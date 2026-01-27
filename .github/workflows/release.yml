@@ -34,6 +34,10 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install build
 
+      - name: Clean distribution directory
+        run: |
+          rm -rf dist
+
       - name: Run tests
         run: |
           python scripts/test.py
@@ -44,3 +48,9 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Python Package Index
+        if: ${{ hashFiles('dist/*') != '' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
