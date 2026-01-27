@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.1.1 (2026-01-27)
+
+### Bug Fixes
+
+- Publish to Python Package Index from release workflow
+  ([`de51437`](https://github.com/AnthusAI/Biblicus/commit/de51437472622f8ee3d1e9e404a30fc00944e098))
+
+### Chores
+
+- Publish distributions to Python Package Index
+  ([`0973ac6`](https://github.com/AnthusAI/Biblicus/commit/0973ac692e4867b0fdbf88de37c1850e81aac125))
+
+
 ## v0.1.0 (2026-01-27)
 
 ### Chores
