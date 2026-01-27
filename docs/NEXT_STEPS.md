@@ -4,6 +4,43 @@ This document is a menu of options for what to build next, plus practical comman
 
 The goal is to keep one clear home base for planning and prioritization.
 
+## Diagram of the current system and the next layers
+
+Green boxes are implemented now. Grey boxes are planned next layers that we can build and compare.
+
+```mermaid
+flowchart TD
+  subgraph Exists now
+    A[Ingest] --> B[Raw item files]
+    B --> C[Catalog file]
+    C --> D[Scan backend]
+    C --> E[Sqlite full text search backend]
+    D --> F[Evidence]
+    E --> F
+    F --> G[Evaluation metrics]
+  end
+
+  subgraph Planned layers
+    P1[Text extraction pipeline stage] --> C
+    P2[Rerank pipeline stage] --> F
+    P3[Filter pipeline stage] --> F
+    P4[Tool server for external backends] --> D
+    P4 --> E
+  end
+
+  style B fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style C fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style D fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style E fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style F fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style G fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+
+  style P1 fill:#f5f5f5,stroke:#616161,color:#424242
+  style P2 fill:#f5f5f5,stroke:#616161,color:#424242
+  style P3 fill:#f5f5f5,stroke:#616161,color:#424242
+  style P4 fill:#f5f5f5,stroke:#616161,color:#424242
+```
+
 ## Working examples you can run now
 
 ### Install for local development
@@ -172,4 +209,3 @@ When we choose what to build next, these are the main considerations to weigh.
 If you want a focused next step that delivers visible value without adding heavy dependencies, the best next move is a pipeline stage that extracts text from Portable Document Format files into derived text artifacts, plus an evidence strategy that prefers extracted text when available.
 
 This reinforces the core separation between raw items, derived artifacts, and retrieval evidence, and it makes the system immediately more useful for real world documents.
-

@@ -28,6 +28,35 @@ The framework is a small, explicit vocabulary that appears in code, specificatio
 - Recipe is a named configuration for a backend.
 - Pipeline stage is a distinct retrieval step such as retrieve, rerank, and filter.
 
+## Diagram
+
+This diagram shows how a corpus becomes evidence for an assistant.
+
+```mermaid
+flowchart LR
+  subgraph Corpus
+    Source[Source items] --> Ingest[Ingest]
+    Ingest --> Raw[Raw item files]
+    Raw --> Catalog[Catalog file]
+  end
+
+  subgraph Retrieval
+    Catalog --> Build[Build run]
+    Build --> Run[Run manifest]
+    Run --> Query[Query]
+    Query --> Evidence[Evidence]
+  end
+
+  Evidence --> Context[Assistant context]
+  Context --> Model[Large language model call]
+  Model --> Answer[Answer]
+
+  style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style Run fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+```
+
 ## Practical value
 
 - You can ingest raw material once, then try many retrieval approaches over time.
