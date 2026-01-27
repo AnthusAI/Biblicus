@@ -47,6 +47,12 @@ This repository is a working Python package. Install it into a virtual environme
 python3 -m pip install -e .
 ```
 
+After the first release, you can install it from Python Package Index.
+
+```
+python3 -m pip install biblicus
+```
+
 ## Quick start
 
 ```
