@@ -135,6 +135,8 @@ Releases are automated from the main branch using semantic versioning and conven
 
 The release pipeline publishes a GitHub release and uploads the package to Python Package Index when continuous integration succeeds.
 
+Publishing uses a Python Package Index token stored in the GitHub secret named PYPI_TOKEN.
+
 ## Documentation
 
 Reference documentation is generated from Sphinx style docstrings. Build the documentation with the command below.
