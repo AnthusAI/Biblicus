@@ -44,7 +44,7 @@ flowchart LR
     LegendYourCode[Your application]
   end
 
-  subgraph Diagram[Diagram]
+  subgraph Main[" "]
     direction TB
 
     subgraph StableCore[Stable core]
@@ -78,6 +78,7 @@ flowchart LR
   end
 
   style Legend fill:#ffffff,stroke:#ffffff
+  style Main fill:#ffffff,stroke:#ffffff
   style LegendStable fill:#ffffff,stroke:#1b5e20,stroke-width:2px
   style LegendPluggable fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
   style LegendYourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
