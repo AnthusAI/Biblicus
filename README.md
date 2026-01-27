@@ -32,6 +32,7 @@ The framework is a small, explicit vocabulary that appears in code, specificatio
 
 This diagram shows how a corpus becomes evidence for an assistant.
 The legend shows what the border styles mean.
+The your code region is where you decide how to turn evidence into context and how to call a model.
 
 ```mermaid
 %%{init: {"flowchart": {"useMaxWidth": true}}}%%
@@ -49,12 +50,16 @@ flowchart TD
   end
 
   Catalog --> Build
-  Evidence --> Context[Assistant context]
-  Context --> Model[Large language model call]
-  Model --> Answer[Answer]
+  Evidence --> Context
+
+  subgraph YourCode[Your code]
+    Context[Assistant context] --> Model[Large language model call]
+    Model --> Answer[Answer]
+  end
 
   style StableCore fill:#ffffff,stroke:#1b5e20,stroke-width:2px
   style PluggableRetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
+  style YourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
 
   style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
   style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
@@ -64,11 +69,13 @@ flowchart TD
   subgraph Legend[Legend]
     LegendStable[Stable core region]
     LegendPluggable[Pluggable region]
+    LegendYourCode[Your code region]
   end
 
   style Legend fill:#ffffff,stroke:#ffffff
   style LegendStable fill:#ffffff,stroke:#1b5e20,stroke-width:2px
   style LegendPluggable fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
+  style LegendYourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
 ```
 
 ## Practical value
