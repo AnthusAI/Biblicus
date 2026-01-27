@@ -31,6 +31,7 @@ The framework is a small, explicit vocabulary that appears in code, specificatio
 ## Diagram
 
 This diagram shows how a corpus becomes evidence for an assistant.
+The legend shows what the border styles mean.
 
 ```mermaid
 %%{init: {"flowchart": {"useMaxWidth": true}}}%%
@@ -59,6 +60,15 @@ flowchart TD
   style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
   style Run fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
   style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+
+  subgraph Legend[Legend]
+    LegendStable[Stable core region]
+    LegendPluggable[Pluggable region]
+  end
+
+  style Legend fill:#ffffff,stroke:#ffffff
+  style LegendStable fill:#ffffff,stroke:#1b5e20,stroke-width:2px
+  style LegendPluggable fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
 ```
 
 ## Practical value
