@@ -94,6 +94,7 @@ The documents below are written to be read in order.
 
 - [Architecture][architecture]
 - [Backends][backends]
+- [Next steps][next-steps]
 
 ## Metadata and catalog
 
@@ -155,6 +156,7 @@ License terms are in `LICENSE`.
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
 [architecture]: docs/ARCHITECTURE.md
 [backends]: docs/BACKENDS.md
+[next-steps]: docs/NEXT_STEPS.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
