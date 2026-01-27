@@ -1,0 +1,154 @@
+from __future__ import annotations
+
+import os
+import sys
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, Optional, Sequence
+
+from biblicus.cli import main as biblicus_main
+
+
+def _repo_root() -> Path:
+    """
+    Resolve the repository root directory.
+
+    :return: Repository root path.
+    :rtype: Path
+    """
+
+    return Path(__file__).resolve().parent.parent
+
+
+def before_scenario(context, scenario) -> None:
+    """
+    Behave hook executed before each scenario.
+
+    :param context: Behave context object.
+    :type context: object
+    :param scenario: Behave scenario.
+    :type scenario: object
+    :return: None.
+    :rtype: None
+    """
+
+    import biblicus.__main__ as _biblicus_main
+
+    _ = _biblicus_main
+
+    if "integration" in scenario.effective_tags and os.environ.get("BIBLICUS_INTEGRATION") != "1":
+        scenario.skip("Integration tests are disabled. Set BIBLICUS_INTEGRATION=1 to enable.")
+
+    context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
+    context.workdir = Path(context._tmp.name)
+    context.repo_root = _repo_root()
+    context.env = dict(os.environ)
+    context.last_result = None
+    context.last_ingest = None
+    context.last_shown = None
+    context.ingested_ids = []
+
+
+def after_scenario(context, scenario) -> None:
+    """
+    Behave hook executed after each scenario.
+
+    :param context: Behave context object.
+    :type context: object
+    :param scenario: Behave scenario.
+    :type scenario: object
+    :return: None.
+    :rtype: None
+    """
+
+    if getattr(context, "httpd", None) is not None:
+        context.httpd.shutdown()
+        context.httpd.server_close()
+        context.httpd = None
+    if hasattr(context, "_tmp"):
+        context._tmp.cleanup()
+
+
+@dataclass
+class RunResult:
+    """
+    Captured command-line interface execution result.
+
+    :ivar returncode: Process exit code.
+    :vartype returncode: int
+    :ivar stdout: Captured standard output.
+    :vartype stdout: str
+    :ivar stderr: Captured standard error.
+    :vartype stderr: str
+    """
+
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+def run_biblicus(
+    context,
+    args: Sequence[str],
+    *,
+    cwd: Optional[Path] = None,
+    input_text: Optional[str] = None,
+    extra_env: Optional[Dict[str, str]] = None,
+) -> RunResult:
+    """
+    Run the Biblicus command-line interface in-process for coverage capture.
+
+    :param context: Behave context object.
+    :type context: object
+    :param args: Command-line interface argument list.
+    :type args: Sequence[str]
+    :param cwd: Optional working directory.
+    :type cwd: Path or None
+    :param input_text: Optional standard input content.
+    :type input_text: str or None
+    :param extra_env: Optional environment overrides.
+    :type extra_env: dict[str, str] or None
+    :return: Captured execution result.
+    :rtype: RunResult
+    """
+
+    import contextlib
+    import io
+
+    out = io.StringIO()
+    err = io.StringIO()
+
+    prev_cwd = os.getcwd()
+    prev_stdin = sys.stdin
+
+    prior_env: dict[str, Optional[str]] = {}
+    if extra_env:
+        for k, v in extra_env.items():
+            prior_env[k] = os.environ.get(k)
+            os.environ[k] = v
+
+    try:
+        os.chdir(str(cwd or context.workdir))
+        if input_text is not None:
+            sys.stdin = io.StringIO(input_text)
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = int(biblicus_main(list(args)) or 0)
+            except SystemExit as e:
+                if isinstance(e.code, int):
+                    code = e.code
+                else:
+                    code = 1
+    finally:
+        os.chdir(prev_cwd)
+        sys.stdin = prev_stdin
+        for k, v in prior_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    result = RunResult(returncode=code, stdout=out.getvalue(), stderr=err.getvalue())
+    context.last_result = result
+    return result

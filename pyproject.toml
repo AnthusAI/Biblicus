@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biblicus"
+version = "0.0.0"
+description = "Command line interface and Python library for corpus ingestion, retrieval, and evaluation."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = [
+  "pydantic>=2.0",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "behave>=1.2.6",
+  "coverage[toml]>=7.0",
+  "sphinx>=7.0",
+  "myst-parser>=2.0",
+  "ruff>=0.4.0",
+  "black>=24.0",
+]
+
+[project.scripts]
+biblicus = "biblicus.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["biblicus"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "I"]
+ignore = ["E501"]

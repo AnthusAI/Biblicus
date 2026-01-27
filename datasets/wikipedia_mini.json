@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "name": "wikipedia-mini",
+  "description": "Small evaluation set aligned with the Wikipedia integration corpus.",
+  "queries": [
+    {
+      "query_id": "q1",
+      "query_text": "mathematician who worked on the Analytical Engine",
+      "expected_source_uri": "https://en.wikipedia.org/wiki/Ada_Lovelace",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q2",
+      "query_text": "pioneer of computer programming in the US Navy",
+      "expected_source_uri": "https://en.wikipedia.org/wiki/Grace_Hopper",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q3",
+      "query_text": "proposed the Church-Turing thesis",
+      "expected_source_uri": "https://en.wikipedia.org/wiki/Alan_Turing",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q4",
+      "query_text": "invented information theory",
+      "expected_source_uri": "https://en.wikipedia.org/wiki/Claude_Shannon",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q5",
+      "query_text": "coined the term artificial intelligence",
+      "expected_source_uri": "https://en.wikipedia.org/wiki/John_McCarthy_(computer_scientist)",
+      "kind": "synthetic"
+    }
+  ]
+}

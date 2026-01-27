@@ -1,0 +1,19 @@
+include README.md
+include LICENSE
+include pyproject.toml
+
+recursive-include src *.py
+recursive-include docs *.rst *.md *.py
+recursive-include features *.feature *.py
+recursive-include scripts *.py
+recursive-include datasets *.json
+
+prune corpora
+prune reports
+prune docs/_build
+
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__/*
+global-exclude .DS_Store
+global-exclude .coverage

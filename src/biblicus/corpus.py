@@ -1,0 +1,952 @@
+"""
+Corpus storage and ingestion for Biblicus.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import mimetypes
+import shutil
+import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence
+
+import yaml
+
+from .constants import CORPUS_DIR_NAME, DEFAULT_RAW_DIR, RUNS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
+from .frontmatter import parse_front_matter, render_front_matter
+from .models import CatalogItem, CorpusCatalog, CorpusConfig, IngestResult, RetrievalRun
+from .sources import load_source
+from .time import utc_now_iso
+from .uris import normalize_corpus_uri, corpus_ref_to_path
+
+
+def _sha256_bytes(data: bytes) -> str:
+    """
+    Compute a Secure Hash Algorithm 256 digest for byte content.
+
+    :param data: Input bytes.
+    :type data: bytes
+    :return: Secure Hash Algorithm 256 hex digest.
+    :rtype: str
+    """
+
+    return hashlib.sha256(data).hexdigest()
+
+
+def _sanitize_filename(name: str) -> str:
+    """
+    Sanitize a filename into a portable, filesystem-friendly form.
+
+    :param name: Raw filename.
+    :type name: str
+    :return: Sanitized filename.
+    :rtype: str
+    """
+
+    allowed_characters = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._() ")
+    sanitized_name = "".join(
+        (character if character in allowed_characters else "_") for character in name
+    ).strip()
+    return sanitized_name or "file"
+
+
+def _preferred_extension_for_media_type(media_type: str) -> Optional[str]:
+    """
+    Return a preferred filename extension for a media type.
+
+    :param media_type: Internet Assigned Numbers Authority media type.
+    :type media_type: str
+    :return: Preferred extension or None.
+    :rtype: str or None
+    """
+
+    media_type_overrides = {
+        "image/jpeg": ".jpg",
+    }
+    if media_type in media_type_overrides:
+        return media_type_overrides[media_type]
+    return mimetypes.guess_extension(media_type)
+
+
+def _ensure_filename_extension(filename: str, *, media_type: str) -> str:
+    """
+    Ensure a usable filename extension for a media type.
+
+    :param filename: Raw filename.
+    :type filename: str
+    :param media_type: Internet Assigned Numbers Authority media type.
+    :type media_type: str
+    :return: Filename with a compatible extension.
+    :rtype: str
+    """
+
+    raw_name = filename.strip()
+
+    if media_type == "text/markdown":
+        if raw_name.lower().endswith((".md", ".markdown")):
+            return raw_name
+        return raw_name + ".md"
+
+    ext = _preferred_extension_for_media_type(media_type)
+    if not ext:
+        return raw_name
+    if raw_name.lower().endswith(ext.lower()):
+        return raw_name
+    return raw_name + ext
+
+
+def _merge_tags(explicit: Sequence[str], from_frontmatter: Any) -> List[str]:
+    """
+    Merge tags from explicit input and front matter values.
+
+    :param explicit: Explicit tags provided by callers.
+    :type explicit: Sequence[str]
+    :param from_frontmatter: Tags from front matter.
+    :type from_frontmatter: Any
+    :return: Deduplicated tag list preserving order.
+    :rtype: list[str]
+    """
+
+    merged_tags: List[str] = []
+
+    for explicit_tag in explicit:
+        cleaned_tag = explicit_tag.strip()
+        if cleaned_tag:
+            merged_tags.append(cleaned_tag)
+
+    if isinstance(from_frontmatter, str):
+        merged_tags.append(from_frontmatter)
+    elif isinstance(from_frontmatter, list):
+        for item in from_frontmatter:
+            if isinstance(item, str) and item.strip():
+                merged_tags.append(item.strip())
+
+    seen_tags = set()
+    deduplicated_tags: List[str] = []
+    for tag_value in merged_tags:
+        if tag_value not in seen_tags:
+            seen_tags.add(tag_value)
+            deduplicated_tags.append(tag_value)
+    return deduplicated_tags
+
+
+def _sidecar_path_for(content_path: Path) -> Path:
+    """
+    Compute the sidecar metadata path for a content file.
+
+    :param content_path: Path to the content file.
+    :type content_path: Path
+    :return: Sidecar path.
+    :rtype: Path
+    """
+
+    return content_path.with_name(content_path.name + SIDECAR_SUFFIX)
+
+
+def _load_sidecar(content_path: Path) -> Dict[str, Any]:
+    """
+    Load sidecar metadata for a content file.
+
+    :param content_path: Path to the content file.
+    :type content_path: Path
+    :return: Parsed sidecar metadata.
+    :rtype: dict[str, Any]
+    :raises ValueError: If the sidecar content is not a mapping.
+    """
+
+    path = _sidecar_path_for(content_path)
+    if not path.is_file():
+        return {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Sidecar metadata must be a mapping/object: {path}")
+    return dict(data)
+
+
+def _write_sidecar(content_path: Path, metadata: Dict[str, Any]) -> None:
+    """
+    Write a sidecar metadata file.
+
+    :param content_path: Path to the content file.
+    :type content_path: Path
+    :param metadata: Metadata to serialize.
+    :type metadata: dict[str, Any]
+    :return: None.
+    :rtype: None
+    """
+    path = _sidecar_path_for(content_path)
+    text = yaml.safe_dump(
+        metadata,
+        sort_keys=False,
+        allow_unicode=True,
+        default_flow_style=False,
+    ).strip()
+    path.write_text(text + "\n", encoding="utf-8")
+
+
+def _ensure_biblicus_block(metadata: Dict[str, Any], *, item_id: str, source_uri: str) -> Dict[str, Any]:
+    """
+    Ensure the biblicus metadata block exists and is populated.
+
+    :param metadata: Existing metadata.
+    :type metadata: dict[str, Any]
+    :param item_id: Item identifier to store.
+    :type item_id: str
+    :param source_uri: Source uniform resource identifier to store.
+    :type source_uri: str
+    :return: Updated metadata mapping.
+    :rtype: dict[str, Any]
+    """
+    updated_metadata = dict(metadata)
+    existing_biblicus = updated_metadata.get("biblicus")
+    if not isinstance(existing_biblicus, dict):
+        existing_biblicus = {}
+    biblicus_block = dict(existing_biblicus)
+    biblicus_block["id"] = item_id
+    biblicus_block["source"] = source_uri
+    updated_metadata["biblicus"] = biblicus_block
+    return updated_metadata
+
+
+def _parse_uuid_prefix(filename: str) -> Optional[str]:
+    """
+    Extract a universally unique identifier prefix from a filename, if present.
+
+    :param filename: Filename to inspect.
+    :type filename: str
+    :return: Universally unique identifier string or None.
+    :rtype: str or None
+    """
+    if len(filename) < 36:
+        return None
+    prefix = filename[:36]
+    try:
+        return str(uuid.UUID(prefix))
+    except ValueError:
+        return None
+
+
+def _merge_metadata(front: Dict[str, Any], side: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Merge front matter and sidecar metadata.
+
+    :param front: Front matter metadata.
+    :type front: dict[str, Any]
+    :param side: Sidecar metadata.
+    :type side: dict[str, Any]
+    :return: Merged metadata.
+    :rtype: dict[str, Any]
+    """
+    merged_metadata: Dict[str, Any] = dict(front)
+
+    front_biblicus = merged_metadata.get("biblicus")
+    sidecar_biblicus = side.get("biblicus")
+    if isinstance(front_biblicus, dict) or isinstance(sidecar_biblicus, dict):
+        merged_biblicus: Dict[str, Any] = {}
+        if isinstance(front_biblicus, dict):
+            merged_biblicus.update(front_biblicus)
+        if isinstance(sidecar_biblicus, dict):
+            merged_biblicus.update(sidecar_biblicus)
+        merged_metadata["biblicus"] = merged_biblicus
+
+    merged_tags = _merge_tags(_merge_tags([], front.get("tags")), side.get("tags"))
+    if merged_tags:
+        merged_metadata["tags"] = merged_tags
+
+    for metadata_key, metadata_value in side.items():
+        if metadata_key in {"biblicus", "tags"}:
+            continue
+        merged_metadata[metadata_key] = metadata_value
+
+    return merged_metadata
+
+
+class Corpus:
+    """
+    Local corpus manager for Biblicus.
+
+    :ivar root: Corpus root directory.
+    :vartype root: Path
+    :ivar meta_dir: Metadata directory under the corpus root.
+    :vartype meta_dir: Path
+    :ivar raw_dir: Raw item directory under the corpus root.
+    :vartype raw_dir: Path
+    :ivar config: Parsed corpus config, if present.
+    :vartype config: CorpusConfig or None
+    """
+
+    def __init__(self, root: Path):
+        """
+        Initialize a corpus wrapper around a filesystem path.
+
+        :param root: Corpus root directory.
+        :type root: Path
+        """
+
+        self.root = root
+        self.meta_dir = self.root / CORPUS_DIR_NAME
+        self.raw_dir = self.root / DEFAULT_RAW_DIR
+        self.config = self._load_config()
+
+    @property
+    def uri(self) -> str:
+        """
+        Return the canonical uniform resource identifier for the corpus root.
+
+        :return: Corpus uniform resource identifier.
+        :rtype: str
+        """
+
+        return self.root.as_uri()
+
+    def _load_config(self) -> Optional[CorpusConfig]:
+        """
+        Load the corpus config if it exists.
+
+        :return: Parsed corpus config or None.
+        :rtype: CorpusConfig or None
+        :raises ValueError: If the config schema is invalid.
+        """
+
+        path = self.meta_dir / "config.json"
+        if not path.is_file():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return CorpusConfig.model_validate(data)
+
+    @classmethod
+    def find(cls, start: Path) -> "Corpus":
+        """
+        Locate a corpus by searching upward from a path.
+
+        :param start: Starting path to search.
+        :type start: Path
+        :return: Located corpus instance.
+        :rtype: Corpus
+        :raises FileNotFoundError: If no corpus config is found.
+        """
+
+        start = start.resolve()
+        for candidate in [start, *start.parents]:
+            if (candidate / CORPUS_DIR_NAME / "config.json").is_file():
+                return cls(candidate)
+        raise FileNotFoundError(
+            f"Not a Biblicus corpus (no {CORPUS_DIR_NAME}/config.json found from {start})"
+        )
+
+    @classmethod
+    def open(cls, ref: str | Path) -> "Corpus":
+        """
+        Open a corpus from a path or uniform resource identifier reference.
+
+        :param ref: Filesystem path or file:// uniform resource identifier.
+        :type ref: str or Path
+        :return: Opened corpus instance.
+        :rtype: Corpus
+        """
+
+        return cls.find(corpus_ref_to_path(ref))
+
+    @classmethod
+    def init(cls, root: Path, *, force: bool = False) -> "Corpus":
+        """
+        Initialize a new corpus on disk.
+
+        :param root: Corpus root directory.
+        :type root: Path
+        :param force: Whether to overwrite existing config.
+        :type force: bool
+        :return: Initialized corpus instance.
+        :rtype: Corpus
+        :raises FileExistsError: If the corpus already exists and force is False.
+        """
+
+        root = root.resolve()
+        corpus = cls(root)
+
+        corpus.meta_dir.mkdir(parents=True, exist_ok=True)
+        corpus.raw_dir.mkdir(parents=True, exist_ok=True)
+
+        config_path = corpus.meta_dir / "config.json"
+        if config_path.exists() and not force:
+            raise FileExistsError(f"Corpus already exists at {root}")
+
+        config = CorpusConfig(
+            schema_version=SCHEMA_VERSION,
+            created_at=utc_now_iso(),
+            corpus_uri=normalize_corpus_uri(root),
+            raw_dir=DEFAULT_RAW_DIR,
+        )
+        config_path.write_text(config.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+        corpus._init_catalog()
+        return corpus
+
+    @property
+    def catalog_path(self) -> Path:
+        """
+        Return the path to the corpus catalog file.
+
+        :return: Catalog file path.
+        :rtype: Path
+        """
+
+        return self.meta_dir / "catalog.json"
+
+    def _init_catalog(self) -> None:
+        """
+        Initialize the catalog if it does not already exist.
+
+        :return: None.
+        :rtype: None
+        """
+
+        if self.catalog_path.exists():
+            return
+        catalog = CorpusCatalog(
+            schema_version=SCHEMA_VERSION,
+            generated_at=utc_now_iso(),
+            corpus_uri=normalize_corpus_uri(self.root),
+            raw_dir=DEFAULT_RAW_DIR,
+            latest_run_id=None,
+            items={},
+            order=[],
+        )
+        self._write_catalog(catalog)
+
+    def _load_catalog(self) -> CorpusCatalog:
+        """
+        Read and validate the corpus catalog file.
+
+        :return: Parsed corpus catalog.
+        :rtype: CorpusCatalog
+        :raises FileNotFoundError: If the catalog file does not exist.
+        :raises ValueError: If the catalog schema is invalid.
+        """
+
+        if not self.catalog_path.is_file():
+            raise FileNotFoundError(f"Missing corpus catalog: {self.catalog_path}")
+        catalog_data = json.loads(self.catalog_path.read_text(encoding="utf-8"))
+        return CorpusCatalog.model_validate(catalog_data)
+
+    def load_catalog(self) -> CorpusCatalog:
+        """
+        Load the current corpus catalog.
+
+        :return: Parsed corpus catalog.
+        :rtype: CorpusCatalog
+        :raises FileNotFoundError: If the catalog file does not exist.
+        :raises ValueError: If the catalog schema is invalid.
+        """
+
+        return self._load_catalog()
+
+    def _write_catalog(self, catalog: CorpusCatalog) -> None:
+        """
+        Atomically write a corpus catalog to disk.
+
+        :param catalog: Catalog to persist.
+        :type catalog: CorpusCatalog
+        :return: None.
+        :rtype: None
+        """
+
+        temp_path = self.catalog_path.with_suffix(".json.tmp")
+        temp_path.write_text(catalog.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        temp_path.replace(self.catalog_path)
+
+    @property
+    def runs_dir(self) -> Path:
+        """
+        Location of retrieval run manifests.
+
+        :return: Path to the runs directory.
+        :rtype: Path
+        """
+
+        return self.meta_dir / RUNS_DIR_NAME
+
+    def _ensure_runs_dir(self) -> None:
+        """
+        Ensure the retrieval runs directory exists.
+
+        :return: None.
+        :rtype: None
+        """
+
+        self.runs_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_run(self, run: RetrievalRun) -> None:
+        """
+        Persist a retrieval run manifest and update the catalog pointer.
+
+        :param run: Run manifest to persist.
+        :type run: RetrievalRun
+        :return: None.
+        :rtype: None
+        """
+
+        self._ensure_runs_dir()
+        path = self.runs_dir / f"{run.run_id}.json"
+        path.write_text(run.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        catalog = self._load_catalog()
+        catalog.latest_run_id = run.run_id
+        catalog.generated_at = utc_now_iso()
+        self._write_catalog(catalog)
+
+    def load_run(self, run_id: str) -> RetrievalRun:
+        """
+        Load a retrieval run manifest by identifier.
+
+        :param run_id: Run identifier.
+        :type run_id: str
+        :return: Parsed run manifest.
+        :rtype: RetrievalRun
+        :raises FileNotFoundError: If the run manifest does not exist.
+        """
+
+        path = self.runs_dir / f"{run_id}.json"
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing run manifest: {path}")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return RetrievalRun.model_validate(data)
+
+    @property
+    def latest_run_id(self) -> Optional[str]:
+        """
+        Latest retrieval run identifier recorded in the catalog.
+
+        :return: Latest run identifier or None.
+        :rtype: str or None
+        """
+
+        return self._load_catalog().latest_run_id
+
+    def _upsert_catalog_item(self, item: CatalogItem) -> None:
+        """
+        Upsert a catalog item and reset the latest run pointer.
+
+        :param item: Catalog item to insert or update.
+        :type item: CatalogItem
+        :return: None.
+        :rtype: None
+        """
+
+        self._init_catalog()
+        catalog = self._load_catalog()
+        catalog.items[item.id] = item
+
+        ordered_ids = [item_id for item_id in catalog.order if item_id != item.id]
+        ordered_ids.insert(0, item.id)
+        catalog.order = ordered_ids
+        catalog.generated_at = utc_now_iso()
+        catalog.latest_run_id = None
+
+        self._write_catalog(catalog)
+
+    def ingest_item(
+        self,
+        data: bytes,
+        *,
+        filename: Optional[str] = None,
+        media_type: str = "application/octet-stream",
+        title: Optional[str] = None,
+        tags: Sequence[str] = (),
+        metadata: Optional[Dict[str, Any]] = None,
+        source_uri: str = "unknown",
+    ) -> IngestResult:
+        """
+        Ingest a single raw item into the corpus.
+
+        This is the modality-neutral primitive: callers provide bytes + a media type.
+        Higher-level conveniences (ingest_note, ingest_source, and related methods) build on top.
+
+        :param data: Raw item bytes.
+        :type data: bytes
+        :param filename: Optional filename for the stored item.
+        :type filename: str or None
+        :param media_type: Internet Assigned Numbers Authority media type for the item.
+        :type media_type: str
+        :param title: Optional title metadata.
+        :type title: str or None
+        :param tags: Tags to associate with the item.
+        :type tags: Sequence[str]
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
+        :param source_uri: Source uniform resource identifier for provenance.
+        :type source_uri: str
+        :return: Ingestion result summary.
+        :rtype: IngestResult
+        :raises ValueError: If markdown is not Unicode Transformation Format 8.
+        """
+
+        item_id = str(uuid.uuid4())
+        safe_filename = _sanitize_filename(filename) if filename else ""
+
+        if safe_filename:
+            safe_filename = _ensure_filename_extension(safe_filename, media_type=media_type)
+
+        if media_type == "text/markdown":
+            output_name = f"{item_id}--{safe_filename}" if safe_filename else f"{item_id}.md"
+        else:
+            if safe_filename:
+                output_name = f"{item_id}--{safe_filename}"
+            else:
+                extension = _preferred_extension_for_media_type(media_type) or ""
+                output_name = f"{item_id}{extension}" if extension else f"{item_id}"
+
+        relpath = str(Path(DEFAULT_RAW_DIR) / output_name)
+        output_path = self.root / relpath
+
+        resolved_title = title.strip() if isinstance(title, str) and title.strip() else None
+        resolved_tags = list(tags)
+        metadata_input: Dict[str, Any] = dict(metadata or {})
+        if resolved_title and "title" not in metadata_input:
+            metadata_input["title"] = resolved_title
+        if resolved_tags and "tags" not in metadata_input:
+            metadata_input["tags"] = list(resolved_tags)
+
+        frontmatter: Dict[str, Any] = {}
+
+        if media_type == "text/markdown":
+            try:
+                markdown_text = data.decode("utf-8")
+            except UnicodeDecodeError as decode_error:
+                raise ValueError("Markdown must be Unicode Transformation Format 8") from decode_error
+
+            parsed_document = parse_front_matter(markdown_text)
+            frontmatter = dict(parsed_document.metadata)
+
+            merged_tags = _merge_tags(resolved_tags, frontmatter.get("tags"))
+            if merged_tags:
+                frontmatter["tags"] = merged_tags
+            resolved_tags = merged_tags
+
+            if resolved_title and not (
+                isinstance(frontmatter.get("title"), str) and frontmatter.get("title").strip()
+            ):
+                frontmatter["title"] = resolved_title
+
+            title_value = frontmatter.get("title")
+            if isinstance(title_value, str) and title_value.strip():
+                resolved_title = title_value.strip()
+
+            frontmatter = _ensure_biblicus_block(frontmatter, item_id=item_id, source_uri=source_uri)
+            rendered_document = render_front_matter(frontmatter, parsed_document.body)
+            data_to_write = rendered_document.encode("utf-8")
+        else:
+            data_to_write = data
+
+        sha256_digest = _sha256_bytes(data_to_write)
+        output_path.write_bytes(data_to_write)
+
+        if media_type != "text/markdown":
+            sidecar: Dict[str, Any] = {}
+            sidecar["media_type"] = media_type
+            if resolved_tags:
+                sidecar["tags"] = resolved_tags
+            if metadata_input:
+                for metadata_key, metadata_value in metadata_input.items():
+                    if metadata_key in {"tags", "biblicus"}:
+                        continue
+                    sidecar[metadata_key] = metadata_value
+            sidecar["biblicus"] = {"id": item_id, "source": source_uri}
+            _write_sidecar(output_path, sidecar)
+            frontmatter = sidecar
+
+        created_at = utc_now_iso()
+        item_record = CatalogItem(
+            id=item_id,
+            relpath=relpath,
+            sha256=sha256_digest,
+            bytes=len(data_to_write),
+            media_type=media_type,
+            title=resolved_title,
+            tags=list(resolved_tags),
+            metadata=dict(frontmatter or {}),
+            created_at=created_at,
+            source_uri=source_uri,
+        )
+        self._upsert_catalog_item(item_record)
+
+        return IngestResult(item_id=item_id, relpath=relpath, sha256=sha256_digest)
+
+    def ingest_note(
+        self,
+        text: str,
+        *,
+        title: Optional[str] = None,
+        tags: Sequence[str] = (),
+        source_uri: str = "text",
+    ) -> IngestResult:
+        """
+        Ingest a text note as Markdown.
+
+        :param text: Note content.
+        :type text: str
+        :param title: Optional title metadata.
+        :type title: str or None
+        :param tags: Tags to associate with the note.
+        :type tags: Sequence[str]
+        :param source_uri: Source uniform resource identifier for provenance.
+        :type source_uri: str
+        :return: Ingestion result summary.
+        :rtype: IngestResult
+        """
+
+        data = text.encode("utf-8")
+        return self.ingest_item(
+            data,
+            filename=None,
+            media_type="text/markdown",
+            title=title,
+            tags=tags,
+            metadata=None,
+            source_uri=source_uri,
+        )
+
+    def ingest_source(
+        self,
+        source: str | Path,
+        *,
+        tags: Sequence[str] = (),
+        source_uri: Optional[str] = None,
+    ) -> IngestResult:
+        """
+        Ingest a file path or uniform resource locator source.
+
+        :param source: File path or uniform resource locator.
+        :type source: str or Path
+        :param tags: Tags to associate with the item.
+        :type tags: Sequence[str]
+        :param source_uri: Optional override for the source uniform resource identifier.
+        :type source_uri: str or None
+        :return: Ingestion result summary.
+        :rtype: IngestResult
+        """
+
+        payload = load_source(source, source_uri=source_uri)
+        return self.ingest_item(
+            payload.data,
+            filename=payload.filename,
+            media_type=payload.media_type,
+            title=None,
+            tags=tags,
+            metadata=None,
+            source_uri=payload.source_uri,
+        )
+
+    def list_items(self, *, limit: int = 50) -> List[CatalogItem]:
+        """
+        List items from the catalog.
+
+        :param limit: Maximum number of items to return.
+        :type limit: int
+        :return: Catalog items ordered by recency.
+        :rtype: list[CatalogItem]
+        """
+
+        catalog = self._load_catalog()
+        ordered_ids = (
+            catalog.order[:limit] if catalog.order else list(catalog.items.keys())[:limit]
+        )
+        collected_items: List[CatalogItem] = []
+        for item_id in ordered_ids:
+            item = catalog.items.get(item_id)
+            if item is not None:
+                collected_items.append(item)
+        return collected_items
+
+    def get_item(self, item_id: str) -> CatalogItem:
+        """
+        Fetch a catalog item by identifier.
+
+        :param item_id: Item identifier.
+        :type item_id: str
+        :return: Catalog item.
+        :rtype: CatalogItem
+        :raises KeyError: If the item identifier is unknown.
+        """
+
+        catalog = self._load_catalog()
+        item = catalog.items.get(item_id)
+        if item is None:
+            raise KeyError(f"Unknown item identifier: {item_id}")
+        return item
+
+    def reindex(self) -> Dict[str, int]:
+        """
+        Rebuild/refresh the corpus catalog from the current on-disk corpus contents.
+
+        This is the core "mutable corpus with re-indexing" loop: edit raw files or sidecars,
+        then reindex to refresh the derived catalog.
+
+        :return: Reindex statistics.
+        :rtype: dict[str, int]
+        :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
+        """
+
+        self._init_catalog()
+        existing_catalog = self._load_catalog()
+        stats = {"scanned": 0, "skipped": 0, "inserted": 0, "updated": 0}
+
+        content_files = [
+            content_path
+            for content_path in self.raw_dir.rglob("*")
+            if content_path.is_file() and not content_path.name.endswith(SIDECAR_SUFFIX)
+        ]
+
+        new_items: Dict[str, CatalogItem] = {}
+
+        for content_path in content_files:
+            stats["scanned"] += 1
+            relpath = str(content_path.relative_to(self.root))
+            data = content_path.read_bytes()
+            sha256 = _sha256_bytes(data)
+
+            media_type, _ = mimetypes.guess_type(content_path.name)
+            media_type = media_type or "application/octet-stream"
+
+            sidecar = _load_sidecar(content_path)
+
+            frontmatter: Dict[str, Any] = {}
+            if content_path.suffix.lower() in {".md", ".markdown"}:
+                try:
+                    text = data.decode("utf-8")
+                except UnicodeDecodeError as decode_error:
+                    raise ValueError(
+                        f"Markdown file must be Unicode Transformation Format 8: {relpath}"
+                    ) from decode_error
+                parsed_document = parse_front_matter(text)
+                frontmatter = parsed_document.metadata
+                media_type = "text/markdown"
+
+            merged_metadata = _merge_metadata(frontmatter, sidecar)
+
+            if media_type != "text/markdown":
+                media_type_override = merged_metadata.get("media_type")
+                if isinstance(media_type_override, str) and media_type_override.strip():
+                    media_type = media_type_override.strip()
+
+            item_id: Optional[str] = None
+            biblicus_block = merged_metadata.get("biblicus")
+            if isinstance(biblicus_block, dict):
+                biblicus_id = biblicus_block.get("id")
+                if isinstance(biblicus_id, str):
+                    try:
+                        item_id = str(uuid.UUID(biblicus_id))
+                    except ValueError:
+                        item_id = None
+
+            if item_id is None:
+                item_id = _parse_uuid_prefix(content_path.name)
+
+            if item_id is None:
+                stats["skipped"] += 1
+                continue
+
+            title: Optional[str] = None
+            title_value = merged_metadata.get("title")
+            if isinstance(title_value, str) and title_value.strip():
+                title = title_value.strip()
+
+            resolved_tags = _merge_tags([], merged_metadata.get("tags"))
+
+            source_uri: Optional[str] = None
+            if isinstance(biblicus_block, dict):
+                source_value = biblicus_block.get("source")
+                if isinstance(source_value, str) and source_value.strip():
+                    source_uri = source_value.strip()
+
+            previous_item = existing_catalog.items.get(item_id)
+            created_at = previous_item.created_at if previous_item is not None else utc_now_iso()
+            source_uri = source_uri or (previous_item.source_uri if previous_item is not None else None)
+
+            if previous_item is None:
+                stats["inserted"] += 1
+            else:
+                stats["updated"] += 1
+
+            new_items[item_id] = CatalogItem(
+                id=item_id,
+                relpath=relpath,
+                sha256=sha256,
+                bytes=len(data),
+                media_type=media_type,
+                title=title,
+                tags=list(resolved_tags),
+                metadata=dict(merged_metadata or {}),
+                created_at=created_at,
+                source_uri=source_uri,
+            )
+
+        order = sorted(
+            new_items.keys(),
+            key=lambda item_id: (new_items[item_id].created_at, item_id),
+            reverse=True,
+        )
+
+        catalog = CorpusCatalog(
+            schema_version=SCHEMA_VERSION,
+            generated_at=utc_now_iso(),
+            corpus_uri=normalize_corpus_uri(self.root),
+            raw_dir=DEFAULT_RAW_DIR,
+            latest_run_id=None,
+            items=new_items,
+            order=order,
+        )
+        self._write_catalog(catalog)
+
+        return stats
+
+    @property
+    def name(self) -> str:
+        """
+        Return the corpus name (directory basename).
+
+        :return: Corpus name.
+        :rtype: str
+        """
+
+        return self.root.name
+
+    def purge(self, *, confirm: str) -> None:
+        """
+        Delete all ingested items and derived files, preserving corpus identity/config.
+
+        :param confirm: Confirmation string matching the corpus name.
+        :type confirm: str
+        :return: None.
+        :rtype: None
+        :raises ValueError: If the confirmation does not match.
+        """
+
+        expected = self.name
+        if confirm != expected:
+            raise ValueError(f"Confirmation mismatch: pass --confirm {expected!r} to purge this corpus")
+
+        if self.raw_dir.exists():
+            shutil.rmtree(self.raw_dir)
+        self.raw_dir.mkdir(parents=True, exist_ok=True)
+
+        for path in self.meta_dir.iterdir():
+            if path.name == "config.json":
+                continue
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        self._init_catalog()
+        self._write_catalog(
+            CorpusCatalog(
+                schema_version=SCHEMA_VERSION,
+                generated_at=utc_now_iso(),
+                corpus_uri=normalize_corpus_uri(self.root),
+                raw_dir=DEFAULT_RAW_DIR,
+                latest_run_id=None,
+                items={},
+                order=[],
+            )
+        )
