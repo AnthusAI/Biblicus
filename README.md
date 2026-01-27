@@ -35,45 +35,49 @@ The legend shows what the border styles mean.
 The your code region is where you decide how to turn evidence into context and how to call a model.
 
 ```mermaid
-%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 20, "rankSpacing": 24}}}%%
-flowchart TD
-  subgraph StableCore[Stable core]
-    Source[Source items] --> Ingest[Ingest]
-    Ingest --> Raw[Raw item files]
-    Raw --> Catalog[Catalog file]
-  end
-
-  subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
-    Build[Build run] --> Run[Run manifest]
-    Run --> Query[Query]
-    Query --> Evidence[Evidence]
-  end
-
-  Catalog --> Build
-  Evidence --> Context
-
-  subgraph YourCode[Your code]
-    Context[Assistant context] --> Model[Large language model call]
-    Model --> Answer[Answer]
-  end
-
-  style StableCore fill:#ffffff,stroke:#1b5e20,stroke-width:2px
-  style PluggableRetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
-  style YourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
-
-  style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style Run fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-```
-
-```mermaid
-%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 20, "rankSpacing": 16}}}%%
+%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
 flowchart LR
-  LegendStable[Built in core]
-  LegendPluggable[Pluggable backend]
-  LegendYourCode[Your application]
+  subgraph Legend[Legend]
+    direction TB
+    LegendStable[Built in core]
+    LegendPluggable[Pluggable backend]
+    LegendYourCode[Your application]
+  end
 
+  subgraph Diagram[Diagram]
+    direction TB
+
+    subgraph StableCore[Stable core]
+      Source[Source items] --> Ingest[Ingest]
+      Ingest --> Raw[Raw item files]
+      Raw --> Catalog[Catalog file]
+    end
+
+    subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
+      Build[Build run] --> Run[Run manifest]
+      Run --> Query[Query]
+      Query --> Evidence[Evidence]
+    end
+
+    Catalog --> Build
+    Evidence --> Context
+
+    subgraph YourCode[Your code]
+      Context[Assistant context] --> Model[Large language model call]
+      Model --> Answer[Answer]
+    end
+
+    style StableCore fill:#ffffff,stroke:#1b5e20,stroke-width:2px
+    style PluggableRetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
+    style YourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
+
+    style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style Run fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  end
+
+  style Legend fill:#ffffff,stroke:#ffffff
   style LegendStable fill:#ffffff,stroke:#1b5e20,stroke-width:2px
   style LegendPluggable fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
   style LegendYourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
