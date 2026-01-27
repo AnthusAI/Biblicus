@@ -1,5 +1,8 @@
 # Biblicus
 
+![Continuous integration][continuous-integration-badge]
+![Coverage][coverage-badge]
+
 Make your documents usable by your assistant, then decide later how you will search and retrieve them.
 
 If you are building an assistant in Python, you probably have material you want it to use: notes, documents, web pages, and reference files. A common approach is retrieval augmented generation, where a system retrieves relevant material and uses it as evidence when generating a response.
@@ -152,3 +155,6 @@ License terms are in `LICENSE`.
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
 [architecture]: docs/ARCHITECTURE.md
 [backends]: docs/BACKENDS.md
+
+[continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
+[coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
