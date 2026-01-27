@@ -123,6 +123,12 @@ The dataset file `datasets/wikipedia_mini.json` provides a small evaluation set 
 python3 scripts/test.py
 ```
 
+## Releases
+
+Releases are automated from the main branch using semantic versioning and conventional commit messages.
+
+The release pipeline publishes a GitHub release and uploads the package to Python Package Index when continuous integration succeeds.
+
 ## Documentation
 
 Reference documentation is generated from Sphinx style docstrings. Build the documentation with the command below.
