@@ -67,9 +67,9 @@ flowchart TD
   style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
 
   subgraph Legend[Legend]
-    LegendStable[Stable core region]
-    LegendPluggable[Pluggable region]
-    LegendYourCode[Your code region]
+    LegendStable[Built in core]
+    LegendPluggable[Pluggable backend]
+    LegendYourCode[Your application]
   end
 
   style Legend fill:#ffffff,stroke:#ffffff
