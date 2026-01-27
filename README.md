@@ -41,12 +41,10 @@ flowchart TD
     Raw --> Catalog[Catalog file]
   end
 
-  subgraph PluggableModules[Pluggable modules]
-    subgraph RetrievalBackend[Retrieval backend]
-      Build[Build run] --> Run[Run manifest]
-      Run --> Query[Query]
-      Query --> Evidence[Evidence]
-    end
+  subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
+    Build[Build run] --> Run[Run manifest]
+    Run --> Query[Query]
+    Query --> Evidence[Evidence]
   end
 
   Catalog --> Build
@@ -55,8 +53,7 @@ flowchart TD
   Model --> Answer[Answer]
 
   style StableCore fill:#ffffff,stroke:#1b5e20,stroke-width:2px
-  style PluggableModules fill:#ffffff,stroke:#424242,stroke-dasharray:6 3,stroke-width:2px
-  style RetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
+  style PluggableRetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
 
   style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
   style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
