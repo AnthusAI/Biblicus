@@ -33,19 +33,16 @@ The framework is a small, explicit vocabulary that appears in code, specificatio
 This diagram shows how a corpus becomes evidence for an assistant.
 
 ```mermaid
-flowchart LR
-  subgraph Corpus
-    Source[Source items] --> Ingest[Ingest]
-    Ingest --> Raw[Raw item files]
-    Raw --> Catalog[Catalog file]
-  end
+%%{init: {"flowchart": {"useMaxWidth": true}}}%%
+flowchart TD
+  Source[Source items] --> Ingest[Ingest]
+  Ingest --> Raw[Raw item files]
+  Raw --> Catalog[Catalog file]
 
-  subgraph Retrieval
-    Catalog --> Build[Build run]
-    Build --> Run[Run manifest]
-    Run --> Query[Query]
-    Query --> Evidence[Evidence]
-  end
+  Catalog --> Build[Build run]
+  Build --> Run[Run manifest]
+  Run --> Query[Query]
+  Query --> Evidence[Evidence]
 
   Evidence --> Context[Assistant context]
   Context --> Model[Large language model call]
