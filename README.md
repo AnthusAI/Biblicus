@@ -171,6 +171,8 @@ In an assistant system, retrieval usually produces context for a model call. Thi
 The documents below are written to be read in order.
 
 - [Architecture][architecture]
+- [Roadmap][roadmap]
+- [Feature index][feature-index]
 - [Corpus][corpus]
 - [Text extraction][text-extraction]
 - [Backends][backends]
@@ -232,10 +234,18 @@ Publishing uses a Python Package Index token stored in the GitHub secret named P
 
 ## Documentation
 
-Reference documentation is generated from Sphinx style docstrings. Build the documentation with the command below.
+Reference documentation is generated from Sphinx style docstrings.
+
+Install development dependencies:
 
 ```
-sphinx-build -b html docs docs/_build
+python3 -m pip install -e ".[dev]"
+```
+
+Build the documentation:
+
+```
+python3 -m sphinx -b html docs docs/_build
 ```
 
 ## License
@@ -244,6 +254,8 @@ License terms are in `LICENSE`.
 
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
 [architecture]: docs/ARCHITECTURE.md
+[roadmap]: docs/ROADMAP.md
+[feature-index]: docs/FEATURE_INDEX.md
 [corpus]: docs/CORPUS.md
 [text-extraction]: docs/EXTRACTION.md
 [backends]: docs/BACKENDS.md

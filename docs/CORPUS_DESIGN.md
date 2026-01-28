@@ -1,12 +1,8 @@
-# Corpus workflows and lifecycle hooks
+# Corpus design
 
-This document records the design decisions and outcomes for corpus management and lifecycle hooks in version zero. It is written in a decision format because the long term shape of the library is determined by corpus workflows more than by any particular retrieval backend.
+This document records design decisions and outcomes for corpus management and lifecycle hooks in version zero.
 
 The goal is to make corpus management practical for day to day use, while keeping the raw corpus durable and readable as ordinary files on disk.
-
-## Initiative constraints
-
-The project uses strict behavior driven development. Behavior specifications in `features/*.feature` are the authoritative definition of system behavior.
 
 ## What exists today
 

@@ -1,8 +1,8 @@
 # Next steps
 
-This document is a menu of options for what to build next, plus practical commands you can run to see the current system working end to end.
+This document is a set of runnable examples you can use to see the current system working end to end.
 
-The goal is to keep one clear reference point for planning and prioritization.
+For the ordered plan of what to build next, see `docs/ROADMAP.md`.
 
 ## Diagram of the current system and the next layers
 
@@ -193,69 +193,13 @@ To include integration scenarios that download public test data at runtime:
 python3 scripts/test.py --integration
 ```
 
-## Menu of build options
+## Documentation map
 
-Each option below is phrased as a user visible behavior. If we decide to build it, the next step is to write behavior driven development scenarios that describe it.
-
-This roadmap is intentionally biased toward corpus management, because the day to day work of collecting and curating a corpus is the foundation for everything else.
-
-This project uses strict behavior driven development. Feature specifications and Sphinx style documentation are treated as first class outputs, and the goal is complete specification coverage of behavior.
-
-See `docs/CORPUS_WORKFLOWS.md` for design decisions about corpus management and lifecycle hooks.
-
-Reference documentation for what exists today:
-
-- `docs/CORPUS.md`
-- `docs/EXTRACTION.md`
-- `docs/TESTING.md`
-
-### Corpus workflows
-
-- Extend ingest from a web address with better filename and media type handling for difficult pages and redirects
-- Import a folder tree into a corpus while preserving a stable source path
-- Crawl a website under a base address and ingest discovered pages
-- Deduplicate items by content hash to avoid repeated ingestion
-- Add a corpus level ignore list for files and paths that should not be ingested
-- Support large binary items with streaming write and checksum verification
-- Provide first class commands for archive, prune, and export workflows
-- Provide a corpus status command that reports size, newest items, and obvious problems
-
-### Corpus management and lifecycle hooks
-
-- Define lifecycle hooks so plugins can transform and curate items during ingestion and catalog rebuilds
-- Support an editorial pipeline for filtering and pruning a corpus without destroying raw source material
-- Support metadata enrichment steps that can be applied consistently across many items
-- Provide a strict, documented hook protocol so the same plugin can target multiple hook points
-- Provide a safe way to record what changed when hooks run, to support reproducibility and trust
-- Keep hook interfaces typed and validated with Pydantic models
-
-### Metadata workflows
-
-- Provide first class commands to edit tags and title without manual file edits
-- Provide first class commands to attach or update sidecar metadata
-- Define a minimal, strict metadata schema for common fields while still allowing free form metadata
-- Add a metadata validation command that explains why a file or sidecar is invalid
-
-### Text extraction as pipeline stages
-
-- Extract text from Portable Document Format files into a derived text artifact
-- Extract text from office document formats into a derived text artifact
-- Extract text from images with optical character recognition into a derived text artifact
-- Define a pipeline stage interface so these steps are pluggable and testable
-- Define extraction runs as a separate plugin stage from retrieval so extraction providers and retrieval providers can be combined freely
-- Store derived artifacts under the corpus, partitioned by plugin type and identifier, so multiple implementations can coexist side by side
-
-### Retrieval and evidence
-
-- Add a second retrieval stage that reranks evidence from a first stage
-- Add a filtering stage that applies tags, sources, or metadata predicates
-- Add evidence formatting utilities for common assistant frameworks
-- Add evidence provenance utilities that make citations easy and consistent
-
-### Evaluation and datasets
-
-- Add a dataset authoring command that helps create small, human curated evaluation sets
-- Add evaluation reports that include per query diagnostics and summary tables
+- Corpus: `docs/CORPUS.md`
+- Text extraction: `docs/EXTRACTION.md`
+- Backends: `docs/BACKENDS.md`
+- Testing: `docs/TESTING.md`
+- Roadmap: `docs/ROADMAP.md`
 - Add regression checks so evaluation results can be compared across runs
 - Add dataset loaders for common sources while keeping the on disk schema stable
 - Add extraction evaluation datasets that measure extracted text quality for images and Portable Document Format pages
