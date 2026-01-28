@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .constants import SCHEMA_VERSION
+from .hooks import HookSpec
 
 
 class CorpusConfig(BaseModel):
@@ -25,6 +26,8 @@ class CorpusConfig(BaseModel):
     :vartype raw_dir: str
     :ivar notes: Optional free-form notes for operators.
     :vartype notes: dict[str, Any] or None
+    :ivar hooks: Optional hook specifications for corpus lifecycle events.
+    :vartype hooks: list[HookSpec] or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -34,6 +37,7 @@ class CorpusConfig(BaseModel):
     corpus_uri: str
     raw_dir: str = "raw"
     notes: Optional[Dict[str, Any]] = None
+    hooks: Optional[List[HookSpec]] = None
 
     @model_validator(mode="after")
     def _enforce_schema_version(self) -> "CorpusConfig":
@@ -305,3 +309,19 @@ class RetrievalResult(BaseModel):
     generated_at: str
     evidence: List[Evidence] = Field(default_factory=list)
     stats: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExtractedText(BaseModel):
+    """
+    Text payload produced by an extractor plugin.
+
+    :ivar text: Extracted text content.
+    :vartype text: str
+    :ivar producer_extractor_id: Extractor identifier that produced this text.
+    :vartype producer_extractor_id: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    producer_extractor_id: str = Field(min_length=1)

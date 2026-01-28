@@ -4,6 +4,7 @@ Behavior-driven development and coverage test runner for Biblicus.
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -55,9 +56,20 @@ def main() -> int:
     """
     Execute Behave under coverage and emit Hypertext Markup Language reports.
 
+    By default, scenarios tagged ``@integration`` are excluded. Use ``--integration`` to
+    include them.
+
     :return: Exit code.
     :rtype: int
     """
+
+    parser = argparse.ArgumentParser(description="Run Biblicus behavior specs under coverage.")
+    parser.add_argument(
+        "--integration",
+        action="store_true",
+        help="Include scenarios tagged @integration.",
+    )
+    args = parser.parse_args()
 
     repo_root = _repo_root()
     env = _env_with_src()
@@ -66,7 +78,8 @@ def main() -> int:
 
     _run([sys.executable, "-m", "coverage", "erase"], env=env)
 
-    rc = _run([sys.executable, "-m", "coverage", "run", "-m", "behave"], env=env)
+    behave_args = [] if args.integration else ["--tags", "~@integration"]
+    rc = _run([sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args], env=env)
     _run([sys.executable, "-m", "coverage", "report", "-m"], env=env)
     _run([sys.executable, "-m", "coverage", "html", "-d", str(htmlcov_dir)], env=env)
 

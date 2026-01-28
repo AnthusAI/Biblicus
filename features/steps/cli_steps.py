@@ -5,6 +5,7 @@ import re
 import runpy
 import shlex
 import threading
+import hashlib
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -200,6 +201,13 @@ def step_file_exists_with_contents(context, filename: str) -> None:
     (context.workdir / filename).write_text(context.text, encoding="utf-8")
 
 
+@given('a file "{filename}" exists with bytes:')
+def step_file_exists_with_bytes(context, filename: str) -> None:
+    raw = context.text.strip()
+    data = raw.encode("utf-8").decode("unicode_escape").encode("latin1")
+    (context.workdir / filename).write_bytes(data)
+
+
 @then('the last ingested item is markdown with title "{title}" and tags:')
 def step_last_item_markdown_with_title_tags(context, title: str) -> None:
     assert context.last_ingest is not None
@@ -219,9 +227,20 @@ def step_binary_file_exists(context, filename: str) -> None:
     (context.workdir / filename).write_bytes(b"%PDF-1.4\n%...\n")
 
 
+@given('a binary file "{filename}" exists with Portable Document Format bytes')
+def step_binary_file_exists_pdf_bytes(context, filename: str) -> None:
+    (context.workdir / filename).write_bytes(b"%PDF-1.7\n%...\n")
+
+
 @given('a binary file "{filename}" exists with invalid Unicode Transformation Format 8 bytes')
 def step_binary_file_exists_invalid_utf8(context, filename: str) -> None:
     (context.workdir / filename).write_bytes(b"\xff\xfe\xfa")
+
+
+@given('a binary file "{filename}" exists with size {size:d} bytes')
+def step_binary_file_exists_with_size(context, filename: str, size: int) -> None:
+    path = context.workdir / filename
+    path.write_bytes(b"a" * size)
 
 
 @given('a text file "{filename}" exists with contents "{contents}"')
@@ -302,6 +321,13 @@ def step_sidecar_includes_media_type(context, media_type: str) -> None:
     assert data.get("media_type") == media_type
 
 
+@then('the last ingested item relpath ends with "{suffix}"')
+def step_last_ingested_relpath_endswith(context, suffix: str) -> None:
+    assert context.last_ingest is not None
+    relpath = context.last_ingest["relpath"]
+    assert relpath.endswith(suffix), relpath
+
+
 @given("a hypertext transfer protocol server is serving the workdir")
 def step_http_server_serving(context) -> None:
     class QuietHandler(SimpleHTTPRequestHandler):
@@ -309,6 +335,28 @@ def step_http_server_serving(context) -> None:
             return
 
     handler = partial(QuietHandler, directory=str(context.workdir))
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    context.httpd = httpd
+    host, port = httpd.server_address
+    context.http_base_url = f"http://{host}:{port}/"
+
+
+@given("a hypertext transfer protocol server is serving the workdir without content type headers")
+def step_http_server_serving_without_content_type(context) -> None:
+    class NoContentTypeHandler(SimpleHTTPRequestHandler):
+        def log_message(self, message_format, *args):
+            return
+
+        def end_headers(self) -> None:
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+        def guess_type(self, path: str) -> str:
+            return "application/octet-stream"
+
+    handler = partial(NoContentTypeHandler, directory=str(context.workdir))
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
@@ -418,6 +466,13 @@ def step_shown_includes_tag(context, tag: str) -> None:
     assert context.last_shown is not None
     tags: List[str] = context.last_shown.get("tags") or []
     assert tag in tags
+
+
+@then('the shown JavaScript Object Notation tags equal "{csv}"')
+def step_shown_tags_equal(context, csv: str) -> None:
+    assert context.last_shown is not None
+    expected = [t.strip() for t in csv.split(",") if t.strip()]
+    assert (context.last_shown.get("tags") or []) == expected
 
 
 @then('the shown JavaScript Object Notation includes media type "{media_type}"')
@@ -659,3 +714,147 @@ def step_last_ingested_item_filename_includes(context, part: str) -> None:
     assert context.last_ingest is not None
     name = Path(context.last_ingest["relpath"]).name
     assert part in name
+
+
+@then('the last ingest sha256 matches the file "{filename}"')
+def step_last_ingest_sha256_matches_file(context, filename: str) -> None:
+    assert context.last_ingest is not None
+    expected = hashlib.sha256((context.workdir / filename).read_bytes()).hexdigest()
+    assert context.last_ingest["sha256"] == expected
+
+
+@given('the corpus "{corpus_name}" ignore file includes:')
+def step_corpus_ignore_file_includes(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    (corpus / ".biblicusignore").write_text(context.text.strip() + "\n", encoding="utf-8")
+
+
+@given(
+    'the corpus "{corpus_name}" has a configured hook "{hook_id}" for hook point "{hook_point}" with tags "{tags}"'
+)
+def step_corpus_configured_hook_with_tags(
+    context, corpus_name: str, hook_id: str, hook_point: str, tags: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    config_path = corpus / ".biblicus" / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    hooks = list(config.get("hooks") or [])
+    hook_config: Dict[str, Any] = {"hook_id": hook_id, "hook_points": [hook_point], "config": {}}
+    if tags.strip():
+        hook_config["config"]["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
+    hooks.append(hook_config)
+    config["hooks"] = hooks
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+@given(
+    'the corpus "{corpus_name}" has a configured hook "{hook_id}" for hook point "{hook_point}" with no tags'
+)
+def step_corpus_configured_hook_no_tags(context, corpus_name: str, hook_id: str, hook_point: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    config_path = corpus / ".biblicus" / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    hooks = list(config.get("hooks") or [])
+    hooks.append({"hook_id": hook_id, "hook_points": [hook_point], "config": {}})
+    config["hooks"] = hooks
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+@given('the corpus "{corpus_name}" config includes hooks JavaScript Object Notation:')
+def step_corpus_config_includes_hooks_json(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    config_path = corpus / ".biblicus" / "config.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    hooks = json.loads(context.text)
+    config["hooks"] = hooks
+    config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+@then('the corpus "{corpus_name}" hook logs include a record for hook point "{hook_point}" and hook "{hook_id}"')
+def step_hook_logs_include_record(context, corpus_name: str, hook_point: str, hook_id: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    log_dir = corpus / ".biblicus" / "hook_logs"
+    assert log_dir.is_dir()
+    entries: List[Dict[str, Any]] = []
+    for path in sorted(log_dir.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                entries.append(json.loads(line))
+    matched = [
+        entry
+        for entry in entries
+        if entry.get("hook_point") == hook_point and entry.get("hook_id") == hook_id
+    ]
+    assert matched, entries
+
+
+@given('the directory "{dir_name}" contains files:')
+def step_directory_contains_files(context, dir_name: str) -> None:
+    root = (context.workdir / dir_name).resolve()
+    for row in context.table:
+        relpath = row["relpath"]
+        raw_contents = row["contents"]
+        contents = raw_contents.encode("utf-8").decode("unicode_escape")
+        file_path = root / relpath
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(contents, encoding="utf-8")
+
+
+@given(
+    'the directory "{dir_name}" contains a markdown file "{relpath}" with invalid Unicode Transformation Format 8 bytes'
+)
+def step_directory_contains_invalid_markdown_bytes(context, dir_name: str, relpath: str) -> None:
+    root = (context.workdir / dir_name).resolve()
+    file_path = root / relpath
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_bytes(b"\xff\xfe\xfa")
+
+
+@when('I import the folder tree "{dir_name}" into corpus "{corpus_name}" with tags "{tags}"')
+def step_import_tree(context, dir_name: str, corpus_name: str, tags: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    source_root = (context.workdir / dir_name).resolve()
+    args = ["--corpus", str(corpus), "import-tree", str(source_root), "--tags", tags]
+    run_biblicus(context, args)
+
+
+@then('the corpus "{corpus_name}" has at least {count:d} items')
+def step_corpus_has_at_least_n_items(context, corpus_name: str, count: int) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    catalog_path = corpus / ".biblicus" / "catalog.json"
+    data = json.loads(catalog_path.read_text(encoding="utf-8"))
+    items = data.get("items")
+    assert isinstance(items, dict)
+    assert len(items) >= count, len(items)
+
+
+@then('the corpus "{corpus_name}" has an item with source suffix "{suffix}"')
+def step_corpus_has_item_with_source_suffix(context, corpus_name: str, suffix: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    catalog_path = corpus / ".biblicus" / "catalog.json"
+    data = json.loads(catalog_path.read_text(encoding="utf-8"))
+    items = data.get("items")
+    assert isinstance(items, dict)
+    any_matches = False
+    for item in items.values():
+        source_uri = (item.get("source_uri") or "").replace("%2F", "/")
+        if source_uri.endswith(suffix):
+            any_matches = True
+            break
+    assert any_matches
+
+
+@then('the corpus "{corpus_name}" has no item with source suffix "{suffix}"')
+def step_corpus_has_no_item_with_source_suffix(context, corpus_name: str, suffix: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    catalog_path = corpus / ".biblicus" / "catalog.json"
+    data = json.loads(catalog_path.read_text(encoding="utf-8"))
+    items = data.get("items")
+    assert isinstance(items, dict)
+    any_matches = False
+    for item in items.values():
+        source_uri = (item.get("source_uri") or "").replace("%2F", "/")
+        if source_uri.endswith(suffix):
+            any_matches = True
+            break
+    assert not any_matches

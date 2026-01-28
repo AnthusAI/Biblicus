@@ -37,9 +37,6 @@ def before_scenario(context, scenario) -> None:
 
     _ = _biblicus_main
 
-    if "integration" in scenario.effective_tags and os.environ.get("BIBLICUS_INTEGRATION") != "1":
-        scenario.skip("Integration tests are disabled. Set BIBLICUS_INTEGRATION=1 to enable.")
-
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
     context.repo_root = _repo_root()

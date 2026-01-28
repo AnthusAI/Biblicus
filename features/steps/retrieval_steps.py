@@ -376,6 +376,7 @@ def step_rebuild_sqlite_full_text_search(context, corpus_name: str, relative_pat
         corpus=corpus,
         items=corpus.load_catalog().items.values(),
         recipe_config=config,
+        extraction_reference=None,
     )
     context.sqlite_full_text_search_path = db_path
     context.sqlite_full_text_search_stats = stats
@@ -471,6 +472,19 @@ def step_download_wikipedia_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
         ["python3", "scripts/download_wikipedia.py", "--corpus", str(corpus), "--limit", "5"],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@when('I download a Portable Document Format corpus into "{corpus_name}"')
+def step_download_pdf_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        ["python3", "scripts/download_pdf_samples.py", "--corpus", str(corpus), "--force"],
         cwd=context.repo_root,
         capture_output=True,
         text=True,

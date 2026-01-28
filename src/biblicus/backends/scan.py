@@ -9,6 +9,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
+from ..extraction import ExtractionRunReference, parse_extraction_run_reference
 from ..frontmatter import parse_front_matter
 from ..models import Evidence, QueryBudget, RetrievalResult, RetrievalRun
 from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
@@ -21,11 +22,14 @@ class ScanRecipeConfig(BaseModel):
 
     :ivar snippet_characters: Maximum characters to include in evidence snippets.
     :vartype snippet_characters: int
+    :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
+    :vartype extraction_run: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     snippet_characters: int = Field(default=400, ge=1)
+    extraction_run: Optional[str] = None
 
 
 class ScanBackend:
@@ -59,7 +63,7 @@ class ScanBackend:
             name=recipe_name,
             config=recipe_config.model_dump(),
         )
-        stats = {"items": len(catalog.items), "text_items": _count_text_items(catalog.items.values())}
+        stats = {"items": len(catalog.items), "text_items": _count_text_items(corpus, catalog.items.values(), recipe_config)}
         run = create_run_manifest(corpus, recipe=recipe, stats=stats, artifact_paths=[])
         corpus.write_run(run)
         return run
@@ -89,12 +93,14 @@ class ScanBackend:
 
         recipe_config = ScanRecipeConfig.model_validate(run.recipe.config)
         catalog = corpus.load_catalog()
+        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
         query_tokens = _tokenize_query(query_text)
         scored_candidates = _score_items(
             corpus,
             catalog.items.values(),
             query_tokens,
             recipe_config.snippet_characters,
+            extraction_reference=extraction_reference,
         )
         sorted_candidates = sorted(
             scored_candidates,
@@ -124,18 +130,60 @@ class ScanBackend:
         )
 
 
-def _count_text_items(items: Iterable[object]) -> int:
+def _resolve_extraction_reference(corpus: Corpus, recipe_config: ScanRecipeConfig) -> Optional[ExtractionRunReference]:
+    """
+    Resolve an extraction run reference from a recipe config.
+
+    :param corpus: Corpus associated with the recipe.
+    :type corpus: Corpus
+    :param recipe_config: Parsed scan recipe configuration.
+    :type recipe_config: ScanRecipeConfig
+    :return: Parsed extraction reference or None.
+    :rtype: ExtractionRunReference or None
+    :raises FileNotFoundError: If an extraction run is referenced but not present.
+    """
+
+    if not recipe_config.extraction_run:
+        return None
+    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
+    run_dir = corpus.extraction_run_dir(
+        extractor_id=extraction_reference.extractor_id,
+        run_id=extraction_reference.run_id,
+    )
+    if not run_dir.is_dir():
+        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+    return extraction_reference
+
+
+def _count_text_items(corpus: Corpus, items: Iterable[object], recipe_config: ScanRecipeConfig) -> int:
     """
     Count catalog items that represent text content.
 
+    When an extraction run is configured, extracted artifacts are treated as text.
+
+    :param corpus: Corpus containing the items.
+    :type corpus: Corpus
     :param items: Catalog items to inspect.
     :type items: Iterable[object]
+    :param recipe_config: Parsed scan recipe configuration.
+    :type recipe_config: ScanRecipeConfig
     :return: Number of text items.
     :rtype: int
     """
 
     text_item_count = 0
+    extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
     for catalog_item in items:
+        item_id = str(getattr(catalog_item, "id", ""))
+        if extraction_reference and item_id:
+            extracted_text = corpus.read_extracted_text(
+                extractor_id=extraction_reference.extractor_id,
+                run_id=extraction_reference.run_id,
+                item_id=item_id,
+            )
+            if isinstance(extracted_text, str) and extracted_text.strip():
+                text_item_count += 1
+                continue
         media_type = getattr(catalog_item, "media_type", "")
         if media_type == "text/markdown" or str(media_type).startswith("text/"):
             text_item_count += 1
@@ -155,19 +203,39 @@ def _tokenize_query(query_text: str) -> List[str]:
     return [token for token in query_text.lower().split() if token]
 
 
-def _load_text_from_item(corpus: Corpus, relpath: str, media_type: str) -> Optional[str]:
+def _load_text_from_item(
+    corpus: Corpus,
+    *,
+    item_id: str,
+    relpath: str,
+    media_type: str,
+    extraction_reference: Optional[ExtractionRunReference],
+) -> Optional[str]:
     """
     Load a text payload from a catalog item.
 
     :param corpus: Corpus containing the item.
     :type corpus: Corpus
+    :param item_id: Item identifier.
+    :type item_id: str
     :param relpath: Relative path to the stored content.
     :type relpath: str
     :param media_type: Media type for the stored content.
     :type media_type: str
+    :param extraction_reference: Optional extraction run reference.
+    :type extraction_reference: ExtractionRunReference or None
     :return: Text payload or None if not decodable as text.
     :rtype: str or None
     """
+
+    if extraction_reference:
+        extracted_text = corpus.read_extracted_text(
+            extractor_id=extraction_reference.extractor_id,
+            run_id=extraction_reference.run_id,
+            item_id=item_id,
+        )
+        if isinstance(extracted_text, str) and extracted_text.strip():
+            return extracted_text
 
     content_path = corpus.root / relpath
     raw_bytes = content_path.read_bytes()
@@ -240,6 +308,8 @@ def _score_items(
     items: Iterable[object],
     tokens: List[str],
     snippet_characters: int,
+    *,
+    extraction_reference: Optional[ExtractionRunReference],
 ) -> List[Evidence]:
     """
     Score catalog items by token frequency and return evidence candidates.
@@ -260,7 +330,14 @@ def _score_items(
     for catalog_item in items:
         media_type = getattr(catalog_item, "media_type", "")
         relpath = getattr(catalog_item, "relpath", "")
-        item_text = _load_text_from_item(corpus, relpath, media_type)
+        item_id = str(getattr(catalog_item, "id", ""))
+        item_text = _load_text_from_item(
+            corpus,
+            item_id=item_id,
+            relpath=relpath,
+            media_type=str(media_type),
+            extraction_reference=extraction_reference,
+        )
         if item_text is None:
             continue
         lower_text = item_text.lower()

@@ -55,3 +55,20 @@ Feature: Python application programming interface (item-centered ingestion)
     When I ingest a markdown item via the Python application programming interface into corpus "corpus" with front matter tags and extra tags
     Then the python ingest result succeeds
     And the python ingested item tags equal "y,x"
+
+  Scenario: Stream ingestion refuses Markdown
+    Given I have an initialized corpus at "corpus"
+    When I attempt stream ingestion of a Markdown item into corpus "corpus"
+    Then the python stream ingestion error is raised
+
+  Scenario: Stream ingestion supports no filename
+    Given I have an initialized corpus at "corpus"
+    When I stream ingest bytes into corpus "corpus" with no filename and media type "application/pdf"
+    Then the python ingest result succeeds
+    And the python ingested item relpath ends with ".pdf"
+
+  Scenario: Stream ingestion writes metadata to sidecar
+    Given I have an initialized corpus at "corpus"
+    When I stream ingest bytes into corpus "corpus" with filename "blob.bin" and media type "application/octet-stream" and metadata foo "bar"
+    Then the python ingest result succeeds
+    And the python ingested item sidecar includes metadata foo "bar"

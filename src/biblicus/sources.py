@@ -53,6 +53,46 @@ def _media_type_from_filename(name: str) -> str:
     return media_type or "application/octet-stream"
 
 
+def _sniff_media_type_from_bytes(data: bytes) -> Optional[str]:
+    """
+    Sniff a media type from leading bytes for a small set of common formats.
+
+    :param data: Raw bytes to inspect.
+    :type data: bytes
+    :return: Detected media type or None.
+    :rtype: str or None
+    """
+
+    prefix = data[:32]
+    if prefix.startswith(b"%PDF-"):
+        return "application/pdf"
+    if prefix.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if prefix[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if prefix.lstrip().lower().startswith(b"<!doctype html") or prefix.lstrip().lower().startswith(b"<html"):
+        return "text/html"
+    return None
+
+
+def _ensure_extension_for_media_type(filename: str, media_type: str) -> str:
+    """
+    Ensure the filename has a usable extension for the media type.
+
+    :param filename: Filename candidate.
+    :type filename: str
+    :param media_type: Media type to target.
+    :type media_type: str
+    :return: Filename with extension.
+    :rtype: str
+    """
+
+    if Path(filename).suffix:
+        return filename
+    ext = mimetypes.guess_extension(media_type) or ""
+    return filename + ext if ext else filename
+
+
 @dataclass(frozen=True)
 class SourcePayload:
     """
@@ -115,6 +155,11 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
                 content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip()
                 filename = _filename_from_url_path(parsed.path)
                 media_type = content_type or _media_type_from_filename(filename)
+                if media_type == "application/octet-stream":
+                    sniffed = _sniff_media_type_from_bytes(response_bytes)
+                    if sniffed:
+                        media_type = sniffed
+                        filename = _ensure_extension_for_media_type(filename, media_type)
                 if Path(filename).suffix.lower() in {".md", ".markdown"}:
                     media_type = "text/markdown"
                 return SourcePayload(

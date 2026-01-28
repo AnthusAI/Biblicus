@@ -2,43 +2,93 @@
 
 This document is a menu of options for what to build next, plus practical commands you can run to see the current system working end to end.
 
-The goal is to keep one clear home base for planning and prioritization.
+The goal is to keep one clear reference point for planning and prioritization.
 
 ## Diagram of the current system and the next layers
 
-Green boxes are implemented now. Grey boxes are planned next layers that we can build and compare.
+Blue boxes are implemented now. Purple boxes are planned next layers that we can build and compare.
 
 ```mermaid
-flowchart TD
-  subgraph Exists now
-    A[Ingest] --> B[Raw item files]
-    B --> C[Catalog file]
-    C --> D[Scan backend]
-    C --> E[Sqlite full text search backend]
-    D --> F[Evidence]
-    E --> F
-    F --> G[Evaluation metrics]
+%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
+flowchart TB
+  subgraph Legend[Legend]
+    direction LR
+    LegendNow[Implemented now]
+    LegendPlanned[Planned]
+    LegendNow --- LegendPlanned
   end
 
-  subgraph Planned layers
-    P1[Text extraction pipeline stage] --> C
-    P2[Rerank pipeline stage] --> F
-    P3[Filter pipeline stage] --> F
-    P4[Tool server for external backends] --> D
-    P4 --> E
+  subgraph ExistsNow[Implemented now]
+    direction TB
+
+    Ingest[Ingest] --> RawFiles[Raw item files]
+    RawFiles --> CatalogFile[Catalog file]
+    CatalogFile --> ExtractionRun[Extraction run]
+    ExtractionRun --> ExtractedText[Extracted text artifacts]
+
+    subgraph PluggableBackend[Pluggable backend]
+      direction LR
+
+      subgraph BackendIngestionIndexing[Ingestion and indexing]
+        direction TB
+        CatalogFile --> BuildRun[Build run]
+        ExtractedText -.-> BuildRun
+        BuildRun --> BackendIndex[Backend index]
+        BackendIndex --> RunManifest[Run manifest]
+      end
+
+      subgraph BackendRetrievalGeneration[Retrieval and generation]
+        direction TB
+        RunManifest --> Query[Query]
+        Query --> Evidence[Evidence]
+        Evidence --> EvaluationMetrics[Evaluation metrics]
+      end
+    end
   end
 
-  style B fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style C fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style D fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style E fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style F fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-  style G fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+  subgraph PlannedLayers[Planned]
+    direction TB
+    RerankStage[Rerank<br/>pipeline stage]
+    FilterStage[Filter<br/>pipeline stage]
+    ToolServer[Tool server<br/>for external backends]
+    PdfTextExtraction[Portable Document Format<br/>text extraction plugin]
+    OpticalCharacterRecognition[Optical character recognition<br/>extraction plugin]
+  end
 
-  style P1 fill:#f5f5f5,stroke:#616161,color:#424242
-  style P2 fill:#f5f5f5,stroke:#616161,color:#424242
-  style P3 fill:#f5f5f5,stroke:#616161,color:#424242
-  style P4 fill:#f5f5f5,stroke:#616161,color:#424242
+  PdfTextExtraction -.-> ExtractionRun
+  OpticalCharacterRecognition -.-> ExtractionRun
+  RerankStage -.-> Evidence
+  FilterStage -.-> Evidence
+  ToolServer -.-> PluggableBackend
+
+  style Legend fill:#ffffff,stroke:#ffffff,color:#111111
+  style ExistsNow fill:#ffffff,stroke:#ffffff,color:#111111
+  style PlannedLayers fill:#ffffff,stroke:#ffffff,color:#111111
+
+  style LegendNow fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style LegendPlanned fill:#f3e5f5,stroke:#8e24aa,color:#111111
+
+  style Ingest fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style RawFiles fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style CatalogFile fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style ExtractionRun fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style ExtractedText fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style BuildRun fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style BackendIndex fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style RunManifest fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style Query fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style Evidence fill:#e3f2fd,stroke:#1e88e5,color:#111111
+  style EvaluationMetrics fill:#e3f2fd,stroke:#1e88e5,color:#111111
+
+  style PluggableBackend fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
+  style BackendIngestionIndexing fill:#ffffff,stroke:#cfd8dc,color:#111111
+  style BackendRetrievalGeneration fill:#ffffff,stroke:#cfd8dc,color:#111111
+
+  style RerankStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style FilterStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style ToolServer fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style PdfTextExtraction fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style OpticalCharacterRecognition fill:#f3e5f5,stroke:#8e24aa,color:#111111
 ```
 
 ## Working examples you can run now
@@ -62,6 +112,8 @@ python3 -m biblicus ingest --corpus corpora/demo --note "Hello from a note" --ti
 printf "A tiny text file\n" > /tmp/biblicus-demo.txt
 python3 -m biblicus ingest --corpus corpora/demo /tmp/biblicus-demo.txt
 
+python3 -m biblicus ingest --corpus corpora/demo https://example.com
+
 python3 -m biblicus list --corpus corpora/demo
 ```
 
@@ -81,6 +133,18 @@ The catalog is rebuildable. You can edit raw files or sidecar metadata, then ref
 python3 -m biblicus reindex --corpus corpora/demo
 ```
 
+### Build an extraction run
+
+Text extraction is a separate pipeline stage from retrieval. An extraction run produces derived text artifacts under the corpus.
+
+This extractor reads text items and skips non-text items.
+
+```
+python3 -m biblicus extract --corpus corpora/demo --extractor pass-through-text
+```
+
+Copy the `run_id` from the JavaScript Object Notation output. You will use it as `EXTRACTION_RUN_ID` in the next command.
+
 ### Build and query the minimal backend
 
 The scan backend is a minimal baseline that reads raw items directly.
@@ -95,7 +159,7 @@ python3 -m biblicus query --corpus corpora/demo --query "Hello"
 The sqlite full text search backend builds a local index under the run directory.
 
 ```
-python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search
+python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pass-through-text:EXTRACTION_RUN_ID
 python3 -m biblicus query --corpus corpora/demo --query "tiny"
 ```
 
@@ -123,17 +187,47 @@ python3 scripts/test.py
 open reports/htmlcov/index.html
 ```
 
+To include integration scenarios that download public test data at runtime:
+
+```
+python3 scripts/test.py --integration
+```
+
 ## Menu of build options
 
 Each option below is phrased as a user visible behavior. If we decide to build it, the next step is to write behavior driven development scenarios that describe it.
 
+This roadmap is intentionally biased toward corpus management, because the day to day work of collecting and curating a corpus is the foundation for everything else.
+
+This project uses strict behavior driven development. Feature specifications and Sphinx style documentation are treated as first class outputs, and the goal is complete specification coverage of behavior.
+
+See `docs/CORPUS_WORKFLOWS.md` for design decisions about corpus management and lifecycle hooks.
+
+Reference documentation for what exists today:
+
+- `docs/CORPUS.md`
+- `docs/EXTRACTION.md`
+- `docs/TESTING.md`
+
 ### Corpus workflows
 
-- Ingest from a web address with filename and media type detection and consistent naming
+- Extend ingest from a web address with better filename and media type handling for difficult pages and redirects
 - Import a folder tree into a corpus while preserving a stable source path
+- Crawl a website under a base address and ingest discovered pages
 - Deduplicate items by content hash to avoid repeated ingestion
 - Add a corpus level ignore list for files and paths that should not be ingested
 - Support large binary items with streaming write and checksum verification
+- Provide first class commands for archive, prune, and export workflows
+- Provide a corpus status command that reports size, newest items, and obvious problems
+
+### Corpus management and lifecycle hooks
+
+- Define lifecycle hooks so plugins can transform and curate items during ingestion and catalog rebuilds
+- Support an editorial pipeline for filtering and pruning a corpus without destroying raw source material
+- Support metadata enrichment steps that can be applied consistently across many items
+- Provide a strict, documented hook protocol so the same plugin can target multiple hook points
+- Provide a safe way to record what changed when hooks run, to support reproducibility and trust
+- Keep hook interfaces typed and validated with Pydantic models
 
 ### Metadata workflows
 
@@ -148,6 +242,8 @@ Each option below is phrased as a user visible behavior. If we decide to build i
 - Extract text from office document formats into a derived text artifact
 - Extract text from images with optical character recognition into a derived text artifact
 - Define a pipeline stage interface so these steps are pluggable and testable
+- Define extraction runs as a separate plugin stage from retrieval so extraction providers and retrieval providers can be combined freely
+- Store derived artifacts under the corpus, partitioned by plugin type and identifier, so multiple implementations can coexist side by side
 
 ### Retrieval and evidence
 
@@ -162,6 +258,8 @@ Each option below is phrased as a user visible behavior. If we decide to build i
 - Add evaluation reports that include per query diagnostics and summary tables
 - Add regression checks so evaluation results can be compared across runs
 - Add dataset loaders for common sources while keeping the on disk schema stable
+- Add extraction evaluation datasets that measure extracted text quality for images and Portable Document Format pages
+- Add extraction evaluation metrics for accuracy, speed, and cost, recorded per item and aggregated by run
 
 ### Plug in architecture
 
@@ -206,6 +304,6 @@ When we choose what to build next, these are the main considerations to weigh.
 
 ## Suggested next iteration
 
-If you want a focused next step that delivers visible value without adding heavy dependencies, the best next move is a pipeline stage that extracts text from Portable Document Format files into derived text artifacts, plus an evidence strategy that prefers extracted text when available.
+If you want a focused next step that delivers visible value without adding heavy dependencies, the best next move is an extraction plugin stage that produces derived text artifacts for Portable Document Format and image items, plus a retrieval policy that can prefer extracted text when it exists.
 
-This reinforces the core separation between raw items, derived artifacts, and retrieval evidence, and it makes the system immediately more useful for real world documents.
+This reinforces the core separation between raw items, derived artifacts, and retrieval evidence, and it makes the system immediately more useful for real world documents. It also makes it possible to evaluate multiple extraction providers against the same corpus and the same retrieval backend.

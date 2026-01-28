@@ -11,5 +11,6 @@ Contents
 
    ARCHITECTURE
    BACKENDS
+   CORPUS_WORKFLOWS
    NEXT_STEPS
    api

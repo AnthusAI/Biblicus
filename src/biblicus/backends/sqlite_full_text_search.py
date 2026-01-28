@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..constants import CORPUS_DIR_NAME, RUNS_DIR_NAME
 from ..corpus import Corpus
+from ..extraction import ExtractionRunReference, parse_extraction_run_reference
 from ..frontmatter import parse_front_matter
 from ..models import Evidence, QueryBudget, RetrievalResult, RetrievalRun
 from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
@@ -28,6 +29,8 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     :vartype chunk_overlap: int
     :ivar snippet_characters: Maximum characters to include in evidence snippets.
     :vartype snippet_characters: int
+    :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
+    :vartype extraction_run: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -35,6 +38,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     chunk_size: int = Field(default=800, ge=1)
     chunk_overlap: int = Field(default=200, ge=0)
     snippet_characters: int = Field(default=400, ge=1)
+    extraction_run: Optional[str] = None
 
 
 class SqliteFullTextSearchBackend:
@@ -72,11 +76,13 @@ class SqliteFullTextSearchBackend:
         db_relpath = str(Path(CORPUS_DIR_NAME) / RUNS_DIR_NAME / f"{run.run_id}.sqlite")
         db_path = corpus.root / db_relpath
         corpus.runs_dir.mkdir(parents=True, exist_ok=True)
+        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
         stats = _build_full_text_search_index(
             db_path=db_path,
             corpus=corpus,
             items=catalog.items.values(),
             recipe_config=recipe_config,
+            extraction_reference=extraction_reference,
         )
         run = run.model_copy(update={"artifact_paths": [db_relpath], "stats": stats})
         corpus.write_run(run)
@@ -227,6 +233,7 @@ def _build_full_text_search_index(
     corpus: Corpus,
     items: Iterable[object],
     recipe_config: SqliteFullTextSearchRecipeConfig,
+    extraction_reference: Optional[ExtractionRunReference],
 ) -> Dict[str, int]:
     """
     Build a full-text search index from corpus items.
@@ -256,7 +263,13 @@ def _build_full_text_search_index(
             item_count += 1
             media_type = getattr(catalog_item, "media_type", "")
             relpath = getattr(catalog_item, "relpath", "")
-            item_text = _load_text_from_item(corpus, relpath, media_type)
+            item_text = _load_text_from_item(
+                corpus,
+                item_id=str(getattr(catalog_item, "id", "")),
+                relpath=str(relpath),
+                media_type=str(media_type),
+                extraction_reference=extraction_reference,
+            )
             if item_text is None:
                 continue
             text_item_count += 1
@@ -302,19 +315,39 @@ def _build_full_text_search_index(
         connection.close()
 
 
-def _load_text_from_item(corpus: Corpus, relpath: str, media_type: str) -> Optional[str]:
+def _load_text_from_item(
+    corpus: Corpus,
+    *,
+    item_id: str,
+    relpath: str,
+    media_type: str,
+    extraction_reference: Optional[ExtractionRunReference],
+) -> Optional[str]:
     """
     Load text content from a catalog item.
 
     :param corpus: Corpus containing the content.
     :type corpus: Corpus
+    :param item_id: Item identifier.
+    :type item_id: str
     :param relpath: Relative path to the content.
     :type relpath: str
     :param media_type: Media type for the content.
     :type media_type: str
+    :param extraction_reference: Optional extraction run reference.
+    :type extraction_reference: ExtractionRunReference or None
     :return: Text payload or None if not text.
     :rtype: str or None
     """
+
+    if extraction_reference:
+        extracted_text = corpus.read_extracted_text(
+            extractor_id=extraction_reference.extractor_id,
+            run_id=extraction_reference.run_id,
+            item_id=item_id,
+        )
+        if isinstance(extracted_text, str) and extracted_text.strip():
+            return extracted_text
 
     content_path = corpus.root / relpath
     raw_bytes = content_path.read_bytes()
@@ -325,6 +358,34 @@ def _load_text_from_item(corpus: Corpus, relpath: str, media_type: str) -> Optio
     if media_type.startswith("text/"):
         return raw_bytes.decode("utf-8")
     return None
+
+
+def _resolve_extraction_reference(
+    corpus: Corpus,
+    recipe_config: SqliteFullTextSearchRecipeConfig,
+) -> Optional[ExtractionRunReference]:
+    """
+    Resolve an extraction run reference from a recipe config.
+
+    :param corpus: Corpus associated with the recipe.
+    :type corpus: Corpus
+    :param recipe_config: Parsed backend recipe configuration.
+    :type recipe_config: SqliteFullTextSearchRecipeConfig
+    :return: Parsed extraction reference or None.
+    :rtype: ExtractionRunReference or None
+    :raises FileNotFoundError: If an extraction run is referenced but not present.
+    """
+
+    if not recipe_config.extraction_run:
+        return None
+    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
+    run_dir = corpus.extraction_run_dir(
+        extractor_id=extraction_reference.extractor_id,
+        run_id=extraction_reference.run_id,
+    )
+    if not run_dir.is_dir():
+        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+    return extraction_reference
 
 
 def _iter_chunks(text: str, *, chunk_size: int, chunk_overlap: int) -> Iterable[Tuple[int, int, str]]:

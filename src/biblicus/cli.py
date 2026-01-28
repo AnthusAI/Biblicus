@@ -14,6 +14,7 @@ from pydantic import ValidationError
 
 from .backends import get_backend
 from .corpus import Corpus
+from .extraction import build_extraction_run
 from .evaluation import evaluate_run, load_dataset
 from .models import QueryBudget
 from .uris import corpus_ref_to_path
@@ -187,6 +188,27 @@ def cmd_reindex(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_import_tree(arguments: argparse.Namespace) -> int:
+    """
+    Import a folder tree into a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    tags = _parse_tags(arguments.tags, arguments.tag)
+    stats = corpus.import_tree(Path(arguments.path), tags=tags)
+    print(json.dumps(stats, indent=2, sort_keys=False))
+    return 0
+
+
 def cmd_purge(arguments: argparse.Namespace) -> int:
     """
     Purge all items and derived artifacts from a corpus.
@@ -240,6 +262,44 @@ def _parse_config_pairs(pairs: Optional[List[str]]) -> Dict[str, object]:
     return config
 
 
+def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
+    """
+    Parse a cascade step specification.
+
+    :param raw_step: Step spec in the form extractor_id or extractor_id:key=value,key=value.
+    :type raw_step: str
+    :return: Tuple of extractor_id and config mapping.
+    :rtype: tuple[str, dict[str, object]]
+    :raises ValueError: If the step spec is invalid.
+    """
+
+    raw_step = raw_step.strip()
+    if not raw_step:
+        raise ValueError("Step spec must be non-empty")
+    if ":" not in raw_step:
+        return raw_step, {}
+    extractor_id, raw_pairs = raw_step.split(":", 1)
+    extractor_id = extractor_id.strip()
+    if not extractor_id:
+        raise ValueError("Step spec must start with an extractor identifier")
+    config: Dict[str, object] = {}
+    raw_pairs = raw_pairs.strip()
+    if not raw_pairs:
+        return extractor_id, {}
+    for token in raw_pairs.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if "=" not in token:
+            raise ValueError(f"Step config values must be key=value (got {token!r})")
+        key, value = token.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError("Step config keys must be non-empty")
+        config[key] = value
+    return extractor_id, config
+
+
 def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
     """
     Build a QueryBudget from command-line interface arguments.
@@ -276,6 +336,40 @@ def cmd_build(arguments: argparse.Namespace) -> int:
     config = _parse_config_pairs(arguments.config)
     run = backend.build_run(corpus, recipe_name=arguments.recipe_name, config=config)
     print(run.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_extract(arguments: argparse.Namespace) -> int:
+    """
+    Build a text extraction run for the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    config = _parse_config_pairs(arguments.config)
+    if getattr(arguments, "step", None):
+        if arguments.extractor != "cascade":
+            raise ValueError("--step is only supported for the cascade extractor")
+        steps: List[Dict[str, object]] = []
+        for raw_step in arguments.step:
+            extractor_id, step_config = _parse_step_spec(raw_step)
+            steps.append({"extractor_id": extractor_id, "config": step_config})
+        config = {"steps": steps}
+    manifest = build_extraction_run(
+        corpus,
+        extractor_id=arguments.extractor,
+        recipe_name=arguments.recipe_name,
+        config=config,
+    )
+    print(manifest.model_dump_json(indent=2))
     return 0
 
 
@@ -390,6 +484,13 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_corpus_arg(p_reindex)
     p_reindex.set_defaults(func=cmd_reindex)
 
+    p_import_tree = sub.add_parser("import-tree", help="Import a folder tree into the corpus.")
+    _add_common_corpus_arg(p_import_tree)
+    p_import_tree.add_argument("path", help="Folder tree root to import.")
+    p_import_tree.add_argument("--tags", default=None, help="Comma-separated tags to apply to imported items.")
+    p_import_tree.add_argument("--tag", action="append", help="Repeatable tag to apply to imported items.")
+    p_import_tree.set_defaults(func=cmd_import_tree)
+
     p_purge = sub.add_parser("purge", help="Delete all items and derived files (requires confirmation).")
     _add_common_corpus_arg(p_purge)
     p_purge.add_argument(
@@ -414,6 +515,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Backend config as key=value (repeatable).",
     )
     p_build.set_defaults(func=cmd_build)
+
+    p_extract = sub.add_parser("extract", help="Build a text extraction run for the corpus.")
+    _add_common_corpus_arg(p_extract)
+    p_extract.add_argument(
+        "--extractor",
+        required=True,
+        help="Extractor identifier (for example, pass-through-text, metadata-text, cascade).",
+    )
+    p_extract.add_argument("--recipe-name", default="default", help="Human-readable recipe name.")
+    p_extract.add_argument(
+        "--step",
+        action="append",
+        default=None,
+        help="Cascade step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
+    )
+    p_extract.add_argument(
+        "--config",
+        action="append",
+        default=None,
+        help="Extractor config as key=value (repeatable).",
+    )
+    p_extract.set_defaults(func=cmd_extract)
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)

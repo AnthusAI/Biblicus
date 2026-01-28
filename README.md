@@ -31,57 +31,79 @@ The framework is a small, explicit vocabulary that appears in code, specificatio
 ## Diagram
 
 This diagram shows how a corpus becomes evidence for an assistant.
-The legend shows what the border styles mean.
+The legend shows what the border styles and fill styles mean.
 The your code region is where you decide how to turn evidence into context and how to call a model.
 
 ```mermaid
 %%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
 flowchart LR
   subgraph Legend[Legend]
-    direction TB
-    LegendStable[Built in core]
-    LegendPluggable[Pluggable backend]
-    LegendYourCode[Your application]
+    direction LR
+    LegendArtifact[Stored artifact or evidence]
+    LegendStep[Step]
+    LegendArtifact --- LegendStep
   end
 
   subgraph Main[" "]
     direction TB
 
     subgraph StableCore[Stable core]
+      direction TB
       Source[Source items] --> Ingest[Ingest]
       Ingest --> Raw[Raw item files]
       Raw --> Catalog[Catalog file]
     end
 
     subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
-      Build[Build run] --> Run[Run manifest]
-      Run --> Query[Query]
-      Query --> Evidence[Evidence]
+      direction LR
+
+      subgraph BackendIngestionIndexing[Ingestion and indexing]
+        direction TB
+        Catalog --> Build[Build run]
+        Build --> BackendIndex[Backend index]
+        BackendIndex --> Run[Run manifest]
+      end
+
+      subgraph BackendRetrievalGeneration[Retrieval and generation]
+        direction TB
+        Run --> Query[Query]
+        Query --> Evidence[Evidence]
+      end
     end
 
-    Catalog --> Build
     Evidence --> Context
 
     subgraph YourCode[Your code]
+      direction TB
       Context[Assistant context] --> Model[Large language model call]
       Model --> Answer[Answer]
     end
 
-    style StableCore fill:#ffffff,stroke:#1b5e20,stroke-width:2px
-    style PluggableRetrievalBackend fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
-    style YourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
+    style StableCore fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
+    style PluggableRetrievalBackend fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
+    style YourCode fill:#ffffff,stroke:#d81b60,stroke-width:2px,color:#111111
+    style BackendIngestionIndexing fill:#ffffff,stroke:#cfd8dc,color:#111111
+    style BackendRetrievalGeneration fill:#ffffff,stroke:#cfd8dc,color:#111111
 
-    style Raw fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-    style Catalog fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-    style Run fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
-    style Evidence fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style Raw fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Catalog fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style BackendIndex fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Run fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Evidence fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Context fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Answer fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Source fill:#f3e5f5,stroke:#8e24aa,color:#111111
+
+    style Ingest fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Build fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Query fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Model fill:#eceff1,stroke:#90a4ae,color:#111111
   end
 
-  style Legend fill:#ffffff,stroke:#ffffff
-  style Main fill:#ffffff,stroke:#ffffff
-  style LegendStable fill:#ffffff,stroke:#1b5e20,stroke-width:2px
-  style LegendPluggable fill:#ffffff,stroke:#1565c0,stroke-dasharray:6 3,stroke-width:2px
-  style LegendYourCode fill:#ffffff,stroke:#6a1b9a,stroke-width:2px
+  style Legend fill:#ffffff,stroke:#ffffff,color:#111111
+  style Main fill:#ffffff,stroke:#ffffff,color:#111111
+  style LegendArtifact fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style LegendStep fill:#eceff1,stroke:#90a4ae,color:#111111
 ```
 
 ## Practical value
@@ -149,8 +171,11 @@ In an assistant system, retrieval usually produces context for a model call. Thi
 The documents below are written to be read in order.
 
 - [Architecture][architecture]
+- [Corpus][corpus]
+- [Text extraction][text-extraction]
 - [Backends][backends]
 - [Next steps][next-steps]
+- [Testing][testing]
 
 ## Metadata and catalog
 
@@ -183,10 +208,18 @@ Use `scripts/download_wikipedia.py` to download a small integration corpus from 
 
 The dataset file `datasets/wikipedia_mini.json` provides a small evaluation set that matches the integration corpus.
 
+Use `scripts/download_pdf_samples.py` to download a small Portable Document Format integration corpus when running tests or demos. The repository does not include that content.
+
 ## Tests and coverage
 
 ```
 python3 scripts/test.py
+```
+
+To include integration scenarios that download public test data at runtime, run this command.
+
+```
+python3 scripts/test.py --integration
 ```
 
 ## Releases
@@ -211,8 +244,11 @@ License terms are in `LICENSE`.
 
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
 [architecture]: docs/ARCHITECTURE.md
+[corpus]: docs/CORPUS.md
+[text-extraction]: docs/EXTRACTION.md
 [backends]: docs/BACKENDS.md
 [next-steps]: docs/NEXT_STEPS.md
+[testing]: docs/TESTING.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json

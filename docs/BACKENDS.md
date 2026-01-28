@@ -27,6 +27,7 @@ Backends implement two operations:
 - Treat **runs** as immutable manifests with reproducible parameters.
 - If your backend needs artifacts, store them under `.biblicus/runs/` and record paths in `artifact_paths`.
 - Keep **text extraction** in explicit pipeline stages, not in backend ingestion.
+  See `docs/EXTRACTION.md` for how extraction runs are built and referenced from backend configs.
 
 ## Examples
 

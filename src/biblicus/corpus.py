@@ -14,8 +14,20 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import yaml
 
-from .constants import CORPUS_DIR_NAME, DEFAULT_RAW_DIR, RUNS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
+from .constants import (
+    CORPUS_DIR_NAME,
+    DEFAULT_RAW_DIR,
+    EXTRACTION_RUNS_DIR_NAME,
+    RUNS_DIR_NAME,
+    SCHEMA_VERSION,
+    SIDECAR_SUFFIX,
+)
 from .frontmatter import parse_front_matter, render_front_matter
+from pydantic import ValidationError
+
+from .hook_manager import HookManager
+from .hooks import HookPoint
+from .ignore import load_corpus_ignore_spec
 from .models import CatalogItem, CorpusCatalog, CorpusConfig, IngestResult, RetrievalRun
 from .sources import load_source
 from .time import utc_now_iso
@@ -33,6 +45,34 @@ def _sha256_bytes(data: bytes) -> str:
     """
 
     return hashlib.sha256(data).hexdigest()
+
+
+def _write_stream_and_hash(stream, destination_path: Path, *, chunk_size: int = 1024 * 1024) -> Dict[str, object]:
+    """
+    Write a binary stream to disk while computing a digest.
+
+    :param stream: Binary stream to read from.
+    :type stream: object
+    :param destination_path: Destination path to write to.
+    :type destination_path: Path
+    :param chunk_size: Chunk size for reads.
+    :type chunk_size: int
+    :return: Mapping containing sha256 and bytes_written.
+    :rtype: dict[str, object]
+    :raises OSError: If the destination cannot be written.
+    """
+
+    hasher = hashlib.sha256()
+    bytes_written = 0
+    with destination_path.open("wb") as destination_handle:
+        while True:
+            chunk = stream.read(chunk_size)
+            if not chunk:
+                break
+            hasher.update(chunk)
+            destination_handle.write(chunk)
+            bytes_written += len(chunk)
+    return {"sha256": hasher.hexdigest(), "bytes_written": bytes_written}
 
 
 def _sanitize_filename(name: str) -> str:
@@ -289,6 +329,7 @@ class Corpus:
         self.meta_dir = self.root / CORPUS_DIR_NAME
         self.raw_dir = self.root / DEFAULT_RAW_DIR
         self.config = self._load_config()
+        self._hooks = self._load_hooks()
 
     @property
     def uri(self) -> str:
@@ -314,7 +355,33 @@ class Corpus:
         if not path.is_file():
             return None
         data = json.loads(path.read_text(encoding="utf-8"))
-        return CorpusConfig.model_validate(data)
+        try:
+            return CorpusConfig.model_validate(data)
+        except ValidationError as exc:
+            has_hook_error = any(
+                isinstance(error.get("loc"), tuple) and error.get("loc") and error.get("loc")[0] == "hooks"
+                for error in exc.errors()
+            )
+            if has_hook_error:
+                raise ValueError(f"Invalid hook specification: {exc}") from exc
+            raise ValueError(f"Invalid corpus config: {exc}") from exc
+
+    def _load_hooks(self) -> Optional[HookManager]:
+        """
+        Load the hook manager from config if hooks are configured.
+
+        :return: Hook manager or None.
+        :rtype: HookManager or None
+        :raises ValueError: If hook specifications are invalid.
+        """
+
+        if self.config is None or not self.config.hooks:
+            return None
+        return HookManager.from_config(
+            corpus_root=self.root,
+            corpus_uri=self.uri,
+            hook_specs=self.config.hooks,
+        )
 
     @classmethod
     def find(cls, start: Path) -> "Corpus":
@@ -468,6 +535,51 @@ class Corpus:
 
         return self.meta_dir / RUNS_DIR_NAME
 
+    @property
+    def extraction_runs_dir(self) -> Path:
+        """
+        Location of extraction run artifacts.
+
+        :return: Path to the extraction runs directory.
+        :rtype: Path
+        """
+
+        return self.runs_dir / EXTRACTION_RUNS_DIR_NAME
+
+    def extraction_run_dir(self, *, extractor_id: str, run_id: str) -> Path:
+        """
+        Resolve an extraction run directory.
+
+        :param extractor_id: Extractor plugin identifier.
+        :type extractor_id: str
+        :param run_id: Extraction run identifier.
+        :type run_id: str
+        :return: Extraction run directory.
+        :rtype: Path
+        """
+
+        return self.extraction_runs_dir / extractor_id / run_id
+
+    def read_extracted_text(self, *, extractor_id: str, run_id: str, item_id: str) -> Optional[str]:
+        """
+        Read extracted text for an item from an extraction run, when present.
+
+        :param extractor_id: Extractor plugin identifier.
+        :type extractor_id: str
+        :param run_id: Extraction run identifier.
+        :type run_id: str
+        :param item_id: Item identifier.
+        :type item_id: str
+        :return: Extracted text or None if the artifact does not exist.
+        :rtype: str or None
+        :raises OSError: If the file exists but cannot be read.
+        """
+
+        path = self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id) / "text" / f"{item_id}.txt"
+        if not path.is_file():
+            return None
+        return path.read_text(encoding="utf-8")
+
     def _ensure_runs_dir(self) -> None:
         """
         Ensure the retrieval runs directory exists.
@@ -608,6 +720,21 @@ class Corpus:
         if resolved_tags and "tags" not in metadata_input:
             metadata_input["tags"] = list(resolved_tags)
 
+        if self._hooks is not None:
+            mutation = self._hooks.run_ingest_hooks(
+                hook_point=HookPoint.before_ingest,
+                filename=filename,
+                media_type=media_type,
+                title=resolved_title,
+                tags=list(resolved_tags),
+                metadata=dict(metadata_input),
+                source_uri=source_uri,
+            )
+            if mutation.add_tags:
+                for tag in mutation.add_tags:
+                    if tag not in resolved_tags:
+                        resolved_tags.append(tag)
+
         frontmatter: Dict[str, Any] = {}
 
         if media_type == "text/markdown":
@@ -656,6 +783,32 @@ class Corpus:
             _write_sidecar(output_path, sidecar)
             frontmatter = sidecar
 
+        if self._hooks is not None:
+            mutation = self._hooks.run_ingest_hooks(
+                hook_point=HookPoint.after_ingest,
+                filename=filename,
+                media_type=media_type,
+                title=resolved_title,
+                tags=list(resolved_tags),
+                metadata=dict(metadata_input),
+                source_uri=source_uri,
+                item_id=item_id,
+                relpath=relpath,
+            )
+            if mutation.add_tags:
+                updated_tags = list(resolved_tags)
+                for tag in mutation.add_tags:
+                    if tag not in updated_tags:
+                        updated_tags.append(tag)
+                resolved_tags = updated_tags
+                sidecar_metadata = _load_sidecar(output_path)
+                sidecar_metadata["tags"] = resolved_tags
+                if media_type != "text/markdown":
+                    sidecar_metadata["media_type"] = media_type
+                sidecar_metadata["biblicus"] = {"id": item_id, "source": source_uri}
+                _write_sidecar(output_path, sidecar_metadata)
+                frontmatter = _merge_metadata(frontmatter if isinstance(frontmatter, dict) else {}, sidecar_metadata)
+
         created_at = utc_now_iso()
         item_record = CatalogItem(
             id=item_id,
@@ -666,6 +819,130 @@ class Corpus:
             title=resolved_title,
             tags=list(resolved_tags),
             metadata=dict(frontmatter or {}),
+            created_at=created_at,
+            source_uri=source_uri,
+        )
+        self._upsert_catalog_item(item_record)
+
+        return IngestResult(item_id=item_id, relpath=relpath, sha256=sha256_digest)
+
+    def ingest_item_stream(
+        self,
+        stream,
+        *,
+        filename: Optional[str] = None,
+        media_type: str = "application/octet-stream",
+        tags: Sequence[str] = (),
+        metadata: Optional[Dict[str, Any]] = None,
+        source_uri: str = "unknown",
+    ) -> IngestResult:
+        """
+        Ingest a binary item from a readable stream.
+
+        This method is intended for large non-markdown items. It writes bytes to disk incrementally
+        while computing a checksum.
+
+        :param stream: Readable binary stream.
+        :type stream: object
+        :param filename: Optional filename for the stored item.
+        :type filename: str or None
+        :param media_type: Internet Assigned Numbers Authority media type for the item.
+        :type media_type: str
+        :param tags: Tags to associate with the item.
+        :type tags: Sequence[str]
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
+        :param source_uri: Source uniform resource identifier for provenance.
+        :type source_uri: str
+        :return: Ingestion result summary.
+        :rtype: IngestResult
+        :raises ValueError: If the media_type is text/markdown.
+        """
+
+        if media_type == "text/markdown":
+            raise ValueError("Stream ingestion is not supported for Markdown")
+
+        item_id = str(uuid.uuid4())
+        safe_filename = _sanitize_filename(filename) if filename else ""
+        if safe_filename:
+            safe_filename = _ensure_filename_extension(safe_filename, media_type=media_type)
+
+        if safe_filename:
+            output_name = f"{item_id}--{safe_filename}"
+        else:
+            extension = _preferred_extension_for_media_type(media_type) or ""
+            output_name = f"{item_id}{extension}" if extension else f"{item_id}"
+
+        relpath = str(Path(DEFAULT_RAW_DIR) / output_name)
+        output_path = self.root / relpath
+
+        resolved_tags = list(tags)
+        metadata_input: Dict[str, Any] = dict(metadata or {})
+        if resolved_tags and "tags" not in metadata_input:
+            metadata_input["tags"] = list(resolved_tags)
+
+        if self._hooks is not None:
+            mutation = self._hooks.run_ingest_hooks(
+                hook_point=HookPoint.before_ingest,
+                filename=filename,
+                media_type=media_type,
+                title=None,
+                tags=list(resolved_tags),
+                metadata=dict(metadata_input),
+                source_uri=source_uri,
+            )
+            if mutation.add_tags:
+                for tag in mutation.add_tags:
+                    if tag not in resolved_tags:
+                        resolved_tags.append(tag)
+
+        write_result = _write_stream_and_hash(stream, output_path)
+        sha256_digest = str(write_result["sha256"])
+        bytes_written = int(write_result["bytes_written"])
+
+        sidecar: Dict[str, Any] = {}
+        sidecar["media_type"] = media_type
+        if resolved_tags:
+            sidecar["tags"] = resolved_tags
+        if metadata_input:
+            for metadata_key, metadata_value in metadata_input.items():
+                if metadata_key in {"tags", "biblicus"}:
+                    continue
+                sidecar[metadata_key] = metadata_value
+        sidecar["biblicus"] = {"id": item_id, "source": source_uri}
+        _write_sidecar(output_path, sidecar)
+
+        if self._hooks is not None:
+            mutation = self._hooks.run_ingest_hooks(
+                hook_point=HookPoint.after_ingest,
+                filename=filename,
+                media_type=media_type,
+                title=None,
+                tags=list(resolved_tags),
+                metadata=dict(metadata_input),
+                source_uri=source_uri,
+                item_id=item_id,
+                relpath=relpath,
+            )
+            if mutation.add_tags:
+                updated_tags = list(resolved_tags)
+                for tag in mutation.add_tags:
+                    if tag not in updated_tags:
+                        updated_tags.append(tag)
+                resolved_tags = updated_tags
+                sidecar["tags"] = resolved_tags
+                _write_sidecar(output_path, sidecar)
+
+        created_at = utc_now_iso()
+        item_record = CatalogItem(
+            id=item_id,
+            relpath=relpath,
+            sha256=sha256_digest,
+            bytes=bytes_written,
+            media_type=media_type,
+            title=None,
+            tags=list(resolved_tags),
+            metadata=dict(sidecar or {}),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -727,6 +1004,36 @@ class Corpus:
         :rtype: IngestResult
         """
 
+        candidate_path = Path(source) if isinstance(source, str) and "://" not in source else None
+        if isinstance(source, Path) or (candidate_path is not None and candidate_path.exists()):
+            path = source if isinstance(source, Path) else candidate_path
+            assert isinstance(path, Path)
+            path = path.resolve()
+            filename = path.name
+            media_type, _ = mimetypes.guess_type(filename)
+            media_type = media_type or "application/octet-stream"
+            if path.suffix.lower() in {".md", ".markdown"}:
+                media_type = "text/markdown"
+            if media_type == "text/markdown":
+                return self.ingest_item(
+                    path.read_bytes(),
+                    filename=filename,
+                    media_type=media_type,
+                    title=None,
+                    tags=tags,
+                    metadata=None,
+                    source_uri=source_uri or path.as_uri(),
+                )
+            with path.open("rb") as handle:
+                return self.ingest_item_stream(
+                    handle,
+                    filename=filename,
+                    media_type=media_type,
+                    tags=tags,
+                    metadata=None,
+                    source_uri=source_uri or path.as_uri(),
+                )
+
         payload = load_source(source, source_uri=source_uri)
         return self.ingest_item(
             payload.data,
@@ -737,6 +1044,128 @@ class Corpus:
             metadata=None,
             source_uri=payload.source_uri,
         )
+
+    def import_tree(self, source_root: Path, *, tags: Sequence[str] = ()) -> Dict[str, int]:
+        """
+        Import a folder tree into the corpus, preserving relative paths and provenance.
+
+        Imported content is stored under the raw directory in a dedicated import namespace so that
+        operators can inspect and back up imported content as a structured tree.
+
+        :param source_root: Root directory of the folder tree to import.
+        :type source_root: Path
+        :param tags: Tags to associate with imported items.
+        :type tags: Sequence[str]
+        :return: Import statistics.
+        :rtype: dict[str, int]
+        :raises FileNotFoundError: If the source_root does not exist.
+        :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
+        """
+
+        source_root = source_root.resolve()
+        if not source_root.is_dir():
+            raise FileNotFoundError(f"Import source root does not exist: {source_root}")
+
+        ignore_spec = load_corpus_ignore_spec(self.root)
+        import_id = str(uuid.uuid4())
+        stats = {"scanned": 0, "ignored": 0, "imported": 0}
+
+        for source_path in sorted(source_root.rglob("*")):
+            if not source_path.is_file():
+                continue
+            relative_source_path = source_path.relative_to(source_root).as_posix()
+            stats["scanned"] += 1
+            if ignore_spec.matches(relative_source_path):
+                stats["ignored"] += 1
+                continue
+            self._import_file(
+                source_path=source_path,
+                import_id=import_id,
+                relative_source_path=relative_source_path,
+                tags=tags,
+            )
+            stats["imported"] += 1
+
+        return stats
+
+    def _import_file(
+        self,
+        *,
+        source_path: Path,
+        import_id: str,
+        relative_source_path: str,
+        tags: Sequence[str],
+    ) -> None:
+        """
+        Import a single file into the corpus under an import namespace.
+
+        :param source_path: Source file path to import.
+        :type source_path: Path
+        :param import_id: Import identifier.
+        :type import_id: str
+        :param relative_source_path: Relative path within the imported tree.
+        :type relative_source_path: str
+        :param tags: Tags to apply.
+        :type tags: Sequence[str]
+        :return: None.
+        :rtype: None
+        :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
+        """
+
+        item_id = str(uuid.uuid4())
+        destination_relpath = str(Path(DEFAULT_RAW_DIR) / "imports" / import_id / relative_source_path)
+        destination_path = (self.root / destination_relpath).resolve()
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+
+        raw_bytes = source_path.read_bytes()
+        sha256_digest = _sha256_bytes(raw_bytes)
+
+        media_type, _ = mimetypes.guess_type(source_path.name)
+        media_type = media_type or "application/octet-stream"
+        if source_path.suffix.lower() in {".md", ".markdown"}:
+            media_type = "text/markdown"
+
+        title: Optional[str] = None
+        frontmatter_metadata: Dict[str, Any] = {}
+        if media_type == "text/markdown":
+            try:
+                text = raw_bytes.decode("utf-8")
+            except UnicodeDecodeError as decode_error:
+                raise ValueError(
+                    f"Markdown file must be Unicode Transformation Format 8: {relative_source_path}"
+                ) from decode_error
+            parsed_document = parse_front_matter(text)
+            frontmatter_metadata = dict(parsed_document.metadata)
+            title_value = frontmatter_metadata.get("title")
+            if isinstance(title_value, str) and title_value.strip():
+                title = title_value.strip()
+
+        destination_path.write_bytes(raw_bytes)
+
+        sidecar: Dict[str, Any] = {}
+        if tags:
+            sidecar["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
+        if media_type != "text/markdown":
+            sidecar["media_type"] = media_type
+        sidecar["biblicus"] = {"id": item_id, "source": source_path.as_uri()}
+        _write_sidecar(destination_path, sidecar)
+
+        merged_metadata = _merge_metadata(frontmatter_metadata, sidecar)
+        resolved_tags = _merge_tags([], merged_metadata.get("tags"))
+
+        item_record = CatalogItem(
+            id=item_id,
+            relpath=destination_relpath,
+            sha256=sha256_digest,
+            bytes=len(raw_bytes),
+            media_type=media_type,
+            title=title,
+            tags=list(resolved_tags),
+            metadata=dict(merged_metadata or {}),
+            created_at=utc_now_iso(),
+            source_uri=source_path.as_uri(),
+        )
+        self._upsert_catalog_item(item_record)
 
     def list_items(self, *, limit: int = 50) -> List[CatalogItem]:
         """
