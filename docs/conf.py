@@ -26,6 +26,13 @@ source_suffix = {
     ".md": "markdown",
 }
 
+suppress_warnings = ["misc.highlighting_failure"]
+
 import sys
 
 sys.path.insert(0, str(SOURCE_ROOT))
+
+from pygments.lexers.special import TextLexer
+from sphinx.highlighting import lexers
+
+lexers["mermaid"] = TextLexer()
