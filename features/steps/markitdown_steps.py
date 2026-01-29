@@ -168,3 +168,6 @@ def step_fake_markitdown_marked_real(context) -> None:
     markitdown_module = sys.modules.get("markitdown")
     if markitdown_module is not None:
         markitdown_module.__biblicus_fake__ = False
+    if not hasattr(context, "_original_sys_version_info"):
+        context._original_sys_version_info = sys.version_info
+    sys.version_info = (3, 9, 0, "final", 0)

@@ -156,6 +156,10 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_markitdown_unavailable_installed = False
         context._fake_markitdown_unavailable_original_modules = {}
+    original_sys_version_info = getattr(context, "_original_sys_version_info", None)
+    if original_sys_version_info is not None:
+        sys.version_info = original_sys_version_info
+        context._original_sys_version_info = None
     if hasattr(context, "_tmp"):
         context._tmp.cleanup()
 
