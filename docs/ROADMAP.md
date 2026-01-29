@@ -124,6 +124,21 @@ Acceptance checks:
 
 These are valuable, but intentionally not the near-term focus while retrieval becomes practical end to end.
 
+### In-memory corpus for ephemeral workflows
+
+Goal: allow programmatic, temporary corpora that live in memory for short-lived agents or tests.
+
+Deliverables:
+
+- A memory-backed corpus implementation that supports the same ingestion and catalog APIs.
+- A serialization option for snapshots so ephemeral corpora can be persisted when needed.
+- Documentation that explains tradeoffs versus file-based corpora.
+
+Acceptance checks:
+
+- Behavior specifications cover ingestion, listing, and reindexing in memory.
+- Retrieval and extraction can operate on the in-memory corpus without special casing.
+
 ### Extractor datasets and evaluation harness
 
 Goal: compare extraction approaches in a way that is measurable, repeatable, and useful for practical engineering decisions.

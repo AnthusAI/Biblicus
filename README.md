@@ -38,7 +38,7 @@ If you want to run a real, executable version of this story, use `scripts/readme
 This simplified sequence diagram shows the same idea at a high level.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
 sequenceDiagram
   participant App as Your assistant code
   participant KB as Knowledge base
@@ -77,7 +77,7 @@ In a coding assistant, retrieval is often triggered by what the user is doing ri
 This diagram shows two sequential Biblicus calls. They are shown separately to make the boundaries explicit: retrieval returns evidence, and context pack building consumes evidence.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
 sequenceDiagram
   participant User
   participant App as Your assistant code
@@ -131,6 +131,7 @@ Some extractors are optional so the base install stays small.
 - Optical character recognition for images: `python3 -m pip install "biblicus[ocr]"`
 - Speech to text transcription: `python3 -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Broad document parsing fallback: `python3 -m pip install "biblicus[unstructured]"`
+- MarkItDown document conversion (requires Python 3.10 or higher): `python3 -m pip install "biblicus[markitdown]"`
 
 ## Quick start
 
@@ -437,6 +438,20 @@ Two backends are included.
 
 - `scan` is a minimal baseline that scans raw items directly.
 - `sqlite-full-text-search` is a practical baseline that builds a full text search index in Sqlite.
+
+## Extraction backends
+
+These extractors are built in. Optional ones require extra dependencies.
+
+- `pass-through-text` reads text items and strips Markdown front matter.
+- `metadata-text` turns catalog metadata into a small text artifact.
+- `pdf-text` extracts text from Portable Document Format items with `pypdf`.
+- `select-text` chooses one prior extraction result in a pipeline.
+- `select-longest-text` chooses the longest prior extraction result.
+- `ocr-rapidocr` does optical character recognition on images (optional).
+- `stt-openai` performs speech to text on audio (optional).
+- `unstructured` provides broad document parsing (optional).
+- `markitdown` converts many formats into Markdown-like text (optional).
 
 ## Integration corpus and evaluation dataset
 

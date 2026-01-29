@@ -134,6 +134,28 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_rapidocr_unavailable_installed = False
         context._fake_rapidocr_unavailable_original_modules = {}
+    if getattr(context, "_fake_markitdown_installed", False):
+        original_modules = getattr(context, "_fake_markitdown_original_modules", {})
+        for name in [
+            "markitdown",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_markitdown_installed = False
+        context._fake_markitdown_original_modules = {}
+    if getattr(context, "_fake_markitdown_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_markitdown_unavailable_original_modules", {})
+        for name in [
+            "markitdown",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_markitdown_unavailable_installed = False
+        context._fake_markitdown_unavailable_original_modules = {}
     if hasattr(context, "_tmp"):
         context._tmp.cleanup()
 

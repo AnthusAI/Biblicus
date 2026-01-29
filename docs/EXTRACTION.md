@@ -71,6 +71,27 @@ To install:
 python3 -m pip install "biblicus[unstructured]"
 ```
 
+`markitdown`
+
+- Converts common document formats into Markdown-like text
+- Backed by the optional `markitdown` dependency
+- Requires Python 3.10 or higher
+- Skips items that are already text so the pass-through extractor remains the canonical choice for text items
+- This means it will not process `text/html` or other text media types unless that policy changes
+
+To install:
+
+```
+python3 -m pip install "biblicus[markitdown]"
+```
+
+Example:
+
+```
+python3 -m biblicus extract build --corpus corpora/extraction-demo \\
+  --step markitdown
+```
+
 `ocr-rapidocr`
 
 - Optical character recognition for image items

@@ -123,6 +123,7 @@ What it does:
 - Includes a Portable Document Format text extractor plugin.
 - Includes a speech to text extractor plugin for audio items.
 - Includes a selection extractor step for choosing extracted text within a pipeline.
+- Includes a MarkItDown extractor plugin for document conversion.
 
 Documentation:
 
@@ -139,6 +140,7 @@ Behavior specifications:
 - `features/ocr_extractor.feature`
 - `features/stt_extractor.feature`
 - `features/unstructured_extractor.feature`
+- `features/markitdown_extractor.feature`
 - `features/integration_unstructured_extraction.feature`
 
 Primary implementation:

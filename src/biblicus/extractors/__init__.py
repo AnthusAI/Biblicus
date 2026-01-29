@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Dict
 
 from .base import TextExtractor
+from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
 from .openai_stt import OpenAiSpeechToTextExtractor
 from .pass_through_text import PassThroughTextExtractor
@@ -30,6 +31,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
     """
     extractors: Dict[str, TextExtractor] = {
         MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
+        MarkItDownExtractor.extractor_id: MarkItDownExtractor(),
         PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
         PipelineExtractor.extractor_id: PipelineExtractor(),
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),

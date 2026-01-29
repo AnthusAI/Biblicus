@@ -36,6 +36,9 @@ unstructured = [
 ocr = [
   "rapidocr-onnxruntime>=1.3.0",
 ]
+markitdown = [
+  "markitdown[all]>=0.1.0; python_version>='3.10'",
+]
 
 [project.scripts]
 biblicus = "biblicus.cli:main"

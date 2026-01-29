@@ -221,6 +221,25 @@ python3 -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-tex
 python3 -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
 ```
 
+### Wikipedia retrieval demo (Python)
+
+This example downloads a few Wikipedia summaries about retrieval and knowledge bases, builds an extraction run, creates a local full text index, and returns evidence plus a context pack.
+
+```
+rm -rf corpora/wikipedia_rag_demo
+python3 scripts/wikipedia_rag_demo.py --corpus corpora/wikipedia_rag_demo --force
+```
+
+### MarkItDown extraction demo (Python 3.10+)
+
+MarkItDown requires Python 3.10 or higher. This example uses the `py311` conda environment to run the extractor over the mixed sample corpus.
+
+```
+conda run -n py311 python -m pip install -e . "markitdown[all]"
+conda run -n py311 python scripts/download_mixed_samples.py --corpus corpora/markitdown_demo_py311 --force
+conda run -n py311 python -m biblicus extract build --corpus corpora/markitdown_demo_py311 --step markitdown
+```
+
 ### Mixed modality integration corpus
 
 This example assembles a tiny mixed corpus with a Markdown note, a Hypertext Markup Language page, an image, a Portable Document Format file with extractable text, and a generated Portable Document Format file with no extractable text.
