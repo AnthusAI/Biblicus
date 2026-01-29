@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.7.0 (2026-01-29)
+
+### Bug Fixes
+
+- Enforce 100% coverage gate
+  ([`3495377`](https://github.com/AnthusAI/Biblicus/commit/34953770ec9da9db8521a046b5b101e1bee8b86f))
+
+- Stabilize markitdown version guard test
+  ([`886fc1c`](https://github.com/AnthusAI/Biblicus/commit/886fc1ced92787e5ca9a6d9053085c5c8070abaf))
+
+### Features
+
+- Add MarkItDown extractor
+  ([`2a489d6`](https://github.com/AnthusAI/Biblicus/commit/2a489d66fe769b0926e87b05ce40f268c521fc0f))
+
+
 ## v0.6.0 (2026-01-29)
 
 ### Features
