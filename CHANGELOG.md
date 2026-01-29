@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.6.0 (2026-01-29)
+
+### Features
+
+- Knowledge base workflow
+  ([`ede4d54`](https://github.com/AnthusAI/Biblicus/commit/ede4d5479ffea62c472c44dc4b51a7b20616f2b8))
+
+
 ## v0.5.0 (2026-01-29)
 
 ### Features
