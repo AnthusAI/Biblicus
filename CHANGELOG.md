@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.5.0 (2026-01-29)
+
+### Features
+
+- Retrieval evidence pipeline
+  ([`593de79`](https://github.com/AnthusAI/Biblicus/commit/593de79589dbc899ba0cd8775b061cafcd36ce36))
+
+
 ## v0.4.0 (2026-01-29)
 
 ### Features
