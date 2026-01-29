@@ -64,6 +64,8 @@ def main() -> int:
     Scenarios that require the optional Unstructured dependency are tagged ``@unstructured``
     and are excluded unless you also pass ``--unstructured``.
 
+    The coverage report enforces the configured minimum coverage threshold.
+
     :return: Exit code.
     :rtype: int
     """
@@ -100,12 +102,21 @@ def main() -> int:
         behave_args.extend(["--tags", "~@ocr"])
     if args.integration and not args.unstructured:
         behave_args.extend(["--tags", "~@unstructured"])
-    rc = _run([sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args], env=env)
-    _run([sys.executable, "-m", "coverage", "report", "-m"], env=env)
-    _run([sys.executable, "-m", "coverage", "html", "-d", str(htmlcov_dir)], env=env)
+    behave_exit_code = _run(
+        [sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args],
+        env=env,
+    )
+    coverage_report_exit_code = _run(
+        [sys.executable, "-m", "coverage", "report", "-m"],
+        env=env,
+    )
+    coverage_html_exit_code = _run(
+        [sys.executable, "-m", "coverage", "html", "-d", str(htmlcov_dir)],
+        env=env,
+    )
 
     print(f"Coverage report in Hypertext Markup Language: {htmlcov_dir / 'index.html'}")
-    return int(rc)
+    return int(max(behave_exit_code, coverage_report_exit_code, coverage_html_exit_code))
 
 
 if __name__ == "__main__":
