@@ -116,6 +116,12 @@ Feature: Speech to text extraction
     When I call the speech to text extractor without an API key
     Then a fatal extraction error is raised
 
+  Scenario: Speech to text extractor rejects extraction at runtime when optional dependency is missing
+    Given the OpenAI dependency is unavailable
+    And an OpenAI API key is configured for this scenario
+    When I call the speech to text extractor with an API key
+    Then a fatal extraction error is raised
+
   Scenario: Speech to text output can override earlier metadata output in a pipeline
     Given I initialized a corpus at "corpus"
     And a fake OpenAI library is available that returns transcript "Transcript wins" for filename "clip.wav"

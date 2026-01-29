@@ -115,6 +115,7 @@ class OpenAiSpeechToTextExtractor(TextExtractor):
         :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
         :return: Extracted text payload, or None when the item is not audio.
         :rtype: ExtractedText or None
+        :raises ExtractionRunFatalError: If the optional dependency or required configuration is missing.
         """
         _ = previous_extractions
         if not item.media_type.startswith("audio/"):
@@ -126,8 +127,6 @@ class OpenAiSpeechToTextExtractor(TextExtractor):
             else OpenAiSpeechToTextExtractorConfig.model_validate(config)
         )
 
-        from openai import OpenAI
-
         api_key = resolve_openai_api_key()
         if api_key is None:
             raise ExtractionRunFatalError(
@@ -135,6 +134,14 @@ class OpenAiSpeechToTextExtractor(TextExtractor):
                 "Set OPENAI_API_KEY or configure it in ~/.biblicus/config.yml or ./.biblicus/config.yml under "
                 "openai.api_key."
             )
+
+        try:
+            from openai import OpenAI
+        except ImportError as import_error:
+            raise ExtractionRunFatalError(
+                "OpenAI speech to text extractor requires an optional dependency. "
+                'Install it with pip install "biblicus[openai]".'
+            ) from import_error
 
         client = OpenAI(api_key=api_key)
         source_path = corpus.root / item.relpath
