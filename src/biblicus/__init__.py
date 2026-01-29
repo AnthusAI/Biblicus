@@ -3,6 +3,7 @@ Biblicus public package interface.
 """
 
 from .corpus import Corpus
+from .knowledge_base import KnowledgeBase
 from .models import (
     CorpusConfig,
     Evidence,
@@ -19,6 +20,7 @@ __all__ = [
     "CorpusConfig",
     "Evidence",
     "IngestResult",
+    "KnowledgeBase",
     "QueryBudget",
     "RecipeManifest",
     "RetrievalResult",

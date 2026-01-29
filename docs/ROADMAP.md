@@ -46,6 +46,65 @@ Acceptance checks:
 - Behavior specifications cover policy selection and budgeting behaviors.
 - Example outputs show how context packs differ across policies.
 
+## Next: extraction backends (OCR and document understanding)
+
+Goal: treat optical character recognition and document understanding as pluggable extractors with consistent inputs and outputs.
+
+Deliverables:
+
+- A baseline OCR extractor that is fast and local for smoke tests.
+- A higher quality OCR extractor candidate (for example: Paddle OCR or Docling OCR).
+- A general document understanding extractor candidate (for example: Docling or Unstructured).
+- A consistent output contract that captures text plus optional confidence and per-page metadata.
+- A selector policy for choosing between multiple extractor outputs in a pipeline.
+- A shared evaluation harness for extraction backends using the same corpus and dataset.
+
+Acceptance checks:
+
+- Behavior specifications cover extractor selection and output provenance.
+- Evaluation reports compare accuracy, processable fraction, latency, and cost.
+
+## Next: corpus analysis tools
+
+Goal: provide lightweight analysis utilities that summarize corpus themes and guide curation.
+
+Deliverables:
+
+- A topic modeling workflow for corpus analysis (for example: BERTopic).
+- A report that highlights dominant themes and outliers.
+- A way to compare topic distributions across corpora or corpus snapshots.
+
+Acceptance checks:
+
+- Analysis is reproducible for the same corpus state.
+- Reports are exportable and readable without custom tooling.
+
+### Candidate backend ecosystem (for planning and evaluation)
+
+Document understanding and OCR blur together at the interface level in Biblicus, so the roadmap treats them as extractor candidates with the same input/output contract.
+
+Docling family candidates:
+
+- Docling (document understanding with structured outputs)
+- docling-ocr (OCR component in the Docling ecosystem)
+
+General-purpose extraction candidates:
+
+- Unstructured (element-oriented extraction for many formats)
+- MarkItDown (lightweight conversion to Markdown)
+- Kreuzberg (speed-focused extraction for bulk workflows)
+- ExtractThinker (schema-driven extraction using Pydantic contracts)
+
+Ecosystem adapters:
+
+- LangChain document loaders (uniform loader interface across many sources)
+
+### Guidance for choosing early targets
+
+- If you need layout and table understanding, prioritize Docling and docling-ocr.
+- If you need speed and simplicity, prioritize MarkItDown or Kreuzberg.
+- If you need schema-first extraction, prioritize ExtractThinker layered on an OCR or document extractor.
+
 ## Later: alternate backends and hosting modes
 
 Goal: broaden the backend surface while keeping the core predictable.

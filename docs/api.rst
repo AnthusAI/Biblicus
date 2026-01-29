@@ -8,6 +8,10 @@ Core
    :members:
    :undoc-members:
 
+.. automodule:: biblicus.knowledge_base
+   :members:
+   :undoc-members:
+
 .. automodule:: biblicus.models
    :members:
    :undoc-members:

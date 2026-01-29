@@ -208,6 +208,21 @@ Primary implementation:
 
 - `src/biblicus/context.py`
 
+## Knowledge base
+
+What it does:
+
+- Provides a turnkey interface that accepts a folder and returns a ready-to-query workflow.
+- Applies sensible defaults for import, retrieval, and context pack shaping.
+
+Behavior specifications:
+
+- `features/knowledge_base.feature`
+
+Primary implementation:
+
+- `src/biblicus/knowledge_base.py`
+
 ## Testing, coverage, and documentation build
 
 What it does:

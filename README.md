@@ -16,6 +16,40 @@ It can be used alongside LangGraph, Tactus, Pydantic AI, any agent framework, or
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
 
+## Start with a knowledge base
+
+If you just want to hand a folder to your assistant and move on, use the high-level knowledge base interface. The folder can be nothing more than a handful of plain text files. You are not choosing a retrieval strategy yet. You are just collecting.
+
+This example assumes a folder called `notes/` with a few `.txt` files. The knowledge base handles sensible defaults and still gives you a clear context pack for your model call.
+
+```python
+from biblicus.knowledge_base import KnowledgeBase
+
+
+kb = KnowledgeBase.from_folder("notes")
+result = kb.query("Primary button style preference")
+context_pack = kb.context_pack(result, max_tokens=800)
+
+print(context_pack.text)
+```
+
+If you want to run a real, executable version of this story, use `scripts/readme_end_to_end_demo.py` from a fresh clone.
+
+This simplified sequence diagram shows the same idea at a high level.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
+sequenceDiagram
+  participant App as Your assistant code
+  participant KB as Knowledge base
+  participant LLM as Large language model
+
+  App->>KB: query
+  KB-->>App: evidence and context
+  App->>LLM: context plus prompt
+  LLM-->>App: response draft
+```
+
 ## A simple mental model
 
 Think in three stages.
@@ -124,11 +158,11 @@ biblicus crawl --corpus corpora/example \\
   --tag crawled
 ```
 
-## End-to-end example: evidence to assistant context
+## End-to-end example: lower-level control
 
 The command-line interface returns JavaScript Object Notation by default. This makes it easy to use Biblicus in scripts and to treat retrieval as a deterministic, testable step.
 
-Start with a few short “memories” from a chat system. Each memory is stored as a normal item in the corpus.
+This version shows the lower-level pieces explicitly. You are building the corpus, controlling each memory string, choosing the backend, and shaping the context pack yourself.
 
 ```python
 from biblicus.backends import get_backend
@@ -354,6 +388,7 @@ The documents below follow the pipeline from raw items to model context:
 
 - [Corpus][corpus]
 - [Text extraction][text-extraction]
+- [Knowledge base][knowledge-base]
 - [Backends][backends]
 - [Context packs][context-packs]
 - [Testing and evaluation][testing]
@@ -456,6 +491,7 @@ License terms are in `LICENSE`.
 [roadmap]: docs/ROADMAP.md
 [feature-index]: docs/FEATURE_INDEX.md
 [corpus]: docs/CORPUS.md
+[knowledge-base]: docs/KNOWLEDGE_BASE.md
 [text-extraction]: docs/EXTRACTION.md
 [user-configuration]: docs/USER_CONFIGURATION.md
 [backends]: docs/BACKENDS.md
