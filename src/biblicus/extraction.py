@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -196,8 +195,9 @@ def create_extraction_run_manifest(
     :rtype: ExtractionRunManifest
     """
     catalog = corpus.load_catalog()
+    run_id = hash_text(f"{recipe.recipe_id}:{catalog.generated_at}")
     return ExtractionRunManifest(
-        run_id=str(uuid4()),
+        run_id=run_id,
         recipe=recipe,
         corpus_uri=corpus.uri,
         catalog_generated_at=catalog.generated_at,
@@ -341,6 +341,8 @@ def build_extraction_run(
     )
     manifest = create_extraction_run_manifest(corpus, recipe=recipe)
     run_dir = corpus.extraction_run_dir(extractor_id=extractor_id, run_id=manifest.run_id)
+    if run_dir.exists():
+        return corpus.load_extraction_run_manifest(extractor_id=extractor_id, run_id=manifest.run_id)
     run_dir.mkdir(parents=True, exist_ok=False)
 
     catalog = corpus.load_catalog()

@@ -48,10 +48,7 @@ flowchart LR
     direction LR
     LegendArtifact[Stored artifact or evidence]
     LegendStep[Step]
-    LegendStable[Stable region]
-    LegendPluggable[Pluggable region]
     LegendArtifact --- LegendStep
-    LegendStable --- LegendPluggable
   end
 
   subgraph Main[" "]
@@ -64,14 +61,14 @@ flowchart LR
       Raw --> Catalog[Catalog file]
     end
 
-    subgraph PluggableExtractionPipeline[Pluggable extraction pipeline]
+    subgraph PluggableExtractionPipeline[Pluggable: extraction pipeline]
       direction TB
       Catalog --> Extract[Extract pipeline]
       Extract --> ExtractedText[Extracted text artifacts]
       ExtractedText --> ExtractionRun[Extraction run manifest]
     end
 
-    subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
+    subgraph PluggableRetrievalBackend[Pluggable: retrieval backend]
       direction LR
 
       subgraph BackendIngestionIndexing[Ingestion and indexing]
@@ -125,8 +122,6 @@ flowchart LR
   style Main fill:#ffffff,stroke:#ffffff,color:#111111
   style LegendArtifact fill:#f3e5f5,stroke:#8e24aa,color:#111111
   style LegendStep fill:#eceff1,stroke:#90a4ae,color:#111111
-  style LegendStable fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
-  style LegendPluggable fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
 ```
 
 ## Practical value
@@ -139,6 +134,7 @@ flowchart LR
 
 - Initialize a corpus folder.
 - Ingest items from file paths, web addresses, or text input.
+- Crawl a website section into corpus items when you want a repeatable “import from the web” workflow.
 - Run extraction when you want derived text artifacts from non-text sources.
 - Reindex to refresh the catalog after edits.
 - Build a retrieval run with a backend.
@@ -176,9 +172,20 @@ biblicus init corpora/example
 biblicus ingest --corpus corpora/example notes/example.txt
 echo "A short note" | biblicus ingest --corpus corpora/example --stdin --title "First note"
 biblicus list --corpus corpora/example
-biblicus extract --corpus corpora/example --step pass-through-text --step metadata-text
+biblicus extract build --corpus corpora/example --step pass-through-text --step metadata-text
+biblicus extract list --corpus corpora/example
 biblicus build --corpus corpora/example --backend scan
 biblicus query --corpus corpora/example --query "note"
+```
+
+If you want to turn a website section into corpus items, crawl a root web address while restricting the crawl to an allowed prefix:
+
+```
+biblicus crawl --corpus corpora/example \\
+  --root-url https://example.com/docs/index.html \\
+  --allowed-prefix https://example.com/docs/ \\
+  --max-items 50 \\
+  --tag crawled
 ```
 
 ## Python usage
@@ -204,7 +211,7 @@ In an assistant system, retrieval usually produces context for a model call. Thi
 
 ## Learn more
 
-Full documentation is available on [ReadTheDocs](https://biblicus.readthedocs.io/).
+Full documentation is published on GitHub Pages: https://anthusai.github.io/Biblicus/
 
 The documents below are written to be read in order.
 
@@ -233,7 +240,16 @@ corpus/
     config.json
     catalog.json
     runs/
-      run-id.json
+      extraction/
+        pipeline/
+          <run id>/
+            manifest.json
+            text/
+              <item id>.txt
+      retrieval/
+        <backend id>/
+          <run id>/
+            manifest.json
 ```
 
 ## Retrieval backends
@@ -284,7 +300,7 @@ python3 -m pip install -e ".[dev]"
 Build the documentation:
 
 ```
-python3 -m sphinx -b html docs docs/_build
+python3 -m sphinx -b html docs docs/_build/html
 ```
 
 ## License
@@ -304,4 +320,4 @@ License terms are in `LICENSE`.
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
-[documentation-badge]: https://readthedocs.org/projects/biblicus/badge/?version=latest
+[documentation-badge]: https://img.shields.io/badge/docs-GitHub%20Pages-blue

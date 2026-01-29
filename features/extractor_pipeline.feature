@@ -51,7 +51,7 @@ Feature: Extraction pipeline
 
   Scenario: Pipeline requires at least one step
     Given I initialized a corpus at "corpus"
-    When I run "extract" in corpus "corpus"
+    When I run "extract build" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Pipeline extraction requires at least one --step"
 
@@ -64,13 +64,13 @@ Feature: Extraction pipeline
   Scenario: Step spec with trailing colon is accepted
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I run "extract --step pass-through-text:" in corpus "corpus"
+    And I run "extract build --step pass-through-text:" in corpus "corpus"
     Then the command succeeds
 
   Scenario: Step spec ignores empty tokens
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I run "extract --step metadata-text:,, " in corpus "corpus"
+    And I run "extract build --step metadata-text:,, " in corpus "corpus"
     Then the command succeeds
 
   Scenario: Step spec can pass config values to an extractor

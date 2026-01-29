@@ -43,6 +43,20 @@ Ingest a web address:
 python3 -m biblicus ingest --corpus corpora/example https://example.com --tag web
 ```
 
+## Crawl a website prefix
+
+To build a corpus from a website section, crawl a root uniform resource locator and restrict the crawl to an allowed prefix.
+
+```
+python3 -m biblicus crawl --corpus corpora/example \\
+  --root-url https://example.com/docs/index.html \\
+  --allowed-prefix https://example.com/docs/ \\
+  --max-items 50 \\
+  --tag crawled
+```
+
+The crawl command only follows links within the allowed prefix, and it respects `.biblicusignore` patterns against the path relative to the allowed prefix.
+
 Ingest a text note:
 
 ```
@@ -100,4 +114,3 @@ Purging deletes all items and derived artifacts under the corpus. It requires yo
 ```
 python3 -m biblicus purge --corpus corpora/example --confirm example
 ```
-

@@ -27,7 +27,14 @@ from .frontmatter import parse_front_matter, render_front_matter
 from .hook_manager import HookManager
 from .hooks import HookPoint
 from .ignore import load_corpus_ignore_spec
-from .models import CatalogItem, CorpusCatalog, CorpusConfig, IngestResult, RetrievalRun
+from .models import (
+    CatalogItem,
+    CorpusCatalog,
+    CorpusConfig,
+    ExtractionRunListEntry,
+    IngestResult,
+    RetrievalRun,
+)
 from .sources import load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
@@ -566,6 +573,96 @@ class Corpus:
         if not path.is_file():
             return None
         return path.read_text(encoding="utf-8")
+
+    def load_extraction_run_manifest(self, *, extractor_id: str, run_id: str):
+        """
+        Load an extraction run manifest from the corpus.
+
+        :param extractor_id: Extractor plugin identifier.
+        :type extractor_id: str
+        :param run_id: Extraction run identifier.
+        :type run_id: str
+        :return: Parsed extraction run manifest.
+        :rtype: biblicus.extraction.ExtractionRunManifest
+        :raises FileNotFoundError: If the manifest file does not exist.
+        :raises ValueError: If the manifest data is invalid.
+        """
+        from .extraction import ExtractionRunManifest
+
+        manifest_path = (
+            self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id) / "manifest.json"
+        )
+        if not manifest_path.is_file():
+            raise FileNotFoundError(f"Missing extraction run manifest: {manifest_path}")
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return ExtractionRunManifest.model_validate(data)
+
+    def list_extraction_runs(self, *, extractor_id: Optional[str] = None) -> List[ExtractionRunListEntry]:
+        """
+        List extraction runs stored under the corpus.
+
+        :param extractor_id: Optional extractor identifier filter.
+        :type extractor_id: str or None
+        :return: Summary list entries for each run.
+        :rtype: list[biblicus.models.ExtractionRunListEntry]
+        """
+        runs_root = self.extraction_runs_dir
+        if not runs_root.is_dir():
+            return []
+
+        extractor_dirs: List[Path]
+        if extractor_id is None:
+            extractor_dirs = [path for path in sorted(runs_root.iterdir()) if path.is_dir()]
+        else:
+            extractor_path = runs_root / extractor_id
+            extractor_dirs = [extractor_path] if extractor_path.is_dir() else []
+
+        entries: List[ExtractionRunListEntry] = []
+        for extractor_dir in extractor_dirs:
+            for run_dir in sorted(extractor_dir.iterdir()):
+                if not run_dir.is_dir():
+                    continue
+                manifest_path = run_dir / "manifest.json"
+                if not manifest_path.is_file():
+                    continue
+                try:
+                    manifest = self.load_extraction_run_manifest(
+                        extractor_id=extractor_dir.name,
+                        run_id=run_dir.name,
+                    )
+                except (FileNotFoundError, ValueError):
+                    continue
+                entries.append(
+                    ExtractionRunListEntry(
+                        extractor_id=extractor_dir.name,
+                        run_id=run_dir.name,
+                        recipe_id=manifest.recipe.recipe_id,
+                        recipe_name=manifest.recipe.name,
+                        catalog_generated_at=manifest.catalog_generated_at,
+                        created_at=manifest.created_at,
+                        stats=dict(manifest.stats),
+                    )
+                )
+
+        entries.sort(key=lambda entry: (entry.created_at, entry.extractor_id, entry.run_id), reverse=True)
+        return entries
+
+    def delete_extraction_run(self, *, extractor_id: str, run_id: str) -> None:
+        """
+        Delete an extraction run directory and its derived artifacts.
+
+        :param extractor_id: Extractor plugin identifier.
+        :type extractor_id: str
+        :param run_id: Extraction run identifier.
+        :type run_id: str
+        :return: None.
+        :rtype: None
+        :raises FileNotFoundError: If the extraction run directory does not exist.
+        """
+        run_dir = self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id)
+        if not run_dir.is_dir():
+            raise FileNotFoundError(f"Missing extraction run directory: {run_dir}")
+        shutil.rmtree(run_dir)
 
     def _ensure_runs_dir(self) -> None:
         """
@@ -1184,6 +1281,78 @@ class Corpus:
         if item is None:
             raise KeyError(f"Unknown item identifier: {item_id}")
         return item
+
+    def create_crawl_id(self) -> str:
+        """
+        Create a new crawl identifier.
+
+        :return: Crawl identifier.
+        :rtype: str
+        """
+        return str(uuid.uuid4())
+
+    def ingest_crawled_payload(
+        self,
+        *,
+        crawl_id: str,
+        relative_path: str,
+        data: bytes,
+        filename: str,
+        media_type: str,
+        source_uri: str,
+        tags: Sequence[str],
+    ) -> None:
+        """
+        Ingest a crawled payload under a crawl import namespace.
+
+        :param crawl_id: Crawl identifier used to group crawled artifacts.
+        :type crawl_id: str
+        :param relative_path: Relative path within the crawl prefix.
+        :type relative_path: str
+        :param data: Raw payload bytes.
+        :type data: bytes
+        :param filename: Suggested filename from the payload metadata.
+        :type filename: str
+        :param media_type: Internet Assigned Numbers Authority media type.
+        :type media_type: str
+        :param source_uri: Source uniform resource identifier (typically an http or https uniform resource locator).
+        :type source_uri: str
+        :param tags: Tags to attach to the stored item.
+        :type tags: Sequence[str]
+        :return: None.
+        :rtype: None
+        """
+        _ = filename
+        item_id = str(uuid.uuid4())
+        destination_relpath = str(Path(DEFAULT_RAW_DIR) / "imports" / "crawl" / crawl_id / relative_path)
+        destination_path = (self.root / destination_relpath).resolve()
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        destination_path.write_bytes(data)
+
+        sha256_digest = _sha256_bytes(data)
+
+        sidecar: Dict[str, Any] = {}
+        sidecar["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
+        sidecar["media_type"] = media_type
+        sidecar["biblicus"] = {"id": item_id, "source": source_uri}
+        _write_sidecar(destination_path, sidecar)
+
+        merged_metadata = _merge_metadata({}, sidecar)
+        resolved_tags = _merge_tags([], merged_metadata.get("tags"))
+
+        item_record = CatalogItem(
+            id=item_id,
+            relpath=destination_relpath,
+            sha256=sha256_digest,
+            bytes=len(data),
+            media_type=media_type,
+            title=None,
+            tags=list(resolved_tags),
+            metadata=dict(merged_metadata or {}),
+            created_at=utc_now_iso(),
+            source_uri=source_uri,
+        )
+        self._upsert_catalog_item(item_record)
 
     def reindex(self) -> Dict[str, int]:
         """

@@ -133,6 +133,46 @@ The catalog is rebuildable. You can edit raw files or sidecar metadata, then ref
 python3 -m biblicus reindex --corpus corpora/demo
 ```
 
+### Crawl a website prefix
+
+To turn a website section into corpus items, crawl a root page and restrict the crawl to an allowed prefix.
+
+In one terminal, create a tiny local website and serve it:
+
+```
+rm -rf /tmp/biblicus-site
+mkdir -p /tmp/biblicus-site/site/subdir
+cat > /tmp/biblicus-site/site/index.html <<'HTML'
+<html>
+  <body>
+    <a href="page.html">Page</a>
+    <a href="subdir/">Subdir</a>
+  </body>
+</html>
+HTML
+cat > /tmp/biblicus-site/site/page.html <<'HTML'
+<html><body>hello</body></html>
+HTML
+cat > /tmp/biblicus-site/site/subdir/index.html <<'HTML'
+<html><body>subdir</body></html>
+HTML
+
+python3 -m http.server 8000 --directory /tmp/biblicus-site
+```
+
+In another terminal:
+
+```
+rm -rf corpora/crawl-demo
+python3 -m biblicus init corpora/crawl-demo
+python3 -m biblicus crawl --corpus corpora/crawl-demo \\
+  --root-url http://127.0.0.1:8000/site/index.html \\
+  --allowed-prefix http://127.0.0.1:8000/site/ \\
+  --max-items 50 \\
+  --tag crawled
+python3 -m biblicus list --corpus corpora/crawl-demo
+```
+
 ### Build an extraction run
 
 Text extraction is a separate pipeline stage from retrieval. An extraction run produces derived text artifacts under the corpus.
@@ -140,7 +180,7 @@ Text extraction is a separate pipeline stage from retrieval. An extraction run p
 This extractor reads text items and skips non-text items.
 
 ```
-python3 -m biblicus extract --corpus corpora/demo --step pass-through-text
+python3 -m biblicus extract build --corpus corpora/demo --step pass-through-text
 ```
 
 The output includes a `run_id` you can reuse when building a retrieval backend.
@@ -150,7 +190,7 @@ The output includes a `run_id` you can reuse when building a retrieval backend.
 When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
 
 ```
-python3 -m biblicus extract --corpus corpora/demo \\
+python3 -m biblicus extract build --corpus corpora/demo \\
   --step pass-through-text \\
   --step metadata-text \\
   --step select-text
@@ -171,7 +211,7 @@ This example downloads a small set of public Portable Document Format files, ext
 rm -rf corpora/pdf_samples
 python3 scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
 
-python3 -m biblicus extract --corpus corpora/pdf_samples --step pdf-text
+python3 -m biblicus extract build --corpus corpora/pdf_samples --step pdf-text
 ```
 
 Copy the `run_id` from the JavaScript Object Notation output. You will use it as `PDF_EXTRACTION_RUN_ID` in the next command.
@@ -211,7 +251,7 @@ python3 -m pip install "biblicus[ocr]"
 Then build an extraction run:
 
 ```
-python3 -m biblicus extract --corpus corpora/image_samples --step ocr-rapidocr
+python3 -m biblicus extract build --corpus corpora/image_samples --step ocr-rapidocr
 ```
 
 ### Optional: Unstructured as a last-resort extractor
@@ -227,7 +267,7 @@ python3 -m pip install "biblicus[unstructured]"
 Then build an extraction run:
 
 ```
-python3 -m biblicus extract --corpus corpora/pdf_samples --step unstructured
+python3 -m biblicus extract build --corpus corpora/pdf_samples --step unstructured
 ```
 
 To see Unstructured handle a non-Portable-Document-Format format, use the mixed corpus demo, which includes a `.docx` sample:
@@ -235,13 +275,13 @@ To see Unstructured handle a non-Portable-Document-Format format, use the mixed 
 ```
 rm -rf corpora/mixed_samples
 python3 scripts/download_mixed_samples.py --corpus corpora/mixed_samples --force
-python3 -m biblicus extract --corpus corpora/mixed_samples --step unstructured
+python3 -m biblicus extract build --corpus corpora/mixed_samples --step unstructured
 ```
 
 When you want to prefer one extractor over another for the same item types, order the steps and end with `select-text`:
 
 ```
-python3 -m biblicus extract --corpus corpora/pdf_samples \\
+python3 -m biblicus extract build --corpus corpora/pdf_samples \\
   --step unstructured \\
   --step pdf-text \\
   --step select-text
@@ -263,7 +303,7 @@ python3 -m biblicus list --corpus corpora/audio_samples
 If you only want a metadata-only baseline, extract `metadata-text`:
 
 ```
-python3 -m biblicus extract --corpus corpora/audio_samples --step metadata-text
+python3 -m biblicus extract build --corpus corpora/audio_samples --step metadata-text
 ```
 
 For real speech to text transcription with the OpenAI backend, install the optional dependency and set an API key:
@@ -272,7 +312,7 @@ For real speech to text transcription with the OpenAI backend, install the optio
 python3 -m pip install "biblicus[openai]"
 mkdir -p .biblicus
 printf "openai:\n  api_key: ...\n" > .biblicus/config.yml
-python3 -m biblicus extract --corpus corpora/audio_samples --step stt-openai
+python3 -m biblicus extract build --corpus corpora/audio_samples --step stt-openai
 ```
 
 ### Build and query the minimal backend

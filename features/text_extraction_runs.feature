@@ -19,7 +19,7 @@ Feature: Text extraction runs
     And a binary file "image.png" exists
     When I ingest the file "image.png" with tags "retained" into corpus "corpus"
     And I build a "metadata-text" extraction run in corpus "corpus"
-    And I build a "metadata-text" extraction run in corpus "corpus"
+    And I build a "pass-through-text" extraction run in corpus "corpus"
     Then the corpus has at least 2 extraction runs for extractor "pipeline"
 
   Scenario: Empty extracted text is recorded as empty output

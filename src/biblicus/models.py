@@ -189,6 +189,37 @@ def parse_extraction_run_reference(value: str) -> ExtractionRunReference:
     return ExtractionRunReference(extractor_id=extractor_id, run_id=run_id)
 
 
+class ExtractionRunListEntry(BaseModel):
+    """
+    Summary entry for an extraction run stored in a corpus.
+
+    :ivar extractor_id: Extractor plugin identifier.
+    :vartype extractor_id: str
+    :ivar run_id: Extraction run identifier.
+    :vartype run_id: str
+    :ivar recipe_id: Deterministic recipe identifier.
+    :vartype recipe_id: str
+    :ivar recipe_name: Human-readable recipe name.
+    :vartype recipe_name: str
+    :ivar catalog_generated_at: Catalog timestamp used for the run.
+    :vartype catalog_generated_at: str
+    :ivar created_at: International Organization for Standardization 8601 timestamp for run creation.
+    :vartype created_at: str
+    :ivar stats: Run statistics.
+    :vartype stats: dict[str, object]
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    extractor_id: str = Field(min_length=1)
+    run_id: str = Field(min_length=1)
+    recipe_id: str = Field(min_length=1)
+    recipe_name: str = Field(min_length=1)
+    catalog_generated_at: str = Field(min_length=1)
+    created_at: str = Field(min_length=1)
+    stats: Dict[str, object] = Field(default_factory=dict)
+
+
 class QueryBudget(BaseModel):
     """
     Evidence selection budget for retrieval.

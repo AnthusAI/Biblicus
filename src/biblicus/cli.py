@@ -14,10 +14,11 @@ from pydantic import ValidationError
 
 from .backends import get_backend
 from .corpus import Corpus
+from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionRunFatalError
 from .evaluation import evaluate_run, load_dataset
 from .extraction import build_extraction_run
-from .models import QueryBudget
+from .models import QueryBudget, parse_extraction_run_reference
 from .uris import corpus_ref_to_path
 
 
@@ -327,7 +328,7 @@ def cmd_build(arguments: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_extract(arguments: argparse.Namespace) -> int:
+def cmd_extract_build(arguments: argparse.Namespace) -> int:
     """
     Build a text extraction run for the corpus using a pipeline of extractors.
 
@@ -356,6 +357,69 @@ def cmd_extract(arguments: argparse.Namespace) -> int:
         config=config,
     )
     print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_extract_list(arguments: argparse.Namespace) -> int:
+    """
+    List extraction runs stored under the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    runs = corpus.list_extraction_runs(extractor_id=arguments.extractor_id)
+    print(json.dumps([entry.model_dump() for entry in runs], indent=2))
+    return 0
+
+
+def cmd_extract_show(arguments: argparse.Namespace) -> int:
+    """
+    Show an extraction run manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    reference = parse_extraction_run_reference(arguments.run)
+    manifest = corpus.load_extraction_run_manifest(
+        extractor_id=reference.extractor_id, run_id=reference.run_id
+    )
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_extract_delete(arguments: argparse.Namespace) -> int:
+    """
+    Delete an extraction run directory and its derived artifacts.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    if arguments.confirm != arguments.run:
+        raise ValueError("Refusing to delete extraction run without an exact --confirm match.")
+    reference = parse_extraction_run_reference(arguments.run)
+    corpus.delete_extraction_run(extractor_id=reference.extractor_id, run_id=reference.run_id)
+    print(json.dumps({"deleted": True, "run": arguments.run}, indent=2))
     return 0
 
 
@@ -410,6 +474,32 @@ def cmd_eval(arguments: argparse.Namespace) -> int:
     dataset = load_dataset(Path(arguments.dataset))
     budget = _budget_from_args(arguments)
     result = evaluate_run(corpus=corpus, run=run, dataset=dataset, budget=budget)
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_crawl(arguments: argparse.Namespace) -> int:
+    """
+    Crawl a website prefix into a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    tags = _parse_tags(arguments.tags, arguments.tag)
+    request = CrawlRequest(
+        root_url=arguments.root_url,
+        allowed_prefix=arguments.allowed_prefix,
+        max_items=arguments.max_items,
+        tags=tags,
+    )
+    result = crawl_into_corpus(corpus=corpus, request=request)
     print(result.model_dump_json(indent=2))
     return 0
 
@@ -511,16 +601,53 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_build.set_defaults(func=cmd_build)
 
-    p_extract = sub.add_parser("extract", help="Build a text extraction run for the corpus.")
-    _add_common_corpus_arg(p_extract)
-    p_extract.add_argument("--recipe-name", default="default", help="Human-readable recipe name.")
-    p_extract.add_argument(
+    p_extract = sub.add_parser("extract", help="Work with text extraction runs for the corpus.")
+    extract_sub = p_extract.add_subparsers(dest="extract_command", required=True)
+
+    p_extract_build = extract_sub.add_parser("build", help="Build a text extraction run.")
+    _add_common_corpus_arg(p_extract_build)
+    p_extract_build.add_argument(
+        "--recipe-name", default="default", help="Human-readable recipe name."
+    )
+    p_extract_build.add_argument(
         "--step",
         action="append",
         default=None,
         help="Pipeline step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
     )
-    p_extract.set_defaults(func=cmd_extract)
+    p_extract_build.set_defaults(func=cmd_extract_build)
+
+    p_extract_list = extract_sub.add_parser("list", help="List extraction runs.")
+    _add_common_corpus_arg(p_extract_list)
+    p_extract_list.add_argument(
+        "--extractor-id",
+        default=None,
+        help="Optional extractor identifier filter (for example: pipeline).",
+    )
+    p_extract_list.set_defaults(func=cmd_extract_list)
+
+    p_extract_show = extract_sub.add_parser("show", help="Show an extraction run manifest.")
+    _add_common_corpus_arg(p_extract_show)
+    p_extract_show.add_argument(
+        "--run",
+        required=True,
+        help="Extraction run reference in the form extractor_id:run_id.",
+    )
+    p_extract_show.set_defaults(func=cmd_extract_show)
+
+    p_extract_delete = extract_sub.add_parser("delete", help="Delete an extraction run directory.")
+    _add_common_corpus_arg(p_extract_delete)
+    p_extract_delete.add_argument(
+        "--run",
+        required=True,
+        help="Extraction run reference in the form extractor_id:run_id.",
+    )
+    p_extract_delete.add_argument(
+        "--confirm",
+        required=True,
+        help="Type the exact extractor_id:run_id to confirm deletion.",
+    )
+    p_extract_delete.set_defaults(func=cmd_extract_delete)
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
@@ -544,6 +671,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_eval.add_argument("--max-total-characters", type=int, default=2000)
     p_eval.add_argument("--max-items-per-source", type=int, default=5)
     p_eval.set_defaults(func=cmd_eval)
+
+    p_crawl = sub.add_parser("crawl", help="Crawl a website prefix into the corpus.")
+    _add_common_corpus_arg(p_crawl)
+    p_crawl.add_argument("--root-url", required=True, help="Root uniform resource locator to fetch.")
+    p_crawl.add_argument(
+        "--allowed-prefix",
+        required=True,
+        help="Uniform resource locator prefix that limits which links are eligible for crawl.",
+    )
+    p_crawl.add_argument("--max-items", type=int, default=50, help="Maximum number of items to store.")
+    p_crawl.add_argument("--tags", default=None, help="Comma-separated tags to apply to stored items.")
+    p_crawl.add_argument("--tag", action="append", help="Repeatable tag to apply to stored items.")
+    p_crawl.set_defaults(func=cmd_crawl)
 
     return parser
 

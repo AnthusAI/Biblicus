@@ -25,108 +25,94 @@ Version zero includes:
 - A broad catchall extractor plugin (`unstructured`) implemented as an optional dependency.
 - Integration corpora that include deterministic non-text cases such as a blank Portable Document Format file and a silence Waveform Audio File Format clip.
 
+Milestones 1 through 4 are complete. The next planned work begins at Milestone 5.
+
+## Near-term focus
+
+The next work will focus on the retrieval side of the pipeline:
+
+- Make retrieval runs and evidence production the simplest possible practical “minimum viable product”.
+- Add explicit evidence quality stages (rerank and filter) that are easy to compose, test, and evaluate.
+- Expand retrieval evaluation so it is easy to compare backends using the same corpora and datasets.
+
+Lower-priority work related to corpus ingestion conveniences and extractor evaluation remains valuable, but it is deferred while we make retrieval practical end to end.
+
 ## Milestones
 
-### Milestone 1: Portable Document Format text extraction plugin
+### Milestone 1: Artifact lifecycle and storage layout
 
-Goal: extract usable text from Portable Document Format items without mutating raw corpus files.
+Goal: make derived artifacts easy to inspect, compare, and retain across multiple extraction implementations.
 
-Deliverables:
-
-- A new extractor plugin that produces extracted text artifacts for Portable Document Format items.
-- A dataset and evaluation approach that compares extractor outputs for accuracy, speed, and cost.
-
-Acceptance checks:
-
-- New behavior specifications describe the supported Portable Document Format subset.
-- `python3 scripts/test.py` reports 100 percent coverage.
-- `python3 scripts/test.py --integration` downloads sample Portable Document Format files and produces extracted text artifacts.
-
-Status:
-
-- The first extractor plugin exists as `pdf-text`.
-- The evaluation dataset and metrics are still pending.
-
-### Milestone 2: Optical character recognition plugin
-
-Goal: extract usable text from image items as derived artifacts, with pluggable providers.
+Status: complete.
 
 Deliverables:
 
-- One local reference implementation, even if it is limited.
-- A provider interface that can be backed by a local engine or a remote service.
-- Evaluation metrics that report throughput and error rates.
-- The optical character recognition plugin composes with selection extractor steps so you can compare it against other extractors.
-- Additional speech to text plugins for audio items are planned as sibling milestones, using the same extraction pipeline and artifact layout.
+- A stable on-disk layout for extracted artifacts that partitions by extraction recipe and extractor identity.
+- A clear, human-readable manifest for each extraction run that includes configuration, timing, and summary stats.
+- Corpus-level tooling to list, inspect, and delete derived artifacts without touching raw items.
 
 Acceptance checks:
 
-- A small corpus of test images can be downloaded by an integration script.
-- Extraction runs record success, empty output, and skip counts per item.
+- Raw items remain readable, portable files in `raw/`.
+- Derived artifacts can coexist for multiple extractors and multiple recipes over the same raw items.
+- Behavior specifications cover artifact layout and lifecycle operations.
 
-Status:
+### Milestone 2: Idempotency and change detection
 
-- A reference extractor exists as `ocr-rapidocr`.
-- Integration downloads include a deterministic blank image for stable empty-output cases.
+Goal: make extraction runs repeatable, fast, and safe by skipping work when nothing relevant changed.
 
-### Milestone 3: Catchall extraction for wide format coverage
-
-Goal: provide a last-resort extractor with broad file format support, while keeping it optional.
+Status: complete.
 
 Deliverables:
 
-- A catchall extractor plugin backed by the `unstructured` library.
-- Integration coverage that validates Unstructured can extract usable text from at least one non-text format that other built-in extractors do not handle.
-- Clear test gating so the base integration suite remains deterministic and does not require large optional dependencies.
+- Change detection for extraction inputs (raw bytes identity) and extraction settings (extractor identity and configuration).
+- Extraction run behavior that cleanly separates “skipped because already present” from “skipped because unsupported”.
+- A simple “rebuild” workflow that is explicit and safe: delete an extraction run, then build it again.
 
 Acceptance checks:
 
-- `python3 scripts/test.py --integration` passes without installing Unstructured.
-- `python3 scripts/test.py --integration --unstructured` passes when `biblicus[unstructured]` is installed.
+- Running the same extraction recipe twice produces the same outputs and reports predictable skip counts.
+- Behavior specifications cover idempotency and change detection outcomes.
 
-Status:
+### Milestone 3: Failure semantics and reporting
 
-- The extractor exists as `unstructured`.
-- The mixed integration corpus includes a `.docx` sample that Unstructured can extract.
+Goal: make extraction outcomes diagnosable and measurable without reading log output.
 
-### Milestone 4: Selection policies for competing extractors (next)
-
-Goal: make extractor choice explicit, reproducible, and testable when multiple extractors can produce text for the same item.
+Status: complete.
 
 Deliverables:
 
-- A selection extractor that can choose among prior pipeline outputs using an explicit policy.
-- Provenance that records which step produced the chosen output and why it was chosen.
+- A clear set of extraction outcome categories (success, empty output, skipped, fatal error) with structured reasons.
+- Per-run reporting that summarizes outcomes and provides a path to per-item details.
+- Consistent, user-facing errors when optional dependencies or required configuration are missing.
 
 Acceptance checks:
 
-- Behavior specifications cover selection policy behavior and tie-breaking.
-- The selection policy is implemented as an extractor step so it is versioned as part of the extraction run.
+- Behavior specifications cover error classification and summary reporting.
+- Reports remain deterministic for the same corpus and recipe.
 
-Status:
+### Milestone 4: Corpus import and crawl utilities
 
-- A minimal selection step exists as `select-text` (first usable output).
-- A deterministic content-based selection step exists as `select-longest-text` (longest usable output).
-- A quality-aware selection step remains a next milestone.
+Goal: make it easy to build a corpus from real-world sources while keeping the corpus readable and portable.
 
-### Milestone 5: Scanned Portable Document Format extraction (next)
-
-Goal: extract usable text from scanned Portable Document Format files using optical character recognition, without mutating raw files.
+Status: complete.
 
 Deliverables:
 
-- A scanned Portable Document Format sample that contains no extractable text via `pdf-text`.
-- An optical character recognition based pipeline that produces usable text from that same file.
-- A comparison story that makes it easy to evaluate `pdf-text`, optical character recognition, and Unstructured against the same raw item.
+- Folder tree import ergonomics: stable naming, media type detection, and predictable metadata sidecars.
+- A website crawl command that stays within an allow-listed uniform resource locator prefix and respects `.biblicusignore`.
+- Integration downloads that produce a small, realistic, repeatable corpus for experimentation without committing third-party content to the repository.
 
 Acceptance checks:
 
-- Integration coverage includes a scanned Portable Document Format case and verifies expected differences across extractors.
-- The pipeline remains composable: optical character recognition is independent from retrieval backends and independent from Unstructured.
+- The crawl and import workflows are fully specified with behavior specifications.
+- Integration corpora remain gitignored, and can be regenerated from scripts.
 
 ### Milestone 6: Evidence quality stages
 
 Goal: add explicit rerank and filter stages to retrieval.
+
+Status: next.
 
 Deliverables:
 
@@ -143,6 +129,8 @@ Acceptance checks:
 
 Goal: make evaluation results easier to interpret and compare.
 
+Status: next.
+
 Deliverables:
 
 - A dataset authoring workflow that supports small hand labeled sets and larger synthetic sets.
@@ -156,6 +144,8 @@ Acceptance checks:
 ### Milestone 8: Pluggable backend hosting modes
 
 Goal: add one reference backend in an external process or remote service mode.
+
+Status: later.
 
 Deliverables:
 
@@ -172,3 +162,39 @@ Acceptance checks:
 Design notes live in `docs/` so they are easy to browse and cross link.
 
 Executable behavior lives in `features/*.feature`.
+
+## Completed milestones (version zero)
+
+These milestones are complete as of version zero, and are maintained through behavior specifications:
+
+- Portable Document Format text extraction (`pdf-text`).
+- Optical character recognition extraction (`ocr-rapidocr`).
+- Catchall extraction for wide format coverage (`unstructured`).
+- Selection extractor steps (`select-text`, `select-longest-text`).
+
+## Completed milestones (post version zero)
+
+These milestones are complete after version zero, and remain defined by behavior specifications:
+
+- Extraction run lifecycle operations (`extract list`, `extract show`, `extract delete`) and a stable artifact layout.
+- Deterministic extraction run identifiers based on recipe and catalog version (idempotent extraction runs).
+- Crawl ingestion (`crawl`) with allow-listed prefix enforcement and `.biblicusignore` filtering.
+
+## Deferred milestones
+
+These milestones remain planned, but are not the near-term focus.
+
+### Milestone 5: Extractor datasets and evaluation harness (deferred)
+
+Goal: compare extraction approaches in a way that is measurable, repeatable, and useful for practical engineering decisions.
+
+Deliverables:
+
+- Dataset authoring workflow for extraction ground truth (for example: expected transcripts and expected optical character recognition text).
+- Evaluation metrics for accuracy, speed, and cost, including “processable fraction” for a given extractor recipe.
+- A report format that can compare multiple extraction recipes against the same corpus and dataset.
+
+Acceptance checks:
+
+- Evaluation results are stable and reproducible for the same corpus and dataset inputs.
+- Reports make it clear when an extractor fails to process an item versus producing empty output.

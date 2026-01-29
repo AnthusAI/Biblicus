@@ -87,6 +87,13 @@ def _build_step_spec(extractor_id: str, config: dict[str, object]) -> str:
     inline_pairs = ",".join(f"{key}={value}" for key, value in config.items())
     return f"{extractor_id}:{inline_pairs}"
 
+def _run_reference_from_context(context) -> str:
+    extractor_id = context.last_extractor_id
+    run_id = context.last_extraction_run_id
+    assert isinstance(extractor_id, str) and extractor_id
+    assert isinstance(run_id, str) and run_id
+    return f"{extractor_id}:{run_id}"
+
 
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}" with config:')
 def step_build_extraction_run_with_config(context, extractor_id: str, corpus_name: str) -> None:
@@ -96,7 +103,7 @@ def step_build_extraction_run_with_config(context, extractor_id: str, corpus_nam
         key, value = _table_key_value(row)
         step_config[key] = value
     step_spec = _build_step_spec(extractor_id, step_config)
-    args = ["--corpus", str(corpus), "extract", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_run = _parse_json_output(result.stdout)
@@ -108,7 +115,7 @@ def step_build_extraction_run_with_config(context, extractor_id: str, corpus_nam
 def step_build_pipeline_extraction_run(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
-    args = ["--corpus", str(corpus), "extract"]
+    args = ["--corpus", str(corpus), "extract", "build"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
         step_config = step["config"]
@@ -125,7 +132,7 @@ def step_build_pipeline_extraction_run(context, corpus_name: str) -> None:
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}"')
 def step_build_extraction_run(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_run = _parse_json_output(result.stdout)
@@ -136,7 +143,7 @@ def step_build_extraction_run(context, extractor_id: str, corpus_name: str) -> N
 @when('I attempt to build a "{extractor_id}" extraction run in corpus "{corpus_name}"')
 def step_attempt_build_extraction_run(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -148,7 +155,7 @@ def step_attempt_build_extraction_run_with_step_spec(
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
-    args = ["--corpus", str(corpus), "extract", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -156,7 +163,7 @@ def step_attempt_build_extraction_run_with_step_spec(
 def step_attempt_build_pipeline_extraction_run(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
-    args = ["--corpus", str(corpus), "extract"]
+    args = ["--corpus", str(corpus), "extract", "build"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
         step_config = step["config"]
@@ -164,6 +171,31 @@ def step_attempt_build_pipeline_extraction_run(context, corpus_name: str) -> Non
         step_spec = _build_step_spec(extractor_id, step_config)
         args.extend(["--step", step_spec])
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+
+
+@when('I remember the last extraction run reference as "{name}"')
+def step_remember_last_extraction_run_reference(context, name: str) -> None:
+    remembered = getattr(context, "remembered_extraction_run_references", None)
+    if remembered is None:
+        remembered = {}
+        context.remembered_extraction_run_references = remembered
+    remembered[name] = _run_reference_from_context(context)
+
+
+@then('the last extraction run reference equals "{name}"')
+def step_last_extraction_run_reference_equals(context, name: str) -> None:
+    remembered = getattr(context, "remembered_extraction_run_references", {})
+    expected = remembered.get(name)
+    assert isinstance(expected, str) and expected
+    assert _run_reference_from_context(context) == expected
+
+
+@then('the last extraction run reference does not equal "{name}"')
+def step_last_extraction_run_reference_not_equals(context, name: str) -> None:
+    remembered = getattr(context, "remembered_extraction_run_references", {})
+    expected = remembered.get(name)
+    assert isinstance(expected, str) and expected
+    assert _run_reference_from_context(context) != expected
 
 
 @then('the extraction run artifacts exist under the corpus for extractor "{extractor_id}"')
