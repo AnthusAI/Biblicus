@@ -4,13 +4,13 @@ Pass-through extractor for text items.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
 from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
-from ..models import CatalogItem, ExtractedText
+from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
 
@@ -45,10 +45,16 @@ class PassThroughTextExtractor(TextExtractor):
         :return: Parsed config.
         :rtype: PassThroughTextExtractorConfig
         """
-
         return PassThroughTextExtractorConfig.model_validate(config)
 
-    def extract_text(self, *, corpus: Corpus, item: CatalogItem, config: BaseModel) -> Optional[ExtractedText]:
+    def extract_text(
+        self,
+        *,
+        corpus: Corpus,
+        item: CatalogItem,
+        config: BaseModel,
+        previous_extractions: List[ExtractionStepOutput],
+    ) -> Optional[ExtractedText]:
         """
         Extract text by reading the raw item content from the corpus.
 
@@ -58,11 +64,13 @@ class PassThroughTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: PassThroughTextExtractorConfig
+        :param previous_extractions: Prior step outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
         :return: Extracted text payload, or None if the item is not text.
         :rtype: ExtractedText or None
         """
-
         _ = config
+        _ = previous_extractions
         media_type = item.media_type
         if media_type != "text/markdown" and not media_type.startswith("text/"):
             return None
@@ -71,4 +79,6 @@ class PassThroughTextExtractor(TextExtractor):
             markdown_text = raw_bytes.decode("utf-8")
             parsed_document = parse_front_matter(markdown_text)
             return ExtractedText(text=parsed_document.body, producer_extractor_id=self.extractor_id)
-        return ExtractedText(text=raw_bytes.decode("utf-8"), producer_extractor_id=self.extractor_id)
+        return ExtractedText(
+            text=raw_bytes.decode("utf-8"), producer_extractor_id=self.extractor_id
+        )

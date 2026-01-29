@@ -56,8 +56,13 @@ def main() -> int:
     """
     Execute Behave under coverage and emit Hypertext Markup Language reports.
 
-    By default, scenarios tagged ``@integration`` are excluded. Use ``--integration`` to
-    include them.
+    By default, scenarios tagged ``@integration`` are excluded.
+
+    Use ``--integration`` to include integration scenarios. Optical character recognition
+    scenarios are tagged ``@ocr`` and are excluded unless you also pass ``--ocr``.
+
+    Scenarios that require the optional Unstructured dependency are tagged ``@unstructured``
+    and are excluded unless you also pass ``--unstructured``.
 
     :return: Exit code.
     :rtype: int
@@ -69,6 +74,16 @@ def main() -> int:
         action="store_true",
         help="Include scenarios tagged @integration.",
     )
+    parser.add_argument(
+        "--ocr",
+        action="store_true",
+        help="Include optical character recognition integration scenarios tagged @ocr.",
+    )
+    parser.add_argument(
+        "--unstructured",
+        action="store_true",
+        help="Include Unstructured integration scenarios tagged @unstructured.",
+    )
     args = parser.parse_args()
 
     repo_root = _repo_root()
@@ -78,7 +93,13 @@ def main() -> int:
 
     _run([sys.executable, "-m", "coverage", "erase"], env=env)
 
-    behave_args = [] if args.integration else ["--tags", "~@integration"]
+    behave_args: list[str] = []
+    if not args.integration:
+        behave_args.extend(["--tags", "~@integration"])
+    elif not args.ocr:
+        behave_args.extend(["--tags", "~@ocr"])
+    if args.integration and not args.unstructured:
+        behave_args.extend(["--tags", "~@unstructured"])
     rc = _run([sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args], env=env)
     _run([sys.executable, "-m", "coverage", "report", "-m"], env=env)
     _run([sys.executable, "-m", "coverage", "html", "-d", str(htmlcov_dir)], env=env)

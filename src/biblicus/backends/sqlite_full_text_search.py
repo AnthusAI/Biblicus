@@ -12,9 +12,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..constants import CORPUS_DIR_NAME, RUNS_DIR_NAME
 from ..corpus import Corpus
-from ..extraction import ExtractionRunReference, parse_extraction_run_reference
 from ..frontmatter import parse_front_matter
-from ..models import Evidence, QueryBudget, RetrievalResult, RetrievalRun
+from ..models import (
+    Evidence,
+    ExtractionRunReference,
+    QueryBudget,
+    RetrievalResult,
+    RetrievalRun,
+    parse_extraction_run_reference,
+)
 from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
 from ..time import utc_now_iso
 
@@ -51,7 +57,9 @@ class SqliteFullTextSearchBackend:
 
     backend_id = "sqlite-full-text-search"
 
-    def build_run(self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]) -> RetrievalRun:
+    def build_run(
+        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
+    ) -> RetrievalRun:
         """
         Build a full-text search version five index for the corpus.
 
@@ -64,7 +72,6 @@ class SqliteFullTextSearchBackend:
         :return: Run manifest describing the build.
         :rtype: RetrievalRun
         """
-
         recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(config)
         catalog = corpus.load_catalog()
         recipe = create_recipe_manifest(
@@ -110,7 +117,6 @@ class SqliteFullTextSearchBackend:
         :return: Retrieval results containing evidence.
         :rtype: RetrievalResult
         """
-
         recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(run.recipe.config)
         db_path = _resolve_run_db_path(corpus, run)
         candidates = _query_full_text_search_index(
@@ -156,7 +162,6 @@ def _candidate_limit(max_total_items: int) -> int:
     :return: Candidate limit for backend search.
     :rtype: int
     """
-
     return max_total_items * 5
 
 
@@ -172,7 +177,6 @@ def _resolve_run_db_path(corpus: Corpus, run: RetrievalRun) -> Path:
     :rtype: Path
     :raises FileNotFoundError: If the run does not have artifact paths.
     """
-
     if not run.artifact_paths:
         raise FileNotFoundError("Run has no artifact paths to query")
     return corpus.root / run.artifact_paths[0]
@@ -188,7 +192,6 @@ def _ensure_full_text_search_version_five(conn: sqlite3.Connection) -> None:
     :rtype: None
     :raises RuntimeError: If full-text search version five support is unavailable.
     """
-
     try:
         cursor = conn.execute(
             "CREATE VIRTUAL TABLE IF NOT EXISTS chunks_full_text_search USING fts5(content)"
@@ -210,7 +213,6 @@ def _create_full_text_search_schema(conn: sqlite3.Connection) -> None:
     :return: None.
     :rtype: None
     """
-
     conn.execute(
         """
         CREATE VIRTUAL TABLE chunks_full_text_search USING fts5(
@@ -249,7 +251,6 @@ def _build_full_text_search_index(
     :return: Index statistics.
     :rtype: dict[str, int]
     """
-
     if db_path.exists():
         db_path.unlink()
     connection = sqlite3.connect(str(db_path))
@@ -339,7 +340,6 @@ def _load_text_from_item(
     :return: Text payload or None if not text.
     :rtype: str or None
     """
-
     if extraction_reference:
         extracted_text = corpus.read_extracted_text(
             extractor_id=extraction_reference.extractor_id,
@@ -375,7 +375,6 @@ def _resolve_extraction_reference(
     :rtype: ExtractionRunReference or None
     :raises FileNotFoundError: If an extraction run is referenced but not present.
     """
-
     if not recipe_config.extraction_run:
         return None
     extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
@@ -388,7 +387,9 @@ def _resolve_extraction_reference(
     return extraction_reference
 
 
-def _iter_chunks(text: str, *, chunk_size: int, chunk_overlap: int) -> Iterable[Tuple[int, int, str]]:
+def _iter_chunks(
+    text: str, *, chunk_size: int, chunk_overlap: int
+) -> Iterable[Tuple[int, int, str]]:
     """
     Yield overlapping chunks of text for indexing.
 
@@ -402,7 +403,6 @@ def _iter_chunks(text: str, *, chunk_size: int, chunk_overlap: int) -> Iterable[
     :rtype: Iterable[tuple[int, int, str]]
     :raises ValueError: If the overlap is greater than or equal to the chunk size.
     """
-
     if chunk_overlap >= chunk_size:
         raise ValueError("chunk_overlap must be smaller than chunk_size")
     start_offset = 0
@@ -435,7 +435,6 @@ def _query_full_text_search_index(
     :return: Evidence candidates.
     :rtype: list[Evidence]
     """
-
     connection = sqlite3.connect(str(db_path))
     try:
         rows = connection.execute(

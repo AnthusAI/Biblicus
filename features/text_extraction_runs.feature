@@ -1,26 +1,26 @@
 Feature: Text extraction runs
   Text extraction is a separate, pluggable pipeline stage that produces derived text artifacts.
-  Extracted text artifacts are stored under the corpus and can coexist for multiple extractor plugins.
+  Extracted text artifacts are stored under the corpus and can coexist for multiple pipeline runs.
 
   Scenario: Build an extraction run that writes per-item text artifacts
     Given I initialized a corpus at "corpus"
     And a binary file "image.png" exists
     When I ingest the file "image.png" with tags "extracted from binary" into corpus "corpus"
     And I build a "metadata-text" extraction run in corpus "corpus"
-    Then the extraction run artifacts exist under the corpus for extractor "metadata-text"
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline"
     And the extraction run includes extracted text for the last ingested item
     And the extracted text for the last ingested item equals "tags: extracted from binary"
     And the extraction run stats include total_items 1
     And the extraction run stats include needs_extraction_items 1
     And the extraction run stats include converted_items 1
 
-  Scenario: Extraction artifacts are retained for multiple extractor plugins
+  Scenario: Extraction artifacts are retained for multiple pipeline runs
     Given I initialized a corpus at "corpus"
     And a binary file "image.png" exists
     When I ingest the file "image.png" with tags "retained" into corpus "corpus"
     And I build a "metadata-text" extraction run in corpus "corpus"
     And I build a "metadata-text" extraction run in corpus "corpus"
-    Then the corpus has at least 2 extraction runs for extractor "metadata-text"
+    Then the corpus has at least 2 extraction runs for extractor "pipeline"
 
   Scenario: Empty extracted text is recorded as empty output
     Given I initialized a corpus at "corpus"
@@ -43,7 +43,7 @@ Feature: Text extraction runs
     And a binary file "image.png" exists
     When I ingest the file "image.png" into corpus "corpus"
     And I build a "pass-through-text" extraction run in corpus "corpus"
-    Then the extraction run artifacts exist under the corpus for extractor "pass-through-text"
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline"
     And the extraction run does not include extracted text for the last ingested item
     And the extraction run stats include converted_items 0
 
@@ -52,7 +52,7 @@ Feature: Text extraction runs
     And a text file "alpha.txt" exists with contents "alpha"
     When I ingest the file "alpha.txt" into corpus "corpus"
     And I build a "pass-through-text" extraction run in corpus "corpus"
-    Then the extraction run artifacts exist under the corpus for extractor "pass-through-text"
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline"
     And the extraction run includes extracted text for the last ingested item
     And the extracted text for the last ingested item equals "alpha"
 

@@ -4,7 +4,7 @@ from typing import List
 
 from behave import then, when
 
-from biblicus.cli import _parse_config_pairs
+from biblicus.cli import _parse_config_pairs, _parse_step_spec
 
 
 def _table_pairs(rows) -> List[str]:
@@ -55,3 +55,22 @@ def step_config_parse_error(context) -> None:
 @then('the config parsing error mentions "{message}"')
 def step_config_parse_error_message(context, message: str) -> None:
     assert message in str(context.config_parse_error)
+
+
+@when("I attempt to parse an empty step spec")
+def step_attempt_parse_empty_step_spec(context) -> None:
+    try:
+        _parse_step_spec("")
+        context.step_spec_parse_error = None
+    except ValueError as exc:
+        context.step_spec_parse_error = exc
+
+
+@then("a step spec parsing error is raised")
+def step_step_spec_parse_error(context) -> None:
+    assert context.step_spec_parse_error is not None
+
+
+@then('the step spec parsing error mentions "{message}"')
+def step_step_spec_parse_error_message(context, message: str) -> None:
+    assert message in str(context.step_spec_parse_error)

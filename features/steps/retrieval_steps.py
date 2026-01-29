@@ -75,7 +75,10 @@ def _build_evidence_items(texts: Iterable[str]) -> List[Evidence]:
 @when('I build a "{backend}" retrieval run in corpus "{corpus_name}"')
 def step_build_run(context, backend: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    result = run_biblicus(context, ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"])
+    result = run_biblicus(
+        context,
+        ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"],
+    )
     assert result.returncode == 0, result.stderr
     context.last_run = _parse_json_output(result.stdout)
     context.last_run_id = context.last_run.get("run_id")
@@ -174,7 +177,9 @@ def step_run_stats_chunks(context, count: int) -> None:
 def step_create_eval_dataset(context, filename: str) -> None:
     assert context.ingested_ids
     last_id = context.ingested_ids[-1]
-    previous_id = context.ingested_ids[-2] if len(context.ingested_ids) > 1 else context.ingested_ids[-1]
+    previous_id = (
+        context.ingested_ids[-2] if len(context.ingested_ids) > 1 else context.ingested_ids[-1]
+    )
     queries = []
     for idx, row in enumerate(context.table, start=1):
         query_text = row["query_text"] if "query_text" in row.headings else row[0]
@@ -353,10 +358,14 @@ def step_scan_snippet_is(context, snippet: str) -> None:
     assert context.scan_snippet == expected
 
 
-@when('I split text "{text}" into sqlite chunks with size {chunk_size:d} and overlap {chunk_overlap:d}')
+@when(
+    'I split text "{text}" into sqlite chunks with size {chunk_size:d} and overlap {chunk_overlap:d}'
+)
 def step_split_sqlite_chunks(context, text: str, chunk_size: int, chunk_overlap: int) -> None:
     normalized_text = _normalize_empty_text(text)
-    context.sqlite_chunks = list(_iter_chunks(normalized_text, chunk_size=chunk_size, chunk_overlap=chunk_overlap))
+    context.sqlite_chunks = list(
+        _iter_chunks(normalized_text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    )
 
 
 @then("the sqlite chunk count is {count:d}")
@@ -493,7 +502,62 @@ def step_download_pdf_corpus(context, corpus_name: str) -> None:
     assert result.returncode == 0, result.stderr
 
 
+@when('I download a mixed corpus into "{corpus_name}"')
+def step_download_mixed_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        ["python3", "scripts/download_mixed_samples.py", "--corpus", str(corpus), "--force"],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@when('I download an audio corpus into "{corpus_name}"')
+def step_download_audio_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        ["python3", "scripts/download_audio_samples.py", "--corpus", str(corpus), "--force"],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@when('I download an image corpus into "{corpus_name}"')
+def step_download_image_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        ["python3", "scripts/download_image_samples.py", "--corpus", str(corpus), "--force"],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 @then("the corpus contains at least {count:d} items")
 def step_corpus_contains_items(context, count: int) -> None:
     catalog = Corpus.open(_corpus_path(context, "corpus")).load_catalog()
     assert len(catalog.items) >= count
+
+
+@then('the corpus contains at least {count:d} item with media type "{media_type}"')
+@then('the corpus contains at least {count:d} items with media type "{media_type}"')
+def step_corpus_contains_items_with_media_type(context, count: int, media_type: str) -> None:
+    catalog = Corpus.open(_corpus_path(context, "corpus")).load_catalog()
+    matching = [item for item in catalog.items.values() if item.media_type == media_type]
+    assert len(matching) >= count
+
+
+@then('the corpus contains at least {count:d} item tagged "{tag}"')
+@then('the corpus contains at least {count:d} items tagged "{tag}"')
+def step_corpus_contains_items_with_tag(context, count: int, tag: str) -> None:
+    catalog = Corpus.open(_corpus_path(context, "corpus")).load_catalog()
+    matching = [item for item in catalog.items.values() if tag in item.tags]
+    assert len(matching) >= count

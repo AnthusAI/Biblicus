@@ -21,7 +21,6 @@ def _looks_like_uri(value: str) -> bool:
     :return: True if the string has a valid uniform resource identifier scheme prefix.
     :rtype: bool
     """
-
     return "://" in value and value.split("://", 1)[0].isidentifier()
 
 
@@ -34,7 +33,6 @@ def _filename_from_url_path(path: str) -> str:
     :return: Filename or a fallback name.
     :rtype: str
     """
-
     filename = Path(unquote(path)).name
     return filename or "download"
 
@@ -48,7 +46,6 @@ def _media_type_from_filename(name: str) -> str:
     :return: Guessed media type or application/octet-stream.
     :rtype: str
     """
-
     media_type, _ = mimetypes.guess_type(name)
     return media_type or "application/octet-stream"
 
@@ -62,7 +59,6 @@ def _sniff_media_type_from_bytes(data: bytes) -> Optional[str]:
     :return: Detected media type or None.
     :rtype: str or None
     """
-
     prefix = data[:32]
     if prefix.startswith(b"%PDF-"):
         return "application/pdf"
@@ -70,9 +66,44 @@ def _sniff_media_type_from_bytes(data: bytes) -> Optional[str]:
         return "image/png"
     if prefix[:3] == b"\xff\xd8\xff":
         return "image/jpeg"
-    if prefix.lstrip().lower().startswith(b"<!doctype html") or prefix.lstrip().lower().startswith(b"<html"):
+    if prefix.startswith(b"RIFF") and prefix[8:12] == b"WAVE":
+        return "audio/x-wav"
+    if prefix.startswith(b"ID3") or (
+        len(prefix) >= 2 and prefix[0] == 0xFF and (prefix[1] & 0xE0) == 0xE0
+    ):
+        return "audio/mpeg"
+    if prefix.startswith(b"OggS"):
+        return "audio/ogg"
+    if prefix.lstrip().lower().startswith(b"<!doctype html") or prefix.lstrip().lower().startswith(
+        b"<html"
+    ):
         return "text/html"
     return None
+
+
+def _normalize_media_type(*, filename: str, media_type: str) -> str:
+    """
+    Normalize media types that are commonly mislabelled by upstream sources.
+
+    This function exists to keep the corpus usable for humans. When a source provides a filename
+    extension that users recognize (for example, ``.ogg``), Biblicus prefers a matching media type
+    so that downstream processing can make reasonable decisions.
+
+    :param filename: Filename associated with the payload.
+    :type filename: str
+    :param media_type: Media type reported or guessed for the payload.
+    :type media_type: str
+    :return: Normalized media type.
+    :rtype: str
+    """
+    suffix = Path(filename).suffix.lower()
+    if media_type in {"application/ogg", "application/x-ogg"} and suffix in {
+        ".ogg",
+        ".oga",
+        ".ogx",
+    }:
+        return "audio/ogg"
+    return media_type
 
 
 def _ensure_extension_for_media_type(filename: str, media_type: str) -> str:
@@ -86,10 +117,12 @@ def _ensure_extension_for_media_type(filename: str, media_type: str) -> str:
     :return: Filename with extension.
     :rtype: str
     """
-
     if Path(filename).suffix:
         return filename
-    ext = mimetypes.guess_extension(media_type) or ""
+    if media_type == "audio/ogg":
+        ext = ".ogg"
+    else:
+        ext = mimetypes.guess_extension(media_type) or ""
     return filename + ext if ext else filename
 
 
@@ -127,7 +160,6 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
     :raises ValueError: If a file:// uniform resource identifier has a non-local host.
     :raises NotImplementedError: If the uniform resource identifier scheme is unsupported.
     """
-
     if isinstance(source, Path):
         path = source.resolve()
         media_type = _media_type_from_filename(path.name)
@@ -144,7 +176,9 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
         parsed = urlparse(source)
         if parsed.scheme == "file":
             if parsed.netloc not in ("", "localhost"):
-                raise ValueError(f"Unsupported file uniform resource identifier host: {parsed.netloc!r}")
+                raise ValueError(
+                    f"Unsupported file uniform resource identifier host: {parsed.netloc!r}"
+                )
             path = Path(unquote(parsed.path)).resolve()
             return load_source(path, source_uri=source_uri or source)
 
@@ -160,6 +194,7 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
                     if sniffed:
                         media_type = sniffed
                         filename = _ensure_extension_for_media_type(filename, media_type)
+                media_type = _normalize_media_type(filename=filename, media_type=media_type)
                 if Path(filename).suffix.lower() in {".md", ".markdown"}:
                     media_type = "text/markdown"
                 return SourcePayload(

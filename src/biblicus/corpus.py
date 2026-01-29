@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 import yaml
+from pydantic import ValidationError
 
 from .constants import (
     CORPUS_DIR_NAME,
@@ -23,15 +24,13 @@ from .constants import (
     SIDECAR_SUFFIX,
 )
 from .frontmatter import parse_front_matter, render_front_matter
-from pydantic import ValidationError
-
 from .hook_manager import HookManager
 from .hooks import HookPoint
 from .ignore import load_corpus_ignore_spec
 from .models import CatalogItem, CorpusCatalog, CorpusConfig, IngestResult, RetrievalRun
 from .sources import load_source
 from .time import utc_now_iso
-from .uris import normalize_corpus_uri, corpus_ref_to_path
+from .uris import corpus_ref_to_path, normalize_corpus_uri
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -43,11 +42,12 @@ def _sha256_bytes(data: bytes) -> str:
     :return: Secure Hash Algorithm 256 hex digest.
     :rtype: str
     """
-
     return hashlib.sha256(data).hexdigest()
 
 
-def _write_stream_and_hash(stream, destination_path: Path, *, chunk_size: int = 1024 * 1024) -> Dict[str, object]:
+def _write_stream_and_hash(
+    stream, destination_path: Path, *, chunk_size: int = 1024 * 1024
+) -> Dict[str, object]:
     """
     Write a binary stream to disk while computing a digest.
 
@@ -61,7 +61,6 @@ def _write_stream_and_hash(stream, destination_path: Path, *, chunk_size: int = 
     :rtype: dict[str, object]
     :raises OSError: If the destination cannot be written.
     """
-
     hasher = hashlib.sha256()
     bytes_written = 0
     with destination_path.open("wb") as destination_handle:
@@ -84,7 +83,6 @@ def _sanitize_filename(name: str) -> str:
     :return: Sanitized filename.
     :rtype: str
     """
-
     allowed_characters = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._() ")
     sanitized_name = "".join(
         (character if character in allowed_characters else "_") for character in name
@@ -101,9 +99,9 @@ def _preferred_extension_for_media_type(media_type: str) -> Optional[str]:
     :return: Preferred extension or None.
     :rtype: str or None
     """
-
     media_type_overrides = {
         "image/jpeg": ".jpg",
+        "audio/ogg": ".ogg",
     }
     if media_type in media_type_overrides:
         return media_type_overrides[media_type]
@@ -121,7 +119,6 @@ def _ensure_filename_extension(filename: str, *, media_type: str) -> str:
     :return: Filename with a compatible extension.
     :rtype: str
     """
-
     raw_name = filename.strip()
 
     if media_type == "text/markdown":
@@ -129,10 +126,11 @@ def _ensure_filename_extension(filename: str, *, media_type: str) -> str:
             return raw_name
         return raw_name + ".md"
 
+    if Path(raw_name).suffix:
+        return raw_name
+
     ext = _preferred_extension_for_media_type(media_type)
     if not ext:
-        return raw_name
-    if raw_name.lower().endswith(ext.lower()):
         return raw_name
     return raw_name + ext
 
@@ -148,7 +146,6 @@ def _merge_tags(explicit: Sequence[str], from_frontmatter: Any) -> List[str]:
     :return: Deduplicated tag list preserving order.
     :rtype: list[str]
     """
-
     merged_tags: List[str] = []
 
     for explicit_tag in explicit:
@@ -181,7 +178,6 @@ def _sidecar_path_for(content_path: Path) -> Path:
     :return: Sidecar path.
     :rtype: Path
     """
-
     return content_path.with_name(content_path.name + SIDECAR_SUFFIX)
 
 
@@ -195,7 +191,6 @@ def _load_sidecar(content_path: Path) -> Dict[str, Any]:
     :rtype: dict[str, Any]
     :raises ValueError: If the sidecar content is not a mapping.
     """
-
     path = _sidecar_path_for(content_path)
     if not path.is_file():
         return {}
@@ -226,7 +221,9 @@ def _write_sidecar(content_path: Path, metadata: Dict[str, Any]) -> None:
     path.write_text(text + "\n", encoding="utf-8")
 
 
-def _ensure_biblicus_block(metadata: Dict[str, Any], *, item_id: str, source_uri: str) -> Dict[str, Any]:
+def _ensure_biblicus_block(
+    metadata: Dict[str, Any], *, item_id: str, source_uri: str
+) -> Dict[str, Any]:
     """
     Ensure the biblicus metadata block exists and is populated.
 
@@ -324,7 +321,6 @@ class Corpus:
         :param root: Corpus root directory.
         :type root: Path
         """
-
         self.root = root
         self.meta_dir = self.root / CORPUS_DIR_NAME
         self.raw_dir = self.root / DEFAULT_RAW_DIR
@@ -339,7 +335,6 @@ class Corpus:
         :return: Corpus uniform resource identifier.
         :rtype: str
         """
-
         return self.root.as_uri()
 
     def _load_config(self) -> Optional[CorpusConfig]:
@@ -350,7 +345,6 @@ class Corpus:
         :rtype: CorpusConfig or None
         :raises ValueError: If the config schema is invalid.
         """
-
         path = self.meta_dir / "config.json"
         if not path.is_file():
             return None
@@ -359,7 +353,9 @@ class Corpus:
             return CorpusConfig.model_validate(data)
         except ValidationError as exc:
             has_hook_error = any(
-                isinstance(error.get("loc"), tuple) and error.get("loc") and error.get("loc")[0] == "hooks"
+                isinstance(error.get("loc"), tuple)
+                and error.get("loc")
+                and error.get("loc")[0] == "hooks"
                 for error in exc.errors()
             )
             if has_hook_error:
@@ -374,7 +370,6 @@ class Corpus:
         :rtype: HookManager or None
         :raises ValueError: If hook specifications are invalid.
         """
-
         if self.config is None or not self.config.hooks:
             return None
         return HookManager.from_config(
@@ -394,7 +389,6 @@ class Corpus:
         :rtype: Corpus
         :raises FileNotFoundError: If no corpus config is found.
         """
-
         start = start.resolve()
         for candidate in [start, *start.parents]:
             if (candidate / CORPUS_DIR_NAME / "config.json").is_file():
@@ -413,7 +407,6 @@ class Corpus:
         :return: Opened corpus instance.
         :rtype: Corpus
         """
-
         return cls.find(corpus_ref_to_path(ref))
 
     @classmethod
@@ -429,7 +422,6 @@ class Corpus:
         :rtype: Corpus
         :raises FileExistsError: If the corpus already exists and force is False.
         """
-
         root = root.resolve()
         corpus = cls(root)
 
@@ -459,7 +451,6 @@ class Corpus:
         :return: Catalog file path.
         :rtype: Path
         """
-
         return self.meta_dir / "catalog.json"
 
     def _init_catalog(self) -> None:
@@ -469,7 +460,6 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-
         if self.catalog_path.exists():
             return
         catalog = CorpusCatalog(
@@ -492,7 +482,6 @@ class Corpus:
         :raises FileNotFoundError: If the catalog file does not exist.
         :raises ValueError: If the catalog schema is invalid.
         """
-
         if not self.catalog_path.is_file():
             raise FileNotFoundError(f"Missing corpus catalog: {self.catalog_path}")
         catalog_data = json.loads(self.catalog_path.read_text(encoding="utf-8"))
@@ -507,7 +496,6 @@ class Corpus:
         :raises FileNotFoundError: If the catalog file does not exist.
         :raises ValueError: If the catalog schema is invalid.
         """
-
         return self._load_catalog()
 
     def _write_catalog(self, catalog: CorpusCatalog) -> None:
@@ -519,7 +507,6 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-
         temp_path = self.catalog_path.with_suffix(".json.tmp")
         temp_path.write_text(catalog.model_dump_json(indent=2) + "\n", encoding="utf-8")
         temp_path.replace(self.catalog_path)
@@ -532,7 +519,6 @@ class Corpus:
         :return: Path to the runs directory.
         :rtype: Path
         """
-
         return self.meta_dir / RUNS_DIR_NAME
 
     @property
@@ -543,7 +529,6 @@ class Corpus:
         :return: Path to the extraction runs directory.
         :rtype: Path
         """
-
         return self.runs_dir / EXTRACTION_RUNS_DIR_NAME
 
     def extraction_run_dir(self, *, extractor_id: str, run_id: str) -> Path:
@@ -557,7 +542,6 @@ class Corpus:
         :return: Extraction run directory.
         :rtype: Path
         """
-
         return self.extraction_runs_dir / extractor_id / run_id
 
     def read_extracted_text(self, *, extractor_id: str, run_id: str, item_id: str) -> Optional[str]:
@@ -574,8 +558,11 @@ class Corpus:
         :rtype: str or None
         :raises OSError: If the file exists but cannot be read.
         """
-
-        path = self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id) / "text" / f"{item_id}.txt"
+        path = (
+            self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id)
+            / "text"
+            / f"{item_id}.txt"
+        )
         if not path.is_file():
             return None
         return path.read_text(encoding="utf-8")
@@ -587,7 +574,6 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-
         self.runs_dir.mkdir(parents=True, exist_ok=True)
 
     def write_run(self, run: RetrievalRun) -> None:
@@ -599,7 +585,6 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-
         self._ensure_runs_dir()
         path = self.runs_dir / f"{run.run_id}.json"
         path.write_text(run.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -618,7 +603,6 @@ class Corpus:
         :rtype: RetrievalRun
         :raises FileNotFoundError: If the run manifest does not exist.
         """
-
         path = self.runs_dir / f"{run_id}.json"
         if not path.is_file():
             raise FileNotFoundError(f"Missing run manifest: {path}")
@@ -633,7 +617,6 @@ class Corpus:
         :return: Latest run identifier or None.
         :rtype: str or None
         """
-
         return self._load_catalog().latest_run_id
 
     def _upsert_catalog_item(self, item: CatalogItem) -> None:
@@ -645,7 +628,6 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-
         self._init_catalog()
         catalog = self._load_catalog()
         catalog.items[item.id] = item
@@ -693,7 +675,6 @@ class Corpus:
         :rtype: IngestResult
         :raises ValueError: If markdown is not Unicode Transformation Format 8.
         """
-
         item_id = str(uuid.uuid4())
         safe_filename = _sanitize_filename(filename) if filename else ""
 
@@ -741,7 +722,9 @@ class Corpus:
             try:
                 markdown_text = data.decode("utf-8")
             except UnicodeDecodeError as decode_error:
-                raise ValueError("Markdown must be Unicode Transformation Format 8") from decode_error
+                raise ValueError(
+                    "Markdown must be Unicode Transformation Format 8"
+                ) from decode_error
 
             parsed_document = parse_front_matter(markdown_text)
             frontmatter = dict(parsed_document.metadata)
@@ -760,7 +743,9 @@ class Corpus:
             if isinstance(title_value, str) and title_value.strip():
                 resolved_title = title_value.strip()
 
-            frontmatter = _ensure_biblicus_block(frontmatter, item_id=item_id, source_uri=source_uri)
+            frontmatter = _ensure_biblicus_block(
+                frontmatter, item_id=item_id, source_uri=source_uri
+            )
             rendered_document = render_front_matter(frontmatter, parsed_document.body)
             data_to_write = rendered_document.encode("utf-8")
         else:
@@ -807,7 +792,9 @@ class Corpus:
                     sidecar_metadata["media_type"] = media_type
                 sidecar_metadata["biblicus"] = {"id": item_id, "source": source_uri}
                 _write_sidecar(output_path, sidecar_metadata)
-                frontmatter = _merge_metadata(frontmatter if isinstance(frontmatter, dict) else {}, sidecar_metadata)
+                frontmatter = _merge_metadata(
+                    frontmatter if isinstance(frontmatter, dict) else {}, sidecar_metadata
+                )
 
         created_at = utc_now_iso()
         item_record = CatalogItem(
@@ -858,7 +845,6 @@ class Corpus:
         :rtype: IngestResult
         :raises ValueError: If the media_type is text/markdown.
         """
-
         if media_type == "text/markdown":
             raise ValueError("Stream ingestion is not supported for Markdown")
 
@@ -972,7 +958,6 @@ class Corpus:
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
-
         data = text.encode("utf-8")
         return self.ingest_item(
             data,
@@ -1003,7 +988,6 @@ class Corpus:
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
-
         candidate_path = Path(source) if isinstance(source, str) and "://" not in source else None
         if isinstance(source, Path) or (candidate_path is not None and candidate_path.exists()):
             path = source if isinstance(source, Path) else candidate_path
@@ -1061,7 +1045,6 @@ class Corpus:
         :raises FileNotFoundError: If the source_root does not exist.
         :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
         """
-
         source_root = source_root.resolve()
         if not source_root.is_dir():
             raise FileNotFoundError(f"Import source root does not exist: {source_root}")
@@ -1111,9 +1094,10 @@ class Corpus:
         :rtype: None
         :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
         """
-
         item_id = str(uuid.uuid4())
-        destination_relpath = str(Path(DEFAULT_RAW_DIR) / "imports" / import_id / relative_source_path)
+        destination_relpath = str(
+            Path(DEFAULT_RAW_DIR) / "imports" / import_id / relative_source_path
+        )
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1176,11 +1160,8 @@ class Corpus:
         :return: Catalog items ordered by recency.
         :rtype: list[CatalogItem]
         """
-
         catalog = self._load_catalog()
-        ordered_ids = (
-            catalog.order[:limit] if catalog.order else list(catalog.items.keys())[:limit]
-        )
+        ordered_ids = catalog.order[:limit] if catalog.order else list(catalog.items.keys())[:limit]
         collected_items: List[CatalogItem] = []
         for item_id in ordered_ids:
             item = catalog.items.get(item_id)
@@ -1198,7 +1179,6 @@ class Corpus:
         :rtype: CatalogItem
         :raises KeyError: If the item identifier is unknown.
         """
-
         catalog = self._load_catalog()
         item = catalog.items.get(item_id)
         if item is None:
@@ -1216,7 +1196,6 @@ class Corpus:
         :rtype: dict[str, int]
         :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
         """
-
         self._init_catalog()
         existing_catalog = self._load_catalog()
         stats = {"scanned": 0, "skipped": 0, "inserted": 0, "updated": 0}
@@ -1291,7 +1270,9 @@ class Corpus:
 
             previous_item = existing_catalog.items.get(item_id)
             created_at = previous_item.created_at if previous_item is not None else utc_now_iso()
-            source_uri = source_uri or (previous_item.source_uri if previous_item is not None else None)
+            source_uri = source_uri or (
+                previous_item.source_uri if previous_item is not None else None
+            )
 
             if previous_item is None:
                 stats["inserted"] += 1
@@ -1338,7 +1319,6 @@ class Corpus:
         :return: Corpus name.
         :rtype: str
         """
-
         return self.root.name
 
     def purge(self, *, confirm: str) -> None:
@@ -1351,10 +1331,11 @@ class Corpus:
         :rtype: None
         :raises ValueError: If the confirmation does not match.
         """
-
         expected = self.name
         if confirm != expected:
-            raise ValueError(f"Confirmation mismatch: pass --confirm {expected!r} to purge this corpus")
+            raise ValueError(
+                f"Confirmation mismatch: pass --confirm {expected!r} to purge this corpus"
+            )
 
         if self.raw_dir.exists():
             shutil.rmtree(self.raw_dir)

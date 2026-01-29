@@ -18,7 +18,6 @@ def available_backends() -> Dict[str, Type[RetrievalBackend]]:
     :return: Mapping of backend identifiers to backend classes.
     :rtype: dict[str, Type[RetrievalBackend]]
     """
-
     return {
         ScanBackend.backend_id: ScanBackend,
         SqliteFullTextSearchBackend.backend_id: SqliteFullTextSearchBackend,
@@ -35,7 +34,6 @@ def get_backend(backend_id: str) -> RetrievalBackend:
     :rtype: RetrievalBackend
     :raises KeyError: If the backend identifier is unknown.
     """
-
     registry = available_backends()
     backend_class = registry.get(backend_id)
     if backend_class is None:

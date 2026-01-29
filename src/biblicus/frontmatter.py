@@ -35,7 +35,6 @@ def parse_front_matter(text: str) -> FrontMatterDocument:
     :rtype: FrontMatterDocument
     :raises ValueError: If front matter is present but not a mapping.
     """
-
     if not text.startswith("---\n"):
         return FrontMatterDocument(metadata={}, body=text)
 
@@ -64,7 +63,6 @@ def render_front_matter(metadata: Dict[str, Any], body: str) -> str:
     :return: Markdown with Yet Another Markup Language front matter.
     :rtype: str
     """
-
     if not metadata:
         return body
 
@@ -87,6 +85,5 @@ def split_markdown_front_matter(path_text: str) -> Tuple[Dict[str, Any], str]:
     :return: Metadata mapping and body text.
     :rtype: tuple[dict[str, Any], str]
     """
-
     parsed_document = parse_front_matter(path_text)
     return parsed_document.metadata, parsed_document.body

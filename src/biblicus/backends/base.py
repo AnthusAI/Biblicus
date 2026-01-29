@@ -22,7 +22,9 @@ class RetrievalBackend(ABC):
     backend_id: str
 
     @abstractmethod
-    def build_run(self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]) -> RetrievalRun:
+    def build_run(
+        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
+    ) -> RetrievalRun:
         """
         Build or register a retrieval run for the backend.
 
@@ -35,7 +37,6 @@ class RetrievalBackend(ABC):
         :return: Run manifest describing the build.
         :rtype: RetrievalRun
         """
-
         raise NotImplementedError
 
     @abstractmethod
@@ -61,5 +62,4 @@ class RetrievalBackend(ABC):
         :return: Retrieval results containing evidence.
         :rtype: RetrievalResult
         """
-
         raise NotImplementedError

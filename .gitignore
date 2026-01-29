@@ -13,3 +13,6 @@ reports/
 venv/
 
 docs/_build/
+
+.biblicus/
+!.biblicus/config.example.yml

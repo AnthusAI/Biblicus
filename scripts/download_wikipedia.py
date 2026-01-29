@@ -112,7 +112,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Download a Wikipedia corpus into Biblicus.")
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
     parser.add_argument("--limit", type=int, default=5, help="Number of pages to download.")
-    parser.add_argument("--force", action="store_true", help="Initialize even if the directory is not empty.")
+    parser.add_argument(
+        "--force", action="store_true", help="Initialize even if the directory is not empty."
+    )
     return parser
 
 

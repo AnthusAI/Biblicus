@@ -94,13 +94,35 @@ Primary implementation:
 - `src/biblicus/hook_manager.py`
 - `src/biblicus/hook_logging.py`
 
+## User configuration files
+
+What it does:
+
+- Loads machine-specific configuration for optional integrations.
+- Supports home and local configuration file locations.
+
+Documentation:
+
+- `docs/USER_CONFIGURATION.md`
+
+Behavior specifications:
+
+- `features/user_config.feature`
+
+Primary implementation:
+
+- `src/biblicus/user_config.py`
+
 ## Text extraction stage
 
 What it does:
 
 - Builds extraction runs as a separate pipeline stage.
 - Stores extracted text artifacts under the corpus so multiple extractors can coexist.
-- Supports an explicit extractor pipeline through the `cascade` extractor.
+- Supports an explicit extractor pipeline through the `pipeline` extractor.
+- Includes a Portable Document Format text extractor plugin.
+- Includes a speech to text extractor plugin for audio items.
+- Includes a selection extractor step for choosing extracted text within a pipeline.
 
 Documentation:
 
@@ -111,6 +133,13 @@ Behavior specifications:
 - `features/text_extraction_runs.feature`
 - `features/extractor_pipeline.feature`
 - `features/extractor_validation.feature`
+- `features/extraction_selection.feature`
+- `features/extraction_selection_longest.feature`
+- `features/extraction_error_handling.feature`
+- `features/ocr_extractor.feature`
+- `features/stt_extractor.feature`
+- `features/unstructured_extractor.feature`
+- `features/integration_unstructured_extraction.feature`
 
 Primary implementation:
 
@@ -186,9 +215,14 @@ Behavior specifications:
 
 - `features/integration_wikipedia.feature`
 - `features/integration_pdf_samples.feature`
+- `features/integration_mixed_corpus.feature`
+- `features/integration_mixed_extraction.feature`
+- `features/integration_pdf_retrieval.feature`
+- `features/integration_audio_samples.feature`
 
 Integration scripts:
 
 - `scripts/download_wikipedia.py`
 - `scripts/download_pdf_samples.py`
-
+- `scripts/download_mixed_samples.py`
+- `scripts/download_audio_samples.py`

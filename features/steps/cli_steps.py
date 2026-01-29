@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import runpy
 import shlex
 import threading
-import hashlib
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -93,7 +93,9 @@ def step_corpus_has_catalog(context) -> None:
     assert len(candidates) == 1
 
 
-@when('I ingest the text "{text}" with title "{title}" and tags "{tags}" into corpus "{corpus_name}"')
+@when(
+    'I ingest the text "{text}" with title "{title}" and tags "{tags}" into corpus "{corpus_name}"'
+)
 def step_ingest_text(context, text: str, title: str, tags: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
@@ -112,8 +114,12 @@ def step_ingest_text_minimal(context, text: str, corpus_name: str) -> None:
     _record_ingest(context, result)
 
 
-@when('I ingest the text "{text}" with title "{title}" and comma-tags "{tags}" into corpus "{corpus_name}"')
-def step_ingest_text_with_tags_csv(context, text: str, title: str, tags: str, corpus_name: str) -> None:
+@when(
+    'I ingest the text "{text}" with title "{title}" and comma-tags "{tags}" into corpus "{corpus_name}"'
+)
+def step_ingest_text_with_tags_csv(
+    context, text: str, title: str, tags: str, corpus_name: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
     args = ["--corpus", str(corpus), "ingest", "--note", text, "--title", title, "--tags", tags]
@@ -136,6 +142,14 @@ def step_ingest_file(context, filename: str, tags: str, corpus_name: str) -> Non
 @when('I ingest the file "{filename}" into corpus "{corpus_name}"')
 def step_ingest_file_no_tags(context, filename: str, corpus_name: str) -> None:
     step_ingest_file(context, filename, "", corpus_name)
+
+
+@when('I ingest the uniform resource locator "{url}" into corpus "{corpus_name}"')
+def step_ingest_url(context, url: str, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    context.last_corpus_root = corpus
+    result = run_biblicus(context, ["--corpus", str(corpus), "ingest", url])
+    _record_ingest(context, result)
 
 
 @then("the last ingest succeeds")
@@ -198,7 +212,9 @@ def step_file_body(context, filename: str) -> None:
 
 @given('a file "{filename}" exists with contents:')
 def step_file_exists_with_contents(context, filename: str) -> None:
-    (context.workdir / filename).write_text(context.text, encoding="utf-8")
+    path = context.workdir / filename
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(context.text, encoding="utf-8")
 
 
 @given('a file "{filename}" exists with bytes:')
@@ -257,7 +273,9 @@ def step_invalid_front_matter_list(context, filename: str) -> None:
     'a raw file with universally unique identifier "{item_id}" exists in corpus "{corpus_name}" named "{name}" with '
     'contents "{contents}"'
 )
-def step_raw_file_with_uuid_exists(context, item_id: str, corpus_name: str, name: str, contents: str) -> None:
+def step_raw_file_with_uuid_exists(
+    context, item_id: str, corpus_name: str, name: str, contents: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     (corpus / "raw").mkdir(parents=True, exist_ok=True)
     (corpus / "raw" / f"{item_id}--{name}").write_text(contents, encoding="utf-8")
@@ -277,7 +295,9 @@ def step_raw_file_with_uuid_exists_doc(context, item_id: str, corpus_name: str, 
     "a raw file with universally unique identifier "
     '"{item_id}" exists in corpus "{corpus_name}" named "{name}" with invalid Unicode Transformation Format 8 bytes'
 )
-def step_raw_file_with_uuid_exists_invalid_utf8(context, item_id: str, corpus_name: str, name: str) -> None:
+def step_raw_file_with_uuid_exists_invalid_utf8(
+    context, item_id: str, corpus_name: str, name: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     (corpus / "raw").mkdir(parents=True, exist_ok=True)
     (corpus / "raw" / f"{item_id}--{name}").write_bytes(b"\xff\xfe\xfa")
@@ -365,6 +385,27 @@ def step_http_server_serving_without_content_type(context) -> None:
     context.http_base_url = f"http://{host}:{port}/"
 
 
+@given(
+    'a hypertext transfer protocol server is serving the workdir with content type "{media_type}"'
+)
+def step_http_server_serving_with_content_type(context, media_type: str) -> None:
+    class ForcedContentTypeHandler(SimpleHTTPRequestHandler):
+        def log_message(self, message_format, *args):
+            return
+
+        def guess_type(self, path: str) -> str:
+            _ = path
+            return media_type
+
+    handler = partial(ForcedContentTypeHandler, directory=str(context.workdir))
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    context.httpd = httpd
+    host, port = httpd.server_address
+    context.http_base_url = f"http://{host}:{port}/"
+
+
 @when('I ingest the file uniform resource locator for "{filename}" into corpus "{corpus_name}"')
 def step_ingest_file_url(context, filename: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
@@ -391,7 +432,9 @@ def step_ingest_http_url(context, filename: str, corpus_name: str) -> None:
     )
 
 
-@then("the last ingested item has biblicus provenance with a file source uniform resource identifier")
+@then(
+    "the last ingested item has biblicus provenance with a file source uniform resource identifier"
+)
 def step_has_file_source_uri(context) -> None:
     assert context.last_ingest is not None
     corpus_root = context.last_corpus_root
@@ -481,7 +524,9 @@ def step_shown_includes_media_type(context, media_type: str) -> None:
     assert context.last_shown.get("media_type") == media_type
 
 
-@then('the shown JavaScript Object Notation includes source uniform resource identifier "{source_uri}"')
+@then(
+    'the shown JavaScript Object Notation includes source uniform resource identifier "{source_uri}"'
+)
 def step_shown_includes_source_uri(context, source_uri: str) -> None:
     assert context.last_shown is not None
     assert context.last_shown.get("source_uri") == source_uri
@@ -499,7 +544,7 @@ def step_shown_has_no_title(context) -> None:
     assert context.last_shown.get("title") in (None, "")
 
 
-@when("I add tag \"{tag}\" to the last ingested item's sidecar metadata")
+@when('I add tag "{tag}" to the last ingested item\'s sidecar metadata')
 def step_add_tag_to_sidecar(context, tag: str) -> None:
     assert context.last_ingest is not None
     relpath = Path(context.last_ingest["relpath"])
@@ -510,7 +555,9 @@ def step_add_tag_to_sidecar(context, tag: str) -> None:
     if tag not in tags:
         tags.append(tag)
     data["tags"] = tags
-    sidecar_path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True).strip() + "\n", encoding="utf-8")
+    sidecar_path.write_text(
+        yaml.safe_dump(data, sort_keys=False, allow_unicode=True).strip() + "\n", encoding="utf-8"
+    )
 
 
 @when('I set the last ingested item\'s sidecar media type to "{media_type}"')
@@ -522,7 +569,9 @@ def step_set_sidecar_media_type(context, media_type: str) -> None:
     data = yaml.safe_load(sidecar_path.read_text(encoding="utf-8")) or {}
     assert isinstance(data, dict)
     data["media_type"] = media_type
-    sidecar_path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True).strip() + "\n", encoding="utf-8")
+    sidecar_path.write_text(
+        yaml.safe_dump(data, sort_keys=False, allow_unicode=True).strip() + "\n", encoding="utf-8"
+    )
 
 
 @when("I write a sidecar for the last ingested item with Yet Another Markup Language:")
@@ -750,7 +799,9 @@ def step_corpus_configured_hook_with_tags(
 @given(
     'the corpus "{corpus_name}" has a configured hook "{hook_id}" for hook point "{hook_point}" with no tags'
 )
-def step_corpus_configured_hook_no_tags(context, corpus_name: str, hook_id: str, hook_point: str) -> None:
+def step_corpus_configured_hook_no_tags(
+    context, corpus_name: str, hook_id: str, hook_point: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     config_path = corpus / ".biblicus" / "config.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -770,7 +821,9 @@ def step_corpus_config_includes_hooks_json(context, corpus_name: str) -> None:
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
 
-@then('the corpus "{corpus_name}" hook logs include a record for hook point "{hook_point}" and hook "{hook_id}"')
+@then(
+    'the corpus "{corpus_name}" hook logs include a record for hook point "{hook_point}" and hook "{hook_id}"'
+)
 def step_hook_logs_include_record(context, corpus_name: str, hook_point: str, hook_id: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     log_dir = corpus / ".biblicus" / "hook_logs"

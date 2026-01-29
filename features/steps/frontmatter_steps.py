@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from behave import then, when
 
-from biblicus.frontmatter import parse_front_matter, render_front_matter, split_markdown_front_matter
+from biblicus.frontmatter import (
+    parse_front_matter,
+    render_front_matter,
+    split_markdown_front_matter,
+)
 
 
 @when('I render front matter with empty metadata and body "{body}"')
@@ -47,4 +51,3 @@ def step_split_meta_title(context, title: str) -> None:
 @then('the split body equals "{body}"')
 def step_split_body_equals(context, body: str) -> None:
     assert context.split_body == body
-

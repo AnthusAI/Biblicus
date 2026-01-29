@@ -41,6 +41,7 @@ def before_scenario(context, scenario) -> None:
     context.workdir = Path(context._tmp.name)
     context.repo_root = _repo_root()
     context.env = dict(os.environ)
+    context.extra_env = {}
     context.last_result = None
     context.last_ingest = None
     context.last_shown = None
@@ -63,6 +64,76 @@ def after_scenario(context, scenario) -> None:
         context.httpd.shutdown()
         context.httpd.server_close()
         context.httpd = None
+    if getattr(context, "_fake_unstructured_installed", False):
+        original_modules = getattr(context, "_fake_unstructured_original_modules", {})
+        for name in [
+            "unstructured.partition.auto",
+            "unstructured.partition",
+            "unstructured",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_unstructured_installed = False
+        context._fake_unstructured_original_modules = {}
+    if getattr(context, "_fake_unstructured_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_unstructured_unavailable_original_modules", {})
+        for name in [
+            "unstructured.partition.auto",
+            "unstructured.partition",
+            "unstructured",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_unstructured_unavailable_installed = False
+        context._fake_unstructured_unavailable_original_modules = {}
+    if getattr(context, "_fake_openai_installed", False):
+        original_modules = getattr(context, "_fake_openai_original_modules", {})
+        for name in [
+            "openai",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_openai_installed = False
+        context._fake_openai_original_modules = {}
+    if getattr(context, "_fake_openai_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_openai_unavailable_original_modules", {})
+        for name in [
+            "openai",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_openai_unavailable_installed = False
+        context._fake_openai_unavailable_original_modules = {}
+    if getattr(context, "_fake_rapidocr_installed", False):
+        original_modules = getattr(context, "_fake_rapidocr_original_modules", {})
+        for name in [
+            "rapidocr_onnxruntime",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_rapidocr_installed = False
+        context._fake_rapidocr_original_modules = {}
+    if getattr(context, "_fake_rapidocr_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_rapidocr_unavailable_original_modules", {})
+        for name in [
+            "rapidocr_onnxruntime",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_rapidocr_unavailable_installed = False
+        context._fake_rapidocr_unavailable_original_modules = {}
     if hasattr(context, "_tmp"):
         context._tmp.cleanup()
 

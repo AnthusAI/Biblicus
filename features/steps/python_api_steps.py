@@ -98,7 +98,9 @@ def step_ingest_item_python_no_filename(context, name: str, media_type: str) -> 
     "I ingest an item via the Python application programming interface with metadata foo "
     '"{value}" into corpus "{name}" with filename "{filename}" and media type "{media_type}"'
 )
-def step_ingest_item_python_with_metadata(context, value: str, name: str, filename: str, media_type: str) -> None:
+def step_ingest_item_python_with_metadata(
+    context, value: str, name: str, filename: str, media_type: str
+) -> None:
     corpus_path = _corpus_path(context, name)
     corpus = Corpus.open(corpus_path)
     data = _data_for_media_type(media_type)
@@ -123,15 +125,7 @@ def step_ingest_item_python_with_metadata(context, value: str, name: str, filena
 def step_ingest_markdown_with_weird_tags(context, name: str) -> None:
     corpus_path = _corpus_path(context, name)
     corpus = Corpus.open(corpus_path)
-    md = (
-        "---\n"
-        "tags:\n"
-        "  - x\n"
-        "  - \"\"\n"
-        "  - 1\n"
-        "---\n"
-        "body\n"
-    ).encode("utf-8")
+    md = ("---\n" "tags:\n" "  - x\n" '  - ""\n' "  - 1\n" "---\n" "body\n").encode("utf-8")
     res = corpus.ingest_item(
         md,
         filename="note.md",
@@ -203,7 +197,9 @@ def step_python_item_tags_equal(context, csv: str) -> None:
     "I ingest an item via the Python application programming interface into corpus "
     '"{name}" with source uniform resource identifier "{source_uri}" and filename "{filename}"'
 )
-def step_ingest_item_python_with_source_uri(context, name: str, source_uri: str, filename: str) -> None:
+def step_ingest_item_python_with_source_uri(
+    context, name: str, source_uri: str, filename: str
+) -> None:
     corpus_path = _corpus_path(context, name)
     corpus = Corpus.open(corpus_path)
     res = corpus.ingest_item(
@@ -274,7 +270,9 @@ def step_execute_hook_manager_with_bad_hook(context) -> None:
             _ = hook_context
             return {"message": "not a model"}
 
-    manager = HookManager(corpus_uri="file://example", log_dir=context.workdir / "logs", hooks=[NonPydanticHook()])
+    manager = HookManager(
+        corpus_uri="file://example", log_dir=context.workdir / "logs", hooks=[NonPydanticHook()]
+    )
     try:
         manager.run_ingest_hooks(
             hook_point=HookPoint.before_ingest,
@@ -343,7 +341,9 @@ def step_stream_ingest_no_filename(context, name: str, media_type: str) -> None:
 @when(
     'I stream ingest bytes into corpus "{name}" with filename "{filename}" and media type "{media_type}" and metadata foo "{value}"'
 )
-def step_stream_ingest_with_metadata(context, name: str, filename: str, media_type: str, value: str) -> None:
+def step_stream_ingest_with_metadata(
+    context, name: str, filename: str, media_type: str, value: str
+) -> None:
     corpus_path = _corpus_path(context, name)
     corpus = Corpus.open(corpus_path)
     res = corpus.ingest_item_stream(
@@ -391,7 +391,9 @@ def step_execute_hook_manager_with_raising_hook(context) -> None:
             _ = hook_context
             raise RuntimeError("boom")
 
-    manager = HookManager(corpus_uri="file://example", log_dir=context.workdir / "logs", hooks=[RaisingHook()])
+    manager = HookManager(
+        corpus_uri="file://example", log_dir=context.workdir / "logs", hooks=[RaisingHook()]
+    )
     try:
         manager.run_ingest_hooks(
             hook_point=HookPoint.before_ingest,

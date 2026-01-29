@@ -34,7 +34,6 @@ def create_recipe_manifest(
     :return: Deterministic recipe manifest.
     :rtype: RecipeManifest
     """
-
     config_json = json.dumps(config, sort_keys=True, separators=(",", ":"))
     recipe_seed = f"{backend_id}:{config_json}"
     recipe_id = hashlib.sha256(recipe_seed.encode("utf-8")).hexdigest()
@@ -69,7 +68,6 @@ def create_run_manifest(
     :return: Run manifest.
     :rtype: RetrievalRun
     """
-
     catalog = corpus.load_catalog()
     created_at = utc_now_iso()
     run_id = hashlib.sha256(f"{recipe.recipe_id}:{created_at}".encode("utf-8")).hexdigest()
@@ -93,7 +91,6 @@ def hash_text(text: str) -> str:
     :return: Secure Hash Algorithm 256 hex digest.
     :rtype: str
     """
-
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -108,7 +105,6 @@ def apply_budget(evidence: Iterable[Evidence], budget: QueryBudget) -> List[Evid
     :return: Evidence list respecting the budget.
     :rtype: list[Evidence]
     """
-
     selected_evidence: List[Evidence] = []
     source_counts: Dict[str, int] = {}
     total_characters = 0

@@ -2,6 +2,23 @@ Feature: Retrieval can use extracted text artifacts
   Retrieval backends can build and query using a selected extraction run.
   This allows extraction plugins and retrieval plugins to be combined independently.
 
+  Scenario: Query finds text extracted from a Portable Document Format item
+    Given I initialized a corpus at "corpus"
+    And a Portable Document Format file "hello.pdf" exists with text "Portable Document Format retrieval"
+    When I ingest the file "hello.pdf" into corpus "corpus"
+    And I build a "pdf-text" extraction run in corpus "corpus"
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" using the latest extraction run and config:
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    And I query with the latest run for "Portable Document Format retrieval" and budget:
+      | key                 | value |
+      | max_total_items     | 5     |
+      | max_total_characters| 10000 |
+      | max_items_per_source| 5     |
+    Then the query evidence includes the last ingested item identifier
+
   Scenario: Query finds text that exists only in extracted artifacts
     Given I initialized a corpus at "corpus"
     And a binary file "image.png" exists

@@ -7,9 +7,15 @@ from __future__ import annotations
 from typing import Dict
 
 from .base import TextExtractor
-from .cascade import CascadeExtractor
 from .metadata_text import MetadataTextExtractor
+from .openai_stt import OpenAiSpeechToTextExtractor
 from .pass_through_text import PassThroughTextExtractor
+from .pdf_text import PortableDocumentFormatTextExtractor
+from .pipeline import PipelineExtractor
+from .rapidocr_text import RapidOcrExtractor
+from .select_longest_text import SelectLongestTextExtractor
+from .select_text import SelectTextExtractor
+from .unstructured_text import UnstructuredExtractor
 
 
 def get_extractor(extractor_id: str) -> TextExtractor:
@@ -22,11 +28,16 @@ def get_extractor(extractor_id: str) -> TextExtractor:
     :rtype: TextExtractor
     :raises KeyError: If the extractor identifier is not known.
     """
-
     extractors: Dict[str, TextExtractor] = {
-        CascadeExtractor.extractor_id: CascadeExtractor(),
         MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
         PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
+        PipelineExtractor.extractor_id: PipelineExtractor(),
+        PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
+        OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
+        RapidOcrExtractor.extractor_id: RapidOcrExtractor(),
+        SelectTextExtractor.extractor_id: SelectTextExtractor(),
+        SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor(),
+        UnstructuredExtractor.extractor_id: UnstructuredExtractor(),
     }
     if extractor_id not in extractors:
         raise KeyError(f"Unknown extractor: {extractor_id!r}")

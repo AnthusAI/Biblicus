@@ -1,4 +1,4 @@
-# Next steps
+# Demos
 
 This document is a set of runnable examples you can use to see the current system working end to end.
 
@@ -51,12 +51,12 @@ flowchart TB
     RerankStage[Rerank<br/>pipeline stage]
     FilterStage[Filter<br/>pipeline stage]
     ToolServer[Tool server<br/>for external backends]
-    PdfTextExtraction[Portable Document Format<br/>text extraction plugin]
     OpticalCharacterRecognition[Optical character recognition<br/>extraction plugin]
+    SpeechToText[Speech to text<br/>extraction plugin]
   end
 
-  PdfTextExtraction -.-> ExtractionRun
   OpticalCharacterRecognition -.-> ExtractionRun
+  SpeechToText -.-> ExtractionRun
   RerankStage -.-> Evidence
   FilterStage -.-> Evidence
   ToolServer -.-> PluggableBackend
@@ -87,8 +87,8 @@ flowchart TB
   style RerankStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
   style FilterStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
   style ToolServer fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style PdfTextExtraction fill:#f3e5f5,stroke:#8e24aa,color:#111111
   style OpticalCharacterRecognition fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style SpeechToText fill:#f3e5f5,stroke:#8e24aa,color:#111111
 ```
 
 ## Working examples you can run now
@@ -140,10 +140,140 @@ Text extraction is a separate pipeline stage from retrieval. An extraction run p
 This extractor reads text items and skips non-text items.
 
 ```
-python3 -m biblicus extract --corpus corpora/demo --extractor pass-through-text
+python3 -m biblicus extract --corpus corpora/demo --step pass-through-text
+```
+
+The output includes a `run_id` you can reuse when building a retrieval backend.
+
+### Select extracted text within a pipeline
+
+When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
+
+```
+python3 -m biblicus extract --corpus corpora/demo \\
+  --step pass-through-text \\
+  --step metadata-text \\
+  --step select-text
 ```
 
 Copy the `run_id` from the JavaScript Object Notation output. You will use it as `EXTRACTION_RUN_ID` in the next command.
+
+```
+python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \\
+  --config extraction_run=pipeline:EXTRACTION_RUN_ID
+```
+
+### Portable Document Format extraction and retrieval
+
+This example downloads a small set of public Portable Document Format files, extracts text, builds a local full text index, and runs a query.
+
+```
+rm -rf corpora/pdf_samples
+python3 scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
+
+python3 -m biblicus extract --corpus corpora/pdf_samples --step pdf-text
+```
+
+Copy the `run_id` from the JavaScript Object Notation output. You will use it as `PDF_EXTRACTION_RUN_ID` in the next command.
+
+```
+python3 -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_run=pipeline:PDF_EXTRACTION_RUN_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
+python3 -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
+```
+
+### Mixed modality integration corpus
+
+This example assembles a tiny mixed corpus with a Markdown note, a Hypertext Markup Language page, an image, a Portable Document Format file with extractable text, and a generated Portable Document Format file with no extractable text.
+It also includes a downloaded Office Open Extensible Markup Language document to support catchall extraction experiments.
+
+```
+rm -rf corpora/mixed_samples
+python3 scripts/download_mixed_samples.py --corpus corpora/mixed_samples --force
+python3 -m biblicus list --corpus corpora/mixed_samples
+```
+
+### Image samples (for optical character recognition experiments)
+
+This example downloads a tiny image corpus intended for optical character recognition experiments: one image that contains text and one that should not.
+
+```
+rm -rf corpora/image_samples
+python3 scripts/download_image_samples.py --corpus corpora/image_samples --force
+python3 -m biblicus list --corpus corpora/image_samples
+```
+
+To perform optical character recognition on the image items, install the optional dependency:
+
+```
+python3 -m pip install "biblicus[ocr]"
+```
+
+Then build an extraction run:
+
+```
+python3 -m biblicus extract --corpus corpora/image_samples --step ocr-rapidocr
+```
+
+### Optional: Unstructured as a last-resort extractor
+
+The `unstructured` extractor is an optional dependency. It is intended as a last-resort extractor for non-text items.
+
+Install the optional dependency:
+
+```
+python3 -m pip install "biblicus[unstructured]"
+```
+
+Then build an extraction run:
+
+```
+python3 -m biblicus extract --corpus corpora/pdf_samples --step unstructured
+```
+
+To see Unstructured handle a non-Portable-Document-Format format, use the mixed corpus demo, which includes a `.docx` sample:
+
+```
+rm -rf corpora/mixed_samples
+python3 scripts/download_mixed_samples.py --corpus corpora/mixed_samples --force
+python3 -m biblicus extract --corpus corpora/mixed_samples --step unstructured
+```
+
+When you want to prefer one extractor over another for the same item types, order the steps and end with `select-text`:
+
+```
+python3 -m biblicus extract --corpus corpora/pdf_samples \\
+  --step unstructured \\
+  --step pdf-text \\
+  --step select-text
+```
+
+### Optional: Speech to text for audio items
+
+This example downloads a small set of public speech samples from Wikimedia Commons and uses extraction to derive text artifacts.
+It also includes a generated Waveform Audio File Format silence clip for repeatable non-speech cases.
+
+Download the integration corpus:
+
+```
+rm -rf corpora/audio_samples
+python3 scripts/download_audio_samples.py --corpus corpora/audio_samples --force
+python3 -m biblicus list --corpus corpora/audio_samples
+```
+
+If you only want a metadata-only baseline, extract `metadata-text`:
+
+```
+python3 -m biblicus extract --corpus corpora/audio_samples --step metadata-text
+```
+
+For real speech to text transcription with the OpenAI backend, install the optional dependency and set an API key:
+
+```
+python3 -m pip install "biblicus[openai]"
+mkdir -p .biblicus
+printf "openai:\n  api_key: ...\n" > .biblicus/config.yml
+python3 -m biblicus extract --corpus corpora/audio_samples --step stt-openai
+```
 
 ### Build and query the minimal backend
 
@@ -159,7 +289,7 @@ python3 -m biblicus query --corpus corpora/demo --query "Hello"
 The sqlite full text search backend builds a local index under the run directory.
 
 ```
-python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pass-through-text:EXTRACTION_RUN_ID
+python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pipeline:EXTRACTION_RUN_ID
 python3 -m biblicus query --corpus corpora/demo --query "tiny"
 ```
 
@@ -200,54 +330,5 @@ python3 scripts/test.py --integration
 - Backends: `docs/BACKENDS.md`
 - Testing: `docs/TESTING.md`
 - Roadmap: `docs/ROADMAP.md`
-- Add regression checks so evaluation results can be compared across runs
-- Add dataset loaders for common sources while keeping the on disk schema stable
-- Add extraction evaluation datasets that measure extracted text quality for images and Portable Document Format pages
-- Add extraction evaluation metrics for accuracy, speed, and cost, recorded per item and aggregated by run
 
-### Plug in architecture
-
-- Define a plugin discovery mechanism for third party backends
-- Define a stable tool schema for external tool execution
-- Define a minimal server process that exposes the tools over the Model Context Protocol
-
-### Documentation and developer experience
-
-- Provide a short tutorial that starts from zero and ends with an evaluated retrieval run
-- Add a reference page that defines the vocabulary with examples
-- Add a cookbook with small patterns, each backed by behavior driven development scenarios
-
-## Decision factors
-
-When we choose what to build next, these are the main considerations to weigh.
-
-### Learning value
-
-- Does the feature teach the framework vocabulary and reinforce the mental model
-- Does it make it easier to experiment with different retrieval designs
-
-### Practical value
-
-- Does it remove friction for a Python engineer building an assistant system
-- Does it reduce time spent managing files and metadata by hand
-
-### Portability and durability
-
-- Does the raw corpus remain readable with ordinary operating system tools
-- Can a user back up the corpus by copying a folder
-
-### Reproducibility
-
-- Does the feature make runs and evaluation results easier to reproduce
-- Does it keep derived artifacts clearly separated from raw items
-
-### Cost and complexity
-
-- Does the feature add dependencies that are hard to install
-- Does it require a service process or can it run as a local library
-
-## Suggested next iteration
-
-If you want a focused next step that delivers visible value without adding heavy dependencies, the best next move is an extraction plugin stage that produces derived text artifacts for Portable Document Format and image items, plus a retrieval policy that can prefer extracted text when it exists.
-
-This reinforces the core separation between raw items, derived artifacts, and retrieval evidence, and it makes the system immediately more useful for real world documents. It also makes it possible to evaluate multiple extraction providers against the same corpus and the same retrieval backend.
+For what to build next, see `docs/ROADMAP.md`.

@@ -11,8 +11,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .constants import DATASET_SCHEMA_VERSION
 from .backends import get_backend
+from .constants import DATASET_SCHEMA_VERSION
 from .corpus import Corpus
 from .models import QueryBudget, RetrievalResult, RetrievalRun
 from .time import utc_now_iso
@@ -45,7 +45,9 @@ class EvaluationQuery(BaseModel):
     @model_validator(mode="after")
     def _require_expectation(self) -> "EvaluationQuery":
         if not self.expected_item_id and not self.expected_source_uri:
-            raise ValueError("Evaluation queries must include expected_item_id or expected_source_uri")
+            raise ValueError(
+                "Evaluation queries must include expected_item_id or expected_source_uri"
+            )
         return self
 
 
@@ -114,7 +116,6 @@ def load_dataset(path: Path) -> EvaluationDataset:
     :return: Parsed evaluation dataset.
     :rtype: EvaluationDataset
     """
-
     data = json.loads(path.read_text(encoding="utf-8"))
     return EvaluationDataset.model_validate(data)
 
@@ -140,7 +141,6 @@ def evaluate_run(
     :return: Evaluation result bundle.
     :rtype: EvaluationResult
     """
-
     backend = get_backend(run.recipe.backend_id)
     latency_seconds: List[float] = []
     hit_count = 0
@@ -200,7 +200,6 @@ def _expected_rank(result: RetrievalResult, query: EvaluationQuery) -> Optional[
     :return: Rank of the first matching evidence item, or None.
     :rtype: int or None
     """
-
     for evidence in result.evidence:
         if query.expected_item_id and evidence.item_id == query.expected_item_id:
             return evidence.rank
@@ -218,7 +217,6 @@ def _average_latency_milliseconds(latencies: List[float]) -> float:
     :return: Average latency in milliseconds.
     :rtype: float
     """
-
     if not latencies:
         return 0.0
     return sum(latencies) / len(latencies) * 1000.0
@@ -233,7 +231,6 @@ def _percentile_95_latency_milliseconds(latencies: List[float]) -> float:
     :return: Percentile 95 latency in milliseconds.
     :rtype: float
     """
-
     if not latencies:
         return 0.0
     sorted_latencies = sorted(latencies)
@@ -252,7 +249,6 @@ def _run_artifact_bytes(corpus: Corpus, run: RetrievalRun) -> int:
     :return: Total artifact bytes.
     :rtype: int
     """
-
     total_bytes = 0
     for artifact_relpath in run.artifact_paths:
         artifact_path = corpus.root / artifact_relpath

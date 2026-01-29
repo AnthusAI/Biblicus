@@ -164,7 +164,6 @@ class LifecycleHook:
         :rtype: HookResult
         :raises NotImplementedError: If the hook does not implement run.
         """
-
         _ = context
         raise NotImplementedError("LifecycleHook.run must be implemented by concrete hooks")
 
@@ -192,7 +191,6 @@ class AddTagsHook:
         :param tags: Tags to add.
         :type tags: Sequence[str]
         """
-
         self.hook_points = list(hook_points)
         self.tags = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
 
@@ -205,7 +203,6 @@ class AddTagsHook:
         :return: Ingest mutation result.
         :rtype: HookResult
         """
-
         _ = context
         return IngestMutation(add_tags=list(self.tags))
 
@@ -229,7 +226,6 @@ class DenyAllHook:
         :param hook_points: Hook points where the hook runs.
         :type hook_points: Sequence[HookPoint]
         """
-
         self.hook_points = list(hook_points)
 
     def run(self, context: HookContext) -> HookResult:
@@ -241,7 +237,6 @@ class DenyAllHook:
         :return: Ingest denial result.
         :rtype: HookResult
         """
-
         _ = context
         return IngestMutation(deny=True, deny_reason="Ingest denied by deny-all hook")
 
@@ -256,10 +251,11 @@ def build_builtin_hook(spec: HookSpec) -> LifecycleHook:
     :rtype: LifecycleHook
     :raises KeyError: If the hook identifier is unknown.
     """
-
     if spec.hook_id == AddTagsHook.hook_id:
         tags = spec.config.get("tags") or []
-        return AddTagsHook(hook_points=spec.hook_points, tags=tags if isinstance(tags, list) else [])
+        return AddTagsHook(
+            hook_points=spec.hook_points, tags=tags if isinstance(tags, list) else []
+        )
     if spec.hook_id == DenyAllHook.hook_id:
         return DenyAllHook(hook_points=spec.hook_points)
     raise KeyError(f"Unknown hook_id {spec.hook_id!r}")

@@ -23,7 +23,9 @@ class _FailingConnection:
 class _AbstractBackend(RetrievalBackend):
     backend_id = "abstract"
 
-    def build_run(self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]) -> RetrievalRun:
+    def build_run(
+        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
+    ) -> RetrievalRun:
         return super().build_run(corpus, recipe_name=recipe_name, config=config)
 
     def query(

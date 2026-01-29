@@ -18,7 +18,6 @@ def _looks_like_uri(value: str) -> bool:
     :return: True if the string has a valid uniform resource identifier scheme prefix.
     :rtype: bool
     """
-
     return "://" in value and value.split("://", 1)[0].isidentifier()
 
 
@@ -33,7 +32,6 @@ def corpus_ref_to_path(ref: Union[str, Path]) -> Path:
     :raises NotImplementedError: If a non-file uniform resource identifier scheme is used.
     :raises ValueError: If a file:// uniform resource identifier has a non-local host.
     """
-
     if isinstance(ref, Path):
         return ref.resolve()
 
@@ -45,7 +43,9 @@ def corpus_ref_to_path(ref: Union[str, Path]) -> Path:
                 f"(got {parsed.scheme}://)"
             )
         if parsed.netloc not in ("", "localhost"):
-            raise ValueError(f"Unsupported file uniform resource identifier host: {parsed.netloc!r}")
+            raise ValueError(
+                f"Unsupported file uniform resource identifier host: {parsed.netloc!r}"
+            )
         return Path(unquote(parsed.path)).resolve()
 
     return Path(ref).resolve()
@@ -60,5 +60,4 @@ def normalize_corpus_uri(ref: Union[str, Path]) -> str:
     :return: Canonical file:// uniform resource identifier.
     :rtype: str
     """
-
     return corpus_ref_to_path(ref).as_uri()

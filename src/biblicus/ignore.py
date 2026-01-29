@@ -34,7 +34,6 @@ class CorpusIgnoreSpec(BaseModel):
         :return: True if the path should be ignored.
         :rtype: bool
         """
-
         normalized = relpath.replace("\\", "/").lstrip("/")
         return any(fnmatch.fnmatch(normalized, pattern) for pattern in self.patterns)
 
@@ -50,7 +49,6 @@ def load_corpus_ignore_spec(corpus_root: Path) -> CorpusIgnoreSpec:
     :return: Parsed ignore specification.
     :rtype: CorpusIgnoreSpec
     """
-
     ignore_path = corpus_root / ".biblicusignore"
     if not ignore_path.is_file():
         return CorpusIgnoreSpec(patterns=[])
@@ -64,4 +62,3 @@ def load_corpus_ignore_spec(corpus_root: Path) -> CorpusIgnoreSpec:
             continue
         patterns.append(line)
     return CorpusIgnoreSpec(patterns=patterns)
-

@@ -2,6 +2,7 @@
 Biblicus public package interface.
 """
 
+from .corpus import Corpus
 from .models import (
     CorpusConfig,
     Evidence,
@@ -11,7 +12,6 @@ from .models import (
     RetrievalResult,
     RetrievalRun,
 )
-from .corpus import Corpus
 
 __all__ = [
     "__version__",

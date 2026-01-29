@@ -2,6 +2,7 @@
 
 ![Continuous integration][continuous-integration-badge]
 ![Coverage][coverage-badge]
+![Documentation][documentation-badge]
 
 Make your documents usable by your assistant, then decide later how you will search and retrieve them.
 
@@ -11,28 +12,34 @@ The first practical problem is not retrieval. It is collection and care. You nee
 
 This library gives you a corpus, which is a normal folder on disk. It stores each ingested item as a file, with optional metadata stored next to it. You can open and inspect the raw files directly. Any derived catalog or index can be rebuilt from the raw corpus.
 
-It integrates with LangChain, Tactus, Pydantic AI, and the agent development kit. Use it from Python or from the command line interface.
+It can be used alongside LangChain, Tactus, Pydantic AI, or the agent development kit. Use it from Python or from the command line interface.
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
 
-## The framework
+## A beginner friendly mental model
 
-The framework is a small, explicit vocabulary that appears in code, specifications, and documentation. If you learn these words, the rest of the system becomes predictable.
+Think in three stages.
+
+- Ingest puts raw items into a corpus. This is file first and human inspectable.
+- Extract turns items into usable text. This is where you would do text extraction from Portable Document Format files, optical character recognition for images, or speech to text for audio. If an item is already text, extraction can simply read it. Extraction outputs are derived artifacts, not edits to the raw files.
+- Retrieve searches extracted text and returns evidence. Evidence is structured so you can turn it into context for your model call in whatever way your project prefers.
+
+If you learn a few project words, the rest of the system becomes predictable.
 
 - Corpus is the folder that holds raw items and their metadata.
-- Item is the raw bytes of a document or other artifact, plus its source.
+- Item is the raw bytes plus optional metadata and source information.
 - Catalog is the rebuildable index of the corpus.
-- Evidence is what retrieval returns, ready to be turned into context for a large language model.
-- Run is a recorded retrieval build for a corpus.
+- Extraction run is a recorded extraction build that produces text artifacts.
 - Backend is a pluggable retrieval implementation.
-- Recipe is a named configuration for a backend.
-- Pipeline stage is a distinct retrieval step such as retrieve, rerank, and filter.
+- Run is a recorded retrieval build for a corpus.
+- Evidence is what retrieval returns, with identifiers and source information.
 
 ## Diagram
 
 This diagram shows how a corpus becomes evidence for an assistant.
-The legend shows what the border styles and fill styles mean.
-The your code region is where you decide how to turn evidence into context and how to call a model.
+Extraction is introduced here as a separate stage so you can swap extraction approaches without changing the raw corpus.
+The legend shows what the block styles mean.
+Your code is where you decide how to turn evidence into context and how to call a model.
 
 ```mermaid
 %%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
@@ -41,7 +48,10 @@ flowchart LR
     direction LR
     LegendArtifact[Stored artifact or evidence]
     LegendStep[Step]
+    LegendStable[Stable region]
+    LegendPluggable[Pluggable region]
     LegendArtifact --- LegendStep
+    LegendStable --- LegendPluggable
   end
 
   subgraph Main[" "]
@@ -54,12 +64,19 @@ flowchart LR
       Raw --> Catalog[Catalog file]
     end
 
+    subgraph PluggableExtractionPipeline[Pluggable extraction pipeline]
+      direction TB
+      Catalog --> Extract[Extract pipeline]
+      Extract --> ExtractedText[Extracted text artifacts]
+      ExtractedText --> ExtractionRun[Extraction run manifest]
+    end
+
     subgraph PluggableRetrievalBackend[Pluggable retrieval backend]
       direction LR
 
       subgraph BackendIngestionIndexing[Ingestion and indexing]
         direction TB
-        Catalog --> Build[Build run]
+        ExtractionRun --> Build[Build run]
         Build --> BackendIndex[Backend index]
         BackendIndex --> Run[Run manifest]
       end
@@ -80,6 +97,7 @@ flowchart LR
     end
 
     style StableCore fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
+    style PluggableExtractionPipeline fill:#ffffff,stroke:#5e35b1,stroke-dasharray:6 3,stroke-width:2px,color:#111111
     style PluggableRetrievalBackend fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
     style YourCode fill:#ffffff,stroke:#d81b60,stroke-width:2px,color:#111111
     style BackendIngestionIndexing fill:#ffffff,stroke:#cfd8dc,color:#111111
@@ -87,6 +105,8 @@ flowchart LR
 
     style Raw fill:#f3e5f5,stroke:#8e24aa,color:#111111
     style Catalog fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style ExtractedText fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style ExtractionRun fill:#f3e5f5,stroke:#8e24aa,color:#111111
     style BackendIndex fill:#f3e5f5,stroke:#8e24aa,color:#111111
     style Run fill:#f3e5f5,stroke:#8e24aa,color:#111111
     style Evidence fill:#f3e5f5,stroke:#8e24aa,color:#111111
@@ -95,6 +115,7 @@ flowchart LR
     style Source fill:#f3e5f5,stroke:#8e24aa,color:#111111
 
     style Ingest fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Extract fill:#eceff1,stroke:#90a4ae,color:#111111
     style Build fill:#eceff1,stroke:#90a4ae,color:#111111
     style Query fill:#eceff1,stroke:#90a4ae,color:#111111
     style Model fill:#eceff1,stroke:#90a4ae,color:#111111
@@ -104,6 +125,8 @@ flowchart LR
   style Main fill:#ffffff,stroke:#ffffff,color:#111111
   style LegendArtifact fill:#f3e5f5,stroke:#8e24aa,color:#111111
   style LegendStep fill:#eceff1,stroke:#90a4ae,color:#111111
+  style LegendStable fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
+  style LegendPluggable fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
 ```
 
 ## Practical value
@@ -116,6 +139,7 @@ flowchart LR
 
 - Initialize a corpus folder.
 - Ingest items from file paths, web addresses, or text input.
+- Run extraction when you want derived text artifacts from non-text sources.
 - Reindex to refresh the catalog after edits.
 - Build a retrieval run with a backend.
 - Query the run to collect evidence and evaluate it with datasets.
@@ -134,13 +158,25 @@ After the first release, you can install it from Python Package Index.
 python3 -m pip install biblicus
 ```
 
+### Optional extras
+
+Some extractors are optional so the base install stays small.
+
+- Optical character recognition for images: `python3 -m pip install "biblicus[ocr]"`
+- Speech to text transcription: `python3 -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Broad document parsing fallback: `python3 -m pip install "biblicus[unstructured]"`
+
 ## Quick start
 
 ```
+mkdir -p notes
+echo "A small file note" > notes/example.txt
+
 biblicus init corpora/example
 biblicus ingest --corpus corpora/example notes/example.txt
 echo "A short note" | biblicus ingest --corpus corpora/example --stdin --title "First note"
 biblicus list --corpus corpora/example
+biblicus extract --corpus corpora/example --step pass-through-text --step metadata-text
 biblicus build --corpus corpora/example --backend scan
 biblicus query --corpus corpora/example --query "note"
 ```
@@ -168,6 +204,8 @@ In an assistant system, retrieval usually produces context for a model call. Thi
 
 ## Learn more
 
+Full documentation is available on [ReadTheDocs](https://biblicus.readthedocs.io/).
+
 The documents below are written to be read in order.
 
 - [Architecture][architecture]
@@ -175,8 +213,9 @@ The documents below are written to be read in order.
 - [Feature index][feature-index]
 - [Corpus][corpus]
 - [Text extraction][text-extraction]
+- [User configuration][user-configuration]
 - [Backends][backends]
-- [Next steps][next-steps]
+- [Demos][demos]
 - [Testing][testing]
 
 ## Metadata and catalog
@@ -258,9 +297,11 @@ License terms are in `LICENSE`.
 [feature-index]: docs/FEATURE_INDEX.md
 [corpus]: docs/CORPUS.md
 [text-extraction]: docs/EXTRACTION.md
+[user-configuration]: docs/USER_CONFIGURATION.md
 [backends]: docs/BACKENDS.md
-[next-steps]: docs/NEXT_STEPS.md
+[demos]: docs/DEMOS.md
 [testing]: docs/TESTING.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
+[documentation-badge]: https://readthedocs.org/projects/biblicus/badge/?version=latest

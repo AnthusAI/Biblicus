@@ -19,3 +19,8 @@ Feature: Command-line interface parsing
       | pair      |
       | mode=fast |
     Then the parsed config value "mode" is string "fast"
+
+  Scenario: Step specs reject empty strings
+    When I attempt to parse an empty step spec
+    Then a step spec parsing error is raised
+    And the step spec parsing error mentions "Step spec must be non-empty"

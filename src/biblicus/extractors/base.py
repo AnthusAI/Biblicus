@@ -5,12 +5,12 @@ Base interfaces for text extraction plugins.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
 from ..corpus import Corpus
-from ..models import CatalogItem, ExtractedText
+from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 
 
 class TextExtractor(ABC):
@@ -38,11 +38,17 @@ class TextExtractor(ABC):
         :rtype: pydantic.BaseModel
         :raises ValueError: If the configuration is invalid.
         """
-
         raise NotImplementedError
 
     @abstractmethod
-    def extract_text(self, *, corpus: Corpus, item: CatalogItem, config: BaseModel) -> Optional[ExtractedText]:
+    def extract_text(
+        self,
+        *,
+        corpus: Corpus,
+        item: CatalogItem,
+        config: BaseModel,
+        previous_extractions: List[ExtractionStepOutput],
+    ) -> Optional[ExtractedText]:
         """
         Derive text for a catalog item.
 
@@ -54,8 +60,9 @@ class TextExtractor(ABC):
         :type item: CatalogItem
         :param config: Parsed extractor configuration.
         :type config: pydantic.BaseModel
+        :param previous_extractions: Prior step outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
         :return: Extracted text payload or None when skipped.
         :rtype: ExtractedText or None
         """
-
         raise NotImplementedError

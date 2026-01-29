@@ -2,10 +2,51 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest import mock
 
 from behave import then, when
+from pydantic import BaseModel, ConfigDict
 
+from biblicus.corpus import Corpus
+from biblicus.errors import ExtractionRunFatalError
+from biblicus.extraction import build_extraction_run
+from biblicus.extractors import get_extractor as resolve_extractor
+from biblicus.extractors.base import TextExtractor
+from biblicus.models import CatalogItem, ExtractionStepOutput
 from features.environment import run_biblicus
+
+
+class _FatalExtractorConfig(BaseModel):
+    """
+    Configuration model for the fatal extractor test double.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class _FatalExtractor(TextExtractor):
+    """
+    Extractor test double that raises a fatal extraction error.
+    """
+
+    extractor_id = "fatal-text"
+
+    def validate_config(self, config: dict[str, object]) -> BaseModel:
+        return _FatalExtractorConfig.model_validate(config)
+
+    def extract_text(
+        self,
+        *,
+        corpus: Corpus,
+        item: CatalogItem,
+        config: BaseModel,
+        previous_extractions: list[ExtractionStepOutput],
+    ) -> None:
+        _ = corpus
+        _ = item
+        _ = config
+        _ = previous_extractions
+        raise ExtractionRunFatalError("Fatal extractor failure")
 
 
 def _corpus_path(context, name: str) -> Path:
@@ -21,11 +62,16 @@ def _table_key_value(row) -> tuple[str, str]:
 def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(standard_output)
 
+
 def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
     steps: list[dict[str, object]] = []
     for row in table:
         extractor_id = (row["extractor_id"] if "extractor_id" in row.headings else row[0]).strip()
-        raw_config = row["config_json"] if "config_json" in row.headings else (row[1] if len(row) > 1 else "{}")
+        raw_config = (
+            row["config_json"]
+            if "config_json" in row.headings
+            else (row[1] if len(row) > 1 else "{}")
+        )
         config = json.loads(raw_config) if raw_config else {}
         if config is None:
             config = {}
@@ -35,64 +81,89 @@ def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
     return steps
 
 
+def _build_step_spec(extractor_id: str, config: dict[str, object]) -> str:
+    if not config:
+        return extractor_id
+    inline_pairs = ",".join(f"{key}={value}" for key, value in config.items())
+    return f"{extractor_id}:{inline_pairs}"
+
+
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}" with config:')
 def step_build_extraction_run_with_config(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--extractor", extractor_id]
+    step_config: dict[str, object] = {}
     for row in context.table:
         key, value = _table_key_value(row)
-        args.extend(["--config", f"{key}={value}"])
-    result = run_biblicus(context, args)
+        step_config[key] = value
+    step_spec = _build_step_spec(extractor_id, step_config)
+    args = ["--corpus", str(corpus), "extract", "--step", step_spec]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_run = _parse_json_output(result.stdout)
     context.last_extraction_run_id = context.last_extraction_run.get("run_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
-@when('I build a "cascade" extraction run in corpus "{corpus_name}" with steps:')
-def step_build_cascade_extraction_run(context, corpus_name: str) -> None:
+@when('I build a "pipeline" extraction run in corpus "{corpus_name}" with steps:')
+def step_build_pipeline_extraction_run(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
-    args = ["--corpus", str(corpus), "extract", "--extractor", "cascade"]
+    args = ["--corpus", str(corpus), "extract"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
         step_config = step["config"]
         assert isinstance(step_config, dict)
-        if not step_config:
-            args.extend(["--step", extractor_id])
-            continue
-        inline_pairs = ",".join(f"{key}={value}" for key, value in step_config.items())
-        args.extend(["--step", f"{extractor_id}:{inline_pairs}"])
-    result = run_biblicus(context, args)
+        step_spec = _build_step_spec(extractor_id, step_config)
+        args.extend(["--step", step_spec])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_run = _parse_json_output(result.stdout)
     context.last_extraction_run_id = context.last_extraction_run.get("run_id")
-    context.last_extractor_id = "cascade"
+    context.last_extractor_id = "pipeline"
 
 
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}"')
 def step_build_extraction_run(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--extractor", extractor_id]
-    result = run_biblicus(context, args)
+    args = ["--corpus", str(corpus), "extract", "--step", extractor_id]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_run = _parse_json_output(result.stdout)
     context.last_extraction_run_id = context.last_extraction_run.get("run_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
 @when('I attempt to build a "{extractor_id}" extraction run in corpus "{corpus_name}"')
 def step_attempt_build_extraction_run(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--extractor", extractor_id]
-    context.last_result = run_biblicus(context, args)
+    args = ["--corpus", str(corpus), "extract", "--step", extractor_id]
+    context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
-@when('I attempt to build an extraction run in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"')
-def step_attempt_build_extraction_run_with_step_spec(context, corpus_name: str, extractor_id: str, step_spec: str) -> None:
+@when(
+    'I attempt to build an extraction run in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"'
+)
+def step_attempt_build_extraction_run_with_step_spec(
+    context, corpus_name: str, extractor_id: str, step_spec: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "--extractor", extractor_id, "--step", step_spec]
-    context.last_result = run_biblicus(context, args)
+    _ = extractor_id
+    args = ["--corpus", str(corpus), "extract", "--step", step_spec]
+    context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+
+
+@when('I attempt to build a "pipeline" extraction run in corpus "{corpus_name}" with steps:')
+def step_attempt_build_pipeline_extraction_run(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    steps = _build_extractor_steps_from_table(context.table)
+    args = ["--corpus", str(corpus), "extract"]
+    for step in steps:
+        extractor_id = str(step["extractor_id"])
+        step_config = step["config"]
+        assert isinstance(step_config, dict)
+        step_spec = _build_step_spec(extractor_id, step_config)
+        args.extend(["--step", step_spec])
+    context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
 @then('the extraction run artifacts exist under the corpus for extractor "{extractor_id}"')
@@ -179,6 +250,62 @@ def step_extracted_text_is_empty(context) -> None:
     assert text.strip() == ""
 
 
+@then('the extracted text for the item tagged "{tag}" is empty in the latest extraction run')
+def step_extracted_text_for_tagged_item_is_empty(context, tag: str) -> None:
+    run_id = context.last_extraction_run_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(run_id, str) and run_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    run_dir = corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id
+    text_path = run_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    text = text_path.read_text(encoding="utf-8")
+    assert text.strip() == ""
+
+
+@then('the extracted text for the item tagged "{tag}" is not empty in the latest extraction run')
+def step_extracted_text_for_tagged_item_is_not_empty(context, tag: str) -> None:
+    run_id = context.last_extraction_run_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(run_id, str) and run_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    run_dir = corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id
+    text_path = run_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    text = text_path.read_text(encoding="utf-8")
+    assert text.strip(), f'Extracted text for item tagged "{tag}" is empty'
+
+
+@then('the extraction run does not include extracted text for the item tagged "{tag}"')
+def step_extraction_run_does_not_include_tagged_item(context, tag: str) -> None:
+    run_id = context.last_extraction_run_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(run_id, str) and run_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    run_dir = corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id
+    text_path = run_dir / "text" / f"{item_id}.txt"
+    assert not text_path.exists(), text_path
+
+
+@then('the extraction run includes extracted text for the item tagged "{tag}"')
+def step_extraction_run_includes_extracted_text_for_tagged_item(context, tag: str) -> None:
+    run_id = context.last_extraction_run_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(run_id, str) and run_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    run_dir = corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id
+    text_path = run_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+
+
 @then("the extraction run stats include {key} {value:d}")
 def step_extraction_run_stats_include_int(context, key: str, value: int) -> None:
     assert context.last_extraction_run is not None
@@ -194,10 +321,118 @@ def step_extraction_run_item_provenance_extractor(context, extractor_id: str) ->
     item_id = context.last_ingest["id"]
     items = context.last_extraction_run.get("items") or []
     assert isinstance(items, list)
-    matches = [entry for entry in items if isinstance(entry, dict) and entry.get("item_id") == item_id]
+    matches = [
+        entry for entry in items if isinstance(entry, dict) and entry.get("item_id") == item_id
+    ]
     assert len(matches) == 1
     entry = matches[0]
-    assert entry.get("producer_extractor_id") == extractor_id, entry
+    assert entry.get("final_producer_extractor_id") == extractor_id, entry
+
+
+def _extraction_run_item_entry_for_item_id(context, *, item_id: str) -> dict[str, object]:
+    assert context.last_extraction_run is not None
+    items = context.last_extraction_run.get("items") or []
+    assert isinstance(items, list)
+    matches = [
+        entry for entry in items if isinstance(entry, dict) and entry.get("item_id") == item_id
+    ]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _ingested_item_id_at_index(context, index: int) -> str:
+    ingested = getattr(context, "ingested_ids", None)
+    assert isinstance(ingested, list)
+    assert len(ingested) > index
+    value = ingested[index]
+    assert isinstance(value, str) and value
+    return value
+
+
+def _first_item_id_tagged(context, tag: str) -> str:
+    corpus = Corpus.open(_corpus_path(context, "corpus"))
+    catalog = corpus.load_catalog()
+    matching = [item for item in catalog.items.values() if tag in item.tags]
+    assert matching, f'No catalog items tagged "{tag}"'
+    return matching[0].id
+
+
+@then("the extraction run includes an errored result for the first ingested item")
+def step_extraction_run_first_item_errored(context) -> None:
+    item_id = _ingested_item_id_at_index(context, 0)
+    entry = _extraction_run_item_entry_for_item_id(context, item_id=item_id)
+    assert entry.get("status") == "errored", entry
+
+
+@then("the extraction run includes an errored result for the last ingested item")
+def step_extraction_run_last_item_errored(context) -> None:
+    assert context.last_ingest is not None
+    item_id = context.last_ingest["id"]
+    entry = _extraction_run_item_entry_for_item_id(context, item_id=item_id)
+    assert entry.get("status") == "errored", entry
+
+
+@then('the extraction run error type for the first ingested item equals "{expected_type}"')
+def step_extraction_run_error_type_first_item(context, expected_type: str) -> None:
+    item_id = _ingested_item_id_at_index(context, 0)
+    entry = _extraction_run_item_entry_for_item_id(context, item_id=item_id)
+    assert entry.get("error_type") == expected_type, entry
+
+
+@when('I attempt to build a non-pipeline extraction run in corpus "{corpus_name}"')
+def step_attempt_non_pipeline_extraction_run(context, corpus_name: str) -> None:
+    corpus = Corpus.open(_corpus_path(context, corpus_name))
+    context.extraction_fatal_error = None
+    try:
+        build_extraction_run(
+            corpus,
+            extractor_id="metadata-text",
+            recipe_name="default",
+            config={},
+        )
+    except Exception as exc:
+        context.extraction_fatal_error = exc
+
+
+@when(
+    'I attempt to build a pipeline extraction run in corpus "{corpus_name}" with a fatal extractor step'
+)
+def step_attempt_pipeline_with_fatal_extractor(context, corpus_name: str) -> None:
+    corpus = Corpus.open(_corpus_path(context, corpus_name))
+
+    def _resolve_extractor(extractor_id: str) -> TextExtractor:
+        if extractor_id == _FatalExtractor.extractor_id:
+            return _FatalExtractor()
+        return resolve_extractor(extractor_id)
+
+    context.extraction_fatal_error = None
+    with mock.patch("biblicus.extraction.get_extractor", side_effect=_resolve_extractor):
+        try:
+            build_extraction_run(
+                corpus,
+                extractor_id="pipeline",
+                recipe_name="default",
+                config={
+                    "steps": [
+                        {"extractor_id": _FatalExtractor.extractor_id, "config": {}},
+                    ]
+                },
+            )
+        except Exception as exc:
+            context.extraction_fatal_error = exc
+
+
+@then("a fatal extraction error is raised")
+def step_fatal_extraction_error_raised(context) -> None:
+    assert isinstance(
+        context.extraction_fatal_error,
+        ExtractionRunFatalError,
+    ), f"Expected ExtractionRunFatalError, got {context.extraction_fatal_error!r}"
+
+
+@then('the fatal extraction error message includes "{message}"')
+def step_fatal_extraction_error_message(context, message: str) -> None:
+    assert message in str(context.extraction_fatal_error)
 
 
 @then('the corpus has at least {count:d} extraction runs for extractor "{extractor_id}"')
@@ -209,8 +444,12 @@ def step_corpus_has_extraction_runs(context, count: int, extractor_id: str) -> N
     assert len(run_dirs) >= count
 
 
-@when('I build a "{backend}" retrieval run in corpus "{corpus_name}" using the latest extraction run and config:')
-def step_build_retrieval_run_using_latest_extraction(context, backend: str, corpus_name: str) -> None:
+@when(
+    'I build a "{backend}" retrieval run in corpus "{corpus_name}" using the latest extraction run and config:'
+)
+def step_build_retrieval_run_using_latest_extraction(
+    context, backend: str, corpus_name: str
+) -> None:
     run_id = context.last_extraction_run_id
     extractor_id = context.last_extractor_id
     assert isinstance(run_id, str) and run_id
@@ -231,7 +470,9 @@ def step_build_retrieval_run_using_latest_extraction(context, backend: str, corp
 @when(
     'I attempt to build a "{backend}" retrieval run in corpus "{corpus_name}" with extraction run "{extraction_run}"'
 )
-def step_attempt_build_retrieval_run_with_extraction_run(context, backend: str, corpus_name: str, extraction_run: str) -> None:
+def step_attempt_build_retrieval_run_with_extraction_run(
+    context, backend: str, corpus_name: str, extraction_run: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
     args.extend(["--config", f"extraction_run={extraction_run}"])

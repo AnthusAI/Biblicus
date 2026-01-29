@@ -1,5 +1,7 @@
 include README.md
 include LICENSE
+include THIRD_PARTY_NOTICES.md
+include .biblicus/config.example.yml
 include pyproject.toml
 
 recursive-include src *.py

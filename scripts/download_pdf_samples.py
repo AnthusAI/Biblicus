@@ -88,7 +88,9 @@ def build_parser() -> argparse.ArgumentParser:
     :rtype: argparse.ArgumentParser
     """
 
-    parser = argparse.ArgumentParser(description="Download Portable Document Format samples into Biblicus.")
+    parser = argparse.ArgumentParser(
+        description="Download Portable Document Format samples into Biblicus."
+    )
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
     parser.add_argument(
         "--url",
@@ -96,7 +98,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Portable Document Format URL to download (repeatable).",
     )
-    parser.add_argument("--force", action="store_true", help="Initialize even if the directory is not empty.")
+    parser.add_argument(
+        "--force", action="store_true", help="Initialize even if the directory is not empty."
+    )
     parser.add_argument(
         "--tag",
         action="append",
@@ -130,4 +134,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

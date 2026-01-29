@@ -23,7 +23,6 @@ def new_operation_id() -> str:
     :return: Operation identifier.
     :rtype: str
     """
-
     return str(uuid.uuid4())
 
 
@@ -36,7 +35,6 @@ def redact_source_uri(source_uri: str) -> str:
     :return: Redacted source uniform resource identifier.
     :rtype: str
     """
-
     parsed = urlparse(source_uri)
 
     if not parsed.scheme:
@@ -117,7 +115,6 @@ class HookLogger:
         :param operation_id: Operation identifier for grouping records.
         :type operation_id: str
         """
-
         self.log_dir = log_dir
         self.operation_id = operation_id
 
@@ -129,7 +126,6 @@ class HookLogger:
         :return: Log file path.
         :rtype: Path
         """
-
         return self.log_dir / f"{self.operation_id}.jsonl"
 
     def record(
@@ -166,7 +162,6 @@ class HookLogger:
         :return: None.
         :rtype: None
         """
-
         self.log_dir.mkdir(parents=True, exist_ok=True)
         entry = HookLogEntry(
             operation_id=self.operation_id,

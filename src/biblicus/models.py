@@ -142,6 +142,53 @@ class CorpusCatalog(BaseModel):
         return self
 
 
+class ExtractionRunReference(BaseModel):
+    """
+    Reference to an extraction run.
+
+    :ivar extractor_id: Extractor plugin identifier.
+    :vartype extractor_id: str
+    :ivar run_id: Extraction run identifier.
+    :vartype run_id: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    extractor_id: str = Field(min_length=1)
+    run_id: str = Field(min_length=1)
+
+    def as_string(self) -> str:
+        """
+        Serialize the reference as a single string.
+
+        :return: Reference in the form extractor_id:run_id.
+        :rtype: str
+        """
+        return f"{self.extractor_id}:{self.run_id}"
+
+
+def parse_extraction_run_reference(value: str) -> ExtractionRunReference:
+    """
+    Parse an extraction run reference in the form extractor_id:run_id.
+
+    :param value: Raw reference string.
+    :type value: str
+    :return: Parsed extraction run reference.
+    :rtype: ExtractionRunReference
+    :raises ValueError: If the reference is not well formed.
+    """
+    if ":" not in value:
+        raise ValueError("Extraction run reference must be extractor_id:run_id")
+    extractor_id, run_id = value.split(":", 1)
+    extractor_id = extractor_id.strip()
+    run_id = run_id.strip()
+    if not extractor_id or not run_id:
+        raise ValueError(
+            "Extraction run reference must be extractor_id:run_id with non-empty parts"
+        )
+    return ExtractionRunReference(extractor_id=extractor_id, run_id=run_id)
+
+
 class QueryBudget(BaseModel):
     """
     Evidence selection budget for retrieval.
@@ -319,9 +366,49 @@ class ExtractedText(BaseModel):
     :vartype text: str
     :ivar producer_extractor_id: Extractor identifier that produced this text.
     :vartype producer_extractor_id: str
+    :ivar source_step_index: Optional pipeline step index where this text originated.
+    :vartype source_step_index: int or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     text: str
     producer_extractor_id: str = Field(min_length=1)
+    source_step_index: Optional[int] = Field(default=None, ge=1)
+
+
+class ExtractionStepOutput(BaseModel):
+    """
+    In-memory representation of a pipeline step output for a single item.
+
+    :ivar step_index: One-based pipeline step index.
+    :vartype step_index: int
+    :ivar extractor_id: Extractor identifier for the step.
+    :vartype extractor_id: str
+    :ivar status: Step status, extracted, skipped, or errored.
+    :vartype status: str
+    :ivar text: Extracted text content, when produced.
+    :vartype text: str or None
+    :ivar text_characters: Character count of the extracted text.
+    :vartype text_characters: int
+    :ivar producer_extractor_id: Extractor identifier that produced the text content.
+    :vartype producer_extractor_id: str or None
+    :ivar source_step_index: Optional step index that supplied the text for selection-style extractors.
+    :vartype source_step_index: int or None
+    :ivar error_type: Optional error type name for errored steps.
+    :vartype error_type: str or None
+    :ivar error_message: Optional error message for errored steps.
+    :vartype error_message: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    step_index: int = Field(ge=1)
+    extractor_id: str
+    status: str
+    text: Optional[str] = None
+    text_characters: int = Field(default=0, ge=0)
+    producer_extractor_id: Optional[str] = None
+    source_step_index: Optional[int] = Field(default=None, ge=1)
+    error_type: Optional[str] = None
+    error_message: Optional[str] = None

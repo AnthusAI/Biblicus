@@ -4,11 +4,11 @@ Metadata-based text extractor plugin.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models import CatalogItem, ExtractedText
+from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
 
@@ -60,10 +60,16 @@ class MetadataTextExtractor(TextExtractor):
         :return: Parsed config.
         :rtype: MetadataTextExtractorConfig
         """
-
         return MetadataTextExtractorConfig.model_validate(config)
 
-    def extract_text(self, *, corpus, item: CatalogItem, config: BaseModel) -> Optional[ExtractedText]:
+    def extract_text(
+        self,
+        *,
+        corpus,
+        item: CatalogItem,
+        config: BaseModel,
+        previous_extractions: List[ExtractionStepOutput],
+    ) -> Optional[ExtractedText]:
         """
         Extract a metadata-based text payload for the item.
 
@@ -73,16 +79,18 @@ class MetadataTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: MetadataTextExtractorConfig
+        :param previous_extractions: Prior step outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
         :return: Extracted text payload, or ``None`` if no metadata is available.
         :rtype: ExtractedText or None
         """
-
         parsed_config = (
             config
             if isinstance(config, MetadataTextExtractorConfig)
             else MetadataTextExtractorConfig.model_validate(config)
         )
         _ = corpus
+        _ = previous_extractions
         lines: list[str] = []
 
         if parsed_config.include_title and isinstance(item.title, str) and item.title.strip():

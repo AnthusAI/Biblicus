@@ -55,7 +55,6 @@ class HookManager:
         :param operation_id: Optional operation identifier override.
         :type operation_id: str or None
         """
-
         self.corpus_uri = corpus_uri
         self.log_dir = log_dir
         self.operation_id = operation_id or new_operation_id()
@@ -63,7 +62,9 @@ class HookManager:
         self._logger = HookLogger(log_dir=self.log_dir, operation_id=self.operation_id)
 
     @classmethod
-    def from_config(cls, *, corpus_root: Path, corpus_uri: str, hook_specs: Iterable[HookSpec]) -> "HookManager":
+    def from_config(
+        cls, *, corpus_root: Path, corpus_uri: str, hook_specs: Iterable[HookSpec]
+    ) -> "HookManager":
         """
         Build a hook manager from config data.
 
@@ -77,7 +78,6 @@ class HookManager:
         :rtype: HookManager
         :raises KeyError: If a hook identifier is unknown.
         """
-
         log_dir = corpus_root / CORPUS_DIR_NAME / HOOK_LOGS_DIR_NAME
         hooks: List[LifecycleHook] = []
 
@@ -124,7 +124,6 @@ class HookManager:
         :rtype: IngestMutation
         :raises ValueError: If ingestion is denied by a hook.
         """
-
         context = IngestHookContext(
             hook_point=hook_point,
             operation_id=self.operation_id,
@@ -195,7 +194,6 @@ class HookManager:
         :rtype: dict[str, Any]
         :raises ValueError: If a hook raises an exception.
         """
-
         try:
             result = hook.run(context)
         except Exception as exc:

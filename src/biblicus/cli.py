@@ -14,8 +14,9 @@ from pydantic import ValidationError
 
 from .backends import get_backend
 from .corpus import Corpus
-from .extraction import build_extraction_run
+from .errors import ExtractionRunFatalError
 from .evaluation import evaluate_run, load_dataset
+from .extraction import build_extraction_run
 from .models import QueryBudget
 from .uris import corpus_ref_to_path
 
@@ -29,7 +30,6 @@ def _add_common_corpus_arg(parser: argparse.ArgumentParser) -> None:
     :return: None.
     :rtype: None
     """
-
     parser.add_argument(
         "--corpus",
         type=str,
@@ -51,7 +51,6 @@ def cmd_init(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus_path = corpus_ref_to_path(arguments.path)
     corpus = Corpus.init(corpus_path, force=arguments.force)
     print(f"Initialized corpus at {corpus.root}")
@@ -69,7 +68,6 @@ def _parse_tags(raw: Optional[str], raw_list: Optional[List[str]]) -> List[str]:
     :return: Deduplicated tag list.
     :rtype: list[str]
     """
-
     parsed_tags: List[str] = []
     if raw:
         parsed_tags.extend([tag.strip() for tag in raw.split(",") if tag.strip()])
@@ -94,7 +92,6 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -135,7 +132,6 @@ def cmd_list(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -157,7 +153,6 @@ def cmd_show(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -177,7 +172,6 @@ def cmd_reindex(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -197,7 +191,6 @@ def cmd_import_tree(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -218,7 +211,6 @@ def cmd_purge(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -241,7 +233,6 @@ def _parse_config_pairs(pairs: Optional[List[str]]) -> Dict[str, object]:
     :rtype: dict[str, object]
     :raises ValueError: If any entry is not key=value.
     """
-
     config: Dict[str, object] = {}
     for item in pairs or []:
         if "=" not in item:
@@ -264,7 +255,7 @@ def _parse_config_pairs(pairs: Optional[List[str]]) -> Dict[str, object]:
 
 def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
     """
-    Parse a cascade step specification.
+    Parse a pipeline step specification.
 
     :param raw_step: Step spec in the form extractor_id or extractor_id:key=value,key=value.
     :type raw_step: str
@@ -272,7 +263,6 @@ def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
     :rtype: tuple[str, dict[str, object]]
     :raises ValueError: If the step spec is invalid.
     """
-
     raw_step = raw_step.strip()
     if not raw_step:
         raise ValueError("Step spec must be non-empty")
@@ -309,7 +299,6 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
     :return: Query budget instance.
     :rtype: QueryBudget
     """
-
     return QueryBudget(
         max_total_items=arguments.max_total_items,
         max_total_characters=arguments.max_total_characters,
@@ -326,7 +315,6 @@ def cmd_build(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -341,31 +329,29 @@ def cmd_build(arguments: argparse.Namespace) -> int:
 
 def cmd_extract(arguments: argparse.Namespace) -> int:
     """
-    Build a text extraction run for the corpus.
+    Build a text extraction run for the corpus using a pipeline of extractors.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    config = _parse_config_pairs(arguments.config)
-    if getattr(arguments, "step", None):
-        if arguments.extractor != "cascade":
-            raise ValueError("--step is only supported for the cascade extractor")
-        steps: List[Dict[str, object]] = []
-        for raw_step in arguments.step:
-            extractor_id, step_config = _parse_step_spec(raw_step)
-            steps.append({"extractor_id": extractor_id, "config": step_config})
-        config = {"steps": steps}
+    raw_steps = list(arguments.step or [])
+    if not raw_steps:
+        raise ValueError("Pipeline extraction requires at least one --step")
+    steps: List[Dict[str, object]] = []
+    for raw_step in raw_steps:
+        extractor_id, step_config = _parse_step_spec(raw_step)
+        steps.append({"extractor_id": extractor_id, "config": step_config})
+    config = {"steps": steps}
     manifest = build_extraction_run(
         corpus,
-        extractor_id=arguments.extractor,
+        extractor_id="pipeline",
         recipe_name=arguments.recipe_name,
         config=config,
     )
@@ -382,7 +368,6 @@ def cmd_query(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -413,7 +398,6 @@ def cmd_eval(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
@@ -437,7 +421,6 @@ def build_parser() -> argparse.ArgumentParser:
     :return: Argument parser instance.
     :rtype: argparse.ArgumentParser
     """
-
     parser = argparse.ArgumentParser(
         prog="biblicus",
         description="Biblicus command-line interface (minimum viable product)",
@@ -457,14 +440,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_init = sub.add_parser("init", help="Initialize a new corpus at PATH.")
     p_init.add_argument("path", help="Corpus path or file:// uniform resource identifier.")
-    p_init.add_argument("--force", action="store_true", help="Overwrite existing config if present.")
+    p_init.add_argument(
+        "--force", action="store_true", help="Overwrite existing config if present."
+    )
     p_init.set_defaults(func=cmd_init)
 
     p_ingest = sub.add_parser("ingest", help="Ingest file(s) and/or text into the corpus.")
     _add_common_corpus_arg(p_ingest)
     p_ingest.add_argument("files", nargs="*", help="File paths to ingest.")
     p_ingest.add_argument("--note", default=None, help="Ingest a literal note as Markdown text.")
-    p_ingest.add_argument("--stdin", action="store_true", help="Read text to ingest from standard input.")
+    p_ingest.add_argument(
+        "--stdin", action="store_true", help="Read text to ingest from standard input."
+    )
     p_ingest.add_argument("--title", default=None, help="Optional title (for --note/--stdin).")
     p_ingest.add_argument("--tags", default=None, help="Comma-separated tags.")
     p_ingest.add_argument("--tag", action="append", help="Repeatable tag.")
@@ -480,18 +467,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_show.add_argument("id", help="Item identifier (universally unique identifier).")
     p_show.set_defaults(func=cmd_show)
 
-    p_reindex = sub.add_parser("reindex", help="Rebuild/refresh the corpus catalog from the on-disk corpus.")
+    p_reindex = sub.add_parser(
+        "reindex", help="Rebuild/refresh the corpus catalog from the on-disk corpus."
+    )
     _add_common_corpus_arg(p_reindex)
     p_reindex.set_defaults(func=cmd_reindex)
 
     p_import_tree = sub.add_parser("import-tree", help="Import a folder tree into the corpus.")
     _add_common_corpus_arg(p_import_tree)
     p_import_tree.add_argument("path", help="Folder tree root to import.")
-    p_import_tree.add_argument("--tags", default=None, help="Comma-separated tags to apply to imported items.")
-    p_import_tree.add_argument("--tag", action="append", help="Repeatable tag to apply to imported items.")
+    p_import_tree.add_argument(
+        "--tags", default=None, help="Comma-separated tags to apply to imported items."
+    )
+    p_import_tree.add_argument(
+        "--tag", action="append", help="Repeatable tag to apply to imported items."
+    )
     p_import_tree.set_defaults(func=cmd_import_tree)
 
-    p_purge = sub.add_parser("purge", help="Delete all items and derived files (requires confirmation).")
+    p_purge = sub.add_parser(
+        "purge", help="Delete all items and derived files (requires confirmation)."
+    )
     _add_common_corpus_arg(p_purge)
     p_purge.add_argument(
         "--confirm",
@@ -518,23 +513,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_extract = sub.add_parser("extract", help="Build a text extraction run for the corpus.")
     _add_common_corpus_arg(p_extract)
-    p_extract.add_argument(
-        "--extractor",
-        required=True,
-        help="Extractor identifier (for example, pass-through-text, metadata-text, cascade).",
-    )
     p_extract.add_argument("--recipe-name", default="default", help="Human-readable recipe name.")
     p_extract.add_argument(
         "--step",
         action="append",
         default=None,
-        help="Cascade step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
-    )
-    p_extract.add_argument(
-        "--config",
-        action="append",
-        default=None,
-        help="Extractor config as key=value (repeatable).",
+        help="Pipeline step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
     )
     p_extract.set_defaults(func=cmd_extract)
 
@@ -573,7 +557,6 @@ def main(argument_list: Optional[List[str]] = None) -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = build_parser()
     arguments = parser.parse_args(argument_list)
     try:
@@ -583,6 +566,7 @@ def main(argument_list: Optional[List[str]] = None) -> int:
         FileExistsError,
         KeyError,
         ValueError,
+        ExtractionRunFatalError,
         NotImplementedError,
         ValidationError,
     ) as exception:

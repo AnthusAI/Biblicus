@@ -9,9 +9,15 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..extraction import ExtractionRunReference, parse_extraction_run_reference
 from ..frontmatter import parse_front_matter
-from ..models import Evidence, QueryBudget, RetrievalResult, RetrievalRun
+from ..models import (
+    Evidence,
+    ExtractionRunReference,
+    QueryBudget,
+    RetrievalResult,
+    RetrievalRun,
+    parse_extraction_run_reference,
+)
 from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
 from ..time import utc_now_iso
 
@@ -42,7 +48,9 @@ class ScanBackend:
 
     backend_id = "scan"
 
-    def build_run(self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]) -> RetrievalRun:
+    def build_run(
+        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
+    ) -> RetrievalRun:
         """
         Register a scan backend run (no materialization).
 
@@ -55,7 +63,6 @@ class ScanBackend:
         :return: Run manifest describing the build.
         :rtype: RetrievalRun
         """
-
         recipe_config = ScanRecipeConfig.model_validate(config)
         catalog = corpus.load_catalog()
         recipe = create_recipe_manifest(
@@ -63,7 +70,10 @@ class ScanBackend:
             name=recipe_name,
             config=recipe_config.model_dump(),
         )
-        stats = {"items": len(catalog.items), "text_items": _count_text_items(corpus, catalog.items.values(), recipe_config)}
+        stats = {
+            "items": len(catalog.items),
+            "text_items": _count_text_items(corpus, catalog.items.values(), recipe_config),
+        }
         run = create_run_manifest(corpus, recipe=recipe, stats=stats, artifact_paths=[])
         corpus.write_run(run)
         return run
@@ -90,7 +100,6 @@ class ScanBackend:
         :return: Retrieval results containing evidence.
         :rtype: RetrievalResult
         """
-
         recipe_config = ScanRecipeConfig.model_validate(run.recipe.config)
         catalog = corpus.load_catalog()
         extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
@@ -130,7 +139,9 @@ class ScanBackend:
         )
 
 
-def _resolve_extraction_reference(corpus: Corpus, recipe_config: ScanRecipeConfig) -> Optional[ExtractionRunReference]:
+def _resolve_extraction_reference(
+    corpus: Corpus, recipe_config: ScanRecipeConfig
+) -> Optional[ExtractionRunReference]:
     """
     Resolve an extraction run reference from a recipe config.
 
@@ -142,7 +153,6 @@ def _resolve_extraction_reference(corpus: Corpus, recipe_config: ScanRecipeConfi
     :rtype: ExtractionRunReference or None
     :raises FileNotFoundError: If an extraction run is referenced but not present.
     """
-
     if not recipe_config.extraction_run:
         return None
     extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
@@ -155,7 +165,9 @@ def _resolve_extraction_reference(corpus: Corpus, recipe_config: ScanRecipeConfi
     return extraction_reference
 
 
-def _count_text_items(corpus: Corpus, items: Iterable[object], recipe_config: ScanRecipeConfig) -> int:
+def _count_text_items(
+    corpus: Corpus, items: Iterable[object], recipe_config: ScanRecipeConfig
+) -> int:
     """
     Count catalog items that represent text content.
 
@@ -170,7 +182,6 @@ def _count_text_items(corpus: Corpus, items: Iterable[object], recipe_config: Sc
     :return: Number of text items.
     :rtype: int
     """
-
     text_item_count = 0
     extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
     for catalog_item in items:
@@ -199,7 +210,6 @@ def _tokenize_query(query_text: str) -> List[str]:
     :return: Lowercased non-empty tokens.
     :rtype: list[str]
     """
-
     return [token for token in query_text.lower().split() if token]
 
 
@@ -227,7 +237,6 @@ def _load_text_from_item(
     :return: Text payload or None if not decodable as text.
     :rtype: str or None
     """
-
     if extraction_reference:
         extracted_text = corpus.read_extracted_text(
             extractor_id=extraction_reference.extractor_id,
@@ -259,7 +268,6 @@ def _find_first_match(text: str, tokens: List[str]) -> Optional[Tuple[int, int]]
     :return: Start/end span for the earliest match, or None if no matches.
     :rtype: tuple[int, int] or None
     """
-
     lower_text = text.lower()
     best_start: Optional[int] = None
     best_end: Optional[int] = None
@@ -291,7 +299,6 @@ def _build_snippet(text: str, span: Optional[Tuple[int, int]], *, max_chars: int
     :return: Snippet text.
     :rtype: str
     """
-
     if not text:
         return ""
     if span is None:
@@ -325,7 +332,6 @@ def _score_items(
     :return: Evidence candidates with provisional ranks.
     :rtype: list[Evidence]
     """
-
     evidence_items: List[Evidence] = []
     for catalog_item in items:
         media_type = getattr(catalog_item, "media_type", "")
