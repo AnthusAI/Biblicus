@@ -53,6 +53,7 @@ Biblicus is designed to integrate with agent frameworks through explicit tools a
 ## Design principles
 
 - **Primitives + derived constructs**: keep the protocol surface small and composable; ship higher-level helpers and example procedures on top.
+- **Composability definition**: composable means each stage has a small input and output contract, so you can connect stages in different orders without rewriting them.
 - **Minimal opinion raw store**: raw ingestion should work for a folder of files with optional lightweight tagging.
 - **Reproducibility by default**: comparisons require manifests (even when there are no persisted materializations).
 - **Mutability is real**: corpora are edited, pruned, and reorganized; re-indexing must be a core workflow.

@@ -16,6 +16,10 @@ Core
    :members:
    :undoc-members:
 
+.. automodule:: biblicus.context
+   :members:
+   :undoc-members:
+
 .. automodule:: biblicus.evaluation
    :members:
    :undoc-members:

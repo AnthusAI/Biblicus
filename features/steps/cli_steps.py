@@ -16,6 +16,7 @@ import yaml
 from behave import given, then, when
 
 from features.environment import RunResult, run_biblicus
+from biblicus.models import RetrievalResult
 
 
 def _corpus_path(context, name: str) -> Path:
@@ -58,6 +59,48 @@ def _parse_markdown_front_matter(text: str) -> Dict[str, Any]:
     if not isinstance(data, dict):
         raise AssertionError("Front matter must be a mapping/object")
     return dict(data)
+
+
+@when('I run "context-pack build" joining with "{join_with}"')
+def step_context_pack_build_from_standard_input(context, join_with: str) -> None:
+    decoded_join_with = bytes(join_with, "utf-8").decode("unicode_escape")
+    retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
+    result = run_biblicus(
+        context,
+        ["context-pack", "build", "--join-with", decoded_join_with],
+        input_text=retrieval_result_json,
+    )
+    context.last_result = result
+    assert result.returncode == 0, result.stderr
+    context.context_pack_build_output = json.loads(result.stdout)
+
+
+@when('I run "context-pack build" joining with "{join_with}" and token budget {max_tokens:d}')
+def step_context_pack_build_with_token_budget_from_standard_input(
+    context, join_with: str, max_tokens: int
+) -> None:
+    decoded_join_with = bytes(join_with, "utf-8").decode("unicode_escape")
+    retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
+    result = run_biblicus(
+        context,
+        ["context-pack", "build", "--join-with", decoded_join_with, "--max-tokens", str(max_tokens)],
+        input_text=retrieval_result_json,
+    )
+    context.last_result = result
+    assert result.returncode == 0, result.stderr
+    context.context_pack_build_output = json.loads(result.stdout)
+
+
+@when('I run "context-pack build" with empty standard input')
+def step_context_pack_build_with_empty_standard_input(context) -> None:
+    result = run_biblicus(context, ["context-pack", "build", "--join-with", "\n\n"], input_text="")
+    context.last_result = result
+
+
+@then("the context pack build output text equals:")
+def step_then_context_pack_build_output_text_equals(context) -> None:
+    actual_text = context.context_pack_build_output["context_pack"]["text"]
+    assert actual_text == context.text
 
 
 @when('I initialize a corpus at "{name}"')
@@ -112,6 +155,65 @@ def step_ingest_text_minimal(context, text: str, corpus_name: str) -> None:
     context.last_corpus_root = corpus
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", "--note", text])
     _record_ingest(context, result)
+
+
+@given('I ingested note items into corpus "{corpus_name}":')
+def step_ingest_note_items_table(context, corpus_name: str) -> None:
+    for row in context.table:
+        step_ingest_text_minimal(context, row["text"], corpus_name)
+
+
+@given('I built a scan run for corpus "{corpus_name}"')
+def step_build_scan_run(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = run_biblicus(
+        context,
+        ["--corpus", str(corpus), "build", "--backend", "scan"],
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@when(
+    'I query corpus "{corpus_name}" with query "{query_text}" reranking with "{reranker_id}"'
+)
+def step_query_with_rerank(context, corpus_name: str, query_text: str, reranker_id: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = run_biblicus(
+        context,
+        ["--corpus", str(corpus), "query", "--query", query_text, "--reranker-id", reranker_id],
+    )
+    assert result.returncode == 0, result.stderr
+    context.last_query_result = RetrievalResult.model_validate_json(result.stdout)
+
+
+@when(
+    'I query corpus "{corpus_name}" with query "{query_text}" filtering with minimum score {minimum_score:f}'
+)
+def step_query_with_minimum_score_filter(
+    context, corpus_name: str, query_text: str, minimum_score: float
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = run_biblicus(
+        context,
+        [
+            "--corpus",
+            str(corpus),
+            "query",
+            "--query",
+            query_text,
+            "--minimum-score",
+            str(minimum_score),
+        ],
+    )
+    assert result.returncode == 0, result.stderr
+    context.last_query_result = RetrievalResult.model_validate_json(result.stdout)
+
+
+@then("the query result evidence text order is:")
+def step_then_query_result_evidence_text_order_is(context) -> None:
+    expected_text_values = [row["text"] for row in context.table]
+    actual_text_values = [evidence_item.text for evidence_item in context.last_query_result.evidence]
+    assert actual_text_values == expected_text_values
 
 
 @when(

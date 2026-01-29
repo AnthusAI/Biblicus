@@ -188,6 +188,26 @@ Primary implementation:
 - `src/biblicus/evaluation.py`
 - `src/biblicus/models.py`
 
+## Context packs
+
+What it does:
+
+- Builds context pack text from retrieval evidence using an explicit policy.
+- Fits a context pack to a token budget using an explicit tokenizer identifier.
+
+Documentation:
+
+- `docs/CONTEXT_PACK.md`
+
+Behavior specifications:
+
+- `features/context_pack.feature`
+- `features/token_budget.feature`
+
+Primary implementation:
+
+- `src/biblicus/context.py`
+
 ## Testing, coverage, and documentation build
 
 What it does:

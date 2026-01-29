@@ -12,11 +12,11 @@ The first practical problem is not retrieval. It is collection and care. You nee
 
 This library gives you a corpus, which is a normal folder on disk. It stores each ingested item as a file, with optional metadata stored next to it. You can open and inspect the raw files directly. Any derived catalog or index can be rebuilt from the raw corpus.
 
-It can be used alongside LangChain, Tactus, Pydantic AI, or the agent development kit. Use it from Python or from the command line interface.
+It can be used alongside LangGraph, Tactus, Pydantic AI, any agent framework, or your own setup. Use it from Python or from the command line interface.
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
 
-## A beginner friendly mental model
+## A simple mental model
 
 Think in three stages.
 
@@ -34,94 +34,30 @@ If you learn a few project words, the rest of the system becomes predictable.
 - Run is a recorded retrieval build for a corpus.
 - Evidence is what retrieval returns, with identifiers and source information.
 
-## Diagram
+## Where it fits in an assistant
 
-This diagram shows how a corpus becomes evidence for an assistant.
-Extraction is introduced here as a separate stage so you can swap extraction approaches without changing the raw corpus.
-The legend shows what the block styles mean.
-Your code is where you decide how to turn evidence into context and how to call a model.
+Biblicus does not answer user questions. It is not a language model. It helps your assistant answer them by retrieving relevant material and returning it as structured evidence. Your code decides how to turn evidence into a context pack for the model call, which is then passed to a model you choose.
+
+In a coding assistant, retrieval is often triggered by what the user is doing right now. For example: you are about to propose a user interface change, so you retrieve the user's stated preferences, then you include that as context for the model call.
+
+This diagram shows two sequential Biblicus calls. They are shown separately to make the boundaries explicit: retrieval returns evidence, and context pack building consumes evidence.
 
 ```mermaid
-%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
-flowchart LR
-  subgraph Legend[Legend]
-    direction LR
-    LegendArtifact[Stored artifact or evidence]
-    LegendStep[Step]
-    LegendArtifact --- LegendStep
-  end
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff", "noteBkgColor": "#ffffff", "noteTextColor": "#111111", "actorBkg": "#f3e5f5", "actorBorder": "#8e24aa", "actorTextColor": "#111111"}}}%%
+sequenceDiagram
+  participant User
+  participant App as Your assistant code
+  participant Bib as Biblicus
+  participant LLM as Large language model
 
-  subgraph Main[" "]
-    direction TB
-
-    subgraph StableCore[Stable core]
-      direction TB
-      Source[Source items] --> Ingest[Ingest]
-      Ingest --> Raw[Raw item files]
-      Raw --> Catalog[Catalog file]
-    end
-
-    subgraph PluggableExtractionPipeline[Pluggable: extraction pipeline]
-      direction TB
-      Catalog --> Extract[Extract pipeline]
-      Extract --> ExtractedText[Extracted text artifacts]
-      ExtractedText --> ExtractionRun[Extraction run manifest]
-    end
-
-    subgraph PluggableRetrievalBackend[Pluggable: retrieval backend]
-      direction LR
-
-      subgraph BackendIngestionIndexing[Ingestion and indexing]
-        direction TB
-        ExtractionRun --> Build[Build run]
-        Build --> BackendIndex[Backend index]
-        BackendIndex --> Run[Run manifest]
-      end
-
-      subgraph BackendRetrievalGeneration[Retrieval and generation]
-        direction TB
-        Run --> Query[Query]
-        Query --> Evidence[Evidence]
-      end
-    end
-
-    Evidence --> Context
-
-    subgraph YourCode[Your code]
-      direction TB
-      Context[Assistant context] --> Model[Large language model call]
-      Model --> Answer[Answer]
-    end
-
-    style StableCore fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
-    style PluggableExtractionPipeline fill:#ffffff,stroke:#5e35b1,stroke-dasharray:6 3,stroke-width:2px,color:#111111
-    style PluggableRetrievalBackend fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
-    style YourCode fill:#ffffff,stroke:#d81b60,stroke-width:2px,color:#111111
-    style BackendIngestionIndexing fill:#ffffff,stroke:#cfd8dc,color:#111111
-    style BackendRetrievalGeneration fill:#ffffff,stroke:#cfd8dc,color:#111111
-
-    style Raw fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Catalog fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style ExtractedText fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style ExtractionRun fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style BackendIndex fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Run fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Evidence fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Context fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Answer fill:#f3e5f5,stroke:#8e24aa,color:#111111
-    style Source fill:#f3e5f5,stroke:#8e24aa,color:#111111
-
-    style Ingest fill:#eceff1,stroke:#90a4ae,color:#111111
-    style Extract fill:#eceff1,stroke:#90a4ae,color:#111111
-    style Build fill:#eceff1,stroke:#90a4ae,color:#111111
-    style Query fill:#eceff1,stroke:#90a4ae,color:#111111
-    style Model fill:#eceff1,stroke:#90a4ae,color:#111111
-  end
-
-  style Legend fill:#ffffff,stroke:#ffffff,color:#111111
-  style Main fill:#ffffff,stroke:#ffffff,color:#111111
-  style LegendArtifact fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style LegendStep fill:#eceff1,stroke:#90a4ae,color:#111111
+  User->>App: request
+  App->>Bib: query retrieval
+  Bib-->>App: retrieval result evidence JSON
+  App->>Bib: build context pack from evidence
+  Bib-->>App: context pack text
+  App->>LLM: context pack plus prompt
+  LLM-->>App: response draft
+  App-->>User: response
 ```
 
 ## Practical value
@@ -188,6 +124,216 @@ biblicus crawl --corpus corpora/example \\
   --tag crawled
 ```
 
+## End-to-end example: evidence to assistant context
+
+The command-line interface returns JavaScript Object Notation by default. This makes it easy to use Biblicus in scripts and to treat retrieval as a deterministic, testable step.
+
+Start with a few short “memories” from a chat system. Each memory is stored as a normal item in the corpus.
+
+```python
+from biblicus.backends import get_backend
+from biblicus.context import ContextPackPolicy, TokenBudget, build_context_pack, fit_context_pack_to_token_budget
+from biblicus.corpus import Corpus
+from biblicus.models import QueryBudget
+
+
+corpus = Corpus.init("corpora/story")
+
+notes = [
+    ("User name", "The user's name is Tactus Maximus."),
+    ("Button style preference", "Primary button style preference: the user's favorite color is magenta."),
+    ("Style preference", "The user prefers concise answers."),
+    ("Language preference", "The user dislikes idioms and abbreviations."),
+    ("Engineering preference", "The user likes code that is over-documented and behavior-driven."),
+]
+for note_title, note_text in notes:
+    corpus.ingest_note(note_text, title=note_title, tags=["memory"])
+
+backend = get_backend("scan")
+run = backend.build_run(corpus, recipe_name="Story demo", config={})
+budget = QueryBudget(max_total_items=5, max_total_characters=2000, max_items_per_source=None)
+result = backend.query(
+    corpus,
+    run=run,
+    query_text="Primary button style preference",
+    budget=budget,
+)
+
+policy = ContextPackPolicy(join_with="\n\n")
+context_pack = build_context_pack(result, policy=policy)
+context_pack = fit_context_pack_to_token_budget(
+    context_pack,
+    policy=policy,
+    token_budget=TokenBudget(max_tokens=60),
+)
+print(context_pack.text)
+```
+
+If you want a runnable version of this story, use the script at `scripts/readme_end_to_end_demo.py`.
+
+If you prefer the command-line interface, here is the same flow in compressed form:
+
+```
+biblicus init corpora/story
+biblicus ingest --corpus corpora/story --stdin --title "User name" --tag memory <<< "The user's name is Tactus Maximus."
+biblicus ingest --corpus corpora/story --stdin --title "Button style preference" --tag memory <<< "Primary button style preference: the user's favorite color is magenta."
+biblicus ingest --corpus corpora/story --stdin --title "Style preference" --tag memory <<< "The user prefers concise answers."
+biblicus ingest --corpus corpora/story --stdin --title "Language preference" --tag memory <<< "The user dislikes idioms and abbreviations."
+biblicus ingest --corpus corpora/story --stdin --title "Engineering preference" --tag memory <<< "The user likes code that is over-documented and behavior-driven."
+biblicus build --corpus corpora/story --backend scan
+biblicus query --corpus corpora/story --query "Primary button style preference"
+```
+
+Example output:
+
+```json
+{
+  "query_text": "Primary button style preference",
+  "budget": {
+    "max_total_items": 5,
+    "max_total_characters": 2000,
+    "max_items_per_source": null
+  },
+  "run_id": "RUN_ID",
+  "recipe_id": "RECIPE_ID",
+  "backend_id": "scan",
+  "generated_at": "2026-01-29T00:00:00.000000Z",
+  "evidence": [
+    {
+      "item_id": "ITEM_ID",
+      "source_uri": "text",
+      "media_type": "text/markdown",
+      "score": 1.0,
+      "rank": 1,
+      "text": "Primary button style preference: the user's favorite color is magenta.",
+      "content_ref": null,
+      "span_start": null,
+      "span_end": null,
+      "stage": "scan",
+      "recipe_id": "RECIPE_ID",
+      "run_id": "RUN_ID",
+      "hash": null
+    }
+  ],
+  "stats": {}
+}
+```
+
+Evidence is the output contract. Your code decides how to convert evidence into assistant context.
+
+### Turn evidence into a context pack
+
+A context pack is a readable text block you send to a model. There is no single correct format. Treat it as a policy surface you can iterate on.
+
+Here is a minimal example that builds a context pack from evidence:
+
+```python
+from biblicus.context import ContextPackPolicy, build_context_pack
+
+
+policy = ContextPackPolicy(
+    join_with="\n\n",
+)
+context_pack = build_context_pack(result, policy=policy)
+print(context_pack.text)
+```
+
+Example context pack output:
+
+```text
+Primary button style preference: the user's favorite color is magenta.
+```
+
+You can also build a context pack from the command-line interface by piping the retrieval result:
+
+```
+biblicus query --corpus corpora/story --query "Primary button style preference" \\
+  | biblicus context-pack build
+```
+
+Most production systems also apply a budget when building context. If you want a precise token budget, the budgeting logic needs a specific tokenizer and should be treated as its own stage.
+
+## Pipeline diagram
+
+This diagram shows how a corpus becomes evidence for your assistant. Your code decides how to turn evidence into context and how to call a model.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#f3e5f5", "primaryTextColor": "#111111", "primaryBorderColor": "#8e24aa", "lineColor": "#90a4ae", "secondaryColor": "#eceff1", "tertiaryColor": "#ffffff"}, "flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
+flowchart TB
+  subgraph Legend[Legend]
+    direction LR
+    LegendArtifact[Stored artifact or evidence]
+    LegendStep[Step]
+    LegendArtifact --- LegendStep
+  end
+
+  subgraph Main[" "]
+    direction TB
+
+    subgraph Pipeline[" "]
+      direction TB
+
+      subgraph RowStable[Stable core]
+        direction TB
+        Source[Source items] --> Ingest[Ingest] --> Raw[Raw item files] --> Catalog[Catalog file]
+      end
+
+      subgraph RowExtraction[Pluggable: extraction pipeline]
+        direction TB
+        Catalog --> Extract[Extract pipeline] --> ExtractedText[Extracted text artifacts] --> ExtractionRun[Extraction run manifest]
+      end
+
+      subgraph RowRetrieval[Pluggable: retrieval backend]
+        direction TB
+        ExtractionRun --> Build[Build run] --> BackendIndex[Backend index] --> Run[Run manifest] --> Retrieve[Retrieve] --> Rerank[Rerank optional] --> Filter[Filter optional] --> Evidence[Evidence]
+      end
+
+      subgraph RowContext[Context]
+        direction TB
+        Evidence --> ContextPack[Context pack] --> FitTokens[Fit tokens optional] --> Context[Assistant context]
+      end
+
+      subgraph RowYourCode[Your code]
+        direction TB
+        Context --> Model[Large language model call] --> Answer[Answer]
+      end
+    end
+
+    style RowStable fill:#ffffff,stroke:#8e24aa,stroke-width:2px,color:#111111
+    style RowExtraction fill:#ffffff,stroke:#5e35b1,stroke-dasharray:6 3,stroke-width:2px,color:#111111
+    style RowRetrieval fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
+    style RowContext fill:#ffffff,stroke:#7b1fa2,stroke-width:2px,color:#111111
+    style RowYourCode fill:#ffffff,stroke:#d81b60,stroke-width:2px,color:#111111
+
+    style Raw fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Catalog fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style ExtractedText fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style ExtractionRun fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style BackendIndex fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Run fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Evidence fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style ContextPack fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Context fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Answer fill:#f3e5f5,stroke:#8e24aa,color:#111111
+    style Source fill:#f3e5f5,stroke:#8e24aa,color:#111111
+
+    style Ingest fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Extract fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Build fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Retrieve fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Rerank fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Filter fill:#eceff1,stroke:#90a4ae,color:#111111
+    style FitTokens fill:#eceff1,stroke:#90a4ae,color:#111111
+    style Model fill:#eceff1,stroke:#90a4ae,color:#111111
+  end
+
+  style Legend fill:#ffffff,stroke:#ffffff,color:#111111
+  style Main fill:#ffffff,stroke:#ffffff,color:#111111
+  style Pipeline fill:#ffffff,stroke:#ffffff,color:#111111
+  style LegendArtifact fill:#f3e5f5,stroke:#8e24aa,color:#111111
+  style LegendStep fill:#eceff1,stroke:#90a4ae,color:#111111
+```
+
 ## Python usage
 
 From Python, the same flow is available through the Corpus class and backend interfaces. The public surface area is small on purpose.
@@ -200,30 +346,28 @@ From Python, the same flow is available through the Corpus class and backend int
 - Query a run with `backend.query`.
 - Evaluate with `evaluate_run`.
 
-## How it fits into an assistant
-
-In an assistant system, retrieval usually produces context for a model call. This library treats evidence as the primary output so you can decide how to use it.
-
-- Use a corpus as the source of truth for raw items.
-- Use a backend run to build any derived artifacts needed for retrieval.
-- Use queries to obtain evidence objects.
-- Convert evidence into the format your framework expects, such as message content, tool output, or citations.
-
 ## Learn more
 
 Full documentation is published on GitHub Pages: https://anthusai.github.io/Biblicus/
 
-The documents below are written to be read in order.
+The documents below follow the pipeline from raw items to model context:
 
-- [Architecture][architecture]
-- [Roadmap][roadmap]
-- [Feature index][feature-index]
 - [Corpus][corpus]
 - [Text extraction][text-extraction]
-- [User configuration][user-configuration]
 - [Backends][backends]
+- [Context packs][context-packs]
+- [Testing and evaluation][testing]
+
+Reference:
+
 - [Demos][demos]
-- [Testing][testing]
+- [User configuration][user-configuration]
+
+Design and implementation map:
+
+- [Feature index][feature-index]
+- [Roadmap][roadmap]
+- [Architecture][architecture]
 
 ## Metadata and catalog
 
@@ -315,6 +459,7 @@ License terms are in `LICENSE`.
 [text-extraction]: docs/EXTRACTION.md
 [user-configuration]: docs/USER_CONFIGURATION.md
 [backends]: docs/BACKENDS.md
+[context-packs]: docs/CONTEXT_PACK.md
 [demos]: docs/DEMOS.md
 [testing]: docs/TESTING.md
 

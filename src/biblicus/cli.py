@@ -13,12 +13,19 @@ from typing import Dict, List, Optional
 from pydantic import ValidationError
 
 from .backends import get_backend
+from .context import (
+    ContextPackPolicy,
+    TokenBudget,
+    build_context_pack,
+    fit_context_pack_to_token_budget,
+)
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionRunFatalError
 from .evaluation import evaluate_run, load_dataset
+from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_run
-from .models import QueryBudget, parse_extraction_run_reference
+from .models import QueryBudget, RetrievalResult, parse_extraction_run_reference
 from .uris import corpus_ref_to_path
 
 
@@ -449,7 +456,59 @@ def cmd_query(arguments: argparse.Namespace) -> int:
     query_text = arguments.query if arguments.query is not None else sys.stdin.read()
     budget = _budget_from_args(arguments)
     result = backend.query(corpus, run=run, query_text=query_text, budget=budget)
+    processed_evidence = result.evidence
+    if getattr(arguments, "reranker_id", None):
+        processed_evidence = apply_evidence_reranker(
+            reranker_id=arguments.reranker_id,
+            query_text=result.query_text,
+            evidence=processed_evidence,
+        )
+    if getattr(arguments, "minimum_score", None) is not None:
+        processed_evidence = apply_evidence_filter(
+            filter_id="filter-minimum-score",
+            query_text=result.query_text,
+            evidence=processed_evidence,
+            config={"minimum_score": float(arguments.minimum_score)},
+        )
+    if processed_evidence is not result.evidence:
+        result = result.model_copy(update={"evidence": processed_evidence})
     print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_context_pack_build(arguments: argparse.Namespace) -> int:
+    """
+    Build a context pack from a retrieval result.
+
+    The retrieval result is read from standard input as JavaScript Object Notation.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    input_text = sys.stdin.read()
+    if not input_text.strip():
+        raise ValueError("Context pack build requires a retrieval result JavaScript Object Notation on standard input")
+    retrieval_result = RetrievalResult.model_validate_json(input_text)
+    join_with = bytes(arguments.join_with, "utf-8").decode("unicode_escape")
+    policy = ContextPackPolicy(join_with=join_with)
+    context_pack = build_context_pack(retrieval_result, policy=policy)
+    if arguments.max_tokens is not None:
+        context_pack = fit_context_pack_to_token_budget(
+            context_pack,
+            policy=policy,
+            token_budget=TokenBudget(max_tokens=int(arguments.max_tokens)),
+        )
+    print(
+        json.dumps(
+            {
+                "policy": policy.model_dump(),
+                "context_pack": context_pack.model_dump(),
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -657,7 +716,37 @@ def build_parser() -> argparse.ArgumentParser:
     p_query.add_argument("--max-total-items", type=int, default=5)
     p_query.add_argument("--max-total-characters", type=int, default=2000)
     p_query.add_argument("--max-items-per-source", type=int, default=5)
+    p_query.add_argument(
+        "--reranker-id",
+        default=None,
+        help="Optional reranker identifier to apply after retrieval (for example: rerank-longest-text).",
+    )
+    p_query.add_argument(
+        "--minimum-score",
+        type=float,
+        default=None,
+        help="Optional minimum score threshold to filter evidence after retrieval.",
+    )
     p_query.set_defaults(func=cmd_query)
+
+    p_context_pack = sub.add_parser("context-pack", help="Build context pack text from evidence.")
+    context_pack_sub = p_context_pack.add_subparsers(dest="context_pack_command", required=True)
+
+    p_context_pack_build = context_pack_sub.add_parser(
+        "build", help="Build a context pack from a retrieval result JavaScript Object Notation."
+    )
+    p_context_pack_build.add_argument(
+        "--join-with",
+        default="\\n\\n",
+        help="Separator between evidence blocks (escape sequences supported, default is two newlines).",
+    )
+    p_context_pack_build.add_argument(
+        "--max-tokens",
+        default=None,
+        type=int,
+        help="Optional token budget for the final context pack using the naive-whitespace tokenizer.",
+    )
+    p_context_pack_build.set_defaults(func=cmd_context_pack_build)
 
     p_eval = sub.add_parser("eval", help="Evaluate a run against a dataset.")
     _add_common_corpus_arg(p_eval)
