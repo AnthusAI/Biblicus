@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.4.0 (2026-01-29)
+
+### Features
+
+- **corpus**: Add crawl and extraction run lifecycle
+  ([`0727c08`](https://github.com/AnthusAI/Biblicus/commit/0727c0807705f5483aa1cd87a25e31314eb93a6d))
+
+Add a website crawl workflow with allowed-prefix enforcement and .biblicusignore filtering.\n\nAdd
+  extraction run lifecycle commands (build, list, show, delete) with deterministic, idempotent run
+  identifiers and inspectable run manifests.\n\nUpdate documentation and roadmap toward retrieval
+  MVP.
+
+
 ## v0.3.0 (2026-01-29)
 
 ### Bug Fixes
