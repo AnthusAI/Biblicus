@@ -1,6 +1,57 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-01-29)
+
+### Bug Fixes
+
+- **stt**: Handle missing optional OpenAI dependency at runtime
+  ([`8019f18`](https://github.com/AnthusAI/Biblicus/commit/8019f18bcf966c9a35c5ce894ca462fae4f042ee))
+
+### Chores
+
+- **ci**: Build documentation
+  ([`c2690be`](https://github.com/AnthusAI/Biblicus/commit/c2690be862621bb8e7334090bff877c57b122284))
+
+Build Sphinx documentation in continuous integration and release workflows and upload the Hypertext
+  Markup Language output as an artifact.
+
+- **ci**: Deploy docs via CI
+  ([`57e8062`](https://github.com/AnthusAI/Biblicus/commit/57e8062f5b69d3851879957c58cd1bce8ce9ed9c))
+
+Deploy Sphinx documentation to GitHub Pages only after continuous integration succeeds on main.
+
+- **ci**: Publish documentation site
+  ([`123d52a`](https://github.com/AnthusAI/Biblicus/commit/123d52a9b3b2d341bd60a3c90f5e12902886673c))
+
+Publish Sphinx Hypertext Markup Language documentation to GitHub Pages from the main branch.
+
+### Documentation
+
+- Add roadmap and feature index
+  ([`17f3f4b`](https://github.com/AnthusAI/Biblicus/commit/17f3f4ba5f72701981ce272339d26abe99660a7b))
+
+Add a conventional roadmap and a feature index that maps behavior specifications to documentation
+  and implementation modules.
+
+Refocus next steps on runnable examples and rename corpus workflow notes to a stable design
+  document.
+
+### Features
+
+- **extraction**: Add pluggable extraction pipeline
+  ([`b7bc0e7`](https://github.com/AnthusAI/Biblicus/commit/b7bc0e78332f4036f6f543704896b61d7892199b))
+
+Adds extraction runs with per-step artifacts and selection policies (select-text,
+  select-longest-text).
+
+Includes optional extractors for PDF text (pdf-text), OCR (ocr-rapidocr), speech-to-text
+  (stt-openai), and Unstructured catchall, with user configuration support.
+
+Adds integration corpus download scripts and gated integration test flags, plus updated docs, demos,
+  roadmap, and CI docs publishing.
+
+
 ## v0.2.0 (2026-01-28)
 
 ### Chores
