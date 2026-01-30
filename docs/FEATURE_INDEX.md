@@ -148,6 +148,25 @@ Primary implementation:
 - `src/biblicus/extraction.py`
 - `src/biblicus/extractors/`
 
+## Extraction evaluation
+
+What it does:
+
+- Evaluates extraction runs against labeled datasets.
+- Reports coverage, accuracy, and processable fraction metrics.
+
+Documentation:
+
+- `docs/EXTRACTION_EVALUATION.md`
+
+Behavior specifications:
+
+- `features/extraction_evaluation.feature`
+
+Primary implementation:
+
+- `src/biblicus/extraction_evaluation.py`
+
 ## Retrieval backends
 
 What it does:

@@ -407,6 +407,7 @@ def step_last_item_markdown_with_title_tags(context, title: str) -> None:
 
 
 @given('a binary file "{filename}" exists')
+@when('a binary file "{filename}" exists')
 def step_binary_file_exists(context, filename: str) -> None:
     (context.workdir / filename).write_bytes(b"%PDF-1.4\n%...\n")
 

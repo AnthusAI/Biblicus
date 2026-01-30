@@ -28,6 +28,11 @@ from .errors import ExtractionRunFatalError
 from .evaluation import evaluate_run, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_run
+from .extraction_evaluation import (
+    evaluate_extraction_run,
+    load_extraction_dataset,
+    write_extraction_evaluation_result,
+)
 from .models import QueryBudget, RetrievalResult, parse_extraction_run_reference
 from .uris import corpus_ref_to_path
 
@@ -506,6 +511,54 @@ def cmd_extract_delete(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
+    """
+    Evaluate an extraction run against a dataset.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    if arguments.run:
+        run_ref = parse_extraction_run_reference(arguments.run)
+    else:
+        run_ref = corpus.latest_extraction_run_reference()
+        if run_ref is None:
+            raise ValueError("Extraction evaluation requires an extraction run")
+        print(
+            "Warning: using latest extraction run; pass --run for reproducibility.",
+            file=sys.stderr,
+        )
+
+    dataset_path = Path(arguments.dataset)
+    if not dataset_path.is_file():
+        raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+    try:
+        dataset = load_extraction_dataset(dataset_path)
+    except ValidationError as exc:
+        raise ValueError(f"Invalid extraction dataset: {exc}") from exc
+
+    run = corpus.load_extraction_run_manifest(
+        extractor_id=run_ref.extractor_id,
+        run_id=run_ref.run_id,
+    )
+    result = evaluate_extraction_run(
+        corpus=corpus,
+        run=run,
+        extractor_id=run_ref.extractor_id,
+        dataset=dataset,
+    )
+    write_extraction_evaluation_result(corpus=corpus, run_id=run.run_id, result=result)
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
 def cmd_query(arguments: argparse.Namespace) -> int:
     """
     Execute a retrieval query.
@@ -900,6 +953,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Type the exact extractor_id:run_id to confirm deletion.",
     )
     p_extract_delete.set_defaults(func=cmd_extract_delete)
+
+    p_extract_evaluate = extract_sub.add_parser(
+        "evaluate", help="Evaluate an extraction run against a dataset."
+    )
+    _add_common_corpus_arg(p_extract_evaluate)
+    p_extract_evaluate.add_argument(
+        "--run",
+        default=None,
+        help="Extraction run reference in the form extractor_id:run_id (defaults to latest run).",
+    )
+    p_extract_evaluate.add_argument(
+        "--dataset",
+        required=True,
+        help="Path to the extraction evaluation dataset JSON file.",
+    )
+    p_extract_evaluate.set_defaults(func=cmd_extract_evaluate)
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
