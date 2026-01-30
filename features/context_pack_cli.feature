@@ -23,6 +23,31 @@ Feature: Context pack command-line interface
       one two three
       """
 
+  Scenario: Context pack build can include metadata
+    Given a retrieval result exists with sourced evidence:
+      | source_uri | score | text  |
+      | source-a   | 10.0  | alpha |
+    When I run "context-pack build" joining with "\n\n" ordering "score" and including metadata
+    Then the context pack build output text equals:
+      """
+      item_id: item-1
+      source_uri: source-a
+      score: 10.0
+      stage: scan
+      alpha
+      """
+
+  Scenario: Context pack build can fit to a character budget
+    Given a retrieval result exists with evidence text:
+      | text |
+      | alpha |
+      | beta |
+    When I run "context-pack build" joining with "\n\n" and character budget 6
+    Then the context pack build output text equals:
+      """
+      alpha
+      """
+
   Scenario: Context pack build fails without retrieval result on standard input
     When I run "context-pack build" with empty standard input
     Then the command fails with exit code 2

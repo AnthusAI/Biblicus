@@ -15,9 +15,11 @@ from pydantic import ValidationError
 from .analysis import get_analysis_backend
 from .backends import get_backend
 from .context import (
+    CharacterBudget,
     ContextPackPolicy,
     TokenBudget,
     build_context_pack,
+    fit_context_pack_to_character_budget,
     fit_context_pack_to_token_budget,
 )
 from .corpus import Corpus
@@ -568,13 +570,23 @@ def cmd_context_pack_build(arguments: argparse.Namespace) -> int:
         )
     retrieval_result = RetrievalResult.model_validate_json(input_text)
     join_with = bytes(arguments.join_with, "utf-8").decode("unicode_escape")
-    policy = ContextPackPolicy(join_with=join_with)
+    policy = ContextPackPolicy(
+        join_with=join_with,
+        ordering=arguments.ordering,
+        include_metadata=arguments.include_metadata,
+    )
     context_pack = build_context_pack(retrieval_result, policy=policy)
     if arguments.max_tokens is not None:
         context_pack = fit_context_pack_to_token_budget(
             context_pack,
             policy=policy,
             token_budget=TokenBudget(max_tokens=int(arguments.max_tokens)),
+        )
+    if arguments.max_characters is not None:
+        context_pack = fit_context_pack_to_character_budget(
+            context_pack,
+            policy=policy,
+            character_budget=CharacterBudget(max_characters=int(arguments.max_characters)),
         )
     print(
         json.dumps(
@@ -922,10 +934,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Separator between evidence blocks (escape sequences supported, default is two newlines).",
     )
     p_context_pack_build.add_argument(
+        "--ordering",
+        choices=["rank", "score", "source"],
+        default="rank",
+        help="Evidence ordering policy (rank, score, source).",
+    )
+    p_context_pack_build.add_argument(
+        "--include-metadata",
+        action="store_true",
+        help="Include evidence metadata in each context pack block.",
+    )
+    p_context_pack_build.add_argument(
         "--max-tokens",
         default=None,
         type=int,
         help="Optional token budget for the final context pack using the naive-whitespace tokenizer.",
+    )
+    p_context_pack_build.add_argument(
+        "--max-characters",
+        default=None,
+        type=int,
+        help="Optional character budget for the final context pack.",
     )
     p_context_pack_build.set_defaults(func=cmd_context_pack_build)
 

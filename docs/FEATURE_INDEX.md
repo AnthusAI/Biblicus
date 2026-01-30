@@ -204,6 +204,7 @@ Documentation:
 Behavior specifications:
 
 - `features/context_pack.feature`
+- `features/context_pack_policies.feature`
 - `features/token_budget.feature`
 
 Primary implementation:

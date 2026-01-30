@@ -8,11 +8,11 @@ stable contract while context formatting remains an explicit policy surface.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .models import RetrievalResult
+from .models import Evidence, RetrievalResult
 
 
 class ContextPackPolicy(BaseModel):
@@ -21,11 +21,17 @@ class ContextPackPolicy(BaseModel):
 
     :ivar join_with: Separator inserted between evidence text blocks.
     :vartype join_with: str
+    :ivar ordering: Evidence ordering policy (rank, score, or source).
+    :vartype ordering: str
+    :ivar include_metadata: Whether to include evidence metadata lines in each block.
+    :vartype include_metadata: bool
     """
 
     model_config = ConfigDict(extra="forbid")
 
     join_with: str = Field(default="\n\n")
+    ordering: Literal["rank", "score", "source"] = Field(default="rank")
+    include_metadata: bool = Field(default=False)
 
 
 class ContextPack(BaseModel):
@@ -55,12 +61,15 @@ class ContextPackBlock(BaseModel):
     :vartype evidence_item_id: str
     :ivar text: Text included in this block.
     :vartype text: str
+    :ivar metadata: Optional metadata included with the block.
+    :vartype metadata: dict[str, object] or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     evidence_item_id: str = Field(min_length=1)
     text: str = Field(min_length=1)
+    metadata: Optional[Dict[str, object]] = None
 
 
 class TokenCounter(BaseModel):
@@ -92,6 +101,19 @@ class TokenBudget(BaseModel):
     max_tokens: int = Field(ge=1)
 
 
+class CharacterBudget(BaseModel):
+    """
+    Character budget for a context pack.
+
+    :ivar max_characters: Maximum characters permitted for the final context pack text.
+    :vartype max_characters: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_characters: int = Field(ge=1)
+
+
 def build_context_pack(result: RetrievalResult, *, policy: ContextPackPolicy) -> ContextPack:
     """
     Build a context pack from a retrieval result using an explicit policy.
@@ -104,14 +126,20 @@ def build_context_pack(result: RetrievalResult, *, policy: ContextPackPolicy) ->
     :rtype: ContextPack
     """
     selected_blocks: List[ContextPackBlock] = []
-    for evidence in result.evidence:
+    for evidence in _order_evidence(result.evidence, policy=policy):
         if not isinstance(evidence.text, str):
             continue
         trimmed_text = evidence.text.strip()
         if not trimmed_text:
             continue
+        metadata = _metadata_for_evidence(evidence) if policy.include_metadata else None
+        block_text = _format_block_text(trimmed_text, metadata=metadata)
         selected_blocks.append(
-            ContextPackBlock(evidence_item_id=evidence.item_id, text=trimmed_text)
+            ContextPackBlock(
+                evidence_item_id=evidence.item_id,
+                text=block_text,
+                metadata=metadata,
+            )
         )
 
     return ContextPack(
@@ -181,3 +209,109 @@ def fit_context_pack_to_token_budget(
         remaining_blocks = remaining_blocks[:-1]
 
     return ContextPack(text="", evidence_count=0, blocks=[])
+
+
+def fit_context_pack_to_character_budget(
+    context_pack: ContextPack,
+    *,
+    policy: ContextPackPolicy,
+    character_budget: CharacterBudget,
+) -> ContextPack:
+    """
+    Fit a context pack to a character budget by dropping trailing blocks.
+
+    :param context_pack: Context pack to fit.
+    :type context_pack: ContextPack
+    :param policy: Policy controlling how blocks are joined into text.
+    :type policy: ContextPackPolicy
+    :param character_budget: Character budget to enforce.
+    :type character_budget: CharacterBudget
+    :return: Fitted context pack.
+    :rtype: ContextPack
+    """
+    remaining_blocks: List[ContextPackBlock] = list(context_pack.blocks)
+    max_characters = character_budget.max_characters
+
+    while remaining_blocks:
+        candidate_text = policy.join_with.join([block.text for block in remaining_blocks])
+        if len(candidate_text) <= max_characters:
+            return ContextPack(
+                text=candidate_text,
+                evidence_count=len(remaining_blocks),
+                blocks=remaining_blocks,
+            )
+        remaining_blocks = remaining_blocks[:-1]
+
+    return ContextPack(text="", evidence_count=0, blocks=[])
+
+
+def _order_evidence(
+    evidence: List[Evidence],
+    *,
+    policy: ContextPackPolicy,
+) -> List[Evidence]:
+    """
+    Order evidence items according to the context pack policy.
+
+    :param evidence: Evidence list to order.
+    :type evidence: list[Evidence]
+    :param policy: Context pack policy.
+    :type policy: ContextPackPolicy
+    :return: Ordered evidence list.
+    :rtype: list[Evidence]
+    """
+    if policy.ordering == "rank":
+        return sorted(evidence, key=lambda item: (item.rank, item.item_id))
+    if policy.ordering == "score":
+        return sorted(evidence, key=lambda item: (-item.score, item.item_id))
+    if policy.ordering == "source":
+        return sorted(
+            evidence,
+            key=lambda item: (
+                item.source_uri or item.item_id,
+                -item.score,
+                item.item_id,
+            ),
+        )
+    raise ValueError(f"Unknown context pack ordering: {policy.ordering}")
+
+
+def _metadata_for_evidence(evidence: Evidence) -> Dict[str, object]:
+    """
+    Build metadata for a context pack block.
+
+    :param evidence: Evidence item to describe.
+    :type evidence: Evidence
+    :return: Metadata mapping.
+    :rtype: dict[str, object]
+    """
+    return {
+        "item_id": evidence.item_id,
+        "source_uri": evidence.source_uri or "none",
+        "score": evidence.score,
+        "stage": evidence.stage,
+    }
+
+
+def _format_block_text(text: str, *, metadata: Optional[Dict[str, object]]) -> str:
+    """
+    Format a context pack block text with optional metadata.
+
+    :param text: Evidence text.
+    :type text: str
+    :param metadata: Optional metadata mapping.
+    :type metadata: dict[str, object] or None
+    :return: Formatted block text.
+    :rtype: str
+    """
+    if not metadata:
+        return text
+    metadata_lines = "\n".join(
+        [
+            f"item_id: {metadata['item_id']}",
+            f"source_uri: {metadata['source_uri']}",
+            f"score: {metadata['score']}",
+            f"stage: {metadata['stage']}",
+        ]
+    )
+    return f"{metadata_lines}\n{text}"

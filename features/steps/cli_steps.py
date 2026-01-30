@@ -97,6 +97,57 @@ def step_context_pack_build_with_token_budget_from_standard_input(
     context.context_pack_build_output = json.loads(result.stdout)
 
 
+@when(
+    'I run "context-pack build" joining with "{join_with}" ordering "{ordering}" and including metadata'
+)
+def step_context_pack_build_with_metadata_from_standard_input(
+    context, join_with: str, ordering: str
+) -> None:
+    decoded_join_with = bytes(join_with, "utf-8").decode("unicode_escape")
+    retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
+    result = run_biblicus(
+        context,
+        [
+            "context-pack",
+            "build",
+            "--join-with",
+            decoded_join_with,
+            "--ordering",
+            ordering,
+            "--include-metadata",
+        ],
+        input_text=retrieval_result_json,
+    )
+    context.last_result = result
+    assert result.returncode == 0, result.stderr
+    context.context_pack_build_output = json.loads(result.stdout)
+
+
+@when(
+    'I run "context-pack build" joining with "{join_with}" and character budget {max_characters:d}'
+)
+def step_context_pack_build_with_character_budget_from_standard_input(
+    context, join_with: str, max_characters: int
+) -> None:
+    decoded_join_with = bytes(join_with, "utf-8").decode("unicode_escape")
+    retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
+    result = run_biblicus(
+        context,
+        [
+            "context-pack",
+            "build",
+            "--join-with",
+            decoded_join_with,
+            "--max-characters",
+            str(max_characters),
+        ],
+        input_text=retrieval_result_json,
+    )
+    context.last_result = result
+    assert result.returncode == 0, result.stderr
+    context.context_pack_build_output = json.loads(result.stdout)
+
+
 @when('I run "context-pack build" with empty standard input')
 def step_context_pack_build_with_empty_standard_input(context) -> None:
     result = run_biblicus(context, ["context-pack", "build", "--join-with", "\n\n"], input_text="")
