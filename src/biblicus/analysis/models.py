@@ -201,7 +201,7 @@ class TopicModelingVectorizerConfig(AnalysisSchemaModel):
                 raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
             return value
         if isinstance(value, list):
-            if not all(isinstance(entry, str) and entry for entry in value):
+            if not value or not all(isinstance(entry, str) and entry for entry in value):
                 raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
             return value
         raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
