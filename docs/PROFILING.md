@@ -88,6 +88,39 @@ Profiling output is stored under:
 .biblicus/runs/analysis/profiling/<run_id>/output.json
 ```
 
+## Reading the report
+
+Profiling output is a structured report with separate sections for raw items and extracted text. A shortened example:
+
+```json
+{
+  "analysis_id": "profiling",
+  "generated_at": "2024-01-01T00:00:00Z",
+  "report": {
+    "raw_items": {
+      "total_items": 3,
+      "media_type_counts": {
+        "text/markdown": 3
+      }
+    },
+    "extracted_text": {
+      "extracted_nonempty_items": 3,
+      "extracted_empty_items": 0,
+      "extracted_missing_items": 0
+    }
+  }
+}
+```
+
+The `raw_items` section summarizes corpus composition. The `extracted_text` section tells you how much content made it
+through extraction and how much was missing or empty.
+
+## Common pitfalls
+
+- Profiling without specifying an extraction run, which makes comparisons harder to reproduce.
+- Comparing runs with different `sample_size` or `min_text_characters` settings.
+- Interpreting tag counts without noting the `tag_filters` applied.
+
 ## Working demo
 
 A runnable demo is provided in `scripts/profiling_demo.py`. It downloads a corpus, runs extraction, and executes the

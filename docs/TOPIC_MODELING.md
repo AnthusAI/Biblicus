@@ -49,6 +49,29 @@ Per-topic behavior is determined by the BERTopic assignments and the optional fi
 processing flags can substantially change tokenization and therefore the resulting topic labels. The outlier
 `topic_id` `-1` indicates documents that BERTopic could not confidently assign to a cluster.
 
+### Reading a topic record
+
+Each topic includes evidence you can inspect. A shortened example:
+
+```json
+{
+  "topic_id": 2,
+  "label": "global markets and stocks",
+  "label_source": "bertopic",
+  "keywords": [
+    {"keyword": "stocks", "weight": 0.42},
+    {"keyword": "market", "weight": 0.37}
+  ],
+  "document_count": 124,
+  "document_examples": [
+    "Stocks climbed after the earnings report ...",
+    "Markets opened higher as investors ..."
+  ]
+}
+```
+
+Use `document_examples` as a sanity check, then trace `document_ids` back to the corpus for deeper inspection.
+
 ## Configuration reference
 
 Topic modeling recipes use a strict schema. Unknown fields or type mismatches are errors.
@@ -157,3 +180,18 @@ AG News downloads require the `datasets` dependency. Install with:
 ```
 python3 -m pip install "biblicus[datasets,topic-modeling]"
 ```
+
+## Tuning workflow
+
+Start with a small sample to validate the pipeline, then scale up:
+
+1) Run with `--limit 500` to validate extraction and output structure.
+2) Add bigrams and stop words to reduce noise in keyword lists.
+3) Increase `--limit` or `--sample-size` once topics look stable.
+4) Experiment with `nr_topics` and `min_topic_size` to control granularity.
+
+## Common pitfalls
+
+- Using too few documents for BERTopic defaults (aim for at least 16).
+- Forgetting to enable stop words and ending up with filler topics.
+- Comparing runs that used different extraction prompts or lexical settings.
