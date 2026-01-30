@@ -109,6 +109,7 @@ class RapidOcrExtractor(TextExtractor):
             return ExtractedText(text="", producer_extractor_id=self.extractor_id)
 
         lines: list[str] = []
+        confidences: list[float] = []
         for entry in result:
             if not isinstance(entry, list) or len(entry) < 3:
                 continue
@@ -124,6 +125,12 @@ class RapidOcrExtractor(TextExtractor):
             cleaned = text_value.strip()
             if cleaned:
                 lines.append(cleaned)
+                confidences.append(confidence)
 
         text = parsed_config.joiner.join(lines).strip()
-        return ExtractedText(text=text, producer_extractor_id=self.extractor_id)
+        avg_confidence = sum(confidences) / len(confidences) if confidences else None
+        return ExtractedText(
+            text=text,
+            producer_extractor_id=self.extractor_id,
+            confidence=avg_confidence,
+        )

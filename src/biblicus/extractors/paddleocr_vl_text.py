@@ -11,7 +11,7 @@ the inference backend abstraction.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,7 +60,7 @@ class PaddleOcrVlExtractor(TextExtractor):
 
     extractor_id = "ocr-paddleocr-vl"
 
-    _model_cache: Optional[Any] = None
+    _model_cache: ClassVar[Dict[Tuple[str, bool], Any]] = {}
 
     def validate_config(self, config: Dict[str, Any]) -> BaseModel:
         """
@@ -177,13 +177,14 @@ class PaddleOcrVlExtractor(TextExtractor):
         """
         from paddleocr import PaddleOCR
 
-        if PaddleOcrVlExtractor._model_cache is None:
-            PaddleOcrVlExtractor._model_cache = PaddleOCR(
+        cache_key = (config.lang, config.use_angle_cls)
+        ocr = PaddleOcrVlExtractor._model_cache.get(cache_key)
+        if ocr is None:
+            ocr = PaddleOCR(
                 use_angle_cls=config.use_angle_cls,
                 lang=config.lang,
             )
-
-        ocr = PaddleOcrVlExtractor._model_cache
+            PaddleOcrVlExtractor._model_cache[cache_key] = ocr
         result = ocr.ocr(str(source_path), cls=config.use_angle_cls)
 
         if result is None or not result:

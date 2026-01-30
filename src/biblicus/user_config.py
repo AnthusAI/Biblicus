@@ -29,17 +29,49 @@ class OpenAiUserConfig(BaseModel):
     api_key: str = Field(min_length=1)
 
 
+class HuggingFaceUserConfig(BaseModel):
+    """
+    Configuration for HuggingFace integrations.
+
+    :ivar api_key: HuggingFace API key used for authenticated requests.
+    :vartype api_key: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    api_key: str = Field(min_length=1)
+
+
+class DeepgramUserConfig(BaseModel):
+    """
+    Configuration for Deepgram integrations.
+
+    :ivar api_key: Deepgram API key used for authenticated requests.
+    :vartype api_key: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    api_key: str = Field(min_length=1)
+
+
 class BiblicusUserConfig(BaseModel):
     """
     Parsed user configuration for Biblicus.
 
     :ivar openai: Optional OpenAI configuration.
     :vartype openai: OpenAiUserConfig or None
+    :ivar huggingface: Optional HuggingFace configuration.
+    :vartype huggingface: HuggingFaceUserConfig or None
+    :ivar deepgram: Optional Deepgram configuration.
+    :vartype deepgram: DeepgramUserConfig or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     openai: Optional[OpenAiUserConfig] = None
+    huggingface: Optional[HuggingFaceUserConfig] = None
+    deepgram: Optional[DeepgramUserConfig] = None
 
 
 def default_user_config_paths(
@@ -136,3 +168,47 @@ def resolve_openai_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Op
     if loaded.openai is None:
         return None
     return loaded.openai.api_key
+
+
+def resolve_huggingface_api_key(
+    *, config: Optional[BiblicusUserConfig] = None
+) -> Optional[str]:
+    """
+    Resolve a HuggingFace API key from environment or user configuration.
+
+    Environment takes precedence over configuration.
+
+    :param config: Optional pre-loaded user configuration.
+    :type config: BiblicusUserConfig or None
+    :return: API key string, or None when no key is available.
+    :rtype: str or None
+    """
+    env_key = os.environ.get("HUGGINGFACE_API_KEY")
+    if env_key:
+        return env_key
+    loaded = config or load_user_config()
+    if loaded.huggingface is None:
+        return None
+    return loaded.huggingface.api_key
+
+
+def resolve_deepgram_api_key(
+    *, config: Optional[BiblicusUserConfig] = None
+) -> Optional[str]:
+    """
+    Resolve a Deepgram API key from environment or user configuration.
+
+    Environment takes precedence over configuration.
+
+    :param config: Optional pre-loaded user configuration.
+    :type config: BiblicusUserConfig or None
+    :return: API key string, or None when no key is available.
+    :rtype: str or None
+    """
+    env_key = os.environ.get("DEEPGRAM_API_KEY")
+    if env_key:
+        return env_key
+    loaded = config or load_user_config()
+    if loaded.deepgram is None:
+        return None
+    return loaded.deepgram.api_key

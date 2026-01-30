@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..corpus import Corpus
 from ..errors import ExtractionRunFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
-from .base import TextExtractor  # noqa: F401
+from .base import TextExtractor
 
 DOCLING_SUPPORTED_MEDIA_TYPES = frozenset(
     [
@@ -164,6 +164,7 @@ class DoclingGraniteExtractor(TextExtractor):
         :rtype: str
         """
         from docling.document_converter import DocumentConverter, DocumentConverterOptions
+        from docling.format_options import InputFormat, PdfFormatOption
         from docling.pipeline_options import VlmPipelineOptions, vlm_model_specs
 
         if config.backend == "mlx":
@@ -175,7 +176,8 @@ class DoclingGraniteExtractor(TextExtractor):
             pipeline_options=VlmPipelineOptions(vlm_options=vlm_options)
         )
 
-        converter = DocumentConverter(format_options={"pdf": pipeline_options})
+        pdf_format_option = PdfFormatOption(pipeline_options=pipeline_options)
+        converter = DocumentConverter(format_options={InputFormat.PDF: pdf_format_option})
         result = converter.convert(str(source_path))
 
         if config.output_format == "html":
