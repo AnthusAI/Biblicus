@@ -190,6 +190,11 @@ Start with a small sample to validate the pipeline, then scale up:
 3) Increase `--limit` or `--sample-size` once topics look stable.
 4) Experiment with `nr_topics` and `min_topic_size` to control granularity.
 
+## Interpreting results
+
+When a topic looks off, inspect the `document_examples` and compare them to the keyword list. If the documents do not
+match the keywords, adjust lexical processing or increase `min_topic_size` to reduce noise.
+
 ## Common pitfalls
 
 - Using too few documents for BERTopic defaults (aim for at least 16).
