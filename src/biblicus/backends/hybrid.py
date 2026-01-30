@@ -128,11 +128,12 @@ class HybridBackend:
             raise ValueError("Hybrid run missing lexical or embedding run identifiers")
         lexical_run = corpus.load_run(str(lexical_run_id))
         embedding_run = corpus.load_run(str(embedding_run_id))
+        component_budget = _expand_component_budget(budget)
         lexical_result = lexical_backend.query(
-            corpus, run=lexical_run, query_text=query_text, budget=budget
+            corpus, run=lexical_run, query_text=query_text, budget=component_budget
         )
         embedding_result = embedding_backend.query(
-            corpus, run=embedding_run, query_text=query_text, budget=budget
+            corpus, run=embedding_run, query_text=query_text, budget=component_budget
         )
         candidates = _fuse_evidence(
             lexical_result.evidence,
@@ -203,6 +204,28 @@ def _resolve_backend(backend_id: str):
     from . import get_backend
 
     return get_backend(backend_id)
+
+
+def _expand_component_budget(budget: QueryBudget, *, multiplier: int = 5) -> QueryBudget:
+    """
+    Expand a final budget to collect more candidates for fusion.
+
+    :param budget: Final evidence budget.
+    :type budget: QueryBudget
+    :param multiplier: Candidate expansion multiplier.
+    :type multiplier: int
+    :return: Expanded budget for component backends.
+    :rtype: QueryBudget
+    """
+    max_total_characters = budget.max_total_characters
+    expanded_characters = (
+        max_total_characters * multiplier if max_total_characters is not None else None
+    )
+    return QueryBudget(
+        max_total_items=budget.max_total_items * multiplier,
+        max_total_characters=expanded_characters,
+        max_items_per_source=budget.max_items_per_source,
+    )
 
 
 def _fuse_evidence(
