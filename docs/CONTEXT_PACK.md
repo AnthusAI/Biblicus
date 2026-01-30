@@ -48,6 +48,27 @@ Context pack building returns a structured result you can inspect:
 
 `blocks` keeps a per-evidence record so you can debug how the final text was assembled.
 
+### Before and after example
+
+Given two evidence blocks, compare how different policies change the output:
+
+```python
+policy = ContextPackPolicy(join_with="\n\n", ordering="rank", include_metadata=False)
+context_pack = build_context_pack(result, policy=policy)
+print(context_pack.text)
+```
+
+With metadata enabled and score ordering:
+
+```python
+policy = ContextPackPolicy(join_with="\n\n", ordering="score", include_metadata=True)
+context_pack = build_context_pack(result, policy=policy)
+print(context_pack.text)
+```
+
+The first output keeps the original ranking and clean text blocks. The second output reorders by score and adds
+explicit metadata lines for inspection.
+
 ## Policy surfaces
 
 Context pack policies make ordering and formatting explicit.
