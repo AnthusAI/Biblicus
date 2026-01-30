@@ -80,6 +80,16 @@ python3 -c "import json; data=json.load(open('/tmp/retrieval_output.json')); pri
 python3 -m biblicus show --corpus corpora/demo ITEM_ID
 ```
 
+## Saving evidence for later analysis
+
+Evidence output is stable JSON. Save it alongside your experiments so you can compare runs later:
+
+```
+python3 -m biblicus query --corpus corpora/demo --query "beta" > artifacts/retrieval/beta.json
+```
+
+Record the run identifier and budget values in the same folder so you can reproduce the query.
+
 ## Labs and demos
 
 When you want a repeatable example with bundled data, use the retrieval evaluation lab:
