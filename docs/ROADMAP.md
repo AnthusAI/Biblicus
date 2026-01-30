@@ -39,34 +39,32 @@ These are the capability slices that already exist and have end-to-end behavior 
 - Token and character budget strategies with explicit selectors.
 - Documentation and examples that show how policy choices change outputs.
 
-## Next: extraction evaluation harness
+### Extraction evaluation harness
 
-Goal: compare extraction approaches in a way that is measurable, repeatable, and useful for practical engineering decisions.
+This evaluation harness compares extraction approaches in a way that is measurable, repeatable, and useful for
+practical engineering decisions.
 
-Deliverables:
+### Corpus analysis tools
 
-- Dataset authoring workflow for extraction ground truth (for example: expected transcripts and expected OCR text).
-- Evaluation metrics for accuracy, speed, and cost, including processable fraction for a given extractor recipe.
-- A report format that can compare multiple extraction recipes against the same corpus and dataset.
-
-Acceptance checks:
-
-- Evaluation results are stable and reproducible for the same corpus and dataset inputs.
-- Reports make it clear when an extractor fails to process an item versus producing empty output.
-
-## Next: corpus analysis tools
-
-Goal: provide lightweight analysis utilities that summarize corpus themes and guide curation.
-
-Deliverables:
+Lightweight analysis utilities summarize corpus themes and guide curation:
 
 - Basic corpus profiling with deterministic metrics for raw items and extracted text.
+- Topic modeling with BERTopic and optional LLM-assisted labeling.
+- Side-by-side analysis outputs stored under the corpus for reproducible comparison.
+
+## Next: sequence analysis (hidden Markov models)
+
+Goal: provide a sequence-oriented analysis backend for corpora where order matters (conversations, timelines, logs).
+
+Deliverables:
+
 - Hidden Markov modeling analysis for sequence-driven corpora.
-- A way to compare analysis outputs across corpora or corpus snapshots.
+- A report format that explains state transitions and emissions with evidence.
+- Evaluation guidance for comparing HMM outputs across corpora or snapshots.
 
 Acceptance checks:
 
-- Analysis is reproducible for the same corpus state.
+- HMM analysis is reproducible for the same corpus state and extraction run.
 - Reports are exportable and readable without custom tooling.
 
 ## Later: alternate backends and hosting modes
