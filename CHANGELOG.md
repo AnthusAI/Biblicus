@@ -1,7 +1,15 @@
 # CHANGELOG
 
 
+## v0.10.0 (2026-01-30)
+
+
 ## v0.9.0 (2026-01-30)
+
+### Features
+
+- Add profiling analysis backend
+  ([`cac66c9`](https://github.com/AnthusAI/Biblicus/commit/cac66c97cac72c964c0bc2f5e664f87566a5fcd5))
 
 
 ## v0.8.0 (2026-01-30)
