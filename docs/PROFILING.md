@@ -115,6 +115,16 @@ Profiling output is a structured report with separate sections for raw items and
 The `raw_items` section summarizes corpus composition. The `extracted_text` section tells you how much content made it
 through extraction and how much was missing or empty.
 
+## Comparing profiling runs
+
+Use the same extraction run and recipe configuration whenever you compare profiling outputs:
+
+1) Run profiling on two corpus snapshots.
+2) Compare `raw_items.total_items`, media type counts, and tag coverage.
+3) Compare `extracted_text` coverage to spot extraction regressions.
+
+Record the run identifiers and catalog timestamps so you can trace differences later.
+
 ## Common pitfalls
 
 - Profiling without specifying an extraction run, which makes comparisons harder to reproduce.
