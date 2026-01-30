@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.9.0 (2026-01-30)
+
+
 ## v0.8.0 (2026-01-30)
 
 ### Bug Fixes
@@ -62,6 +65,9 @@ Add analysis_runs_dir property and analysis_run_dir method. Add latest_extractio
 
 Add ANALYSIS_SCHEMA_VERSION and ANALYSIS_RUNS_DIR_NAME constants needed by the analysis pipeline
   infrastructure.
+
+- Add BERTopic analysis pipeline
+  ([`3e146b0`](https://github.com/AnthusAI/Biblicus/commit/3e146b0c4c98a9338b0be86c90942ab789628386))
 
 - Add confidence scores to extraction output
   ([`e3ac910`](https://github.com/AnthusAI/Biblicus/commit/e3ac9103c11fc30e25d6197435cf50683af725f0))
