@@ -84,6 +84,30 @@ Extraction evaluation artifacts are stored under:
 .biblicus/runs/evaluation/extraction/<run_id>/output.json
 ```
 
+## Reading the output
+
+Evaluation outputs include metrics and dataset/run metadata. A shortened example:
+
+```json
+{
+  "dataset": {
+    "name": "Extraction baseline",
+    "description": "Short labeled texts for extraction accuracy",
+    "items": 2
+  },
+  "run_id": "pipeline:RUN_ID",
+  "metrics": {
+    "coverage_present": 2.0,
+    "coverage_empty": 0.0,
+    "coverage_missing": 0.0,
+    "processable_fraction": 1.0,
+    "average_similarity": 1.0
+  }
+}
+```
+
+Use `coverage_*` to understand how much text was produced and `average_similarity` to compare extraction quality.
+
 ## Working demo
 
 A runnable demo is provided in `scripts/extraction_evaluation_demo.py`. It downloads AG News, runs extraction, builds a
@@ -145,3 +169,9 @@ non-empty items, the similarity score is 1.0 for those items.
 - Use coverage metrics to detect extractors that skip or fail on specific media types.
 - Use accuracy metrics to compare competing extractors on labeled samples.
 - Track processable fraction before optimizing quality so you know what fraction of the corpus is actually evaluated.
+
+## Common pitfalls
+
+- Evaluating a run with a dataset built from a different corpus.
+- Forgetting to record the extraction run reference in experiment logs.
+- Comparing runs with different label sets or dataset sizes.
