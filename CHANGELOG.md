@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.14.0 (2026-01-30)
+
+### Bug Fixes
+
+- Expand hybrid candidate budgets
+  ([`264e27e`](https://github.com/AnthusAI/Biblicus/commit/264e27e39b33476c008c2dcc89640759142b27df))
+
+### Features
+
+- Add retrieval evaluation lab
+  ([`2156a93`](https://github.com/AnthusAI/Biblicus/commit/2156a9366320343116b1dc930f97a14747813868))
+
+
 ## v0.13.0 (2026-01-30)
 
 ### Documentation
