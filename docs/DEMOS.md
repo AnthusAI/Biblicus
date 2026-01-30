@@ -198,6 +198,23 @@ python3 -m pip install "biblicus[datasets,topic-modeling]"
 python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
+### Extraction evaluation demo run
+
+Use the extraction evaluation demo to build an extraction run, write a labeled dataset from AG News items, and evaluate
+coverage and accuracy.
+
+Install optional dependencies first:
+
+```
+python3 -m pip install "biblicus[datasets]"
+```
+
+```
+python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
+```
+
+The script prints the dataset path, extraction run reference, and evaluation output path so you can inspect the results.
+
 Run with a larger corpus and a higher topic count:
 
 ```

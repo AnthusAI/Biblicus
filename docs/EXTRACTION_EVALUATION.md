@@ -84,9 +84,17 @@ Extraction evaluation artifacts are stored under:
 .biblicus/runs/evaluation/extraction/<run_id>/output.json
 ```
 
+## Working demo
+
+A runnable demo is provided in `scripts/extraction_evaluation_demo.py`. It downloads AG News, runs extraction, builds a
+dataset from the ingested items, and evaluates the extraction run:
+
+```
+python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
+```
+
 ## Interpretation tips
 
 - Use coverage metrics to detect extractors that skip or fail on specific media types.
 - Use accuracy metrics to compare competing extractors on labeled samples.
 - Track processable fraction before optimizing quality so you know what fraction of the corpus is actually evaluated.
-
