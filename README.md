@@ -447,6 +447,11 @@ Two backends are included.
 
 For detailed documentation including configuration options, performance characteristics, and usage examples, see the [Backend Reference][backend-reference].
 
+## Retrieval documentation
+
+For the retrieval pipeline overview and run artifacts, see `docs/RETRIEVAL.md`. For the planned quality upgrades
+(tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`.
+
 ## Extraction backends
 
 These extractors are built in. Optional ones require extra dependencies. See [text extraction documentation][text-extraction] for details.

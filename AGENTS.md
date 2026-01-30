@@ -57,6 +57,14 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Only then implement the feature**, following the documentation and specs exactly.
 - **Finish by enforcing quality gates**: docstrings, validation, naming clarity, and 100% coverage.
 
+## Documentation as a runnable textbook
+
+- **Documentation is as important as code**: Sphinx pages are treated as a textbook that teaches the concepts and the Biblicus implementation.
+- **Elementary, educational examples**: prefer basic, textbook methods first, then build up to advanced techniques.
+- **Runnable narratives**: every concept described in the docs must have a working example users can run on bundled demo data.
+- **Learning by doing**: demos should be executable end to end and reusable on user-provided data.
+- **Teach by example**: explanations should connect to actual Biblicus commands, scripts, and outputs.
+
 ## One official way (no compatibility baggage)
 
 - No backwards compatibility layers, no legacy aliases, no “support both”.

@@ -97,6 +97,16 @@ def step_build_run_with_config(context, backend: str, corpus_name: str) -> None:
     context.last_run_id = context.last_run.get("run_id")
 
 
+@when('I attempt to build a "{backend}" retrieval run in corpus "{corpus_name}" with config:')
+def step_attempt_build_run_with_config(context, backend: str, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
+    for row in context.table:
+        key, value = _table_key_value(row)
+        args.extend(["--config", f"{key}={value}"])
+    context.last_result = run_biblicus(context, args)
+
+
 @when('I query with the latest run for "{query_text}" and budget:')
 def step_query_latest_run(context, query_text: str) -> None:
     assert context.last_run_id

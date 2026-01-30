@@ -31,6 +31,21 @@ Acceptance checks:
 - Dataset formats are versioned when they change.
 - Reports remain deterministic for the same inputs.
 
+## Next: retrieval quality upgrades
+
+Goal: make retrieval relevance stronger while keeping deterministic baselines and clear evaluation.
+
+Deliverables:
+
+- A tuned lexical baseline (for example: BM25 configuration, n-grams, field weighting, stop word controls).
+- A reranking stage that can refine top-N results with either a cross-encoder or an LLM re-ranker.
+- A hybrid retrieval mode that combines lexical signals with embeddings and exposes weights explicitly.
+
+Acceptance checks:
+
+- Accuracy-at-k improves on the same evaluation datasets without regressions in determinism.
+- Retrieval stages are explicitly recorded (retrieve, rerank, filter) in the output artifacts.
+
 ## Next: context pack policy surfaces
 
 Goal: make context shaping policies easier to evaluate and swap.
@@ -67,7 +82,6 @@ Goal: provide lightweight analysis utilities that summarize corpus themes and gu
 
 Deliverables:
 
-- Basic data profiling reports (counts, media types, size distributions, tag coverage).
 - Hidden Markov modeling analysis for sequence-driven corpora.
 - A way to compare analysis outputs across corpora or corpus snapshots.
 

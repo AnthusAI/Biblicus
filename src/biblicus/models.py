@@ -263,6 +263,8 @@ class Evidence(BaseModel):
     :vartype span_end: int or None
     :ivar stage: Retrieval stage label (for example, scan, full-text search, rerank).
     :vartype stage: str
+    :ivar stage_scores: Optional per-stage scores for multi-stage retrieval.
+    :vartype stage_scores: dict[str, float] or None
     :ivar recipe_id: Recipe identifier used to create the run.
     :vartype recipe_id: str
     :ivar run_id: Retrieval run identifier.
@@ -283,6 +285,7 @@ class Evidence(BaseModel):
     span_start: Optional[int] = None
     span_end: Optional[int] = None
     stage: str
+    stage_scores: Optional[Dict[str, float]] = None
     recipe_id: str
     run_id: str
     hash: Optional[str] = None

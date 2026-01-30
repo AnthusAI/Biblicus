@@ -7,8 +7,10 @@ from __future__ import annotations
 from typing import Dict, Type
 
 from .base import RetrievalBackend
+from .hybrid import HybridBackend
 from .scan import ScanBackend
 from .sqlite_full_text_search import SqliteFullTextSearchBackend
+from .vector import VectorBackend
 
 
 def available_backends() -> Dict[str, Type[RetrievalBackend]]:
@@ -19,8 +21,10 @@ def available_backends() -> Dict[str, Type[RetrievalBackend]]:
     :rtype: dict[str, Type[RetrievalBackend]]
     """
     return {
+        HybridBackend.backend_id: HybridBackend,
         ScanBackend.backend_id: ScanBackend,
         SqliteFullTextSearchBackend.backend_id: SqliteFullTextSearchBackend,
+        VectorBackend.backend_id: VectorBackend,
     }
 
 

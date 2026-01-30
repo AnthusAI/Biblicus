@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..constants import CORPUS_DIR_NAME, RUNS_DIR_NAME
 from ..corpus import Corpus
@@ -35,6 +35,28 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     :vartype chunk_overlap: int
     :ivar snippet_characters: Maximum characters to include in evidence snippets.
     :vartype snippet_characters: int
+    :ivar bm25_k1: BM25 k1 tuning parameter.
+    :vartype bm25_k1: float
+    :ivar bm25_b: BM25 b tuning parameter.
+    :vartype bm25_b: float
+    :ivar ngram_min: Minimum n-gram size for lexical tuning.
+    :vartype ngram_min: int
+    :ivar ngram_max: Maximum n-gram size for lexical tuning.
+    :vartype ngram_max: int
+    :ivar stop_words: Optional stop word policy or list.
+    :vartype stop_words: str or list[str] or None
+    :ivar field_weight_title: Relative weight for title field matches.
+    :vartype field_weight_title: float
+    :ivar field_weight_body: Relative weight for body field matches.
+    :vartype field_weight_body: float
+    :ivar field_weight_tags: Relative weight for tag field matches.
+    :vartype field_weight_tags: float
+    :ivar rerank_enabled: Whether to apply reranking to retrieved candidates.
+    :vartype rerank_enabled: bool
+    :ivar rerank_model: Reranker model identifier for metadata.
+    :vartype rerank_model: str or None
+    :ivar rerank_top_k: Number of candidates to rerank.
+    :vartype rerank_top_k: int
     :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
     :vartype extraction_run: str or None
     """
@@ -44,7 +66,80 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     chunk_size: int = Field(default=800, ge=1)
     chunk_overlap: int = Field(default=200, ge=0)
     snippet_characters: int = Field(default=400, ge=1)
+    bm25_k1: float = Field(default=1.2, gt=0)
+    bm25_b: float = Field(default=0.75, ge=0, le=1)
+    ngram_min: int = Field(default=1, ge=1)
+    ngram_max: int = Field(default=1, ge=1)
+    stop_words: Optional[Union[str, List[str]]] = None
+    field_weight_title: float = Field(default=1.0, ge=0)
+    field_weight_body: float = Field(default=1.0, ge=0)
+    field_weight_tags: float = Field(default=1.0, ge=0)
+    rerank_enabled: bool = False
+    rerank_model: Optional[str] = None
+    rerank_top_k: int = Field(default=10, ge=1)
     extraction_run: Optional[str] = None
+
+    @field_validator("stop_words")
+    @classmethod
+    def _validate_stop_words(
+        cls, value: Optional[Union[str, List[str]]]
+    ) -> Optional[Union[str, List[str]]]:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            if value.lower() == "english":
+                return "english"
+            raise ValueError("stop_words must be 'english' or a list of strings")
+        if not value:
+            raise ValueError("stop_words list must not be empty")
+        if any(not isinstance(token, str) or not token.strip() for token in value):
+            raise ValueError("stop_words list must contain non-empty strings")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_ngram_range(self) -> "SqliteFullTextSearchRecipeConfig":
+        if self.ngram_min > self.ngram_max:
+            raise ValueError("Invalid ngram range: ngram_min must be <= ngram_max")
+        if self.rerank_enabled and not self.rerank_model:
+            raise ValueError("Rerank enabled requires rerank_model")
+        return self
+
+
+_ENGLISH_STOP_WORDS: Set[str] = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "but",
+    "by",
+    "for",
+    "if",
+    "in",
+    "into",
+    "is",
+    "it",
+    "no",
+    "not",
+    "of",
+    "on",
+    "or",
+    "such",
+    "that",
+    "the",
+    "their",
+    "then",
+    "there",
+    "these",
+    "they",
+    "this",
+    "to",
+    "was",
+    "will",
+    "with",
+}
 
 
 class SqliteFullTextSearchBackend:
@@ -118,29 +213,39 @@ class SqliteFullTextSearchBackend:
         :rtype: RetrievalResult
         """
         recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(run.recipe.config)
+        query_tokens = _tokenize_query(query_text)
+        stop_words = _resolve_stop_words(recipe_config.stop_words)
+        filtered_tokens = _apply_stop_words(query_tokens, stop_words)
+        if not filtered_tokens:
+            return RetrievalResult(
+                query_text=query_text,
+                budget=budget,
+                run_id=run.run_id,
+                recipe_id=run.recipe.recipe_id,
+                backend_id=self.backend_id,
+                generated_at=utc_now_iso(),
+                evidence=[],
+                stats={"candidates": 0, "returned": 0},
+            )
         db_path = _resolve_run_db_path(corpus, run)
         candidates = _query_full_text_search_index(
             db_path=db_path,
-            query_text=query_text,
+            query_text=" ".join(filtered_tokens),
             limit=_candidate_limit(budget.max_total_items),
             snippet_characters=recipe_config.snippet_characters,
         )
-        sorted_candidates = sorted(
-            candidates,
-            key=lambda evidence_item: (-evidence_item.score, evidence_item.item_id),
+        sorted_candidates = _rank_candidates(candidates)
+        evidence = _apply_rerank_if_enabled(
+            sorted_candidates,
+            query_tokens=filtered_tokens,
+            run=run,
+            budget=budget,
+            rerank_enabled=recipe_config.rerank_enabled,
+            rerank_top_k=recipe_config.rerank_top_k,
         )
-        ranked = [
-            evidence_item.model_copy(
-                update={
-                    "rank": index,
-                    "recipe_id": run.recipe.recipe_id,
-                    "run_id": run.run_id,
-                }
-            )
-            for index, evidence_item in enumerate(sorted_candidates, start=1)
-        ]
-        evidence = apply_budget(ranked, budget)
-        stats = {"candidates": len(sorted_candidates), "returned": len(evidence)}
+        stats: Dict[str, object] = {"candidates": len(sorted_candidates), "returned": len(evidence)}
+        if recipe_config.rerank_enabled:
+            stats["reranked_candidates"] = min(len(sorted_candidates), recipe_config.rerank_top_k)
         return RetrievalResult(
             query_text=query_text,
             budget=budget,
@@ -163,6 +268,147 @@ def _candidate_limit(max_total_items: int) -> int:
     :rtype: int
     """
     return max_total_items * 5
+
+
+def _tokenize_query(query_text: str) -> List[str]:
+    """
+    Tokenize a query string into lowercased terms.
+
+    :param query_text: Raw query text.
+    :type query_text: str
+    :return: Token list.
+    :rtype: list[str]
+    """
+    return [token for token in query_text.lower().split() if token]
+
+
+def _resolve_stop_words(value: Optional[Union[str, List[str]]]) -> Set[str]:
+    """
+    Resolve stop words based on a configuration value.
+
+    :param value: Stop word configuration.
+    :type value: str or list[str] or None
+    :return: Stop word set.
+    :rtype: set[str]
+    """
+    if value is None:
+        return set()
+    if isinstance(value, str):
+        return set(_ENGLISH_STOP_WORDS)
+    return {token.strip().lower() for token in value if token.strip()}
+
+
+def _apply_stop_words(tokens: List[str], stop_words: Set[str]) -> List[str]:
+    """
+    Filter query tokens by a stop word list.
+
+    :param tokens: Token list.
+    :type tokens: list[str]
+    :param stop_words: Stop word set.
+    :type stop_words: set[str]
+    :return: Filtered token list.
+    :rtype: list[str]
+    """
+    if not stop_words:
+        return tokens
+    return [token for token in tokens if token not in stop_words]
+
+
+def _rank_candidates(candidates: List[Evidence]) -> List[Evidence]:
+    """
+    Sort evidence candidates by descending score.
+
+    :param candidates: Evidence list to sort.
+    :type candidates: list[Evidence]
+    :return: Sorted evidence list.
+    :rtype: list[Evidence]
+    """
+    return sorted(
+        candidates, key=lambda evidence_item: (-evidence_item.score, evidence_item.item_id)
+    )
+
+
+def _rerank_score(text: str, query_tokens: List[str]) -> float:
+    """
+    Compute a simple rerank score using token overlap.
+
+    :param text: Candidate text.
+    :type text: str
+    :param query_tokens: Query tokens.
+    :type query_tokens: list[str]
+    :return: Rerank score.
+    :rtype: float
+    """
+    lower_text = text.lower() if text else ""
+    return float(sum(1 for token in query_tokens if token in lower_text))
+
+
+def _apply_rerank_if_enabled(
+    candidates: List[Evidence],
+    *,
+    query_tokens: List[str],
+    run: RetrievalRun,
+    budget: QueryBudget,
+    rerank_enabled: bool,
+    rerank_top_k: int,
+) -> List[Evidence]:
+    """
+    Rerank candidates when enabled, otherwise apply the budget to ranked results.
+
+    :param candidates: Ranked candidate evidence.
+    :type candidates: list[Evidence]
+    :param query_tokens: Query tokens used for reranking.
+    :type query_tokens: list[str]
+    :param run: Retrieval run to annotate evidence with.
+    :type run: RetrievalRun
+    :param budget: Evidence selection budget.
+    :type budget: QueryBudget
+    :param rerank_enabled: Whether reranking is enabled.
+    :type rerank_enabled: bool
+    :param rerank_top_k: Maximum candidates to rerank.
+    :type rerank_top_k: int
+    :return: Evidence list respecting budget.
+    :rtype: list[Evidence]
+    """
+    if not rerank_enabled:
+        ranked = [
+            evidence_item.model_copy(
+                update={
+                    "rank": index,
+                    "recipe_id": run.recipe.recipe_id,
+                    "run_id": run.run_id,
+                }
+            )
+            for index, evidence_item in enumerate(candidates, start=1)
+        ]
+        return apply_budget(ranked, budget)
+
+    rerank_limit = min(len(candidates), rerank_top_k)
+    rerank_candidates = candidates[:rerank_limit]
+    reranked: List[Evidence] = []
+    for evidence_item in rerank_candidates:
+        rerank_score = _rerank_score(evidence_item.text or "", query_tokens)
+        reranked.append(
+            evidence_item.model_copy(
+                update={
+                    "score": rerank_score,
+                    "stage": "rerank",
+                    "stage_scores": {"retrieve": evidence_item.score, "rerank": rerank_score},
+                }
+            )
+        )
+    reranked_sorted = _rank_candidates(reranked)
+    ranked = [
+        evidence_item.model_copy(
+            update={
+                "rank": index,
+                "recipe_id": run.recipe.recipe_id,
+                "run_id": run.run_id,
+            }
+        )
+        for index, evidence_item in enumerate(reranked_sorted, start=1)
+    ]
+    return apply_budget(ranked, budget)
 
 
 def _resolve_run_db_path(corpus: Corpus, run: RetrievalRun) -> Path:
