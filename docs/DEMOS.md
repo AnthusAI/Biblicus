@@ -215,6 +215,16 @@ python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extractio
 
 The script prints the dataset path, extraction run reference, and evaluation output path so you can inspect the results.
 
+### Extraction evaluation lab run
+
+Use the lab script for a fast, fully local walkthrough with bundled files and labels:
+
+```
+python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
+```
+
+The lab writes a generated dataset file and evaluation output path and prints both in the command output.
+
 Run with a larger corpus and a higher topic count:
 
 ```

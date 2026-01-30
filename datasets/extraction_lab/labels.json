@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "extraction-evaluation-lab",
+  "description": "Bundled labels for the extraction evaluation lab.",
+  "items": [
+    {
+      "filename": "alpha.md",
+      "expected_text": "Alpha note"
+    },
+    {
+      "filename": "beta.txt",
+      "expected_text": "Beta note"
+    },
+    {
+      "filename": "blank.md",
+      "expected_text": ""
+    }
+  ]
+}

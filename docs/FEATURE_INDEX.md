@@ -162,6 +162,7 @@ Documentation:
 Behavior specifications:
 
 - `features/extraction_evaluation.feature`
+- `features/extraction_evaluation_lab.feature`
 
 Primary implementation:
 

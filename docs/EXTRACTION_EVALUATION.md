@@ -93,6 +93,19 @@ dataset from the ingested items, and evaluates the extraction run:
 python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
 ```
 
+## Extraction evaluation lab
+
+For a fast, fully local walkthrough, use the bundled lab. It ingests a tiny set of files, runs extraction, generates a
+dataset, and evaluates the run in seconds.
+
+```
+python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
+```
+
+The lab uses the bundled files under `datasets/extraction_lab/items` and writes the generated dataset to
+`datasets/extraction_lab_output.json` by default. The command output includes the evaluation artifact path so you can
+inspect the metrics immediately.
+
 ## Interpretation tips
 
 - Use coverage metrics to detect extractors that skip or fail on specific media types.
