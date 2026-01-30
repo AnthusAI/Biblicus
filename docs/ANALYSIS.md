@@ -55,6 +55,11 @@ Analysis backends implement the `CorpusAnalysisBackend` interface and are regist
 A backend receives the corpus, a recipe name, a configuration mapping, and an extraction run reference. It returns a
 Pydantic model that is serialized to JavaScript Object Notation for storage.
 
+## Choosing an analysis backend
+
+Start with profiling when you need fast, deterministic baselines. Use topic modeling when you want thematic clustering
+and exploratory labels. Combine both for a clear view of corpus composition and themes.
+
 ## Recipe files
 
 Analysis recipes are optional JavaScript Object Notation or YAML files that capture configuration in a repeatable way.
