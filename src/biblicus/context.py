@@ -8,7 +8,7 @@ stable contract while context formatting remains an explicit policy surface.
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,7 +30,7 @@ class ContextPackPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     join_with: str = Field(default="\n\n")
-    ordering: Literal["rank", "score", "source"] = Field(default="rank")
+    ordering: str = Field(default="rank", min_length=1)
     include_metadata: bool = Field(default=False)
 
 

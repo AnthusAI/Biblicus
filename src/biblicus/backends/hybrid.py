@@ -221,10 +221,15 @@ def _expand_component_budget(budget: QueryBudget, *, multiplier: int = 5) -> Que
     expanded_characters = (
         max_total_characters * multiplier if max_total_characters is not None else None
     )
+    expanded_max_items_per_source = (
+        budget.max_items_per_source * multiplier
+        if budget.max_items_per_source is not None
+        else None
+    )
     return QueryBudget(
         max_total_items=budget.max_total_items * multiplier,
         max_total_characters=expanded_characters,
-        max_items_per_source=budget.max_items_per_source,
+        max_items_per_source=expanded_max_items_per_source,
     )
 
 
