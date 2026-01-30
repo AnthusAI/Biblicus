@@ -88,6 +88,33 @@ python3 -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/ret
   --max-total-items 3 --max-total-characters 2000 --max-items-per-source 5
 ```
 
+## Authoring a dataset from a corpus
+
+Use this workflow when you want to build a small, hand-labeled dataset:
+
+1) Ingest a small, representative subset of items.
+2) Run extraction and build a retrieval run.
+3) Use `biblicus list` to capture item identifiers.
+4) Write a dataset JSON that maps queries to `expected_item_id` values.
+
+Example skeleton:
+
+```json
+{
+  "schema_version": 1,
+  "name": "my-retrieval-dataset",
+  "description": "Hand-labeled queries for evaluation.",
+  "queries": [
+    {
+      "query_id": "q1",
+      "query_text": "example query",
+      "expected_item_id": "ITEM_ID",
+      "kind": "gold"
+    }
+  ]
+}
+```
+
 ## Retrieval evaluation lab
 
 The retrieval evaluation lab ships with bundled files and labels so you can run a deterministic end-to-end evaluation
