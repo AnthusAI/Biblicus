@@ -185,6 +185,28 @@ python3 -m biblicus extract build --corpus corpora/demo --step pass-through-text
 
 The output includes a `run_id` you can reuse when building a retrieval backend.
 
+### Topic modeling integration run
+
+Use the integration script to download a Wikipedia corpus, run extraction, and run topic modeling with a single command.
+
+```
+python3 scripts/topic_modeling_integration.py --corpus corpora/wiki_demo --force
+```
+
+Run with a smaller corpus and a higher topic count:
+
+```
+python3 scripts/topic_modeling_integration.py \
+  --corpus corpora/wiki_demo \
+  --force \
+  --limit 20 \
+  --bertopic-param nr_topics=8 \
+  --bertopic-param min_topic_size=2
+```
+
+The command prints the analysis run identifier and the output path. Open the `output.json` file to inspect per-topic labels,
+keywords, and document examples.
+
 ### Select extracted text within a pipeline
 
 When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.

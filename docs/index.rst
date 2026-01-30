@@ -11,9 +11,12 @@ Contents
 
    CORPUS
    EXTRACTION
+   extractors/index
    KNOWLEDGE_BASE
    BACKENDS
+   backends/index
    CONTEXT_PACK
+   TOPIC_MODELING
    DEMOS
    USER_CONFIGURATION
    TESTING

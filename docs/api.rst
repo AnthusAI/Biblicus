@@ -28,6 +28,17 @@ Core
    :members:
    :undoc-members:
 
+Extraction
+----------
+
+.. automodule:: biblicus.extraction
+   :members:
+   :undoc-members:
+
+.. automodule:: biblicus.extractors
+   :members:
+   :undoc-members:
+
 Backends
 --------
 

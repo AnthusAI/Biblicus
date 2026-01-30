@@ -34,3 +34,16 @@ openai:
 ```
 
 The OpenAI speech to text extractor also supports the `OPENAI_API_KEY` environment variable. Environment takes precedence over configuration.
+
+## Example: Deepgram speech to text
+
+Create a config file with a Deepgram API key.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+deepgram:
+  api_key: YOUR_KEY_HERE
+```
+
+The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` environment variable. Environment takes precedence over configuration.

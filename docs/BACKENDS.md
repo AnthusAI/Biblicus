@@ -3,6 +3,8 @@
 Backends are pluggable engines that implement a small, stable interface.
 The goal is to make new retrieval ideas easy to test without reshaping the corpus.
 
+For user documentation on available backends, see the [Backend Reference](backends/index.md).
+
 ## Backend contract
 
 Backends implement two operations:

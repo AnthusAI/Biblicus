@@ -129,9 +129,14 @@ python3 -m pip install biblicus
 Some extractors are optional so the base install stays small.
 
 - Optical character recognition for images: `python3 -m pip install "biblicus[ocr]"`
-- Speech to text transcription: `python3 -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Advanced optical character recognition with PaddleOCR: `python3 -m pip install "biblicus[paddleocr]"`
+- Document understanding with Docling VLM: `python3 -m pip install "biblicus[docling]"`
+- Document understanding with Docling VLM and MLX acceleration: `python3 -m pip install "biblicus[docling-mlx]"`
+- Speech to text transcription with OpenAI: `python3 -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Speech to text transcription with Deepgram: `python3 -m pip install "biblicus[deepgram]"` (requires a Deepgram API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Broad document parsing fallback: `python3 -m pip install "biblicus[unstructured]"`
 - MarkItDown document conversion (requires Python 3.10 or higher): `python3 -m pip install "biblicus[markitdown]"`
+- Topic modeling analysis with BERTopic: `python3 -m pip install "biblicus[topic-modeling]"`
 
 ## Quick start
 
@@ -389,6 +394,7 @@ The documents below follow the pipeline from raw items to model context:
 
 - [Corpus][corpus]
 - [Text extraction][text-extraction]
+- [Speech to text][speech-to-text]
 - [Knowledge base][knowledge-base]
 - [Backends][backends]
 - [Context packs][context-packs]
@@ -437,21 +443,97 @@ corpus/
 Two backends are included.
 
 - `scan` is a minimal baseline that scans raw items directly.
-- `sqlite-full-text-search` is a practical baseline that builds a full text search index in Sqlite.
+- `sqlite-full-text-search` is a practical baseline that builds a full text search index in SQLite.
+
+For detailed documentation including configuration options, performance characteristics, and usage examples, see the [Backend Reference][backend-reference].
 
 ## Extraction backends
 
-These extractors are built in. Optional ones require extra dependencies.
+These extractors are built in. Optional ones require extra dependencies. See [text extraction documentation][text-extraction] for details.
 
-- `pass-through-text` reads text items and strips Markdown front matter.
-- `metadata-text` turns catalog metadata into a small text artifact.
-- `pdf-text` extracts text from Portable Document Format items with `pypdf`.
-- `select-text` chooses one prior extraction result in a pipeline.
-- `select-longest-text` chooses the longest prior extraction result.
-- `ocr-rapidocr` does optical character recognition on images (optional).
-- `stt-openai` performs speech to text on audio (optional).
-- `unstructured` provides broad document parsing (optional).
-- `markitdown` converts many formats into Markdown-like text (optional).
+### Text and document extraction
+
+- [`pass-through-text`](docs/extractors/text-document/pass-through.md) reads text items and strips Markdown front matter.
+- [`metadata-text`](docs/extractors/text-document/metadata.md) turns catalog metadata into a small text artifact.
+- [`pdf-text`](docs/extractors/text-document/pdf.md) extracts text from Portable Document Format items with `pypdf`.
+- [`unstructured`](docs/extractors/text-document/unstructured.md) provides broad document parsing (optional).
+- [`markitdown`](docs/extractors/text-document/markitdown.md) converts many formats into Markdown-like text (optional).
+
+### Optical character recognition
+
+- [`ocr-rapidocr`](docs/extractors/ocr/rapidocr.md) does optical character recognition on images (optional).
+- [`ocr-paddleocr-vl`](docs/extractors/ocr/paddleocr-vl.md) does advanced optical character recognition with PaddleOCR vision-language model (optional).
+
+### Vision-language models
+
+- [`docling-smol`](docs/extractors/vlm-document/docling-smol.md) uses the SmolDocling-256M vision-language model for fast document understanding (optional).
+- [`docling-granite`](docs/extractors/vlm-document/docling-granite.md) uses the Granite Docling-258M vision-language model for high-accuracy extraction (optional).
+
+### Speech to text
+
+- [`stt-openai`](docs/extractors/speech-to-text/openai.md) performs speech to text on audio using OpenAI (optional).
+- [`stt-deepgram`](docs/extractors/speech-to-text/deepgram.md) performs speech to text on audio using Deepgram (optional).
+
+### Pipeline utilities
+
+- [`select-text`](docs/extractors/pipeline-utilities/select-text.md) chooses one prior extraction result in a pipeline.
+- [`select-longest-text`](docs/extractors/pipeline-utilities/select-longest.md) chooses the longest prior extraction result.
+- [`select-override`](docs/extractors/pipeline-utilities/select-override.md) chooses the last extraction result for matching media types in a pipeline.
+- [`select-smart-override`](docs/extractors/pipeline-utilities/select-smart-override.md) intelligently chooses between extraction results based on confidence and content quality.
+
+For detailed documentation on all extractors, see the [Extractor Reference][extractor-reference].
+
+## Topic modeling analysis
+
+Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Topic modeling is the first
+analysis backend. It reads an extraction run, optionally applies an LLM-driven extraction pass, applies lexical
+processing, runs BERTopic, and optionally applies an LLM fine-tuning pass to label topics. The output is structured
+JavaScript Object Notation.
+
+Run a topic analysis using a recipe file:
+
+```
+biblicus analyze topics --corpus corpora/example --recipe recipes/topic-modeling.yml --extraction-run pipeline:<run_id>
+```
+
+If `--extraction-run` is omitted, Biblicus uses the most recent extraction run and emits a warning about
+reproducibility. The analysis output is stored under:
+
+```
+.biblicus/runs/analysis/topic-modeling/<run_id>/output.json
+```
+
+Minimal recipe example:
+
+```yaml
+schema_version: 1
+text_source:
+  sample_size: 200
+llm_extraction:
+  enabled: false
+lexical_processing:
+  enabled: true
+  lowercase: true
+  strip_punctuation: false
+  collapse_whitespace: true
+bertopic_analysis:
+  parameters:
+    min_topic_size: 8
+    nr_topics: 10
+llm_fine_tuning:
+  enabled: false
+```
+
+LLM extraction and fine-tuning require `biblicus[openai]` and a configured OpenAI API key.
+Recipe files are validated strictly against the topic modeling schema, so type mismatches or unknown fields are errors.
+
+For a repeatable, real-world integration run that downloads a Wikipedia corpus and executes topic modeling, use:
+
+```
+python3 scripts/topic_modeling_integration.py --corpus corpora/wiki_demo --force
+```
+
+See `docs/TOPIC_MODELING.md` for parameter examples and per-topic output behavior.
 
 ## Integration corpus and evaluation dataset
 
@@ -508,6 +590,9 @@ License terms are in `LICENSE`.
 [corpus]: docs/CORPUS.md
 [knowledge-base]: docs/KNOWLEDGE_BASE.md
 [text-extraction]: docs/EXTRACTION.md
+[extractor-reference]: docs/extractors/index.md
+[backend-reference]: docs/backends/index.md
+[speech-to-text]: docs/STT.md
 [user-configuration]: docs/USER_CONFIGURATION.md
 [backends]: docs/BACKENDS.md
 [context-packs]: docs/CONTEXT_PACK.md
