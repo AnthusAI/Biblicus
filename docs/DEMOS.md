@@ -1,6 +1,7 @@
 # Demos
 
 This document is a set of runnable examples you can use to see the current system working end to end.
+Each section links to a textbook chapter so you can read the concept and then run the code.
 
 For the ordered plan of what to build next, see `docs/ROADMAP.md`.
 
@@ -92,6 +93,9 @@ flowchart TB
 ```
 
 ## Working examples you can run now
+
+Use the examples in order if you are new to the system. They build from ingestion to extraction, retrieval,
+evaluation, and analysis.
 
 ### Install for local development
 
@@ -185,6 +189,8 @@ python3 -m biblicus extract build --corpus corpora/demo --step pass-through-text
 
 The output includes a `run_id` you can reuse when building a retrieval backend.
 
+Text extraction details: `docs/EXTRACTION.md`
+
 ### Topic modeling integration run
 
 Use the integration script to download AG News, run extraction, and run topic modeling with a single command.
@@ -197,6 +203,8 @@ python3 -m pip install "biblicus[datasets,topic-modeling]"
 ```
 python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
+
+Topic modeling details: `docs/TOPIC_MODELING.md`
 
 ### Extraction evaluation demo run
 
@@ -215,6 +223,8 @@ python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extractio
 
 The script prints the dataset path, extraction run reference, and evaluation output path so you can inspect the results.
 
+Extraction evaluation details: `docs/EXTRACTION_EVALUATION.md`
+
 ### Extraction evaluation lab run
 
 Use the lab script for a fast, fully local walkthrough with bundled files and labels:
@@ -224,6 +234,8 @@ python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_la
 ```
 
 The lab writes a generated dataset file and evaluation output path and prints both in the command output.
+
+Extraction evaluation lab details: `docs/EXTRACTION_EVALUATION.md`
 
 ### Retrieval evaluation lab run
 
@@ -235,6 +247,8 @@ python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab 
 ```
 
 The script prints the dataset path, retrieval run identifier, and evaluation output location.
+
+Retrieval evaluation details: `docs/RETRIEVAL_EVALUATION.md`
 
 Run with a larger corpus and a higher topic count:
 
@@ -260,6 +274,8 @@ The profiling demo downloads AG News, runs extraction, and produces a profiling 
 python3 scripts/profiling_demo.py --corpus corpora/profiling_demo --force
 ```
 
+Profiling details: `docs/PROFILING.md`
+
 ### Select extracted text within a pipeline
 
 When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
@@ -278,6 +294,8 @@ python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-searc
   --config extraction_run=pipeline:EXTRACTION_RUN_ID
 ```
 
+Extraction pipeline details: `docs/EXTRACTION.md`
+
 ### Portable Document Format extraction and retrieval
 
 This example downloads a small set of public Portable Document Format files, extracts text, builds a local full text index, and runs a query.
@@ -295,6 +313,8 @@ Copy the `run_id` from the JavaScript Object Notation output. Use it as `PDF_EXT
 python3 -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_run=pipeline:PDF_EXTRACTION_RUN_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
 python3 -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
 ```
+
+Retrieval details: `docs/RETRIEVAL.md`
 
 ### MarkItDown extraction demo (Python 3.10+)
 
@@ -409,6 +429,8 @@ python3 -m biblicus build --corpus corpora/demo --backend scan
 python3 -m biblicus query --corpus corpora/demo --query "Hello"
 ```
 
+Backend details: `docs/BACKENDS.md`
+
 ### Build and query the practical backend
 
 The sqlite full text search backend builds a local index under the run directory.
@@ -417,6 +439,8 @@ The sqlite full text search backend builds a local index under the run directory
 python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pipeline:EXTRACTION_RUN_ID
 python3 -m biblicus query --corpus corpora/demo --query "tiny"
 ```
+
+Backend details: `docs/BACKENDS.md`
 
 ### Run the test suite and view coverage
 
@@ -430,6 +454,8 @@ To include integration scenarios that download public test data at runtime:
 ```
 python3 scripts/test.py --integration
 ```
+
+Testing details: `docs/TESTING.md`
 
 ## Documentation map
 
