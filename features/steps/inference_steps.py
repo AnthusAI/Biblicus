@@ -1,11 +1,13 @@
-from behave import given, when, then
 import os
 
+from behave import then, when
 
-@when('I call resolve_api_key for OpenAI provider with no config override')
+
+@when("I call resolve_api_key for OpenAI provider with no config override")
 def step_call_resolve_api_key_openai(context):
-    from biblicus.inference import resolve_api_key, ApiProvider
     from pathlib import Path
+
+    from biblicus.inference import ApiProvider, resolve_api_key
 
     # Temporarily override environment for test
     old_env_key = os.environ.get("OPENAI_API_KEY")
@@ -46,18 +48,22 @@ def step_call_resolve_api_key_openai(context):
 
 @then('the resolved API key equals "{expected_key}"')
 def step_check_resolved_api_key(context, expected_key):
-    assert context.resolved_api_key == expected_key, f"Expected {expected_key}, got {context.resolved_api_key}"
+    assert (
+        context.resolved_api_key == expected_key
+    ), f"Expected {expected_key}, got {context.resolved_api_key}"
 
 
-@when('I call resolve_api_key for unknown provider with no config override')
+@when("I call resolve_api_key for unknown provider with no config override")
 def step_call_resolve_api_key_unknown(context):
     from biblicus.inference import resolve_api_key
+
     # Create a mock provider that's not in the enum
     class UnknownProvider:
         value = "unknown"
+
     context.resolved_api_key = resolve_api_key(UnknownProvider(), config_override=None)
 
 
-@then('the resolved API key is None')
+@then("the resolved API key is None")
 def step_check_resolved_api_key_is_none(context):
     assert context.resolved_api_key is None, f"Expected None, got {context.resolved_api_key}"

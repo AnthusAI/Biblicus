@@ -170,9 +170,7 @@ def resolve_openai_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Op
     return loaded.openai.api_key
 
 
-def resolve_huggingface_api_key(
-    *, config: Optional[BiblicusUserConfig] = None
-) -> Optional[str]:
+def resolve_huggingface_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Optional[str]:
     """
     Resolve a HuggingFace API key from environment or user configuration.
 
@@ -192,9 +190,7 @@ def resolve_huggingface_api_key(
     return loaded.huggingface.api_key
 
 
-def resolve_deepgram_api_key(
-    *, config: Optional[BiblicusUserConfig] = None
-) -> Optional[str]:
+def resolve_deepgram_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Optional[str]:
     """
     Resolve a Deepgram API key from environment or user configuration.
 

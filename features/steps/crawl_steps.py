@@ -54,14 +54,18 @@ def step_crawl_reports_key_value(context, key: str, value: int) -> None:
     assert int(data.get(key, -1)) == value
 
 
-@then('the corpus contains a crawled item with source uniform resource identifier ending with "{suffix}"')
+@then(
+    'the corpus contains a crawled item with source uniform resource identifier ending with "{suffix}"'
+)
 def step_corpus_contains_crawled_item_source_uri_suffix(context, suffix: str) -> None:
     corpus_root = _corpus_path(context, "corpus")
     source_uris = _catalog_source_uris(corpus_root)
     assert any(uri.endswith(suffix) for uri in source_uris), source_uris
 
 
-@then('the corpus does not contain a crawled item with source uniform resource identifier ending with "{suffix}"')
+@then(
+    'the corpus does not contain a crawled item with source uniform resource identifier ending with "{suffix}"'
+)
 def step_corpus_does_not_contain_crawled_item_source_uri_suffix(context, suffix: str) -> None:
     corpus_root = _corpus_path(context, "corpus")
     source_uris = _catalog_source_uris(corpus_root)

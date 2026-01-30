@@ -7,10 +7,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 from biblicus.corpus import Corpus
-
 
 LABELS = ["World", "Sports", "Business", "Sci/Tech"]
 

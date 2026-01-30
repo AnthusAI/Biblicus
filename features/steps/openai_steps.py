@@ -164,7 +164,9 @@ def step_fake_openai_available(context) -> None:
     _install_fake_openai_module(context)
 
 
-@given('a fake OpenAI library is available that returns chat completion "{response}" for any prompt')
+@given(
+    'a fake OpenAI library is available that returns chat completion "{response}" for any prompt'
+)
 def step_fake_openai_returns_chat_completion(context, response: str) -> None:
     _install_fake_openai_module(context)
     behaviors = _ensure_fake_openai_chat_behaviors(context)

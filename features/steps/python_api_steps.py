@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
+
 import yaml
 from behave import given, then, when
 
@@ -25,7 +26,6 @@ def _data_for_media_type(media_type: str) -> bytes:
     :return: Fixture bytes.
     :rtype: bytes
     """
-
     if media_type == "text/markdown":
         return b"hello\n"
     if media_type.startswith("text/"):

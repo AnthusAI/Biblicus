@@ -17,7 +17,9 @@ def _extractor_and_run_id(reference: str) -> tuple[str, str]:
     extractor_id = extractor_id.strip()
     run_id = run_id.strip()
     if not extractor_id or not run_id:
-        raise ValueError("Extraction run reference must be extractor_id:run_id with non-empty parts")
+        raise ValueError(
+            "Extraction run reference must be extractor_id:run_id with non-empty parts"
+        )
     return extractor_id, run_id
 
 
@@ -122,7 +124,9 @@ def step_delete_extraction_run(context, name: str, corpus_name: str) -> None:
     assert result.returncode == 0, result.stderr
 
 
-@when('I attempt to delete extraction run "{name}" in corpus "{corpus_name}" with confirm "{confirm}"')
+@when(
+    'I attempt to delete extraction run "{name}" in corpus "{corpus_name}" with confirm "{confirm}"'
+)
 def step_attempt_delete_extraction_run(context, name: str, corpus_name: str, confirm: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     reference = _remembered_reference(context, name)

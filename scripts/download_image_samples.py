@@ -36,7 +36,6 @@ def _blank_portable_network_graphics_bytes() -> bytes:
     :return: Portable Network Graphics bytes.
     :rtype: bytes
     """
-
     return _BLANK_PNG_BYTES
 
 
@@ -52,7 +51,6 @@ def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     :rtype: Corpus
     :raises ValueError: If the target path is non-empty without force.
     """
-
     if (path / ".biblicus" / "config.json").is_file():
         corpus = Corpus.open(path)
         if force:
@@ -89,7 +87,6 @@ def download_image_samples(
     :return: Ingestion statistics.
     :rtype: dict[str, int]
     """
-
     corpus = _prepare_corpus(corpus_path, force=force)
     ingested = 0
     failed = 0
@@ -127,7 +124,6 @@ def build_parser() -> argparse.ArgumentParser:
     :return: Argument parser.
     :rtype: argparse.ArgumentParser
     """
-
     parser = argparse.ArgumentParser(description="Download image samples into Biblicus.")
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
     parser.add_argument(
@@ -160,7 +156,6 @@ def main() -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = build_parser()
     args = parser.parse_args()
     urls = args.url or list(DEFAULT_IMAGE_URLS)

@@ -214,6 +214,14 @@ python3 scripts/topic_modeling_integration.py \
 The command prints the analysis run identifier and the output path. Open the `output.json` file to inspect per-topic labels,
 keywords, and document examples.
 
+### Profiling analysis demo
+
+The profiling demo downloads AG News, runs extraction, and produces a profiling report.
+
+```
+python3 scripts/profiling_demo.py --corpus corpora/profiling_demo --force
+```
+
 ### Select extracted text within a pipeline
 
 When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.

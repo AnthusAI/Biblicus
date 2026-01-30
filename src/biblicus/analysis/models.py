@@ -84,6 +84,221 @@ class AnalysisRunManifest(AnalysisSchemaModel):
     stats: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ProfilingRecipeConfig(AnalysisSchemaModel):
+    """
+    Recipe configuration for profiling analysis.
+
+    :ivar schema_version: Analysis schema version.
+    :vartype schema_version: int
+    :ivar sample_size: Optional sample size for distribution metrics.
+    :vartype sample_size: int or None
+    :ivar min_text_characters: Optional minimum character count for extracted text inclusion.
+    :vartype min_text_characters: int or None
+    :ivar percentiles: Percentiles to compute for distributions.
+    :vartype percentiles: list[int]
+    :ivar top_tag_count: Maximum number of tags to include in top tag output.
+    :vartype top_tag_count: int
+    :ivar tag_filters: Optional tag filters to limit tag coverage metrics.
+    :vartype tag_filters: list[str] or None
+    """
+
+    schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
+    sample_size: Optional[int] = Field(default=None, ge=1)
+    min_text_characters: Optional[int] = Field(default=None, ge=1)
+    percentiles: List[int] = Field(default_factory=lambda: [50, 90, 99])
+    top_tag_count: int = Field(default=10, ge=1)
+    tag_filters: Optional[List[str]] = None
+
+    @model_validator(mode="after")
+    def _validate_schema_version(self) -> "ProfilingRecipeConfig":
+        if self.schema_version != ANALYSIS_SCHEMA_VERSION:
+            raise ValueError(f"Unsupported analysis schema version: {self.schema_version}")
+        return self
+
+    @field_validator("percentiles", mode="after")
+    @classmethod
+    def _validate_percentiles(cls, value: List[int]) -> List[int]:
+        if not value:
+            raise ValueError("percentiles must include at least one value")
+        if any(percentile < 1 or percentile > 100 for percentile in value):
+            raise ValueError("percentiles must be between 1 and 100")
+        if value != sorted(value):
+            raise ValueError("percentiles must be sorted in ascending order")
+        return value
+
+    @field_validator("tag_filters", mode="before")
+    @classmethod
+    def _validate_tag_filters(cls, value: object) -> object:
+        if value is None:
+            return None
+        if not isinstance(value, list):
+            raise ValueError("tag_filters must be a list of strings")
+        cleaned = [str(tag).strip() for tag in value]
+        if not cleaned or any(not tag for tag in cleaned):
+            raise ValueError("tag_filters must be a list of non-empty strings")
+        return cleaned
+
+
+class ProfilingPercentileValue(AnalysisSchemaModel):
+    """
+    Percentile entry for a distribution.
+
+    :ivar percentile: Percentile value between 1 and 100.
+    :vartype percentile: int
+    :ivar value: Percentile value.
+    :vartype value: float
+    """
+
+    percentile: int = Field(ge=1, le=100)
+    value: float
+
+
+class ProfilingDistributionReport(AnalysisSchemaModel):
+    """
+    Distribution summary for numeric values.
+
+    :ivar count: Count of values included.
+    :vartype count: int
+    :ivar min_value: Minimum value observed.
+    :vartype min_value: float
+    :ivar max_value: Maximum value observed.
+    :vartype max_value: float
+    :ivar mean_value: Mean value observed.
+    :vartype mean_value: float
+    :ivar percentiles: Percentile values.
+    :vartype percentiles: list[ProfilingPercentileValue]
+    """
+
+    count: int = Field(ge=0)
+    min_value: float
+    max_value: float
+    mean_value: float
+    percentiles: List[ProfilingPercentileValue] = Field(default_factory=list)
+
+
+class ProfilingTagCount(AnalysisSchemaModel):
+    """
+    Tag count entry for profiling output.
+
+    :ivar tag: Tag name.
+    :vartype tag: str
+    :ivar count: Number of items with this tag.
+    :vartype count: int
+    """
+
+    tag: str
+    count: int = Field(ge=0)
+
+
+class ProfilingTagReport(AnalysisSchemaModel):
+    """
+    Tag coverage summary for raw items.
+
+    :ivar tagged_items: Count of items with tags.
+    :vartype tagged_items: int
+    :ivar untagged_items: Count of items without tags.
+    :vartype untagged_items: int
+    :ivar total_unique_tags: Count of unique tags.
+    :vartype total_unique_tags: int
+    :ivar top_tags: Most frequent tags.
+    :vartype top_tags: list[ProfilingTagCount]
+    :ivar tag_filters: Optional tag filters applied.
+    :vartype tag_filters: list[str] or None
+    """
+
+    tagged_items: int = Field(ge=0)
+    untagged_items: int = Field(ge=0)
+    total_unique_tags: int = Field(ge=0)
+    top_tags: List[ProfilingTagCount] = Field(default_factory=list)
+    tag_filters: Optional[List[str]] = None
+
+
+class ProfilingRawItemsReport(AnalysisSchemaModel):
+    """
+    Summary of raw corpus items.
+
+    :ivar total_items: Total number of catalog items.
+    :vartype total_items: int
+    :ivar media_type_counts: Count of items per media type.
+    :vartype media_type_counts: dict[str, int]
+    :ivar bytes_distribution: Distribution of raw item sizes in bytes.
+    :vartype bytes_distribution: ProfilingDistributionReport
+    :ivar tags: Tag coverage summary.
+    :vartype tags: ProfilingTagReport
+    """
+
+    total_items: int = Field(ge=0)
+    media_type_counts: Dict[str, int] = Field(default_factory=dict)
+    bytes_distribution: ProfilingDistributionReport
+    tags: ProfilingTagReport
+
+
+class ProfilingExtractedTextReport(AnalysisSchemaModel):
+    """
+    Summary of extracted text coverage.
+
+    :ivar source_items: Count of source items in the extraction run.
+    :vartype source_items: int
+    :ivar extracted_nonempty_items: Count of extracted items with non-empty text.
+    :vartype extracted_nonempty_items: int
+    :ivar extracted_empty_items: Count of extracted items with empty text.
+    :vartype extracted_empty_items: int
+    :ivar extracted_missing_items: Count of items with no extracted text artifact.
+    :vartype extracted_missing_items: int
+    :ivar characters_distribution: Distribution of extracted text lengths.
+    :vartype characters_distribution: ProfilingDistributionReport
+    """
+
+    source_items: int = Field(ge=0)
+    extracted_nonempty_items: int = Field(ge=0)
+    extracted_empty_items: int = Field(ge=0)
+    extracted_missing_items: int = Field(ge=0)
+    characters_distribution: ProfilingDistributionReport
+
+
+class ProfilingReport(AnalysisSchemaModel):
+    """
+    Report for profiling analysis.
+
+    :ivar raw_items: Raw corpus item summary.
+    :vartype raw_items: ProfilingRawItemsReport
+    :ivar extracted_text: Extracted text coverage summary.
+    :vartype extracted_text: ProfilingExtractedTextReport
+    :ivar warnings: Warning messages.
+    :vartype warnings: list[str]
+    :ivar errors: Error messages.
+    :vartype errors: list[str]
+    """
+
+    raw_items: ProfilingRawItemsReport
+    extracted_text: ProfilingExtractedTextReport
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
+class ProfilingOutput(AnalysisSchemaModel):
+    """
+    Output bundle for profiling analysis.
+
+    :ivar schema_version: Analysis schema version.
+    :vartype schema_version: int
+    :ivar analysis_id: Analysis backend identifier.
+    :vartype analysis_id: str
+    :ivar generated_at: International Organization for Standardization 8601 timestamp for output creation.
+    :vartype generated_at: str
+    :ivar run: Analysis run manifest.
+    :vartype run: AnalysisRunManifest
+    :ivar report: Profiling report data.
+    :vartype report: ProfilingReport
+    """
+
+    schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
+    analysis_id: str
+    generated_at: str
+    run: AnalysisRunManifest
+    report: ProfilingReport
+
+
 class TopicModelingTextSourceConfig(AnalysisSchemaModel):
     """
     Configuration for text collection within topic modeling.
@@ -124,7 +339,9 @@ class TopicModelingLlmExtractionConfig(AnalysisSchemaModel):
     """
 
     enabled: bool = Field(default=False)
-    method: TopicModelingLlmExtractionMethod = Field(default=TopicModelingLlmExtractionMethod.SINGLE)
+    method: TopicModelingLlmExtractionMethod = Field(
+        default=TopicModelingLlmExtractionMethod.SINGLE
+    )
     client: Optional[LlmClientConfig] = None
     prompt_template: Optional[str] = None
     system_prompt: Optional[str] = None
@@ -136,7 +353,9 @@ class TopicModelingLlmExtractionConfig(AnalysisSchemaModel):
             return value
         if isinstance(value, str):
             return TopicModelingLlmExtractionMethod(value)
-        raise ValueError("llm_extraction.method must be a string or TopicModelingLlmExtractionMethod")
+        raise ValueError(
+            "llm_extraction.method must be a string or TopicModelingLlmExtractionMethod"
+        )
 
     @model_validator(mode="after")
     def _validate_requirements(self) -> "TopicModelingLlmExtractionConfig":
@@ -188,7 +407,9 @@ class TopicModelingVectorizerConfig(AnalysisSchemaModel):
     def _validate_ngram_range(self) -> "TopicModelingVectorizerConfig":
         start, end = self.ngram_range
         if start < 1 or end < start:
-            raise ValueError("vectorizer.ngram_range must include two integers with start >= 1 and end >= start")
+            raise ValueError(
+                "vectorizer.ngram_range must include two integers with start >= 1 and end >= start"
+            )
         return self
 
     @field_validator("stop_words", mode="before")
@@ -280,7 +501,9 @@ class TopicModelingRecipeConfig(AnalysisSchemaModel):
     """
 
     schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
-    text_source: TopicModelingTextSourceConfig = Field(default_factory=TopicModelingTextSourceConfig)
+    text_source: TopicModelingTextSourceConfig = Field(
+        default_factory=TopicModelingTextSourceConfig
+    )
     llm_extraction: TopicModelingLlmExtractionConfig = Field(
         default_factory=TopicModelingLlmExtractionConfig
     )

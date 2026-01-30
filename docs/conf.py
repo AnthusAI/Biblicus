@@ -4,7 +4,12 @@ Sphinx configuration for Biblicus documentation.
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
+
+from pygments.lexers.special import TextLexer
+from sphinx.highlighting import lexers
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ROOT = PROJECT_ROOT / "src"
@@ -31,8 +36,6 @@ html_theme_options = {
 }
 
 # ReadTheDocs integration - canonical URL for SEO
-import os
-
 if os.environ.get("READTHEDOCS"):
     rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
     rtd_project = os.environ.get("READTHEDOCS_PROJECT", "biblicus")
@@ -44,12 +47,6 @@ source_suffix = {
 }
 
 suppress_warnings = ["misc.highlighting_failure"]
-
-import sys
-
 sys.path.insert(0, str(SOURCE_ROOT))
-
-from pygments.lexers.special import TextLexer
-from sphinx.highlighting import lexers
 
 lexers["mermaid"] = TextLexer()

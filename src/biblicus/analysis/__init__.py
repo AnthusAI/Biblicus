@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Dict, Type
 
 from .base import CorpusAnalysisBackend
+from .profiling import ProfilingBackend
 from .topic_modeling import TopicModelingBackend
 
 
@@ -18,6 +19,7 @@ def available_analysis_backends() -> Dict[str, Type[CorpusAnalysisBackend]]:
     :rtype: dict[str, Type[CorpusAnalysisBackend]]
     """
     return {
+        ProfilingBackend.analysis_id: ProfilingBackend,
         TopicModelingBackend.analysis_id: TopicModelingBackend,
     }
 

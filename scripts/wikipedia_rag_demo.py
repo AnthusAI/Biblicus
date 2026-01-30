@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, Tuple
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -21,7 +21,6 @@ from biblicus.context import (
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_run
 from biblicus.models import QueryBudget
-
 
 DEFAULT_TITLES = [
     "Retrieval-augmented generation",
@@ -76,9 +75,7 @@ def prepare_corpus(path: Path, *, force: bool) -> Corpus:
     return Corpus.init(path, force=True)
 
 
-def ingest_wikipedia_summaries(
-    corpus: Corpus, titles: Iterable[str]
-) -> Dict[str, int]:
+def ingest_wikipedia_summaries(corpus: Corpus, titles: Iterable[str]) -> Dict[str, int]:
     """
     Ingest Wikipedia summaries as notes in a corpus.
 
@@ -178,9 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--limit", type=int, default=5, help="Number of Wikipedia pages to download."
     )
-    parser.add_argument(
-        "--force", action="store_true", help="Purge existing corpus content."
-    )
+    parser.add_argument("--force", action="store_true", help="Purge existing corpus content.")
     parser.add_argument(
         "--query",
         default="retrieval augmented generation",

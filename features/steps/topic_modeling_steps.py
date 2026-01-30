@@ -6,7 +6,7 @@ import types
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from behave import given, then, when
 
@@ -208,8 +208,12 @@ def step_sklearn_dependency_unavailable(context) -> None:
     _install_sklearn_unavailable_module(context)
 
 
-@when('I run a topic analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run')
-def step_run_topic_analysis_with_latest_extraction(context, corpus_name: str, recipe_file: str) -> None:
+@when(
+    'I run a topic analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run'
+)
+def step_run_topic_analysis_with_latest_extraction(
+    context, corpus_name: str, recipe_file: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None

@@ -18,7 +18,6 @@ def _repo_root() -> Path:
     :return: Repository root path.
     :rtype: Path
     """
-
     return Path(__file__).resolve().parent.parent
 
 
@@ -29,7 +28,6 @@ def _env_with_src() -> dict[str, str]:
     :return: Environment mapping.
     :rtype: dict[str, str]
     """
-
     repo_root = _repo_root()
     env = dict(os.environ)
     src = str(repo_root / "src")
@@ -48,7 +46,6 @@ def _run(command: list[str], *, env: dict[str, str]) -> int:
     :return: Process exit code.
     :rtype: int
     """
-
     return subprocess.call(command, env=env)
 
 
@@ -69,7 +66,6 @@ def main() -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = argparse.ArgumentParser(description="Run Biblicus behavior specs under coverage.")
     parser.add_argument(
         "--integration",

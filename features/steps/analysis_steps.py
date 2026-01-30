@@ -9,23 +9,25 @@ from biblicus.analysis import get_analysis_backend
 from biblicus.analysis.base import CorpusAnalysisBackend
 from biblicus.analysis.llm import LlmClientConfig, LlmProvider
 from biblicus.analysis.models import (
+    ProfilingRecipeConfig,
+    TopicModelingKeyword,
+    TopicModelingLabelSource,
     TopicModelingLlmExtractionConfig,
     TopicModelingLlmExtractionMethod,
     TopicModelingLlmFineTuningConfig,
-    TopicModelingKeyword,
-    TopicModelingLabelSource,
     TopicModelingTopic,
     TopicModelingVectorizerConfig,
 )
+from biblicus.analysis.profiling import _ordered_catalog_items, _percentile_value
 from biblicus.analysis.topic_modeling import (
-    _TopicDocument,
     _apply_llm_fine_tuning,
     _parse_itemized_response,
+    _TopicDocument,
 )
-from biblicus.models import ExtractionRunReference
+from biblicus.models import CatalogItem, ExtractionRunReference
 from features.steps.openai_steps import (
-    _FakeOpenAiChatBehavior,
     _ensure_fake_openai_chat_behaviors,
+    _FakeOpenAiChatBehavior,
     _install_fake_openai_module,
 )
 
@@ -163,9 +165,7 @@ def step_run_llm_fine_tuning_missing_documents(context) -> None:
             document_ids=["missing"],
         )
     ]
-    documents = [
-        _TopicDocument(document_id="present", source_item_id="present", text="Text")
-    ]
+    documents = [_TopicDocument(document_id="present", source_item_id="present", text="Text")]
     report, labeled_topics = _apply_llm_fine_tuning(
         topics=topics,
         documents=documents,
@@ -184,7 +184,7 @@ def step_fine_tuning_topics_labeled(context, count: int) -> None:
 
 @when("I parse an itemized response JSON string")
 def step_parse_itemized_response_json_string(context) -> None:
-    response_text = "\"[\\\"Alpha\\\", \\\"Beta\\\"]\""
+    response_text = '"[\\"Alpha\\", \\"Beta\\"]"'
     context.itemized_response = _parse_itemized_response(response_text)
 
 
@@ -247,3 +247,143 @@ def step_vectorizer_stop_words_equals(context, value: str) -> None:
 def step_vectorizer_stop_words_absent(context) -> None:
     model = context.last_model
     assert model.stop_words is None
+
+
+@when("I attempt to validate a profiling config with sample size {value:d}")
+def step_validate_profiling_sample_size(context, value: int) -> None:
+    try:
+        ProfilingRecipeConfig(sample_size=value)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when('I attempt to validate a profiling config with percentiles "{values}"')
+def step_validate_profiling_percentiles(context, values: str) -> None:
+    try:
+        percentiles = [int(value.strip()) for value in values.split(",") if value.strip()]
+        ProfilingRecipeConfig(percentiles=percentiles)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when('I attempt to validate a profiling config with tag filters "{values}"')
+def step_validate_profiling_tag_filters(context, values: str) -> None:
+    try:
+        tags = [value.strip() for value in values.split(",")]
+        ProfilingRecipeConfig(tag_filters=tags)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when("I attempt to validate a profiling config with schema version {value:d}")
+def step_validate_profiling_schema_version(context, value: int) -> None:
+    try:
+        ProfilingRecipeConfig(schema_version=value)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when("I attempt to validate a profiling config with empty percentiles")
+def step_validate_profiling_empty_percentiles(context) -> None:
+    try:
+        ProfilingRecipeConfig(percentiles=[])
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when('I attempt to validate a profiling config with tag filters string "{value}"')
+def step_validate_profiling_tag_filters_string(context, value: str) -> None:
+    try:
+        ProfilingRecipeConfig(tag_filters=value)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when("I validate a profiling config with tag filters None")
+def step_validate_profiling_tag_filters_none(context) -> None:
+    context.last_model = ProfilingRecipeConfig(tag_filters=None)
+
+
+@when('I validate a profiling config with tag filters list "{values}"')
+def step_validate_profiling_tag_filters_list(context, values: str) -> None:
+    tags = [value.strip() for value in values.split(",")]
+    context.last_model = ProfilingRecipeConfig(tag_filters=tags)
+
+
+@then("the profiling tag filters are absent")
+def step_profiling_tag_filters_absent(context) -> None:
+    model = context.last_model
+    assert model.tag_filters is None
+
+
+@then('the profiling tag filters include "{value}"')
+def step_profiling_tag_filters_include(context, value: str) -> None:
+    model = context.last_model
+    assert model.tag_filters is not None
+    assert value in model.tag_filters
+
+
+@when("I order catalog items with missing entries")
+def step_order_catalog_items_with_missing_entries(context) -> None:
+    items = {
+        "a": CatalogItem(
+            id="a",
+            relpath="raw/a.txt",
+            sha256="a",
+            bytes=1,
+            media_type="text/plain",
+            title=None,
+            tags=[],
+            metadata={},
+            created_at="2020-01-01T00:00:00Z",
+            source_uri=None,
+        ),
+        "b": CatalogItem(
+            id="b",
+            relpath="raw/b.txt",
+            sha256="b",
+            bytes=2,
+            media_type="text/plain",
+            title=None,
+            tags=[],
+            metadata={},
+            created_at="2020-01-01T00:00:00Z",
+            source_uri=None,
+        ),
+        "c": CatalogItem(
+            id="c",
+            relpath="raw/c.txt",
+            sha256="c",
+            bytes=3,
+            media_type="text/plain",
+            title=None,
+            tags=[],
+            metadata={},
+            created_at="2020-01-01T00:00:00Z",
+            source_uri=None,
+        ),
+    }
+    ordered = _ordered_catalog_items(items, ["a", "missing", "c"])
+    context.ordered_catalog_ids = [item.id for item in ordered]
+
+
+@then('the ordered catalog item identifiers equal "{values}"')
+def step_ordered_catalog_item_identifiers_equal(context, values: str) -> None:
+    expected = [value.strip() for value in values.split(",") if value.strip()]
+    assert context.ordered_catalog_ids == expected
+
+
+@when("I compute a profiling percentile on empty values")
+def step_compute_profiling_percentile_empty(context) -> None:
+    context.percentile_value = _percentile_value([], 50)
+
+
+@then("the profiling percentile value equals {value:d}")
+def step_profiling_percentile_value_equals(context, value: int) -> None:
+    assert context.percentile_value == value

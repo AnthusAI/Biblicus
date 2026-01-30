@@ -29,6 +29,7 @@ class MarkItDownExtractorConfig(BaseModel):
 
     enable_plugins: bool = Field(default=False)
 
+
 class MarkItDownExtractor(TextExtractor):
     """
     Extractor plugin backed by the `markitdown` library.

@@ -82,15 +82,17 @@ def _install_fake_paddleocr_module(context) -> None:
                 # Return format: list of page_results, each page_result is a list of line_results
                 # line_result format: [coordinates, text_info] where text_info is [text, confidence]
                 return [
-                    [[[[0,0]], ["valid", 0.95]]],  # Valid page with valid line
+                    [[[[0, 0]], ["valid", 0.95]]],  # Valid page with valid line
                     None,  # None page - line 197 continue
                     [None],  # Page with None line_result - line 199 continue
                     [["bad"]],  # Page with line_result len < 2 - line 200 continue
-                    [[[[0,0]], "not-a-list"]],  # Page with line where text_info not list - 202 fails
-                    [[[[0,0]], ["text", "not-number"]]],  # Page with non-numeric conf - 205 False
-                    [[[[0,0]], [123, 0.95]]],  # Page with non-string text - 208 False
-                    [[[[0,0]], ["", 0.95]]],  # Page with empty text - 208 False
-                    [[[[0,0]], ["   ", 0.95]]]  # Page with whitespace-only text - 208 False
+                    [
+                        [[[0, 0]], "not-a-list"]
+                    ],  # Page with line where text_info not list - 202 fails
+                    [[[[0, 0]], ["text", "not-number"]]],  # Page with non-numeric conf - 205 False
+                    [[[[0, 0]], [123, 0.95]]],  # Page with non-string text - 208 False
+                    [[[[0, 0]], ["", 0.95]]],  # Page with empty text - 208 False
+                    [[[[0, 0]], ["   ", 0.95]]],  # Page with whitespace-only text - 208 False
                 ]
             if behavior.mode == "malformed-empty":
                 # Return malformed data with no valid lines (all defensive code paths hit, no extraction)
@@ -98,11 +100,13 @@ def _install_fake_paddleocr_module(context) -> None:
                     None,  # None page - line 197 continue
                     [None],  # Page with None line_result - line 199 continue
                     [["bad"]],  # Page with line_result len < 2 - line 200 continue
-                    [[[[0,0]], "not-a-list"]],  # Page with line where text_info not list - 202 fails
-                    [[[[0,0]], ["text", "not-number"]]],  # Page with non-numeric conf - 205 False
-                    [[[[0,0]], [123, 0.95]]],  # Page with non-string text - 208 False
-                    [[[[0,0]], ["", 0.95]]],  # Page with empty text - 208 False
-                    [[[[0,0]], ["   ", 0.95]]]  # Page with whitespace-only text - 208 False
+                    [
+                        [[[0, 0]], "not-a-list"]
+                    ],  # Page with line where text_info not list - 202 fails
+                    [[[[0, 0]], ["text", "not-number"]]],  # Page with non-numeric conf - 205 False
+                    [[[[0, 0]], [123, 0.95]]],  # Page with non-string text - 208 False
+                    [[[[0, 0]], ["", 0.95]]],  # Page with empty text - 208 False
+                    [[[[0, 0]], ["   ", 0.95]]],  # Page with whitespace-only text - 208 False
                 ]
             return None
 
@@ -180,17 +184,11 @@ def step_paddleocr_dependency_unavailable(context) -> None:
 def step_fake_paddleocr_returns_malformed(context, filename: str) -> None:
     _install_fake_paddleocr_module(context)
     behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
-    behaviors[filename] = _FakePaddleOcrVlBehavior(
-        mode="malformed",
-        lines=None
-    )
+    behaviors[filename] = _FakePaddleOcrVlBehavior(mode="malformed", lines=None)
 
 
 @given('a fake PaddleOCR library returns malformed empty output for filename "{filename}"')
 def step_fake_paddleocr_returns_malformed_empty(context, filename: str) -> None:
     _install_fake_paddleocr_module(context)
     behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
-    behaviors[filename] = _FakePaddleOcrVlBehavior(
-        mode="malformed-empty",
-        lines=None
-    )
+    behaviors[filename] = _FakePaddleOcrVlBehavior(mode="malformed-empty", lines=None)

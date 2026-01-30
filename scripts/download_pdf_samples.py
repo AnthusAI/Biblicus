@@ -11,7 +11,6 @@ from typing import Dict, List
 
 from biblicus.corpus import Corpus
 
-
 DEFAULT_PDF_URLS = [
     "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Example.pdf",
@@ -31,7 +30,6 @@ def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     :rtype: Corpus
     :raises ValueError: If the target path is non-empty without force.
     """
-
     if (path / ".biblicus" / "config.json").is_file():
         corpus = Corpus.open(path)
         if force:
@@ -66,7 +64,6 @@ def download_pdf_samples(
     :return: Ingestion statistics.
     :rtype: dict[str, int]
     """
-
     corpus = _prepare_corpus(corpus_path, force=force)
     ingested = 0
     failed = 0
@@ -87,7 +84,6 @@ def build_parser() -> argparse.ArgumentParser:
     :return: Argument parser.
     :rtype: argparse.ArgumentParser
     """
-
     parser = argparse.ArgumentParser(
         description="Download Portable Document Format samples into Biblicus."
     )
@@ -117,7 +113,6 @@ def main() -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = build_parser()
     args = parser.parse_args()
     urls = args.url or list(DEFAULT_PDF_URLS)

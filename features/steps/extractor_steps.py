@@ -5,13 +5,13 @@ from typing import Any, Dict
 from behave import then, when
 
 from biblicus.corpus import Corpus
+from biblicus.errors import ExtractionRunFatalError
 from biblicus.extractors.base import TextExtractor
 from biblicus.extractors.pipeline import (
     PipelineExtractor,
     PipelineExtractorConfig,
     PipelineStepSpec,
 )
-from biblicus.errors import ExtractionRunFatalError
 from biblicus.models import CatalogItem, ExtractionStepOutput
 from biblicus.time import utc_now_iso
 

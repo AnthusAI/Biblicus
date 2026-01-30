@@ -152,9 +152,7 @@ class PaddleOcrVlExtractor(TextExtractor):
                 parsed_config.backend.api_provider,
                 config_override=parsed_config.backend.api_key,
             )
-            text, confidence = self._extract_via_api(
-                source_path, parsed_config, api_key
-            )
+            text, confidence = self._extract_via_api(source_path, parsed_config, api_key)
 
         return ExtractedText(
             text=text,

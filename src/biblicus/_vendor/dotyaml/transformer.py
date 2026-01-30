@@ -132,4 +132,3 @@ def convert_string_to_value(value: str) -> Any:
         return json.loads(value)
     except (json.JSONDecodeError, ValueError):
         return value
-

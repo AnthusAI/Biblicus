@@ -563,7 +563,9 @@ def cmd_context_pack_build(arguments: argparse.Namespace) -> int:
     """
     input_text = sys.stdin.read()
     if not input_text.strip():
-        raise ValueError("Context pack build requires a retrieval result JavaScript Object Notation on standard input")
+        raise ValueError(
+            "Context pack build requires a retrieval result JavaScript Object Notation on standard input"
+        )
     retrieval_result = RetrievalResult.model_validate_json(input_text)
     join_with = bytes(arguments.join_with, "utf-8").decode("unicode_escape")
     policy = ContextPackPolicy(join_with=join_with)
@@ -681,6 +683,58 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
         )
     except ValidationError as exc:
         raise ValueError(f"Invalid topic modeling recipe: {exc}") from exc
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
+    """
+    Run profiling analysis for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import yaml
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+
+    recipe_data: dict[str, object] = {}
+    if arguments.recipe is not None:
+        recipe_path = Path(arguments.recipe)
+        if not recipe_path.is_file():
+            raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
+        recipe_raw = yaml.safe_load(recipe_path.read_text(encoding="utf-8")) or {}
+        if not isinstance(recipe_raw, dict):
+            raise ValueError("Profiling recipe must be a mapping/object")
+        recipe_data = recipe_raw
+
+    if arguments.extraction_run:
+        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    else:
+        extraction_run = corpus.latest_extraction_run_reference()
+        if extraction_run is None:
+            raise ValueError("Profiling analysis requires an extraction run to supply text inputs")
+        print(
+            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            file=sys.stderr,
+        )
+
+    backend = get_analysis_backend("profiling")
+    try:
+        output = backend.run_analysis(
+            corpus,
+            recipe_name=arguments.recipe_name,
+            config=recipe_data,
+            extraction_run=extraction_run,
+        )
+    except ValidationError as exc:
+        raise ValueError(f"Invalid profiling recipe: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
 
@@ -890,14 +944,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_crawl = sub.add_parser("crawl", help="Crawl a website prefix into the corpus.")
     _add_common_corpus_arg(p_crawl)
-    p_crawl.add_argument("--root-url", required=True, help="Root uniform resource locator to fetch.")
+    p_crawl.add_argument(
+        "--root-url", required=True, help="Root uniform resource locator to fetch."
+    )
     p_crawl.add_argument(
         "--allowed-prefix",
         required=True,
         help="Uniform resource locator prefix that limits which links are eligible for crawl.",
     )
-    p_crawl.add_argument("--max-items", type=int, default=50, help="Maximum number of items to store.")
-    p_crawl.add_argument("--tags", default=None, help="Comma-separated tags to apply to stored items.")
+    p_crawl.add_argument(
+        "--max-items", type=int, default=50, help="Maximum number of items to store."
+    )
+    p_crawl.add_argument(
+        "--tags", default=None, help="Comma-separated tags to apply to stored items."
+    )
     p_crawl.add_argument("--tag", action="append", help="Repeatable tag to apply to stored items.")
     p_crawl.set_defaults(func=cmd_crawl)
 
@@ -922,6 +982,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction run reference in the form extractor_id:run_id.",
     )
     p_analyze_topics.set_defaults(func=cmd_analyze_topics)
+
+    p_analyze_profile = analyze_sub.add_parser("profile", help="Run profiling analysis.")
+    _add_common_corpus_arg(p_analyze_profile)
+    p_analyze_profile.add_argument(
+        "--recipe",
+        default=None,
+        help="Optional profiling recipe YAML file.",
+    )
+    p_analyze_profile.add_argument(
+        "--recipe-name",
+        default="default",
+        help="Human-readable recipe name.",
+    )
+    p_analyze_profile.add_argument(
+        "--extraction-run",
+        default=None,
+        help="Extraction run reference in the form extractor_id:run_id.",
+    )
+    p_analyze_profile.set_defaults(func=cmd_analyze_profile)
 
     return parser
 

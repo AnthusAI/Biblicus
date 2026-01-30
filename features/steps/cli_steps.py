@@ -15,8 +15,8 @@ from urllib.parse import quote
 import yaml
 from behave import given, then, when
 
-from features.environment import RunResult, run_biblicus
 from biblicus.models import RetrievalResult
+from features.environment import RunResult, run_biblicus
 
 
 def _corpus_path(context, name: str) -> Path:
@@ -32,7 +32,6 @@ def _parse_ingest_standard_output(standard_output: str) -> Dict[str, str]:
     :return: Parsed ingest fields.
     :rtype: dict[str, str]
     """
-
     line = standard_output.strip().splitlines()[-1]
     parts = line.split("\t")
     if len(parts) != 3:
@@ -83,7 +82,14 @@ def step_context_pack_build_with_token_budget_from_standard_input(
     retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
     result = run_biblicus(
         context,
-        ["context-pack", "build", "--join-with", decoded_join_with, "--max-tokens", str(max_tokens)],
+        [
+            "context-pack",
+            "build",
+            "--join-with",
+            decoded_join_with,
+            "--max-tokens",
+            str(max_tokens),
+        ],
         input_text=retrieval_result_json,
     )
     context.last_result = result
@@ -182,9 +188,7 @@ def step_build_scan_run(context, corpus_name: str) -> None:
     assert result.returncode == 0, result.stderr
 
 
-@when(
-    'I query corpus "{corpus_name}" with query "{query_text}" reranking with "{reranker_id}"'
-)
+@when('I query corpus "{corpus_name}" with query "{query_text}" reranking with "{reranker_id}"')
 def step_query_with_rerank(context, corpus_name: str, query_text: str, reranker_id: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = run_biblicus(
@@ -221,7 +225,9 @@ def step_query_with_minimum_score_filter(
 @then("the query result evidence text order is:")
 def step_then_query_result_evidence_text_order_is(context) -> None:
     expected_text_values = [row["text"] for row in context.table]
-    actual_text_values = [evidence_item.text for evidence_item in context.last_query_result.evidence]
+    actual_text_values = [
+        evidence_item.text for evidence_item in context.last_query_result.evidence
+    ]
     assert actual_text_values == expected_text_values
 
 

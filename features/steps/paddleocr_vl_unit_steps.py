@@ -23,7 +23,7 @@ def step_have_paddleocr_extractor(context) -> None:
     context._paddleocr_config = PaddleOcrVlExtractorConfig()
 
 
-@when('I parse an API response with value {value}')
+@when("I parse an API response with value {value}")
 def step_parse_api_response(context, value: str) -> None:
     parsed_value = json.loads(value)
     context._paddleocr_parsed_result = context._paddleocr_extractor._parse_api_response(
@@ -68,10 +68,11 @@ def step_have_previous_extractions(context) -> None:
 @when("I select the best extraction with threshold {threshold:f} and min length {min_length:d}")
 def step_select_best_extraction(context, threshold: float, min_length: int) -> None:
     """Call extract_text with the mock extractions."""
-    from biblicus.corpus import Corpus
-    from pathlib import Path
     import tempfile
     from datetime import datetime
+    from pathlib import Path
+
+    from biblicus.corpus import Corpus
 
     # Create a minimal corpus and item
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -84,25 +85,25 @@ def step_select_best_extraction(context, threshold: float, min_length: int) -> N
             media_type="image/png",
             created_at=datetime.now().isoformat(),
         )
-        
+
         config = SelectSmartOverrideConfig(
             media_type_patterns=["image/*"],
             min_confidence_threshold=threshold,
             min_text_length=min_length,
         )
-        
+
         result = context._smart_override_extractor.extract_text(
             corpus=corpus,
             item=item,
             config=config,
             previous_extractions=context._extractions,
         )
-        
+
         context._selected_text = result.text if result else ""
 
 
 @then('the selected text is "{expected_text}"')
 def step_selected_text_is(context, expected_text: str) -> None:
-    assert context._selected_text == expected_text, (
-        f"Expected text {expected_text!r}, got {context._selected_text!r}"
-    )
+    assert (
+        context._selected_text == expected_text
+    ), f"Expected text {expected_text!r}, got {context._selected_text!r}"

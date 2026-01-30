@@ -7,12 +7,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from biblicus.corpus import Corpus
-
 
 DEFAULT_TITLES = [
     "Ada Lovelace",
@@ -52,7 +51,6 @@ def _fetch_summary(title: str) -> Tuple[str, str, str]:
     :return: Tuple of extract text, page uniform resource locator, and resolved title.
     :rtype: tuple[str, str, str]
     """
-
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(title)}"
     request = Request(url, headers={"User-Agent": "biblicus/0"})
     with urlopen(request, timeout=30) as response:
@@ -77,7 +75,6 @@ def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     :rtype: Corpus
     :raises ValueError: If the target path is non-empty without force.
     """
-
     if (path / ".biblicus" / "config.json").is_file():
         corpus = Corpus.open(path)
         if force:
@@ -101,7 +98,6 @@ def download_wikipedia_corpus(*, corpus_path: Path, limit: int, force: bool) -> 
     :return: Ingestion statistics.
     :rtype: dict[str, int]
     """
-
     corpus = _prepare_corpus(corpus_path, force=force)
     titles = DEFAULT_TITLES[:limit]
     ingested = 0

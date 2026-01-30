@@ -37,8 +37,6 @@ def _install_fake_deepgram_module(context) -> None:
         if name in sys.modules:
             original_modules[name] = sys.modules[name]
 
-    behaviors = _ensure_fake_deepgram_transcription_behaviors(context)
-
     class _Alternative:
         def __init__(self, transcript: str) -> None:
             self.transcript = transcript
@@ -68,9 +66,7 @@ def _install_fake_deepgram_module(context) -> None:
             self.results = _Results([_Channel([])])
 
     class _TranscribeApi:
-        def transcribe_file(
-            self, audio_data: Dict[str, Any], options: Dict[str, Any]
-        ) -> object:
+        def transcribe_file(self, audio_data: Dict[str, Any], options: Dict[str, Any]) -> object:
             deepgram_module.last_transcription_model = options.get("model")
             deepgram_module.last_transcription_options = dict(options)
             behaviors_map = _ensure_fake_deepgram_transcription_behaviors(context)
@@ -89,9 +85,7 @@ def _install_fake_deepgram_module(context) -> None:
         def __init__(self) -> None:
             pass
 
-        def transcribe_file(
-            self, audio_data: Dict[str, Any], options: Dict[str, Any]
-        ) -> object:
+        def transcribe_file(self, audio_data: Dict[str, Any], options: Dict[str, Any]) -> object:
             return _TranscribeApi().transcribe_file(audio_data, options)
 
     class _ListenRest:
@@ -160,9 +154,7 @@ def step_fake_deepgram_returns_empty_results(context, filename: str) -> None:
     )
 
 
-@given(
-    'a fake Deepgram library is available that returns empty channels for filename "{filename}"'
-)
+@given('a fake Deepgram library is available that returns empty channels for filename "{filename}"')
 def step_fake_deepgram_returns_empty_channels(context, filename: str) -> None:
     _install_fake_deepgram_module(context)
     behaviors = _ensure_fake_deepgram_transcription_behaviors(context)

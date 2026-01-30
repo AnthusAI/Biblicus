@@ -20,7 +20,6 @@ def step_paddleocr_not_available(context) -> None:
         return original_import(name, *args, **kwargs)
 
     # Remove from sys.modules if present
-    module_names = ["paddleocr", "paddlepaddle"]
     for name in list(sys.modules.keys()):
         if name.startswith("paddleocr") or name.startswith("paddlepaddle"):
             original_modules[name] = sys.modules[name]

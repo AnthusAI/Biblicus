@@ -16,6 +16,7 @@ class _FakeRequestsResponse:
 
     def json(self) -> Any:
         import json
+
         return json.loads(self.text)
 
     def raise_for_status(self) -> None:
@@ -63,14 +64,12 @@ def _install_fake_requests_module(context) -> None:
         if behavior is None:
             # Default: return error for unmocked URLs
             return _FakeRequestsResponse(
-                status_code=500,
-                content=b"Unmocked URL",
-                text="Unmocked URL"
+                status_code=500, content=b"Unmocked URL", text="Unmocked URL"
             )
         return _FakeRequestsResponse(
             status_code=behavior.status_code,
             content=(behavior.response_text or "").encode("utf-8"),
-            text=behavior.response_text or ""
+            text=behavior.response_text or "",
         )
 
     requests_module = types.ModuleType("requests")
@@ -92,9 +91,10 @@ def step_fake_requests_returns_text(context, response_text: str, url: str) -> No
     # Behave passes escaped backslashes literally, so if the Gherkin has "\"foo\"",
     # we receive '\"foo\"' and need to decode it to '"foo"'
     # But if there are no backslashes, don't decode (to avoid breaking normal strings)
-    if '\\' in response_text:
+    if "\\" in response_text:
         import codecs
-        decoded_text = codecs.decode(response_text, 'unicode_escape')
+
+        decoded_text = codecs.decode(response_text, "unicode_escape")
     else:
         decoded_text = response_text
     _install_fake_requests_module(context)
@@ -109,9 +109,12 @@ def step_fake_requests_returns_error(context, status_code: int, url: str) -> Non
     behaviors[url] = _FakeRequestsBehavior(response_text="Error", status_code=status_code)
 
 
-@given('a fake requests library returns HuggingFace OCR response for model "{model_id}" with text "{text}"')
+@given(
+    'a fake requests library returns HuggingFace OCR response for model "{model_id}" with text "{text}"'
+)
 def step_fake_requests_returns_huggingface_ocr_response(context, model_id: str, text: str) -> None:
     import json
+
     _install_fake_requests_module(context)
     behaviors = _ensure_fake_requests_behaviors(context)
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
@@ -119,18 +122,26 @@ def step_fake_requests_returns_huggingface_ocr_response(context, model_id: str, 
     behaviors[api_url] = _FakeRequestsBehavior(response_text=json.dumps(response_payload))
 
 
-@given('a fake requests library returns HuggingFace string response for model "{model_id}" with value "{text}"')
-def step_fake_requests_returns_huggingface_string_response(context, model_id: str, text: str) -> None:
+@given(
+    'a fake requests library returns HuggingFace string response for model "{model_id}" with value "{text}"'
+)
+def step_fake_requests_returns_huggingface_string_response(
+    context, model_id: str, text: str
+) -> None:
     import json
+
     _install_fake_requests_module(context)
     behaviors = _ensure_fake_requests_behaviors(context)
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     behaviors[api_url] = _FakeRequestsBehavior(response_text=json.dumps(text))
 
 
-@given('a fake requests library returns HuggingFace list response for model "{model_id}" with text "{text}"')
+@given(
+    'a fake requests library returns HuggingFace list response for model "{model_id}" with text "{text}"'
+)
 def step_fake_requests_returns_huggingface_list_response(context, model_id: str, text: str) -> None:
     import json
+
     _install_fake_requests_module(context)
     behaviors = _ensure_fake_requests_behaviors(context)
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
@@ -138,9 +149,12 @@ def step_fake_requests_returns_huggingface_list_response(context, model_id: str,
     behaviors[api_url] = _FakeRequestsBehavior(response_text=json.dumps(response_payload))
 
 
-@given('a fake requests library returns HuggingFace OCR response without confidence for model "{model_id}" with text "{text}"')
+@given(
+    'a fake requests library returns HuggingFace OCR response without confidence for model "{model_id}" with text "{text}"'
+)
 def step_fake_requests_returns_huggingface_no_confidence(context, model_id: str, text: str) -> None:
     import json
+
     _install_fake_requests_module(context)
     behaviors = _ensure_fake_requests_behaviors(context)
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"
@@ -148,9 +162,14 @@ def step_fake_requests_returns_huggingface_no_confidence(context, model_id: str,
     behaviors[api_url] = _FakeRequestsBehavior(response_text=json.dumps(response_payload))
 
 
-@given('a fake requests library returns HuggingFace list OCR response without confidence for model "{model_id}" with text "{text}"')
-def step_fake_requests_returns_huggingface_list_no_confidence(context, model_id: str, text: str) -> None:
+@given(
+    'a fake requests library returns HuggingFace list OCR response without confidence for model "{model_id}" with text "{text}"'
+)
+def step_fake_requests_returns_huggingface_list_no_confidence(
+    context, model_id: str, text: str
+) -> None:
     import json
+
     _install_fake_requests_module(context)
     behaviors = _ensure_fake_requests_behaviors(context)
     api_url = f"https://api-inference.huggingface.co/models/{model_id}"

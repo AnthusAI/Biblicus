@@ -60,4 +60,3 @@ def _interpolate_string(text: str) -> str:
         raise ValueError(f"Required environment variable '{env_var}' not found")
 
     return re.sub(pattern, replace_match, text)
-

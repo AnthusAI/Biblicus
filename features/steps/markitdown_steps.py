@@ -107,9 +107,7 @@ def step_fake_markitdown_returns_text(context, text: str, filename: str) -> None
     behaviors[filename] = _FakeMarkItDownBehavior(mode="text", text=text)
 
 
-@given(
-    'a fake MarkItDown library is available that returns empty output for filename "{filename}"'
-)
+@given('a fake MarkItDown library is available that returns empty output for filename "{filename}"')
 def step_fake_markitdown_returns_empty(context, filename: str) -> None:
     _install_fake_markitdown_module(context)
     behaviors = _ensure_fake_markitdown_behaviors(context)

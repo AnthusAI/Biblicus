@@ -622,7 +622,9 @@ class Corpus:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
         return ExtractionRunManifest.model_validate(data)
 
-    def list_extraction_runs(self, *, extractor_id: Optional[str] = None) -> List[ExtractionRunListEntry]:
+    def list_extraction_runs(
+        self, *, extractor_id: Optional[str] = None
+    ) -> List[ExtractionRunListEntry]:
         """
         List extraction runs stored under the corpus.
 
@@ -669,7 +671,9 @@ class Corpus:
                     )
                 )
 
-        entries.sort(key=lambda entry: (entry.created_at, entry.extractor_id, entry.run_id), reverse=True)
+        entries.sort(
+            key=lambda entry: (entry.created_at, entry.extractor_id, entry.run_id), reverse=True
+        )
         return entries
 
     def latest_extraction_run_reference(
@@ -1366,7 +1370,9 @@ class Corpus:
         """
         _ = filename
         item_id = str(uuid.uuid4())
-        destination_relpath = str(Path(DEFAULT_RAW_DIR) / "imports" / "crawl" / crawl_id / relative_path)
+        destination_relpath = str(
+            Path(DEFAULT_RAW_DIR) / "imports" / "crawl" / crawl_id / relative_path
+        )
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         destination_path.write_bytes(data)

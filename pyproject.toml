@@ -112,6 +112,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/biblicus/_vendor/*" = ["D"]  # Exclude vendored code
+"features/steps/*.py" = ["D103"]  # Behave step functions are registered via decorators
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

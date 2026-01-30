@@ -56,3 +56,55 @@ Feature: Analysis schema validation
     When I attempt to validate a vectorizer config with stop words "spanish"
     Then a model validation error is raised
     And the validation error mentions "vectorizer.stop_words must be"
+
+  Scenario: Profiling config rejects invalid sample size
+    When I attempt to validate a profiling config with sample size 0
+    Then a model validation error is raised
+    And the validation error mentions "sample_size"
+
+  Scenario: Profiling config rejects unsupported schema version
+    When I attempt to validate a profiling config with schema version 2
+    Then a model validation error is raised
+    And the validation error mentions "Unsupported analysis schema version"
+
+  Scenario: Profiling config rejects invalid percentiles
+    When I attempt to validate a profiling config with percentiles "0,101"
+    Then a model validation error is raised
+    And the validation error mentions "percentiles"
+
+  Scenario: Profiling config rejects empty percentiles
+    When I attempt to validate a profiling config with empty percentiles
+    Then a model validation error is raised
+    And the validation error mentions "percentiles"
+
+  Scenario: Profiling config rejects unsorted percentiles
+    When I attempt to validate a profiling config with percentiles "90,50"
+    Then a model validation error is raised
+    And the validation error mentions "percentiles"
+
+  Scenario: Profiling config rejects empty tag filters
+    When I attempt to validate a profiling config with tag filters "alpha,,beta"
+    Then a model validation error is raised
+    And the validation error mentions "tag_filters"
+
+  Scenario: Profiling config rejects non-list tag filters
+    When I attempt to validate a profiling config with tag filters string "alpha"
+    Then a model validation error is raised
+    And the validation error mentions "tag_filters"
+
+  Scenario: Profiling config accepts tag filters None
+    When I validate a profiling config with tag filters None
+    Then the profiling tag filters are absent
+
+  Scenario: Profiling config normalizes tag filters
+    When I validate a profiling config with tag filters list " alpha ,beta "
+    Then the profiling tag filters include "alpha"
+    And the profiling tag filters include "beta"
+
+  Scenario: Profiling ordering helper ignores missing items
+    When I order catalog items with missing entries
+    Then the ordered catalog item identifiers equal "a,c,b"
+
+  Scenario: Profiling percentile helper handles empty values
+    When I compute a profiling percentile on empty values
+    Then the profiling percentile value equals 0

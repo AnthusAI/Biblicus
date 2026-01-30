@@ -11,7 +11,6 @@ from biblicus.context import (
 from biblicus.corpus import Corpus
 from biblicus.models import QueryBudget
 
-
 if __name__ == "__main__":
     with TemporaryDirectory(prefix="biblicus-readme-demo-") as temp_dir:
         # This script is a narrative demonstration of the README flow using the Python API.

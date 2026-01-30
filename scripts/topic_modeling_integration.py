@@ -8,25 +8,25 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, Optional
 
-from biblicus.analysis.topic_modeling import TopicModelingBackend
 from biblicus.analysis.models import (
     TopicModelingBerTopicConfig,
+    TopicModelingLexicalProcessingConfig,
     TopicModelingLlmExtractionConfig,
     TopicModelingLlmFineTuningConfig,
-    TopicModelingLexicalProcessingConfig,
     TopicModelingRecipeConfig,
     TopicModelingTextSourceConfig,
     TopicModelingVectorizerConfig,
 )
+from biblicus.analysis.topic_modeling import TopicModelingBackend
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_run
 from biblicus.models import ExtractionRunReference
-REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.download_ag_news import download_ag_news_corpus
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
@@ -115,6 +115,8 @@ def run_integration(arguments: argparse.Namespace) -> Dict[str, object]:
     :rtype: dict[str, object]
     """
     corpus_path = Path(arguments.corpus).resolve()
+    from scripts.download_ag_news import download_ag_news_corpus
+
     ingestion_stats = download_ag_news_corpus(
         corpus_path=corpus_path,
         split=arguments.split,
@@ -154,10 +156,13 @@ def run_integration(arguments: argparse.Namespace) -> Dict[str, object]:
         config=recipe_config.model_dump(),
         extraction_run=extraction_run,
     )
-    output_path = corpus.analysis_run_dir(
-        analysis_id=TopicModelingBackend.analysis_id,
-        run_id=output.run.run_id,
-    ) / "output.json"
+    output_path = (
+        corpus.analysis_run_dir(
+            analysis_id=TopicModelingBackend.analysis_id,
+            run_id=output.run.run_id,
+        )
+        / "output.json"
+    )
     return {
         "corpus": str(corpus_path),
         "ingestion": ingestion_stats,

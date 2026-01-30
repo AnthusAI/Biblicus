@@ -34,3 +34,14 @@ python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --fo
 
 The command prints the analysis run identifier and the output path. Open the resulting `output.json` to inspect per-topic
 labels, keywords, and document examples.
+
+## Profiling analysis
+
+Profiling is the baseline analysis backend. It summarizes corpus composition and extraction coverage using
+deterministic counts and distribution metrics. See `docs/PROFILING.md` for the full reference and working demo.
+
+Run profiling from the CLI:
+
+```
+biblicus analyze profile --corpus corpora/example --extraction-run pipeline:RUN_ID
+```

@@ -452,7 +452,7 @@ def _run_bertopic(
             except ImportError as import_error:
                 raise ValueError(
                     "Vectorizer configuration requires scikit-learn. "
-                    "Install with pip install \"biblicus[topic-modeling]\"."
+                    'Install with pip install "biblicus[topic-modeling]".'
                 ) from import_error
             bertopic_kwargs["vectorizer_model"] = CountVectorizer(
                 ngram_range=tuple(config.vectorizer.ngram_range),
@@ -504,13 +504,10 @@ def _group_documents_by_topic(
     return grouped
 
 
-def _resolve_topic_keywords(
-    *, topic_model: Any, topic_id: int
-) -> List[TopicModelingKeyword]:
+def _resolve_topic_keywords(*, topic_model: Any, topic_id: int) -> List[TopicModelingKeyword]:
     raw_keywords = topic_model.get_topic(topic_id) or []
     return [
-        TopicModelingKeyword(keyword=str(entry[0]), score=float(entry[1]))
-        for entry in raw_keywords
+        TopicModelingKeyword(keyword=str(entry[0]), score=float(entry[1])) for entry in raw_keywords
     ]
 
 

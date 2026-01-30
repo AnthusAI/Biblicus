@@ -485,12 +485,13 @@ For detailed documentation on all extractors, see the [Extractor Reference][extr
 
 ## Topic modeling analysis
 
-Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Topic modeling is the first
-analysis backend. It reads an extraction run, optionally applies an LLM-driven extraction pass, applies lexical
-processing, runs BERTopic, and optionally applies an LLM fine-tuning pass to label topics. The output is structured
-JavaScript Object Notation.
+Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Profiling and topic modeling
+are the first analysis backends. Profiling summarizes corpus composition and extraction coverage. Topic modeling reads
+an extraction run, optionally applies an LLM-driven extraction pass, applies lexical processing, runs BERTopic, and
+optionally applies an LLM fine-tuning pass to label topics. The output is structured JavaScript Object Notation.
 
-See `docs/ANALYSIS.md` for the analysis pipeline overview and `docs/TOPIC_MODELING.md` for topic modeling details.
+See `docs/ANALYSIS.md` for the analysis pipeline overview, `docs/PROFILING.md` for profiling, and
+`docs/TOPIC_MODELING.md` for topic modeling details.
 
 Run a topic analysis using a recipe file:
 

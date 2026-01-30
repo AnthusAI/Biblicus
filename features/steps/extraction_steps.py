@@ -83,15 +83,19 @@ def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
 
 def _build_step_spec(extractor_id: str, config: dict[str, object]) -> str:
     import json
+
     if not config:
         return extractor_id
+
     # Only JSON-encode complex types (lists, dicts), not simple strings/numbers
     def encode_value(v: object) -> str:
         if isinstance(v, (list, dict)):
             return json.dumps(v)
         return str(v)
+
     inline_pairs = ",".join(f"{key}={encode_value(value)}" for key, value in config.items())
     return f"{extractor_id}:{inline_pairs}"
+
 
 def _run_reference_from_context(context) -> str:
     extractor_id = context.last_extractor_id
@@ -138,6 +142,7 @@ def step_build_pipeline_extraction_run(context, corpus_name: str) -> None:
 @when('I build a "pipeline" extraction run in corpus "{corpus_name}" using the recipe:')
 def step_build_pipeline_extraction_run_with_recipe(context, corpus_name: str) -> None:
     import yaml
+
     corpus = _corpus_path(context, corpus_name)
     recipe = yaml.safe_load(context.text)
     extractor_id = recipe["extractor_id"]
@@ -157,8 +162,11 @@ def step_build_pipeline_extraction_run_with_recipe(context, corpus_name: str) ->
 
 
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}" using the recipe:')
-def step_build_non_pipeline_extraction_run_with_recipe(context, extractor_id: str, corpus_name: str) -> None:
+def step_build_non_pipeline_extraction_run_with_recipe(
+    context, extractor_id: str, corpus_name: str
+) -> None:
     import yaml
+
     corpus = _corpus_path(context, corpus_name)
     recipe = yaml.safe_load(context.text)
     config = recipe.get("config", {})
@@ -201,7 +209,9 @@ def step_attempt_build_extraction_run_with_step_spec(
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
-@when('I build an extraction run in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"')
+@when(
+    'I build an extraction run in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"'
+)
 def step_build_extraction_run_with_step_spec(
     context, corpus_name: str, extractor_id: str, step_spec: str
 ) -> None:
@@ -216,9 +226,14 @@ def step_build_extraction_run_with_step_spec(
     context.last_extractor_id = "pipeline"
 
 
-@when('I attempt to build a "{extractor_id}" extraction run in corpus "{corpus_name}" using the recipe:')
-def step_attempt_build_extraction_run_with_recipe(context, extractor_id: str, corpus_name: str) -> None:
+@when(
+    'I attempt to build a "{extractor_id}" extraction run in corpus "{corpus_name}" using the recipe:'
+)
+def step_attempt_build_extraction_run_with_recipe(
+    context, extractor_id: str, corpus_name: str
+) -> None:
     import yaml
+
     corpus = _corpus_path(context, corpus_name)
     recipe = yaml.safe_load(context.text)
     config = recipe.get("config", {})
@@ -628,8 +643,12 @@ def step_build_extraction_run_from_recipe_file(context, corpus_name: str, recipe
     context.last_extractor_id = recipe.get("extractor_id")
 
 
-@when('I attempt to build an extraction run in corpus "{corpus_name}" using recipe file "{recipe_file}"')
-def step_attempt_build_extraction_run_from_recipe_file(context, corpus_name: str, recipe_file: str) -> None:
+@when(
+    'I attempt to build an extraction run in corpus "{corpus_name}" using recipe file "{recipe_file}"'
+)
+def step_attempt_build_extraction_run_from_recipe_file(
+    context, corpus_name: str, recipe_file: str
+) -> None:
     """Attempt to build an extraction run from a recipe file without asserting success."""
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)

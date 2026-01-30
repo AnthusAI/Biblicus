@@ -11,7 +11,6 @@ from typing import Dict
 
 from biblicus.corpus import Corpus
 
-
 DEFAULT_HTML_URL = "https://example.com"
 DEFAULT_IMAGE_URL = "https://commons.wikimedia.org/wiki/Special:FilePath/Example.jpg"
 DEFAULT_PDF_URL = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
@@ -30,7 +29,6 @@ def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     :rtype: Corpus
     :raises ValueError: If the target path is non-empty without force.
     """
-
     if (path / ".biblicus" / "config.json").is_file():
         corpus = Corpus.open(path)
         if force:
@@ -48,7 +46,6 @@ def _blank_single_page_pdf_bytes() -> bytes:
     :return: Portable Document Format bytes.
     :rtype: bytes
     """
-
     objects: list[bytes] = []
 
     objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
@@ -128,7 +125,6 @@ def download_mixed_samples(
     :return: Ingestion statistics.
     :rtype: dict[str, int]
     """
-
     corpus = _prepare_corpus(corpus_path, force=force)
     ingested = 0
     failed = 0
@@ -188,7 +184,6 @@ def build_parser() -> argparse.ArgumentParser:
     :return: Argument parser.
     :rtype: argparse.ArgumentParser
     """
-
     parser = argparse.ArgumentParser(description="Download mixed-modality samples into Biblicus.")
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
     parser.add_argument("--force", action="store_true", help="Purge existing corpus content.")
@@ -220,7 +215,6 @@ def main() -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = build_parser()
     args = parser.parse_args()
     stats = download_mixed_samples(

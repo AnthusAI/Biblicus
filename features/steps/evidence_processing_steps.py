@@ -44,4 +44,3 @@ def then_evidence_text_order_is(context) -> None:
     expected_text_values = [row["text"] for row in context.table]
     actual_text_values = [evidence_item.text for evidence_item in context.retrieval_result.evidence]
     assert actual_text_values == expected_text_values
-

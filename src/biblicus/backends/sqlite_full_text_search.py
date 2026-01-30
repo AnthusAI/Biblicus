@@ -213,8 +213,7 @@ def _create_full_text_search_schema(conn: sqlite3.Connection) -> None:
     :return: None.
     :rtype: None
     """
-    conn.execute(
-        """
+    conn.execute("""
         CREATE VIRTUAL TABLE chunks_full_text_search USING fts5(
             content,
             item_id UNINDEXED,
@@ -225,8 +224,7 @@ def _create_full_text_search_schema(conn: sqlite3.Connection) -> None:
             start_offset UNINDEXED,
             end_offset UNINDEXED
         )
-        """
-    )
+        """)
 
 
 def _build_full_text_search_index(

@@ -256,9 +256,7 @@ def step_fake_docling_returns_text(context, text: str, filename: str) -> None:
     behaviors[filename] = _FakeDoclingBehavior(mode="text", text=text)
 
 
-@given(
-    'a fake Docling library is available that returns empty output for filename "{filename}"'
-)
+@given('a fake Docling library is available that returns empty output for filename "{filename}"')
 def step_fake_docling_returns_empty(context, filename: str) -> None:
     """
     Configure fake Docling to return empty output for a filename.
@@ -273,9 +271,7 @@ def step_fake_docling_returns_empty(context, filename: str) -> None:
     behaviors[filename] = _FakeDoclingBehavior(mode="empty", text="")
 
 
-@given(
-    'a fake Docling library is available that raises a RuntimeError for filename "{filename}"'
-)
+@given('a fake Docling library is available that raises a RuntimeError for filename "{filename}"')
 def step_fake_docling_raises_error(context, filename: str) -> None:
     """
     Configure fake Docling to raise a RuntimeError for a filename.

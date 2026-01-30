@@ -15,6 +15,15 @@ from biblicus.corpus import Corpus
 
 
 class AudioSample(TypedDict):
+    """
+    Typed dictionary describing an audio sample source.
+
+    :ivar url: Uniform resource locator for the audio sample.
+    :vartype url: str
+    :ivar tags: Tags associated with the sample.
+    :vartype tags: list[str]
+    """
+
     url: str
     tags: List[str]
 
@@ -56,7 +65,6 @@ def _silent_wave_bytes(*, seconds: float, sample_rate_hz: int) -> bytes:
     :return: Waveform Audio File Format bytes.
     :rtype: bytes
     """
-
     channels = 1
     bits_per_sample = 16
     bytes_per_sample = bits_per_sample // 8
@@ -92,7 +100,6 @@ def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     :rtype: Corpus
     :raises ValueError: If the target path is non-empty without force.
     """
-
     if (path / ".biblicus" / "config.json").is_file():
         corpus = Corpus.open(path)
         if force:
@@ -120,7 +127,6 @@ def download_audio_samples(
     :return: Ingestion statistics.
     :rtype: dict[str, int]
     """
-
     corpus = _prepare_corpus(corpus_path, force=force)
     ingested = 0
     failed = 0
@@ -159,7 +165,6 @@ def build_parser() -> argparse.ArgumentParser:
     :return: Argument parser.
     :rtype: argparse.ArgumentParser
     """
-
     parser = argparse.ArgumentParser(description="Download audio samples into Biblicus.")
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
     parser.add_argument("--force", action="store_true", help="Purge existing corpus content.")
@@ -179,7 +184,6 @@ def main() -> int:
     :return: Exit code.
     :rtype: int
     """
-
     parser = build_parser()
     args = parser.parse_args()
     samples: List[AudioSample]

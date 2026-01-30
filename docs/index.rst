@@ -17,6 +17,7 @@ Contents
    backends/index
    CONTEXT_PACK
    ANALYSIS
+   PROFILING
    TOPIC_MODELING
    DEMOS
    USER_CONFIGURATION

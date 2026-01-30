@@ -345,7 +345,9 @@ def build_extraction_run(
     manifest = create_extraction_run_manifest(corpus, recipe=recipe)
     run_dir = corpus.extraction_run_dir(extractor_id=extractor_id, run_id=manifest.run_id)
     if run_dir.exists():
-        return corpus.load_extraction_run_manifest(extractor_id=extractor_id, run_id=manifest.run_id)
+        return corpus.load_extraction_run_manifest(
+            extractor_id=extractor_id, run_id=manifest.run_id
+        )
     run_dir.mkdir(parents=True, exist_ok=False)
 
     catalog = corpus.load_catalog()

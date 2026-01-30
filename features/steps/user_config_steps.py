@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from behave import given, then, when
@@ -99,14 +100,11 @@ def step_deepgram_api_key_equals(context, api_key: str) -> None:
     assert loaded.deepgram.api_key == api_key
 
 
-from behave import when
-import os
-
-
-@when('I call resolve_huggingface_api_key helper function')
+@when("I call resolve_huggingface_api_key helper function")
 def step_call_resolve_huggingface_api_key(context):
-    from biblicus.user_config import resolve_huggingface_api_key
     from pathlib import Path
+
+    from biblicus.user_config import resolve_huggingface_api_key
 
     # Temporarily override environment for test
     old_env_key = os.environ.get("HUGGINGFACE_API_KEY")
@@ -147,8 +145,9 @@ def step_call_resolve_huggingface_api_key(context):
 
 @when("I call resolve_deepgram_api_key helper function")
 def step_call_resolve_deepgram_api_key(context):
-    from biblicus.user_config import resolve_deepgram_api_key
     from pathlib import Path
+
+    from biblicus.user_config import resolve_deepgram_api_key
 
     old_env_key = os.environ.get("DEEPGRAM_API_KEY")
     old_env_home = os.environ.get("HOME")

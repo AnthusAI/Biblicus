@@ -17,7 +17,6 @@ def _repo_root() -> Path:
     :return: Repository root path.
     :rtype: Path
     """
-
     return Path(__file__).resolve().parent.parent
 
 
@@ -32,7 +31,6 @@ def before_scenario(context, scenario) -> None:
     :return: None.
     :rtype: None
     """
-
     import biblicus.__main__ as _biblicus_main
 
     _ = _biblicus_main
@@ -74,7 +72,6 @@ def after_scenario(context, scenario) -> None:
     :return: None.
     :rtype: None
     """
-
     if getattr(context, "httpd", None) is not None:
         context.httpd.shutdown()
         context.httpd.server_close()
@@ -221,7 +218,9 @@ def after_scenario(context, scenario) -> None:
         context.fake_paddleocr_vl_behaviors.clear()
     if getattr(context, "_fake_paddleocr_installed", False):
         # Remove all paddle-related modules
-        paddle_module_names = [name for name in list(sys.modules.keys()) if "paddle" in name.lower()]
+        paddle_module_names = [
+            name for name in list(sys.modules.keys()) if "paddle" in name.lower()
+        ]
         for name in paddle_module_names:
             sys.modules.pop(name, None)
         # Restore original modules
@@ -345,7 +344,6 @@ def run_biblicus(
     :return: Captured execution result.
     :rtype: RunResult
     """
-
     import contextlib
     import io
 

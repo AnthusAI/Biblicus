@@ -99,7 +99,10 @@ class EvidenceRerankLongestText(EvidenceReranker):
         """
         return sorted(
             evidence,
-            key=lambda evidence_item: (-len((evidence_item.text or "").strip()), evidence_item.item_id),
+            key=lambda evidence_item: (
+                -len((evidence_item.text or "").strip()),
+                evidence_item.item_id,
+            ),
         )
 
 
@@ -198,4 +201,3 @@ def apply_evidence_filter(
     """
     evidence_filter = _EVIDENCE_FILTERS[filter_id]
     return evidence_filter.filter(query_text=query_text, evidence=evidence, config=config)
-

@@ -48,6 +48,15 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Specification completeness**: every behavior that exists must be specified. If a behavior cannot be specified clearly, it should not exist (remove it or make it a hard error).
 - **100% test coverage is required**: all code must be covered by BDD tests. This is non-negotiable.
 
+## Working backwards (product-first workflow)
+
+- **Start with a PR-FAQ draft** for every new feature. The AI coding agent writes it as a draft to demonstrate product understanding.
+- **Review the PR-FAQ first**, then decide whether the feature should proceed.
+- **Only after PR-FAQ approval**, write the README and Sphinx docs as if the feature already exists.
+- **Then write BDD specs** in `features/*.feature` that reflect the documentation.
+- **Only then implement the feature**, following the documentation and specs exactly.
+- **Finish by enforcing quality gates**: docstrings, validation, naming clarity, and 100% coverage.
+
 ## One official way (no compatibility baggage)
 
 - No backwards compatibility layers, no legacy aliases, no “support both”.
