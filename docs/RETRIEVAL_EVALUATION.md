@@ -27,6 +27,16 @@ Retrieval datasets are stored as JavaScript Object Notation files with a strict 
 Each query includes either an `expected_item_id` or an `expected_source_uri`. The `kind` field records whether the
 query is hand-labeled (`gold`) or synthetic.
 
+## Metrics primer
+
+Retrieval evaluation reports a small set of textbook metrics:
+
+- **Hit rate**: the fraction of queries that retrieved the expected item at any rank.
+- **Precision-at-k**: hit rate normalized by the evidence budget (`max_total_items`).
+- **Mean reciprocal rank**: the average of `1 / rank` for the first matching item per query.
+
+These metrics are deterministic for the same corpus, run, dataset, and budget.
+
 ## Running an evaluation
 
 Use the command-line interface to evaluate a retrieval run against a dataset:
@@ -39,6 +49,57 @@ biblicus eval --corpus corpora/example --run <run_id> --dataset datasets/retriev
 If `--run` is omitted, the latest retrieval run is used. Evaluations are deterministic for the same corpus, run, and
 budget.
 
+## End-to-end evaluation example
+
+This example builds a tiny corpus, creates a retrieval run, and evaluates it against a minimal dataset:
+
+```
+rm -rf corpora/retrieval_eval_demo
+python3 -m biblicus init corpora/retrieval_eval_demo
+printf "alpha apple\n" > /tmp/eval-alpha.txt
+printf "beta banana\n" > /tmp/eval-beta.txt
+python3 -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-alpha.txt
+python3 -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-beta.txt
+
+python3 -m biblicus extract build --corpus corpora/retrieval_eval_demo --step pass-through-text
+python3 -m biblicus build --corpus corpora/retrieval_eval_demo --backend sqlite-full-text-search
+
+cat > /tmp/retrieval_eval_dataset.json <<'JSON'
+{
+  "schema_version": 1,
+  "name": "retrieval-eval-demo",
+  "description": "Minimal dataset for evaluation walkthroughs.",
+  "queries": [
+    {
+      "query_id": "q1",
+      "query_text": "apple",
+      "expected_item_id": "ITEM_ID_FOR_ALPHA",
+      "kind": "gold"
+    }
+  ]
+}
+JSON
+```
+
+Replace `ITEM_ID_FOR_ALPHA` with the item identifier from `biblicus list`, then run:
+
+```
+python3 -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/retrieval_eval_dataset.json \
+  --max-total-items 3 --max-total-characters 2000 --max-items-per-source 5
+```
+
+## Retrieval evaluation lab
+
+The retrieval evaluation lab ships with bundled files and labels so you can run a deterministic end-to-end evaluation
+without external dependencies.
+
+```
+python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
+```
+
+The script prints a summary that includes the generated dataset path, the retrieval run identifier, and the evaluation
+output path.
+
 ## Output
 
 The evaluation output includes:
@@ -49,6 +110,52 @@ The evaluation output includes:
 - System diagnostics (latency percentiles and index size).
 
 The output is JavaScript Object Notation suitable for downstream reporting.
+
+Example snippet:
+
+```json
+{
+  "dataset": {
+    "name": "retrieval-eval-demo",
+    "description": "Minimal dataset for evaluation walkthroughs.",
+    "queries": 1
+  },
+  "backend_id": "sqlite-full-text-search",
+  "run_id": "RUN_ID",
+  "evaluated_at": "2024-01-01T00:00:00Z",
+  "metrics": {
+    "hit_rate": 1.0,
+    "precision_at_max_total_items": 0.3333333333333333,
+    "mean_reciprocal_rank": 1.0
+  },
+  "system": {
+    "average_latency_milliseconds": 1.2,
+    "percentile_95_latency_milliseconds": 2.4,
+    "index_bytes": 2048.0
+  }
+}
+```
+
+The `metrics` section is the primary signal for retriever quality. The `system` section helps compare performance and
+storage costs across backends.
+
+## What to record for comparisons
+
+When you compare retrieval runs, capture the same inputs every time:
+
+- Corpus path (and whether the catalog has been reindexed).
+- Extraction run identifier used by the retrieval run.
+- Retrieval backend identifier and run identifier.
+- Evaluation dataset path and schema version.
+- Evidence budget values.
+
+This metadata allows you to rerun the evaluation and explain differences between results.
+
+## Common pitfalls
+
+- Evaluating against a dataset built for a different corpus or extraction run.
+- Changing budgets between runs and expecting metrics to be comparable.
+- Using stale item identifiers after reindexing or re-ingesting content.
 
 ## Python usage
 

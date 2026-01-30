@@ -24,15 +24,64 @@ Retrieval runs are stored under:
 .biblicus/runs/retrieval/<backend_id>/<run_id>/
 ```
 
+## A minimal run you can execute
+
+This walkthrough uses the full text search backend and produces evidence you can inspect immediately.
+
+```
+rm -rf corpora/retrieval_demo
+python3 -m biblicus init corpora/retrieval_demo
+printf "alpha beta\n" > /tmp/retrieval-alpha.txt
+printf "beta gamma\n" > /tmp/retrieval-beta.txt
+python3 -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-alpha.txt
+python3 -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-beta.txt
+
+python3 -m biblicus extract build --corpus corpora/retrieval_demo --step pass-through-text
+python3 -m biblicus build --corpus corpora/retrieval_demo --backend sqlite-full-text-search
+python3 -m biblicus query --corpus corpora/retrieval_demo --query "beta"
+```
+
+The query output is structured evidence with identifiers and scores. That evidence is the primary output for evaluation
+and downstream context packing.
+
 ## Backends
 
 See `docs/backends/index.md` for backend selection and configuration.
+
+## Choosing a backend
+
+Start with the simplest backend that answers your question:
+
+- `scan` for tiny corpora or sanity checks.
+- `sqlite-full-text-search` for a practical lexical baseline.
+- `vector` when you want deterministic term-frequency similarity without external dependencies.
+
+You can compare them with the same dataset and budget using the retrieval evaluation workflow.
 
 ## Evaluation
 
 Retrieval runs are evaluated against datasets with explicit budgets. See `docs/RETRIEVAL_EVALUATION.md` for the
 dataset format and workflow, `docs/FEATURE_INDEX.md` for the behavior specifications, and `docs/CONTEXT_PACK.md` for
 how evidence feeds into context packs.
+
+## Labs and demos
+
+When you want a repeatable example with bundled data, use the retrieval evaluation lab:
+
+```
+python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
+```
+
+The lab builds a tiny corpus, runs extraction, builds a retrieval run, and evaluates it. It prints the dataset path and
+evaluation output so you can open the JavaScript Object Notation directly.
+
+## Reproducibility checklist
+
+Use these habits when you want repeatable retrieval experiments:
+
+- Record the extraction run identifier and pass it explicitly when you build a retrieval run.
+- Keep evaluation datasets in source control and treat them as immutable inputs.
+- Capture the full retrieval run identifier when you compare outputs across backends.
 
 ## Why the separation matters
 

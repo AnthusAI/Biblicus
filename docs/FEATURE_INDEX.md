@@ -200,10 +200,15 @@ What it does:
 
 - Evaluates retrieval runs against datasets and budgets.
 
+Documentation:
+
+- `docs/RETRIEVAL_EVALUATION.md`
+
 Behavior specifications:
 
 - `features/evaluation.feature`
 - `features/model_validation.feature`
+- `features/retrieval_evaluation_lab.feature`
 
 Primary implementation:
 

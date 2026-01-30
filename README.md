@@ -452,7 +452,8 @@ For detailed documentation including configuration options, performance characte
 
 For the retrieval pipeline overview and run artifacts, see `docs/RETRIEVAL.md`. For retrieval quality upgrades
 (tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`. For evaluation workflows
-and dataset formats, see `docs/RETRIEVAL_EVALUATION.md`.
+and dataset formats, see `docs/RETRIEVAL_EVALUATION.md`. For a runnable walkthrough, use the retrieval evaluation lab
+script (`scripts/retrieval_evaluation_lab.py`).
 
 ## Extraction backends
 

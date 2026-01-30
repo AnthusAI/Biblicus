@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "name": "retrieval-evaluation-lab",
+  "description": "Bundled labels for the retrieval evaluation lab.",
+  "queries": [
+    {
+      "query_id": "q1",
+      "query_text": "alpha unique",
+      "expected_filename": "alpha.txt",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q2",
+      "query_text": "beta unique",
+      "expected_filename": "beta.txt",
+      "kind": "gold"
+    },
+    {
+      "query_id": "q3",
+      "query_text": "gamma unique",
+      "expected_filename": "gamma.txt",
+      "kind": "gold"
+    }
+  ]
+}

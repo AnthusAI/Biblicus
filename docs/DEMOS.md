@@ -225,6 +225,17 @@ python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_la
 
 The lab writes a generated dataset file and evaluation output path and prints both in the command output.
 
+### Retrieval evaluation lab run
+
+Use the retrieval evaluation lab to build a tiny corpus, run extraction, build a retrieval backend, and evaluate it
+against bundled labels:
+
+```
+python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
+```
+
+The script prints the dataset path, retrieval run identifier, and evaluation output location.
+
 Run with a larger corpus and a higher topic count:
 
 ```
