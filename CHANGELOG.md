@@ -1,6 +1,31 @@
 # CHANGELOG
 
 
+## v0.13.0 (2026-01-30)
+
+### Documentation
+
+- Add extraction evaluation guide
+  ([`857ebe0`](https://github.com/AnthusAI/Biblicus/commit/857ebe0b30d31b296d9c7b296792f3372db9bc01))
+
+- Add extraction evaluation lab walkthrough
+  ([`da1c6ce`](https://github.com/AnthusAI/Biblicus/commit/da1c6ce7b4bb3cbca96b2c70a6dedca4da91d11b))
+
+- Add vector backend reference
+  ([`12e2793`](https://github.com/AnthusAI/Biblicus/commit/12e27938f9e6bf4e5a3bb347420abd3e1e4032a0))
+
+### Features
+
+- Add extraction evaluation demo
+  ([`a7c3efd`](https://github.com/AnthusAI/Biblicus/commit/a7c3efd7da65b3d202e7a518e2fa2bd43774a53e))
+
+- Add extraction evaluation harness
+  ([`cc94e90`](https://github.com/AnthusAI/Biblicus/commit/cc94e90f723a54f50202df7f5661dc9b6230d553))
+
+- Add extraction evaluation lab
+  ([`8306c8d`](https://github.com/AnthusAI/Biblicus/commit/8306c8de2f459884874b2533df922a30ebd72c23))
+
+
 ## v0.12.0 (2026-01-30)
 
 ### Documentation
