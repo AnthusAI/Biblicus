@@ -30,8 +30,9 @@ See `docs/backends/index.md` for backend selection and configuration.
 
 ## Evaluation
 
-Retrieval runs can be evaluated against datasets with explicit budgets. See `docs/FEATURE_INDEX.md` for the behavior
-specifications, and `docs/CONTEXT_PACK.md` for how evidence feeds into context packs.
+Retrieval runs are evaluated against datasets with explicit budgets. See `docs/RETRIEVAL_EVALUATION.md` for the
+dataset format and workflow, `docs/FEATURE_INDEX.md` for the behavior specifications, and `docs/CONTEXT_PACK.md` for
+how evidence feeds into context packs.
 
 ## Why the separation matters
 

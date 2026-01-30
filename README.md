@@ -449,8 +449,9 @@ For detailed documentation including configuration options, performance characte
 
 ## Retrieval documentation
 
-For the retrieval pipeline overview and run artifacts, see `docs/RETRIEVAL.md`. For the planned quality upgrades
-(tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`.
+For the retrieval pipeline overview and run artifacts, see `docs/RETRIEVAL.md`. For retrieval quality upgrades
+(tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`. For evaluation workflows
+and dataset formats, see `docs/RETRIEVAL_EVALUATION.md`.
 
 ## Extraction backends
 
