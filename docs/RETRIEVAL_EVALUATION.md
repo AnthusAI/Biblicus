@@ -166,6 +166,16 @@ Example snippet:
 The `metrics` section is the primary signal for retriever quality. The `system` section helps compare performance and
 storage costs across backends.
 
+## Reading per-query diagnostics
+
+When a query misses, inspect the evidence list for that query and compare it to your expectations:
+
+- Is the expected item present but ranked too low?
+- Is the expected item missing because extraction did not produce text?
+- Did the budget truncate the relevant evidence?
+
+Use this inspection to decide whether to adjust extraction, retrieval configuration, or evaluation datasets.
+
 ## What to record for comparisons
 
 When you compare retrieval runs, capture the same inputs every time:
