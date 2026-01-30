@@ -216,7 +216,7 @@ Version zero locked this as policy. A prune workflow was not implemented yet.
 
 Goal: retain derived artifacts from multiple implementations side by side so a user can compare results and switch between implementations without losing work.
 
-This decision applies to extraction plugins and retrieval backends, and to any future plugin type that produces derived artifacts.
+This decision applies to extraction plugins and retrieval backends, and to any plugin type that produces derived artifacts.
 
 Option A: store artifacts under the corpus, partitioned by plugin type
 
@@ -369,7 +369,7 @@ Version zero implemented option A by writing structured log entries for hook exe
 
 ## Outcomes and remaining questions
 
-The hook protocol and hook logging policy above were implemented in version zero. This section records what was implemented, plus the questions that remain for future iterations.
+The hook protocol and hook logging policy above were implemented in version zero. This section records what was implemented and the open questions tracked for later iterations.
 
 ### Hook contexts implemented in version zero
 

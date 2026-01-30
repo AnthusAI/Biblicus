@@ -41,6 +41,6 @@ Keeping extraction and retrieval distinct makes it possible to:
 - Compare backends against the same corpus and dataset inputs.
 - Record and audit retrieval decisions without mixing in prompting or context formatting.
 
-## Next steps
+## Retrieval quality
 
-For planned retrieval quality improvements, see `docs/RETRIEVAL_QUALITY.md`.
+For retrieval quality upgrades, see `docs/RETRIEVAL_QUALITY.md`.

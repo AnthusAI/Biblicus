@@ -1,7 +1,7 @@
-# Retrieval quality upgrades (planned)
+# Retrieval quality upgrades
 
-This document records the design intent for planned retrieval quality upgrades. It is a reference for future work
-and should be read alongside `docs/ROADMAP.md`.
+This document describes the retrieval quality upgrades available in Biblicus. It is a reference for how retrieval
+quality is expressed in runs and should be read alongside `docs/ROADMAP.md`.
 
 ## Goals
 
@@ -9,7 +9,7 @@ and should be read alongside `docs/ROADMAP.md`.
 - Keep retrieval stages explicit and visible in run artifacts.
 - Preserve the evidence-first output model.
 
-## Planned upgrades
+## Available upgrades
 
 ### 1) Tuned lexical baseline
 
@@ -21,8 +21,7 @@ and should be read alongside `docs/ROADMAP.md`.
 ### 2) Reranking stage
 
 - Optional rerank step that re-scores top-N candidates.
-- Cross-encoder as the default deterministic path.
-- Optional LLM reranking with structured outputs and explicit cost controls.
+- Deterministic scoring keeps rerank behavior reproducible.
 
 ### 3) Hybrid retrieval
 
@@ -30,9 +29,9 @@ and should be read alongside `docs/ROADMAP.md`.
 - Expose fusion weights in the recipe schema.
 - Emit stage-level scores and weights in evidence metadata.
 
-## Evaluation requirements
+## Evaluation guidance
 
-- Accuracy-at-k improves on the same datasets without regressions.
+- Measure accuracy-at-k and compare against the same datasets.
 - Run artifacts capture each stage and configuration for auditability.
 - Deterministic settings remain available as the default baseline.
 

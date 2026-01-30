@@ -88,11 +88,11 @@ Evidence is the canonical output of retrieval. Required fields:
 ### Integration boundary
 
 - Biblicus can integrate with Tactus as a **Model Context Protocol toolset**, for example with tool names such as `knowledge_base_ingest`, `knowledge_base_query`, and `knowledge_base_stats`.
-- We will **not** add a knowledge base or retrieval augmented generation language primitive in version zero. Revisit only if we need semantics that tools cannot express cleanly, such as enforceable policy boundaries, runtime managed durability, caching hooks, or guaranteed instrumentation.
+- We do **not** add a knowledge base or retrieval augmented generation language primitive in version zero. Revisit only if we need semantics that tools cannot express cleanly, such as enforceable policy boundaries, runtime managed durability, caching hooks, or guaranteed instrumentation.
 
 ### Interface packaging
 
-- The knowledge base interface is a **small protocol and reference implementation**, including tool schemas and a reference Model Context Protocol server. We will not build a full managed service in version zero.
+- The knowledge base interface is a **small protocol and reference implementation**, including tool schemas and a reference Model Context Protocol server. We do not build a full managed service in version zero.
 
 ### Corpus identity and layout
 
@@ -143,7 +143,7 @@ The interface stays the same; topology is configuration.
 - When a backend produces persisted materializations, Biblicus treats them as **versioned build runs** identified by `run_id` (rather than overwriting in place by default).
 - Manifests exist even for just-in-time backends (materializations may be empty).
 - Full directed acyclic graph lineage is not included in version zero; revisit only if needed.
-- Future (optional): define **shared materialization formats** (canonical chunk and embedding stores) so multiple backends can reuse intermediates when it makes sense; keep it opt-in.
+- Optional: define **shared materialization formats** (canonical chunk and embedding stores) so multiple backends can reuse intermediates when it makes sense; keep it opt-in.
 
 ### Evaluation
 
@@ -156,7 +156,7 @@ The interface stays the same; topology is configuration.
 - The corpus catalog is **file-based** (committable, portable, backend-agnostic) so any backend/tool can consume it without requiring a database engine.
 - Canonical version zero format is a single JavaScript Object Notation file at `.biblicus/catalog.json`, written atomically (temporary file and rename) on updates.
 - The catalog includes `latest_run_id` and run manifests are stored at `.biblicus/runs/<run_id>.json`.
-- If this ever becomes a bottleneck at very large scales, we will **change the specification** (bump `schema_version`) rather than introduce multiple “supported” catalog storage modes.
+- If this becomes a bottleneck at very large scales, we **change the specification** (bump `schema_version`) rather than introduce multiple “supported” catalog storage modes.
 
 ## Near-term deliverables
 

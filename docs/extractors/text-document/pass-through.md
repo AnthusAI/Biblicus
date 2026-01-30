@@ -120,12 +120,12 @@ title: My Document
 tags: [note, draft]
 ---
 
-This is the body content that will be extracted.
+This is the body content that is extracted.
 ```
 
 Output text:
 ```
-This is the body content that will be extracted.
+This is the body content that is extracted.
 ```
 
 ### Mixed Format Pipeline
@@ -185,7 +185,7 @@ Non-text items are silently skipped (returns `None`). This allows the extractor 
 
 ### Encoding Errors
 
-UTF-8 decoding errors will cause per-item failures recorded in `errored_items` but won't halt the entire extraction run.
+UTF-8 decoding errors cause per-item failures recorded in `errored_items` but do not halt the entire extraction run.
 
 ### Missing Files
 

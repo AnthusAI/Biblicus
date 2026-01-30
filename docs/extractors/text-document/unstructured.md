@@ -78,7 +78,7 @@ class UnstructuredExtractorConfig(BaseModel):
 
 ### Configuration Options
 
-This extractor currently accepts no configuration. Future versions may expose Unstructured library options.
+This extractor currently accepts no configuration. Optional extensions may expose Unstructured library options.
 
 ## Usage
 

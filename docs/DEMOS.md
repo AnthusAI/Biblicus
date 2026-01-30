@@ -6,7 +6,7 @@ For the ordered plan of what to build next, see `docs/ROADMAP.md`.
 
 ## Diagram of the current system and the next layers
 
-Blue boxes are implemented now. Purple boxes are planned next layers that we can build and compare.
+Blue boxes are implemented now. Purple boxes are layers not implemented yet that we can build and compare.
 
 ```mermaid
 %%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
@@ -233,7 +233,7 @@ python3 -m biblicus extract build --corpus corpora/demo \\
   --step select-text
 ```
 
-Copy the `run_id` from the JavaScript Object Notation output. You will use it as `EXTRACTION_RUN_ID` in the next command.
+Copy the `run_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_RUN_ID` in the next command.
 
 ```
 python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \\
@@ -251,7 +251,7 @@ python3 scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
 python3 -m biblicus extract build --corpus corpora/pdf_samples --step pdf-text
 ```
 
-Copy the `run_id` from the JavaScript Object Notation output. You will use it as `PDF_EXTRACTION_RUN_ID` in the next command.
+Copy the `run_id` from the JavaScript Object Notation output. Use it as `PDF_EXTRACTION_RUN_ID` in the next command.
 
 ```
 python3 -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_run=pipeline:PDF_EXTRACTION_RUN_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
