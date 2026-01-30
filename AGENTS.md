@@ -44,8 +44,9 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 
 - **Specifications first**: new behavior starts in `features/*.feature` and should fail before implementation begins.
 - **Single vocabulary**: scenarios must use the domain-specific cognitive framework terms (avoid synonyms that drift over time).
-- **No “just tests”**: behavior specifications are part of the architecture; they define what the system *is*.
+- **No "just tests"**: behavior specifications are part of the architecture; they define what the system *is*.
 - **Specification completeness**: every behavior that exists must be specified. If a behavior cannot be specified clearly, it should not exist (remove it or make it a hard error).
+- **100% test coverage is required**: all code must be covered by BDD tests. This is non-negotiable.
 
 ## One official way (no compatibility baggage)
 
@@ -57,6 +58,15 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 
 - Domain constructs should be represented as **Pydantic models** whenever they cross a boundary (configurations, application programming interfaces, tool schemas, command-line interface output).
 - Validation errors should be converted into clear, user-facing messages (especially in command-line interface and tool contexts).
+
+## Semantic versioning and releases
+
+- **Semantic release is fully automated in GitHub Actions**: version bumps, changelog generation, and PyPI publishing are handled by the `python-semantic-release` workflow.
+- **Do NOT manually update version numbers** (e.g., in `pyproject.toml` or `src/biblicus/__init__.py`).
+- **Do NOT manually edit the CHANGELOG.md file**.
+- **Use conventional commits** for all commits: prefix with `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, etc. to trigger the appropriate semantic version bump.
+- The workflow parses commit messages to determine the next version (major, minor, patch) and automatically generates release notes.
+- Local development should focus on writing code and tests; versioning and publishing are automated on `main` after code review.
 
 ## Coding style policies
 
