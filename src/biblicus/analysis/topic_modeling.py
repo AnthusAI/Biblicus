@@ -159,7 +159,12 @@ def _run_topic_modeling(
         bertopic_analysis=bertopic_report,
         llm_fine_tuning=fine_tuning_report,
         topics=labeled_topics,
-        warnings=text_report.warnings,
+        warnings=(
+            text_report.warnings
+            + llm_extraction_report.warnings
+            + bertopic_report.warnings
+            + fine_tuning_report.warnings
+        ),
         errors=text_report.errors
         + llm_extraction_report.errors
         + bertopic_report.errors
