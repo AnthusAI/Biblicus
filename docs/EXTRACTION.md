@@ -33,6 +33,35 @@ corpus/
                   <item id>.txt
 ```
 
+### Output structure
+
+Extraction output is structured and inspectable. The manifest captures the recipe and per-item status:
+
+```json
+{
+  "run_id": "RUN_ID",
+  "extractor_id": "pipeline",
+  "recipe": {
+    "name": "default",
+    "steps": ["pass-through-text", "metadata-text"]
+  },
+  "stats": {
+    "total_items": 3,
+    "extracted_items": 2,
+    "skipped_items": 1,
+    "errored_items": 0
+  }
+}
+```
+
+The `text/` folder contains the final extracted text for each item, while `steps/` preserves all intermediate outputs.
+
+## Reproducibility checklist
+
+- Record the extraction run identifier (`extractor_id:run_id`).
+- Keep the pipeline steps and step order in source control (recipe files are preferred).
+- Capture the catalog timestamp when comparing extraction runs.
+
 ## Available Extractors
 
 Biblicus provides 16 built-in extractors organized by category:
@@ -169,6 +198,12 @@ Extraction runs are stored under the corpus and can be listed and inspected.
 python3 -m biblicus extract list --corpus corpora/extraction-demo
 python3 -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:EXTRACTION_RUN_ID
 ```
+
+## Common pitfalls
+
+- Comparing extraction runs built from different pipeline step orders.
+- Forgetting to capture the extraction run reference before building retrieval runs.
+- Assuming selection steps choose the “best” output rather than the first usable output.
 
 Deletion is explicit and requires typing the exact run reference as confirmation:
 
