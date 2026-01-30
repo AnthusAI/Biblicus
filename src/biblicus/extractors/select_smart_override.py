@@ -132,15 +132,17 @@ class SelectSmartOverrideExtractor(TextExtractor):
         if last_is_meaningful:
             return self._extraction_to_result(last_extraction)
 
-        for prev in reversed(previous_candidates):
-            prev_confidence = prev.confidence
-            if (
-                prev_confidence is not None
-                and prev_confidence < parsed_config.min_confidence_threshold
-            ):
-                continue
+        best_candidate = None
+        best_confidence = -1.0
+        for prev in previous_candidates:
             if self._is_meaningful(prev, parsed_config):
-                return self._extraction_to_result(prev)
+                prev_confidence = prev.confidence if prev.confidence is not None else 0.0
+                if prev_confidence > best_confidence:
+                    best_candidate = prev
+                    best_confidence = prev_confidence
+
+        if best_candidate is not None:
+            return self._extraction_to_result(best_candidate)
 
         return self._extraction_to_result(last_extraction)
 
