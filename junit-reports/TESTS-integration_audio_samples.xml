@@ -1,0 +1,17 @@
+<testsuite name="integration_audio_samples.Audio corpus integration" tests="1" errors="0" failures="0" skipped="0" time="6.675228" timestamp="2026-01-29T13:53:24.828517" hostname="JW2TF3YWMJ"><testcase classname="integration_audio_samples.Audio corpus integration" name="Download audio and extract metadata text for retrieval baselines" status="passed" time="6.675228"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Download audio and extract metadata text for retrieval baselines
+    When I download an audio corpus into "corpus" ... passed in 6.663s
+    Then the corpus contains at least 1 item with media type "audio/ogg" ... passed in 0.003s
+    And the corpus contains at least 1 item with media type "audio/wav" ... passed in 0.001s
+    And the corpus contains at least 1 item tagged "no-speech" ... passed in 0.000s
+    When I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.008s
+      | extractor_id  | config_json |
+      | metadata-text | {}          |
+    Then the extracted text for the item tagged "audio" is not empty in the latest extraction run ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

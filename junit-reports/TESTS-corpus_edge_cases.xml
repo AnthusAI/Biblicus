@@ -1,0 +1,222 @@
+<testsuite name="corpus_edge_cases.Corpus edge cases and robustness" tests="15" errors="0" failures="0" skipped="0" time="0.162911" timestamp="2026-01-29T13:53:13.697116" hostname="JW2TF3YWMJ"><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Init fails when a corpus already exists" status="passed" time="0.006148"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Init fails when a corpus already exists
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I attempt to initialize a corpus at "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Corpus already exists" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Running commands outside a corpus fails" status="passed" time="0.002733"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Running commands outside a corpus fails
+    When I run "list" without specifying a corpus ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Not a Biblicus corpus" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Ingest text without title or tags" status="passed" time="0.011836"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest text without title or tags
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hi" with no metadata into corpus "corpus" ... passed in 0.006s
+    Then the last ingest succeeds ... passed in 0.000s
+    When I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation has no tags ... passed in 0.000s
+    And the shown JavaScript Object Notation has no title ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Sidecar metadata must be a mapping" status="passed" time="0.014852"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Sidecar metadata must be a mapping
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "blob.bin" exists ... passed in 0.000s
+    When I ingest the file "blob.bin" with tags "t" into corpus "corpus" ... passed in 0.005s
+    And I overwrite the last ingested item's sidecar with a Yet Another Markup Language list ... passed in 0.000s
+    When I run "reindex" in corpus "corpus" ... passed in 0.006s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Sidecar metadata must be a mapping" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex rejects markdown files that are not Unicode Transformation Format 8" status="passed" time="0.007345"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex rejects markdown files that are not Unicode Transformation Format 8
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000003" exists in corpus "corpus" named "bad.md" with invalid Unicode Transformation Format 8 bytes ... passed in 0.000s
+    When I run "reindex" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Markdown file must be Unicode Transformation Format 8" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex ignores invalid biblicus.id and falls back to universally unique identifier prefix" status="passed" time="0.012014"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex ignores invalid biblicus.id and falls back to universally unique identifier prefix
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000002" exists in corpus "corpus" named "id-bad.md" with contents "x" ... passed in 0.000s
+    And a sidecar for raw file "00000000-0000-0000-0000-000000000002--id-bad.md" exists in corpus "corpus" with Yet Another Markup Language: ... passed in 0.000s
+      """
+      biblicus:
+        id: not-a-universally-unique-identifier
+      """
+    When I reindex corpus "corpus" ... passed in 0.007s
+    Then reindex stats include inserted 1 ... passed in 0.000s
+    And reindex stats include skipped 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex ignores non-string biblicus.id and falls back to universally unique identifier prefix" status="passed" time="0.007526"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex ignores non-string biblicus.id and falls back to universally unique identifier prefix
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000004" exists in corpus "corpus" named "id-int.md" with contents "x" ... passed in 0.000s
+    And a sidecar for raw file "00000000-0000-0000-0000-000000000004--id-int.md" exists in corpus "corpus" with Yet Another Markup Language: ... passed in 0.000s
+      """
+      biblicus:
+        id: 123
+      """
+    When I reindex corpus "corpus" ... passed in 0.004s
+    Then reindex stats include inserted 1 ... passed in 0.000s
+    And reindex stats include skipped 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex skips files with non-universally unique identifier prefixes" status="passed" time="0.007618"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex skips files with non-universally unique identifier prefixes
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a raw file named "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx--oops.txt" exists in corpus "corpus" with contents "y" ... passed in 0.000s
+    When I reindex corpus "corpus" ... passed in 0.004s
+    Then reindex stats include skipped 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex skips files without a universally unique identifier prefix" status="passed" time="0.007812"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex skips files without a universally unique identifier prefix
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a raw file named "short.txt" exists in corpus "corpus" with contents "x" ... passed in 0.000s
+    When I reindex corpus "corpus" ... passed in 0.004s
+    Then reindex stats include skipped 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Listing works even if catalog order is missing" status="passed" time="0.012101"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Listing works even if catalog order is missing
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    When I ingest the text "hello" with title "T" and tags "t" into corpus "corpus" ... passed in 0.004s
+    And I clear the corpus catalog order list in corpus "corpus" ... passed in 0.001s
+    And I list items in corpus "corpus" ... passed in 0.003s
+    Then the list output includes the last ingested item identifier ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Listing skips unknown identifiers in catalog order" status="passed" time="0.015681"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Listing skips unknown identifiers in catalog order
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with title "T" and tags "t" into corpus "corpus" ... passed in 0.008s
+    And I prepend an unknown identifier to the corpus catalog order list in corpus "corpus" ... passed in 0.000s
+    And I list items in corpus "corpus" ... passed in 0.003s
+    Then the list output includes the last ingested item identifier ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex respects media_type from sidecar" status="passed" time="0.017205"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex respects media_type from sidecar
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "data.bin" exists ... passed in 0.000s
+    When I ingest the file "data.bin" with tags "raw" into corpus "corpus" ... passed in 0.005s
+    And I set the last ingested item's sidecar media type to "application/pdf" ... passed in 0.001s
+    And I reindex corpus "corpus" ... passed in 0.005s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes media type "application/pdf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex merges biblicus provenance from front matter and sidecar" status="passed" time="0.016931"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex merges biblicus provenance from front matter and sidecar
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with title "T" and tags "t" into corpus "corpus" ... passed in 0.004s
+    And I write a sidecar for the last ingested item with Yet Another Markup Language: ... passed in 0.000s
+      """
+      biblicus:
+        source: sidecar
+      """
+    And I reindex corpus "corpus" ... passed in 0.007s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes source uniform resource identifier "sidecar" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex works when no biblicus metadata exists" status="passed" time="0.011734"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex works when no biblicus metadata exists
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000005" exists in corpus "corpus" named "plain.md" with contents "hello" ... passed in 0.000s
+    When I reindex corpus "corpus" ... passed in 0.008s
+    Then reindex stats include inserted 1 ... passed in 0.000s
+    And reindex stats include skipped 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_edge_cases.Corpus edge cases and robustness" name="Reindex ignores invalid sidecar biblicus type" status="passed" time="0.011375"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reindex ignores invalid sidecar biblicus type
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000006" exists in corpus "corpus" named "mix.md" with contents: ... passed in 0.000s
+      """
+      ---
+      biblicus:
+        source: front
+      ---
+      body
+      """
+    And a sidecar for raw file "00000000-0000-0000-0000-000000000006--mix.md" exists in corpus "corpus" with Yet Another Markup Language: ... passed in 0.000s
+      """
+      biblicus: nope
+      """
+    When I reindex corpus "corpus" ... passed in 0.004s
+    When I show item "00000000-0000-0000-0000-000000000006" in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes source uniform resource identifier "front" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

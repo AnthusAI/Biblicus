@@ -1,0 +1,31 @@
+<testsuite name="hook_error_handling.Hook execution error handling" tests="3" errors="0" failures="0" skipped="0" time="0.002678" timestamp="2026-01-29T13:53:16.380710" hostname="JW2TF3YWMJ"><testcase classname="hook_error_handling.Hook execution error handling" name="Non-Pydantic hook result raises a clear error" status="passed" time="0.002431"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Non-Pydantic hook result raises a clear error
+    When I execute a hook manager with a non-Pydantic hook result ... passed in 0.002s
+    Then a hook result error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="hook_error_handling.Hook execution error handling" name="Base hook run is not implemented" status="passed" time="0.000105"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Base hook run is not implemented
+    When I call the base lifecycle hook run method ... passed in 0.000s
+    Then a hook not implemented error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="hook_error_handling.Hook execution error handling" name="Hook exceptions are wrapped with a clear error" status="passed" time="0.000142"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hook exceptions are wrapped with a clear error
+    When I execute a hook manager with a hook that raises an exception ... passed in 0.000s
+    Then a hook execution error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

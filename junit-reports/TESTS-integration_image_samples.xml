@@ -1,0 +1,14 @@
+<testsuite name="integration_image_samples.Image corpus integration" tests="1" errors="0" failures="0" skipped="0" time="3.024632" timestamp="2026-01-29T13:53:27.859392" hostname="JW2TF3YWMJ"><testcase classname="integration_image_samples.Image corpus integration" name="Download image samples and record tags for with-text and without-text cases" status="passed" time="3.024632"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Download image samples and record tags for with-text and without-text cases
+    When I download an image corpus into "corpus" ... passed in 3.023s
+    Then the corpus contains at least 1 item with media type "image/png" ... passed in 0.001s
+    And the corpus contains at least 1 item with media type "image/jpeg" ... passed in 0.000s
+    And the corpus contains at least 1 item tagged "image-with-text" ... passed in 0.000s
+    And the corpus contains at least 1 item tagged "image-without-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

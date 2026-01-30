@@ -1,0 +1,12 @@
+<testsuite name="retrieval_budget.Retrieval budget behavior" tests="1" errors="0" failures="0" skipped="0" time="0.000179" timestamp="2026-01-29T13:53:55.564065" hostname="JW2TF3YWMJ"><testcase classname="retrieval_budget.Retrieval budget behavior" name="Budget treats None limits as unbounded" status="passed" time="0.000179"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Budget treats None limits as unbounded
+    When I apply a budget with no per-source or character limits ... passed in 0.000s
+    Then the budget returns 2 evidence items ... passed in 0.000s
+    And the budget returns evidence ranks "1,2" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

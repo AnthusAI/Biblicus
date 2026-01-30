@@ -1,0 +1,33 @@
+<testsuite name="frontmatter.Markdown front matter parsing and rendering" tests="3" errors="0" failures="0" skipped="0" time="0.000761" timestamp="2026-01-29T13:53:16.350278" hostname="JW2TF3YWMJ"><testcase classname="frontmatter.Markdown front matter parsing and rendering" name="Rendering with empty metadata returns the body unchanged" status="passed" time="0.000198"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Rendering with empty metadata returns the body unchanged
+    When I render front matter with empty metadata and body "hello" ... passed in 0.000s
+    Then the rendered markdown equals "hello" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="frontmatter.Markdown front matter parsing and rendering" name="Parsing without a closing fence treats it as plain text" status="passed" time="0.000177"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Parsing without a closing fence treats it as plain text
+    When I parse front matter from text without a closing fence ... passed in 0.000s
+    Then the parsed metadata is empty ... passed in 0.000s
+    And the parsed body starts with "---" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="frontmatter.Markdown front matter parsing and rendering" name="Splitting front matter returns metadata and body" status="passed" time="0.000386"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Splitting front matter returns metadata and body
+    When I split front matter from markdown with title "T" and body "B" ... passed in 0.000s
+    Then the split metadata includes title "T" ... passed in 0.000s
+    And the split body equals "B" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

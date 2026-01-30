@@ -1,0 +1,313 @@
+<testsuite name="error_cases.Command-line interface error behavior (human-friendly failures)" tests="24" errors="0" failures="0" skipped="0" time="0.200216" timestamp="2026-01-29T13:53:15.614557" hostname="JW2TF3YWMJ"><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Ingest requires input" status="passed" time="0.006715"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest requires input
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "ingest" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Nothing to ingest" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Show fails for unknown identifier" status="passed" time="0.007628"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Show fails for unknown identifier
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I run "show 00000000-0000-0000-0000-000000000000" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unknown item identifier" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="List fails if the catalog file is missing" status="passed" time="0.006981"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: List fails if the catalog file is missing
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And I delete the corpus catalog file in corpus "corpus" ... passed in 0.000s
+    When I run "list" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Missing corpus catalog" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject non-file corpus uniform resource identifiers" status="passed" time="0.002448"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject non-file corpus uniform resource identifiers
+    When I run "list" with corpus uniform resource identifier "http://example.com/corpus" ... passed in 0.002s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Only file:// corpus uniform resource identifiers are supported" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject file:// uniform resource identifiers with a non-local host" status="passed" time="0.002506"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject file:// uniform resource identifiers with a non-local host
+    When I run "list" with corpus uniform resource identifier "file://example.com/tmp/corpus" ... passed in 0.002s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported file uniform resource identifier host" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject markdown with invalid Yet Another Markup Language front matter shape" status="passed" time="0.007653"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject markdown with invalid Yet Another Markup Language front matter shape
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "bad.md" exists with invalid Yet Another Markup Language front matter list ... passed in 0.000s
+    When I ingest the file "bad.md" into corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Yet Another Markup Language front matter must be a mapping" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject markdown files that are not Unicode Transformation Format 8" status="passed" time="0.007797"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject markdown files that are not Unicode Transformation Format 8
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "bad.md" exists with invalid Unicode Transformation Format 8 bytes ... passed in 0.000s
+    When I ingest the file "bad.md" into corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Markdown must be Unicode Transformation Format 8" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject ingest source uniform resource locators with a non-local file:// host" status="passed" time="0.006325"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject ingest source uniform resource locators with a non-local file:// host
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "ingest file://example.com/tmp/hello.txt" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported file uniform resource identifier host" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject ingest source uniform resource locators with unsupported schemes" status="passed" time="0.007204"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject ingest source uniform resource locators with unsupported schemes
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I run "ingest ftp://example.com/hello.txt" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported source uniform resource identifier scheme" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Sanitize unsafe filenames on ingestion" status="passed" time="0.007458"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Sanitize unsafe filenames on ingestion
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "weird🔥.txt" exists with contents "x" ... passed in 0.000s
+    When I ingest the file "weird🔥.txt" into corpus "corpus" ... passed in 0.004s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item filename includes "--weird_.txt" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Split and deduplicate tags from --tags" status="passed" time="0.007761"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Split and deduplicate tags from --tags
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "x" with title "Tag test" and comma-tags "a, b, a" into corpus "corpus" ... passed in 0.004s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item is a markdown note with title "Tag test" and tags: ... passed in 0.001s
+      | tag |
+      | a   |
+      | b   |
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject unknown retrieval backend" status="passed" time="0.006014"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject unknown retrieval backend
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "build --backend unknown --recipe-name default" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unknown backend" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid backend config pairs" status="passed" time="0.006115"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid backend config pairs
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "build --backend scan --recipe-name default --config badpair" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Config values must be key=value" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject empty backend config keys" status="passed" time="0.00582"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject empty backend config keys
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "build --backend scan --recipe-name default --config =123" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Config keys must be non-empty" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid chunk overlap configuration" status="passed" time="0.02352"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid chunk overlap configuration
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a text file "alpha.md" exists with contents "alpha bravo" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I run "build --backend sqlite-full-text-search --recipe-name default --config chunk_size=100 --config chunk_overlap=100" in corpus "corpus" ... passed in 0.015s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "chunk_overlap must be smaller than chunk_size" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject query without a run" status="passed" time="0.006429"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject query without a run
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "query --query test --max-total-items 1 --max-total-characters 10 --max-items-per-source 1" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "No run identifier provided" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject querying a missing run manifest" status="passed" time="0.005984"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject querying a missing run manifest
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "query --run 00000000-0000-0000-0000-000000000000 --query test" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Missing run manifest" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject backend mismatch on query" status="passed" time="0.013736"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject backend mismatch on query
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I attempt to query the latest run with backend "sqlite-full-text-search" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Backend mismatch" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid corpus config schema version" status="passed" time="0.0072"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid corpus config schema version
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I corrupt the corpus config schema version in corpus "corpus" ... passed in 0.000s
+    When I run "list" in corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported corpus config schema version" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid corpus catalog schema version" status="passed" time="0.006114"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid corpus catalog schema version
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I corrupt the corpus catalog schema version in corpus "corpus" ... passed in 0.000s
+    When I run "list" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported catalog schema version" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid query budget values" status="passed" time="0.013057"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid query budget values
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I attempt to query the latest run with an invalid budget ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "greater than or equal to 1" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject evaluation queries without expectations" status="passed" time="0.013924"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject evaluation queries without expectations
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I create an invalid evaluation dataset at "dataset.json" for query "alpha" ... passed in 0.000s
+    And I attempt to evaluate the latest run with dataset "dataset.json" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "expected_item_id or expected_source_uri" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject evaluation without a run" status="passed" time="0.006917"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject evaluation without a run
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I create an empty evaluation dataset at "dataset.json" ... passed in 0.000s
+    When I run "eval --dataset dataset.json" in corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "No run identifier provided" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="error_cases.Command-line interface error behavior (human-friendly failures)" name="Reject invalid dataset schema version" status="passed" time="0.01491"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Reject invalid dataset schema version
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I create an evaluation dataset at "dataset.json" with schema version 999 ... passed in 0.000s
+    And I attempt to evaluate the latest run with dataset "dataset.json" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unsupported dataset schema version" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

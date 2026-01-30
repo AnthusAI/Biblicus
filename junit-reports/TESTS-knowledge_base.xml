@@ -1,0 +1,89 @@
+<testsuite name="knowledge_base.Knowledge base (turnkey workflow)" tests="6" errors="0" failures="0" skipped="0" time="0.029527" timestamp="2026-01-29T13:53:43.642703" hostname="JW2TF3YWMJ"><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Build a knowledge base from a folder and query it" status="passed" time="0.013124"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Build a knowledge base from a folder and query it
+    Given a folder "notes" exists with text files: ... passed in 0.002s
+      | filename  | contents                                                               |
+      | note1.txt | The user's name is Tactus Maximus.                                     |
+      | note2.txt | Primary button style preference: the user's favorite color is magenta. |
+    When I create a knowledge base from folder "notes" only ... passed in 0.011s
+    And I query the knowledge base for "Primary button style preference" ... passed in 0.001s
+    Then the knowledge base returns evidence that includes "favorite color is magenta" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Knowledge base context pack is shaped with a token budget" status="passed" time="0.00659"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Knowledge base context pack is shaped with a token budget
+    Given a folder "notes" exists with text files: ... passed in 0.000s
+      | filename  | contents      |
+      | note1.txt | one two three |
+      | note2.txt | four five six |
+    When I create a knowledge base from folder "notes" only ... passed in 0.006s
+    And I query the knowledge base for "one" ... passed in 0.000s
+    And I build a context pack from the knowledge base query with token budget 3 ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      one two three
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Knowledge base context pack defaults to no token budget" status="passed" time="0.004946"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Knowledge base context pack defaults to no token budget
+    Given a folder "notes" exists with text files: ... passed in 0.000s
+      | filename  | contents   |
+      | note1.txt | alpha beta |
+    When I create a knowledge base from folder "notes" only ... passed in 0.004s
+    And I query the knowledge base for "alpha" ... passed in 0.000s
+    And I build a context pack from the knowledge base query without a token budget ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      alpha beta
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Knowledge base rejects missing folder" status="passed" time="0.000184"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Knowledge base rejects missing folder
+    When I attempt to create a knowledge base from folder "missing" ... passed in 0.000s
+    Then the knowledge base error includes "does not exist" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Knowledge base rejects non-folder path" status="passed" time="0.000361"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Knowledge base rejects non-folder path
+    Given a file "not-a-folder.txt" exists with contents "hello" ... passed in 0.000s
+    When I attempt to create a knowledge base from folder "not-a-folder.txt" ... passed in 0.000s
+    Then the knowledge base error includes "not a directory" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="knowledge_base.Knowledge base (turnkey workflow)" name="Knowledge base can use an explicit corpus root" status="passed" time="0.004322"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Knowledge base can use an explicit corpus root
+    Given a folder "notes" exists with text files: ... passed in 0.000s
+      | filename  | contents |
+      | note1.txt | alpha    |
+    And a folder "kb-root" exists ... passed in 0.000s
+    When I create a knowledge base from folder "notes" using corpus root "kb-root" ... passed in 0.003s
+    And I query the knowledge base for "alpha" ... passed in 0.000s
+    Then the knowledge base returns evidence that includes "alpha" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

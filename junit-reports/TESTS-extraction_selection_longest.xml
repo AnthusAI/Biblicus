@@ -1,0 +1,87 @@
+<testsuite name="extraction_selection_longest.Longest text selection" tests="4" errors="0" failures="0" skipped="0" time="0.074892" timestamp="2026-01-29T13:53:16.178838" hostname="JW2TF3YWMJ"><testcase classname="extraction_selection_longest.Longest text selection" name="Longest selection chooses the longest usable prior output" status="passed" time="0.014592"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Longest selection chooses the longest usable prior output
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+      | tags  | a     |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      body body body
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id        | config_json |
+      | metadata-text       | {}          |
+      | pass-through-text   | {}          |
+      | select-longest-text | {}          |
+    Then the extracted text for the last ingested item equals: ... passed in 0.001s
+      """
+      body body body
+      """
+    And the extraction run item provenance uses extractor "pass-through-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection_longest.Longest text selection" name="Longest selection chooses the earliest step when there is a length tie" status="passed" time="0.016821"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Longest selection chooses the earliest step when there is a length tie
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      alpha
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.005s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id        | config_json |
+      | pass-through-text   | {}          |
+      | pass-through-text   | {}          |
+      | select-longest-text | {}          |
+    Then the extracted text for the last ingested item equals "alpha" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection_longest.Longest text selection" name="Longest selection produces no output when no prior outputs exist" status="passed" time="0.014163"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Longest selection produces no output when no prior outputs exist
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    And a binary file "image.png" exists ... passed in 0.000s
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.004s
+      | extractor_id        | config_json |
+      | select-longest-text | {}          |
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection_longest.Longest text selection" name="Longest selection preserves empty output when no usable output exists" status="passed" time="0.029316"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Longest selection preserves empty output when no usable output exists
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+    And the file "note.md" has body: ... passed in 0.000s
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.018s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id        | config_json |
+      | pass-through-text   | {}          |
+      | select-longest-text | {}          |
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run item provenance uses extractor "pass-through-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

@@ -1,0 +1,45 @@
+<testsuite name="context_pack_cli.Context pack command-line interface" tests="3" errors="0" failures="0" skipped="0" time="0.009137" timestamp="2026-01-29T13:53:13.467559" hostname="JW2TF3YWMJ"><testcase classname="context_pack_cli.Context pack command-line interface" name="Context pack build reads retrieval result from standard input" status="passed" time="0.003118"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack build reads retrieval result from standard input
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text                                  |
+      | The user's favorite color is magenta. |
+    When I run "context-pack build" joining with "\n\n" ... passed in 0.003s
+    Then the context pack build output text equals: ... passed in 0.000s
+      """
+      The user's favorite color is magenta.
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="context_pack_cli.Context pack command-line interface" name="Context pack build can fit to a token budget" status="passed" time="0.002689"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack build can fit to a token budget
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text          |
+      | one two three |
+      | four five six |
+    When I run "context-pack build" joining with "\n\n" and token budget 3 ... passed in 0.003s
+    Then the context pack build output text equals: ... passed in 0.000s
+      """
+      one two three
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="context_pack_cli.Context pack command-line interface" name="Context pack build fails without retrieval result on standard input" status="passed" time="0.00333"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack build fails without retrieval result on standard input
+    When I run "context-pack build" with empty standard input ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Context pack build requires a retrieval result" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

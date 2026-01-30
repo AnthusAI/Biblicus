@@ -1,0 +1,129 @@
+<testsuite name="text_extraction_runs.Text extraction runs" tests="8" errors="0" failures="0" skipped="0" time="0.108598" timestamp="2026-01-29T13:53:57.092612" hostname="JW2TF3YWMJ"><testcase classname="text_extraction_runs.Text extraction runs" name="Build an extraction run that writes per-item text artifacts" status="passed" time="0.014429"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Build an extraction run that writes per-item text artifacts
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a binary file "image.png" exists ... passed in 0.000s
+    When I ingest the file "image.png" with tags "extracted from binary" into corpus "corpus" ... passed in 0.006s
+    And I build a "metadata-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline" ... passed in 0.000s
+    And the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "tags: extracted from binary" ... passed in 0.000s
+    And the extraction run stats include total_items 1 ... passed in 0.000s
+    And the extraction run stats include needs_extraction_items 1 ... passed in 0.000s
+    And the extraction run stats include converted_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Extraction artifacts are retained for multiple pipeline runs" status="passed" time="0.016918"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction artifacts are retained for multiple pipeline runs
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a binary file "image.png" exists ... passed in 0.000s
+    When I ingest the file "image.png" with tags "retained" into corpus "corpus" ... passed in 0.004s
+    And I build a "metadata-text" extraction run in corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the corpus has at least 2 extraction runs for extractor "pipeline" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Empty extracted text is recorded as empty output" status="passed" time="0.013062"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Empty extracted text is recorded as empty output
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+    And the file "note.md" has body: ... passed in 0.000s
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item is empty ... passed in 0.001s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+    And the extraction run stats include extracted_nonempty_items 0 ... passed in 0.000s
+    And the extraction run stats include converted_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Pass-through text extractor skips non-text items" status="passed" time="0.011647"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pass-through text extractor skips non-text items
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a binary file "image.png" exists ... passed in 0.000s
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline" ... passed in 0.000s
+    And the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+    And the extraction run stats include converted_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Pass-through text extractor extracts text items" status="passed" time="0.012419"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pass-through text extractor extracts text items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.txt" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.txt" into corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run artifacts exist under the corpus for extractor "pipeline" ... passed in 0.000s
+    And the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "alpha" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Pass-through text extractor extracts markdown items" status="passed" time="0.012464"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pass-through text extractor extracts markdown items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      body line
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "body line" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Metadata text extractor skips items with no title or tags" status="passed" time="0.019998"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Metadata text extractor skips items with no title or tags
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.txt" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.txt" into corpus "corpus" ... passed in 0.005s
+    And I build a "metadata-text" extraction run in corpus "corpus" ... passed in 0.012s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+    And the extraction run stats include converted_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="text_extraction_runs.Text extraction runs" name="Unknown extractor is rejected" status="passed" time="0.00766"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unknown extractor is rejected
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I attempt to build a "unknown" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unknown extractor" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

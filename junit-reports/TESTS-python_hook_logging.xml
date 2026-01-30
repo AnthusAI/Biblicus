@@ -1,0 +1,14 @@
+<testsuite name="python_hook_logging.Hook logging redaction" tests="1" errors="0" failures="0" skipped="0" time="0.004708" timestamp="2026-01-29T13:53:55.496453" hostname="JW2TF3YWMJ"><testcase classname="python_hook_logging.Hook logging redaction" name="Hook log redacts user info in source uniform resource identifier" status="passed" time="0.004708"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hook log redacts user info in source uniform resource identifier
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags "x" ... passed in 0.000s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with source uniform resource identifier "http://user:pass@example.com/private" and filename "note.txt" ... passed in 0.003s
+    Then the corpus "corpus" hook logs do not include "user:pass@" ... passed in 0.000s
+    And the corpus "corpus" hook logs include "example.com" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

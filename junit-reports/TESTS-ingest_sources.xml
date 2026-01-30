@@ -1,0 +1,67 @@
+<testsuite name="ingest_sources.Ingesting sources (paths and uniform resource locators)" tests="5" errors="0" failures="0" skipped="0" time="0.054824" timestamp="2026-01-29T13:53:18.139879" hostname="JW2TF3YWMJ"><testcase classname="ingest_sources.Ingesting sources (paths and uniform resource locators)" name="Ingest a file via file:// uniform resource locator" status="passed" time="0.010066"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a file via file:// uniform resource locator
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "hello.txt" exists with contents "hello" ... passed in 0.000s
+    When I ingest the file uniform resource locator for "hello.txt" into corpus "corpus" ... passed in 0.004s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item has biblicus provenance with a file source uniform resource identifier ... passed in 0.003s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ingest_sources.Ingesting sources (paths and uniform resource locators)" name="Ingest a markdown file via file:// uniform resource locator" status="passed" time="0.008073"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a markdown file via file:// uniform resource locator
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "page.md" exists with contents "---\ntitle: File\n---\nbody\n" ... passed in 0.000s
+    When I ingest the file uniform resource locator for "page.md" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ingest_sources.Ingesting sources (paths and uniform resource locators)" name="Ingest a file via http:// uniform resource locator" status="passed" time="0.009447"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a file via http:// uniform resource locator
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "page.md" exists with contents "---\ntitle: Web\n---\nbody\n" ... passed in 0.000s
+    And a hypertext transfer protocol server is serving the workdir ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "page.md" into corpus "corpus" ... passed in 0.004s
+    Then the last ingest succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ingest_sources.Ingesting sources (paths and uniform resource locators)" name="Ingest a binary file via http:// uniform resource locator" status="passed" time="0.014407"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a binary file via http:// uniform resource locator
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a binary file "blob.bin" exists ... passed in 0.000s
+    And a hypertext transfer protocol server is serving the workdir ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "blob.bin" into corpus "corpus" ... passed in 0.008s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item has a sidecar metadata file ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ingest_sources.Ingesting sources (paths and uniform resource locators)" name="Ingest a Portable Document Format file via http:// uniform resource locator" status="passed" time="0.012831"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a Portable Document Format file via http:// uniform resource locator
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    And a hypertext transfer protocol server is serving the workdir ... passed in 0.003s
+    When I ingest the hypertext transfer protocol uniform resource locator for "report.pdf" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "application/pdf" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

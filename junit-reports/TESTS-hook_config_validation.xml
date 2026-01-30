@@ -1,0 +1,37 @@
+<testsuite name="hook_config_validation.Hook configuration validation" tests="2" errors="0" failures="0" skipped="0" time="0.016459" timestamp="2026-01-29T13:53:16.372770" hostname="JW2TF3YWMJ"><testcase classname="hook_config_validation.Hook configuration validation" name="Unknown hook identifier fails" status="passed" time="0.007145"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unknown hook identifier fails
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" config includes hooks JavaScript Object Notation: ... passed in 0.000s
+      """
+      [
+        {"hook_id": "unknown-hook", "hook_points": ["after_ingest"], "config": {}}
+      ]
+      """
+    When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Unknown hook_id" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="hook_config_validation.Hook configuration validation" name="Invalid hook specification fails" status="passed" time="0.009313"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Invalid hook specification fails
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" config includes hooks JavaScript Object Notation: ... passed in 0.003s
+      """
+      [
+        {"hook_points": ["after_ingest"], "config": {}}
+      ]
+      """
+    When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Invalid hook specification" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

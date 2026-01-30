@@ -1,0 +1,158 @@
+<testsuite name="markitdown_extractor.MarkItDown extractor plugin" tests="10" errors="0" failures="0" skipped="0" time="0.142741" timestamp="2026-01-29T13:53:44.061923" hostname="JW2TF3YWMJ"><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor requires an optional dependency" status="passed" time="0.011519"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor requires an optional dependency
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the MarkItDown dependency is unavailable ... passed in 0.000s
+    And a Portable Document Format file "hello.pdf" exists with text "Hello" ... passed in 0.000s
+    When I ingest the file "hello.pdf" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a "markitdown" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "biblicus[markitdown]" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor rejects unsupported Python versions" status="passed" time="0.012079"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor rejects unsupported Python versions
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake MarkItDown library is available but marked as real ... passed in 0.000s
+    And a Portable Document Format file "hello.pdf" exists with text "Hello" ... passed in 0.000s
+    When I ingest the file "hello.pdf" into corpus "corpus" ... passed in 0.005s
+    And I attempt to build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Python 3.10" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor skips text items" status="passed" time="0.010449"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor skips text items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake MarkItDown library is available ... passed in 0.000s
+    When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor produces extracted text for a non-text item" status="passed" time="0.017246"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor produces extracted text for a non-text item
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a fake MarkItDown library is available that returns text "Extracted by MarkItDown" for filename "doc.pdf" ... passed in 0.000s
+    And a binary file "doc.pdf" exists ... passed in 0.000s
+    When I ingest the file "doc.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.008s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Extracted by MarkItDown" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "markitdown" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor records empty output when it cannot extract text" status="passed" time="0.013124"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor records empty output when it cannot extract text
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake MarkItDown library is available that returns empty output for filename "empty.pdf" ... passed in 0.000s
+    And a binary file "empty.pdf" exists ... passed in 0.000s
+    When I ingest the file "empty.pdf" into corpus "corpus" ... passed in 0.005s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor records empty output when conversion returns None" status="passed" time="0.012226"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor records empty output when conversion returns None
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake MarkItDown library is available that returns None for filename "none.pdf" ... passed in 0.000s
+    And a binary file "none.pdf" exists ... passed in 0.000s
+    When I ingest the file "none.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor accepts string results" status="passed" time="0.012395"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor accepts string results
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake MarkItDown library is available that returns a string for filename "string.pdf" ... passed in 0.000s
+    And a binary file "string.pdf" exists ... passed in 0.000s
+    When I ingest the file "string.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Extracted by MarkItDown" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "markitdown" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor records empty output for non-text conversion output" status="passed" time="0.014291"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor records empty output for non-text conversion output
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a fake MarkItDown library is available that returns non-text output for filename "nonstr.pdf" ... passed in 0.000s
+    And a binary file "nonstr.pdf" exists ... passed in 0.000s
+    When I ingest the file "nonstr.pdf" into corpus "corpus" ... passed in 0.005s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor ignores whitespace output" status="passed" time="0.01746"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor ignores whitespace output
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    And a fake MarkItDown library is available that returns whitespace output for filename "whitespace.pdf" ... passed in 0.000s
+    And a binary file "whitespace.pdf" exists ... passed in 0.000s
+    When I ingest the file "whitespace.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item is empty ... passed in 0.003s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="markitdown_extractor.MarkItDown extractor plugin" name="MarkItDown extractor records per-item errors and continues" status="passed" time="0.021953"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: MarkItDown extractor records per-item errors and continues
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a fake MarkItDown library is available that raises a RuntimeError for filename "boom.pdf" ... passed in 0.000s
+    And a binary file "boom.pdf" exists ... passed in 0.000s
+    And a fake MarkItDown library is available that returns text "ok" for filename "ok.pdf" ... passed in 0.000s
+    And a binary file "ok.pdf" exists ... passed in 0.000s
+    When I ingest the file "boom.pdf" into corpus "corpus" ... passed in 0.007s
+    And I ingest the file "ok.pdf" into corpus "corpus" ... passed in 0.005s
+    And I build a "markitdown" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "ok" ... passed in 0.000s
+    And the extraction run includes an errored result for the first ingested item ... passed in 0.000s
+    And the extraction run error type for the first ingested item equals "RuntimeError" ... passed in 0.000s
+    And the extraction run stats include errored_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

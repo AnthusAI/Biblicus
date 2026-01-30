@@ -1,0 +1,109 @@
+<testsuite name="evaluation.Retrieval evaluation" tests="5" errors="0" failures="0" skipped="0" time="0.082123" timestamp="2026-01-29T13:53:15.716663" hostname="JW2TF3YWMJ"><testcase classname="evaluation.Retrieval evaluation" name="Evaluate a scan backend run against a tiny dataset" status="passed" time="0.019992"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evaluate a scan backend run against a tiny dataset
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "one.md" exists with contents "alpha apple" ... passed in 0.000s
+    And a text file "two.md" exists with contents "beta banana" ... passed in 0.000s
+    When I ingest the file "one.md" into corpus "corpus" ... passed in 0.004s
+    And I ingest the file "two.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I create an evaluation dataset at "dataset.json" with queries: ... passed in 0.000s
+      | query_text | expected_item |
+      | apple      | previous_item |
+      | banana     | last_ingested |
+    And I evaluate the latest run with dataset "dataset.json" and budget: ... passed in 0.005s
+      | key                  | value |
+      | max_total_items      | 3     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the evaluation reports mean reciprocal rank 1.0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="evaluation.Retrieval evaluation" name="Evaluate using source uniform resource identifier expectations" status="passed" time="0.015324"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evaluate using source uniform resource identifier expectations
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "alpha apple" with title "Alpha" and tags "x" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I create a source uniform resource identifier evaluation dataset at "dataset.json" for query "apple" ... passed in 0.000s
+    And I evaluate the latest run with dataset "dataset.json" and budget: ... passed in 0.004s
+      | key                  | value |
+      | max_total_items      | 3     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the evaluation reports hit_rate 1.0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="evaluation.Retrieval evaluation" name="Evaluate an empty dataset" status="passed" time="0.013864"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evaluate an empty dataset
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I create an empty evaluation dataset at "dataset.json" ... passed in 0.000s
+    And I evaluate the latest run with dataset "dataset.json" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 3     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the evaluation reports hit_rate 0.0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="evaluation.Retrieval evaluation" name="Evaluate a run with an unmatched expectation" status="passed" time="0.014497"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evaluate a run with an unmatched expectation
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "one.md" exists with contents "alpha apple" ... passed in 0.000s
+    When I ingest the file "one.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I create an evaluation dataset at "dataset.json" with queries: ... passed in 0.000s
+      | query_text | expected_item |
+      | apple      | missing_item  |
+    And I evaluate the latest run with dataset "dataset.json" and budget: ... passed in 0.004s
+      | key                  | value |
+      | max_total_items      | 3     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the evaluation reports hit_rate 0.0 ... passed in 0.000s
+    And the evaluation reports mean reciprocal rank 0.0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="evaluation.Retrieval evaluation" name="Evaluate a full-text search run and report index size" status="passed" time="0.018446"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evaluate a full-text search run and report index size
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha apple" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.008s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    And I create an evaluation dataset at "dataset.json" with queries: ... passed in 0.000s
+      | query_text | expected_item |
+      | apple      | last_ingested |
+    And I evaluate the latest run with dataset "dataset.json" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 3     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the evaluation system reports index_bytes greater than 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

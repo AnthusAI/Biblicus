@@ -1,0 +1,145 @@
+<testsuite name="python_api.Python application programming interface (item-centered ingestion)" tests="12" errors="0" failures="0" skipped="0" time="0.049683" timestamp="2026-01-29T13:53:55.486515" hostname="JW2TF3YWMJ"><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest a binary item via the Python application programming interface" status="passed" time="0.008825"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a binary item via the Python application programming interface
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with filename "image.png" and media type "image/png" ... passed in 0.008s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item has media type "image/png" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Corpus has a stable file:// uniform resource identifier" status="passed" time="0.001235"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Corpus has a stable file:// uniform resource identifier
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I open the corpus via the Python application programming interface at "corpus" ... passed in 0.000s
+    Then the corpus uniform resource identifier starts with "file://" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest a Portable Document Format file without extension has a usable filename and sidecar media type" status="passed" time="0.016601"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a Portable Document Format file without extension has a usable filename and sidecar media type
+    Given I have an initialized corpus at "corpus" ... passed in 0.014s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with filename "paper" and media type "application/pdf" ... passed in 0.002s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with ".pdf" ... passed in 0.000s
+    And the python ingested item sidecar includes media type "application/pdf" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest a markdown item without extension gets .md" status="passed" time="0.002303"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a markdown item without extension gets .md
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with filename "note" and media type "text/markdown" ... passed in 0.001s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with ".md" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest an image/jpeg without extension gets .jpg" status="passed" time="0.002466"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest an image/jpeg without extension gets .jpg
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with filename "photo" and media type "image/jpeg" ... passed in 0.001s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with ".jpg" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest a Portable Document Format file with no filename uses a .pdf extension" status="passed" time="0.002323"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest a Portable Document Format file with no filename uses a .pdf extension
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with no filename and media type "application/pdf" ... passed in 0.001s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with ".pdf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest unknown media type does not invent an extension" status="passed" time="0.003425"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest unknown media type does not invent an extension
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface into corpus "corpus" with filename "mystery" and media type "application/x-biblicus-unknown" ... passed in 0.001s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with "--mystery" ... passed in 0.000s
+    And the python ingested item sidecar includes media type "application/x-biblicus-unknown" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Ingest binary metadata writes through to sidecar" status="passed" time="0.00305"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Ingest binary metadata writes through to sidecar
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest an item via the Python application programming interface with metadata foo "bar" into corpus "corpus" with filename "data.bin" and media type "application/octet-stream" ... passed in 0.002s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item sidecar includes metadata foo "bar" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Tags ignore blanks and non-strings from front matter" status="passed" time="0.002386"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Tags ignore blanks and non-strings from front matter
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I ingest a markdown item via the Python application programming interface into corpus "corpus" with front matter tags and extra tags ... passed in 0.002s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item tags equal "y,x" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Stream ingestion refuses Markdown" status="passed" time="0.001189"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Stream ingestion refuses Markdown
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I attempt stream ingestion of a Markdown item into corpus "corpus" ... passed in 0.000s
+    Then the python stream ingestion error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Stream ingestion supports no filename" status="passed" time="0.002356"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Stream ingestion supports no filename
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I stream ingest bytes into corpus "corpus" with no filename and media type "application/pdf" ... passed in 0.002s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item relpath ends with ".pdf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="python_api.Python application programming interface (item-centered ingestion)" name="Stream ingestion writes metadata to sidecar" status="passed" time="0.003524"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Stream ingestion writes metadata to sidecar
+    Given I have an initialized corpus at "corpus" ... passed in 0.001s
+    When I stream ingest bytes into corpus "corpus" with filename "blob.bin" and media type "application/octet-stream" and metadata foo "bar" ... passed in 0.002s
+    Then the python ingest result succeeds ... passed in 0.000s
+    And the python ingested item sidecar includes metadata foo "bar" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

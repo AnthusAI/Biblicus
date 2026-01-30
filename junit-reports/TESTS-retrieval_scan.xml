@@ -1,0 +1,111 @@
+<testsuite name="retrieval_scan.Retrieval with scan backend" tests="6" errors="0" failures="0" skipped="0" time="0.101997" timestamp="2026-01-29T13:53:55.696187" hostname="JW2TF3YWMJ"><testcase classname="retrieval_scan.Retrieval with scan backend" name="Build a scan run and query for evidence" status="passed" time="0.015763"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Build a scan run and query for evidence
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha bravo charlie" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I query with the latest run for "bravo" and budget: ... passed in 0.005s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the query returns evidence with stage "scan" ... passed in 0.000s
+    And the query evidence includes the last ingested item identifier ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_scan.Retrieval with scan backend" name="Scan query respects the max_total_items budget" status="passed" time="0.022652"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan query respects the max_total_items budget
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "one.md" exists with contents "topic one" ... passed in 0.000s
+    And a text file "two.md" exists with contents "topic two" ... passed in 0.000s
+    When I ingest the file "one.md" into corpus "corpus" ... passed in 0.004s
+    And I ingest the file "two.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.004s
+    And I query with the latest run for "topic" and budget: ... passed in 0.008s
+      | key                  | value |
+      | max_total_items      | 1     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the query evidence count is 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_scan.Retrieval with scan backend" name="Scan query respects the max_items_per_source budget" status="passed" time="0.018229"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan query respects the max_items_per_source budget
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "shared term one" with title "First" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I ingest the text "shared term two" with title "Second" and tags "b" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I query with the latest run for "shared" and budget: ... passed in 0.004s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 1     |
+    Then the query evidence count is 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_scan.Retrieval with scan backend" name="Scan query respects the max_total_characters budget" status="passed" time="0.017322"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan query respects the max_total_characters budget
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "longtext longtext longtext longtext" with title "Long" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.006s
+    And I query with the latest run for "longtext" and budget: ... passed in 0.004s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 1     |
+      | max_items_per_source | 5     |
+    Then the query evidence count is 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_scan.Retrieval with scan backend" name="Scan backend ignores non-text items" status="passed" time="0.014215"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan backend ignores non-text items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "blob.bin" exists ... passed in 0.000s
+    When I ingest the file "blob.bin" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I query with the latest run for "blob" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the query evidence count is 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_scan.Retrieval with scan backend" name="Scan handles plain text files" status="passed" time="0.013816"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan handles plain text files
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "plain.txt" exists with contents "plain content" ... passed in 0.000s
+    When I ingest the file "plain.txt" into corpus "corpus" ... passed in 0.004s
+    And I build a "scan" retrieval run in corpus "corpus" ... passed in 0.003s
+    And I query with the latest run for "plain" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the query evidence count is 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

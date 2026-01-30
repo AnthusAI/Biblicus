@@ -1,0 +1,170 @@
+<testsuite name="content_sniffing.Content sniffing for media type and filename extension" tests="10" errors="0" failures="0" skipped="0" time="0.152228" timestamp="2026-01-29T13:53:13.434259" hostname="JW2TF3YWMJ"><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest uses sniffed media type when content type header is missing" status="passed" time="0.029781"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest uses sniffed media type when content type header is missing
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "download" exists with Portable Document Format bytes ... passed in 0.000s
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.004s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.022s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".pdf" ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "application/pdf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs hypertext markup language" status="passed" time="0.011804"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs hypertext markup language
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      <!doctype html><html><body>hello</body></html>
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.003s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".html" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs portable network graphics" status="passed" time="0.012108"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs portable network graphics
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n...binary...
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".png" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs joint photographic experts group" status="passed" time="0.010686"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs joint photographic experts group
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      \xff\xd8\xff...binary...
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".jpg" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs waveform audio file format" status="passed" time="0.015798"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs waveform audio file format
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.004s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.008s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".wav" ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "audio/x-wav" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs moving picture experts group layer three" status="passed" time="0.011933"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs moving picture experts group layer three
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      ID3\x04\x00\x00\x00\x00\x00\x21...binary...
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.001s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".mp3" ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "audio/mpeg" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest sniffs Ogg audio" status="passed" time="0.020961"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest sniffs Ogg audio
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      OggS\x00\x02...binary...
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.007s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.009s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".ogg" ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "audio/ogg" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Content sniffing keeps application octet stream when unknown" status="passed" time="0.013698"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Content sniffing keeps application octet stream when unknown
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "download" exists with bytes: ... passed in 0.000s
+      """
+      randombytes
+      """
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download" into corpus "corpus" ... passed in 0.007s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "application/octet-stream" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Sniffed media type does not change a filename that already has an extension" status="passed" time="0.014477"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Sniffed media type does not change a filename that already has an extension
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a binary file "download.pdf" exists with Portable Document Format bytes ... passed in 0.001s
+    And a hypertext transfer protocol server is serving the workdir without content type headers ... passed in 0.002s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download.pdf" into corpus "corpus" ... passed in 0.006s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".pdf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="content_sniffing.Content sniffing for media type and filename extension" name="Hypertext transfer protocol ingest normalizes Ogg content type and preserves filename extension" status="passed" time="0.010982"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hypertext transfer protocol ingest normalizes Ogg content type and preserves filename extension
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "download.ogg" exists with bytes: ... passed in 0.000s
+      """
+      OggS\x00\x02...binary...
+      """
+    And a hypertext transfer protocol server is serving the workdir with content type "application/ogg" ... passed in 0.001s
+    When I ingest the hypertext transfer protocol uniform resource locator for "download.ogg" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the last ingested item relpath ends with ".ogg" ... passed in 0.000s
+    And the last ingested item's sidecar includes media type "audio/ogg" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

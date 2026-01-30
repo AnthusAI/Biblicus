@@ -1,0 +1,90 @@
+<testsuite name="retrieval_utilities.Retrieval utilities" tests="8" errors="0" failures="0" skipped="0" time="0.02321" timestamp="2026-01-29T13:53:56.272398" hostname="JW2TF3YWMJ"><testcase classname="retrieval_utilities.Retrieval utilities" name="Scan match ignores empty tokens and selects earliest match" status="passed" time="0.000328"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan match ignores empty tokens and selects earliest match
+    When I compute a scan match span for text "bar foo" and tokens "foo,,bar,baz" ... passed in 0.000s
+    Then the scan match span is "0..3" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="Scan match returns none when no tokens match" status="passed" time="0.00033"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan match returns none when no tokens match
+    When I compute a scan match span for text "alpha" and tokens "zzz" ... passed in 0.000s
+    Then the scan match span is "none" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="Scan match keeps the earliest span when later matches exist" status="passed" time="0.000114"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan match keeps the earliest span when later matches exist
+    When I compute a scan match span for text "bar foo" and tokens "bar,foo" ... passed in 0.000s
+    Then the scan match span is "0..3" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="Scan snippet handles empty text" status="passed" time="0.000324"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan snippet handles empty text
+    When I build a scan snippet from text "<empty>" with span "none" and max chars 10 ... passed in 0.000s
+    Then the scan snippet is "<empty>" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="Scan snippet falls back when span is missing" status="passed" time="0.001938"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Scan snippet falls back when span is missing
+    When I build a scan snippet from text "abcdef" with span "none" and max chars 3 ... passed in 0.002s
+    Then the scan snippet is "abc" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="SQLite chunking yields multiple slices" status="passed" time="0.000372"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: SQLite chunking yields multiple slices
+    When I split text "abcdefghijkl" into sqlite chunks with size 5 and overlap 2 ... passed in 0.000s
+    Then the sqlite chunk count is 4 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="SQLite chunking handles empty text" status="passed" time="0.000367"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: SQLite chunking handles empty text
+    When I split text "<empty>" into sqlite chunks with size 5 and overlap 2 ... passed in 0.000s
+    Then the sqlite chunk count is 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_utilities.Retrieval utilities" name="Missing run artifacts contribute zero bytes" status="passed" time="0.019437"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Missing run artifacts contribute zero bytes
+    Given I initialized a corpus at "corpus" ... passed in 0.008s
+    And a text file "alpha.md" exists with contents "alpha apple" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.007s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    And I delete the latest run artifacts ... passed in 0.000s
+    And I measure the latest run artifact bytes ... passed in 0.000s
+    Then the run artifact bytes are 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

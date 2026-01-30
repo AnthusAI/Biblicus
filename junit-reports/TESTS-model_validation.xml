@@ -1,0 +1,11 @@
+<testsuite name="model_validation.Domain model validation" tests="1" errors="0" failures="0" skipped="0" time="0.000995" timestamp="2026-01-29T13:53:44.067003" hostname="JW2TF3YWMJ"><testcase classname="model_validation.Domain model validation" name="Evidence requires text or content reference" status="passed" time="0.000995"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Evidence requires text or content reference
+    When I attempt to create evidence without text or content reference ... passed in 0.001s
+    Then a model validation error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

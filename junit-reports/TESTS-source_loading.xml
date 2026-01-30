@@ -1,0 +1,13 @@
+<testsuite name="source_loading.Source loading helper" tests="1" errors="0" failures="0" skipped="0" time="0.000519" timestamp="2026-01-29T13:53:56.692297" hostname="JW2TF3YWMJ"><testcase classname="source_loading.Source loading helper" name="Loading a string path returns bytes and a file source uniform resource identifier" status="passed" time="0.000519"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Loading a string path returns bytes and a file source uniform resource identifier
+    Given I have a file "hello.txt" with contents "hello" ... passed in 0.000s
+    When I load the source "hello.txt" ... passed in 0.000s
+    Then the source payload filename is "hello.txt" ... passed in 0.000s
+    And the source payload source uniform resource identifier starts with "file://" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

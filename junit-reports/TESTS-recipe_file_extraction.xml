@@ -1,0 +1,25 @@
+<testsuite name="recipe_file_extraction.Extraction run recipe files" tests="1" errors="0" failures="1" skipped="0" time="0.010722" timestamp="2026-01-29T13:53:55.561556" hostname="JW2TF3YWMJ"><testcase classname="recipe_file_extraction.Extraction run recipe files" name="Build extraction run from recipe file with nested config" status="failed" time="0.010722"><failure type="AssertionError" message="Pipeline extraction requires at least one --step">
+<![CDATA[
+Failing step: And I build an extraction run in corpus "corpus" using recipe file "recipe.yml" ... failed in 0.003s
+Location: features/recipe_file_extraction.feature:12
+ASSERT FAILED: Pipeline extraction requires at least one --step
+]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Build extraction run from recipe file with nested config
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And a recipe file "recipe.yml" exists with content: ... passed in 0.000s
+      """
+      extractor_id: pass-through-text
+      config: {}
+      """
+    And I build an extraction run in corpus "corpus" using recipe file "recipe.yml" ... failed in 0.003s
+    Then the extraction run includes extracted text for the last ingested item ... skipped in 0.000s
+    And the extracted text for the last ingested item equals "alpha" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

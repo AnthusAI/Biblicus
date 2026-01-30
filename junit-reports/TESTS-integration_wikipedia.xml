@@ -1,0 +1,11 @@
+<testsuite name="integration_wikipedia.Wikipedia integration corpus" tests="1" errors="0" failures="0" skipped="0" time="1.708575" timestamp="2026-01-29T13:53:43.589666" hostname="JW2TF3YWMJ"><testcase classname="integration_wikipedia.Wikipedia integration corpus" name="Download and ingest a small Wikipedia corpus" status="passed" time="1.708575"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Download and ingest a small Wikipedia corpus
+    When I download a Wikipedia corpus into "corpus" ... passed in 1.708s
+    Then the corpus contains at least 5 items ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

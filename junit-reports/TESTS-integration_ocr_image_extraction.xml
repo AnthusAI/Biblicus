@@ -1,0 +1,19 @@
+<testsuite name="integration_ocr_image_extraction.Optical character recognition integration" tests="1" errors="0" failures="1" skipped="0" time="2.748747" timestamp="2026-01-29T13:53:37.503986" hostname="JW2TF3YWMJ"><testcase classname="integration_ocr_image_extraction.Optical character recognition integration" name="RapidOCR extracts text from an image and produces empty output for a blank image" status="failed" time="2.748747"><failure type="AssertionError" message="RapidOCR extractor requires an optional dependency. Install it with pip install &quot;biblicus[ocr]&quot;.">
+<![CDATA[
+Failing step: And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... failed in 0.005s
+Location: features/integration_ocr_image_extraction.feature:9
+ASSERT FAILED: RapidOCR extractor requires an optional dependency. Install it with pip install "biblicus[ocr]".
+]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extracts text from an image and produces empty output for a blank image
+    When I download an image corpus into "corpus" ... passed in 2.744s
+    And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... failed in 0.005s
+    Then the extracted text for the item tagged "image-with-text" is not empty in the latest extraction run ... skipped in 0.000s
+    And the extracted text for the item tagged "image-without-text" is empty in the latest extraction run ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

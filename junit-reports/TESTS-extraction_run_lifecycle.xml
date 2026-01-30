@@ -1,0 +1,181 @@
+<testsuite name="extraction_run_lifecycle.Extraction run lifecycle" tests="11" errors="0" failures="0" skipped="0" time="0.142228" timestamp="2026-01-29T13:53:15.990007" hostname="JW2TF3YWMJ"><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run build is idempotent for the same recipe and catalog" status="passed" time="0.01905"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run build is idempotent for the same recipe and catalog
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I ingest the text "hello" with no metadata into corpus "corpus" ... passed in 0.007s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    And I remember the last extraction run reference as "first" ... passed in 0.000s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.003s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    Then the last extraction run reference equals "first" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run build changes when the catalog changes" status="passed" time="0.023174"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run build changes when the catalog changes
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "alpha" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    And I remember the last extraction run reference as "first" ... passed in 0.000s
+    And I ingest the text "beta" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    Then the last extraction run reference does not equal "first" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction runs can be listed and inspected" status="passed" time="0.020013"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction runs can be listed and inspected
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    And I remember the last extraction run reference as "first" ... passed in 0.000s
+    When I list extraction runs in corpus "corpus" ... passed in 0.003s
+    Then the extraction run list includes "first" ... passed in 0.000s
+    When I show extraction run "first" in corpus "corpus" ... passed in 0.004s
+    Then the shown extraction run reference equals "first" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="An extraction run can be deleted explicitly" status="passed" time="0.020545"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: An extraction run can be deleted explicitly
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    And I remember the last extraction run reference as "first" ... passed in 0.000s
+    When I delete extraction run "first" in corpus "corpus" ... passed in 0.007s
+    Then the extraction run artifacts for "first" do not exist under the corpus ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run list is empty for a new corpus" status="passed" time="0.008395"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run list is empty for a new corpus
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    When I list extraction runs in corpus "corpus" ... passed in 0.003s
+    Then the extraction run list is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run list ignores invalid manifest entries" status="passed" time="0.006784"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run list ignores invalid manifest entries
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "corpus/.biblicus/runs/extraction/pipeline/bad/manifest.json" exists with contents: ... passed in 0.001s
+      """
+      not json
+      """
+    When I list extraction runs in corpus "corpus" ... passed in 0.003s
+    Then the extraction run list does not include raw reference "pipeline:bad" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run list supports filtering by extractor identifier" status="passed" time="0.006469"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run list supports filtering by extractor identifier
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "corpus/.biblicus/runs/extraction/.keep" exists with contents: ... passed in 0.000s
+      """
+      keep
+      """
+    When I list extraction runs for extractor "pipeline" in corpus "corpus" ... passed in 0.003s
+    Then the extraction run list is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Extraction run list ignores non-directories and missing manifests" status="passed" time="0.009465"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction run list ignores non-directories and missing manifests
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "corpus/.biblicus/runs/extraction/pipeline/not-a-directory" exists with contents: ... passed in 0.000s
+      """
+      ignore
+      """
+    And a file "corpus/.biblicus/runs/extraction/pipeline/no-manifest/.keep" exists with contents: ... passed in 0.000s
+      """
+      ignore
+      """
+    When I list extraction runs in corpus "corpus" ... passed in 0.004s
+    Then the extraction run list does not include raw reference "pipeline:not-a-directory" ... passed in 0.000s
+    And the extraction run list does not include raw reference "pipeline:no-manifest" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Showing an unknown extraction run fails cleanly" status="passed" time="0.006635"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Showing an unknown extraction run fails cleanly
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "extract show --run pipeline:missing" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Missing extraction run manifest" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Deleting an unknown extraction run fails cleanly" status="passed" time="0.006547"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Deleting an unknown extraction run fails cleanly
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "extract delete --run pipeline:missing --confirm pipeline:missing" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Missing extraction run directory" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_run_lifecycle.Extraction run lifecycle" name="Deleting requires exact confirmation" status="passed" time="0.015149"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Deleting requires exact confirmation
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    And I remember the last extraction run reference as "first" ... passed in 0.000s
+    When I attempt to delete extraction run "first" in corpus "corpus" with confirm "nope" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "--confirm" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

@@ -1,0 +1,11 @@
+<testsuite name="cli_entrypoint.Command-line interface entry point" tests="1" errors="0" failures="0" skipped="0" time="0.004036" timestamp="2026-01-29T13:53:08.171939" hostname="JW2TF3YWMJ"><testcase classname="cli_entrypoint.Command-line interface entry point" name="Running the module entry point prints help" status="passed" time="0.004036"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Running the module entry point prints help
+    When I run the biblicus module with "--help" ... passed in 0.004s
+    Then the command succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

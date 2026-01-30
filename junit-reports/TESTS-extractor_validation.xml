@@ -1,0 +1,11 @@
+<testsuite name="extractor_validation.Extractor guardrails" tests="1" errors="0" failures="0" skipped="0" time="0.002144" timestamp="2026-01-29T13:53:16.342989" hostname="JW2TF3YWMJ"><testcase classname="extractor_validation.Extractor guardrails" name="Abstract extractor methods raise NotImplementedError" status="passed" time="0.002144"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Abstract extractor methods raise NotImplementedError
+    When I call the abstract extractor methods ... passed in 0.002s
+    Then the abstract extractor errors are raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

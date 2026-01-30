@@ -1,0 +1,17 @@
+<testsuite name="integration_mixed_corpus.Mixed modality integration corpus" tests="1" errors="0" failures="0" skipped="0" time="2.243313" timestamp="2026-01-29T13:53:30.113199" hostname="JW2TF3YWMJ"><testcase classname="integration_mixed_corpus.Mixed modality integration corpus" name="Download and ingest a mixed corpus" status="passed" time="2.243313"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Download and ingest a mixed corpus
+    When I download a mixed corpus into "corpus" ... passed in 2.235s
+    Then the corpus contains at least 5 items ... passed in 0.002s
+    And the corpus contains at least 1 item with media type "text/markdown" ... passed in 0.001s
+    And the corpus contains at least 1 item with media type "text/html" ... passed in 0.001s
+    And the corpus contains at least 1 item with media type "image/jpeg" ... passed in 0.001s
+    And the corpus contains at least 1 item with media type "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ... passed in 0.001s
+    And the corpus contains at least 2 items with media type "application/pdf" ... passed in 0.002s
+    And the corpus contains at least 1 item tagged "scanned" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

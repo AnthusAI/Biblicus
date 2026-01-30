@@ -1,0 +1,56 @@
+<testsuite name="context_pack.Context pack building" tests="3" errors="0" failures="0" skipped="0" time="0.001808" timestamp="2026-01-29T13:53:13.446559" hostname="JW2TF3YWMJ"><testcase classname="context_pack.Context pack building" name="Context pack concatenates evidence text with a join separator" status="passed" time="0.001295"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack concatenates evidence text with a join separator
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text                                  |
+      | The user's name is Tactus.            |
+      | The user's favorite color is magenta. |
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.001s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      The user's name is Tactus.
+      
+      The user's favorite color is magenta.
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="context_pack.Context pack building" name="Context pack excludes empty evidence text" status="passed" time="0.000245"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack excludes empty evidence text
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text                                  |
+      |                                       |
+      | The user's favorite color is magenta. |
+      |                                       |
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      The user's favorite color is magenta.
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="context_pack.Context pack building" name="Context pack excludes non-text evidence" status="passed" time="0.000269"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Context pack excludes non-text evidence
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text                                  |
+      | The user's favorite color is magenta. |
+      |                                       |
+    And the second evidence item has no text payload ... passed in 0.000s
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      The user's favorite color is magenta.
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

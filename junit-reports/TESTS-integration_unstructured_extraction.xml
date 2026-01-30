@@ -1,0 +1,18 @@
+<testsuite name="integration_unstructured_extraction.Unstructured extraction integration" tests="1" errors="0" failures="1" skipped="0" time="1.8939" timestamp="2026-01-29T13:53:41.876920" hostname="JW2TF3YWMJ"><testcase classname="integration_unstructured_extraction.Unstructured extraction integration" name="Unstructured extracts text from a document and does not crash on other non-text items" status="failed" time="1.8939"><failure type="AssertionError" message="Unstructured extractor requires an optional dependency. Install it with pip install &quot;biblicus[unstructured]&quot;.">
+<![CDATA[
+Failing step: And I build a "unstructured" extraction run in corpus "corpus" ... failed in 0.005s
+Location: features/integration_unstructured_extraction.feature:10
+ASSERT FAILED: Unstructured extractor requires an optional dependency. Install it with pip install "biblicus[unstructured]".
+]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extracts text from a document and does not crash on other non-text items
+    When I download a mixed corpus into "corpus" ... passed in 1.889s
+    And I build a "unstructured" extraction run in corpus "corpus" ... failed in 0.005s
+    Then the extracted text for the item tagged "docx-sample" is not empty in the latest extraction run ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

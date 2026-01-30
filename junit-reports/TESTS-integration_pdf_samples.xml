@@ -1,0 +1,11 @@
+<testsuite name="integration_pdf_samples.Portable Document Format integration corpus" tests="1" errors="0" failures="0" skipped="0" time="2.344507" timestamp="2026-01-29T13:53:39.975650" hostname="JW2TF3YWMJ"><testcase classname="integration_pdf_samples.Portable Document Format integration corpus" name="Download and ingest a small Portable Document Format corpus" status="passed" time="2.344507"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Download and ingest a small Portable Document Format corpus
+    When I download a Portable Document Format corpus into "corpus" ... passed in 2.344s
+    Then the corpus contains at least 2 items ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

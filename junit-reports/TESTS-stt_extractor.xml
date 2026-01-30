@@ -1,0 +1,203 @@
+<testsuite name="stt_extractor.Speech to text extraction" tests="11" errors="0" failures="0" skipped="0" time="0.137347" timestamp="2026-01-29T13:53:56.921111" hostname="JW2TF3YWMJ"><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor requires an optional dependency" status="passed" time="0.017084"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor requires an optional dependency
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the OpenAI dependency is unavailable ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.005s
+    And I attempt to build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.008s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "biblicus[openai]" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor skips non-audio items" status="passed" time="0.013094"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor skips non-audio items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake OpenAI library is available ... passed in 0.001s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    When I ingest the text "alpha" with no metadata into corpus "corpus" ... passed in 0.004s
+    And I build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor requires an OpenAI API key" status="passed" time="0.018305"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor requires an OpenAI API key
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake OpenAI library is available ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.005s
+    And I attempt to build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.010s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "OPENAI_API_KEY" ... passed in 0.000s
+    And standard error includes "config.yml" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor produces transcript for an audio item" status="passed" time="0.012964"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor produces transcript for an audio item
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake OpenAI library is available that returns transcript "Hello from speech to text" for filename "clip.wav" ... passed in 0.000s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.005s
+    And I build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "Hello from speech to text" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "stt-openai" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text suppresses no-speech audio when probability is high" status="passed" time="0.014593"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text suppresses no-speech audio when probability is high
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake OpenAI library is available that returns verbose transcript "Hallucinated text" for filename "clip.wav" with segments: ... passed in 0.000s
+      """
+      ["not-a-dict", {"no_speech_prob": "high"}, {"no_speech_prob": 0.99}]
+      """
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.005s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id | config_json                                                              |
+      | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the OpenAI transcription request used response format "verbose_json" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "stt-openai" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="No-speech suppression requires verbose response format" status="passed" time="0.010751"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: No-speech suppression requires verbose response format
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake OpenAI library is available ... passed in 0.000s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.003s
+      | extractor_id | config_json                             |
+      | stt-openai   | {"no_speech_probability_threshold":0.9} |
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "no_speech_probability_threshold requires response_format" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text keeps transcript when no-speech probability is low" status="passed" time="0.012621"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text keeps transcript when no-speech probability is low
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake OpenAI library is available that returns verbose transcript "Real words" for filename "clip.wav" with segments: ... passed in 0.000s
+      """
+      [{"no_speech_prob": 0.1}]
+      """
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.004s
+      | extractor_id | config_json                                                              |
+      | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
+    Then the extracted text for the last ingested item equals "Real words" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor accepts dict transcription results" status="passed" time="0.016294"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor accepts dict transcription results
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake OpenAI library is available that returns a dict transcript "Hello from dict result" for filename "clip.wav" ... passed in 0.000s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.007s
+    And I build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "Hello from dict result" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "stt-openai" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor rejects extraction without an API key at runtime" status="passed" time="0.001766"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor rejects extraction without an API key at runtime
+    When I call the speech to text extractor without an API key ... passed in 0.002s
+    Then a fatal extraction error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text extractor rejects extraction at runtime when optional dependency is missing" status="passed" time="0.001226"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text extractor rejects extraction at runtime when optional dependency is missing
+    Given the OpenAI dependency is unavailable ... passed in 0.000s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    When I call the speech to text extractor with an API key ... passed in 0.001s
+    Then a fatal extraction error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="stt_extractor.Speech to text extraction" name="Speech to text output can override earlier metadata output in a pipeline" status="passed" time="0.018648"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Speech to text output can override earlier metadata output in a pipeline
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake OpenAI library is available that returns transcript "Transcript wins" for filename "clip.wav" ... passed in 0.000s
+    And an OpenAI API key is configured for this scenario ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" with tags "audio,example" into corpus "corpus" ... passed in 0.010s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id  | config_json |
+      | metadata-text | {}          |
+      | stt-openai    | {}          |
+    Then the extracted text for the last ingested item equals "Transcript wins" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "stt-openai" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

@@ -1,0 +1,63 @@
+<testsuite name="pdf_text_extraction.Portable Document Format text extraction" tests="4" errors="0" failures="0" skipped="0" time="0.059463" timestamp="2026-01-29T13:53:55.394854" hostname="JW2TF3YWMJ"><testcase classname="pdf_text_extraction.Portable Document Format text extraction" name="Portable Document Format text extractor produces text artifacts" status="passed" time="0.014802"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Portable Document Format text extractor produces text artifacts
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a Portable Document Format file "hello.pdf" exists with text "Hello from Portable Document Format" ... passed in 0.000s
+    When I ingest the file "hello.pdf" into corpus "corpus" ... passed in 0.006s
+    And I build a "pdf-text" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Hello from Portable Document Format" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "pdf-text" ... passed in 0.000s
+    And the extraction run stats include needs_extraction_items 1 ... passed in 0.000s
+    And the extraction run stats include converted_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="pdf_text_extraction.Portable Document Format text extraction" name="Portable Document Format text extractor skips non Portable Document Format items" status="passed" time="0.012105"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Portable Document Format text extractor skips non Portable Document Format items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.txt" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.txt" into corpus "corpus" ... passed in 0.005s
+    And I build a "pdf-text" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+    And the extraction run stats include converted_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="pdf_text_extraction.Portable Document Format text extraction" name="Portable Document Format text extractor supports a maximum page limit" status="passed" time="0.013017"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Portable Document Format text extractor supports a maximum page limit
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a Portable Document Format file "hello.pdf" exists with text "Hello from Portable Document Format" ... passed in 0.000s
+    When I ingest the file "hello.pdf" into corpus "corpus" ... passed in 0.005s
+    And I build a "pdf-text" extraction run in corpus "corpus" with config: ... passed in 0.005s
+      | key       | value |
+      | max_pages | 1     |
+    Then the extracted text for the last ingested item equals "Hello from Portable Document Format" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="pdf_text_extraction.Portable Document Format text extraction" name="Portable Document Format text extractor records empty output when no text is extractable" status="passed" time="0.019538"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Portable Document Format text extractor records empty output when no text is extractable
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a Portable Document Format file "scan.pdf" exists with no extractable text ... passed in 0.000s
+    When I ingest the file "scan.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "pdf-text" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item is empty ... passed in 0.008s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+    And the extraction run stats include converted_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

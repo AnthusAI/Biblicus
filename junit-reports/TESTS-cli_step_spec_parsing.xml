@@ -1,0 +1,58 @@
+<testsuite name="cli_step_spec_parsing.Command-line step spec parsing with JSON values" tests="3" errors="0" failures="0" skipped="0" time="0.035052" timestamp="2026-01-29T13:53:08.224515" hostname="JW2TF3YWMJ"><testcase classname="cli_step_spec_parsing.Command-line step spec parsing with JSON values" name="Parse step spec with JSON-encoded nested dict value" status="passed" time="0.011709"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Parse step spec with JSON-encoded nested dict value
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text | confidence |
+      | image.png | JSON | 0.85       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"local\"},min_confidence=0.5" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "JSON" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="cli_step_spec_parsing.Command-line step spec parsing with JSON values" name="Parse step spec with multiple config values including JSON" status="passed" time="0.011305"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Parse step spec with multiple config values including JSON
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text | confidence |
+      | image.png | Test | 0.95       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\\n,backend={\"mode\":\"local\"},use_angle_cls=true" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="cli_step_spec_parsing.Command-line step spec parsing with JSON values" name="Parse step spec with quoted string value" status="passed" time="0.012038"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Parse step spec with quoted string value
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text         | confidence |
+      | image.png | Quoted value | 0.90       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.005s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\", \",backend={\"mode\":\"local\"}" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

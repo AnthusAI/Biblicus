@@ -1,0 +1,24 @@
+<testsuite name="corpus_identity.Corpus identity and discovery" tests="2" errors="0" failures="0" skipped="0" time="0.024292" timestamp="2026-01-29T13:53:13.732805" hostname="JW2TF3YWMJ"><testcase classname="corpus_identity.Corpus identity and discovery" name="Use file:// uniform resource identifier to reference a corpus" status="passed" time="0.0123"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Use file:// uniform resource identifier to reference a corpus
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I list items in the corpus by file uniform resource identifier for "corpus" ... passed in 0.009s
+    Then the command succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_identity.Corpus identity and discovery" name="Find a corpus by searching upward from the current working directory" status="passed" time="0.011992"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Find a corpus by searching upward from the current working directory
+    Given I initialized a corpus at "corpus" ... passed in 0.009s
+    And I create the directory "corpus/subdir" ... passed in 0.000s
+    When I list items from within "corpus/subdir" ... passed in 0.003s
+    Then the command succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

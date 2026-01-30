@@ -1,0 +1,25 @@
+<testsuite name="integration_mixed_extraction.Mixed modality extraction integration" tests="2" errors="0" failures="0" skipped="0" time="4.620333" timestamp="2026-01-29T13:53:34.749443" hostname="JW2TF3YWMJ"><testcase classname="integration_mixed_extraction.Mixed modality extraction integration" name="Portable Document Format extraction produces text when available and records empty output when unavailable" status="passed" time="2.325455"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Portable Document Format extraction produces text when available and records empty output when unavailable
+    When I download a mixed corpus into "corpus" ... passed in 2.314s
+    And I build a "pdf-text" extraction run in corpus "corpus" ... passed in 0.010s
+    Then the extracted text for the item tagged "pdf-sample" is not empty in the latest extraction run ... passed in 0.001s
+    And the extracted text for the item tagged "scanned" is empty in the latest extraction run ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="integration_mixed_extraction.Mixed modality extraction integration" name="Pass-through text extractor ignores binary items" status="passed" time="2.294878"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pass-through text extractor ignores binary items
+    When I download a mixed corpus into "corpus" ... passed in 2.284s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.010s
+    Then the extracted text for the item tagged "html" is not empty in the latest extraction run ... passed in 0.001s
+    And the extraction run does not include extracted text for the item tagged "image" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

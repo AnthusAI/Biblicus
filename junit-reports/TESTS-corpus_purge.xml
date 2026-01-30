@@ -1,0 +1,53 @@
+<testsuite name="corpus_purge.Purging a corpus (dangerous operation)" tests="4" errors="0" failures="0" skipped="0" time="0.038696" timestamp="2026-01-29T13:53:13.786994" hostname="JW2TF3YWMJ"><testcase classname="corpus_purge.Purging a corpus (dangerous operation)" name="Purge requires confirmation" status="passed" time="0.009462"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Purge requires confirmation
+    Given I initialized a corpus at "corpus" ... passed in 0.007s
+    When I run "purge" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "--confirm" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_purge.Purging a corpus (dangerous operation)" name="Purge rejects incorrect confirmation" status="passed" time="0.006664"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Purge rejects incorrect confirmation
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I run "purge --confirm wrong" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Confirmation mismatch" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_purge.Purging a corpus (dangerous operation)" name="Purge deletes all items and resets catalog" status="passed" time="0.013745"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Purge deletes all items and resets catalog
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I ingest the text "hello" with title "A" and tags "t" into corpus "corpus" ... passed in 0.005s
+    And I run "purge --confirm corpus" in corpus "corpus" ... passed in 0.004s
+    Then the command succeeds ... passed in 0.000s
+    And the corpus "corpus" raw folder is empty ... passed in 0.000s
+    And the corpus "corpus" catalog has 0 items ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="corpus_purge.Purging a corpus (dangerous operation)" name="Purge removes extra derived files and recreates raw folder" status="passed" time="0.008825"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Purge removes extra derived files and recreates raw folder
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I create an extra derived folder in corpus "corpus" ... passed in 0.000s
+    And I delete the corpus "corpus" raw folder ... passed in 0.000s
+    When I run "purge --confirm corpus" in corpus "corpus" ... passed in 0.004s
+    Then the command succeeds ... passed in 0.000s
+    And the corpus "corpus" raw folder is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

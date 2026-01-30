@@ -1,0 +1,23 @@
+<testsuite name="integration_pdf_retrieval.Portable Document Format extraction and retrieval integration" tests="1" errors="0" failures="0" skipped="0" time="0.115468" timestamp="2026-01-29T13:53:37.626043" hostname="JW2TF3YWMJ"><testcase classname="integration_pdf_retrieval.Portable Document Format extraction and retrieval integration" name="Query finds text extracted from a downloaded Portable Document Format" status="passed" time="0.115468"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Query finds text extracted from a downloaded Portable Document Format
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I ingest the uniform resource locator "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" into corpus "corpus" ... passed in 0.095s
+    And I build a "pdf-text" extraction run in corpus "corpus" ... passed in 0.006s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" using the latest extraction run and config: ... passed in 0.007s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    And I query with the latest run for "Dummy PDF file" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 10000 |
+      | max_items_per_source | 5     |
+    Then the query evidence includes the last ingested item identifier ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

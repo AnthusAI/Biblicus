@@ -1,0 +1,166 @@
+<testsuite name="lifecycle_hooks.Lifecycle hooks" tests="12" errors="0" failures="0" skipped="0" time="0.145388" timestamp="2026-01-29T13:53:43.844141" hostname="JW2TF3YWMJ"><testcase classname="lifecycle_hooks.Lifecycle hooks" name="After ingest hook can add a tag and is recorded" status="passed" time="0.015175"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: After ingest hook can add a tag and is recorded
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags "curated" ... passed in 0.001s
+    When I ingest the text "hello" with title "Hook test" and tags "raw" into corpus "corpus" ... passed in 0.004s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.006s
+    Then the shown JavaScript Object Notation includes tag "raw" ... passed in 0.000s
+    And the shown JavaScript Object Notation includes tag "curated" ... passed in 0.000s
+    And the corpus "corpus" hook logs include a record for hook point "after_ingest" and hook "add-tags" ... passed in 0.001s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="After ingest hook does not duplicate an existing tag for a note" status="passed" time="0.011277"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: After ingest hook does not duplicate an existing tag for a note
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags "raw" ... passed in 0.000s
+    When I ingest the text "hello" with title "Hook test" and tags "raw" into corpus "corpus" ... passed in 0.004s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation tags equal "raw" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="After ingest hook can add a tag for a binary item" status="passed" time="0.012525"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: After ingest hook can add a tag for a binary item
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags "curated" ... passed in 0.000s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    When I ingest the file "report.pdf" into corpus "corpus" ... passed in 0.005s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes tag "curated" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="After ingest hook does not duplicate an existing tag for a binary item" status="passed" time="0.018064"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: After ingest hook does not duplicate an existing tag for a binary item
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags "curated" ... passed in 0.000s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    When I ingest the file "report.pdf" with tags "curated" into corpus "corpus" ... passed in 0.007s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.007s
+    Then the shown JavaScript Object Notation tags equal "curated" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Before ingest hook can add a tag" status="passed" time="0.015301"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Before ingest hook can add a tag
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "before_ingest" with tags "preflight" ... passed in 0.001s
+    When I ingest the text "hello" with title "Hook test" and tags "raw" into corpus "corpus" ... passed in 0.006s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes tag "raw" ... passed in 0.000s
+    And the shown JavaScript Object Notation includes tag "preflight" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Before ingest hook does not duplicate an existing tag" status="passed" time="0.012175"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Before ingest hook does not duplicate an existing tag
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "before_ingest" with tags "raw" ... passed in 0.000s
+    When I ingest the text "hello" with title "Hook test" and tags "raw" into corpus "corpus" ... passed in 0.005s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation tags equal "raw" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Hook manager deduplicates repeated tags" status="passed" time="0.011233"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hook manager deduplicates repeated tags
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "before_ingest" with tags "dup,dup" ... passed in 0.000s
+    When I ingest the text "hello" with title "Hook test" and tags " " into corpus "corpus" ... passed in 0.004s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation tags equal "dup" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Before ingest hook can deny ingest and is recorded" status="passed" time="0.007148"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Before ingest hook can deny ingest and is recorded
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "deny-all" for hook point "before_ingest" with no tags ... passed in 0.000s
+    When I ingest the text "hello" with title "Denied" and tags "raw" into corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Ingest denied" ... passed in 0.000s
+    And the corpus "corpus" hook logs include a record for hook point "before_ingest" and hook "deny-all" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Before ingest hook can add a tag for a binary item" status="passed" time="0.011393"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Before ingest hook can add a tag for a binary item
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "before_ingest" with tags "preflight" ... passed in 0.000s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    When I ingest the file "report.pdf" into corpus "corpus" ... passed in 0.005s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation includes tag "preflight" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Before ingest hook does not duplicate an existing tag for a binary item" status="passed" time="0.011285"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Before ingest hook does not duplicate an existing tag for a binary item
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "before_ingest" with tags "paper" ... passed in 0.000s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    When I ingest the file "report.pdf" with tags "paper" into corpus "corpus" ... passed in 0.004s
+    And I show the last ingested item in corpus "corpus" ... passed in 0.003s
+    Then the shown JavaScript Object Notation tags equal "paper" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Hook with no tag changes still records execution" status="passed" time="0.009456"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hook with no tag changes still records execution
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags " " ... passed in 0.001s
+    When I ingest the text "hello" with title "Hook test" and tags "raw" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the corpus "corpus" hook logs include a record for hook point "after_ingest" and hook "add-tags" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="lifecycle_hooks.Lifecycle hooks" name="Hook with no tag changes runs for a binary item" status="passed" time="0.010357"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Hook with no tag changes runs for a binary item
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the corpus "corpus" has a configured hook "add-tags" for hook point "after_ingest" with tags " " ... passed in 0.000s
+    And a binary file "report.pdf" exists ... passed in 0.000s
+    When I ingest the file "report.pdf" into corpus "corpus" ... passed in 0.005s
+    Then the last ingest succeeds ... passed in 0.000s
+    And the corpus "corpus" hook logs include a record for hook point "after_ingest" and hook "add-tags" ... passed in 0.002s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

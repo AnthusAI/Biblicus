@@ -1,0 +1,49 @@
+<testsuite name="cli_parsing.Command-line interface parsing" tests="4" errors="0" failures="0" skipped="0" time="0.000523" timestamp="2026-01-29T13:53:08.177266" hostname="JW2TF3YWMJ"><testcase classname="cli_parsing.Command-line interface parsing" name="Config pairs parse floating-point values" status="passed" time="0.000182"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Config pairs parse floating-point values
+    When I parse config pairs: ... passed in 0.000s
+      | pair          |
+      | threshold=0.5 |
+    Then the parsed config value "threshold" is float 0.5 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="cli_parsing.Command-line interface parsing" name="Config pairs reject empty keys" status="passed" time="0.000128"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Config pairs reject empty keys
+    When I attempt to parse config pairs: ... passed in 0.000s
+      | pair |
+      | =1   |
+    Then a config parsing error is raised ... passed in 0.000s
+    And the config parsing error mentions "Config keys must be non-empty" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="cli_parsing.Command-line interface parsing" name="Config pairs preserve string values" status="passed" time="8.8e-05"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Config pairs preserve string values
+    When I parse config pairs: ... passed in 0.000s
+      | pair      |
+      | mode=fast |
+    Then the parsed config value "mode" is string "fast" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="cli_parsing.Command-line interface parsing" name="Step specs reject empty strings" status="passed" time="0.000125"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step specs reject empty strings
+    When I attempt to parse an empty step spec ... passed in 0.000s
+    Then a step spec parsing error is raised ... passed in 0.000s
+    And the step spec parsing error mentions "Step spec must be non-empty" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

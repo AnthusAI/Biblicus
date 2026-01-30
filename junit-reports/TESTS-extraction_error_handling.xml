@@ -1,0 +1,48 @@
+<testsuite name="extraction_error_handling.Extraction error handling" tests="3" errors="0" failures="0" skipped="0" time="0.04369" timestamp="2026-01-29T13:53:15.789532" hostname="JW2TF3YWMJ"><testcase classname="extraction_error_handling.Extraction error handling" name="Extraction continues and records an error when an item has invalid text encoding" status="passed" time="0.021574"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction continues and records an error when an item has invalid text encoding
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "good.txt" exists with contents "good" ... passed in 0.000s
+    And a binary file "bad.txt" exists with invalid Unicode Transformation Format 8 bytes ... passed in 0.000s
+    When I ingest the file "bad.txt" into corpus "corpus" ... passed in 0.009s
+    And I ingest the file "good.txt" into corpus "corpus" ... passed in 0.004s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "good" ... passed in 0.000s
+    And the extraction run includes an errored result for the first ingested item ... passed in 0.000s
+    And the extraction run error type for the first ingested item equals "UnicodeDecodeError" ... passed in 0.000s
+    And the extraction run stats include errored_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_error_handling.Extraction error handling" name="Errored items do not create extracted text artifacts" status="passed" time="0.011958"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Errored items do not create extracted text artifacts
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "bad.txt" exists with invalid Unicode Transformation Format 8 bytes ... passed in 0.000s
+    When I ingest the file "bad.txt" into corpus "corpus" ... passed in 0.005s
+    And I build a "pass-through-text" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+    And the extraction run includes an errored result for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_error_handling.Extraction error handling" name="Extraction aborts on fatal extractor errors" status="passed" time="0.010157"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction aborts on fatal extractor errors
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.txt" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.txt" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a pipeline extraction run in corpus "corpus" with a fatal extractor step ... passed in 0.003s
+    Then a fatal extraction error is raised ... passed in 0.000s
+    And the fatal extraction error message includes "Fatal extractor failure" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

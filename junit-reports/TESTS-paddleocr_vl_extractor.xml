@@ -1,0 +1,294 @@
+<testsuite name="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" tests="15" errors="0" failures="2" skipped="0" time="11.022428" timestamp="2026-01-29T13:53:55.303940" hostname="JW2TF3YWMJ"><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor requires an optional dependency for local mode" status="failed" time="10.839124"><failure type="AssertionError" message="[33mChecking connectivity to the model hosters, this may take a while. To bypass this check, set `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` to `True`.[0m">
+<![CDATA[
+Failing step: Then the command fails with exit code 2 ... failed in 0.000s
+Location: features/paddleocr_vl_extractor.feature:17
+ASSERT FAILED: Checking connectivity to the model hosters, this may take a while. To bypass this check, set `PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK` to `True`.
+]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+
+  @skip
+  Scenario: PaddleOCR-VL extractor requires an optional dependency for local mode
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the PaddleOCR dependency is unavailable ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 10.831s
+    Then the command fails with exit code 2 ... failed in 0.000s
+    And standard error includes "biblicus[paddleocr]" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor skips non-image items" status="passed" time="0.01242"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor skips non-image items
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a fake PaddleOCR library is available ... passed in 0.000s
+    When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor produces extracted text for an image item" status="passed" time="0.012662"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor produces extracted text for an image item
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text         | confidence |
+      | image.png | Hello world! | 0.99       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Hello world!" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "ocr-paddleocr-vl" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor records empty output when no text is recognized" status="passed" time="0.012931"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor records empty output when no text is recognized
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns empty output for filename "blank.png" ... passed in 0.000s
+    And a file "blank.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "blank.png" into corpus "corpus" ... passed in 0.005s
+    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor filters lines by minimum confidence threshold" status="passed" time="0.013562"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor filters lines by minimum confidence threshold
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename | text      | confidence |
+      | test.png | High conf | 0.95       |
+      | test.png | Low conf  | 0.30       |
+    And a file "test.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "test.png" into corpus "corpus" ... passed in 0.005s
+    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "High conf" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor API mode requires api_provider" status="passed" time="0.012152"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor API mode requires api_provider
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe: ... passed in 0.004s
+      """
+      extractor_id: ocr-paddleocr-vl
+      config:
+        backend:
+          mode: api
+      """
+    Then the command fails with exit code 2 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor works in API mode with HuggingFace using environment variable API key" status="passed" time="0.012226"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor works in API mode with HuggingFace using environment variable API key
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-api-key" ... passed in 0.000s
+    And a fake requests library returns HuggingFace OCR response for model "PaddlePaddle/PaddleOCR-VL" with text "API extracted text" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "API extracted text" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "ocr-paddleocr-vl" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor parses API string response format" status="passed" time="0.012652"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor parses API string response format
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-api-key" ... passed in 0.000s
+    And a fake requests library returns HuggingFace string response for model "PaddlePaddle/PaddleOCR-VL" with value "Simple string response" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "Simple string response" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor parses API list response format" status="passed" time="0.012708"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor parses API list response format
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-api-key" ... passed in 0.000s
+    And a fake requests library returns HuggingFace list response for model "PaddlePaddle/PaddleOCR-VL" with text "List format response" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.005s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.004s
+    Then the extracted text for the last ingested item equals "List format response" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor handles malformed JSON in config gracefully" status="passed" time="0.010705"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor handles malformed JSON in config gracefully
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake PaddleOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text  | confidence |
+      | image.png | Works | 0.90       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.004s
+      | extractor_id     | config_json        |
+      | ocr-paddleocr-vl | {"backend":"{bad"} |
+    Then the command fails with exit code 2 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor handles malformed OCR output gracefully" status="passed" time="0.017818"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor handles malformed OCR output gracefully
+    Given I initialized a corpus at "corpus" ... passed in 0.008s
+    And a fake PaddleOCR library returns malformed output for filename "bad.png" ... passed in 0.000s
+    And a file "bad.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "bad.png" into corpus "corpus" ... passed in 0.005s
+    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL extractor requires api_provider in API mode" status="failed" time="0.010972"><failure type="AssertionError" message="Expected 'api_provider' in stderr but got: 1 validation error for PaddleOcrVlExtractorConfig&#10;backend&#10;  Input should be a valid dictionary or instance of InferenceBackendConfig [type=model_type, input_value='{\\&quot;mode\\&quot;:\\&quot;api\\&quot;}', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.12/v/model_type">
+<![CDATA[
+Failing step: And standard error includes "api_provider" ... failed in 0.000s
+Location: features/paddleocr_vl_extractor.feature:157
+ASSERT FAILED: Expected 'api_provider' in stderr but got: 1 validation error for PaddleOcrVlExtractorConfig
+backend
+  Input should be a valid dictionary or instance of InferenceBackendConfig [type=model_type, input_value='{\\"mode\\":\\"api\\"}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/model_type
+]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL extractor requires api_provider in API mode
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I attempt to build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\"}" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "api_provider" ... failed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL API response without confidence field" status="passed" time="0.013651"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL API response without confidence field
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake requests library returns HuggingFace OCR response without confidence for model "PaddlePaddle/PaddleOCR-VL" with text "No confidence" ... passed in 0.000s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-key" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.005s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "No confidence" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL API list response without confidence field" status="passed" time="0.013836"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL API list response without confidence field
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake requests library returns HuggingFace list OCR response without confidence for model "PaddlePaddle/PaddleOCR-VL" with text "List no confidence" ... passed in 0.000s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-key" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.005s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "List no confidence" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="paddleocr_vl_extractor.PaddleOCR-VL extractor plugin" name="PaddleOCR-VL API malformed response returns empty" status="passed" time="0.015008"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: PaddleOCR-VL API malformed response returns empty
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a fake requests library returns "[]" for URL "https://api-inference.huggingface.co/models/PaddlePaddle/PaddleOCR-VL" ... passed in 0.000s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "test-key" ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}" ... passed in 0.005s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

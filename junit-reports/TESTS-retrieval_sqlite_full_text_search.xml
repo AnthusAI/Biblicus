@@ -1,0 +1,87 @@
+<testsuite name="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" tests="5" errors="0" failures="0" skipped="0" time="0.088673" timestamp="2026-01-29T13:53:55.830786" hostname="JW2TF3YWMJ"><testcase classname="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" name="Build a full-text search run and query for evidence" status="passed" time="0.018793"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Build a full-text search run and query for evidence
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "alpha.md" exists with contents "alpha bravo charlie" ... passed in 0.000s
+    When I ingest the file "alpha.md" into corpus "corpus" ... passed in 0.005s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.007s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    And I query with the latest run for "bravo" and budget: ... passed in 0.003s
+      | key                  | value |
+      | max_total_items      | 5     |
+      | max_total_characters | 2000  |
+      | max_items_per_source | 5     |
+    Then the query returns evidence with stage "full-text-search" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" name="Full-text search build skips non-text items" status="passed" time="0.02056"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Full-text search build skips non-text items
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a binary file "blob.bin" exists ... passed in 0.004s
+    When I ingest the file "blob.bin" into corpus "corpus" ... passed in 0.004s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.008s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    Then the latest run stats include text_items 0 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" name="Full-text search indexes plain text files" status="passed" time="0.015541"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Full-text search indexes plain text files
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a text file "note.txt" exists with contents "alpha beta" ... passed in 0.000s
+    When I ingest the file "note.txt" into corpus "corpus" ... passed in 0.004s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.008s
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    Then the latest run stats include text_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" name="Full-text search chunking emits multiple chunks" status="passed" time="0.015222"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Full-text search chunking emits multiple chunks
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a text file "long.txt" exists with contents "abcdefghijkl" ... passed in 0.000s
+    When I ingest the file "long.txt" into corpus "corpus" ... passed in 0.004s
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config: ... passed in 0.008s
+      | key                | value |
+      | chunk_size         | 5     |
+      | chunk_overlap      | 2     |
+      | snippet_characters | 120   |
+    Then the latest run stats include chunks 4 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="retrieval_sqlite_full_text_search.Retrieval with SQLite full-text search backend" name="Full-text search rebuild replaces a stale index file" status="passed" time="0.018556"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Full-text search rebuild replaces a stale index file
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a text file "alpha.txt" exists with contents "alpha" ... passed in 0.000s
+    When I ingest the file "alpha.txt" into corpus "corpus" ... passed in 0.011s
+    And I rebuild a SQLite full-text search index for corpus "corpus" at ".biblicus/runs/forced.sqlite" ... passed in 0.004s
+    Then the SQLite full-text search index file exists ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

@@ -1,0 +1,53 @@
+<testsuite name="token_budget.Token budget fitting" tests="3" errors="0" failures="0" skipped="0" time="0.000868" timestamp="2026-01-29T13:53:57.101277" hostname="JW2TF3YWMJ"><testcase classname="token_budget.Token budget fitting" name="Token fitting drops trailing blocks until the budget is met" status="passed" time="0.000376"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Token fitting drops trailing blocks until the budget is met
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text          |
+      | one two three |
+      | four five six |
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.000s
+    And I fit the context pack to a token budget of 3 tokens ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      one two three
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="token_budget.Token budget fitting" name="Token fitting keeps blocks when the budget allows" status="passed" time="0.000252"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Token fitting keeps blocks when the budget allows
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text          |
+      | one two three |
+      | four          |
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.000s
+    And I fit the context pack to a token budget of 10 tokens ... passed in 0.000s
+    Then the context pack text equals: ... passed in 0.000s
+      """
+      one two three
+      
+      four
+      """
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="token_budget.Token budget fitting" name="Token fitting can produce an empty context pack" status="passed" time="0.000239"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Token fitting can produce an empty context pack
+    Given a retrieval result exists with evidence text: ... passed in 0.000s
+      | text          |
+      | one two three |
+    When I build a context pack from that retrieval result joining with "\n\n" ... passed in 0.000s
+    And I fit the context pack to a token budget of 1 tokens ... passed in 0.000s
+    Then the context pack text is empty ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

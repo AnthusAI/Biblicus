@@ -1,0 +1,105 @@
+<testsuite name="user_config.User configuration files" tests="7" errors="0" failures="0" skipped="0" time="0.053871" timestamp="2026-01-29T13:53:57.330418" hostname="JW2TF3YWMJ"><testcase classname="user_config.User configuration files" name="OpenAI speech to text can read the API key from the local configuration file" status="passed" time="0.016915"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: OpenAI speech to text can read the API key from the local configuration file
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    And a fake OpenAI library is available that returns transcript "ok" for filename "clip.wav" ... passed in 0.000s
+    And a local Biblicus user config exists with OpenAI API key "local-key" ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.005s
+    And I build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "ok" ... passed in 0.001s
+    And the OpenAI client was configured with API key "local-key" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="Local configuration overrides home configuration" status="passed" time="0.023842"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Local configuration overrides home configuration
+    Given I initialized a corpus at "corpus" ... passed in 0.007s
+    And a fake OpenAI library is available that returns transcript "ok" for filename "clip.wav" ... passed in 0.000s
+    And a home Biblicus user config exists with OpenAI API key "home-key" ... passed in 0.000s
+    And a local Biblicus user config exists with OpenAI API key "local-key" ... passed in 0.000s
+    And a file "clip.wav" exists with bytes: ... passed in 0.000s
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus" ... passed in 0.008s
+    And I build a "stt-openai" extraction run in corpus "corpus" ... passed in 0.009s
+    Then the OpenAI client was configured with API key "local-key" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="Non-mapping YAML configuration is treated as empty configuration" status="passed" time="0.000934"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Non-mapping YAML configuration is treated as empty configuration
+    Given a file ".biblicus/config.yml" exists with contents: ... passed in 0.000s
+      """
+      - not
+      - a
+      - mapping
+      """
+    When I load user configuration from ".biblicus/config.yml" ... passed in 0.001s
+    Then no OpenAI API key is present in the loaded user configuration ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="HuggingFace API key can be read from configuration" status="passed" time="0.000688"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: HuggingFace API key can be read from configuration
+    Given a file ".biblicus/config.yml" exists with contents: ... passed in 0.000s
+      """
+      huggingface:
+        api_key: hf-test-key
+      """
+    When I load user configuration from ".biblicus/config.yml" ... passed in 0.000s
+    Then the loaded user configuration has HuggingFace API key "hf-test-key" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="Resolve HuggingFace API key from environment via helper function" status="passed" time="0.003655"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Resolve HuggingFace API key from environment via helper function
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "env-hf-key" ... passed in 0.000s
+    When I call resolve_huggingface_api_key helper function ... passed in 0.000s
+    Then the resolved API key equals "env-hf-key" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="Resolve HuggingFace API key from config file via helper function" status="passed" time="0.004199"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Resolve HuggingFace API key from config file via helper function
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a local Biblicus user config exists with HuggingFace API key "config-hf-key" ... passed in 0.000s
+    When I call resolve_huggingface_api_key helper function ... passed in 0.001s
+    Then the resolved API key equals "config-hf-key" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_config.User configuration files" name="Resolve HuggingFace API key returns None when not configured" status="passed" time="0.003637"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Resolve HuggingFace API key returns None when not configured
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I call resolve_huggingface_api_key helper function ... passed in 0.000s
+    Then the resolved API key is None ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

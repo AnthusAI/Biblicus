@@ -1,0 +1,91 @@
+<testsuite name="extraction_selection.Pipeline selection" tests="4" errors="0" failures="0" skipped="0" time="0.055253" timestamp="2026-01-29T13:53:16.068702" hostname="JW2TF3YWMJ"><testcase classname="extraction_selection.Pipeline selection" name="Selection extractor chooses the first usable prior output in pipeline order" status="passed" time="0.014287"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Selection extractor chooses the first usable prior output in pipeline order
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+      | tags  | a     |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      body
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | metadata-text     | {}          |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    Then the extracted text for the last ingested item equals: ... passed in 0.000s
+      """
+      Note
+      tags: a
+      """
+    And the extraction run item provenance uses extractor "metadata-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection.Pipeline selection" name="Selection extractor skips empty outputs and chooses a later usable output" status="passed" time="0.014903"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Selection extractor skips empty outputs and chooses a later usable output
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+      | tags  | a     |
+    And the file "note.md" has body: ... passed in 0.000s
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.006s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | metadata-text     | {}          |
+      | select-text       | {}          |
+    Then the extracted text for the last ingested item equals: ... passed in 0.000s
+      """
+      Note
+      tags: a
+      """
+    And the extraction run item provenance uses extractor "metadata-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection.Pipeline selection" name="Selection extractor produces no output when no prior outputs exist" status="passed" time="0.011274"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Selection extractor produces no output when no prior outputs exist
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a binary file "image.png" exists ... passed in 0.000s
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.003s
+      | extractor_id | config_json |
+      | select-text  | {}          |
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extraction_selection.Pipeline selection" name="Selection extractor preserves empty output when no usable output exists" status="passed" time="0.014788"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Selection extractor preserves empty output when no usable output exists
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+    And the file "note.md" has body: ... passed in 0.000s
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.006s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | select-text       | {}          |
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run item provenance uses extractor "pass-through-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

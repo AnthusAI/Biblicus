@@ -1,0 +1,96 @@
+<testsuite name="unstructured_extractor.Unstructured extractor plugin" tests="6" errors="0" failures="0" skipped="0" time="0.093996" timestamp="2026-01-29T13:53:57.245649" hostname="JW2TF3YWMJ"><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor requires an optional dependency" status="passed" time="0.020042"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor requires an optional dependency
+    Given I initialized a corpus at "corpus" ... passed in 0.007s
+    And the Unstructured dependency is unavailable ... passed in 0.000s
+    And a Portable Document Format file "hello.pdf" exists with text "Hello" ... passed in 0.000s
+    When I ingest the file "hello.pdf" into corpus "corpus" ... passed in 0.008s
+    And I attempt to build a "unstructured" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "biblicus[unstructured]" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor skips text items" status="passed" time="0.011998"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor skips text items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake Unstructured library is available ... passed in 0.000s
+    When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "unstructured" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor produces extracted text for a non-text item" status="passed" time="0.013355"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor produces extracted text for a non-text item
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake Unstructured library is available that returns text "Extracted by Unstructured" for filename "doc.pdf" ... passed in 0.000s
+    And a binary file "doc.pdf" exists ... passed in 0.000s
+    When I ingest the file "doc.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "unstructured" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Extracted by Unstructured" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "unstructured" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor records empty output when it cannot extract text" status="passed" time="0.013002"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor records empty output when it cannot extract text
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake Unstructured library is available that returns empty output for filename "empty.pdf" ... passed in 0.000s
+    And a binary file "empty.pdf" exists ... passed in 0.000s
+    When I ingest the file "empty.pdf" into corpus "corpus" ... passed in 0.005s
+    And I build a "unstructured" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor ignores whitespace element output" status="passed" time="0.017288"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor ignores whitespace element output
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake Unstructured library is available that returns whitespace output for filename "whitespace.pdf" ... passed in 0.000s
+    And a binary file "whitespace.pdf" exists ... passed in 0.000s
+    When I ingest the file "whitespace.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "unstructured" extraction run in corpus "corpus" ... passed in 0.009s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="unstructured_extractor.Unstructured extractor plugin" name="Unstructured extractor records per-item errors and continues" status="passed" time="0.01831"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Unstructured extractor records per-item errors and continues
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake Unstructured library is available that raises a RuntimeError for filename "boom.pdf" ... passed in 0.000s
+    And a binary file "boom.pdf" exists ... passed in 0.000s
+    And a fake Unstructured library is available that returns text "ok" for filename "ok.pdf" ... passed in 0.000s
+    And a binary file "ok.pdf" exists ... passed in 0.000s
+    When I ingest the file "boom.pdf" into corpus "corpus" ... passed in 0.004s
+    And I ingest the file "ok.pdf" into corpus "corpus" ... passed in 0.004s
+    And I build a "unstructured" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the extracted text for the last ingested item equals "ok" ... passed in 0.001s
+    And the extraction run includes an errored result for the first ingested item ... passed in 0.000s
+    And the extraction run error type for the first ingested item equals "RuntimeError" ... passed in 0.000s
+    And the extraction run stats include errored_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

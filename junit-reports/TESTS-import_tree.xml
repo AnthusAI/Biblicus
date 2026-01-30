@@ -1,0 +1,83 @@
+<testsuite name="import_tree.Importing a folder tree" tests="5" errors="0" failures="0" skipped="0" time="0.045237" timestamp="2026-01-29T13:53:16.451115" hostname="JW2TF3YWMJ"><testcase classname="import_tree.Importing a folder tree" name="Import a folder tree into a corpus" status="passed" time="0.012415"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Import a folder tree into a corpus
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the directory "source_tree" contains files: ... passed in 0.000s
+      | relpath       | contents                          |
+      | a.txt         | alpha                             |
+      | docs/b.md     | bravo                             |
+      | docs/notes.md | ---\\ntitle: Note\\n---\\nbody\\n |
+    When I import the folder tree "source_tree" into corpus "corpus" with tags "imported" ... passed in 0.008s
+    Then the command succeeds ... passed in 0.000s
+    And the corpus "corpus" has at least 3 items ... passed in 0.000s
+    And the corpus "corpus" has an item with source suffix "/source_tree/a.txt" ... passed in 0.000s
+    And the corpus "corpus" has an item with source suffix "/source_tree/docs/b.md" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="import_tree.Importing a folder tree" name="Import can run without specifying tags" status="passed" time="0.00889"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Import can run without specifying tags
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And the directory "source_tree" contains files: ... passed in 0.000s
+      | relpath | contents |
+      | a.txt   | alpha    |
+    When I run "import-tree source_tree" in corpus "corpus" ... passed in 0.005s
+    Then the command succeeds ... passed in 0.000s
+    And the corpus "corpus" has at least 1 items ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="import_tree.Importing a folder tree" name="Import respects corpus ignore patterns" status="passed" time="0.009641"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Import respects corpus ignore patterns
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the corpus "corpus" ignore file includes: ... passed in 0.000s
+      """
+      # ignore temporary files
+      
+      *.tmp
+      """
+    And the directory "source_tree" contains files: ... passed in 0.000s
+      | relpath  | contents |
+      | keep.md  | keep     |
+      | skip.tmp | skip     |
+    When I import the folder tree "source_tree" into corpus "corpus" with tags "imported" ... passed in 0.006s
+    Then the command succeeds ... passed in 0.000s
+    And the corpus "corpus" has at least 1 items ... passed in 0.000s
+    And the corpus "corpus" has no item with source suffix "/source_tree/skip.tmp" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="import_tree.Importing a folder tree" name="Import fails when source root does not exist" status="passed" time="0.00631"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Import fails when source root does not exist
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "import-tree missing-tree --tags imported" in corpus "corpus" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Import source root does not exist" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="import_tree.Importing a folder tree" name="Import fails on invalid Markdown bytes" status="passed" time="0.00798"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Import fails on invalid Markdown bytes
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the directory "source_tree" contains a markdown file "bad.md" with invalid Unicode Transformation Format 8 bytes ... passed in 0.000s
+    When I import the folder tree "source_tree" into corpus "corpus" with tags "imported" ... passed in 0.004s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Markdown file must be Unicode Transformation Format 8" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

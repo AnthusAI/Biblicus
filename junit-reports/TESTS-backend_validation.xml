@@ -1,0 +1,31 @@
+<testsuite name="backend_validation.Backend guardrails" tests="3" errors="0" failures="0" skipped="0" time="0.0025" timestamp="2026-01-29T13:53:08.033567" hostname="JW2TF3YWMJ"><testcase classname="backend_validation.Backend guardrails" name="SQLite full-text search version five requirement is enforced" status="passed" time="0.000192"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: SQLite full-text search version five requirement is enforced
+    When I check full-text search version five availability against a failing connection ... passed in 0.000s
+    Then a backend prerequisite error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="backend_validation.Backend guardrails" name="SQLite backend requires artifacts" status="passed" time="0.001192"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: SQLite backend requires artifacts
+    When I attempt to resolve a run without artifacts ... passed in 0.001s
+    Then a backend artifact error is raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="backend_validation.Backend guardrails" name="Abstract backend methods raise NotImplementedError" status="passed" time="0.001115"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Abstract backend methods raise NotImplementedError
+    When I call the abstract backend methods ... passed in 0.001s
+    Then the abstract backend errors are raised ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

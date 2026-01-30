@@ -1,0 +1,88 @@
+<testsuite name="ocr_extractor.RapidOCR extractor plugin" tests="5" errors="0" failures="0" skipped="0" time="0.067695" timestamp="2026-01-29T13:53:44.164859" hostname="JW2TF3YWMJ"><testcase classname="ocr_extractor.RapidOCR extractor plugin" name="RapidOCR extractor requires an optional dependency" status="passed" time="0.015153"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extractor requires an optional dependency
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And the RapidOCR dependency is unavailable ... passed in 0.000s
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.007s
+    And I attempt to build a "ocr-rapidocr" extraction run in corpus "corpus" ... passed in 0.005s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "biblicus[ocr]" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ocr_extractor.RapidOCR extractor plugin" name="RapidOCR extractor skips non-image items" status="passed" time="0.010392"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extractor skips non-image items
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake RapidOCR library is available ... passed in 0.000s
+    When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... passed in 0.003s
+    Then the extraction run does not include extracted text for the last ingested item ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ocr_extractor.RapidOCR extractor plugin" name="RapidOCR extractor produces extracted text for an image item" status="passed" time="0.012965"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extractor produces extracted text for an image item
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    And a fake RapidOCR library is available that returns lines: ... passed in 0.000s
+      | filename  | text         | confidence |
+      | image.png | Hello world! | 0.99       |
+    And a file "image.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "image.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extraction run includes extracted text for the last ingested item ... passed in 0.000s
+    And the extracted text for the last ingested item equals "Hello world!" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "ocr-rapidocr" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ocr_extractor.RapidOCR extractor plugin" name="RapidOCR extractor records empty output when no text is recognized" status="passed" time="0.012464"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extractor records empty output when no text is recognized
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake RapidOCR library is available that returns empty output for filename "blank.png" ... passed in 0.000s
+    And a file "blank.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "blank.png" into corpus "corpus" ... passed in 0.005s
+    And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... passed in 0.004s
+    Then the extracted text for the last ingested item is empty ... passed in 0.000s
+    And the extraction run stats include extracted_empty_items 1 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="ocr_extractor.RapidOCR extractor plugin" name="RapidOCR extractor ignores malformed and low-confidence entries" status="passed" time="0.016721"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: RapidOCR extractor ignores malformed and low-confidence entries
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a fake RapidOCR library is available that returns a mixed result for filename "mixed.png" ... passed in 0.000s
+    And a file "mixed.png" exists with bytes: ... passed in 0.000s
+      """
+      \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
+      """
+    When I ingest the file "mixed.png" into corpus "corpus" ... passed in 0.004s
+    And I build a "ocr-rapidocr" extraction run in corpus "corpus" ... passed in 0.009s
+    Then the extracted text for the last ingested item equals "ok" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

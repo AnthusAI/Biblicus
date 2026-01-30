@@ -1,0 +1,175 @@
+<testsuite name="extractor_pipeline.Extraction pipeline" tests="12" errors="0" failures="0" skipped="0" time="0.108445" timestamp="2026-01-29T13:53:16.337154" hostname="JW2TF3YWMJ"><testcase classname="extractor_pipeline.Extraction pipeline" name="Pipeline final output comes from the last extracted step" status="passed" time="0.015394"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pipeline final output comes from the last extracted step
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+      | tags  | a     |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      body
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.007s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | metadata-text     | {}          |
+    Then the extracted text for the last ingested item equals: ... passed in 0.000s
+      """
+      Note
+      tags: a
+      """
+    And the extraction run item provenance uses extractor "metadata-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Selection step can choose an earlier output" status="passed" time="0.014855"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Selection step can choose an earlier output
+    Given I initialized a corpus at "corpus" ... passed in 0.005s
+    And a file "note.md" exists with markdown front matter: ... passed in 0.000s
+      | key   | value |
+      | title | Note  |
+      | tags  | a     |
+    And the file "note.md" has body: ... passed in 0.000s
+      """
+      body
+      """
+    When I ingest the file "note.md" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.005s
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+      | metadata-text     | {}          |
+      | select-text       | {}          |
+    Then the extracted text for the last ingested item equals "body" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "pass-through-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Pipeline rejects steps that include the pipeline extractor" status="passed" time="0.006059"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pipeline rejects steps that include the pipeline extractor
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "pipeline" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Pipeline steps cannot include the pipeline extractor itself" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Pipeline requires at least one step" status="passed" time="0.005466"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pipeline requires at least one step
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I run "extract build" in corpus "corpus" ... passed in 0.002s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Pipeline extraction requires at least one --step" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec without extractor identifier is rejected" status="passed" time="0.006214"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec without extractor identifier is rejected
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec ":x=y" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Step spec must start with an extractor identifier" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec with trailing colon is accepted" status="passed" time="0.010872"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec with trailing colon is accepted
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus" ... passed in 0.003s
+    And I run "extract build --step pass-through-text:" in corpus "corpus" ... passed in 0.004s
+    Then the command succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec ignores empty tokens" status="passed" time="0.014458"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec ignores empty tokens
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus" ... passed in 0.006s
+    And I run "extract build --step metadata-text:,, " in corpus "corpus" ... passed in 0.005s
+    Then the command succeeds ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec can pass config values to an extractor" status="passed" time="0.014156"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec can pass config values to an extractor
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus" ... passed in 0.004s
+    And I build a "pipeline" extraction run in corpus "corpus" with steps: ... passed in 0.004s
+      | extractor_id  | config_json              |
+      | metadata-text | {"include_title": false} |
+    Then the extracted text for the last ingested item equals "tags: a" ... passed in 0.000s
+    And the extraction run item provenance uses extractor "metadata-text" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec without key value pairs is rejected" status="passed" time="0.006081"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec without key value pairs is rejected
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:badtoken" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Step config values must be key=value" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Step spec with empty key is rejected" status="passed" time="0.009462"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Step spec with empty key is rejected
+    Given I initialized a corpus at "corpus" ... passed in 0.006s
+    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:=x" ... passed in 0.003s
+    Then the command fails with exit code 2 ... passed in 0.000s
+    And standard error includes "Step config keys must be non-empty" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Pipeline extractor cannot be executed directly" status="passed" time="0.000968"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Pipeline extractor cannot be executed directly
+    When I call the pipeline extractor directly ... passed in 0.001s
+    Then the pipeline extractor raises a fatal extraction error ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="extractor_pipeline.Extraction pipeline" name="Extraction runs require the pipeline extractor" status="passed" time="0.00446"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Extraction runs require the pipeline extractor
+    Given I initialized a corpus at "corpus" ... passed in 0.004s
+    When I attempt to build a non-pipeline extraction run in corpus "corpus" ... passed in 0.001s
+    Then a fatal extraction error is raised ... passed in 0.000s
+    And the fatal extraction error message includes "Extraction runs must use the pipeline extractor" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

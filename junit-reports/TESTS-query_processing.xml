@@ -1,0 +1,38 @@
+<testsuite name="query_processing.Query processing stages" tests="2" errors="0" failures="0" skipped="0" time="0.041225" timestamp="2026-01-29T13:53:55.545826" hostname="JW2TF3YWMJ"><testcase classname="query_processing.Query processing stages" name="Query can rerank evidence by text length" status="passed" time="0.02195"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Query can rerank evidence by text length
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I ingested note items into corpus "corpus": ... passed in 0.010s
+      | text                        |
+      | short evidence              |
+      | a much longer evidence text |
+    And I built a scan run for corpus "corpus" ... passed in 0.004s
+    When I query corpus "corpus" with query "evidence" reranking with "rerank-longest-text" ... passed in 0.005s
+    Then the query result evidence text order is: ... passed in 0.000s
+      | text                        |
+      | a much longer evidence text |
+      | short evidence              |
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="query_processing.Query processing stages" name="Query can filter evidence by minimum score" status="passed" time="0.019275"><system-out>
+<![CDATA[
+@scenario.begin
+  Scenario: Query can filter evidence by minimum score
+    Given I initialized a corpus at "corpus" ... passed in 0.003s
+    And I ingested note items into corpus "corpus": ... passed in 0.008s
+      | text      |
+      | keep keep |
+      | keep      |
+    And I built a scan run for corpus "corpus" ... passed in 0.004s
+    When I query corpus "corpus" with query "keep" filtering with minimum score 2.0 ... passed in 0.004s
+    Then the query result evidence text order is: ... passed in 0.000s
+      | text      |
+      | keep keep |
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>
