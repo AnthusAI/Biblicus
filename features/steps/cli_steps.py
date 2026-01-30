@@ -114,6 +114,15 @@ def step_attempt_init_corpus(context, name: str) -> None:
     run_biblicus(context, ["init", str(_corpus_path(context, name))])
 
 
+@given('the environment variable "{var_name}" is set to "{value}"')
+def step_set_environment_variable(context, var_name: str, value: str) -> None:
+    extra_env = getattr(context, "extra_env", None)
+    if extra_env is None:
+        extra_env = {}
+        context.extra_env = extra_env
+    extra_env[var_name] = value
+
+
 @given('I initialized a corpus at "{name}"')
 def step_given_init_corpus(context, name: str) -> None:
     step_init_corpus(context, name)
@@ -800,7 +809,8 @@ def step_command_fails_with_code(context, code: int) -> None:
 @then('standard error includes "{text}"')
 def step_standard_error_includes(context, text: str) -> None:
     assert context.last_result is not None
-    assert text in (context.last_result.stderr or "")
+    stderr = context.last_result.stderr or ""
+    assert text in stderr, f"Expected '{text}' in stderr but got: {stderr}"
 
 
 @then('the corpus "{corpus_name}" raw folder is empty')

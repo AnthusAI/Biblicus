@@ -17,6 +17,12 @@ class _FakeOpenAiTranscriptionBehavior:
     segments_payload: Optional[List[Any]] = None
 
 
+@dataclass
+class _FakeOpenAiChatBehavior:
+    response: str
+    match_text: Optional[str] = None
+
+
 def _ensure_fake_openai_transcription_behaviors(
     context,
 ) -> Dict[str, _FakeOpenAiTranscriptionBehavior]:
@@ -24,6 +30,14 @@ def _ensure_fake_openai_transcription_behaviors(
     if behaviors is None:
         behaviors = {}
         context.fake_openai_transcriptions = behaviors
+    return behaviors
+
+
+def _ensure_fake_openai_chat_behaviors(context) -> List[_FakeOpenAiChatBehavior]:
+    behaviors = getattr(context, "fake_openai_chat_behaviors", None)
+    if behaviors is None:
+        behaviors = []
+        context.fake_openai_chat_behaviors = behaviors
     return behaviors
 
 
@@ -41,6 +55,7 @@ def _install_fake_openai_module(context) -> None:
             original_modules[name] = sys.modules[name]
 
     behaviors = _ensure_fake_openai_transcription_behaviors(context)
+    chat_behaviors = _ensure_fake_openai_chat_behaviors(context)
 
     class _TranscriptionResult:
         def __init__(self, text: str) -> None:
@@ -71,10 +86,41 @@ def _install_fake_openai_module(context) -> None:
         def __init__(self) -> None:
             self.transcriptions = _TranscriptionsApi()
 
+    class _ChatCompletionMessage:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+    class _ChatCompletionChoice:
+        def __init__(self, content: str) -> None:
+            self.message = _ChatCompletionMessage(content)
+
+    class _ChatCompletionResult:
+        def __init__(self, content: str) -> None:
+            self.choices = [_ChatCompletionChoice(content)]
+
+    class _ChatCompletionsApi:
+        def create(self, *, model: str, messages: List[Dict[str, Any]], **kwargs):  # type: ignore[no-untyped-def]
+            openai_module.last_chat_model = model  # type: ignore[attr-defined]
+            openai_module.last_chat_messages = list(messages)  # type: ignore[attr-defined]
+            openai_module.last_chat_kwargs = dict(kwargs)  # type: ignore[attr-defined]
+            prompt_text = "\n".join(str(message.get("content", "")) for message in messages)
+            openai_module.last_chat_prompt = prompt_text  # type: ignore[attr-defined]
+            response_text = ""
+            for behavior in chat_behaviors:
+                if behavior.match_text is None or behavior.match_text in prompt_text:
+                    response_text = behavior.response
+                    break
+            return _ChatCompletionResult(response_text)
+
+    class _ChatApi:
+        def __init__(self) -> None:
+            self.completions = _ChatCompletionsApi()
+
     class OpenAI:  # noqa: N801 - external dependency uses PascalCase
         def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
             openai_module.last_api_key = kwargs.get("api_key")  # type: ignore[attr-defined]
             self.audio = _AudioApi()
+            self.chat = _ChatApi()
 
     openai_module = types.ModuleType("openai")
     openai_module.OpenAI = OpenAI
@@ -82,6 +128,10 @@ def _install_fake_openai_module(context) -> None:
     openai_module.last_transcription_filename = None
     openai_module.last_transcription_model = None
     openai_module.last_transcription_kwargs = {}
+    openai_module.last_chat_model = None
+    openai_module.last_chat_messages = []
+    openai_module.last_chat_kwargs = {}
+    openai_module.last_chat_prompt = None
 
     sys.modules["openai"] = openai_module
 
@@ -112,6 +162,32 @@ def _install_openai_unavailable_module(context) -> None:
 @given("a fake OpenAI library is available")
 def step_fake_openai_available(context) -> None:
     _install_fake_openai_module(context)
+
+
+@given('a fake OpenAI library is available that returns chat completion "{response}" for any prompt')
+def step_fake_openai_returns_chat_completion(context, response: str) -> None:
+    _install_fake_openai_module(context)
+    behaviors = _ensure_fake_openai_chat_behaviors(context)
+    behaviors.append(_FakeOpenAiChatBehavior(response=response))
+
+
+@given('a fake OpenAI library is available that returns chat completion "" for any prompt')
+def step_fake_openai_returns_empty_chat_completion(context) -> None:
+    _install_fake_openai_module(context)
+    behaviors = _ensure_fake_openai_chat_behaviors(context)
+    behaviors.append(_FakeOpenAiChatBehavior(response=""))
+
+
+@given(
+    'a fake OpenAI library is available that returns chat completion "{response}" '
+    'for prompt containing "{match_text}"'
+)
+def step_fake_openai_returns_chat_completion_for_prompt(
+    context, response: str, match_text: str
+) -> None:
+    _install_fake_openai_module(context)
+    behaviors = _ensure_fake_openai_chat_behaviors(context)
+    behaviors.append(_FakeOpenAiChatBehavior(response=response, match_text=match_text))
 
 
 @given(

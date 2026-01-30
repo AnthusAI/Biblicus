@@ -37,6 +37,21 @@ def before_scenario(context, scenario) -> None:
 
     _ = _biblicus_main
 
+    # Clear fake module behaviors at the START of each scenario
+    # Delete and recreate to ensure fresh state
+    if hasattr(context, "fake_rapidocr_behaviors"):
+        del context.fake_rapidocr_behaviors
+    if hasattr(context, "fake_paddleocr_vl_behaviors"):
+        del context.fake_paddleocr_vl_behaviors
+    if hasattr(context, "fake_requests_behaviors"):
+        del context.fake_requests_behaviors
+    if hasattr(context, "fake_docling_behaviors"):
+        del context.fake_docling_behaviors
+    if hasattr(context, "fake_openai_chat_behaviors"):
+        del context.fake_openai_chat_behaviors
+    if hasattr(context, "fake_bertopic_behavior"):
+        del context.fake_bertopic_behavior
+
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
     context.repo_root = _repo_root()
@@ -112,6 +127,22 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_openai_unavailable_installed = False
         context._fake_openai_unavailable_original_modules = {}
+    if getattr(context, "_fake_bertopic_installed", False):
+        original_modules = getattr(context, "_fake_bertopic_original_modules", {})
+        if "bertopic" in original_modules:
+            sys.modules["bertopic"] = original_modules["bertopic"]
+        else:
+            sys.modules.pop("bertopic", None)
+        context._fake_bertopic_installed = False
+        context._fake_bertopic_original_modules = {}
+    if getattr(context, "_fake_bertopic_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_bertopic_unavailable_original_modules", {})
+        if "bertopic" in original_modules:
+            sys.modules["bertopic"] = original_modules["bertopic"]
+        else:
+            sys.modules.pop("bertopic", None)
+        context._fake_bertopic_unavailable_installed = False
+        context._fake_bertopic_unavailable_original_modules = {}
     if getattr(context, "_fake_rapidocr_installed", False):
         original_modules = getattr(context, "_fake_rapidocr_original_modules", {})
         for name in [
@@ -134,6 +165,9 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_rapidocr_unavailable_installed = False
         context._fake_rapidocr_unavailable_original_modules = {}
+    # Clear fake rapidocr behaviors
+    if hasattr(context, "fake_rapidocr_behaviors"):
+        context.fake_rapidocr_behaviors.clear()
     if getattr(context, "_fake_markitdown_installed", False):
         original_modules = getattr(context, "_fake_markitdown_original_modules", {})
         for name in [
@@ -156,6 +190,85 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_markitdown_unavailable_installed = False
         context._fake_markitdown_unavailable_original_modules = {}
+    # Clear fake paddleocr behaviors FIRST (before removing modules)
+    if hasattr(context, "fake_paddleocr_vl_behaviors"):
+        context.fake_paddleocr_vl_behaviors.clear()
+    if getattr(context, "_fake_paddleocr_installed", False):
+        # Remove all paddle-related modules
+        paddle_module_names = [name for name in list(sys.modules.keys()) if "paddle" in name.lower()]
+        for name in paddle_module_names:
+            sys.modules.pop(name, None)
+        # Restore original modules
+        original_modules = getattr(context, "_fake_paddleocr_original_modules", {})
+        for name, module in original_modules.items():
+            sys.modules[name] = module
+        context._fake_paddleocr_installed = False
+        context._fake_paddleocr_original_modules = {}
+    if getattr(context, "_fake_paddleocr_unavailable_installed", False):
+        # Remove import hook
+        hook = getattr(context, "_fake_paddleocr_import_hook", None)
+        if hook is not None and hook in sys.meta_path:
+            sys.meta_path.remove(hook)
+        # Restore original modules
+        original_modules = getattr(context, "_fake_paddleocr_unavailable_original_modules", {})
+        for name, module in original_modules.items():
+            sys.modules[name] = module
+        context._fake_paddleocr_unavailable_installed = False
+        context._fake_paddleocr_unavailable_original_modules = {}
+        context._fake_paddleocr_import_hook = None
+    # Cleanup import patcher from paddleocr_mock_steps
+    import_patcher = getattr(context, "_paddleocr_import_patcher", None)
+    if import_patcher:
+        import_patcher.stop()
+        context._paddleocr_import_patcher = None
+    # Restore original modules from paddleocr_mock_steps
+    original_modules = getattr(context, "_paddleocr_original_modules", None)
+    if original_modules:
+        for name, module in original_modules.items():
+            sys.modules[name] = module
+        context._paddleocr_original_modules = {}
+    if getattr(context, "_fake_requests_installed", False):
+        original_modules = getattr(context, "_fake_requests_original_modules", {})
+        for name in ["requests"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_requests_installed = False
+        context._fake_requests_original_modules = {}
+    # Clear fake requests behaviors
+    if hasattr(context, "fake_requests_behaviors"):
+        context.fake_requests_behaviors.clear()
+    # Cleanup Docling fake modules
+    if getattr(context, "_fake_docling_installed", False):
+        original_modules = getattr(context, "_fake_docling_original_modules", {})
+        for name in [
+            "docling.pipeline_options",
+            "docling.document_converter",
+            "docling",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_docling_installed = False
+        context._fake_docling_original_modules = {}
+    if getattr(context, "_fake_docling_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_docling_unavailable_original_modules", {})
+        for name in [
+            "docling.pipeline_options",
+            "docling.document_converter",
+            "docling",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_docling_unavailable_installed = False
+        context._fake_docling_unavailable_original_modules = {}
+    # Clear fake docling behaviors
+    if hasattr(context, "fake_docling_behaviors"):
+        context.fake_docling_behaviors.clear()
     original_sys_version_info = getattr(context, "_original_sys_version_info", None)
     if original_sys_version_info is not None:
         sys.version_info = original_sys_version_info

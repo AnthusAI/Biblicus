@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
-from behave import then, when
+from behave import given, then, when
 from pydantic import BaseModel, ConfigDict
 
 from biblicus.corpus import Corpus
@@ -82,9 +82,15 @@ def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
 
 
 def _build_step_spec(extractor_id: str, config: dict[str, object]) -> str:
+    import json
     if not config:
         return extractor_id
-    inline_pairs = ",".join(f"{key}={value}" for key, value in config.items())
+    # Only JSON-encode complex types (lists, dicts), not simple strings/numbers
+    def encode_value(v: object) -> str:
+        if isinstance(v, (list, dict)):
+            return json.dumps(v)
+        return str(v)
+    inline_pairs = ",".join(f"{key}={encode_value(value)}" for key, value in config.items())
     return f"{extractor_id}:{inline_pairs}"
 
 def _run_reference_from_context(context) -> str:
@@ -129,6 +135,42 @@ def step_build_pipeline_extraction_run(context, corpus_name: str) -> None:
     context.last_extractor_id = "pipeline"
 
 
+@when('I build a "pipeline" extraction run in corpus "{corpus_name}" using the recipe:')
+def step_build_pipeline_extraction_run_with_recipe(context, corpus_name: str) -> None:
+    import yaml
+    corpus = _corpus_path(context, corpus_name)
+    recipe = yaml.safe_load(context.text)
+    extractor_id = recipe["extractor_id"]
+    config = recipe.get("config", {})
+    steps = config.get("steps", [])
+    args = ["--corpus", str(corpus), "extract", "build"]
+    for step in steps:
+        step_extractor_id = str(step["extractor_id"])
+        step_config = step.get("config", {})
+        step_spec = _build_step_spec(step_extractor_id, step_config)
+        args.extend(["--step", step_spec])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_run = _parse_json_output(result.stdout)
+    context.last_extraction_run_id = context.last_extraction_run.get("run_id")
+    context.last_extractor_id = extractor_id
+
+
+@when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}" using the recipe:')
+def step_build_non_pipeline_extraction_run_with_recipe(context, extractor_id: str, corpus_name: str) -> None:
+    import yaml
+    corpus = _corpus_path(context, corpus_name)
+    recipe = yaml.safe_load(context.text)
+    config = recipe.get("config", {})
+    step_spec = _build_step_spec(extractor_id, config)
+    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_run = _parse_json_output(result.stdout)
+    context.last_extraction_run_id = context.last_extraction_run.get("run_id")
+    context.last_extractor_id = "pipeline"
+
+
 @when('I build a "{extractor_id}" extraction run in corpus "{corpus_name}"')
 def step_build_extraction_run(context, extractor_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
@@ -156,6 +198,41 @@ def step_attempt_build_extraction_run_with_step_spec(
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
     args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+    context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+
+
+@when('I build an extraction run in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"')
+def step_build_extraction_run_with_step_spec(
+    context, corpus_name: str, extractor_id: str, step_spec: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    _ = extractor_id
+    step_spec_unescaped = step_spec.replace('\\"', '"')
+    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec_unescaped]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_run = _parse_json_output(result.stdout)
+    context.last_extraction_run_id = context.last_extraction_run.get("run_id")
+    context.last_extractor_id = "pipeline"
+
+
+@when('I attempt to build a "{extractor_id}" extraction run in corpus "{corpus_name}" using the recipe:')
+def step_attempt_build_extraction_run_with_recipe(context, extractor_id: str, corpus_name: str) -> None:
+    import yaml
+    corpus = _corpus_path(context, corpus_name)
+    recipe = yaml.safe_load(context.text)
+    config = recipe.get("config", {})
+    steps = config.get("steps", []) if "steps" in config else []
+    if steps:
+        args = ["--corpus", str(corpus), "extract", "build"]
+        for step in steps:
+            step_extractor_id = str(step["extractor_id"])
+            step_config = step.get("config", {})
+            step_spec = _build_step_spec(step_extractor_id, step_config)
+            args.extend(["--step", step_spec])
+    else:
+        step_spec = _build_step_spec(extractor_id, config)
+        args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -209,6 +286,19 @@ def step_extraction_run_artifacts_exist(context, extractor_id: str) -> None:
     assert manifest_path.is_file(), manifest_path
 
 
+@then("the extraction run includes extracted text for all items")
+def step_extraction_run_includes_all_items(context) -> None:
+    run_id = context.last_extraction_run_id
+    assert isinstance(run_id, str) and run_id
+    assert context.ingested_ids is not None and len(context.ingested_ids) > 0
+    corpus = _corpus_path(context, "corpus")
+    extractor_id = context.last_extractor_id
+    run_dir = corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id
+    for item_id in context.ingested_ids:
+        text_path = run_dir / "text" / f"{item_id}.txt"
+        assert text_path.is_file(), f"Missing text file for item {item_id}: {text_path}"
+
+
 @then("the extraction run includes extracted text for the last ingested item")
 def step_extraction_run_includes_last_item(context) -> None:
     run_id = context.last_extraction_run_id
@@ -248,7 +338,7 @@ def step_extracted_text_equals(context, expected_text: str) -> None:
     text_path = run_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8").strip()
-    assert text == expected_text
+    assert text == expected_text, f"Expected: {expected_text!r}, Got: {text!r}"
 
 
 @then("the extracted text for the last ingested item equals:")
@@ -509,3 +599,42 @@ def step_attempt_build_retrieval_run_with_extraction_run(
     args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
     args.extend(["--config", f"extraction_run={extraction_run}"])
     context.last_result = run_biblicus(context, args)
+
+
+@given('a recipe file "{filename}" exists with content:')
+@when('a recipe file "{filename}" exists with content:')
+def step_recipe_file_exists(context, filename: str) -> None:
+    """Create a recipe file with the given content."""
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    path = Path(workdir) / filename
+    path.write_text(context.text, encoding="utf-8")
+
+
+@when('I build an extraction run in corpus "{corpus_name}" using recipe file "{recipe_file}"')
+def step_build_extraction_run_from_recipe_file(context, corpus_name: str, recipe_file: str) -> None:
+    """Build an extraction run from a recipe file."""
+    corpus = _corpus_path(context, corpus_name)
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    recipe_path = Path(workdir) / recipe_file
+    args = ["--corpus", str(corpus), "extract", "build", "--recipe", str(recipe_path)]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_run = _parse_json_output(result.stdout)
+    context.last_extraction_run_id = context.last_extraction_run.get("run_id")
+    # Extractor ID is in the recipe sub-object
+    recipe = context.last_extraction_run.get("recipe", {})
+    context.last_extractor_id = recipe.get("extractor_id")
+
+
+@when('I attempt to build an extraction run in corpus "{corpus_name}" using recipe file "{recipe_file}"')
+def step_attempt_build_extraction_run_from_recipe_file(context, corpus_name: str, recipe_file: str) -> None:
+    """Attempt to build an extraction run from a recipe file without asserting success."""
+    corpus = _corpus_path(context, corpus_name)
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    recipe_path = Path(workdir) / recipe_file
+    args = ["--corpus", str(corpus), "extract", "build", "--recipe", str(recipe_path)]
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result

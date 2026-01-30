@@ -42,11 +42,6 @@ def _install_fake_requests_module(context) -> None:
     if already_installed:
         return
 
-    # IMPORTANT: Remove requests from sys.modules if it was already imported
-    # so that future imports will get our fake version
-    if "requests" in sys.modules:
-        del sys.modules["requests"]
-
     original_modules: Dict[str, object] = {}
     module_names = [
         "requests",
@@ -54,6 +49,12 @@ def _install_fake_requests_module(context) -> None:
     for name in module_names:
         if name in sys.modules:
             original_modules[name] = sys.modules[name]
+
+    # IMPORTANT: Remove requests from sys.modules if it was already imported
+    # so that future imports will get our fake version
+    for name in module_names:
+        if name in sys.modules:
+            del sys.modules[name]
 
     def post(url: str, **kwargs: Any) -> _FakeRequestsResponse:
         # Look up behaviors dynamically

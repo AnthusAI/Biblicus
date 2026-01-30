@@ -41,10 +41,10 @@ def _install_fake_rapidocr_module(context) -> None:
         if name in sys.modules:
             original_modules[name] = sys.modules[name]
 
-    behaviors = _ensure_fake_rapidocr_behaviors(context)
-
     class RapidOCR:
         def __call__(self, path: str):  # type: ignore[no-untyped-def]
+            # Look up behaviors from context dynamically to support per-scenario reset
+            behaviors = _ensure_fake_rapidocr_behaviors(context)
             base_name = path.rsplit("/", 1)[-1]
             normalized_name = base_name.split("--", 1)[-1] if "--" in base_name else base_name
             behavior = behaviors.get(normalized_name)

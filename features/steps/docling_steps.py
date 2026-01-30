@@ -141,6 +141,13 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
 
     vlm_model_specs = _VlmModelSpecs(with_mlx)
 
+    class InputFormat:
+        PDF = "pdf"
+
+    class PdfFormatOption:
+        def __init__(self, *, pipeline_options=None) -> None:
+            self.pipeline_options = pipeline_options
+
     class DocumentConverter:
         """Fake DocumentConverter."""
 
@@ -163,15 +170,19 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
 
     docling_module = types.ModuleType("docling")
     converter_module = types.ModuleType("docling.document_converter")
+    format_module = types.ModuleType("docling.format_options")
     options_module = types.ModuleType("docling.pipeline_options")
 
     converter_module.DocumentConverter = DocumentConverter
     converter_module.DocumentConverterOptions = DocumentConverterOptions
+    format_module.InputFormat = InputFormat
+    format_module.PdfFormatOption = PdfFormatOption
     options_module.VlmPipelineOptions = VlmPipelineOptions
     options_module.vlm_model_specs = vlm_model_specs
 
     sys.modules["docling"] = docling_module
     sys.modules["docling.document_converter"] = converter_module
+    sys.modules["docling.format_options"] = format_module
     sys.modules["docling.pipeline_options"] = options_module
 
     context._fake_docling_installed = True
@@ -194,6 +205,7 @@ def _install_docling_unavailable_module(context) -> None:
     module_names = [
         "docling",
         "docling.document_converter",
+        "docling.format_options",
         "docling.pipeline_options",
     ]
     for name in module_names:

@@ -37,3 +37,49 @@ Feature: User configuration files
       """
     When I load user configuration from ".biblicus/config.yml"
     Then no OpenAI API key is present in the loaded user configuration
+
+  Scenario: HuggingFace API key can be read from configuration
+    Given a file ".biblicus/config.yml" exists with contents:
+      """
+      huggingface:
+        api_key: hf-test-key
+      """
+    When I load user configuration from ".biblicus/config.yml"
+    Then the loaded user configuration has HuggingFace API key "hf-test-key"
+
+  Scenario: Resolve HuggingFace API key from environment via helper function
+    Given I initialized a corpus at "corpus"
+    And the environment variable "HUGGINGFACE_API_KEY" is set to "env-hf-key"
+    When I call resolve_huggingface_api_key helper function
+    Then the resolved API key equals "env-hf-key"
+
+  Scenario: Resolve HuggingFace API key from config file via helper function
+    Given I initialized a corpus at "corpus"
+    And a local Biblicus user config exists with HuggingFace API key "config-hf-key"
+    When I call resolve_huggingface_api_key helper function
+    Then the resolved API key equals "config-hf-key"
+
+  Scenario: Resolve HuggingFace API key returns None when not configured
+    Given I initialized a corpus at "corpus"
+    When I call resolve_huggingface_api_key helper function
+    Then the resolved API key is None
+
+  Scenario: Deepgram API key can be read from configuration
+    Given a file ".biblicus/config.yml" exists with contents:
+      """
+      deepgram:
+        api_key: dg-test-key
+      """
+    When I load user configuration from ".biblicus/config.yml"
+    Then the loaded user configuration has Deepgram API key "dg-test-key"
+
+  Scenario: Resolve Deepgram API key from config file via helper function
+    Given I initialized a corpus at "corpus"
+    And a local Biblicus user config exists with Deepgram API key "config-dg-key"
+    When I call resolve_deepgram_api_key helper function
+    Then the resolved API key equals "config-dg-key"
+
+  Scenario: Resolve Deepgram API key returns None when not configured
+    Given I initialized a corpus at "corpus"
+    When I call resolve_deepgram_api_key helper function
+    Then the resolved API key is None

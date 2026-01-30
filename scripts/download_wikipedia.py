@@ -25,6 +25,21 @@ DEFAULT_TITLES = [
     "Donald Knuth",
     "Barbara Liskov",
     "Niklaus Wirth",
+    "John von Neumann",
+    "George Boole",
+    "Kurt Godel",
+    "Noam Chomsky",
+    "Marvin Minsky",
+    "Herbert A. Simon",
+    "E. F. Codd",
+    "Ken Thompson",
+    "Dennis Ritchie",
+    "Brian Kernighan",
+    "Tim Berners-Lee",
+    "Vint Cerf",
+    "Leslie Lamport",
+    "Ivan Sutherland",
+    "Radia Perlman",
 ]
 
 
