@@ -12,6 +12,18 @@ Backends implement two operations:
 - **Build run**: create a `RetrievalRun` manifest (and optional artifacts).
 - **Query**: return structured `Evidence` objects under a `QueryBudget`.
 
+## Run artifacts
+
+Backends store artifacts and manifests under:
+
+```
+.biblicus/runs/retrieval/<backend_id>/<run_id>/
+  manifest.json
+  <backend artifacts>
+```
+
+The manifest is the reproducible contract. Artifacts are backend-specific and listed in `artifact_paths`.
+
 ## Implementation checklist
 
 1. **Define a Pydantic configuration model** for your backend recipe.
@@ -30,6 +42,18 @@ Backends implement two operations:
 - If your backend needs artifacts, store them under `.biblicus/runs/` and record paths in `artifact_paths`.
 - Keep **text extraction** in explicit pipeline stages, not in backend ingestion.
   See `docs/EXTRACTION.md` for how extraction runs are built and referenced from backend configs.
+
+## Reproducibility checklist
+
+- Record the extraction run reference used to build the backend.
+- Keep the backend recipe configuration in source control.
+- Reuse the same `QueryBudget` when comparing backends.
+
+## Common pitfalls
+
+- Returning evidence without `text` or `content_ref`.
+- Mutating artifacts after a run is created (breaks reproducibility).
+- Comparing runs built from different extraction outputs.
 
 ## Examples
 
