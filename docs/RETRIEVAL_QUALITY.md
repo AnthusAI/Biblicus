@@ -92,6 +92,12 @@ Budgets shape every retrieval comparison:
 When you compare backends, keep budgets constant and note any candidate expansion in hybrid runs so fused rankings are
 drawn from comparable pools.
 
+## Evidence tracing checklist
+
+- Inspect `stage` and `stage_scores` to see where ranking changes occurred.
+- Compare `score` against `stage_scores` to understand fusion effects.
+- Use `recipe_id` and `run_id` to map evidence back to run manifests.
+
 ## Non-goals
 
 - Automated hyperparameter tuning.
