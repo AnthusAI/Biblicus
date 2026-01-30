@@ -34,6 +34,14 @@ The knowledge base wraps existing primitives. Defaults are explicit and determin
 - **Backend**: defaults to the `scan` backend.
 - **Query budget**: defaults to a small, conservative evidence budget.
 
+## Output structure
+
+`KnowledgeBase.query` returns a `RetrievalResult` with evidence you can inspect or pass into context pack shaping.
+`KnowledgeBase.context_pack` returns a structured context pack with per-block metadata.
+
+These are the same structures produced by the lower-level retrieval and context pack APIs, so you can reuse existing
+evaluation and inspection tools.
+
 ## Overrides
 
 You can override the defaults when needed.
@@ -66,3 +74,14 @@ The knowledge base is a convenience layer. It uses the same underlying parts tha
 You can always drop down to those lower‑level primitives when you need more control.
 
 If the high‑level workflow is not enough, switch to `Corpus`, `get_backend`, and `ContextPackPolicy` directly.
+
+## Reproducibility checklist
+
+- Record the corpus path and catalog timestamp.
+- Capture the backend run identifier used by the knowledge base.
+- Persist the query budget used for comparisons.
+
+## Common pitfalls
+
+- Comparing results from knowledge bases built on different corpus roots.
+- Forgetting to capture the run identifier before rebuilding the corpus.
