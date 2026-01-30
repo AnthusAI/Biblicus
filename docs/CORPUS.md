@@ -21,6 +21,14 @@ corpus/
       <run manifests and artifacts>
 ```
 
+## Core concepts
+
+- **Item**: raw bytes plus metadata and provenance.
+- **Catalog**: the inventory of items and their metadata.
+- **Run**: a reproducible snapshot of derived artifacts (extraction, retrieval, analysis).
+
+The corpus is designed so the raw items remain the source of truth and everything else can be rebuilt.
+
 ## Ingest items
 
 The simplest ingestion flows use the command line interface.
@@ -85,6 +93,25 @@ For non Markdown items, metadata lives in a sidecar file with the suffix `.bibli
 
 The raw file and its metadata file are meant to be opened, edited, and backed up with ordinary tools.
 
+### Metadata example (Markdown)
+
+```
+---
+title: Example note
+tags: [demo, notes]
+---
+This is the body of the note.
+```
+
+### Metadata example (sidecar)
+
+```
+title: Example PDF
+tags:
+  - paper
+  - reports
+```
+
 ## Ignore rules
 
 If you are importing a folder tree, ignore rules can prevent accidental ingestion of build artifacts, caches, or other irrelevant files.
@@ -106,6 +133,18 @@ The catalog is rebuildable. If you edit files or sidecar metadata, refresh the c
 ```
 python3 -m biblicus reindex --corpus corpora/example
 ```
+
+## Reproducibility checklist
+
+- Keep raw files and sidecars in source control or backed up as immutable inputs.
+- Record the catalog timestamp when comparing run outputs.
+- Prefer `import-tree` for reproducible ingest of existing folder structures.
+
+## Common pitfalls
+
+- Editing raw files without running `reindex` (catalog becomes stale).
+- Renaming raw files directly without updating sidecars.
+- Comparing runs built from different catalog states.
 
 ## Purge
 
