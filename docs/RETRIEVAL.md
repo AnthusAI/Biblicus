@@ -64,6 +64,22 @@ Retrieval runs are evaluated against datasets with explicit budgets. See `docs/R
 dataset format and workflow, `docs/FEATURE_INDEX.md` for the behavior specifications, and `docs/CONTEXT_PACK.md` for
 how evidence feeds into context packs.
 
+## Evidence inspection workflow
+
+When you want to understand a result end to end:
+
+1) Query the backend and save the output.
+2) Inspect the top evidence items and their scores.
+3) Trace each evidence `item_id` back to the corpus for context.
+
+Example:
+
+```
+python3 -m biblicus query --corpus corpora/demo --query "beta" > /tmp/retrieval_output.json
+python3 -c "import json; data=json.load(open('/tmp/retrieval_output.json')); print(data['evidence'][:2])"
+python3 -m biblicus show --corpus corpora/demo ITEM_ID
+```
+
 ## Labs and demos
 
 When you want a repeatable example with bundled data, use the retrieval evaluation lab:
