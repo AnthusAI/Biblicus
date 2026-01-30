@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 
 from pydantic import ValidationError
 
+from .analysis import get_analysis_backend
 from .backends import get_backend
 from .context import (
     ContextPackPolicy,
@@ -284,8 +285,50 @@ def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
     raw_pairs = raw_pairs.strip()
     if not raw_pairs:
         return extractor_id, {}
-    for token in raw_pairs.split(","):
-        token = token.strip()
+
+    tokens = []
+    current_token = []
+    brace_depth = 0
+    bracket_depth = 0
+    in_quotes = False
+    escape_next = False
+
+    for char in raw_pairs:
+        if escape_next:
+            current_token.append(char)
+            escape_next = False
+            continue
+
+        if char == "\\":
+            escape_next = True
+            current_token.append(char)
+            continue
+
+        if char == '"' and brace_depth == 0 and bracket_depth == 0:
+            in_quotes = not in_quotes
+            current_token.append(char)
+            continue
+
+        if not in_quotes:
+            if char == "{":
+                brace_depth += 1
+            elif char == "}":
+                brace_depth -= 1
+            elif char == "[":
+                bracket_depth += 1
+            elif char == "]":
+                bracket_depth -= 1
+            elif char == "," and brace_depth == 0 and bracket_depth == 0:
+                tokens.append("".join(current_token).strip())
+                current_token = []
+                continue
+
+        current_token.append(char)
+
+    if current_token:
+        tokens.append("".join(current_token).strip())
+
+    for token in tokens:
         if not token:
             continue
         if "=" not in token:
@@ -344,22 +387,53 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    import yaml
+
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    raw_steps = list(arguments.step or [])
-    if not raw_steps:
-        raise ValueError("Pipeline extraction requires at least one --step")
-    steps: List[Dict[str, object]] = []
-    for raw_step in raw_steps:
-        extractor_id, step_config = _parse_step_spec(raw_step)
-        steps.append({"extractor_id": extractor_id, "config": step_config})
-    config = {"steps": steps}
+
+    # Load recipe from file if --recipe is provided
+    if getattr(arguments, "recipe", None):
+        recipe_path = Path(arguments.recipe)
+        if not recipe_path.exists():
+            raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
+        with open(recipe_path, "r", encoding="utf-8") as f:
+            recipe_data = yaml.safe_load(f)
+        loaded_extractor_id = recipe_data.get("extractor_id", "pipeline")
+        loaded_config = recipe_data.get("config", {})
+
+        # If the recipe specifies a non-pipeline extractor, wrap it in a pipeline
+        if loaded_extractor_id != "pipeline":
+            extractor_id = "pipeline"
+            config = {
+                "steps": [
+                    {
+                        "extractor_id": loaded_extractor_id,
+                        "config": loaded_config,
+                    }
+                ]
+            }
+        else:
+            extractor_id = loaded_extractor_id
+            config = loaded_config
+    else:
+        # Build from --step arguments
+        raw_steps = list(arguments.step or [])
+        if not raw_steps:
+            raise ValueError("Pipeline extraction requires at least one --step")
+        steps: List[Dict[str, object]] = []
+        for raw_step in raw_steps:
+            step_extractor_id, step_config = _parse_step_spec(raw_step)
+            steps.append({"extractor_id": step_extractor_id, "config": step_config})
+        config = {"steps": steps}
+        extractor_id = "pipeline"
+
     manifest = build_extraction_run(
         corpus,
-        extractor_id="pipeline",
+        extractor_id=extractor_id,
         recipe_name=arguments.recipe_name,
         config=config,
     )
@@ -563,6 +637,54 @@ def cmd_crawl(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
+    """
+    Run topic modeling analysis for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import yaml
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    recipe_path = Path(arguments.recipe)
+    if not recipe_path.is_file():
+        raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
+    recipe_data = yaml.safe_load(recipe_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(recipe_data, dict):
+        raise ValueError("Topic modeling recipe must be a mapping/object")
+
+    if arguments.extraction_run:
+        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    else:
+        extraction_run = corpus.latest_extraction_run_reference()
+        if extraction_run is None:
+            raise ValueError("Topic analysis requires an extraction run to supply text inputs")
+        print(
+            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            file=sys.stderr,
+        )
+
+    backend = get_analysis_backend("topic-modeling")
+    try:
+        output = backend.run_analysis(
+            corpus,
+            recipe_name=arguments.recipe_name,
+            config=recipe_data,
+            extraction_run=extraction_run,
+        )
+    except ValidationError as exc:
+        raise ValueError(f"Invalid topic modeling recipe: {exc}") from exc
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the command-line interface argument parser.
@@ -669,6 +791,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--recipe-name", default="default", help="Human-readable recipe name."
     )
     p_extract_build.add_argument(
+        "--recipe",
+        default=None,
+        help="Path to YAML recipe file. If provided, --step arguments are ignored.",
+    )
+    p_extract_build.add_argument(
         "--step",
         action="append",
         default=None,
@@ -773,6 +900,28 @@ def build_parser() -> argparse.ArgumentParser:
     p_crawl.add_argument("--tags", default=None, help="Comma-separated tags to apply to stored items.")
     p_crawl.add_argument("--tag", action="append", help="Repeatable tag to apply to stored items.")
     p_crawl.set_defaults(func=cmd_crawl)
+
+    p_analyze = sub.add_parser("analyze", help="Run analysis pipelines for the corpus.")
+    analyze_sub = p_analyze.add_subparsers(dest="analyze_command", required=True)
+
+    p_analyze_topics = analyze_sub.add_parser("topics", help="Run topic modeling analysis.")
+    _add_common_corpus_arg(p_analyze_topics)
+    p_analyze_topics.add_argument(
+        "--recipe",
+        required=True,
+        help="Path to topic modeling recipe YAML.",
+    )
+    p_analyze_topics.add_argument(
+        "--recipe-name",
+        default="default",
+        help="Human-readable recipe name.",
+    )
+    p_analyze_topics.add_argument(
+        "--extraction-run",
+        default=None,
+        help="Extraction run reference in the form extractor_id:run_id.",
+    )
+    p_analyze_topics.set_defaults(func=cmd_analyze_topics)
 
     return parser
 
