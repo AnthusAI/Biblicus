@@ -183,7 +183,7 @@ Pick option A. It is simple to explain, easy to test, and safe by default.
 
 Outcome
 
-Version zero locked this as policy. A crawler was not implemented yet.
+Version zero locked this as policy. The crawler enforces the allowed prefix to keep scope explicit.
 
 ### Decision 6: editorial workflow and reversible pruning
 
@@ -210,7 +210,7 @@ Pick option A first. It aligns with the catalog model and keeps the raw bytes st
 
 Outcome
 
-Version zero locked this as policy. A prune workflow was not implemented yet.
+Version zero locked this as policy. The prune workflow remains a future addition.
 
 ### Decision 6A: derived artifact storage is partitioned by plugin type
 
@@ -248,7 +248,8 @@ Pick option A. It supports the comparison workflow directly and it makes the cor
 
 Outcome
 
-This was partially implemented in the current system. Extraction runs are stored under the corpus, partitioned by plugin type and extractor identifier. Retrieval runs are still stored under a single runs directory without backend partitioning.
+This is implemented. Extraction, retrieval, analysis, and evaluation runs are stored under the corpus, partitioned by
+plugin type and identifier so multiple implementations can coexist.
 
 ### Decision 6B: extraction is a separate plugin stage from retrieval
 
@@ -280,7 +281,8 @@ Pick option C. It keeps the corpus raw and stable while allowing clean evaluatio
 
 Outcome
 
-This was implemented. Extraction is a distinct plugin stage with a command line interface entry point, and retrieval backends can reference a selected extraction run.
+This is implemented. Extraction is a distinct plugin stage with a command line interface entry point, and retrieval
+backends can reference a selected extraction run.
 
 ## Lifecycle hooks and where plugins can attach
 
@@ -391,7 +393,6 @@ The hook protocol and hook logging policy above were implemented in version zero
 - Should hooks support concurrency control when multiple operations run at the same time
 - Should hook logs support a standard change patch format for metadata edits
 - Should hook logs have an explicit retention policy beyond manual cleanup
-- Should run artifacts and run manifests move to a partitioned layout by plugin type and identifier, as described above
 
 ## First behavior driven development slices implemented in version zero
 
@@ -402,3 +403,15 @@ These were small, concrete slices that were specified and built without committi
 - Streaming ingestion that computes and records a checksum
 - Content sniffing for a small set of file types to ensure useful file extensions
 - A first lifecycle hook that runs after ingest and can add a tag or title
+
+## Reproducibility checklist
+
+- Keep raw items and sidecar metadata together as the source of truth.
+- Record catalog timestamps before comparing run outputs.
+- Use extraction run references explicitly when building retrieval or analysis runs.
+
+## Common pitfalls
+
+- Editing raw files or metadata without reindexing the catalog.
+- Comparing runs built from different catalog states.
+- Treating hook outputs as implicit behavior instead of explicit, logged actions.

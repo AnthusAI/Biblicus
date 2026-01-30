@@ -10,6 +10,11 @@ Design starts from strict behavior-driven development:
 - Behavior-driven development scenarios are not an afterthought: they are how we keep the domain vocabulary consistent and the platform comparable across backends and recipes.
 - **Specification completeness** is mandatory: if behavior exists, it must be specified. Ambiguous or untestable behavior should be removed or turned into an explicit error.
 
+## Executable textbook principle
+
+Documentation is treated as a runnable textbook. Each chapter includes commands and scripts that can be executed
+locally, and every concept described in the docs has a working example in `docs/DEMOS.md` or a bundled lab script.
+
 ## Domain-specific cognitive framework
 
 The domain-specific cognitive framework is the set of **stable nouns**, **verbs**, and **invariants** that make Biblicus pleasant to use over time.
@@ -112,13 +117,13 @@ Evidence is the canonical output of retrieval. Required fields:
 
 - Text extraction (Portable Document Format, office documents, or image optical character recognition) is a **pipeline stage**, not part of raw ingestion.
 
-### Backend hosting modes (all supported)
+### Backend hosting modes
 
-Biblicus must support all three backend hosting modes behind the same interface, and ship at least one reference example of each:
+Biblicus ships an in-process backend interface today and keeps the same contract for future hosting modes:
 
-- **In-process plugin**: simplest local minimum viable product and deterministic testing.
-- **Out-of-process local daemon**: isolates dependencies and supports warm indexes for heavier systems.
-- **Remote service**: production deployments, multi-tenant separation, and managed infrastructure.
+- **In-process plugin**: current local minimum viable product and deterministic testing.
+- **Out-of-process local daemon**: target mode for heavier systems that need warm indexes.
+- **Remote service**: target mode for managed deployments and multi-tenant separation.
 
 Backend hosting mode is a primary benchmark dimension (cold start, warm start, latency, throughput, cost, operational complexity).
 
@@ -158,19 +163,14 @@ The interface stays the same; topology is configuration.
 - The catalog includes `latest_run_id` and run manifests are stored at `.biblicus/runs/<run_id>.json`.
 - If this becomes a bottleneck at very large scales, we **change the specification** (bump `schema_version`) rather than introduce multiple “supported” catalog storage modes.
 
-## Near-term deliverables
+## Next textbook chapters
 
-1. Define Biblicus version zero knowledge base tool schemas (Model Context Protocol) for:
-   - `knowledge_base_ingest` (upsert documents)
-   - `knowledge_base_query` (retrieve evidence)
-   - `knowledge_base_get` and `knowledge_base_list` (basic management)
-   - `knowledge_base_stats` (latency, counts, sizes)
-2. Implement reference backend examples for each hosting mode:
-   - **In-process plugin**: a naive local backend (for example, metadata registry and lexical baseline) for determinism and tests
-   - **Local daemon**: a vector backend (Qdrant or Postgres with pgvector) for real use
-   - **Remote service**: the same vector backend configured against a remote endpoint
-3. Implement one reference Tactus procedure showing a basic retrieval-augmented generation pattern using the toolset.
-4. Add a small evaluation dataset and run `tactus eval` against multiple retrieval configs.
+The executable textbook continues to expand in these directions:
+
+1. Tool schemas for knowledge base workflows (Model Context Protocol) with runnable examples.
+2. Reference backend examples for out-of-process and remote hosting modes.
+3. A reference Tactus procedure that demonstrates retrieval-augmented generation with Biblicus evidence.
+4. A shared evaluation dataset that demonstrates end-to-end procedure metrics.
 
 ## Open questions
 
