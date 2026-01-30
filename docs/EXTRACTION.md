@@ -188,6 +188,11 @@ python3 -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full
 python3 -m biblicus query --corpus corpora/extraction-demo --query extracted
 ```
 
+## Evaluate extraction quality
+
+Extraction evaluation measures coverage and accuracy for a given extractor recipe. See `docs/EXTRACTION_EVALUATION.md`
+for the dataset format, command-line interface usage, and report interpretation.
+
 ## What extraction is not
 
 Text extraction does not mutate the raw corpus. It is derived output that can be regenerated and compared across implementations.

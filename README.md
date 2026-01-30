@@ -489,6 +489,9 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 
 For detailed documentation on all extractors, see the [Extractor Reference][extractor-reference].
 
+For extraction evaluation workflows, dataset formats, and report interpretation, see
+`docs/EXTRACTION_EVALUATION.md`.
+
 ## Topic modeling analysis
 
 Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Profiling and topic modeling

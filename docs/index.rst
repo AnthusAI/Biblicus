@@ -11,6 +11,7 @@ Contents
 
    CORPUS
    EXTRACTION
+   EXTRACTION_EVALUATION
    extractors/index
    KNOWLEDGE_BASE
    BACKENDS
