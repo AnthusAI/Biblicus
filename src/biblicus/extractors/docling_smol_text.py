@@ -1,0 +1,185 @@
+"""
+SmolDocling VLM-backed document text extraction plugin.
+
+This extractor uses the SmolDocling-256M vision-language model for document understanding.
+It supports PDF, Office documents (DOCX, XLSX, PPTX), HTML, and image formats.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..corpus import Corpus
+from ..errors import ExtractionRunFatalError
+from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from .base import TextExtractor
+
+
+DOCLING_SUPPORTED_MEDIA_TYPES = frozenset(
+    [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/html",
+        "application/xhtml+xml",
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "image/webp",
+        "image/tiff",
+        "image/bmp",
+    ]
+)
+
+
+class DoclingSmolExtractorConfig(BaseModel):
+    """
+    Configuration for the SmolDocling VLM extractor.
+
+    :ivar output_format: Output format for extracted content (markdown, text, or html).
+    :vartype output_format: str
+    :ivar backend: Inference backend (mlx or transformers).
+    :vartype backend: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    output_format: str = Field(default="markdown", pattern="^(markdown|text|html)$")
+    backend: str = Field(default="mlx", pattern="^(mlx|transformers)$")
+
+
+class DoclingSmolExtractor(TextExtractor):
+    """
+    Extractor plugin backed by the SmolDocling-256M vision-language model.
+
+    This extractor converts documents into text using Docling with the SmolDocling VLM.
+    It skips text items (text/plain, text/markdown) to let pass-through handle those.
+
+    :ivar extractor_id: Extractor identifier.
+    :vartype extractor_id: str
+    """
+
+    extractor_id = "docling-smol"
+
+    def validate_config(self, config: Dict[str, Any]) -> BaseModel:
+        """
+        Validate extractor configuration and ensure the dependency is installed.
+
+        :param config: Configuration mapping.
+        :type config: dict[str, Any]
+        :return: Parsed config.
+        :rtype: DoclingSmolExtractorConfig
+        :raises ExtractionRunFatalError: If the optional dependency is not installed.
+        """
+        parsed = DoclingSmolExtractorConfig.model_validate(config)
+
+        try:
+            from docling.document_converter import DocumentConverter  # noqa: F401
+            from docling.pipeline_options import VlmPipelineOptions  # noqa: F401
+            from docling.pipeline_options import vlm_model_specs  # noqa: F401
+        except ImportError as import_error:
+            raise ExtractionRunFatalError(
+                "DoclingSmol extractor requires an optional dependency. "
+                'Install it with pip install "biblicus[docling]".'
+            ) from import_error
+
+        if parsed.backend == "mlx":
+            try:
+                from docling.pipeline_options import vlm_model_specs
+
+                _ = vlm_model_specs.SMOLDOCLING_MLX
+            except (ImportError, AttributeError) as exc:
+                raise ExtractionRunFatalError(
+                    "DoclingSmol extractor with MLX backend requires MLX support. "
+                    'Install it with pip install "biblicus[docling-mlx]".'
+                ) from exc
+
+        return parsed
+
+    def extract_text(
+        self,
+        *,
+        corpus: Corpus,
+        item: CatalogItem,
+        config: BaseModel,
+        previous_extractions: List[ExtractionStepOutput],
+    ) -> Optional[ExtractedText]:
+        """
+        Extract text for a document item using SmolDocling.
+
+        :param corpus: Corpus containing the item bytes.
+        :type corpus: Corpus
+        :param item: Catalog item being processed.
+        :type item: CatalogItem
+        :param config: Parsed configuration model.
+        :type config: DoclingSmolExtractorConfig
+        :param previous_extractions: Prior step outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :return: Extracted text payload, or None when the item is not supported.
+        :rtype: ExtractedText or None
+        """
+        _ = previous_extractions
+
+        if not self._is_supported_media_type(item.media_type):
+            return None
+
+        parsed_config = (
+            config
+            if isinstance(config, DoclingSmolExtractorConfig)
+            else DoclingSmolExtractorConfig.model_validate(config)
+        )
+
+        source_path = corpus.root / item.relpath
+        text = self._convert_document(source_path, parsed_config)
+        return ExtractedText(text=text.strip(), producer_extractor_id=self.extractor_id)
+
+    def _is_supported_media_type(self, media_type: str) -> bool:
+        """
+        Check if a media type is supported by this extractor.
+
+        :param media_type: Media type string.
+        :type media_type: str
+        :return: True if supported, False otherwise.
+        :rtype: bool
+        """
+        if media_type in DOCLING_SUPPORTED_MEDIA_TYPES:
+            return True
+        if media_type.startswith("image/"):
+            return True
+        return False
+
+    def _convert_document(self, source_path, config: DoclingSmolExtractorConfig) -> str:
+        """
+        Convert a document using Docling with the SmolDocling VLM.
+
+        :param source_path: Path to the source document.
+        :type source_path: pathlib.Path
+        :param config: Parsed configuration.
+        :type config: DoclingSmolExtractorConfig
+        :return: Extracted text content.
+        :rtype: str
+        """
+        from docling.document_converter import DocumentConverter, DocumentConverterOptions
+        from docling.pipeline_options import VlmPipelineOptions, vlm_model_specs
+
+        if config.backend == "mlx":
+            vlm_options = vlm_model_specs.SMOLDOCLING_MLX
+        else:
+            vlm_options = vlm_model_specs.SMOLDOCLING_TRANSFORMERS
+
+        pipeline_options = DocumentConverterOptions(
+            pipeline_options=VlmPipelineOptions(vlm_options=vlm_options)
+        )
+
+        converter = DocumentConverter(format_options={"pdf": pipeline_options})
+        result = converter.convert(str(source_path))
+
+        if config.output_format == "html":
+            return result.document.export_to_html()
+        elif config.output_format == "text":
+            return result.document.export_to_text()
+        else:
+            return result.document.export_to_markdown()
