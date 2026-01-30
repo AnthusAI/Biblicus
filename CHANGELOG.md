@@ -1,9 +1,140 @@
 # CHANGELOG
 
 
+## v0.8.0 (2026-01-30)
+
+### Bug Fixes
+
+- Aggregate all warnings from topic modeling pipeline stages
+  ([`15fba05`](https://github.com/AnthusAI/Biblicus/commit/15fba05ebb4a45f1bf2114cd7ac5c2c42b6afe8b))
+
+Collect warnings from all pipeline stages (text, LLM extraction, BERTopic, and fine-tuning) instead
+  of just the text stage.
+
+- Correct smart override selection logic for confidence filtering
+  ([`bf7f349`](https://github.com/AnthusAI/Biblicus/commit/bf7f349ea7cf8d771ffe232624bc732ea6c21498))
+
+Fix SelectSmartOverrideExtractor to skip extractions with confidence below threshold before checking
+  meaningfulness. Ensures high-confidence extractions are preferred over those with missing or low
+  confidence.
+
+- Select highest confidence candidate when last extraction is not meaningful
+  ([`b2abacf`](https://github.com/AnthusAI/Biblicus/commit/b2abacf0150d63b5b42691910de89642f7cc7e08))
+
+When the last extraction lacks meaningful content, iterate through all previous candidates and
+  select the one with the highest confidence score, preferring explicit confidence over missing
+  confidence.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+### Documentation
+
+- Document semantic release automation policy
+  ([`1682741`](https://github.com/AnthusAI/Biblicus/commit/1682741c596430a42fd2a3be694321d8bb0ce7c9))
+
+Add section to AGENTS.md clarifying that semantic versioning, changelog generation, and PyPI
+  publishing are fully automated in GitHub Actions and should not be handled locally.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- Update documentation for new features
+  ([`2018f88`](https://github.com/AnthusAI/Biblicus/commit/2018f88df12358ad27ab8770348072222b30a4f6))
+
+Update API documentation, extraction guide, user configuration, and README to reflect new
+  extractors, analysis pipelines, and inference backends.
+
+### Features
+
+- Add analysis pipeline infrastructure
+  ([`d740823`](https://github.com/AnthusAI/Biblicus/commit/d740823bfcc35f616f3582e296f77e4714f3d1b1))
+
+Add base analysis pipeline framework with support for LLM-driven extraction and topic modeling.
+  Includes schema validation and model abstractions.
+
+- Add analysis run support to corpus
+  ([`d341c28`](https://github.com/AnthusAI/Biblicus/commit/d341c2830240e89cec6b86c84e9df83ff7636dee))
+
+Add analysis_runs_dir property and analysis_run_dir method. Add latest_extraction_run_reference
+  helper for retrieving the most recent extraction run.
+
+- Add analysis schema constants
+  ([`372d427`](https://github.com/AnthusAI/Biblicus/commit/372d4277ec4ea9a7829ff17220dc78315ac52543))
+
+Add ANALYSIS_SCHEMA_VERSION and ANALYSIS_RUNS_DIR_NAME constants needed by the analysis pipeline
+  infrastructure.
+
+- Add confidence scores to extraction output
+  ([`e3ac910`](https://github.com/AnthusAI/Biblicus/commit/e3ac9103c11fc30e25d6197435cf50683af725f0))
+
+Add optional confidence field (0.0-1.0) to ExtractedText and ExtractionStepOutput models to support
+  extraction quality signals.
+
+- Add extraction pipeline selection utilities
+  ([`cec306f`](https://github.com/AnthusAI/Biblicus/commit/cec306f84f98dbb3109b19fc12b330a1e06ca925))
+
+Add SelectOverride and SelectSmartOverride extractors for intelligent extraction result selection in
+  pipelines. Allows choosing extraction results based on media type or quality heuristics.
+
+- Add inference backend abstraction
+  ([`4de0103`](https://github.com/AnthusAI/Biblicus/commit/4de010319e0337ada792a4c665948c2b52f0d6c3))
+
+Add composable inference backend configuration for components that support both local and API-based
+  execution modes. Supports HuggingFace and OpenAI providers.
+
+- Add provider configurations and extractor enhancements
+  ([`ac86e6e`](https://github.com/AnthusAI/Biblicus/commit/ac86e6eacf6c30ae694cf2341c64565fef1dd448))
+
+Add Deepgram and HuggingFace user configuration support. Update extractors with confidence score
+  support and refined implementations for Docling, PaddleOCR, RapidOCR, and selection utilities.
+
+- Add topic modeling analysis command and recipe file support
+  ([`6a60f57`](https://github.com/AnthusAI/Biblicus/commit/6a60f576eb0b5e250df7d4fcaa0beceac6c301dd))
+
+Add biblicus analyze topics command with recipe file support. Improve step spec parsing to handle
+  nested structures (braces, brackets) in extraction pipeline configurations.
+
+- Propagate confidence scores through extraction pipeline
+  ([`1616d45`](https://github.com/AnthusAI/Biblicus/commit/1616d45d436cfe00c2b40738a49ea25dedc04693))
+
+Thread confidence scores from ExtractedText through ExtractionStepResult to support extraction
+  quality signals in the pipeline.
+
+- Register new extractors in factory
+  ([`18c0280`](https://github.com/AnthusAI/Biblicus/commit/18c0280bc4bc04b1238f170d8d9e8d5c559c9b02))
+
+Register PaddleOCR, Docling, Deepgram, and selection utility extractors in the extractor factory.
+
+### Testing
+
+- Add feature specs and steps for inference and selection utilities
+  ([`84205c3`](https://github.com/AnthusAI/Biblicus/commit/84205c30bcd9a1875f7474629fca6d4ea59dbb5a))
+
+Add BDD feature specifications and step implementations for inference backend configuration and
+  extraction result selection utilities.
+
+- Add feature specs for analysis pipelines
+  ([`c98cded`](https://github.com/AnthusAI/Biblicus/commit/c98cdedfbd8d8df3effb4920d66f63c55f7a05ac))
+
+Add BDD specifications for analysis pipeline infrastructure including topic modeling analysis and
+  schema validation.
+
+- Update feature specs and test steps for new features
+  ([`636bd86`](https://github.com/AnthusAI/Biblicus/commit/636bd8653be925f4c00c76311031552fb57e004e))
+
+Update test environment, step implementations, and test fixtures to support new extractors, analysis
+  pipelines, inference backends, and configuration options.
+
+
 ## v0.7.0 (2026-01-29)
 
 ### Bug Fixes
+
+- Correct import formatting in Docling extractors
+  ([`090523d`](https://github.com/AnthusAI/Biblicus/commit/090523d5f4911d8993aae0efe8083fc939a314c9))
+
+Fix Ruff I001 linting errors by properly organizing imports in both Docling VLM extractors.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
 
 - Enforce 100% coverage gate
   ([`3495377`](https://github.com/AnthusAI/Biblicus/commit/34953770ec9da9db8521a046b5b101e1bee8b86f))
@@ -13,8 +144,26 @@
 
 ### Features
 
+- Add Deepgram speech-to-text extractor
+  ([`515a3e8`](https://github.com/AnthusAI/Biblicus/commit/515a3e852c22cc58ff0943db8e04abb4640fa03a))
+
+Add speech-to-text transcription support using Deepgram API. Includes extractor implementation,
+  feature tests, and step definitions.
+
+- Add Docling vision-language model extractors
+  ([`7f51f49`](https://github.com/AnthusAI/Biblicus/commit/7f51f4941afb0dec312a9ca54c311d44ffa52b20))
+
+Add SmolDocling-256M and Granite Docling-258M vision-language model extractors for document
+  understanding. Includes feature tests and step definitions.
+
 - Add MarkItDown extractor
   ([`2a489d6`](https://github.com/AnthusAI/Biblicus/commit/2a489d66fe769b0926e87b05ce40f268c521fc0f))
+
+- Add PaddleOCR vision-language extractor
+  ([`4703e76`](https://github.com/AnthusAI/Biblicus/commit/4703e76aa6f73efa6e16834c2921bdb085fdcd38))
+
+Add support for advanced optical character recognition with PaddleOCR vision-language model.
+  Includes extractor implementation, feature tests, and unit tests for parsing API responses.
 
 
 ## v0.6.0 (2026-01-29)
