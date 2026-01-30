@@ -63,6 +63,8 @@ class ExtractionStepResult(BaseModel):
     :vartype producer_extractor_id: str or None
     :ivar source_step_index: Optional step index that supplied the text for selection-style extractors.
     :vartype source_step_index: int or None
+    :ivar confidence: Optional confidence score from 0.0 to 1.0.
+    :vartype confidence: float or None
     :ivar error_type: Optional error type name for errored steps.
     :vartype error_type: str or None
     :ivar error_message: Optional error message for errored steps.
@@ -78,6 +80,7 @@ class ExtractionStepResult(BaseModel):
     text_characters: int = Field(default=0, ge=0)
     producer_extractor_id: Optional[str] = None
     source_step_index: Optional[int] = Field(default=None, ge=1)
+    confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     error_type: Optional[str] = None
     error_message: Optional[str] = None
 
@@ -447,6 +450,7 @@ def build_extraction_run(
                     text_characters=text_characters,
                     producer_extractor_id=extracted_text.producer_extractor_id,
                     source_step_index=extracted_text.source_step_index,
+                    confidence=extracted_text.confidence,
                     error_type=None,
                     error_message=None,
                 )
@@ -460,6 +464,7 @@ def build_extraction_run(
                     text_characters=text_characters,
                     producer_extractor_id=extracted_text.producer_extractor_id,
                     source_step_index=extracted_text.source_step_index,
+                    confidence=extracted_text.confidence,
                     error_type=None,
                     error_message=None,
                 )
