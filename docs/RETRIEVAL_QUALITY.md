@@ -1,7 +1,7 @@
 # Retrieval quality upgrades
 
 This document describes the retrieval quality upgrades available in Biblicus. It is a reference for how retrieval
-quality is expressed in runs and should be read alongside `docs/ROADMAP.md`.
+quality is expressed in runs and how to interpret the signals in artifacts and evidence.
 
 ## Goals
 
