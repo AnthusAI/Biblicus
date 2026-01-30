@@ -440,10 +440,11 @@ corpus/
 
 ## Retrieval backends
 
-Two backends are included.
+Three backends are included.
 
 - `scan` is a minimal baseline that scans raw items directly.
 - `sqlite-full-text-search` is a practical baseline that builds a full text search index in SQLite.
+- `vector` is a deterministic term-frequency vector baseline with cosine similarity scoring.
 
 For detailed documentation including configuration options, performance characteristics, and usage examples, see the [Backend Reference][backend-reference].
 

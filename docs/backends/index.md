@@ -24,11 +24,21 @@ Production-ready full-text search using SQLite FTS5 with BM25 ranking.
 - **Index**: SQLite database with FTS5 virtual tables
 - **Speed**: Fast with persistent index
 
+### [vector](vector.md)
+
+Deterministic term-frequency vector retrieval with cosine similarity.
+
+- **Backend ID**: `vector`
+- **Installation**: Included by default
+- **Best for**: Semantic-style baselines without embeddings
+- **Index**: None (scans and scores at query time)
+- **Speed**: Moderate for small corpora
+
 ## Quick Start
 
 ### Installation
 
-Both backends are included with the base Biblicus installation:
+All backends are included with the base Biblicus installation:
 
 ```bash
 pip install biblicus
@@ -92,6 +102,7 @@ result = backend.query(
 | Production applications | [sqlite-full-text-search](sqlite-full-text-search.md) | Fast queries with BM25 ranking |
 | Large corpora (>10,000 items) | [sqlite-full-text-search](sqlite-full-text-search.md) | Essential for performance |
 | Baseline comparisons | [scan](scan.md) | Simple reference implementation |
+| Term-frequency vector baseline | [vector](vector.md) | Deterministic cosine similarity |
 
 ## Performance Comparison
 
@@ -150,7 +161,7 @@ biblicus query my-corpus --run sqlite-full-text-search:RUN_ID --query "test"
 
 ### Using Extracted Text
 
-Both backends support extraction runs for non-text content:
+All backends support extraction runs for non-text content:
 
 ```bash
 # Extract text from PDFs
@@ -165,7 +176,7 @@ biblicus build my-corpus --backend sqlite-full-text-search \
 
 ### Common Configuration Options
 
-Both backends support these configuration options:
+All backends support these configuration options:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
