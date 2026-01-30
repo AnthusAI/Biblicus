@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.12.0 (2026-01-30)
+
+### Documentation
+
+- Clarify retrieval quality scope
+  ([`17ddac5`](https://github.com/AnthusAI/Biblicus/commit/17ddac59287de8dc6c9bfe0f9b970e826330ea8b))
+
+- Update roadmap status for retrieval and context packs
+  ([`defac5e`](https://github.com/AnthusAI/Biblicus/commit/defac5ef91260edf83e88936799ec04556aecbaf))
+
+### Features
+
+- Expand context pack policy controls
+  ([`9f2b39f`](https://github.com/AnthusAI/Biblicus/commit/9f2b39f662f92fdb65f9bee160fe60b7b226dce1))
+
+
 ## v0.11.0 (2026-01-30)
 
 ### Bug Fixes
