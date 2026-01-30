@@ -17,49 +17,27 @@ If you are looking for what already exists, start with:
 - Raw corpus items remain readable, portable files.
 - Derived artifacts are stored under the corpus and can coexist for multiple implementations.
 
-## Next: retrieval evaluation and datasets
+## Completed foundations
 
-Goal: make evaluation results easier to interpret and compare.
+These are the capability slices that already exist and have end-to-end behavior specifications.
 
-Deliverables:
+### Retrieval evaluation and datasets
 
-- A dataset authoring workflow that supports small hand-labeled sets and larger synthetic sets.
-- A report that includes per-query diagnostics and a clear summary.
+- Dataset authoring workflow for small hand-labeled sets and larger synthetic sets.
+- Evaluation reports with per-query diagnostics and summary metrics.
+- Versioned dataset formats and deterministic reports for stable inputs.
 
-Acceptance checks:
+### Retrieval quality upgrades
 
-- Dataset formats are versioned when they change.
-- Reports remain deterministic for the same inputs.
+- Tuned lexical baseline with BM25, n-gram range controls, and stop word policies.
+- Reranking stage for top-N candidates with explicit stage metadata.
+- Hybrid retrieval with explicit fusion weights and stage-level scores.
 
-## Next: retrieval quality upgrades
+### Context pack policy surfaces
 
-Goal: make retrieval relevance stronger while keeping deterministic baselines and clear evaluation.
-
-Deliverables:
-
-- A tuned lexical baseline (for example: BM25 configuration, n-grams, field weighting, stop word controls).
-- A reranking stage that can refine top-N results with either a cross-encoder or an LLM re-ranker.
-- A hybrid retrieval mode that combines lexical signals with embeddings and exposes weights explicitly.
-
-Acceptance checks:
-
-- Accuracy-at-k improves on the same evaluation datasets without regressions in determinism.
-- Retrieval stages are explicitly recorded (retrieve, rerank, filter) in the output artifacts.
-
-## Next: context pack policy surfaces
-
-Goal: make context shaping policies easier to evaluate and swap.
-
-Deliverables:
-
-- A clear set of context pack policy variants (formatting, ordering, metadata inclusion).
-- Token budget strategies that can use a real tokenizer.
-- Documentation that explains where context shaping fits in the pipeline.
-
-Acceptance checks:
-
-- Behavior specifications cover policy selection and budgeting behaviors.
-- Example outputs show how context packs differ across policies.
+- Policy variants for formatting, ordering, and metadata inclusion.
+- Token and character budget strategies with explicit selectors.
+- Documentation and examples that show how policy choices change outputs.
 
 ## Next: extraction evaluation harness
 
@@ -82,6 +60,7 @@ Goal: provide lightweight analysis utilities that summarize corpus themes and gu
 
 Deliverables:
 
+- Basic corpus profiling with deterministic metrics for raw items and extracted text.
 - Hidden Markov modeling analysis for sequence-driven corpora.
 - A way to compare analysis outputs across corpora or corpus snapshots.
 
