@@ -106,6 +106,40 @@ The lab uses the bundled files under `datasets/extraction_lab/items` and writes 
 `datasets/extraction_lab_output.json` by default. The command output includes the evaluation artifact path so you can
 inspect the metrics immediately.
 
+### Lab walkthrough
+
+1) Run the lab:
+
+```
+python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
+```
+
+2) Inspect the generated dataset:
+
+```
+cat datasets/extraction_lab_output.json
+```
+
+The dataset is small and deterministic. Each entry maps a corpus item to the expected extracted text.
+
+3) Inspect the evaluation output:
+
+```
+cat corpora/extraction_eval_lab/.biblicus/runs/evaluation/extraction/<run_id>/output.json
+```
+
+The output includes:
+
+- Coverage counts for present, empty, and missing extracted text.
+- Processable fraction for the extractor recipe.
+- Average similarity between expected and extracted text.
+
+4) Compare metrics to raw items:
+
+The lab includes a Markdown note, a plain text file, and a blank Markdown note. The blank note yields empty extracted
+text, which should be reflected in the coverage metrics. Because the expected text matches the extracted text for the
+non-empty items, the similarity score is 1.0 for those items.
+
 ## Interpretation tips
 
 - Use coverage metrics to detect extractors that skip or fail on specific media types.
