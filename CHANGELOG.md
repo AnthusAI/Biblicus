@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v0.11.0 (2026-01-30)
+
+### Bug Fixes
+
+- Expand hybrid component budgets
+  ([`c1122dd`](https://github.com/AnthusAI/Biblicus/commit/c1122dd62bacf744c7a2cd9f92205649e0abca2c))
+
+### Documentation
+
+- Add retrieval evaluation guide
+  ([`2b3d294`](https://github.com/AnthusAI/Biblicus/commit/2b3d294bc35ce04a8cc5f997924d086c44c9b0a6))
+
+- Shift retrieval docs to present tense
+  ([`6bacf03`](https://github.com/AnthusAI/Biblicus/commit/6bacf03f4d9be5bb5693bcf946f7e08677cb6aac))
+
+### Features
+
+- Add retrieval quality backends and specs
+  ([`5e3fbe7`](https://github.com/AnthusAI/Biblicus/commit/5e3fbe78374f8ad006499991dac3e50a029be166))
+
+
 ## v0.10.0 (2026-01-30)
 
 
