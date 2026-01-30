@@ -17,6 +17,11 @@ If both files exist, the local configuration overrides the home configuration.
 
 The configuration file is YAML and is parsed using the `dotyaml` approach (YAML with optional environment variable interpolation).
 
+## Reproducibility notes
+
+User configuration is machine-specific. Do not bake secrets into corpora or datasets, and avoid storing user config
+files in source control.
+
 ## Example: OpenAI speech to text
 
 Create a config file with an OpenAI API key.
@@ -47,3 +52,9 @@ deepgram:
 ```
 
 The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` environment variable. Environment takes precedence over configuration.
+
+## Common pitfalls
+
+- Saving secrets in the corpus directory instead of a user config file.
+- Forgetting that local configuration overrides home configuration.
+- Expecting user configuration to be copied with a corpus.

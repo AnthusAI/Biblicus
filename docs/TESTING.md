@@ -30,6 +30,11 @@ Run the test suite including Unstructured integration scenarios:
 python3 scripts/test.py --integration --unstructured
 ```
 
+## Coverage expectations
+
+Biblicus targets 100% coverage for `src/biblicus/`. Any uncovered behavior should be removed or turned into an explicit
+error with a specification.
+
 ## Integration datasets
 
 Integration scenarios are tagged `@integration`.
@@ -51,3 +56,9 @@ Those are covered by unit-style behavior specifications using fake libraries, no
 Optical character recognition integration scenarios are tagged `@ocr` and are excluded unless you pass `--ocr`.
 
 Unstructured integration scenarios are tagged `@unstructured` and are excluded unless you pass `--unstructured`.
+
+## Common pitfalls
+
+- Running integration tests without optional dependencies installed.
+- Forgetting to set API keys when testing speech-to-text integrations.
+- Comparing coverage reports generated from different code revisions.
