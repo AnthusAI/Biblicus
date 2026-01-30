@@ -35,7 +35,7 @@ def _ensure_fake_bertopic_behavior(context) -> _FakeBerTopicBehavior:
     return behavior
 
 
-def _install_fake_bertopic_module(context) -> None:
+def _install_fake_bertopic_module(context, *, use_fake_marker: bool) -> None:
     already_installed = getattr(context, "_fake_bertopic_installed", False)
     if already_installed:
         return
@@ -79,7 +79,8 @@ def _install_fake_bertopic_module(context) -> None:
 
     bertopic_module = types.ModuleType("bertopic")
     bertopic_module.BERTopic = BERTopic
-    bertopic_module.__biblicus_fake__ = True
+    if use_fake_marker:
+        bertopic_module.__biblicus_fake__ = True
 
     sys.modules["bertopic"] = bertopic_module
 
@@ -113,12 +114,12 @@ def _run_reference_from_context(context) -> str:
 
 @given("a fake BERTopic library is available")
 def step_fake_bertopic_available(context) -> None:
-    _install_fake_bertopic_module(context)
+    _install_fake_bertopic_module(context, use_fake_marker=True)
 
 
 @given('a fake BERTopic library is available with topic assignments "{assignments}" and keywords:')
 def step_fake_bertopic_with_assignments(context, assignments: str) -> None:
-    _install_fake_bertopic_module(context)
+    _install_fake_bertopic_module(context, use_fake_marker=True)
     behavior = _ensure_fake_bertopic_behavior(context)
     parsed_assignments: List[int] = []
     for token in assignments.split(","):
@@ -139,6 +140,72 @@ def step_fake_bertopic_with_assignments(context, assignments: str) -> None:
 @given("the BERTopic dependency is unavailable")
 def step_bertopic_dependency_unavailable(context) -> None:
     _install_bertopic_unavailable_module(context)
+
+
+def _install_fake_sklearn_module(context) -> None:
+    already_installed = getattr(context, "_fake_sklearn_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    for name in [
+        "sklearn",
+        "sklearn.feature_extraction",
+        "sklearn.feature_extraction.text",
+    ]:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
+
+    class CountVectorizer:  # noqa: N801 - external dependency uses PascalCase
+        def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
+            self.kwargs = dict(kwargs)
+
+    sklearn_module = types.ModuleType("sklearn")
+    feature_extraction = types.ModuleType("sklearn.feature_extraction")
+    feature_text = types.ModuleType("sklearn.feature_extraction.text")
+    feature_text.CountVectorizer = CountVectorizer
+    feature_extraction.text = feature_text
+    sklearn_module.feature_extraction = feature_extraction
+
+    sys.modules["sklearn"] = sklearn_module
+    sys.modules["sklearn.feature_extraction"] = feature_extraction
+    sys.modules["sklearn.feature_extraction.text"] = feature_text
+
+    context._fake_sklearn_installed = True
+    context._fake_sklearn_original_modules = original_modules
+
+
+def _install_sklearn_unavailable_module(context) -> None:
+    already_installed = getattr(context, "_fake_sklearn_unavailable_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    for name in [
+        "sklearn",
+        "sklearn.feature_extraction",
+        "sklearn.feature_extraction.text",
+    ]:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
+            sys.modules.pop(name, None)
+
+    sklearn_module = types.ModuleType("sklearn")
+    sys.modules["sklearn"] = sklearn_module
+
+    context._fake_sklearn_unavailable_installed = True
+    context._fake_sklearn_unavailable_original_modules = original_modules
+
+
+@given("a fake BERTopic library without a fake marker is available")
+def step_fake_bertopic_without_marker(context) -> None:
+    _install_fake_bertopic_module(context, use_fake_marker=False)
+    _install_fake_sklearn_module(context)
+
+
+@given("the scikit-learn dependency is unavailable")
+def step_sklearn_dependency_unavailable(context) -> None:
+    _install_sklearn_unavailable_module(context)
 
 
 @when('I run a topic analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run')
@@ -199,6 +266,26 @@ def step_topic_analysis_output_includes_label(context, label: str) -> None:
     topics = output["report"]["topics"]
     labels = {topic["label"] for topic in topics}
     assert label in labels
+
+
+@then("the BERTopic analysis report includes ngram range {min_value:d} and {max_value:d}")
+def step_bertopic_report_includes_ngram_range(context, min_value: int, max_value: int) -> None:
+    output = context.last_analysis_output
+    report = output["report"]["bertopic_analysis"]
+    vectorizer = report.get("vectorizer")
+    assert isinstance(vectorizer, dict)
+    ngram_range = vectorizer.get("ngram_range")
+    assert ngram_range == [min_value, max_value]
+
+
+@then('the BERTopic analysis report includes stop words "{stop_words}"')
+def step_bertopic_report_includes_stop_words(context, stop_words: str) -> None:
+    output = context.last_analysis_output
+    report = output["report"]["bertopic_analysis"]
+    vectorizer = report.get("vectorizer")
+    assert isinstance(vectorizer, dict)
+    value = vectorizer.get("stop_words")
+    assert value == stop_words
 
 
 @then('the topic analysis output label source is "{source}"')

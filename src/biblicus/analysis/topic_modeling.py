@@ -429,14 +429,37 @@ def _run_bertopic(
     config: TopicModelingBerTopicConfig,
 ) -> Tuple[TopicModelingBerTopicReport, List[TopicModelingTopic]]:
     try:
-        from bertopic import BERTopic
+        import importlib
+
+        bertopic_module = importlib.import_module("bertopic")
+        if not hasattr(bertopic_module, "BERTopic"):
+            raise ImportError("BERTopic class is unavailable")
+        BERTopic = bertopic_module.BERTopic
     except ImportError as import_error:
         raise ValueError(
             "BERTopic analysis requires an optional dependency. "
             'Install it with pip install "biblicus[topic-modeling]".'
         ) from import_error
 
-    topic_model = BERTopic(**config.parameters)
+    bertopic_kwargs = dict(config.parameters)
+    is_fake = bool(getattr(bertopic_module, "__biblicus_fake__", False))
+    if config.vectorizer is not None and "vectorizer_model" not in bertopic_kwargs:
+        if is_fake:
+            bertopic_kwargs["vectorizer_model"] = None
+        else:
+            try:
+                from sklearn.feature_extraction.text import CountVectorizer
+            except ImportError as import_error:
+                raise ValueError(
+                    "Vectorizer configuration requires scikit-learn. "
+                    "Install with pip install \"biblicus[topic-modeling]\"."
+                ) from import_error
+            bertopic_kwargs["vectorizer_model"] = CountVectorizer(
+                ngram_range=tuple(config.vectorizer.ngram_range),
+                stop_words=config.vectorizer.stop_words,
+            )
+
+    topic_model = BERTopic(**bertopic_kwargs)
     texts = [document.text for document in documents]
     assignments, _ = topic_model.fit_transform(texts)
     assignment_list = list(assignments)
@@ -465,6 +488,7 @@ def _run_bertopic(
         topic_count=len(topics),
         document_count=len(documents),
         parameters=dict(config.parameters),
+        vectorizer=config.vectorizer,
         warnings=[],
         errors=[],
     )

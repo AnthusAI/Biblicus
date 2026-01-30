@@ -490,6 +490,8 @@ analysis backend. It reads an extraction run, optionally applies an LLM-driven e
 processing, runs BERTopic, and optionally applies an LLM fine-tuning pass to label topics. The output is structured
 JavaScript Object Notation.
 
+See `docs/ANALYSIS.md` for the analysis pipeline overview and `docs/TOPIC_MODELING.md` for topic modeling details.
+
 Run a topic analysis using a recipe file:
 
 ```
@@ -520,26 +522,28 @@ bertopic_analysis:
   parameters:
     min_topic_size: 8
     nr_topics: 10
+  vectorizer:
+    ngram_range: [1, 2]
+    stop_words: english
 llm_fine_tuning:
   enabled: false
 ```
 
 LLM extraction and fine-tuning require `biblicus[openai]` and a configured OpenAI API key.
 Recipe files are validated strictly against the topic modeling schema, so type mismatches or unknown fields are errors.
+AG News integration runs require `biblicus[datasets]` in addition to `biblicus[topic-modeling]`.
 
-For a repeatable, real-world integration run that downloads a Wikipedia corpus and executes topic modeling, use:
+For a repeatable, real-world integration run that downloads AG News and executes topic modeling, use:
 
 ```
-python3 scripts/topic_modeling_integration.py --corpus corpora/wiki_demo --force
+python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
 See `docs/TOPIC_MODELING.md` for parameter examples and per-topic output behavior.
 
 ## Integration corpus and evaluation dataset
 
-Use `scripts/download_wikipedia.py` to download a small integration corpus from Wikipedia when running tests or demos. The repository does not include that content.
-
-The dataset file `datasets/wikipedia_mini.json` provides a small evaluation set that matches the integration corpus.
+Use `scripts/download_ag_news.py` to download the AG News dataset when running topic modeling demos. The repository does not include that content.
 
 Use `scripts/download_pdf_samples.py` to download a small Portable Document Format integration corpus when running tests or demos. The repository does not include that content.
 

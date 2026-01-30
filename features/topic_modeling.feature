@@ -40,6 +40,176 @@ Feature: Topic modeling analysis
       | alpha |
       | gamma |
 
+  Scenario: Topic analysis reports vectorizer ngram range
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [1, 2]
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the BERTopic analysis report includes ngram range 1 and 2
+
+  Scenario: Topic analysis reports stop words
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [1, 2]
+          stop_words: english
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the BERTopic analysis report includes stop words "english"
+
+  Scenario: Topic analysis uses vectorizer model when available
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library without a fake marker is available
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [1, 2]
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the BERTopic analysis report includes ngram range 1 and 2
+
+  Scenario: Topic analysis rejects vectorizer without scikit-learn
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library without a fake marker is available
+    And the scikit-learn dependency is unavailable
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [1, 2]
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the command fails with exit code 2
+    And standard error includes "Vectorizer configuration requires scikit-learn"
+
+  Scenario: Topic analysis rejects invalid ngram range
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [0, 2]
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the command fails with exit code 2
+    And standard error includes "vectorizer.ngram_range must include two integers"
+
+  Scenario: Topic analysis rejects invalid stop words
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a recipe file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        vectorizer:
+          ngram_range: [1, 2]
+          stop_words: 7
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
+    Then the command fails with exit code 2
+    And standard error includes "vectorizer.stop_words must be"
+
   Scenario: Topic analysis truncates sample size
     Given I initialized a corpus at "corpus"
     And a fake BERTopic library is available with topic assignments "0" and keywords:

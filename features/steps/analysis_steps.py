@@ -15,6 +15,7 @@ from biblicus.analysis.models import (
     TopicModelingKeyword,
     TopicModelingLabelSource,
     TopicModelingTopic,
+    TopicModelingVectorizerConfig,
 )
 from biblicus.analysis.topic_modeling import (
     _TopicDocument,
@@ -192,3 +193,57 @@ def step_itemized_response_contains_count(context, count: int) -> None:
     items = getattr(context, "itemized_response", None)
     assert items is not None
     assert len(items) == count
+
+
+@when("I validate a vectorizer config with stop words list")
+def step_validate_vectorizer_stop_words_list(context) -> None:
+    context.last_model = TopicModelingVectorizerConfig(stop_words=["the", "and"])
+
+
+@when("I validate a vectorizer config with stop words english")
+def step_validate_vectorizer_stop_words_english(context) -> None:
+    context.last_model = TopicModelingVectorizerConfig(stop_words="english")
+
+
+@when("I attempt to validate a vectorizer config with invalid stop words")
+def step_validate_vectorizer_stop_words_invalid(context) -> None:
+    try:
+        TopicModelingVectorizerConfig(stop_words=[1, "the"])
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+    except Exception as exc:  # noqa: BLE001
+        context.validation_error = exc
+
+
+@when("I validate a vectorizer config with no stop words")
+def step_validate_vectorizer_no_stop_words(context) -> None:
+    context.last_model = TopicModelingVectorizerConfig.model_validate({"stop_words": None})
+
+
+@when('I attempt to validate a vectorizer config with stop words "{value}"')
+def step_validate_vectorizer_stop_words_string(context, value: str) -> None:
+    try:
+        TopicModelingVectorizerConfig(stop_words=value)
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@then('the vectorizer stop words includes "{token}"')
+def step_vectorizer_stop_words_includes(context, token: str) -> None:
+    model = context.last_model
+    assert model.stop_words is not None
+    assert token in model.stop_words
+
+
+@then('the vectorizer stop words equals "{value}"')
+def step_vectorizer_stop_words_equals(context, value: str) -> None:
+    model = context.last_model
+    assert model.stop_words == value
+
+
+@then("the vectorizer stop words are absent")
+def step_vectorizer_stop_words_absent(context) -> None:
+    model = context.last_model
+    assert model.stop_words is None

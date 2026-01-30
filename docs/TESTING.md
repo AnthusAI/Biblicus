@@ -36,7 +36,7 @@ Integration scenarios are tagged `@integration`.
 
 The repository does not include downloaded content. Integration scripts download content into a corpus path you choose and then ingest it for a test run.
 
-- Wikipedia summaries: `scripts/download_wikipedia.py`
+- AG News dataset: `scripts/download_ag_news.py`
 - Portable Document Format samples: `scripts/download_pdf_samples.py`
 - Image samples: `scripts/download_image_samples.py`
 - Mixed modality samples: `scripts/download_mixed_samples.py`

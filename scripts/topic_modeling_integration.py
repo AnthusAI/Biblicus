@@ -1,5 +1,5 @@
 """
-Run a repeatable topic modeling integration workflow on a Wikipedia corpus.
+Run a repeatable topic modeling integration workflow on AG News.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from biblicus.analysis.models import (
     TopicModelingLexicalProcessingConfig,
     TopicModelingRecipeConfig,
     TopicModelingTextSourceConfig,
+    TopicModelingVectorizerConfig,
 )
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_run
@@ -25,7 +26,7 @@ from biblicus.models import ExtractionRunReference
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.download_wikipedia import download_wikipedia_corpus
+from scripts.download_ag_news import download_ag_news_corpus
 
 
 def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
@@ -87,6 +88,10 @@ def _build_recipe_config(
     )
     bertopic_config = TopicModelingBerTopicConfig(
         parameters=_parse_config_pairs(arguments.bertopic_param),
+        vectorizer=TopicModelingVectorizerConfig(
+            ngram_range=[arguments.vectorizer_ngram_min, arguments.vectorizer_ngram_max],
+            stop_words=_parse_stop_words(arguments.vectorizer_stop_words),
+        ),
     )
     llm_extraction = TopicModelingLlmExtractionConfig(enabled=False)
     llm_fine_tuning = TopicModelingLlmFineTuningConfig(enabled=False)
@@ -110,10 +115,12 @@ def run_integration(arguments: argparse.Namespace) -> Dict[str, object]:
     :rtype: dict[str, object]
     """
     corpus_path = Path(arguments.corpus).resolve()
-    ingestion_stats = download_wikipedia_corpus(
+    ingestion_stats = download_ag_news_corpus(
         corpus_path=corpus_path,
+        split=arguments.split,
         limit=arguments.limit,
         force=arguments.force,
+        resume=arguments.resume,
     )
     corpus = Corpus.open(corpus_path)
     extraction_config = {
@@ -173,11 +180,44 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run a repeatable topic modeling integration workflow."
     )
     parser.add_argument("--corpus", required=True, help="Corpus path to initialize or reuse.")
-    parser.add_argument("--limit", type=int, default=20, help="Number of pages to download.")
+    parser.add_argument(
+        "--split",
+        default="train",
+        help="Dataset split for AG News.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=10000,
+        help="Number of documents to download.",
+    )
+    parser.add_argument(
+        "--vectorizer-ngram-min",
+        type=int,
+        default=1,
+        help="Minimum n-gram size for tokenization.",
+    )
+    parser.add_argument(
+        "--vectorizer-ngram-max",
+        type=int,
+        default=2,
+        help="Maximum n-gram size for tokenization.",
+    )
+    parser.add_argument(
+        "--vectorizer-stop-words",
+        default="english",
+        help="Stop word configuration for tokenization.",
+    )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Purge the corpus before downloading Wikipedia summaries.",
+        help="Purge the corpus before downloading AG News.",
+    )
+    parser.add_argument(
+        "--resume",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Skip items already ingested into the corpus.",
     )
     parser.add_argument(
         "--extraction-step",
@@ -237,6 +277,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="BERTopic constructor parameter (key=value).",
     )
     return parser
+
+
+def _parse_stop_words(raw: str) -> object:
+    """
+    Parse stop word configuration from the command line.
+
+    :param raw: Raw stop word configuration string.
+    :type raw: str
+    :return: Parsed stop word configuration.
+    :rtype: object
+    """
+    value = raw.strip()
+    if not value or value.lower() == "none":
+        return None
+    if value.lower() == "english":
+        return "english"
+    return [token.strip() for token in value.split(",") if token.strip()]
 
 
 def main() -> int:

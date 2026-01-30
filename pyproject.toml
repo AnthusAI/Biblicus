@@ -57,6 +57,9 @@ docling-mlx = [
 topic-modeling = [
   "bertopic>=0.15.0",
 ]
+datasets = [
+  "datasets>=2.18.0",
+]
 
 [project.scripts]
 biblicus = "biblicus.cli:main"

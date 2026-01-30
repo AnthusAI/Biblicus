@@ -171,15 +171,54 @@ class TopicModelingLexicalProcessingConfig(AnalysisSchemaModel):
     collapse_whitespace: bool = Field(default=True)
 
 
+class TopicModelingVectorizerConfig(AnalysisSchemaModel):
+    """
+    Vectorizer configuration for BERTopic tokenization.
+
+    :ivar ngram_range: Inclusive n-gram range as a two-item list.
+    :vartype ngram_range: list[int]
+    :ivar stop_words: Stop word configuration for tokenization.
+    :vartype stop_words: str or list[str] or None
+    """
+
+    ngram_range: List[int] = Field(default_factory=lambda: [1, 1], min_length=2, max_length=2)
+    stop_words: Optional[object] = None
+
+    @model_validator(mode="after")
+    def _validate_ngram_range(self) -> "TopicModelingVectorizerConfig":
+        start, end = self.ngram_range
+        if start < 1 or end < start:
+            raise ValueError("vectorizer.ngram_range must include two integers with start >= 1 and end >= start")
+        return self
+
+    @field_validator("stop_words", mode="before")
+    @classmethod
+    def _validate_stop_words(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            if value != "english":
+                raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
+            return value
+        if isinstance(value, list):
+            if not all(isinstance(entry, str) and entry for entry in value):
+                raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
+            return value
+        raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
+
+
 class TopicModelingBerTopicConfig(AnalysisSchemaModel):
     """
     Configuration for BERTopic analysis.
 
     :ivar parameters: Parameters forwarded to the BERTopic constructor.
     :vartype parameters: dict[str, Any]
+    :ivar vectorizer: Vectorizer configuration for tokenization.
+    :vartype vectorizer: TopicModelingVectorizerConfig or None
     """
 
     parameters: Dict[str, Any] = Field(default_factory=dict)
+    vectorizer: Optional[TopicModelingVectorizerConfig] = None
 
 
 class TopicModelingLlmFineTuningConfig(AnalysisSchemaModel):
@@ -371,6 +410,8 @@ class TopicModelingBerTopicReport(AnalysisSchemaModel):
     :vartype document_count: int
     :ivar parameters: BERTopic configuration parameters.
     :vartype parameters: dict[str, Any]
+    :ivar vectorizer: Vectorizer configuration applied to BERTopic.
+    :vartype vectorizer: TopicModelingVectorizerConfig or None
     :ivar warnings: Warning messages.
     :vartype warnings: list[str]
     :ivar errors: Error messages.
@@ -381,6 +422,7 @@ class TopicModelingBerTopicReport(AnalysisSchemaModel):
     topic_count: int = Field(ge=0)
     document_count: int = Field(ge=0)
     parameters: Dict[str, Any] = Field(default_factory=dict)
+    vectorizer: Optional[TopicModelingVectorizerConfig] = None
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
 

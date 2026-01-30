@@ -34,3 +34,25 @@ Feature: Analysis schema validation
   Scenario: Itemized response parses JSON string
     When I parse an itemized response JSON string
     Then the itemized response contains 2 items
+
+  Scenario: Vectorizer stop words accepts list
+    When I validate a vectorizer config with stop words list
+    Then the vectorizer stop words includes "the"
+
+  Scenario: Vectorizer stop words accepts english
+    When I validate a vectorizer config with stop words english
+    Then the vectorizer stop words equals "english"
+
+  Scenario: Vectorizer stop words rejects invalid entries
+    When I attempt to validate a vectorizer config with invalid stop words
+    Then a model validation error is raised
+    And the validation error mentions "vectorizer.stop_words must be"
+
+  Scenario: Vectorizer stop words allows None
+    When I validate a vectorizer config with no stop words
+    Then the vectorizer stop words are absent
+
+  Scenario: Vectorizer stop words rejects invalid string
+    When I attempt to validate a vectorizer config with stop words "spanish"
+    Then a model validation error is raised
+    And the validation error mentions "vectorizer.stop_words must be"

@@ -187,19 +187,26 @@ The output includes a `run_id` you can reuse when building a retrieval backend.
 
 ### Topic modeling integration run
 
-Use the integration script to download a Wikipedia corpus, run extraction, and run topic modeling with a single command.
+Use the integration script to download AG News, run extraction, and run topic modeling with a single command.
+Install optional dependencies first:
 
 ```
-python3 scripts/topic_modeling_integration.py --corpus corpora/wiki_demo --force
+python3 -m pip install "biblicus[datasets,topic-modeling]"
 ```
 
-Run with a smaller corpus and a higher topic count:
+```
+python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
+```
+
+Run with a larger corpus and a higher topic count:
 
 ```
 python3 scripts/topic_modeling_integration.py \
-  --corpus corpora/wiki_demo \
+  --corpus corpora/ag_news_demo \
   --force \
-  --limit 20 \
+  --limit 10000 \
+  --vectorizer-ngram-min 1 \
+  --vectorizer-ngram-max 2 \
   --bertopic-param nr_topics=8 \
   --bertopic-param min_topic_size=2
 ```
@@ -241,15 +248,6 @@ Copy the `run_id` from the JavaScript Object Notation output. You will use it as
 ```
 python3 -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_run=pipeline:PDF_EXTRACTION_RUN_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
 python3 -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
-```
-
-### Wikipedia retrieval demo (Python)
-
-This example downloads a few Wikipedia summaries about retrieval and knowledge bases, builds an extraction run, creates a local full text index, and returns evidence plus a context pack.
-
-```
-rm -rf corpora/wikipedia_rag_demo
-python3 scripts/wikipedia_rag_demo.py --corpus corpora/wikipedia_rag_demo --force
 ```
 
 ### MarkItDown extraction demo (Python 3.10+)
@@ -372,23 +370,6 @@ The sqlite full text search backend builds a local index under the run directory
 ```
 python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pipeline:EXTRACTION_RUN_ID
 python3 -m biblicus query --corpus corpora/demo --query "tiny"
-```
-
-### Evaluate a run against a dataset
-
-The repository includes a small dataset that matches the Wikipedia integration corpus.
-
-```
-python3 -m biblicus eval --corpus corpora/demo --dataset datasets/wikipedia_mini.json
-```
-
-If you want the matching corpus content, download it first into a separate corpus.
-
-```
-rm -rf corpora/wikipedia
-python3 scripts/download_wikipedia.py --corpus corpora/wikipedia --limit 5 --force
-python3 -m biblicus build --corpus corpora/wikipedia --backend sqlite-full-text-search
-python3 -m biblicus eval --corpus corpora/wikipedia --dataset datasets/wikipedia_mini.json
 ```
 
 ### Run the test suite and view coverage
