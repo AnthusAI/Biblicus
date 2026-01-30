@@ -23,6 +23,31 @@ context_pack = build_context_pack(result, policy=policy)
 print(context_pack.text)
 ```
 
+### Output structure
+
+Context pack building returns a structured result you can inspect:
+
+```json
+{
+  "text": "item_id: ...",
+  "evidence_count": 2,
+  "blocks": [
+    {
+      "evidence_item_id": "ITEM_ID",
+      "text": "item_id: ITEM_ID\nsource_uri: ...",
+      "metadata": {
+        "item_id": "ITEM_ID",
+        "source_uri": "file:///...",
+        "score": 0.42,
+        "stage": "retrieve"
+      }
+    }
+  ]
+}
+```
+
+`blocks` keeps a per-evidence record so you can debug how the final text was assembled.
+
 ## Policy surfaces
 
 Context pack policies make ordering and formatting explicit.
@@ -68,10 +93,22 @@ biblicus query --corpus corpora/example --query "primary button style preference
   | biblicus context-pack build --ordering score --include-metadata --max-characters 500
 ```
 
+## Reproducibility checklist
+
+- Keep the retrieval result JSON alongside the context pack output.
+- Record the policy values (`join_with`, `ordering`, `include_metadata`).
+- Record any budget inputs that trimmed the context pack.
+
 ## What context pack building does
 
 - Includes only usable text evidence.
 - Excludes evidence with no text payload or whitespace-only text.
+
+## Common pitfalls
+
+- Building context packs from different retrieval runs while comparing the results.
+- Comparing outputs with different `ordering` or `include_metadata` values.
+- Relying on token counts without recording the tokenizer identifier.
 
 ## Token budgets
 
