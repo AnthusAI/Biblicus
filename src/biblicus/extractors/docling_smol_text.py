@@ -16,7 +16,6 @@ from ..errors import ExtractionRunFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
-
 DOCLING_SUPPORTED_MEDIA_TYPES = frozenset(
     [
         "application/pdf",
@@ -78,8 +77,10 @@ class DoclingSmolExtractor(TextExtractor):
 
         try:
             from docling.document_converter import DocumentConverter  # noqa: F401
-            from docling.pipeline_options import VlmPipelineOptions  # noqa: F401
-            from docling.pipeline_options import vlm_model_specs  # noqa: F401
+            from docling.pipeline_options import (  # noqa: F401
+                VlmPipelineOptions,
+                vlm_model_specs,
+            )
         except ImportError as import_error:
             raise ExtractionRunFatalError(
                 "DoclingSmol extractor requires an optional dependency. "

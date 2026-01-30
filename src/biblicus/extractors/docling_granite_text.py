@@ -14,8 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..corpus import Corpus
 from ..errors import ExtractionRunFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
-from .base import TextExtractor
-
+from .base import TextExtractor  # noqa: F401
 
 DOCLING_SUPPORTED_MEDIA_TYPES = frozenset(
     [
@@ -78,8 +77,10 @@ class DoclingGraniteExtractor(TextExtractor):
 
         try:
             from docling.document_converter import DocumentConverter  # noqa: F401
-            from docling.pipeline_options import VlmPipelineOptions  # noqa: F401
-            from docling.pipeline_options import vlm_model_specs  # noqa: F401
+            from docling.pipeline_options import (  # noqa: F401
+                VlmPipelineOptions,
+                vlm_model_specs,
+            )
         except ImportError as import_error:
             raise ExtractionRunFatalError(
                 "DoclingGranite extractor requires an optional dependency. "
