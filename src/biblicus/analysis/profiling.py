@@ -266,7 +266,7 @@ def _build_extracted_text_report(
             empty_items += 1
             continue
         nonempty_items += 1
-        text_lengths.append(len(text_value))
+        text_lengths.append(len(stripped))
 
     sampled_lengths = _apply_sample(text_lengths, config.sample_size)
     characters_distribution = _build_distribution(sampled_lengths, config.percentiles)
