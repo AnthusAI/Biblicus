@@ -65,6 +65,8 @@ biblicus build my-corpus --backend sqlite-full-text-search
 biblicus query my-corpus --query "search terms"
 ```
 
+See `docs/RETRIEVAL.md` for a step-by-step retrieval walkthrough.
+
 #### Python API
 
 ```python
@@ -93,6 +95,8 @@ result = backend.query(
 )
 ```
 
+See `docs/RETRIEVAL_EVALUATION.md` for evaluation workflows and dataset formats.
+
 ## Choosing a Backend
 
 | Use Case | Recommended Backend | Notes |
@@ -103,6 +107,18 @@ result = backend.query(
 | Large corpora (>10,000 items) | [sqlite-full-text-search](sqlite-full-text-search.md) | Essential for performance |
 | Baseline comparisons | [scan](scan.md) | Simple reference implementation |
 | Term-frequency vector baseline | [vector](vector.md) | Deterministic cosine similarity |
+
+## Reproducibility checklist
+
+- Record the extraction run reference used for the backend build.
+- Keep backend recipe configurations in source control.
+- Reuse the same `QueryBudget` when comparing backends.
+
+## Common pitfalls
+
+- Comparing runs built from different extraction outputs.
+- Forgetting to persist the run identifier for later evaluation.
+- Using different budget settings and expecting metrics to be comparable.
 
 ## Performance Comparison
 
