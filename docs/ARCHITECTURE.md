@@ -88,6 +88,18 @@ Evidence is the canonical output of retrieval. Required fields:
 - `recipe_id` / `run_id` (for reproducibility)
 - Optional: `span_start`, `span_end`, `hash`
 
+## Evidence lifecycle
+
+Evidence flows through explicit stages and remains inspectable at every step:
+
+1. **Retrieval**: backends return evidence with `stage` labels and scores.
+2. **Processing**: optional reranking or filtering updates scores while preserving provenance.
+3. **Context shaping**: context packs select and format evidence into model-ready text.
+4. **Evaluation**: evaluation datasets compare evidence rankings to expectations.
+
+At each stage, the output remains a structured object, so you can inspect, store, and compare runs without re-running
+the entire pipeline.
+
 ## Architectural policies version zero
 
 ### Integration boundary
