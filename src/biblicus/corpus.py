@@ -16,6 +16,7 @@ import yaml
 from pydantic import ValidationError
 
 from .constants import (
+    ANALYSIS_RUNS_DIR_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
     EXTRACTION_RUNS_DIR_NAME,
@@ -32,6 +33,7 @@ from .models import (
     CorpusCatalog,
     CorpusConfig,
     ExtractionRunListEntry,
+    ExtractionRunReference,
     IngestResult,
     RetrievalRun,
 )
@@ -538,6 +540,16 @@ class Corpus:
         """
         return self.runs_dir / EXTRACTION_RUNS_DIR_NAME
 
+    @property
+    def analysis_runs_dir(self) -> Path:
+        """
+        Location of analysis run artifacts.
+
+        :return: Path to the analysis runs directory.
+        :rtype: Path
+        """
+        return self.runs_dir / ANALYSIS_RUNS_DIR_NAME
+
     def extraction_run_dir(self, *, extractor_id: str, run_id: str) -> Path:
         """
         Resolve an extraction run directory.
@@ -550,6 +562,19 @@ class Corpus:
         :rtype: Path
         """
         return self.extraction_runs_dir / extractor_id / run_id
+
+    def analysis_run_dir(self, *, analysis_id: str, run_id: str) -> Path:
+        """
+        Resolve an analysis run directory.
+
+        :param analysis_id: Analysis backend identifier.
+        :type analysis_id: str
+        :param run_id: Analysis run identifier.
+        :type run_id: str
+        :return: Analysis run directory.
+        :rtype: Path
+        """
+        return self.analysis_runs_dir / analysis_id / run_id
 
     def read_extracted_text(self, *, extractor_id: str, run_id: str, item_id: str) -> Optional[str]:
         """
@@ -646,6 +671,23 @@ class Corpus:
 
         entries.sort(key=lambda entry: (entry.created_at, entry.extractor_id, entry.run_id), reverse=True)
         return entries
+
+    def latest_extraction_run_reference(
+        self, *, extractor_id: Optional[str] = None
+    ) -> Optional[ExtractionRunReference]:
+        """
+        Return the most recent extraction run reference.
+
+        :param extractor_id: Optional extractor identifier filter.
+        :type extractor_id: str or None
+        :return: Latest extraction run reference or None when no runs exist.
+        :rtype: biblicus.models.ExtractionRunReference or None
+        """
+        entries = self.list_extraction_runs(extractor_id=extractor_id)
+        if not entries:
+            return None
+        latest = entries[0]
+        return ExtractionRunReference(extractor_id=latest.extractor_id, run_id=latest.run_id)
 
     def delete_extraction_run(self, *, extractor_id: str, run_id: str) -> None:
         """
