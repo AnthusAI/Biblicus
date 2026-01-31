@@ -165,8 +165,8 @@ def step_text_annotate_allowed_attributes(context, allowed: str) -> None:
 def step_text_annotate_no_word_splits(context) -> None:
     result = context.text_annotate_result
     marked = result.marked_up_text
-    assert re.search(r"\\w<span\\b", marked) is None
-    assert re.search(r"\\w</span>\\w", marked) is None
+    assert re.search(r"\w<span\b", marked) is None
+    assert re.search(r"\w</span>\w", marked) is None
 
 
 @then('the text annotate error mentions "{text}"')

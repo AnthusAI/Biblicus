@@ -189,8 +189,8 @@ def step_text_redact_has_attribute_value(context, name: str, value: str) -> None
 def step_text_redact_no_word_splits(context) -> None:
     result = context.text_redact_result
     marked = result.marked_up_text
-    assert re.search(r"\\w<span\\b", marked) is None
-    assert re.search(r"\\w</span>\\w", marked) is None
+    assert re.search(r"\w<span\b", marked) is None
+    assert re.search(r"\w</span>\w", marked) is None
 
 
 @then('the text redact error mentions "{text}"')

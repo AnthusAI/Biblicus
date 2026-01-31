@@ -140,8 +140,8 @@ def step_text_link_has_ref_span(context) -> None:
 def step_text_link_no_word_splits(context) -> None:
     result = context.text_link_result
     marked = result.marked_up_text
-    assert re.search(r"\\w<span\\b", marked) is None
-    assert re.search(r"\\w</span>\\w", marked) is None
+    assert re.search(r"\w<span\b", marked) is None
+    assert re.search(r"\w</span>\w", marked) is None
 
 
 @then('the text link error mentions "{text}"')
