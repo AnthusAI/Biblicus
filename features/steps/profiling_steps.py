@@ -79,6 +79,69 @@ def step_run_profiling_analysis_with_recipe(context, corpus_name: str, recipe_fi
 
 
 @when(
+    'I run a profiling analysis in corpus "{corpus_name}" using recipes "{recipe_files}" '
+    "and the latest extraction run with config overrides:"
+)
+def step_run_profiling_analysis_with_recipes_and_overrides(
+    context, corpus_name: str, recipe_files: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    recipe_paths = []
+    for token in recipe_files.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        recipe_paths.append(str(Path(workdir) / token))
+    run_ref = _run_reference_from_context(context)
+    args = ["--corpus", str(corpus), "analyze", "profile"]
+    for recipe_path in recipe_paths:
+        args.extend(["--recipe", recipe_path])
+    for row in context.table:
+        key = str(row["key"]).strip()
+        value = str(row["value"]).strip()
+        args.extend(["--config", f"{key}={value}"])
+    args.extend(["--extraction-run", run_ref])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_analysis_output = _parse_json_output(result.stdout)
+
+
+@when(
+    'I run a profiling analysis in corpus "{corpus_name}" using the latest extraction run with config overrides:'
+)
+def step_run_profiling_analysis_with_overrides_only(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    run_ref = _run_reference_from_context(context)
+    args = ["--corpus", str(corpus), "analyze", "profile"]
+    for row in context.table:
+        key = str(row["key"]).strip()
+        value = str(row["value"]).strip()
+        args.extend(["--config", f"{key}={value}"])
+    args.extend(["--extraction-run", run_ref])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_analysis_output = _parse_json_output(result.stdout)
+
+
+@then("the profiling analysis report includes sample_size {value:d}")
+def step_profiling_analysis_report_includes_sample_size(context, value: int) -> None:
+    output = _require_profiling_output(context)
+    report = output["report"]
+    assert report["sample_size"] == value
+
+
+@then("the profiling analysis report includes min_text_characters {value:d}")
+def step_profiling_analysis_report_includes_min_text_characters(context, value: int) -> None:
+    output = _require_profiling_output(context)
+    report = output["report"]
+    assert report["min_text_characters"] == value
+
+
+@when(
     'I run a profiling analysis in corpus "{corpus_name}" using recipe "{recipe_file}" without extraction run'
 )
 def step_run_profiling_analysis_with_recipe_without_extraction(
@@ -142,6 +205,17 @@ def step_profiling_output_includes_extracted_missing(context, count: int) -> Non
     report = output["report"]
     extracted_text = report["extracted_text"]
     assert extracted_text["extracted_missing_items"] == count
+
+
+@then("the profiling analysis output includes percentile {percentile:d}")
+def step_profiling_analysis_output_includes_percentile(context, percentile: int) -> None:
+    output = _require_profiling_output(context)
+    report = output["report"]
+    extracted_text = report["extracted_text"]
+    distribution = extracted_text["characters_distribution"]
+    percentiles = distribution.get("percentiles", [])
+    values = {entry.get("percentile") for entry in percentiles}
+    assert percentile in values
 
 
 @when('I create a profiling recipe file "{filename}" with:')

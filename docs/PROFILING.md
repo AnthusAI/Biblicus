@@ -28,6 +28,27 @@ To customize profiling metrics, pass a recipe file:
 biblicus analyze profile --corpus corpora/example --recipe recipes/profiling.yml --extraction-run pipeline:RUN_ID
 ```
 
+Profiling recipes support cascading composition. Pass multiple `--recipe` files; later recipes override earlier recipes
+via a deep merge:
+
+```
+biblicus analyze profile \
+  --corpus corpora/example \
+  --recipe recipes/profiling/base.yml \
+  --recipe recipes/profiling/strict.yml \
+  --extraction-run pipeline:RUN_ID
+```
+
+To override the composed configuration view from the command line, use `--config key=value` with dotted keys:
+
+```
+biblicus analyze profile \
+  --corpus corpora/example \
+  --recipe recipes/profiling/base.yml \
+  --config sample_size=200 \
+  --extraction-run pipeline:RUN_ID
+```
+
 ### Profiling recipe configuration
 
 Profiling recipes use the analysis schema version and accept these fields:
