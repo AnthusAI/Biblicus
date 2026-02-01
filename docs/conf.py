@@ -25,7 +25,8 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 autodoc_typehints = "description"
-html_theme = "sphinx_rtd_theme"
+html_theme = "biblicus_rtd"
+html_theme_path = [Path(__file__).resolve().parent / "_themes"]
 
 html_theme_options = {
     "prev_next_buttons_location": "bottom",

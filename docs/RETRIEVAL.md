@@ -54,7 +54,8 @@ Start with the simplest backend that answers your question:
 
 - `scan` for tiny corpora or sanity checks.
 - `sqlite-full-text-search` for a practical lexical baseline.
-- `vector` when you want deterministic term-frequency similarity without external dependencies.
+- `tf-vector` when you want deterministic term-frequency similarity without external dependencies.
+- `embedding-index-file` when you want embedding retrieval with a local, file-backed index.
 
 You can compare them with the same dataset and budget using the retrieval evaluation workflow.
 

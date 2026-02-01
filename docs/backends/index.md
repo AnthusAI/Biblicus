@@ -8,7 +8,9 @@ Biblicus provides pluggable retrieval backends that implement different search a
 
 scan
 sqlite-full-text-search
-vector
+tf-vector
+embedding-index-inmemory
+embedding-index-file
 ```
 
 ## Available Backends
@@ -33,15 +35,35 @@ Production-ready full-text search using SQLite FTS5 with BM25 ranking.
 - **Index**: SQLite database with FTS5 virtual tables
 - **Speed**: Fast with persistent index
 
-### [vector](vector.md)
+### [tf-vector](tf-vector.md)
 
-Deterministic term-frequency vector retrieval with cosine similarity.
+Deterministic term-frequency vector retrieval (vector space model baseline) with cosine similarity.
 
-- **Backend ID**: `vector`
+- **Backend ID**: `tf-vector`
 - **Installation**: Included by default
 - **Best for**: Semantic-style baselines without embeddings
 - **Index**: None (scans and scores at query time)
 - **Speed**: Moderate for small corpora
+
+### [embedding-index-inmemory](embedding-index-inmemory.md)
+
+Embedding-based retrieval with an in-memory exact cosine similarity index.
+
+- **Backend ID**: `embedding-index-inmemory`
+- **Installation**: Requires `numpy` and an embedding provider configuration
+- **Best for**: Textbook demos and small corpora
+- **Index**: In-memory embedding matrix
+- **Speed**: Fast for small corpora; bounded by safety caps
+
+### [embedding-index-file](embedding-index-file.md)
+
+Embedding-based retrieval with a file-backed exact cosine similarity index.
+
+- **Backend ID**: `embedding-index-file`
+- **Installation**: Requires `numpy` and an embedding provider configuration
+- **Best for**: Larger corpora without running an external vector database
+- **Index**: Memory-mapped embedding matrix + id mapping under the corpus
+- **Speed**: Exact scan; bounded memory via batching
 
 ## Quick Start
 
@@ -115,7 +137,9 @@ See `docs/RETRIEVAL_EVALUATION.md` for evaluation workflows and dataset formats.
 | Production applications | [sqlite-full-text-search](sqlite-full-text-search.md) | Fast queries with BM25 ranking |
 | Large corpora (>10,000 items) | [sqlite-full-text-search](sqlite-full-text-search.md) | Essential for performance |
 | Baseline comparisons | [scan](scan.md) | Simple reference implementation |
-| Term-frequency vector baseline | [vector](vector.md) | Deterministic cosine similarity |
+| Term-frequency vector baseline | [tf-vector](tf-vector.md) | Deterministic cosine similarity |
+| Embedding retrieval (in-memory) | [embedding-index-inmemory](embedding-index-inmemory.md) | Exact cosine similarity |
+| Embedding retrieval (file-backed) | [embedding-index-file](embedding-index-file.md) | Exact cosine similarity, memory-mapped |
 
 ## Reproducibility checklist
 
