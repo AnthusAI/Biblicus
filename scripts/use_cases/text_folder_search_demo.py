@@ -32,6 +32,18 @@ def _demo_source_files(repo_root: Path) -> List[Path]:
 
 
 def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, object]:
+    """
+    Run the demo workflow and return a JSON-serializable payload.
+
+    :param repo_root: Repository root path used to locate bundled demo data.
+    :type repo_root: pathlib.Path
+    :param corpus_path: Path to the corpus directory to initialize/use.
+    :type corpus_path: pathlib.Path
+    :param force: Whether to purge the corpus before ingesting demo content.
+    :type force: bool
+    :return: JSON-serializable demo output including retrieved evidence.
+    :rtype: dict[str, object]
+    """
     corpus = _prepare_corpus(corpus_path=corpus_path, force=force)
 
     ingested_item_ids: List[str] = []
@@ -84,6 +96,12 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """
+    Build an argument parser for this demo script.
+
+    :return: Parser for command-line arguments.
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser(
         description="Use case demo: folder of text files -> extraction -> indexing -> retrieval."
     )
@@ -93,6 +111,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """
+    Command-line entrypoint.
+
+    :return: Exit code.
+    :rtype: int
+    """
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parent.parent.parent
     payload = run_demo(

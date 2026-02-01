@@ -126,9 +126,7 @@ def step_apply_text_redact_with_types(context, text: str, types: str) -> None:
     context.text_redact_result = apply_text_redact(request)
 
 
-@when(
-    'I apply text redact to text "{text}" with redaction types "{types}" and prompt template:'
-)
+@when('I apply text redact to text "{text}" with redaction types "{types}" and prompt template:')
 def step_apply_text_redact_with_types_and_prompt(context, text: str, types: str) -> None:
     prompt_template = str(getattr(context, "text", "") or "")
     redaction_types = _parse_redaction_types(types)
@@ -174,13 +172,13 @@ def step_attempt_text_redact_with_types(context, text: str, types: str) -> None:
         context.text_redact_error = str(exc)
 
 
-@then('the text redact has {count:d} spans')
+@then("the text redact has {count:d} spans")
 def step_text_redact_span_count(context, count: int) -> None:
     result = context.text_redact_result
     assert len(result.spans) == count
 
 
-@then('the text redact has at least {count:d} spans')
+@then("the text redact has at least {count:d} spans")
 def step_text_redact_span_count_at_least(context, count: int) -> None:
     result = context.text_redact_result
     assert len(result.spans) >= count
@@ -230,9 +228,7 @@ def step_set_text_redact_retry_errors(context) -> None:
 def step_build_text_redact_retry_message(context) -> None:
     errors = getattr(context, "text_redact_retry_errors", []) or []
     current_text = str(getattr(context, "text", "") or "")
-    context.text_redact_retry_message = _build_retry_message(
-        errors, current_text, None
-    )
+    context.text_redact_retry_message = _build_retry_message(errors, current_text, None)
 
 
 @then('the text redact retry message includes "{text}"')
@@ -395,10 +391,8 @@ def step_attempt_text_redact_no_spans(context) -> None:
     original = redact_module.run_tool_loop
     original_confirm = redact_module.request_confirmation
     redact_module.run_tool_loop = fake_tool_loop
-    redact_module.request_confirmation = (
-        lambda **_kwargs: ToolLoopResult(
-            text="Account", done=True, last_error=None, messages=[]
-        )
+    redact_module.request_confirmation = lambda **_kwargs: ToolLoopResult(
+        text="Account", done=True, last_error=None, messages=[]
     )
     try:
         context.text_redact_result = apply_text_redact(request)
@@ -423,7 +417,7 @@ def step_attempt_text_redact_invalid_spans_after_loop(context) -> None:
         prompt_template="Return the requested text.",
         redaction_types=["pii"],
     )
-    marked_up = "<span redact=\"bad\">Account</span>"
+    marked_up = '<span redact="bad">Account</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
@@ -485,12 +479,8 @@ def step_attempt_redact_replace(context, old_str: str, new_str: str) -> None:
         context.text_redact_error = str(exc)
 
 
-@when(
-    'I attempt redact replace in text "{text}" with old_str "{old_str}" and new_str "{new_str}"'
-)
-def step_attempt_redact_replace_in_text(
-    context, text: str, old_str: str, new_str: str
-) -> None:
+@when('I attempt redact replace in text "{text}" with old_str "{old_str}" and new_str "{new_str}"')
+def step_attempt_redact_replace_in_text(context, text: str, old_str: str, new_str: str) -> None:
     try:
         _apply_redact_replace(text, old_str, new_str)
         context.text_redact_error = None

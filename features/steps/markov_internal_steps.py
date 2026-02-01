@@ -4,18 +4,20 @@ import builtins
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, List
 
 from behave import given, then, when
 
 from biblicus.analysis.markov import (
+    MarkovStateName,
+    MarkovStateNamingResponse,
     _add_boundary_segments,
     _apply_boundary_labels,
     _apply_start_end_labels,
     _apply_topic_modeling,
     _assign_state_names,
-    _build_states,
     _build_observations,
+    _build_states,
     _compute_state_position_stats,
     _Document,
     _encode_observations,
@@ -28,11 +30,9 @@ from biblicus.analysis.markov import (
     _span_markup_segments,
     _state_naming_context_pack,
     _tfidf_encode,
-    _verify_end_label,
     _validate_state_names,
+    _verify_end_label,
     _write_graphviz,
-    MarkovStateName,
-    MarkovStateNamingResponse,
 )
 from biblicus.analysis.models import (
     MarkovAnalysisArtifactsConfig,
@@ -103,7 +103,11 @@ def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None
                 "segmentation": {
                     "method": "span_markup",
                     "span_markup": {
-                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "client": {
+                            "provider": "openai",
+                            "model": "gpt-4o-mini",
+                            "api_key": "test-key",
+                        },
                         "prompt_template": "Return spans.",
                         "system_prompt": "Current text:\n---\n{text}\n---\n",
                         "start_label_value": "START",
@@ -111,7 +115,11 @@ def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None
                         "end_reject_label_value": "END_REJECTED",
                         "end_reject_reason_prefix": "Reason",
                         "end_label_verifier": {
-                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "client": {
+                                "provider": "openai",
+                                "model": "gpt-4o-mini",
+                                "api_key": "test-key",
+                            },
                             "system_prompt": "Verify end:\n{text}",
                             "prompt_template": "Return end decision.",
                         },
@@ -121,7 +129,9 @@ def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None
                 "observations": {"encoder": "tfidf"},
             }
         )
-        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+        context.last_segments = _apply_start_end_labels(
+            item_id=item_id, payloads=payloads, config=config
+        )
     finally:
         markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
 
@@ -180,7 +190,9 @@ def step_apply_start_end_labels_without_end_label(context, item_id: str) -> None
             "observations": {"encoder": "tfidf"},
         }
     )
-    context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+    context.last_segments = _apply_start_end_labels(
+        item_id=item_id, payloads=payloads, config=config
+    )
 
 
 @when('I apply start/end labels with rejected end but no rejection label for item "{item_id}":')
@@ -204,13 +216,21 @@ def step_apply_start_end_labels_rejected_end_without_rejection_label(context, it
                 "segmentation": {
                     "method": "span_markup",
                     "span_markup": {
-                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "client": {
+                            "provider": "openai",
+                            "model": "gpt-4o-mini",
+                            "api_key": "test-key",
+                        },
                         "prompt_template": "Return spans.",
                         "system_prompt": "Current text:\n---\n{text}\n---\n",
                         "start_label_value": "START",
                         "end_label_value": "END",
                         "end_label_verifier": {
-                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "client": {
+                                "provider": "openai",
+                                "model": "gpt-4o-mini",
+                                "api_key": "test-key",
+                            },
                             "system_prompt": "Verify end:\n{text}",
                             "prompt_template": "Return end decision.",
                         },
@@ -220,7 +240,9 @@ def step_apply_start_end_labels_rejected_end_without_rejection_label(context, it
                 "observations": {"encoder": "tfidf"},
             }
         )
-        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+        context.last_segments = _apply_start_end_labels(
+            item_id=item_id, payloads=payloads, config=config
+        )
     finally:
         markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
 
@@ -246,7 +268,11 @@ def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: st
                 "segmentation": {
                     "method": "span_markup",
                     "span_markup": {
-                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "client": {
+                            "provider": "openai",
+                            "model": "gpt-4o-mini",
+                            "api_key": "test-key",
+                        },
                         "prompt_template": "Return spans.",
                         "system_prompt": "Current text:\n---\n{text}\n---\n",
                         "start_label_value": "START",
@@ -254,7 +280,11 @@ def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: st
                         "end_reject_label_value": "END_REJECTED",
                         "end_reject_reason_prefix": "Reason",
                         "end_label_verifier": {
-                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "client": {
+                                "provider": "openai",
+                                "model": "gpt-4o-mini",
+                                "api_key": "test-key",
+                            },
                             "system_prompt": "Verify end:\n{text}",
                             "prompt_template": "Return end decision.",
                         },
@@ -264,7 +294,9 @@ def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: st
                 "observations": {"encoder": "tfidf"},
             }
         )
-        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+        context.last_segments = _apply_start_end_labels(
+            item_id=item_id, payloads=payloads, config=config
+        )
     finally:
         markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
 
@@ -1115,9 +1147,11 @@ def step_fit_and_decode_categorical_with_numpy(context) -> None:
     original_numpy = sys.modules.get("numpy")
     try:
         import numpy as numpy_module
+
         context.numpy_available = numpy_module is not None
     except ImportError:
         numpy_module = types.ModuleType("numpy")
+
         def asarray(values: object, dtype: object = None) -> object:
             return values
 
@@ -1150,6 +1184,7 @@ def step_fit_and_decode_gaussian_with_numpy(context) -> None:
     original_numpy = sys.modules.get("numpy")
     try:
         import numpy as numpy_module
+
         context.numpy_available = numpy_module is not None
     except ImportError:
         numpy_module = types.ModuleType("numpy")
@@ -1219,10 +1254,10 @@ def step_assign_state_names_with_provider_response(context) -> None:
 
     def fake_generate_completion(*args: object, **kwargs: object) -> str:
         return (
-            '{\"state_names\":['
-            '{\"state_id\":0,\"name\":\"greeting\"},'
-            '{\"state_id\":1,\"name\":\"billing question\"}'
-            ']}'
+            '{"state_names":['
+            '{"state_id":0,"name":"greeting"},'
+            '{"state_id":1,"name":"billing question"}'
+            "]}"
         )
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
@@ -1263,10 +1298,10 @@ def step_assign_state_names_with_verb_phrase_response(context) -> None:
 
     def fake_generate_completion(*args: object, **kwargs: object) -> str:
         return (
-            '{\"state_names\":['
-            '{\"state_id\":0,\"name\":\"is greeting\"},'
-            '{\"state_id\":1,\"name\":\"to resolve billing\"}'
-            ']}'
+            '{"state_names":['
+            '{"state_id":0,"name":"is greeting"},'
+            '{"state_id":1,"name":"to resolve billing"}'
+            "]}"
         )
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
@@ -1404,16 +1439,8 @@ def step_assign_state_names_with_retries_and_prefixes(context) -> None:
     original_generate_completion = markov_module.generate_completion
     responses = iter(
         [
-            (
-                '{\"state_names\":['
-                '{\"state_id\":2,\"name\":\"is greeting\"}'
-                ']}'
-            ),
-            (
-                '{\"state_names\":['
-                '{\"state_id\":2,\"name\":\"Initial contact\"}'
-                ']}'
-            ),
+            ('{"state_names":[' '{"state_id":2,"name":"is greeting"}' "]}"),
+            ('{"state_names":[' '{"state_id":2,"name":"Initial contact"}' "]}"),
         ]
     )
 
@@ -1540,10 +1567,7 @@ def step_assign_state_names_with_missing_label_in_validation_output(context) -> 
     def fake_generate_completion(*args: object, **kwargs: object) -> str:
         _ = args, kwargs
         return (
-            '{\"state_names\":['
-            '{\"state_id\":0,\"name\":\"Alpha\"},'
-            '{\"state_id\":1,\"name\":\"Beta\"}'
-            ']}'
+            '{"state_names":[' '{"state_id":0,"name":"Alpha"},' '{"state_id":1,"name":"Beta"}' "]}"
         )
 
     def fake_validate_state_names(*args: object, **kwargs: object) -> dict[int, str]:
@@ -1611,7 +1635,9 @@ def step_attempt_span_markup_prepend_without_label_attribute(context) -> None:
                 label_attribute=None,
             ),
         )
-        config = MarkovAnalysisRecipeConfig.model_construct(schema_version=1, segmentation=segmentation)
+        config = MarkovAnalysisRecipeConfig.model_construct(
+            schema_version=1, segmentation=segmentation
+        )
 
         def _invoke() -> None:
             _span_markup_segments(item_id="item", text="Hello", config=config)
@@ -1652,7 +1678,9 @@ def step_attempt_span_markup_missing_label_value(context) -> None:
                 label_attribute="label",
             ),
         )
-        config = MarkovAnalysisRecipeConfig.model_construct(schema_version=1, segmentation=segmentation)
+        config = MarkovAnalysisRecipeConfig.model_construct(
+            schema_version=1, segmentation=segmentation
+        )
 
         def _invoke() -> None:
             _span_markup_segments(item_id="item", text="Hello", config=config)
@@ -1790,7 +1818,9 @@ def step_attempt_apply_start_end_labels_without_config(context) -> None:
     )
 
     def _invoke() -> None:
-        _apply_start_end_labels(item_id="item", payloads=[{"segment_index": 1, "body": "x", "text": "x"}], config=config)
+        _apply_start_end_labels(
+            item_id="item", payloads=[{"segment_index": 1, "body": "x", "text": "x"}], config=config
+        )
 
     _record_error(context, _invoke)
 

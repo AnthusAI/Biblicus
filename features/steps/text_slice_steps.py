@@ -199,7 +199,7 @@ def step_attempt_apply_text_slice(context, text: str) -> None:
 
 
 @when(
-    "I attempt to apply text slice to text \"{text}\" with max rounds {max_rounds:d} "
+    'I attempt to apply text slice to text "{text}" with max rounds {max_rounds:d} '
     "and max edits per round {max_edits:d}"
 )
 def step_attempt_text_slice_with_limits(
@@ -329,6 +329,7 @@ def step_attempt_text_slice_forced_empty(context) -> None:
     )
     original_extract = slice_module._extract_slices
     try:
+
         def _empty_slices(*, marked_up_text: str) -> list:
             _ = marked_up_text
             return []
@@ -342,13 +343,13 @@ def step_attempt_text_slice_forced_empty(context) -> None:
         slice_module._extract_slices = original_extract
 
 
-@then('the text slice has {count:d} slices')
+@then("the text slice has {count:d} slices")
 def step_text_slice_count(context, count: int) -> None:
     result = context.text_slice_result
     assert len(result.slices) == count
 
 
-@then('the text slice has at least {count:d} slices')
+@then("the text slice has at least {count:d} slices")
 def step_text_slice_at_least_count(context, count: int) -> None:
     result = context.text_slice_result
     assert len(result.slices) >= count
@@ -381,7 +382,9 @@ def step_attempt_text_slice_confirmation_last_error(context) -> None:
         return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
 
     def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Hello", done=False, last_error="confirmation error", messages=[])
+        return ToolLoopResult(
+            text="Hello", done=False, last_error="confirmation error", messages=[]
+        )
 
     original = slice_module.run_tool_loop
     original_confirm = slice_module.request_confirmation
@@ -397,7 +400,9 @@ def step_attempt_text_slice_confirmation_last_error(context) -> None:
         slice_module.request_confirmation = original_confirm
 
 
-@when("I attempt to apply text slice where confirmation inserts a marker but no slices are returned")
+@when(
+    "I attempt to apply text slice where confirmation inserts a marker but no slices are returned"
+)
 def step_attempt_text_slice_confirmation_produces_no_slices(context) -> None:
     request = _build_slice_request("Hello")
 

@@ -47,9 +47,7 @@ def step_attempt_validate_markov_recipe_missing_span_markup(context, method: str
         context.validation_error = exc
 
 
-@when(
-    'I attempt to validate a Markov recipe with span markup system prompt missing "{token}"'
-)
+@when('I attempt to validate a Markov recipe with span markup system prompt missing "{token}"')
 def step_attempt_validate_markov_recipe_span_markup_system_prompt_missing(
     context, token: str
 ) -> None:
@@ -78,12 +76,8 @@ def step_attempt_validate_markov_recipe_span_markup_system_prompt_missing(
         context.validation_error = exc
 
 
-@when(
-    'I attempt to validate a Markov recipe with span markup prompt template containing "{token}"'
-)
-def step_attempt_validate_markov_recipe_span_markup_prompt_contains(
-    context, token: str
-) -> None:
+@when('I attempt to validate a Markov recipe with span markup prompt template containing "{token}"')
+def step_attempt_validate_markov_recipe_span_markup_prompt_contains(context, token: str) -> None:
     try:
         MarkovAnalysisRecipeConfig.model_validate(
             {
@@ -167,7 +161,9 @@ def step_attempt_validate_markov_recipe_span_markup_end_label_missing_verifier(c
         context.validation_error = exc
 
 
-@when("I attempt to validate a Markov recipe with span markup end reject label value but no verifier")
+@when(
+    "I attempt to validate a Markov recipe with span markup end reject label value but no verifier"
+)
 def step_attempt_validate_markov_recipe_span_markup_end_reject_missing_verifier(context) -> None:
     try:
         MarkovAnalysisRecipeConfig.model_validate(
@@ -366,6 +362,7 @@ def step_markov_state_naming_is_disabled(context) -> None:
     assert state_naming is not None
     assert state_naming.enabled is False
 
+
 @when(
     'I attempt to validate a Markov recipe with state naming system prompt missing "{context_pack}"'
 )
@@ -444,7 +441,9 @@ def step_attempt_validate_markov_recipe_topic_modeling_enabled_without_recipe(co
         context.validation_error = exc
 
 
-@when("I attempt to validate a Markov recipe with topic modeling enabled and non-single LLM extraction")
+@when(
+    "I attempt to validate a Markov recipe with topic modeling enabled and non-single LLM extraction"
+)
 def step_attempt_validate_markov_recipe_topic_modeling_non_single_llm_extraction(context) -> None:
     try:
         MarkovAnalysisRecipeConfig.model_validate(

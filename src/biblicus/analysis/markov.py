@@ -15,7 +15,6 @@ from pydantic import BaseModel
 
 from ..ai.embeddings import generate_embeddings_batch
 from ..ai.llm import generate_completion
-from ..corpus import Corpus
 from ..context import (
     ContextPack,
     ContextPackPolicy,
@@ -23,8 +22,8 @@ from ..context import (
     build_context_pack,
     fit_context_pack_to_token_budget,
 )
-from ..models import ExtractionRunReference
-from ..models import Evidence, QueryBudget, RetrievalResult
+from ..corpus import Corpus
+from ..models import Evidence, ExtractionRunReference, QueryBudget, RetrievalResult
 from ..retrieval import hash_text
 from ..text.annotate import TextAnnotateRequest, apply_text_annotate
 from ..text.extract import TextExtractRequest, apply_text_extract
@@ -406,20 +405,14 @@ def _add_boundary_segments(
     def flush() -> None:
         item_id = buffer[0].item_id
         index = 1
-        enriched.append(
-            MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="START")
-        )
+        enriched.append(MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="START"))
         for segment in buffer:
             index += 1
             enriched.append(
-                MarkovAnalysisSegment(
-                    item_id=item_id, segment_index=index, text=segment.text
-                )
+                MarkovAnalysisSegment(item_id=item_id, segment_index=index, text=segment.text)
             )
         index += 1
-        enriched.append(
-            MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="END")
-        )
+        enriched.append(MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="END"))
 
     for segment in segments:
         if current_item is None:
@@ -550,9 +543,7 @@ def _span_markup_segments(
                 )
             label_value = str(span.attributes.get(label_attribute, "")).strip()
             if not label_value:
-                raise ValueError(
-                    f"Span {index} missing label attribute '{label_attribute}'"
-                )
+                raise ValueError(f"Span {index} missing label attribute '{label_attribute}'")
             segment_text = f"{label_value}\n{segment_body}"
         segment_payloads.append(
             {"segment_index": index, "body": segment_body, "text": segment_text}
@@ -632,8 +623,6 @@ def _apply_start_end_labels(
                 update={"text": f"{prefix}\n{segments[-1].text}"}
             )
     return segments
-
-
 
 
 def _parse_json_list(raw: str, *, error_label: str) -> List[object]:
@@ -1280,9 +1269,7 @@ def _assign_state_names(
         allowed_state_id=end_state_id,
     )
     naming_states = [
-        state
-        for state in sanitized_states
-        if state.state_id not in {start_state_id, end_state_id}
+        state for state in sanitized_states if state.state_id not in {start_state_id, end_state_id}
     ]
     if not naming_states:
         return _apply_boundary_labels(
@@ -1309,9 +1296,7 @@ def _assign_state_names(
     last_error: Optional[str] = None
     for attempt in range(naming.max_retries + 1):
         if last_error is not None:
-            user_prompt = (
-                f"{user_prompt}\n\nPrevious response:\n{last_error}\n\nFix the issues and return only JSON."
-            )
+            user_prompt = f"{user_prompt}\n\nPrevious response:\n{last_error}\n\nFix the issues and return only JSON."
         response_text = generate_completion(
             client=naming.client,
             system_prompt=system_prompt,
@@ -1444,9 +1429,7 @@ def _compute_state_position_stats(
                 else 0.0
             ),
             "before_end_pct": (
-                before_end_counts.get(state_id, 0) / total_before_end
-                if total_before_end
-                else 0.0
+                before_end_counts.get(state_id, 0) / total_before_end if total_before_end else 0.0
             ),
             "avg_position_pct": (
                 avg_position_sums.get(state_id, 0.0) / avg_count if avg_count else 0.0
@@ -1503,9 +1486,7 @@ def _write_topic_assignments(
             "topic_label": observation.topic_label,
         }
         lines.append(json.dumps(payload, ensure_ascii=True))
-    (run_dir / "topic_assignments.jsonl").write_text(
-        "\n".join(lines) + "\n", encoding="utf-8"
-    )
+    (run_dir / "topic_assignments.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _write_graphviz(
@@ -1616,9 +1597,7 @@ def _write_graphviz(
         )
     if end_state_id is not None:
         lines.append(f"  {{ rank=max; {end_state_id}; }}")
-        lines.append(
-            f'  {end_state_id} [shape="ellipse", peripheries=2, color="#b42318"];'
-        )
+        lines.append(f'  {end_state_id} [shape="ellipse", peripheries=2, color="#b42318"];')
     observed_counts: Dict[Tuple[int, int], int] = {}
     observed_totals_by_state: Dict[int, int] = {}
     for path in decoded_paths:
@@ -1627,25 +1606,19 @@ def _write_graphviz(
             observed_counts[(from_state, to_state)] = (
                 observed_counts.get((from_state, to_state), 0) + 1
             )
-            observed_totals_by_state[from_state] = (
-                observed_totals_by_state.get(from_state, 0) + 1
-            )
+            observed_totals_by_state[from_state] = observed_totals_by_state.get(from_state, 0) + 1
 
     for transition in transitions:
         if end_state_id is not None and transition.from_state == end_state_id:
             continue
         observed_count = observed_counts.get((transition.from_state, transition.to_state), 0)
         observed_total = observed_totals_by_state.get(transition.from_state, 0)
-        observed_weight = (
-            observed_count / observed_total if observed_total else transition.weight
-        )
+        observed_weight = observed_count / observed_total if observed_total else transition.weight
         if observed_total and observed_count == 0:
             continue
         if observed_weight < graphviz.min_edge_weight:
             continue
         label = f"{observed_weight * 100.0:.1f}%"
-        lines.append(
-            f'  {transition.from_state} -> {transition.to_state} [label="{label}"];'
-        )
+        lines.append(f'  {transition.from_state} -> {transition.to_state} [label="{label}"];')
     lines.append("}")
     (run_dir / "transitions.dot").write_text("\n".join(lines) + "\n", encoding="utf-8")

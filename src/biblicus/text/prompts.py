@@ -4,7 +4,6 @@ Default prompts for Biblicus text utilities.
 
 from __future__ import annotations
 
-
 DEFAULT_PROMPT_TEMPLATE = "Return the requested text."
 
 DEFAULT_EXTRACT_SYSTEM_PROMPT = (
@@ -47,7 +46,7 @@ DEFAULT_SLICE_SYSTEM_PROMPT = (
 DEFAULT_ANNOTATE_SYSTEM_PROMPT = (
     "You are a virtual file editor. Use the available tools to edit the text.\n"
     "Interpret the user's request as: wrap the requested text with "
-    "<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.\n"
+    '<span ATTRIBUTE="VALUE">...</span> in-place in the current text.\n'
     "Each span must include exactly one attribute from: {{ allowed_attributes }}.\n\n"
     "Use the str_replace tool to insert span tags and the done tool when finished.\n"
     "When finished, call done. Do NOT return JSON in the assistant message.\n\n"
@@ -67,7 +66,7 @@ DEFAULT_ANNOTATE_SYSTEM_PROMPT = (
 DEFAULT_LINK_SYSTEM_PROMPT = (
     "You are a virtual file editor. Use the available tools to edit the text.\n"
     "Interpret the word 'return' in the user's request as: wrap the returned text with "
-    "<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.\n"
+    '<span ATTRIBUTE="VALUE">...</span> in-place in the current text.\n'
     "Each span must include exactly one attribute: id for first mentions and ref for repeats.\n"
     "Id values must start with '{{ id_prefix }}'.\n\n"
     "Linking rules:\n"

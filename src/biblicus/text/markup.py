@@ -131,9 +131,7 @@ def extract_span_indices(errors: Sequence[str]) -> List[int]:
     return sorted(set(indices))
 
 
-def summarize_span_context(
-    marked_up_text: str, span_indices: Sequence[int]
-) -> List[str]:
+def summarize_span_context(marked_up_text: str, span_indices: Sequence[int]) -> List[str]:
     """
     Summarize span context for the requested indices.
 

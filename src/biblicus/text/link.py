@@ -53,9 +53,7 @@ def apply_text_link(request: TextLinkRequest) -> TextLinkResult:
         max_rounds=request.max_rounds,
         max_edits_per_round=request.max_edits_per_round,
         apply_str_replace=_apply_link_replace,
-        validate_text=lambda current_text: _validate_link_markup(
-            current_text, request.id_prefix
-        ),
+        validate_text=lambda current_text: _validate_link_markup(current_text, request.id_prefix),
         build_retry_message=lambda errors, current_text: _build_retry_message(
             errors, current_text, request.id_prefix
         ),
@@ -231,9 +229,7 @@ def _is_ref_coverage_error(error: str) -> bool:
         return True
     if error.startswith("Id '") and error.endswith("must have at least one ref span"):
         return True
-    if error.startswith("Repeated text '") and error.endswith(
-        "must include ref spans for repeats"
-    ):
+    if error.startswith("Repeated text '") and error.endswith("must include ref spans for repeats"):
         return True
     return False
 
@@ -254,16 +250,12 @@ def _promote_ref_spans_to_id(
         ref_spans = [span for span in group if "ref" in span.attributes]
         if not ref_spans:
             continue
-        candidate = sorted(
-            ref_spans, key=lambda span: (span.start_char, span.end_char)
-        )[0]
+        candidate = sorted(ref_spans, key=lambda span: (span.start_char, span.end_char))[0]
         ref_value = candidate.attributes.get("ref", "")
         if not ref_value.startswith(id_prefix):
             continue
         promote_indices[candidate.index] = ref_value
-        warnings.append(
-            f"Promoted ref span for '{span_text}' to id '{ref_value}'."
-        )
+        warnings.append(f"Promoted ref span for '{span_text}' to id '{ref_value}'.")
     if not promote_indices:
         return list(spans), []
     updated: List[TextAnnotatedSpan] = []
@@ -283,9 +275,7 @@ def _promote_ref_spans_to_id(
     return updated, warnings
 
 
-def _validate_link_spans(
-    spans: Iterable[TextAnnotatedSpan], id_prefix: str
-) -> List[str]:
+def _validate_link_spans(spans: Iterable[TextAnnotatedSpan], id_prefix: str) -> List[str]:
     errors: List[str] = []
     seen_ids: List[str] = []
     id_counts: Dict[str, int] = {}
@@ -302,25 +292,17 @@ def _validate_link_spans(
             continue
         if name == "id":
             if not value.startswith(id_prefix):
-                errors.append(
-                    f"Span {span.index} id '{value}' must start with '{id_prefix}'"
-                )
+                errors.append(f"Span {span.index} id '{value}' must start with '{id_prefix}'")
             if value in seen_ids:
                 errors.append(f"Span {span.index} uses duplicate id '{value}'")
             seen_ids.append(value)
             id_counts[value] = id_counts.get(value, 0) + 1
-            span_texts_by_id.setdefault(value, {"id": set(), "ref": set()})["id"].add(
-                span.text
-            )
+            span_texts_by_id.setdefault(value, {"id": set(), "ref": set()})["id"].add(span.text)
         elif name == "ref":
             if value not in seen_ids:
-                errors.append(
-                    f"Span {span.index} ref '{value}' does not match a previous id"
-                )
+                errors.append(f"Span {span.index} ref '{value}' does not match a previous id")
             ref_counts[value] = ref_counts.get(value, 0) + 1
-            span_texts_by_id.setdefault(value, {"id": set(), "ref": set()})["ref"].add(
-                span.text
-            )
+            span_texts_by_id.setdefault(value, {"id": set(), "ref": set()})["ref"].add(span.text)
         else:
             errors.append(
                 f"Span {span.index} uses attribute '{name}' but only 'id' or 'ref' are allowed"
@@ -343,27 +325,17 @@ def _validate_link_spans(
     for span_text, span_group in spans_by_text.items():
         if len(span_group) <= 1:
             continue
-        id_values = [
-            span.attributes.get("id") for span in span_group if "id" in span.attributes
-        ]
-        ref_values = [
-            span.attributes.get("ref") for span in span_group if "ref" in span.attributes
-        ]
+        id_values = [span.attributes.get("id") for span in span_group if "id" in span.attributes]
+        ref_values = [span.attributes.get("ref") for span in span_group if "ref" in span.attributes]
         if len(id_values) != 1:
-            errors.append(
-                f"Repeated text '{span_text}' must have exactly one id span"
-            )
+            errors.append(f"Repeated text '{span_text}' must have exactly one id span")
             continue
         id_value = id_values[0]
         if not ref_values:
-            errors.append(
-                f"Repeated text '{span_text}' must include ref spans for repeats"
-            )
+            errors.append(f"Repeated text '{span_text}' must include ref spans for repeats")
             continue
         if any(ref != id_value for ref in ref_values):
-            errors.append(
-                f"Repeated text '{span_text}' refs must match id '{id_value}'"
-            )
+            errors.append(f"Repeated text '{span_text}' refs must match id '{id_value}'")
     for id_value, count in id_counts.items():
         if count > 1:
             continue
@@ -372,9 +344,7 @@ def _validate_link_spans(
     return errors
 
 
-def _validate_link_coverage(
-    marked_up_text: str, spans: Iterable[TextAnnotatedSpan]
-) -> List[str]:
+def _validate_link_coverage(marked_up_text: str, spans: Iterable[TextAnnotatedSpan]) -> List[str]:
     plain_text = strip_span_tags(marked_up_text)
     spans_by_text: Dict[str, int] = {}
     for span in spans:
@@ -473,13 +443,13 @@ def _render_span_markup(text: str, spans: List[TextAnnotatedSpan]) -> str:
     for span in spans:
         if span.start_char < cursor:
             raise ValueError("Span overlap detected while rendering markup")
-        parts.append(text[cursor:span.start_char])
-        attrs = " ".join(f'{key}=\"{value}\"' for key, value in span.attributes.items())
+        parts.append(text[cursor : span.start_char])
+        attrs = " ".join(f'{key}="{value}"' for key, value in span.attributes.items())
         if attrs:
             parts.append(f"<span {attrs}>")
         else:
             parts.append("<span>")
-        parts.append(text[span.start_char:span.end_char])
+        parts.append(text[span.start_char : span.end_char])
         parts.append("</span>")
         cursor = span.end_char
     parts.append(text[cursor:])
@@ -520,9 +490,7 @@ def _build_coverage_guidance(errors: Sequence[str]) -> str:
             continue
         if error.startswith("Id '") and error.endswith("must have at least one ref span"):
             id_value = error.split("'")[1]
-            instructions.append(
-                f"- Add ref spans with ref=\"{id_value}\" for each later occurrence."
-            )
+            instructions.append(f'- Add ref spans with ref="{id_value}" for each later occurrence.')
             continue
         if error.startswith("Repeated text '") and error.endswith(
             "must include ref spans for repeats"

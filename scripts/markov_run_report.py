@@ -67,6 +67,16 @@ def _segments_by_state(
 
 
 def build_report(run_dir: Path) -> Path:
+    """
+    Build a Markdown report for a Markov analysis run directory.
+
+    :param run_dir: Path to the Markov analysis run directory containing ``output.json`` and
+        related artifacts (for example ``segments.jsonl``).
+    :type run_dir: pathlib.Path
+    :return: Path to the generated report file.
+    :rtype: pathlib.Path
+    :raises ValueError: If required run artifacts are missing or have unexpected structure.
+    """
     output = _load_json(run_dir / "output.json")
     report = output["report"]
 
@@ -113,9 +123,7 @@ def build_report(run_dir: Path) -> Path:
     lines.append("## Transitions (graph edges)")
     lines.append("")
     for edge in transitions:
-        lines.append(
-            f"- {edge['from_state']} -> {edge['to_state']}: {edge['weight']:.4f}"
-        )
+        lines.append(f"- {edge['from_state']} -> {edge['to_state']}: {edge['weight']:.4f}")
     lines.append("")
     lines.append("## States (how to interpret)")
     lines.append("")
@@ -195,7 +203,7 @@ def build_report(run_dir: Path) -> Path:
         if relpath:
             lines.append(f"- Source path: `{corpus_path / relpath}`")
             try:
-                raw_text = (corpus_path / relpath).read_text(encoding='utf-8').strip()
+                raw_text = (corpus_path / relpath).read_text(encoding="utf-8").strip()
             except Exception:
                 raw_text = ""
             if raw_text:
@@ -212,8 +220,18 @@ def build_report(run_dir: Path) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate a Markdown report for a Markov analysis run.")
-    parser.add_argument("--run-dir", required=True, help="Path to the Markov analysis run directory.")
+    """
+    Command-line entrypoint.
+
+    :return: Exit code.
+    :rtype: int
+    """
+    parser = argparse.ArgumentParser(
+        description="Generate a Markdown report for a Markov analysis run."
+    )
+    parser.add_argument(
+        "--run-dir", required=True, help="Path to the Markov analysis run directory."
+    )
     args = parser.parse_args()
     run_dir = Path(args.run_dir).resolve()
     report_path = build_report(run_dir)

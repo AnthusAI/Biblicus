@@ -237,7 +237,7 @@ def step_attempt_apply_text_extract_with_provider(context, provider: str, text: 
 
 
 @when(
-    "I attempt to apply text extract to text \"{text}\" with max rounds {max_rounds:d} "
+    'I attempt to apply text extract to text "{text}" with max rounds {max_rounds:d} '
     "and max edits per round {max_edits:d}"
 )
 def step_attempt_text_extract_with_limits(
@@ -321,9 +321,7 @@ def step_validate_text_extract_prompt_template(context, prompt_template: str) ->
         context.text_extract_error = str(exc)
 
 
-@when(
-    'I attempt to validate preserved text "{original}" with marked-up text "{marked_up}"'
-)
+@when('I attempt to validate preserved text "{original}" with marked-up text "{marked_up}"')
 def step_validate_text_extract_preserved_text(context, original: str, marked_up: str) -> None:
     try:
         _validate_preserved_text(original=original, marked_up=marked_up)
@@ -332,13 +330,13 @@ def step_validate_text_extract_preserved_text(context, original: str, marked_up:
         context.text_extract_error = str(exc)
 
 
-@then('the text extract has {count:d} span')
+@then("the text extract has {count:d} span")
 def step_text_extract_span_count(context, count: int) -> None:
     result = context.text_extract_result
     assert len(result.spans) == count
 
 
-@then('the text extract has at least {count:d} spans')
+@then("the text extract has at least {count:d} spans")
 def step_text_extract_at_least_count(context, count: int) -> None:
     result = context.text_extract_result
     assert len(result.spans) >= count

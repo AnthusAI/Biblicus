@@ -185,8 +185,7 @@ def run_tool_loop(
                         try:
                             current_text = apply_str_replace(current_text, old_str, new_str)
                             tool_result = (
-                                "Applied str_replace.\nCurrent text:\n---\n"
-                                f"{current_text}\n---"
+                                "Applied str_replace.\nCurrent text:\n---\n" f"{current_text}\n---"
                             )
                             last_error = None
                         except ValueError as exc:
@@ -291,12 +290,7 @@ def _build_no_tool_calls_message(*, assistant_message: str, current_text: str) -
     message = "Your last response did not include any tool calls."
     if assistant_message.strip():
         message = f"{message}\nAssistant message: {assistant_message}"
-    return (
-        f"{message}\n"
-        f"{guidance}\n"
-        "Current text:\n"
-        f"---\n{current_text}\n---"
-    )
+    return f"{message}\n" f"{guidance}\n" "Current text:\n" f"---\n{current_text}\n---"
 
 
 def request_confirmation(

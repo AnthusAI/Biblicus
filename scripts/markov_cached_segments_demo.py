@@ -18,8 +18,8 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from biblicus.analysis.markov import (
     MarkovBackend,
     _add_boundary_segments,
-    _assign_state_names,
     _analysis_run_id,
+    _assign_state_names,
     _build_observations,
     _build_states,
     _collect_documents,
@@ -113,7 +113,9 @@ def _cache_root(*, corpus_path: Path, override: Optional[str]) -> Path:
     return corpus_path / ".biblicus" / "demo_cache" / "markov" / "segments"
 
 
-def _load_cached_segments(*, cache_dir: Path) -> Tuple[List[MarkovAnalysisSegment], Dict[str, object]]:
+def _load_cached_segments(
+    *, cache_dir: Path
+) -> Tuple[List[MarkovAnalysisSegment], Dict[str, object]]:
     segments_path = cache_dir / "segments.jsonl"
     manifest_path = cache_dir / "cache_manifest.json"
     if not segments_path.exists() or not manifest_path.exists():
@@ -226,9 +228,7 @@ def _payloads_from_cache(
                     body_value = "\n".join(lines[1:]).strip()
         if not text_value:
             continue
-        payloads.append(
-            {"segment_index": index, "body": body_value, "text": text_value}
-        )
+        payloads.append({"segment_index": index, "body": body_value, "text": text_value})
     return payloads
 
 
@@ -250,6 +250,7 @@ def _build_cached_segments(
         extraction_run=extraction_run,
         config=config.text_source,
     )
+
     def process_document(
         document: object,
     ) -> Tuple[str, List[Dict[str, object]], str, Optional[str]]:
@@ -284,9 +285,7 @@ def _build_cached_segments(
                 "marked_up_text": "",
                 "segments": [],
             }
-            item_cache_path.write_text(
-                json.dumps(item_payload, indent=2) + "\n", encoding="utf-8"
-            )
+            item_cache_path.write_text(json.dumps(item_payload, indent=2) + "\n", encoding="utf-8")
             return document.item_id, [], "", str(exc)
         item_payload = {
             "item_id": document.item_id,
@@ -294,9 +293,7 @@ def _build_cached_segments(
             "marked_up_text": marked_up_text,
             "segments": payloads,
         }
-        item_cache_path.write_text(
-            json.dumps(item_payload, indent=2) + "\n", encoding="utf-8"
-        )
+        item_cache_path.write_text(json.dumps(item_payload, indent=2) + "\n", encoding="utf-8")
         return document.item_id, payloads, marked_up_text, None
 
     results: Dict[str, Tuple[List[Dict[str, object]], str]] = {}
@@ -309,7 +306,9 @@ def _build_cached_segments(
             results[item_id] = (payloads, marked_up_text)
     else:
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(process_document, document): document for document in documents}
+            futures = {
+                executor.submit(process_document, document): document for document in documents
+            }
             for future in as_completed(futures):
                 item_id, payloads, marked_up_text, error = future.result()
                 if error:
@@ -435,9 +434,7 @@ def _run_hmm_from_segments(
             except ValueError:
                 if "." in status_text:
                     status_text = status_text.split(".")[-1]
-                text_collection_payload["status"] = MarkovAnalysisStageStatus(
-                    status_text.lower()
-                )
+                text_collection_payload["status"] = MarkovAnalysisStageStatus(status_text.lower())
     text_collection_report = MarkovAnalysisTextCollectionReport.model_validate(
         text_collection_payload
     )
@@ -467,9 +464,7 @@ def _run_hmm_from_segments(
         update={"artifact_paths": artifact_paths, "stats": run_stats}
     )
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
-    (run_dir / "output.json").write_text(
-        output.model_dump_json(indent=2) + "\n", encoding="utf-8"
-    )
+    (run_dir / "output.json").write_text(output.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
     return {
         "run_id": run_id,

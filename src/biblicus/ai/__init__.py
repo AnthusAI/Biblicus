@@ -20,7 +20,11 @@ def __getattr__(name: str) -> Any:
     if name in {"AiProvider", "EmbeddingsClientConfig", "LlmClientConfig"}:
         from .models import AiProvider, EmbeddingsClientConfig, LlmClientConfig
 
-        return {"AiProvider": AiProvider, "EmbeddingsClientConfig": EmbeddingsClientConfig, "LlmClientConfig": LlmClientConfig}[name]
+        return {
+            "AiProvider": AiProvider,
+            "EmbeddingsClientConfig": EmbeddingsClientConfig,
+            "LlmClientConfig": LlmClientConfig,
+        }[name]
     if name in {"generate_completion"}:
         from .llm import generate_completion
 
@@ -28,5 +32,8 @@ def __getattr__(name: str) -> Any:
     if name in {"generate_embeddings", "generate_embeddings_batch"}:
         from .embeddings import generate_embeddings, generate_embeddings_batch
 
-        return {"generate_embeddings": generate_embeddings, "generate_embeddings_batch": generate_embeddings_batch}[name]
+        return {
+            "generate_embeddings": generate_embeddings,
+            "generate_embeddings_batch": generate_embeddings_batch,
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

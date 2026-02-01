@@ -21,7 +21,7 @@ def _annotate_system_prompt_template() -> str:
     return (
         "You are a virtual file editor. Use the available tools to edit the text.\n"
         "Interpret the word 'return' in the user's request as: wrap the returned text with "
-        "<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.\n"
+        '<span ATTRIBUTE="VALUE">...</span> in-place in the current text.\n'
         "Each span must include exactly one attribute. Allowed attributes: "
         "{{ allowed_attributes | join(', ') }}.\n\n"
         "Use the str_replace tool to insert span tags and the done tool when finished.\n"
@@ -146,13 +146,13 @@ def step_attempt_text_annotate(context, text: str) -> None:
         context.text_annotate_error = str(exc)
 
 
-@then('the text annotate has {count:d} spans')
+@then("the text annotate has {count:d} spans")
 def step_text_annotate_span_count(context, count: int) -> None:
     result = context.text_annotate_result
     assert len(result.spans) == count
 
 
-@then('the text annotate has at least {count:d} spans')
+@then("the text annotate has at least {count:d} spans")
 def step_text_annotate_minimum_spans(context, count: int) -> None:
     result = context.text_annotate_result
     assert len(result.spans) >= count
@@ -223,9 +223,7 @@ def step_set_text_annotate_retry_errors(context) -> None:
 def step_build_text_annotate_retry_message(context) -> None:
     errors = getattr(context, "text_annotate_retry_errors", []) or []
     current_text = str(getattr(context, "text", "") or "")
-    context.text_annotate_retry_message = _build_retry_message(
-        errors, current_text, ["label"]
-    )
+    context.text_annotate_retry_message = _build_retry_message(errors, current_text, ["label"])
 
 
 @then('the text annotate retry message includes "{text}"')
@@ -243,7 +241,7 @@ def step_text_annotate_retry_message_has_context(context) -> None:
 @when("I apply text annotate with a non-done tool loop result")
 def step_apply_text_annotate_with_incomplete_tool_loop(context) -> None:
     request = _build_annotate_request(text="Hello", prompt_template="Return the requested text.")
-    replacement = "<span label=\"greeting\">Hello</span>"
+    replacement = '<span label="greeting">Hello</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=replacement, done=False, last_error=None, messages=[])
@@ -345,10 +343,8 @@ def step_attempt_text_annotate_no_spans(context) -> None:
     original = annotate_module.run_tool_loop
     original_confirm = annotate_module.request_confirmation
     annotate_module.run_tool_loop = fake_tool_loop
-    annotate_module.request_confirmation = (
-        lambda **_kwargs: ToolLoopResult(
-            text="Hello", done=True, last_error=None, messages=[]
-        )
+    annotate_module.request_confirmation = lambda **_kwargs: ToolLoopResult(
+        text="Hello", done=True, last_error=None, messages=[]
     )
     try:
         context.text_annotate_result = apply_text_annotate(request)
@@ -400,7 +396,7 @@ def step_text_annotate_warnings_include(context, text: str) -> None:
 @when("I attempt text annotate with invalid spans after the tool loop")
 def step_attempt_text_annotate_invalid_spans_after_loop(context) -> None:
     request = _build_annotate_request(text="Hello", prompt_template="Return the requested text.")
-    marked_up = "<span wrong=\"x\">Hello</span>"
+    marked_up = '<span wrong="x">Hello</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])

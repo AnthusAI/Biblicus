@@ -12,8 +12,8 @@ from biblicus.text.link import (
     _promote_ref_spans_to_id,
     _render_span_markup,
     _validate_link_coverage,
-    _validate_link_spans,
     _validate_link_span_minimality,
+    _validate_link_spans,
 )
 from biblicus.text.markup import TextAnnotatedSpan, strip_span_tags
 
@@ -108,7 +108,9 @@ def step_autofill_warnings_include(context, expected: str) -> None:
 @when('I promote ref spans to id for text spans with id prefix "{id_prefix}"')
 def step_promote_ref_spans(context, id_prefix: str) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": "link_1"})
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": "link_1"}
+        )
     ]
     promoted, warnings = _promote_ref_spans_to_id(spans=spans, id_prefix=id_prefix)
     context.promoted_spans = promoted
@@ -118,8 +120,12 @@ def step_promote_ref_spans(context, id_prefix: str) -> None:
 @when('I promote ref spans to id for multiple ref spans with id prefix "{id_prefix}"')
 def step_promote_ref_spans_multiple(context, id_prefix: str) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": "link_1"}),
-        TextAnnotatedSpan(index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_1"}),
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_1"}
+        ),
     ]
     promoted, warnings = _promote_ref_spans_to_id(spans=spans, id_prefix=id_prefix)
     context.promoted_spans = promoted
@@ -177,7 +183,9 @@ def step_missing_coverage_recovery_warnings_include(context, expected: str) -> N
 @when('I validate link span minimality for span text "{text}"')
 def step_validate_link_span_minimality(context, text: str) -> None:
     spans: Sequence[TextAnnotatedSpan] = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=len(text), text=text, attributes={"id": "link_1"})
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=len(text), text=text, attributes={"id": "link_1"}
+        )
     ]
     context.link_minimality_errors = _validate_link_span_minimality(spans)
 
@@ -196,10 +204,14 @@ def step_link_minimality_errors_empty(context) -> None:
     assert errors == []
 
 
-@when('I promote ref spans to id for text spans with ref value "{ref_value}" and id prefix "{id_prefix}"')
+@when(
+    'I promote ref spans to id for text spans with ref value "{ref_value}" and id prefix "{id_prefix}"'
+)
 def step_promote_ref_spans_custom(context, ref_value: str, id_prefix: str) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": ref_value})
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"ref": ref_value}
+        )
     ]
     promoted, warnings = _promote_ref_spans_to_id(spans=spans, id_prefix=id_prefix)
     context.promoted_spans = promoted
@@ -216,9 +228,15 @@ def step_promotion_warnings_empty(context) -> None:
 @when("I validate link spans with mismatched id/ref texts")
 def step_validate_link_spans_mismatched_texts(context) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}),
-        TextAnnotatedSpan(index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_1"}),
-        TextAnnotatedSpan(index=3, start_char=20, end_char=24, text="ACME", attributes={"ref": "link_1"}),
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=3, start_char=20, end_char=24, text="ACME", attributes={"ref": "link_1"}
+        ),
     ]
     context.link_span_errors = _validate_link_spans(spans, "link_")
 
@@ -226,8 +244,12 @@ def step_validate_link_spans_mismatched_texts(context) -> None:
 @when("I validate link spans with repeated text requiring exactly one id")
 def step_validate_link_spans_repeated_text_multiple_ids(context) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}),
-        TextAnnotatedSpan(index=2, start_char=10, end_char=14, text="Acme", attributes={"id": "link_2"}),
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=2, start_char=10, end_char=14, text="Acme", attributes={"id": "link_2"}
+        ),
     ]
     context.link_span_errors = _validate_link_spans(spans, "link_")
 
@@ -235,8 +257,12 @@ def step_validate_link_spans_repeated_text_multiple_ids(context) -> None:
 @when("I validate link spans with repeated text missing ref spans")
 def step_validate_link_spans_repeated_text_missing_refs(context) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}),
-        TextAnnotatedSpan(index=2, start_char=10, end_char=14, text="Acme", attributes={"label": "x"}),
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=2, start_char=10, end_char=14, text="Acme", attributes={"label": "x"}
+        ),
     ]
     context.link_span_errors = _validate_link_spans(spans, "link_")
 
@@ -244,8 +270,12 @@ def step_validate_link_spans_repeated_text_missing_refs(context) -> None:
 @when("I validate link spans with repeated refs that do not match ids")
 def step_validate_link_spans_repeated_text_mismatched_refs(context) -> None:
     spans = [
-        TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}),
-        TextAnnotatedSpan(index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_2"}),
+        TextAnnotatedSpan(
+            index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}
+        ),
+        TextAnnotatedSpan(
+            index=2, start_char=10, end_char=14, text="Acme", attributes={"ref": "link_2"}
+        ),
     ]
     context.link_span_errors = _validate_link_spans(spans, "link_")
 
@@ -324,10 +354,16 @@ def step_attempt_missing_coverage_recovery_invalid_autofill(context) -> None:
         _ = marked_up_text
         _ = spans
         result_spans = [
-            TextAnnotatedSpan(index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}),
-            TextAnnotatedSpan(index=2, start_char=13, end_char=17, text="ACME", attributes={"ref": "link_1"}),
+            TextAnnotatedSpan(
+                index=1, start_char=0, end_char=4, text="Acme", attributes={"id": "link_1"}
+            ),
+            TextAnnotatedSpan(
+                index=2, start_char=13, end_char=17, text="ACME", attributes={"ref": "link_1"}
+            ),
         ]
-        result_text = '<span id="link_1">Acme</span> launched. <span ref="link_1">ACME</span> updated.'
+        result_text = (
+            '<span id="link_1">Acme</span> launched. <span ref="link_1">ACME</span> updated.'
+        )
         return result_text, result_spans, ["Autofilled 1 ref spans for repeated text."]
 
     link_module._autofill_ref_spans = fake_autofill  # type: ignore[assignment]

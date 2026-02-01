@@ -186,15 +186,11 @@ def _validate_redaction_spans(
     allowed_values = set(redaction_types)
     for span in spans:
         if len(span.attributes) != 1:
-            errors.append(
-                f"Span {span.index} must include exactly one redact attribute"
-            )
+            errors.append(f"Span {span.index} must include exactly one redact attribute")
             continue
         name, value = next(iter(span.attributes.items()))
         if name != "redact":
-            errors.append(
-                f"Span {span.index} uses attribute '{name}' but only 'redact' is allowed"
-            )
+            errors.append(f"Span {span.index} uses attribute '{name}' but only 'redact' is allowed")
         if value not in allowed_values:
             errors.append(
                 f"Span {span.index} uses redaction type '{value}'. Allowed types: {', '.join(redaction_types)}"

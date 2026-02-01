@@ -975,10 +975,7 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
     def _validate_requirements(self) -> "MarkovAnalysisSegmentationConfig":
         if self.method == MarkovAnalysisSegmentationMethod.LLM and self.llm is None:
             raise ValueError("segmentation.llm is required when segmentation.method is 'llm'")
-        if (
-            self.method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP
-            and self.span_markup is None
-        ):
+        if self.method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP and self.span_markup is None:
             raise ValueError(
                 "segmentation.span_markup is required when segmentation.method is 'span_markup'"
             )
@@ -1064,7 +1061,9 @@ class MarkovAnalysisTopicModelingConfig(AnalysisSchemaModel):
         if not self.enabled:
             return self
         if self.recipe is None:
-            raise ValueError("topic_modeling.recipe is required when topic_modeling.enabled is true")
+            raise ValueError(
+                "topic_modeling.recipe is required when topic_modeling.enabled is true"
+            )
         if self.recipe.llm_extraction.enabled and (
             self.recipe.llm_extraction.method != TopicModelingLlmExtractionMethod.SINGLE
         ):

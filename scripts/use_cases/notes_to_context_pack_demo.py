@@ -32,6 +32,16 @@ def _prepare_corpus(*, corpus_path: Path, force: bool) -> Corpus:
 
 
 def run_demo(*, corpus_path: Path, force: bool) -> Dict[str, object]:
+    """
+    Run the demo workflow and return a JSON-serializable payload.
+
+    :param corpus_path: Path to the corpus directory to initialize/use.
+    :type corpus_path: pathlib.Path
+    :param force: Whether to purge the corpus before ingesting demo content.
+    :type force: bool
+    :return: JSON-serializable demo output including retrieved evidence and a fitted context pack.
+    :rtype: dict[str, object]
+    """
     corpus = _prepare_corpus(corpus_path=corpus_path, force=force)
 
     notes: List[tuple[str, str]] = [
@@ -78,6 +88,12 @@ def run_demo(*, corpus_path: Path, force: bool) -> Dict[str, object]:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """
+    Build an argument parser for this demo script.
+
+    :return: Parser for command-line arguments.
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser(
         description="Use case demo: short notes -> evidence -> context pack."
     )
@@ -87,6 +103,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """
+    Command-line entrypoint.
+
+    :return: Exit code.
+    :rtype: int
+    """
     args = build_parser().parse_args()
     payload = run_demo(corpus_path=Path(args.corpus).resolve(), force=bool(args.force))
     print(json.dumps(payload, indent=2))
@@ -95,4 +117,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -106,9 +106,7 @@ def step_ai_module_rejects_unknown(context, name: str) -> None:
     raise AssertionError("Expected AttributeError for unknown export")
 
 
-@when(
-    'I resolve an LLM model identifier for provider "{provider}" and model "{model}"'
-)
+@when('I resolve an LLM model identifier for provider "{provider}" and model "{model}"')
 def step_resolve_llm_model_identifier(context, provider: str, model: str) -> None:
     config = LlmClientConfig(provider=AiProvider(provider), model=model)
     context.last_llm_model_identifier = config.litellm_model()

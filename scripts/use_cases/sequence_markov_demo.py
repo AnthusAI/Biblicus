@@ -48,7 +48,9 @@ def _demo_source_files(repo_root: Path) -> List[Path]:
     return sorted(dataset_dir.glob("*.txt"))
 
 
-def _load_markov_recipe(*, recipe_paths: List[str], overrides: Dict[str, object]) -> Dict[str, object]:
+def _load_markov_recipe(
+    *, recipe_paths: List[str], overrides: Dict[str, object]
+) -> Dict[str, object]:
     view = load_recipe_view(recipe_paths, recipe_label="Recipe file")
     if overrides:
         view = apply_dotted_overrides(view, overrides)
@@ -64,6 +66,24 @@ def run_demo(
     recipe_paths: List[str],
     overrides: Dict[str, object],
 ) -> Dict[str, object]:
+    """
+    Run the demo workflow and return a JSON-serializable payload.
+
+    :param repo_root: Repository root path used to locate bundled demo data.
+    :type repo_root: pathlib.Path
+    :param corpus_path: Path to the corpus directory to initialize/use.
+    :type corpus_path: pathlib.Path
+    :param force: Whether to purge the corpus before ingesting demo content.
+    :type force: bool
+    :param ingest_limit: Maximum number of demo source files to ingest.
+    :type ingest_limit: int
+    :param recipe_paths: Markov recipe paths (repeatable; later recipes override earlier ones).
+    :type recipe_paths: list[str]
+    :param overrides: Dotted key/value overrides applied after recipe composition.
+    :type overrides: dict[str, object]
+    :return: JSON-serializable demo output including run identifiers and artifact paths.
+    :rtype: dict[str, object]
+    """
     corpus = _prepare_corpus(corpus_path=corpus_path, force=force)
 
     ingested_item_ids: List[str] = []
@@ -111,6 +131,12 @@ def run_demo(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """
+    Build an argument parser for this demo script.
+
+    :return: Parser for command-line arguments.
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser(
         description="Use case demo: ingest ordered text and run Markov analysis (topic-driven)."
     )
@@ -138,6 +164,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """
+    Command-line entrypoint.
+
+    :return: Exit code.
+    :rtype: int
+    """
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parent.parent.parent
     overrides = parse_dotted_overrides(list(args.config))
@@ -155,4 +187,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

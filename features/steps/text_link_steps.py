@@ -21,7 +21,7 @@ def _link_system_prompt_template() -> str:
     return (
         "You are a virtual file editor. Use the available tools to edit the text.\n"
         "Interpret the user's request as: wrap the requested text with "
-        "<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.\n"
+        '<span ATTRIBUTE="VALUE">...</span> in-place in the current text.\n'
         "Each span must include exactly one attribute: id for first mentions and ref for repeats.\n"
         "Id values must start with '{{ id_prefix }}'.\n\n"
         "Use the str_replace tool to insert span tags and the done tool when finished.\n"
@@ -121,13 +121,13 @@ def step_attempt_text_link(context, text: str) -> None:
         context.text_link_error = str(exc)
 
 
-@then('the text link has {count:d} spans')
+@then("the text link has {count:d} spans")
 def step_text_link_span_count(context, count: int) -> None:
     result = context.text_link_result
     assert len(result.spans) == count
 
 
-@then('the text link has at least {count:d} spans')
+@then("the text link has at least {count:d} spans")
 def step_text_link_span_count_at_least(context, count: int) -> None:
     result = context.text_link_result
     assert len(result.spans) >= count
@@ -201,7 +201,7 @@ def step_text_link_retry_message_has_context(context) -> None:
 @when("I apply text link with a non-done tool loop result")
 def step_apply_text_link_with_incomplete_tool_loop(context) -> None:
     request = _build_link_request(text="Acme Acme", prompt_template="Return the requested text.")
-    replacement = "<span id=\"link_1\">Acme</span> <span ref=\"link_1\">Acme</span>"
+    replacement = '<span id="link_1">Acme</span> <span ref="link_1">Acme</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=replacement, done=False, last_error=None, messages=[])
@@ -254,10 +254,8 @@ def step_attempt_text_link_no_spans(context) -> None:
     original = link_module.run_tool_loop
     original_confirm = link_module.request_confirmation
     link_module.run_tool_loop = fake_tool_loop
-    link_module.request_confirmation = (
-        lambda **_kwargs: ToolLoopResult(
-            text="Acme", done=True, last_error=None, messages=[]
-        )
+    link_module.request_confirmation = lambda **_kwargs: ToolLoopResult(
+        text="Acme", done=True, last_error=None, messages=[]
     )
     try:
         context.text_link_result = apply_text_link(request)
@@ -278,7 +276,7 @@ def step_text_link_warnings_include(context, text: str) -> None:
 @when("I attempt text link with invalid spans after the tool loop")
 def step_attempt_text_link_invalid_spans_after_loop(context) -> None:
     request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
-    marked_up = "<span label=\"x\">Acme</span>"
+    marked_up = '<span label="x">Acme</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
@@ -298,11 +296,15 @@ def step_attempt_text_link_invalid_spans_after_loop(context) -> None:
 
 @when("I apply text link and recover from missing coverage in a non-done tool loop")
 def step_apply_text_link_missing_coverage_recovery(context) -> None:
-    request = _build_link_request(text="Acme launched. Acme updated.", prompt_template="Return the requested text.")
-    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
+    request = _build_link_request(
+        text="Acme launched. Acme updated.", prompt_template="Return the requested text."
+    )
+    marked_up = '<span id="link_1">Acme</span> launched. Acme updated.'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=marked_up, done=False, last_error="validation error", messages=[])
+        return ToolLoopResult(
+            text=marked_up, done=False, last_error="validation error", messages=[]
+        )
 
     from biblicus.text import link as link_module
 
@@ -346,7 +348,7 @@ def step_attempt_text_link_confirmation_last_error(context) -> None:
 @when("I attempt text link where confirmation returns invalid linked spans")
 def step_attempt_text_link_confirmation_invalid_spans(context) -> None:
     request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
-    marked_up = "<span id=\"bad_1\">Acme</span>"
+    marked_up = '<span id="bad_1">Acme</span>'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text="Acme", done=True, last_error=None, messages=[])
@@ -376,10 +378,7 @@ def step_apply_text_link_confirmation_inserts_linked_spans(context) -> None:
         text="Acme launched. Acme updated.",
         prompt_template="Return the requested text.",
     )
-    marked_up = (
-        "<span id=\"link_1\">Acme</span> launched. "
-        "<span ref=\"link_1\">Acme</span> updated."
-    )
+    marked_up = '<span id="link_1">Acme</span> launched. ' '<span ref="link_1">Acme</span> updated.'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=request.text, done=True, last_error=None, messages=[])
@@ -409,7 +408,7 @@ def step_attempt_text_link_autofill_invalid_spans(context) -> None:
         text="Acme launched. Acme updated.",
         prompt_template="Return the requested text.",
     )
-    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
+    marked_up = '<span id="link_1">Acme</span> launched. Acme updated.'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
@@ -435,8 +434,10 @@ def step_attempt_text_link_autofill_invalid_spans(context) -> None:
 
 @when("I apply text link and autofill missing ref spans")
 def step_apply_text_link_autofill_missing_refs(context) -> None:
-    request = _build_link_request(text="Acme launched. Acme updated.", prompt_template="Return the requested text.")
-    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
+    request = _build_link_request(
+        text="Acme launched. Acme updated.", prompt_template="Return the requested text."
+    )
+    marked_up = '<span id="link_1">Acme</span> launched. Acme updated.'
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
         return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
@@ -462,12 +463,9 @@ def step_attempt_link_replace(context, old_str: str, new_str: str) -> None:
     except Exception as exc:  # noqa: BLE001
         context.text_link_error = str(exc)
 
-@when(
-    'I attempt link replace in text "{text}" with old_str "{old_str}" and new_str "{new_str}"'
-)
-def step_attempt_link_replace_in_text(
-    context, text: str, old_str: str, new_str: str
-) -> None:
+
+@when('I attempt link replace in text "{text}" with old_str "{old_str}" and new_str "{new_str}"')
+def step_attempt_link_replace_in_text(context, text: str, old_str: str, new_str: str) -> None:
     try:
         _apply_link_replace(text, old_str, new_str)
         context.text_link_error = None

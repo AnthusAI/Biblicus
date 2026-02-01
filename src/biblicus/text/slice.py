@@ -77,9 +77,7 @@ def apply_text_slice(request: TextSliceRequest) -> TextSliceResult:
     return TextSliceResult(marked_up_text=result.text, slices=slices, warnings=warnings)
 
 
-def _build_mock_result(
-    request: TextSliceRequest, marked_up_text: str
-) -> TextSliceResult:
+def _build_mock_result(request: TextSliceRequest, marked_up_text: str) -> TextSliceResult:
     if marked_up_text == request.text:
         raise ValueError("Text slice produced no markers")
     _validate_preserved_text(original=request.text, marked_up=marked_up_text)

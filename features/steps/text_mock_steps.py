@@ -51,7 +51,9 @@ def step_attempt_mock_text_extract(context, text: str, markup: str) -> None:
         _record_failure(context, exc)
 
 
-@when('I apply mock text extract to text "{text}" with markup "{markup}" using default system prompt')
+@when(
+    'I apply mock text extract to text "{text}" with markup "{markup}" using default system prompt'
+)
 def step_apply_mock_text_extract_default_prompt(context, text: str, markup: str) -> None:
     request = TextExtractRequest(
         text=text,
@@ -82,7 +84,9 @@ def step_attempt_mock_text_annotate(context, text: str, markup: str) -> None:
         _record_failure(context, exc)
 
 
-@when('I apply mock text annotate to text "{text}" with markup "{markup}" using default system prompt')
+@when(
+    'I apply mock text annotate to text "{text}" with markup "{markup}" using default system prompt'
+)
 def step_apply_mock_text_annotate_default_prompt(context, text: str, markup: str) -> None:
     request = TextAnnotateRequest(
         text=text,
@@ -144,7 +148,9 @@ def step_attempt_mock_text_redact(context, text: str, markup: str) -> None:
         _record_failure(context, exc)
 
 
-@when('I apply mock text redact to text "{text}" with markup "{markup}" using default system prompt')
+@when(
+    'I apply mock text redact to text "{text}" with markup "{markup}" using default system prompt'
+)
 def step_apply_mock_text_redact_default_prompt(context, text: str, markup: str) -> None:
     request = TextRedactRequest(
         text=text,
@@ -180,6 +186,7 @@ def step_text_utility_fails_with_message(context, message: str) -> None:
     error_message = getattr(context, "text_utility_error_message", None)
     assert isinstance(error_message, str), "Expected a text utility error message"
     assert message in error_message
+
 
 @when('I apply mock text slice to text "{text}" with markup "{markup}" using default system prompt')
 def step_apply_mock_text_slice_default_prompt(context, text: str, markup: str) -> None:

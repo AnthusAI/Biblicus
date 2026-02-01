@@ -46,6 +46,17 @@ from .models import (
 
 @dataclass
 class TopicModelingDocument:
+    """
+    Text document input for topic modeling.
+
+    :ivar document_id: Stable identifier for this document in the topic modeling stage.
+    :vartype document_id: str
+    :ivar source_item_id: Corpus item identifier the text was derived from.
+    :vartype source_item_id: str
+    :ivar text: Document text content.
+    :vartype text: str
+    """
+
     document_id: str
     source_item_id: str
     text: str

@@ -76,9 +76,7 @@ def apply_text_extract(request: TextExtractRequest) -> TextExtractResult:
     return TextExtractResult(marked_up_text=result.text, spans=spans, warnings=warnings)
 
 
-def _build_mock_result(
-    request: TextExtractRequest, marked_up_text: str
-) -> TextExtractResult:
+def _build_mock_result(request: TextExtractRequest, marked_up_text: str) -> TextExtractResult:
     if marked_up_text == request.text:
         raise ValueError("Text extract produced no spans")
     _validate_preserved_text(original=request.text, marked_up=marked_up_text)

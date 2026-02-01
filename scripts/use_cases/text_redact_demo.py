@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text.models import TextRedactRequest
@@ -36,6 +36,16 @@ def _mock_marked_up_text() -> str:
 
 
 def run_demo(*, mock: bool, model: str) -> Dict[str, object]:
+    """
+    Run the demo and return a JSON-serializable payload.
+
+    :param mock: If True, use a deterministic mock marked-up string instead of calling a model.
+    :type mock: bool
+    :param model: Model identifier to use for real runs (ignored when ``mock=True``).
+    :type model: str
+    :return: JSON-serializable output including markup and extracted spans.
+    :rtype: dict[str, object]
+    """
     text = _demo_text()
     prompt_template = "Return the phone numbers and email addresses."
 
@@ -63,6 +73,12 @@ def run_demo(*, mock: bool, model: str) -> Dict[str, object]:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """
+    Build an argument parser for this demo script.
+
+    :return: Parser for command-line arguments.
+    :rtype: argparse.ArgumentParser
+    """
     parser = argparse.ArgumentParser(
         description="Use case demo: mark sensitive spans in text using text redact."
     )
@@ -82,6 +98,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """
+    Command-line entrypoint.
+
+    :return: Exit code.
+    :rtype: int
+    """
     args = build_parser().parse_args()
     _ = Path(args.corpus)
     _ = bool(args.force)
@@ -92,4 +114,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
