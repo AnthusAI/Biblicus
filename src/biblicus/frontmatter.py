@@ -44,6 +44,8 @@ def parse_front_matter(text: str) -> FrontMatterDocument:
 
     raw_yaml = text[4:front_matter_end]
     body = text[front_matter_end + len("\n---\n") :]
+    if body.startswith("\n"):
+        body = body[1:]
 
     metadata = yaml.safe_load(raw_yaml) or {}
     if not isinstance(metadata, dict):
