@@ -80,7 +80,7 @@ Feature: Retrieval quality upgrades
     And I build a "hybrid" retrieval run in corpus "corpus" with config:
       | key              | value |
       | lexical_backend  | sqlite-full-text-search |
-      | embedding_backend| vector |
+      | embedding_backend| tf-vector |
       | lexical_weight   | 0.7   |
       | embedding_weight | 0.3   |
     And I query with the latest run for "alpha" and budget:
@@ -138,7 +138,7 @@ Feature: Retrieval quality upgrades
     Then the command fails with exit code 2
     And standard error includes "rerank_model"
 
-  Scenario: Vector retrieval returns evidence
+  Scenario: TF vector retrieval returns evidence
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo"
     And a text file "plain.txt" exists with contents "alpha plain"
@@ -150,31 +150,31 @@ Feature: Retrieval quality upgrades
     And I ingest the file "delta.md" into corpus "corpus"
     And I ingest the file "punct.md" into corpus "corpus"
     And I ingest the file "data.bin" into corpus "corpus"
-    And I build a "vector" retrieval run in corpus "corpus"
+    And I build a "tf-vector" retrieval run in corpus "corpus"
     And I query with the latest run for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | max_total_characters | 2000  |
       | max_items_per_source | 5     |
-    Then the query returns evidence with stage "vector"
+    Then the query returns evidence with stage "tf-vector"
 
-  Scenario: Vector retrieval handles longer queries
+  Scenario: TF vector retrieval handles longer queries
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "vector" retrieval run in corpus "corpus"
+    And I build a "tf-vector" retrieval run in corpus "corpus"
     And I query with the latest run for "alpha bravo charlie" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | max_total_characters | 2000  |
       | max_items_per_source | 5     |
-    Then the query returns evidence with stage "vector"
+    Then the query returns evidence with stage "tf-vector"
 
-  Scenario: Vector retrieval ignores empty queries
+  Scenario: TF vector retrieval ignores empty queries
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "vector" retrieval run in corpus "corpus"
+    And I build a "tf-vector" retrieval run in corpus "corpus"
     And I query with the latest run for "!!!" and budget:
       | key                  | value |
       | max_total_items      | 5     |
@@ -182,7 +182,7 @@ Feature: Retrieval quality upgrades
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
-  Scenario: Vector retrieval uses extracted text
+  Scenario: TF vector retrieval uses extracted text
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo"
     And a text file "whitespace.txt" exists with contents "   "
@@ -191,7 +191,7 @@ Feature: Retrieval quality upgrades
     And I ingest the file "whitespace.txt" into corpus "corpus"
     And I ingest the file "data.bin" into corpus "corpus"
     And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "vector" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "tf-vector" retrieval run in corpus "corpus" using the latest extraction run and config:
       | key                | value |
       | snippet_characters | 120   |
     And I query with the latest run for "alpha" and budget:
@@ -201,9 +201,9 @@ Feature: Retrieval quality upgrades
       | max_items_per_source | 5     |
     Then the latest run stats include text_items 2
 
-  Scenario: Vector retrieval rejects missing extraction runs
+  Scenario: TF vector retrieval rejects missing extraction runs
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "vector" retrieval run in corpus "corpus" with extraction run "missing:run"
+    When I attempt to build a "tf-vector" retrieval run in corpus "corpus" with extraction run "missing:run"
     Then the command fails with exit code 2
     And standard error includes "Missing extraction run"
 

@@ -231,7 +231,7 @@ class SqliteFullTextSearchBackend:
         candidates = _query_full_text_search_index(
             db_path=db_path,
             query_text=" ".join(filtered_tokens),
-            limit=_candidate_limit(budget.max_total_items),
+            limit=_candidate_limit(budget.max_total_items + budget.offset),
             snippet_characters=recipe_config.snippet_characters,
         )
         sorted_candidates = _rank_candidates(candidates)

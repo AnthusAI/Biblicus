@@ -37,6 +37,22 @@ def step_config_value_string(context, key: str, expected: str) -> None:
     assert value == expected
 
 
+@then('the parsed config value "{key}" is int {expected:d}')
+def step_config_value_int(context, key: str, expected: int) -> None:
+    value = context.parsed_config.get(key)
+    assert isinstance(value, int)
+    assert value == expected
+
+
+@then('the parsed config value "{key}" has JSON key "{json_key}" list item "{item}"')
+def step_config_value_json_list_item(context, key: str, json_key: str, item: str) -> None:
+    value = context.parsed_config.get(key)
+    assert isinstance(value, dict)
+    assert json_key in value
+    assert isinstance(value[json_key], list)
+    assert item in value[json_key]
+
+
 @when("I attempt to parse config pairs:")
 def step_attempt_parse_config_pairs(context) -> None:
     pairs = _table_pairs(context.table)

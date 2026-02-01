@@ -1,0 +1,34 @@
+{
+  "query_text": "United States",
+  "budget": {
+    "max_total_items": 5,
+    "max_total_characters": 1000,
+    "max_items_per_source": 5
+  },
+  "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
+  "recipe_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
+  "backend_id": "embedding-index-file",
+  "generated_at": "2026-02-01T19:38:17.778273+00:00",
+  "evidence": [
+    {
+      "item_id": "8da6a45e-9b2a-4655-9e50-5e43caef515e",
+      "source_uri": "file:///Users/ryan.porter/Projects/Biblicus/_demo_embedding_retrieval/wikitext_train.txt",
+      "media_type": "text/plain",
+      "score": 0.3028571307659149,
+      "rank": 1,
+      "text": "xcellent quality . Lead mines were opened and worked , and a chemical laboratory was established and successfully operated in aid of the Ordnance Department and in the manufacture of calomel , castor oil , spirits of nitre , the various tinctures of iron , and other valuable medicines . Most of these works were located at or near Arkadelphia on the Ouachita River , 75 miles south from Little Rock . The tools , machinery , and the material were gathered piecemeal or else made by hand labor . Nothing of this sort had been before attempted on Government account in Arkansas to my knowledge , except for the manufacture of small arms , the machinery for which was taken away by General Van Dorn and there was neither capital nor sufficient enterprise among the citizens to engage in such undertakings � A further supply , along with lead and caps , was procured from the citizens of Little Rock and vicinity by donation , purchases , and impressments . \n\n This ammunition , and that which I brought",
+      "content_ref": null,
+      "span_start": 31200,
+      "span_end": 32000,
+      "stage": "embedding-index-file",
+      "stage_scores": null,
+      "recipe_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
+      "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
+      "hash": "ac8802930d1776fc2f46680905e288cd3d4a49dabdb0f027aa757342b3b479c9"
+    }
+  ],
+  "stats": {
+    "candidates": 50,
+    "returned": 1
+  }
+}

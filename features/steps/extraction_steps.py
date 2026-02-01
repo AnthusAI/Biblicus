@@ -605,6 +605,26 @@ def step_build_retrieval_run_using_latest_extraction(
 
 
 @when(
+    'I attempt to build a "{backend}" retrieval run in corpus "{corpus_name}" using the latest extraction run and config:'
+)
+def step_attempt_build_retrieval_run_using_latest_extraction(
+    context, backend: str, corpus_name: str
+) -> None:
+    run_id = context.last_extraction_run_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(run_id, str) and run_id
+    assert isinstance(extractor_id, str) and extractor_id
+
+    corpus = _corpus_path(context, corpus_name)
+    args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
+    args.extend(["--config", f"extraction_run={extractor_id}:{run_id}"])
+    for row in context.table:
+        key, value = _table_key_value(row)
+        args.extend(["--config", f"{key}={value}"])
+    context.last_result = run_biblicus(context, args)
+
+
+@when(
     'I attempt to build a "{backend}" retrieval run in corpus "{corpus_name}" with extraction run "{extraction_run}"'
 )
 def step_attempt_build_retrieval_run_with_extraction_run(

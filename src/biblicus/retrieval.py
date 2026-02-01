@@ -108,8 +108,13 @@ def apply_budget(evidence: Iterable[Evidence], budget: QueryBudget) -> List[Evid
     selected_evidence: List[Evidence] = []
     source_counts: Dict[str, int] = {}
     total_characters = 0
+    skipped = 0
 
     for candidate_evidence in evidence:
+        if skipped < budget.offset:
+            skipped += 1
+            continue
+
         if len(selected_evidence) >= budget.max_total_items:
             break
 

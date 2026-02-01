@@ -11,7 +11,7 @@ from biblicus.backends.sqlite_full_text_search import (
     SqliteFullTextSearchRecipeConfig,
     _resolve_stop_words,
 )
-from biblicus.backends.vector import _build_snippet, _find_first_match
+from biblicus.backends.tf_vector import _build_snippet, _find_first_match
 from biblicus.corpus import Corpus
 from biblicus.models import QueryBudget
 from biblicus.retrieval import create_recipe_manifest, create_run_manifest
@@ -86,7 +86,7 @@ def step_attempt_query_hybrid_without_components(context) -> None:
         name="hybrid-missing-components",
         config={
             "lexical_backend": "sqlite-full-text-search",
-            "embedding_backend": "vector",
+            "embedding_backend": "tf-vector",
             "lexical_weight": 0.5,
             "embedding_weight": 0.5,
         },

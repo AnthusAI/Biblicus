@@ -224,8 +224,16 @@ class QueryBudget(BaseModel):
     """
     Evidence selection budget for retrieval.
 
+    The budget constrains the *returned* evidence. It intentionally does not
+    change how a backend scores candidates, only how many evidence items are
+    selected and how much text is allowed through.
+
     :ivar max_total_items: Maximum number of evidence items to return.
     :vartype max_total_items: int
+    :ivar offset: Number of ranked candidates to skip before selecting evidence.
+        This enables simple pagination by re-running the same query with a
+        higher offset.
+    :vartype offset: int
     :ivar max_total_characters: Optional maximum total characters across evidence text.
     :vartype max_total_characters: int or None
     :ivar max_items_per_source: Optional cap per source uniform resource identifier.
@@ -235,6 +243,7 @@ class QueryBudget(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     max_total_items: int = Field(ge=1)
+    offset: int = Field(default=0, ge=0)
     max_total_characters: Optional[int] = Field(default=None, ge=1)
     max_items_per_source: Optional[int] = Field(default=None, ge=1)
 

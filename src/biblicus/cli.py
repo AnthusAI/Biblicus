@@ -8,7 +8,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from pydantic import ValidationError
 
@@ -239,15 +239,23 @@ def cmd_purge(arguments: argparse.Namespace) -> int:
     return 0
 
 
-def _parse_config_pairs(pairs: Optional[List[str]]) -> Dict[str, object]:
+def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
     """
-    Parse repeated key=value config pairs.
+    Parse key=value pairs into a configuration mapping.
 
-    :param pairs: Config pairs supplied via the command-line interface.
-    :type pairs: list[str] or None
-    :return: Parsed config mapping.
+    This is used by a few command-line options that accept repeated key=value items.
+    Values are coerced to useful types in a predictable way:
+
+    - JSON objects/arrays (leading ``{`` or ``[``) are parsed as JSON.
+    - Whole numbers are parsed as integers.
+    - Other numeric forms are parsed as floats.
+    - Everything else remains a string.
+
+    :param pairs: Iterable of key=value strings.
+    :type pairs: Iterable[str] or None
+    :return: Parsed configuration mapping.
     :rtype: dict[str, object]
-    :raises ValueError: If any entry is not key=value.
+    :raises ValueError: If any entry is not a key=value pair or values are invalid.
     """
     config: Dict[str, object] = {}
     for item in pairs or []:
@@ -257,8 +265,14 @@ def _parse_config_pairs(pairs: Optional[List[str]]) -> Dict[str, object]:
         key = key.strip()
         if not key:
             raise ValueError("Config keys must be non-empty")
+        raw = raw.strip()
         value: object = raw
-        if raw.isdigit():
+        if raw.startswith("{") or raw.startswith("["):
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Config value must be valid JSON for key {key!r}") from exc
+        elif raw.isdigit():
             value = int(raw)
         else:
             try:
@@ -359,6 +373,7 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
     """
     return QueryBudget(
         max_total_items=arguments.max_total_items,
+        offset=getattr(arguments, "offset", 0),
         max_total_characters=arguments.max_total_characters,
         max_items_per_source=arguments.max_items_per_source,
     )
@@ -373,13 +388,26 @@ def cmd_build(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
     backend = get_backend(arguments.backend)
-    config = _parse_config_pairs(arguments.config)
+
+    base_config: Dict[str, object] = {}
+    if getattr(arguments, "recipe", None):
+        base_config = load_recipe_view(
+            arguments.recipe,
+            recipe_label="Recipe file",
+            mapping_error_message="Retrieval build recipe must be a mapping/object",
+        )
+
+    overrides = parse_dotted_overrides(arguments.config)
+    config = apply_dotted_overrides(base_config, overrides)
+
     run = backend.build_run(corpus, recipe_name=arguments.recipe_name, config=config)
     print(run.model_dump_json(indent=2))
     return 0
@@ -948,10 +976,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_build.add_argument("--recipe-name", default="default", help="Human-readable recipe name.")
     p_build.add_argument(
+        "--recipe",
+        default=None,
+        action="append",
+        help="Path to YAML recipe file (repeatable). If provided, recipes are composed in precedence order.",
+    )
+    p_build.add_argument(
         "--config",
         action="append",
         default=None,
-        help="Backend config as key=value (repeatable).",
+        help="Backend config override as key=value (repeatable). Dotted keys create nested config mappings.",
     )
     p_build.set_defaults(func=cmd_build)
 
@@ -1030,6 +1064,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_query.add_argument("--run", default=None, help="Run identifier (defaults to latest run).")
     p_query.add_argument("--backend", default=None, help="Validate backend identifier.")
     p_query.add_argument("--query", default=None, help="Query text (defaults to standard input).")
+    p_query.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Skip this many ranked candidates before selecting evidence (pagination).",
+    )
     p_query.add_argument("--max-total-items", type=int, default=5)
     p_query.add_argument("--max-total-characters", type=int, default=2000)
     p_query.add_argument("--max-items-per-source", type=int, default=5)

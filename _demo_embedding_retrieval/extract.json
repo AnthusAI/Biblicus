@@ -1,0 +1,58 @@
+{
+  "run_id": "82323ce4b424975a6822dc6602e511c031b13e0dded423eae9011912b07c5220",
+  "recipe": {
+    "recipe_id": "d50fcff14405059208f1395d6bd4f7c1a0898b7190eb8bdd77620ba724d17b23",
+    "extractor_id": "pipeline",
+    "name": "default",
+    "created_at": "2026-02-01T19:37:53.463371+00:00",
+    "config": {
+      "steps": [
+        {
+          "extractor_id": "pass-through-text",
+          "config": {}
+        }
+      ]
+    }
+  },
+  "corpus_uri": "file:///Users/ryan.porter/Projects/Biblicus/_demo_embedding_retrieval/corpus",
+  "catalog_generated_at": "2026-02-01T19:37:52.373944+00:00",
+  "created_at": "2026-02-01T19:37:53.464246+00:00",
+  "items": [
+    {
+      "item_id": "8da6a45e-9b2a-4655-9e50-5e43caef515e",
+      "status": "extracted",
+      "final_text_relpath": "text/8da6a45e-9b2a-4655-9e50-5e43caef515e.txt",
+      "final_step_index": 1,
+      "final_step_extractor_id": "pass-through-text",
+      "final_producer_extractor_id": "pass-through-text",
+      "final_source_step_index": null,
+      "error_type": null,
+      "error_message": null,
+      "step_results": [
+        {
+          "step_index": 1,
+          "extractor_id": "pass-through-text",
+          "status": "extracted",
+          "text_relpath": "steps/01-pass-through-text/text/8da6a45e-9b2a-4655-9e50-5e43caef515e.txt",
+          "text_characters": 37407,
+          "producer_extractor_id": "pass-through-text",
+          "source_step_index": null,
+          "confidence": null,
+          "error_type": null,
+          "error_message": null
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "total_items": 1,
+    "already_text_items": 1,
+    "needs_extraction_items": 0,
+    "extracted_items": 1,
+    "extracted_nonempty_items": 1,
+    "extracted_empty_items": 0,
+    "skipped_items": 0,
+    "errored_items": 0,
+    "converted_items": 0
+  }
+}

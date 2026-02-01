@@ -72,6 +72,21 @@ def _build_evidence_items(texts: Iterable[str]) -> List[Evidence]:
     return evidence_items
 
 
+def _evidence_keys_from_query(query_json: Dict[str, Any]) -> set[tuple[object, object, object, object]]:
+    evidence = query_json.get("evidence") or []
+    keys: set[tuple[object, object, object, object]] = set()
+    for item in evidence:
+        keys.add(
+            (
+                item.get("item_id"),
+                item.get("span_start"),
+                item.get("span_end"),
+                item.get("hash"),
+            )
+        )
+    return keys
+
+
 @when('I build a "{backend}" retrieval run in corpus "{corpus_name}"')
 def step_build_run(context, backend: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
@@ -126,6 +141,40 @@ def step_query_latest_run(context, query_text: str) -> None:
     result = run_biblicus(context, args)
     assert result.returncode == 0, result.stderr
     context.last_query = _parse_json_output(result.stdout)
+
+
+@when('I attempt to query with the latest run for "{query_text}" and budget:')
+def step_attempt_query_latest_run(context, query_text: str) -> None:
+    assert context.last_run_id
+    corpus = _corpus_path(context, "corpus")
+    args = [
+        "--corpus",
+        str(corpus),
+        "query",
+        "--run",
+        context.last_run_id,
+        "--query",
+        query_text,
+    ]
+    for row in context.table:
+        key, value = _table_key_value(row)
+        args.extend([f"--{key.replace('_', '-')}", value])
+    context.last_result = run_biblicus(context, args)
+
+
+@when("I remember the query evidence keys")
+def step_remember_query_evidence_keys(context) -> None:
+    assert context.last_query is not None
+    context.remembered_evidence_keys = _evidence_keys_from_query(context.last_query)
+
+
+@then("the query evidence keys are disjoint from the remembered keys")
+def step_query_evidence_keys_disjoint(context) -> None:
+    assert context.last_query is not None
+    assert hasattr(context, "remembered_evidence_keys")
+    current_keys = _evidence_keys_from_query(context.last_query)
+    overlap = current_keys.intersection(context.remembered_evidence_keys)
+    assert not overlap
 
 
 @when("I attempt to query the latest run with an invalid budget")
@@ -323,6 +372,20 @@ def step_measure_latest_run_artifacts(context) -> None:
 @then("the run artifact bytes are {count:d}")
 def step_run_artifact_bytes(context, count: int) -> None:
     assert context.latest_run_bytes == count
+
+
+@then("the run artifact bytes are greater than 0")
+def step_run_artifact_bytes_positive(context) -> None:
+    assert int(getattr(context, "latest_run_bytes", 0)) > 0
+
+
+@then("the query evidence includes span offsets")
+def step_query_evidence_includes_span_offsets(context) -> None:
+    evidence = context.last_query.get("evidence") or []
+    assert evidence
+    for item in evidence:
+        assert item.get("span_start") is not None
+        assert item.get("span_end") is not None
 
 
 @when('I attempt to query the latest run with backend "{backend}"')

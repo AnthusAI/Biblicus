@@ -1,0 +1,40 @@
+{
+  "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
+  "recipe": {
+    "recipe_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
+    "backend_id": "embedding-index-file",
+    "name": "demo",
+    "created_at": "2026-02-01T19:38:16.638239+00:00",
+    "config": {
+      "snippet_characters": 200,
+      "extraction_run": "pipeline:82323ce4b424975a6822dc6602e511c031b13e0dded423eae9011912b07c5220",
+      "chunker": {
+        "chunker_id": "fixed-char-window",
+        "window_characters": 800,
+        "overlap_characters": 200,
+        "window_tokens": null,
+        "overlap_tokens": null
+      },
+      "tokenizer": null,
+      "embedding_provider": {
+        "provider_id": "hash-embedding",
+        "dimensions": 64,
+        "seed": null
+      }
+    },
+    "description": null
+  },
+  "corpus_uri": "file:///Users/ryan.porter/Projects/Biblicus/_demo_embedding_retrieval/corpus",
+  "catalog_generated_at": "2026-02-01T19:37:52.373944+00:00",
+  "created_at": "2026-02-01T19:38:16.638817+00:00",
+  "artifact_paths": [
+    ".biblicus/runs/6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6.embedding-index-file.embeddings.npy",
+    ".biblicus/runs/6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6.embedding-index-file.chunks.jsonl"
+  ],
+  "stats": {
+    "items": 1,
+    "text_items": 1,
+    "chunks": 63,
+    "dimensions": 64
+  }
+}

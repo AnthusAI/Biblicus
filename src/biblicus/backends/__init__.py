@@ -7,10 +7,12 @@ from __future__ import annotations
 from typing import Dict, Type
 
 from .base import RetrievalBackend
+from .embedding_index_file import EmbeddingIndexFileBackend
+from .embedding_index_inmemory import EmbeddingIndexInMemoryBackend
 from .hybrid import HybridBackend
 from .scan import ScanBackend
 from .sqlite_full_text_search import SqliteFullTextSearchBackend
-from .vector import VectorBackend
+from .tf_vector import TfVectorBackend
 
 
 def available_backends() -> Dict[str, Type[RetrievalBackend]]:
@@ -21,10 +23,12 @@ def available_backends() -> Dict[str, Type[RetrievalBackend]]:
     :rtype: dict[str, Type[RetrievalBackend]]
     """
     return {
+        EmbeddingIndexFileBackend.backend_id: EmbeddingIndexFileBackend,
+        EmbeddingIndexInMemoryBackend.backend_id: EmbeddingIndexInMemoryBackend,
         HybridBackend.backend_id: HybridBackend,
         ScanBackend.backend_id: ScanBackend,
         SqliteFullTextSearchBackend.backend_id: SqliteFullTextSearchBackend,
-        VectorBackend.backend_id: VectorBackend,
+        TfVectorBackend.backend_id: TfVectorBackend,
     }
 
 

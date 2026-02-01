@@ -35,7 +35,7 @@ class HybridRecipeConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     lexical_backend: str = Field(default="sqlite-full-text-search", min_length=1)
-    embedding_backend: str = Field(default="vector", min_length=1)
+    embedding_backend: str = Field(default="tf-vector", min_length=1)
     lexical_weight: float = Field(default=0.5, ge=0, le=1)
     embedding_weight: float = Field(default=0.5, ge=0, le=1)
     lexical_config: Dict[str, object] = Field(default_factory=dict)
@@ -226,8 +226,10 @@ def _expand_component_budget(budget: QueryBudget, *, multiplier: int = 5) -> Que
         if budget.max_items_per_source is not None
         else None
     )
+    requested_items = budget.max_total_items + budget.offset
     return QueryBudget(
-        max_total_items=budget.max_total_items * multiplier,
+        max_total_items=requested_items * multiplier,
+        offset=0,
         max_total_characters=expanded_characters,
         max_items_per_source=expanded_max_items_per_source,
     )
