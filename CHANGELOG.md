@@ -1,6 +1,111 @@
 # CHANGELOG
 
 
+## v0.15.0 (2026-02-01)
+
+### Bug Fixes
+
+- Correct word-split regex checks in text utility steps
+  ([`f2e280b`](https://github.com/AnthusAI/Biblicus/commit/f2e280b799d263608be302597136749ade3ec7ae))
+
+- Improve text utilities introduction
+  ([`dbf52b5`](https://github.com/AnthusAI/Biblicus/commit/dbf52b5b3ede456f6b6f4f843baeb861378be048))
+
+- Satisfy ruff and black
+  ([`cf8211f`](https://github.com/AnthusAI/Biblicus/commit/cf8211f475e9c3685056694ee2b92a58741df0e6))
+
+- **ai**: Remove duplicate feature specs
+  ([`62f3cb4`](https://github.com/AnthusAI/Biblicus/commit/62f3cb4dd24655a599614a7a9e0b47529346fb66))
+
+### Documentation
+
+- Add analysis backend selection guidance
+  ([`fd8d76d`](https://github.com/AnthusAI/Biblicus/commit/fd8d76d04813679808df83814cb0388fae65e436))
+
+- Add context pack before-and-after example
+  ([`289c763`](https://github.com/AnthusAI/Biblicus/commit/289c763c66f69efcb6b13ebaa17f4a0bc29ba2a6))
+
+- Add evidence lifecycle overview
+  ([`c01ff7a`](https://github.com/AnthusAI/Biblicus/commit/c01ff7a596182e281ee00315d101768c91157e7e))
+
+- Add profiling comparison workflow
+  ([`ff46df6`](https://github.com/AnthusAI/Biblicus/commit/ff46df6d99bc33b03832f33d9cef72f2ae7b28bd))
+
+- Add retrieval evaluation diagnostics guidance
+  ([`53d93c6`](https://github.com/AnthusAI/Biblicus/commit/53d93c666fba8af4498ddd9f2bb132ffad079f4e))
+
+- Add retrieval evidence inspection workflow
+  ([`a8b0faa`](https://github.com/AnthusAI/Biblicus/commit/a8b0faa7184076fc6a3626f48d3ce864a3a08c27))
+
+- Add retrieval evidence retention guidance
+  ([`647ec04`](https://github.com/AnthusAI/Biblicus/commit/647ec0439d44c170c725d2b1e149bb72702619fd))
+
+- Add retrieval quality evidence tracing
+  ([`922b61d`](https://github.com/AnthusAI/Biblicus/commit/922b61d603f07391bc6d704aec8c73d39cad9ca0))
+
+- Add topic modeling interpretation guidance
+  ([`d508a5d`](https://github.com/AnthusAI/Biblicus/commit/d508a5de536de6fc06cd2baf6849044f5f7c2d9c))
+
+- Expand analysis and profiling textbook
+  ([`5411a59`](https://github.com/AnthusAI/Biblicus/commit/5411a5957d101f94ae1d783d1b828cde9a5b8030))
+
+- Expand backend reference textbook
+  ([`6f90114`](https://github.com/AnthusAI/Biblicus/commit/6f90114f23381eb8e00607c9e3f2b215a4d163d8))
+
+- Expand backend textbook
+  ([`b3ecf02`](https://github.com/AnthusAI/Biblicus/commit/b3ecf02343cc85ef14e7a52248b18e67083b0718))
+
+- Expand context pack textbook
+  ([`6d94e47`](https://github.com/AnthusAI/Biblicus/commit/6d94e479d7f2e2086340613c17d552cf2e0508af))
+
+- Expand corpus design and architecture textbook
+  ([`363219e`](https://github.com/AnthusAI/Biblicus/commit/363219ee0c51f3fc779af464ca5e7db11971de68))
+
+- Expand corpus textbook
+  ([`a28cf3f`](https://github.com/AnthusAI/Biblicus/commit/a28cf3f908b939afe331d3a15f68979366b86847))
+
+- Expand extraction evaluation textbook
+  ([`83b6d18`](https://github.com/AnthusAI/Biblicus/commit/83b6d18966be571dee160ca42002f80f41c59039))
+
+- Expand extraction textbook
+  ([`db6b8c3`](https://github.com/AnthusAI/Biblicus/commit/db6b8c395898459aafdcc4fdbcbca80396aa02fe))
+
+- Expand knowledge base textbook
+  ([`c7412b9`](https://github.com/AnthusAI/Biblicus/commit/c7412b94e706c5b5464c3f5a3c5fc199a7f9fd3f))
+
+- Expand retrieval evaluation textbook
+  ([`df4689c`](https://github.com/AnthusAI/Biblicus/commit/df4689c848699bca88755a593a5a8744db0d5c71))
+
+- Expand user configuration and testing textbook
+  ([`374743c`](https://github.com/AnthusAI/Biblicus/commit/374743ca87587d972379155fc92b40ece48177b6))
+
+- Link demos to textbook chapters
+  ([`dacd105`](https://github.com/AnthusAI/Biblicus/commit/dacd105360020ac97f6c87f9c2cf5fb4883420ee))
+
+- Refresh roadmap for completed analysis
+  ([`7176f47`](https://github.com/AnthusAI/Biblicus/commit/7176f4795872c09901a04500f5e7fe65c3e56347))
+
+### Features
+
+- Add ai api multiplexer with provider-agnostic llm and embeddings support
+  ([`66de0dc`](https://github.com/AnthusAI/Biblicus/commit/66de0dcd646d5dfb72dac01e492e94ac67261bab))
+
+- Add markov analysis and text utilities
+  ([`fd46b2a`](https://github.com/AnthusAI/Biblicus/commit/fd46b2a326253af6f9bcf2113f561c4da9f330cd))
+
+- Add profiling recipes and override handling docs/tests
+  ([`56c3302`](https://github.com/AnthusAI/Biblicus/commit/56c33024a2212080eb438f74f82ccf2bba398f13))
+
+- Align biblicus AI stack with DSPy
+  ([`cf7a0e2`](https://github.com/AnthusAI/Biblicus/commit/cf7a0e25efb5036ed872cc0b069977e9f262df0c))
+
+Unifies embeddings and completions on DSPy primitives and adds BDD coverage for DSPy-backed Markov
+  analysis paths.
+
+- **text**: Text utilities based on a virtual-file-editing paradigm.
+  ([`83ae432`](https://github.com/AnthusAI/Biblicus/commit/83ae432f3443b2d01d96450284bfb45340a9023e))
+
+
 ## v0.14.0 (2026-01-30)
 
 ### Bug Fixes
