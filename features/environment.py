@@ -47,8 +47,12 @@ def before_scenario(context, scenario) -> None:
         del context.fake_docling_behaviors
     if hasattr(context, "fake_openai_chat_behaviors"):
         del context.fake_openai_chat_behaviors
+    if hasattr(context, "fake_openai_embeddings"):
+        del context.fake_openai_embeddings
     if hasattr(context, "fake_bertopic_behavior"):
         del context.fake_bertopic_behavior
+    if hasattr(context, "fake_hmmlearn_behavior"):
+        del context.fake_hmmlearn_behavior
 
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
@@ -124,6 +128,63 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_openai_unavailable_installed = False
         context._fake_openai_unavailable_original_modules = {}
+    if getattr(context, "_fake_dspy_installed", False):
+        original_modules = getattr(context, "_fake_dspy_original_modules", {})
+        if "dspy" in original_modules:
+            sys.modules["dspy"] = original_modules["dspy"]
+        else:
+            sys.modules.pop("dspy", None)
+        context._fake_dspy_installed = False
+        context._fake_dspy_original_modules = {}
+    if getattr(context, "_fake_litellm_installed", False):
+        original_modules = getattr(context, "_fake_litellm_original_modules", {})
+        if "litellm" in original_modules:
+            sys.modules["litellm"] = original_modules["litellm"]
+        else:
+            sys.modules.pop("litellm", None)
+        context._fake_litellm_installed = False
+        context._fake_litellm_original_modules = {}
+    if getattr(context, "_fake_dspy_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_dspy_unavailable_original_modules", {})
+        for name in ["dspy", "litellm"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_dspy_unavailable_installed = False
+        context._fake_dspy_unavailable_original_modules = {}
+    if getattr(context, "_fake_dspy_missing_installed", False):
+        original_modules = getattr(context, "_fake_dspy_missing_original_modules", {})
+        if "dspy" in original_modules:
+            sys.modules["dspy"] = original_modules["dspy"]
+        else:
+            sys.modules.pop("dspy", None)
+        context._fake_dspy_missing_installed = False
+        context._fake_dspy_missing_original_modules = {}
+    if getattr(context, "_fake_hmmlearn_installed", False):
+        original_modules = getattr(context, "_fake_hmmlearn_original_modules", {})
+        for name in [
+            "hmmlearn.hmm",
+            "hmmlearn",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_hmmlearn_installed = False
+        context._fake_hmmlearn_original_modules = {}
+    if getattr(context, "_fake_hmmlearn_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_hmmlearn_unavailable_original_modules", {})
+        for name in [
+            "hmmlearn.hmm",
+            "hmmlearn",
+        ]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_hmmlearn_unavailable_installed = False
+        context._fake_hmmlearn_unavailable_original_modules = {}
     if getattr(context, "_fake_bertopic_installed", False):
         original_modules = getattr(context, "_fake_bertopic_original_modules", {})
         if "bertopic" in original_modules:

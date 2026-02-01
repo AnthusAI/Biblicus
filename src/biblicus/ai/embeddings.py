@@ -5,9 +5,25 @@ Provider-backed text embeddings.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Sequence
+from typing import Any, List, Sequence
 
-from .models import AiProvider, EmbeddingsClientConfig
+from .models import EmbeddingsClientConfig
+
+
+def _require_dspy_embedder():
+    try:
+        import dspy
+    except ImportError as import_error:
+        raise ValueError(
+            "DSPy backend requires an optional dependency. "
+            'Install it with pip install "biblicus[dspy]".'
+        ) from import_error
+    if not hasattr(dspy, "Embedder"):
+        raise ValueError(
+            "DSPy backend requires an optional dependency with Embedder support. "
+            'Install it with pip install "biblicus[dspy]".'
+        )
+    return dspy
 
 
 def generate_embeddings(*, client: EmbeddingsClientConfig, text: str) -> List[float]:
@@ -29,6 +45,14 @@ def _chunks(texts: Sequence[str], batch_size: int) -> List[List[str]]:
     return [list(texts[idx : idx + batch_size]) for idx in range(0, len(texts), batch_size)]
 
 
+def _normalize_embeddings(embeddings: Any) -> List[List[float]]:
+    if hasattr(embeddings, "tolist"):
+        embeddings = embeddings.tolist()
+    if isinstance(embeddings, list) and embeddings and not isinstance(embeddings[0], list):
+        return [[float(value) for value in embeddings]]
+    return [[float(value) for value in row] for row in embeddings]
+
+
 def generate_embeddings_batch(
     *, client: EmbeddingsClientConfig, texts: Sequence[str]
 ) -> List[List[float]]:
@@ -45,31 +69,37 @@ def generate_embeddings_batch(
     :rtype: list[list[float]]
     :raises ValueError: If required dependencies or credentials are missing.
     """
-    if client.provider != AiProvider.OPENAI:
-        raise ValueError(f"Unsupported provider: {client.provider}")
     if not texts:
         return []
 
-    try:
-        from openai import OpenAI
-    except ImportError as import_error:
-        raise ValueError(
-            "OpenAI provider requires an optional dependency. "
-            'Install it with pip install "biblicus[openai]".'
-        ) from import_error
+    dspy = _require_dspy_embedder()
 
-    api_key = client.resolve_api_key()
-    client_instance = OpenAI(api_key=api_key)
+    model = client.litellm_model()
+    request_kwargs = client.build_litellm_kwargs()
 
-    batches = _chunks(list(texts), client.batch_size)
+    items = list(texts)
+    if len(items) == 1:
+        embedder = dspy.Embedder(
+            model,
+            batch_size=1,
+            caching=False,
+            **request_kwargs,
+        )
+        embeddings = embedder(items[0])
+        return _normalize_embeddings(embeddings)
+
+    batches = _chunks(items, client.batch_size)
     results: List[List[List[float]]] = [None for _ in range(len(batches))]  # type: ignore[list-item]
 
     def _embed_batch(batch_texts: List[str]) -> List[List[float]]:
-        response = client_instance.embeddings.create(model=client.model, input=batch_texts)
-        vectors: List[List[float]] = []
-        for row in response.data:
-            vectors.append([float(value) for value in row.embedding])
-        return vectors
+        embedder = dspy.Embedder(
+            model,
+            batch_size=len(batch_texts),
+            caching=False,
+            **request_kwargs,
+        )
+        embeddings = embedder(batch_texts)
+        return _normalize_embeddings(embeddings)
 
     with ThreadPoolExecutor(max_workers=client.parallelism) as executor:
         futures = {executor.submit(_embed_batch, batch): idx for idx, batch in enumerate(batches)}

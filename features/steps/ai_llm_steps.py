@@ -33,7 +33,7 @@ def step_attempt_generate_completion_with_provider(context, provider: str) -> No
 def step_generate_completion_with_response_format(context, response_format: str) -> None:
     client = LlmClientConfig(
         provider=AiProvider.OPENAI,
-        model="gpt-4o-mini",
+        model="openai/gpt-4o-mini",
         api_key="test-key",
         response_format=response_format,
     )

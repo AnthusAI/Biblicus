@@ -1,4 +1,4 @@
-@integration @openai
+@integration @dspy
 Feature: Embeddings generation
   Embeddings are generated via provider-backed APIs and support batching and parallel requests.
 
@@ -21,13 +21,19 @@ Feature: Embeddings generation
     When I generate embeddings for no texts
     Then the embeddings output includes 0 vectors
 
-  Scenario: Embeddings generator rejects unsupported providers
+  Scenario: Embeddings generator supports non-OpenAI providers
+    Given a fake OpenAI library is available that returns embedding vector "1.0,2.0" for input text "alpha"
     When I attempt to generate embeddings with provider "bedrock"
-    Then the command fails with exit code 2
-    And standard error includes "Unsupported provider"
+    Then the command succeeds
 
-  Scenario: Embeddings generator fails fast when OpenAI dependency is unavailable
-    Given the OpenAI dependency is unavailable
+  Scenario: Embeddings generator fails fast when DSPy dependency is unavailable
+    Given the DSPy dependency is unavailable
     When I attempt to generate embeddings for texts "alpha"
     Then the command fails with exit code 2
-    And standard error includes "biblicus[openai]"
+    And standard error includes "biblicus[dspy]"
+
+  Scenario: Embeddings generator fails fast when DSPy is missing entirely
+    Given the DSPy dependency is missing
+    When I attempt to generate embeddings for texts "alpha"
+    Then the command fails with exit code 2
+    And standard error includes "biblicus[dspy]"

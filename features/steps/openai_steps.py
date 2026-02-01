@@ -67,10 +67,186 @@ def _ensure_fake_openai_embedding_behaviors(context) -> Dict[str, _FakeOpenAiEmb
     return behaviors
 
 
+def _install_fake_dspy_module(context) -> None:
+    already_installed = getattr(context, "_fake_dspy_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    if "dspy" in sys.modules:
+        original_modules["dspy"] = sys.modules["dspy"]
+
+    chat_behaviors = _ensure_fake_openai_chat_behaviors(context)
+    embedding_behaviors = _ensure_fake_openai_embedding_behaviors(context)
+
+    class _DspyLM:  # noqa: N801 - external dependency uses PascalCase
+        def __init__(self, model: str, **kwargs):  # type: ignore[no-untyped-def]
+            dspy_module.last_lm_model = model  # type: ignore[attr-defined]
+            dspy_module.last_lm_kwargs = dict(kwargs)  # type: ignore[attr-defined]
+
+        def __call__(self, *, messages, **kwargs):  # type: ignore[no-untyped-def]
+            dspy_module.last_chat_messages = list(messages)  # type: ignore[attr-defined]
+            dspy_module.last_chat_kwargs = dict(kwargs)  # type: ignore[attr-defined]
+            prompt_text = "\n".join(str(message.get("content", "")) for message in messages)
+            dspy_module.last_chat_prompt = prompt_text  # type: ignore[attr-defined]
+            response_text = ""
+            for behavior in chat_behaviors:
+                if behavior.match_text is None or behavior.match_text in prompt_text:
+                    response_text = behavior.response
+                    break
+
+            tool_queue = getattr(dspy_module, "fake_tool_queue", [])
+            if tool_queue:
+                return [{"text": "", "tool_calls": [tool_queue.pop(0)]}]
+
+            try:
+                payload = json.loads(response_text)
+            except json.JSONDecodeError:
+                return [response_text]
+
+            if not isinstance(payload, dict):
+                return [response_text]
+
+            operations = payload.get("operations") or []
+            tool_calls: List[Any] = []
+            tool_index = getattr(dspy_module, "fake_tool_call_index", 0)
+            for operation in operations:
+                tool_index += 1
+                tool_calls.append(
+                    {
+                        "id": f"toolu_{tool_index}",
+                        "type": "function",
+                        "function": {
+                            "name": "str_replace",
+                            "arguments": json.dumps(
+                                {
+                                    "old_str": operation.get("old_str", ""),
+                                    "new_str": operation.get("new_str", ""),
+                                }
+                            ),
+                        },
+                    }
+                )
+            if payload.get("done"):
+                tool_index += 1
+                tool_calls.append(
+                    {
+                        "id": f"toolu_{tool_index}",
+                        "type": "function",
+                        "function": {"name": "done", "arguments": json.dumps({})},
+                    }
+                )
+            dspy_module.fake_tool_call_index = tool_index
+            if payload.get("batch"):
+                return [{"text": "", "tool_calls": tool_calls}]
+            dspy_module.fake_tool_queue = tool_calls[1:]
+            if tool_calls:
+                return [{"text": "", "tool_calls": [tool_calls[0]]}]
+            return [response_text]
+
+    class _FakeArray:
+        def __init__(self, values: Any) -> None:
+            self._values = values
+
+        def tolist(self) -> Any:
+            return self._values
+
+    class _DspyEmbedder:  # noqa: N801 - external dependency uses PascalCase
+        def __init__(self, model: str, batch_size: int = 200, caching: bool = True, **kwargs):  # type: ignore[no-untyped-def]
+            dspy_module.last_embedding_model = model  # type: ignore[attr-defined]
+            dspy_module.last_embedding_kwargs = dict(kwargs)  # type: ignore[attr-defined]
+            dspy_module.last_embedding_batch_size = batch_size  # type: ignore[attr-defined]
+            dspy_module.last_embedding_caching = caching  # type: ignore[attr-defined]
+
+        def __call__(self, inputs, batch_size=None, caching=None, **kwargs):  # type: ignore[no-untyped-def]
+            inputs_list = inputs if isinstance(inputs, list) else [inputs]
+            dspy_module.last_embedding_inputs = list(inputs_list)  # type: ignore[attr-defined]
+            if batch_size is not None:
+                dspy_module.last_embedding_batch_size = batch_size  # type: ignore[attr-defined]
+            if caching is not None:
+                dspy_module.last_embedding_caching = caching  # type: ignore[attr-defined]
+            if kwargs:
+                merged = dict(getattr(dspy_module, "last_embedding_kwargs", {}))
+                merged.update(kwargs)
+                dspy_module.last_embedding_kwargs = merged  # type: ignore[attr-defined]
+            vectors: List[List[float]] = []
+            for text in inputs_list:
+                key = str(text)
+                behavior = embedding_behaviors.get(key)
+                if behavior is not None:
+                    vectors.append([float(value) for value in behavior.vector])
+                else:
+                    vectors.append([float(len(key))])
+            if isinstance(inputs, list):
+                return _FakeArray(vectors)
+            return _FakeArray(vectors[0])
+
+    dspy_module = types.ModuleType("dspy")
+    dspy_module.LM = _DspyLM
+    dspy_module.Embedder = _DspyEmbedder
+    dspy_module.last_lm_model = None
+    dspy_module.last_lm_kwargs = {}
+    dspy_module.last_chat_messages = []
+    dspy_module.last_chat_kwargs = {}
+    dspy_module.last_chat_prompt = None
+    dspy_module.last_embedding_model = None
+    dspy_module.last_embedding_inputs = []
+    dspy_module.last_embedding_kwargs = {}
+    dspy_module.last_embedding_batch_size = None
+    dspy_module.last_embedding_caching = None
+    dspy_module.fake_tool_queue = []
+    dspy_module.fake_tool_call_index = 0
+
+    sys.modules["dspy"] = dspy_module
+    context._fake_dspy_installed = True
+    context._fake_dspy_original_modules = original_modules
+
+
+def _install_fake_litellm_module(context) -> None:
+    already_installed = getattr(context, "_fake_litellm_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    if "litellm" in sys.modules:
+        original_modules["litellm"] = sys.modules["litellm"]
+
+    embedding_behaviors = _ensure_fake_openai_embedding_behaviors(context)
+
+    def embedding(*, model: str, input: Any, **kwargs) -> Dict[str, Any]:  # type: ignore[no-untyped-def]
+        litellm_module.last_embedding_model = model  # type: ignore[attr-defined]
+        litellm_module.last_embedding_kwargs = dict(kwargs)  # type: ignore[attr-defined]
+        inputs = input if isinstance(input, list) else [input]
+        litellm_module.last_embedding_inputs = list(inputs)  # type: ignore[attr-defined]
+        data: List[Dict[str, Any]] = []
+        for text in inputs:
+            key = str(text)
+            behavior = embedding_behaviors.get(key)
+            if behavior is not None:
+                vector = [float(value) for value in behavior.vector]
+            else:
+                vector = [float(len(key))]
+            data.append({"embedding": vector})
+        return {"data": data}
+
+    litellm_module = types.ModuleType("litellm")
+    litellm_module.embedding = embedding
+    litellm_module.last_embedding_model = None
+    litellm_module.last_embedding_inputs = []
+    litellm_module.last_embedding_kwargs = {}
+
+    sys.modules["litellm"] = litellm_module
+    context._fake_litellm_installed = True
+    context._fake_litellm_original_modules = original_modules
+
+
 def _install_fake_openai_module(context) -> None:
     already_installed = getattr(context, "_fake_openai_installed", False)
     if already_installed:
         return
+
+    _install_fake_dspy_module(context)
+    _install_fake_litellm_module(context)
 
     original_modules: Dict[str, object] = {}
     module_names = [
@@ -273,6 +449,41 @@ def _install_openai_unavailable_module(context) -> None:
     context._fake_openai_unavailable_original_modules = original_modules
 
 
+def _install_dspy_unavailable_module(context) -> None:
+    already_installed = getattr(context, "_fake_dspy_unavailable_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    for name in ["dspy", "litellm"]:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
+
+    dspy_module = types.ModuleType("dspy")
+    sys.modules["dspy"] = dspy_module
+
+    litellm_module = types.ModuleType("litellm")
+    sys.modules["litellm"] = litellm_module
+
+    context._fake_dspy_unavailable_installed = True
+    context._fake_dspy_unavailable_original_modules = original_modules
+
+
+def _install_dspy_missing_module(context) -> None:
+    already_installed = getattr(context, "_fake_dspy_missing_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    if "dspy" in sys.modules:
+        original_modules["dspy"] = sys.modules["dspy"]
+
+    sys.modules["dspy"] = None
+
+    context._fake_dspy_missing_installed = True
+    context._fake_dspy_missing_original_modules = original_modules
+
+
 @given("a fake OpenAI library is available")
 def step_fake_openai_available(context) -> None:
     _install_fake_openai_module(context)
@@ -429,12 +640,12 @@ def step_openai_transcription_used_response_format(context, response_format: str
     assert kwargs.get("response_format") == response_format
 
 
-@then('the OpenAI chat request used response format "{response_format}"')
-def step_openai_chat_used_response_format(context, response_format: str) -> None:
+@then('the DSPy chat request used response format "{response_format}"')
+def step_dspy_chat_used_response_format(context, response_format: str) -> None:
     _ = context
-    openai_module = sys.modules.get("openai")
-    assert openai_module is not None
-    kwargs: Dict[str, Any] = getattr(openai_module, "last_chat_kwargs", {})
+    dspy_module = sys.modules.get("dspy")
+    assert dspy_module is not None
+    kwargs: Dict[str, Any] = getattr(dspy_module, "last_chat_kwargs", {})
     assert kwargs.get("response_format") == {"type": response_format}
 
 
@@ -452,36 +663,46 @@ def step_openai_dependency_unavailable(context) -> None:
     _install_openai_unavailable_module(context)
 
 
+@given("the DSPy dependency is unavailable")
+def step_dspy_dependency_unavailable(context) -> None:
+    _install_dspy_unavailable_module(context)
+
+
+@given("the DSPy dependency is missing")
+def step_dspy_dependency_missing(context) -> None:
+    _install_dspy_missing_module(context)
+
+
 @given('a fake OpenAI tool call is queued for "{tool_name}"')
 def step_queue_openai_tool_call(context, tool_name: str) -> None:
     _install_fake_openai_module(context)
-    openai_module = sys.modules.get("openai")
-    assert openai_module is not None
-    tool_index = getattr(openai_module, "fake_tool_call_index", 0) + 1
+    dspy_module = sys.modules.get("dspy")
+    assert dspy_module is not None
+    tool_index = getattr(dspy_module, "fake_tool_call_index", 0) + 1
     tool_call = _ManualToolCall(
         tool_id=f"toolu_{tool_index}",
         name=tool_name,
         arguments=json.dumps({}),
     )
-    openai_module.fake_tool_call_index = tool_index
-    openai_module.fake_tool_queue.append(tool_call)
+    dspy_module.fake_tool_call_index = tool_index
+    dspy_module.fake_tool_queue.append(tool_call)
 
 
 @given('a fake OpenAI tool call is queued for "{tool_name}" with arguments:')
 def step_queue_openai_tool_call_with_args(context, tool_name: str) -> None:
     _install_fake_openai_module(context)
-    openai_module = sys.modules.get("openai")
-    assert openai_module is not None
+    dspy_module = sys.modules.get("dspy")
+    assert dspy_module is not None
     raw_args = str(getattr(context, "text", "") or "")
     parsed_args = json.loads(raw_args)
-    tool_index = getattr(openai_module, "fake_tool_call_index", 0) + 1
+    tool_index = getattr(dspy_module, "fake_tool_call_index", 0) + 1
     tool_call = _ManualToolCall(
         tool_id=f"toolu_{tool_index}",
         name=tool_name,
         arguments=json.dumps(parsed_args),
     )
-    openai_module.fake_tool_call_index = tool_index
-    openai_module.fake_tool_queue.append(tool_call)
+    dspy_module.fake_tool_call_index = tool_index
+    dspy_module.fake_tool_queue.append(tool_call)
 
 
 @given('the OpenAI client was configured with API key "{expected_api_key}"')
