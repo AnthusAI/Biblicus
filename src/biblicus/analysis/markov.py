@@ -686,6 +686,15 @@ def _build_observations(
         llm = config.llm_observations
         assert llm.client is not None and llm.prompt_template is not None
         for index, observation in enumerate(observations):
+            if observation.segment_text in {"START", "END"}:
+                observations[index] = observation.model_copy(
+                    update={
+                        "llm_label": observation.segment_text,
+                        "llm_label_confidence": 1.0,
+                        "llm_summary": observation.segment_text,
+                    }
+                )
+                continue
             prompt = llm.prompt_template.format(segment=observation.segment_text)
             response_text = generate_completion(
                 client=llm.client,
@@ -707,8 +716,12 @@ def _build_observations(
     if config.embeddings.enabled:
         embedding_config = config.embeddings
         assert embedding_config.client is not None
+        embed_indices: List[int] = []
         embed_texts: List[str] = []
-        for observation in observations:
+        for index, observation in enumerate(observations):
+            if observation.segment_text in {"START", "END"}:
+                continue
+            embed_indices.append(index)
             if embedding_config.text_source == "segment_text":
                 embed_texts.append(observation.segment_text)
             else:
@@ -717,10 +730,29 @@ def _build_observations(
                         "embeddings.text_source is 'llm_summary' but llm_summary is missing"
                     )
                 embed_texts.append(observation.llm_summary)
+
+        if not embed_indices:
+            raise ValueError("Embeddings require at least one non-boundary segment")
+
         vectors = generate_embeddings_batch(client=embedding_config.client, texts=embed_texts)
+        if len(vectors) != len(embed_indices):
+            raise ValueError(
+                "Embedding provider returned unexpected vector count: "
+                f"expected {len(embed_indices)} but got {len(vectors)}"
+            )
+
+        vector_by_observation_index: Dict[int, List[float]] = {}
+        for observation_index, vector in zip(embed_indices, vectors):
+            vector_by_observation_index[observation_index] = list(vector)
+
+        embedding_dimension = len(next(iter(vector_by_observation_index.values())))
+        boundary_embedding = [0.0 for _ in range(embedding_dimension)]
         updated: List[MarkovAnalysisObservation] = []
-        for observation, vector in zip(observations, vectors):
-            updated.append(observation.model_copy(update={"embedding": vector}))
+        for index, observation in enumerate(observations):
+            vector = vector_by_observation_index.get(index)
+            updated.append(
+                observation.model_copy(update={"embedding": vector or boundary_embedding})
+            )
         observations = updated
 
     return observations
