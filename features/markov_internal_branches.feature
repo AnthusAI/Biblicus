@@ -145,9 +145,6 @@ Feature: Markov analysis internal utilities
     When I validate state naming response with "infinitive phrase"
     Then a ValueError is raised
     And the ValueError message includes "short noun phrases"
-    When I validate state naming response with "role keyword"
-    Then a ValueError is raised
-    And the ValueError message includes "role prefixes"
     When I validate state naming response with "duplicate state id"
     Then a ValueError is raised
     And the ValueError message includes "duplicate state_id"
@@ -157,32 +154,14 @@ Feature: Markov analysis internal utilities
     When I validate state naming response with "missing state ids"
     Then a ValueError is raised
     And the ValueError message includes "missing required state_id"
-    When I validate state naming response with "missing start id"
-    Then a ValueError is raised
-    And the ValueError message includes "start_state_id"
-    When I validate state naming response with "invalid start id"
-    Then a ValueError is raised
-    And the ValueError message includes "start_state_id must reference"
-    When I validate state naming response with "missing end id"
-    Then a ValueError is raised
-    And the ValueError message includes "end_state_id"
-    When I validate state naming response with "invalid end id"
-    Then a ValueError is raised
-    And the ValueError message includes "end_state_id must reference"
-    When I validate state naming response with "missing disconnection id"
-    Then a ValueError is raised
-    And the ValueError message includes "disconnection_state_id"
-    When I validate state naming response with "invalid disconnection id"
-    Then a ValueError is raised
-    And the ValueError message includes "disconnection_state_id must reference"
 
-  Scenario: Markov state naming applies role prefixes and retries
-    When I assign Markov state names with retries and role prefixes
+  Scenario: Markov state naming assigns START/END labels and retries
+    When I assign Markov state names with retries
     Then the Markov state labels include:
-      | state_id | label                       |
-      | 0        | Start — Greeting             |
-      | 1        | End — Wrap-up                |
-      | 2        | Disconnection — Call drop    |
+      | state_id | label           |
+      | 0        | START           |
+      | 1        | END             |
+      | 2        | Initial contact |
 
   Scenario: Markov state naming handles missing client and empty states
     When I attempt to assign Markov state names without a client
@@ -191,8 +170,8 @@ Feature: Markov analysis internal utilities
     When I assign Markov state names with no states
     Then the Markov state naming returns no states
 
-  Scenario: Markov state naming fails after retries with invalid config
-    When I attempt to assign Markov state names with negative retries
+  Scenario: Markov state naming fails after retries when responses never validate
+    When I attempt to assign Markov state names with retries exhausted
     Then a ValueError is raised
     And the ValueError message includes "failed after retries"
 
@@ -234,3 +213,85 @@ Feature: Markov analysis internal utilities
     When I write a GraphViz transitions file with explicit start/end states
     Then the graphviz output includes start state 2
     And the graphviz output includes end state 0
+
+  Scenario: Boundary segment insertion returns empty list for empty input
+    When I add markov boundary segments for an empty segment list
+    Then the markov boundary segments result is empty
+
+  Scenario: Span markup start/end labeling skips empty payloads and prefixes rejected end segments with a reason
+    Given the Markov end label verifier returns:
+      """
+      {"is_end": false, "reason": "truncated"}
+      """
+    When I apply start/end labels to span-markup payloads for item "item":
+      """
+      [{"text":"  "},{"text":"Alpha"},{"text":"Omega"}]
+      """
+    Then the start/end labeled segments include a prefixed START segment
+    And the start/end labeled segments include a rejected END segment with a reason
+
+  Scenario: Span markup start/end labeling skips end labeling when the end label is not configured
+    When I apply start/end labels without an end label for item "item":
+      """
+      [{"text":"Alpha"},{"text":"Omega"}]
+      """
+    Then the end label is not applied to the final segment
+
+  Scenario: Span markup end verifier rejection leaves the final segment unchanged when no reject label is configured
+    Given the Markov end label verifier returns:
+      """
+      {"is_end": false, "reason": "truncated"}
+      """
+    When I apply start/end labels with rejected end but no rejection label for item "item":
+      """
+      [{"text":"Alpha"},{"text":"Omega"}]
+      """
+    Then the end label is not applied to the final segment
+
+  Scenario: Span markup end verifier rejection omits the reason line when no reason is returned
+    Given the Markov end label verifier returns:
+      """
+      {"is_end": false}
+      """
+    When I apply start/end labels with rejected end and no reason for item "item":
+      """
+      [{"text":"Alpha"},{"text":"Omega"}]
+      """
+    Then the rejected END segment includes no reason line
+
+  Scenario: Topic modeling stage rejects missing recipe and missing documents
+    When I attempt to apply topic modeling with enabled true but no recipe
+    Then a ValueError is raised
+    And the ValueError message includes "topic_modeling.recipe is required"
+    When I attempt to apply topic modeling with only boundary segments
+    Then a ValueError is raised
+    And the ValueError message includes "requires at least one non-boundary segment"
+
+  Scenario: Topic modeling stage rejects missing assignments
+    When I attempt to apply topic modeling that returns no assignment for a segment
+    Then a ValueError is raised
+    And the ValueError message includes "did not return an assignment"
+
+  Scenario: Build states skips out-of-range predicted state ids and preserves boundary tokens under max exemplars
+    When I build markov states with an out-of-range predicted state id
+    Then the built markov states include no exemplars for the unknown state id
+    When I build markov states with max exemplars 1 and a boundary token
+    Then the built markov state exemplars end with "START"
+
+  Scenario: State naming applies boundary labels when only boundary states exist
+    When I assign markov state names with only START and END states
+    Then the assigned markov state labels include "START"
+    And the assigned markov state labels include "END"
+
+  Scenario: Boundary label helper preserves non-boundary states
+    When I apply markov boundary labels with a middle state
+    Then the middle markov state label remains "Middle"
+
+  Scenario: Position stats skip single-state paths
+    When I compute state position stats with a single-state decoded path
+    Then the computed position stats are empty
+
+  Scenario: GraphViz writer filters unobserved transitions and can omit boundary ranks
+    When I write a GraphViz file for a model with no boundary exemplars and an unobserved edge
+    Then the GraphViz file does not include start and end ranks
+    And the GraphViz file does not contain "0 -> 2"

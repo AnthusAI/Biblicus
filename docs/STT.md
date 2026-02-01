@@ -16,7 +16,7 @@ Speech to text using OpenAI Whisper.
 To install:
 
 ```
-python3 -m pip install "biblicus[openai]"
+python -m pip install "biblicus[openai]"
 ```
 
 To configure, set `OPENAI_API_KEY` or add to `~/.biblicus/config.yml`:
@@ -38,7 +38,7 @@ Configuration options:
 Example:
 
 ```
-python3 -m biblicus extract build --corpus corpora/demo \
+python -m biblicus extract build --corpus corpora/demo \
   --step 'stt-openai:model=whisper-1,language=en'
 ```
 
@@ -53,7 +53,7 @@ Speech to text using Deepgram.
 To install:
 
 ```
-python3 -m pip install "biblicus[deepgram]"
+python -m pip install "biblicus[deepgram]"
 ```
 
 To configure, set `DEEPGRAM_API_KEY` or add to `~/.biblicus/config.yml`:
@@ -77,7 +77,7 @@ Configuration options:
 Example:
 
 ```
-python3 -m biblicus extract build --corpus corpora/demo \
+python -m biblicus extract build --corpus corpora/demo \
   --step 'stt-deepgram:model=nova-3,language=en'
 ```
 

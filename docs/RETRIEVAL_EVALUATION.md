@@ -55,14 +55,14 @@ This example builds a tiny corpus, creates a retrieval run, and evaluates it aga
 
 ```
 rm -rf corpora/retrieval_eval_demo
-python3 -m biblicus init corpora/retrieval_eval_demo
+python -m biblicus init corpora/retrieval_eval_demo
 printf "alpha apple\n" > /tmp/eval-alpha.txt
 printf "beta banana\n" > /tmp/eval-beta.txt
-python3 -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-alpha.txt
-python3 -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-beta.txt
+python -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-alpha.txt
+python -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-beta.txt
 
-python3 -m biblicus extract build --corpus corpora/retrieval_eval_demo --step pass-through-text
-python3 -m biblicus build --corpus corpora/retrieval_eval_demo --backend sqlite-full-text-search
+python -m biblicus extract build --corpus corpora/retrieval_eval_demo --step pass-through-text
+python -m biblicus build --corpus corpora/retrieval_eval_demo --backend sqlite-full-text-search
 
 cat > /tmp/retrieval_eval_dataset.json <<'JSON'
 {
@@ -84,7 +84,7 @@ JSON
 Replace `ITEM_ID_FOR_ALPHA` with the item identifier from `biblicus list`, then run:
 
 ```
-python3 -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/retrieval_eval_dataset.json \
+python -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/retrieval_eval_dataset.json \
   --max-total-items 3 --max-total-characters 2000 --max-items-per-source 5
 ```
 
@@ -121,7 +121,7 @@ The retrieval evaluation lab ships with bundled files and labels so you can run 
 without external dependencies.
 
 ```
-python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
+python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
 ```
 
 The script prints a summary that includes the generated dataset path, the retrieval run identifier, and the evaluation

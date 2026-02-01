@@ -92,6 +92,25 @@ def step_apply_text_annotate_with_prompt(context, text: str) -> None:
     context.text_annotate_result = apply_text_annotate(request)
 
 
+@when('I apply text annotate to text "{text}" with prompt template and default system prompt:')
+def step_apply_text_annotate_with_prompt_default_system(context, text: str) -> None:
+    prompt_template = str(getattr(context, "text", "") or "")
+    request = TextAnnotateRequest(
+        text=text,
+        client=LlmClientConfig(
+            provider=AiProvider.OPENAI,
+            model="gpt-4o-mini",
+            api_key=None,
+            response_format="json_object",
+            timeout_seconds=300.0,
+        ),
+        prompt_template=prompt_template,
+        max_rounds=10,
+        max_edits_per_round=200,
+    )
+    context.text_annotate_result = apply_text_annotate(request)
+
+
 @when(
     'I apply text annotate to text "{text}" with allowed attributes "{allowed}" '
     "and prompt template:"
@@ -227,7 +246,7 @@ def step_apply_text_annotate_with_incomplete_tool_loop(context) -> None:
     replacement = "<span label=\"greeting\">Hello</span>"
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=replacement, done=False, last_error=None)
+        return ToolLoopResult(text=replacement, done=False, last_error=None, messages=[])
 
     from biblicus.text import annotate as annotate_module
 
@@ -237,6 +256,55 @@ def step_apply_text_annotate_with_incomplete_tool_loop(context) -> None:
         context.text_annotate_result = apply_text_annotate(request)
     finally:
         annotate_module.run_tool_loop = original
+
+
+@when("I apply text annotate with no edits and confirmation reaches max rounds without done")
+def step_apply_text_annotate_confirmation_max_rounds_without_done(context) -> None:
+    request = _build_annotate_request(text="Hello", prompt_template="Return spans.")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=False, last_error=None, messages=[])
+
+    from biblicus.text import annotate as annotate_module
+
+    original = annotate_module.run_tool_loop
+    original_confirm = annotate_module.request_confirmation
+    annotate_module.run_tool_loop = fake_tool_loop
+    annotate_module.request_confirmation = fake_confirmation
+    try:
+        context.text_annotate_result = apply_text_annotate(request)
+        context.text_annotate_error = None
+    finally:
+        annotate_module.run_tool_loop = original
+        annotate_module.request_confirmation = original_confirm
+
+
+@when("I apply text annotate with no edits and confirmation inserts spans")
+def step_apply_text_annotate_confirmation_inserts_spans(context) -> None:
+    request = _build_annotate_request(text="Hello", prompt_template="Return spans.")
+    marked_up = '<span label="greeting">Hello</span>'
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import annotate as annotate_module
+
+    original = annotate_module.run_tool_loop
+    original_confirm = annotate_module.request_confirmation
+    annotate_module.run_tool_loop = fake_tool_loop
+    annotate_module.request_confirmation = fake_confirmation
+    try:
+        context.text_annotate_result = apply_text_annotate(request)
+        context.text_annotate_error = None
+    finally:
+        annotate_module.run_tool_loop = original
+        annotate_module.request_confirmation = original_confirm
 
 
 @then("the text annotate warnings include max rounds")
@@ -250,7 +318,7 @@ def step_attempt_text_annotate_tool_loop_error_done(context) -> None:
     request = _build_annotate_request(text="Hello", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Hello", done=True, last_error="tool loop error")
+        return ToolLoopResult(text="Hello", done=True, last_error="tool loop error", messages=[])
 
     from biblicus.text import annotate as annotate_module
 
@@ -270,12 +338,49 @@ def step_attempt_text_annotate_no_spans(context) -> None:
     request = _build_annotate_request(text="Hello", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Hello", done=True, last_error=None)
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
 
     from biblicus.text import annotate as annotate_module
 
     original = annotate_module.run_tool_loop
+    original_confirm = annotate_module.request_confirmation
     annotate_module.run_tool_loop = fake_tool_loop
+    annotate_module.request_confirmation = (
+        lambda **_kwargs: ToolLoopResult(
+            text="Hello", done=True, last_error=None, messages=[]
+        )
+    )
+    try:
+        context.text_annotate_result = apply_text_annotate(request)
+        context.text_annotate_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_annotate_error = str(exc)
+    finally:
+        annotate_module.run_tool_loop = original
+        annotate_module.request_confirmation = original_confirm
+
+
+@when("I attempt text annotate where confirmation fails with a last error")
+def step_attempt_text_annotate_confirmation_last_error(context) -> None:
+    request = _build_annotate_request(text="Hello", prompt_template="Return spans.")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(
+            text="Hello",
+            done=False,
+            last_error="confirmation error",
+            messages=[],
+        )
+
+    from biblicus.text import annotate as annotate_module
+
+    original = annotate_module.run_tool_loop
+    original_confirm = annotate_module.request_confirmation
+    annotate_module.run_tool_loop = fake_tool_loop
+    annotate_module.request_confirmation = fake_confirmation
     try:
         apply_text_annotate(request)
         context.text_annotate_error = None
@@ -283,6 +388,13 @@ def step_attempt_text_annotate_no_spans(context) -> None:
         context.text_annotate_error = str(exc)
     finally:
         annotate_module.run_tool_loop = original
+        annotate_module.request_confirmation = original_confirm
+
+
+@then('the text annotate warnings include "{text}"')
+def step_text_annotate_warnings_include(context, text: str) -> None:
+    warnings = context.text_annotate_result.warnings
+    assert any(text in warning for warning in warnings)
 
 
 @when("I attempt text annotate with invalid spans after the tool loop")
@@ -291,7 +403,7 @@ def step_attempt_text_annotate_invalid_spans_after_loop(context) -> None:
     marked_up = "<span wrong=\"x\">Hello</span>"
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=marked_up, done=True, last_error=None)
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
 
     from biblicus.text import annotate as annotate_module
 
@@ -304,6 +416,37 @@ def step_attempt_text_annotate_invalid_spans_after_loop(context) -> None:
         context.text_annotate_error = str(exc)
     finally:
         annotate_module.run_tool_loop = original
+
+
+@when("I attempt text annotate with invalid spans in confirmation")
+def step_attempt_text_annotate_invalid_spans_in_confirmation(context) -> None:
+    request = _build_annotate_request(text="Hello", prompt_template="Return spans.")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(
+            text='<span wrong="x">Hello</span>',
+            done=True,
+            last_error=None,
+            messages=[],
+        )
+
+    from biblicus.text import annotate as annotate_module
+
+    original = annotate_module.run_tool_loop
+    original_confirm = annotate_module.request_confirmation
+    annotate_module.run_tool_loop = fake_tool_loop
+    annotate_module.request_confirmation = fake_confirmation
+    try:
+        apply_text_annotate(request)
+        context.text_annotate_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_annotate_error = str(exc)
+    finally:
+        annotate_module.run_tool_loop = original
+        annotate_module.request_confirmation = original_confirm
 
 
 @when('I attempt annotate replace with old_str "{old_str}" and new_str "{new_str}"')

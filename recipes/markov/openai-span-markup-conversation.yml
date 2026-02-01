@@ -1,0 +1,58 @@
+schema_version: 1
+text_source:
+  sample_size: 10
+  min_text_characters: 200
+segmentation:
+  method: span_markup
+  span_markup:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    system_prompt: |
+      You are a virtual file editor. Use the available tools to edit the text.
+      Interpret the word “return” in the user’s request as: wrap the returned text
+      with <span>...</span> in-place in the current text.
+
+      Use the str_replace tool to insert <span>...</span> tags and the done tool when finished.
+      When finished, call done. Do NOT return JSON in the assistant message.
+
+      Rules:
+      - Use str_replace only.
+      - old_str must match exactly once in the current text.
+      - old_str and new_str must be non-empty strings.
+      - new_str must be identical to old_str with only <span> and </span> inserted.
+      - Do not include <span> or </span> inside old_str or new_str.
+      - Do not insert nested spans.
+      - If a tool call fails due to non-unique old_str, retry with a longer unique old_str.
+      - If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.
+      - Do not delete, reorder, paraphrase, or label text.
+      Current text:
+      ---
+      {text}
+      ---
+    prompt_template: |
+      Return the segments that represent contiguous phases in the text.
+
+      Rules:
+      - Preserve original order.
+      - Do not add labels, summaries, or commentary.
+      - Prefer natural boundaries like greeting/opening, identity verification, reason for call,
+        clarification, resolution steps, handoff/escalation, closing.
+      - Use speaker turn changes as possible boundaries, but keep multi-turn exchanges together if they
+        form a single phase.
+      - Avoid extremely short fragments; merge tiny leftovers into a neighboring span.
+    max_rounds: 6
+    max_edits_per_round: 500
+observations:
+  encoder: tfidf
+  tfidf:
+    max_features: 2000
+    ngram_range: [1, 2]
+model:
+  family: gaussian
+  n_states: 4
+artifacts:
+  graphviz:
+    enabled: true

@@ -9,25 +9,25 @@ Coverage is measured across the `src/biblicus/` package, excluding vendored thir
 Run the test suite without integration downloads:
 
 ```
-python3 scripts/test.py
+python scripts/test.py
 ```
 
 Run the test suite including integration scenarios that download public test data at runtime:
 
 ```
-python3 scripts/test.py --integration
+python scripts/test.py --integration
 ```
 
 Run the test suite including optical character recognition integration scenarios:
 
 ```
-python3 scripts/test.py --integration --ocr
+python scripts/test.py --integration --ocr
 ```
 
 Run the test suite including Unstructured integration scenarios:
 
 ```
-python3 scripts/test.py --integration --unstructured
+python scripts/test.py --integration --unstructured
 ```
 
 ## Coverage expectations

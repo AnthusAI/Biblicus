@@ -10,11 +10,19 @@ If you are building an assistant in Python, you probably have material you want 
 
 The first practical problem is not retrieval. It is collection and care. You need a stable place to put raw items, you need a small amount of metadata so you can find them again, and you need a way to evolve your retrieval approach over time without rewriting ingestion.
 
-This library gives you a corpus, which is a normal folder on disk. It stores each ingested item as a file, with optional metadata stored next to it. You can open and inspect the raw files directly. Any derived catalog or index can be rebuilt from the raw corpus.
+Biblicus gives you a normal folder on disk to manage. In Biblicus documentation, that managed folder is called a *corpus* (plural: *corpora*). It stores each ingested item as a file, with optional metadata stored next to it. You can open and inspect the raw files directly. Any derived catalog or index can be rebuilt from the raw files.
 
 It can be used alongside LangGraph, Tactus, Pydantic AI, any agent framework, or your own setup. Use it from Python or from the command line interface.
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
+
+## Analysis highlights
+
+- `biblicus analyze markov` learns a directed, weighted state transition graph over segmented text.
+- YAML recipes support cascading composition plus dotted `--config key=value` overrides.
+- Text extract splits long texts with an LLM by inserting XML tags in-place for structured spans.
+- See `docs/MARKOV_ANALYSIS.md` for Markov analysis details and runnable demos.
+- See `docs/TEXT_EXTRACT.md` for the text extract utility and examples.
 
 ## Start with a knowledge base
 
@@ -60,7 +68,7 @@ Think in three stages.
 
 If you learn a few project words, the rest of the system becomes predictable.
 
-- Corpus is the folder that holds raw items and their metadata.
+- Corpus is the managed folder that holds raw items and their metadata.
 - Item is the raw bytes plus optional metadata and source information.
 - Catalog is the rebuildable index of the corpus.
 - Extraction run is a recorded extraction build that produces text artifacts.
@@ -115,28 +123,28 @@ sequenceDiagram
 This repository is a working Python package. Install it into a virtual environment from the repository root.
 
 ```
-python3 -m pip install -e .
+python -m pip install -e .
 ```
 
 After the first release, you can install it from Python Package Index.
 
 ```
-python3 -m pip install biblicus
+python -m pip install biblicus
 ```
 
 ### Optional extras
 
 Some extractors are optional so the base install stays small.
 
-- Optical character recognition for images: `python3 -m pip install "biblicus[ocr]"`
-- Advanced optical character recognition with PaddleOCR: `python3 -m pip install "biblicus[paddleocr]"`
-- Document understanding with Docling VLM: `python3 -m pip install "biblicus[docling]"`
-- Document understanding with Docling VLM and MLX acceleration: `python3 -m pip install "biblicus[docling-mlx]"`
-- Speech to text transcription with OpenAI: `python3 -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
-- Speech to text transcription with Deepgram: `python3 -m pip install "biblicus[deepgram]"` (requires a Deepgram API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
-- Broad document parsing fallback: `python3 -m pip install "biblicus[unstructured]"`
-- MarkItDown document conversion (requires Python 3.10 or higher): `python3 -m pip install "biblicus[markitdown]"`
-- Topic modeling analysis with BERTopic: `python3 -m pip install "biblicus[topic-modeling]"`
+- Optical character recognition for images: `python -m pip install "biblicus[ocr]"`
+- Advanced optical character recognition with PaddleOCR: `python -m pip install "biblicus[paddleocr]"`
+- Document understanding with Docling VLM: `python -m pip install "biblicus[docling]"`
+- Document understanding with Docling VLM and MLX acceleration: `python -m pip install "biblicus[docling-mlx]"`
+- Speech to text transcription with OpenAI: `python -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Speech to text transcription with Deepgram: `python -m pip install "biblicus[deepgram]"` (requires a Deepgram API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Broad document parsing fallback: `python -m pip install "biblicus[unstructured]"`
+- MarkItDown document conversion (requires Python 3.10 or higher): `python -m pip install "biblicus[markitdown]"`
+- Topic modeling analysis with BERTopic: `python -m pip install "biblicus[topic-modeling]"`
 
 ## Quick start
 
@@ -154,15 +162,48 @@ biblicus build --corpus corpora/example --backend scan
 biblicus query --corpus corpora/example --query "note"
 ```
 
-If you want to turn a website section into corpus items, crawl a root web address while restricting the crawl to an allowed prefix:
+## Web Ingestion
 
+Biblicus supports ingesting content directly from the web using two approaches.
+
+### Ingest from URLs
+
+Ingest individual documents or web pages from URLs. The `ingest` command automatically detects content types including PDF, HTML, Markdown, images, and audio:
+
+```bash
+# Ingest a document from a URL
+biblicus ingest https://example.com/document.pdf --tags "research"
+
+# Ingest a web page
+biblicus ingest https://example.com/article.html --tags "article"
+
+# Ingest with a corpus path specified
+biblicus ingest --corpus corpora/example https://docs.example.com/guide.md --tags "documentation"
 ```
-biblicus crawl --corpus corpora/example \\
-  --root-url https://example.com/docs/index.html \\
-  --allowed-prefix https://example.com/docs/ \\
-  --max-items 50 \\
-  --tag crawled
+
+### Crawl Websites
+
+Crawl entire website sections with automatic link discovery. The crawler follows links within the allowed prefix and stores discovered content:
+
+```bash
+# Crawl a documentation site
+biblicus crawl \
+  --corpus corpora/example \
+  --root-url https://docs.example.com/ \
+  --allowed-prefix https://docs.example.com/ \
+  --max-items 100 \
+  --tags "documentation"
+
+# Crawl a specific blog category
+biblicus crawl \
+  --corpus corpora/example \
+  --root-url https://blog.example.com/category/tutorials/ \
+  --allowed-prefix https://blog.example.com/category/tutorials/ \
+  --max-items 50 \
+  --tags "tutorials,blog"
 ```
+
+The `--allowed-prefix` parameter restricts the crawler to only follow links that start with the specified URL prefix, preventing it from crawling outside the intended scope. The crawler respects `.biblicusignore` rules and stores items under `raw/imports/crawl/` in your corpus.
 
 ## End-to-end example: lower-level control
 
@@ -494,6 +535,21 @@ For detailed documentation on all extractors, see the [Extractor Reference][extr
 For extraction evaluation workflows, dataset formats, and report interpretation, see
 `docs/EXTRACTION_EVALUATION.md`.
 
+## Text extract utility
+
+Text extract is a reusable analysis utility that lets a model insert XML tags into a long text without re-emitting the
+entire document. It returns structured spans and the marked-up text, and it is used as a segmentation option in Markov
+analysis.
+
+See `docs/TEXT_EXTRACT.md` for the utility API and examples, and `docs/MARKOV_ANALYSIS.md` for the Markov integration.
+
+## Text slice utility
+
+Text slice is a reusable analysis utility that lets a model insert `<slice/>` markers into a long text without
+re-emitting the entire document. It returns ordered slices and the marked-up text for auditing and reuse.
+
+See `docs/TEXT_SLICE.md` for the utility API and examples.
+
 ## Topic modeling analysis
 
 Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Profiling and topic modeling
@@ -548,7 +604,7 @@ AG News integration runs require `biblicus[datasets]` in addition to `biblicus[t
 For a repeatable, real-world integration run that downloads AG News and executes topic modeling, use:
 
 ```
-python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
+python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
 See `docs/TOPIC_MODELING.md` for parameter examples and per-topic output behavior.
@@ -562,13 +618,13 @@ Use `scripts/download_pdf_samples.py` to download a small Portable Document Form
 ## Tests and coverage
 
 ```
-python3 scripts/test.py
+python scripts/test.py
 ```
 
 To include integration scenarios that download public test data at runtime, run this command.
 
 ```
-python3 scripts/test.py --integration
+python scripts/test.py --integration
 ```
 
 ## Releases
@@ -586,13 +642,13 @@ Reference documentation is generated from Sphinx style docstrings.
 Install development dependencies:
 
 ```
-python3 -m pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
 ```
 
 Build the documentation:
 
 ```
-python3 -m sphinx -b html docs docs/_build/html
+python -m sphinx -b html docs docs/_build/html
 ```
 
 ## License

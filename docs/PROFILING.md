@@ -158,5 +158,5 @@ A runnable demo is provided in `scripts/profiling_demo.py`. It downloads a corpu
 profiling analysis so you can inspect the output:
 
 ```
-python3 scripts/profiling_demo.py --corpus corpora/profiling_demo --force
+python scripts/profiling_demo.py --corpus corpora/profiling_demo --force
 ```

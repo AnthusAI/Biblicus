@@ -87,11 +87,23 @@ Feature: Text slice
     When I attempt to apply text slice to text "Alpha Beta" with max rounds 1 and max edits per round 1
     Then the text slice error mentions "max edits per round"
 
-  Scenario: Text slice rejects empty output after view
+  Scenario: Text slice confirms empty output after view
     Given a fake OpenAI tool call is queued for "view"
     And a fake OpenAI tool call is queued for "done"
+    And a fake OpenAI tool call is queued for "done"
     When I attempt to apply text slice to text "Hello"
-    Then the text slice error mentions "produced no markers"
+    Then the text slice warnings include "Text slice returned no markers; model confirmed single slice"
+    And the text slice has 1 slices
+
+  Scenario: Text slice warns when confirmation reaches max rounds without done
+    Given a fake OpenAI library is available
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    When I attempt to apply text slice to text "Hello" with max rounds 1 and max edits per round 1
+    Then the text slice warnings include "Text slice reached max rounds without done=true"
+    And the text slice warnings include "Text slice confirmation reached max rounds without done=true"
+    And the text slice has 1 slices
 
   Scenario: Text slice rejects unknown tools
     Given a fake OpenAI tool call is queued for "mystery"
@@ -113,3 +125,11 @@ Feature: Text slice
   Scenario: Text slice rejects empty slices
     When I attempt to apply text slice with forced empty slices
     Then the text slice error mentions "produced no slices"
+
+  Scenario: Text slice surfaces confirmation last_error as a failure
+    When I attempt to apply text slice where confirmation fails with a last error
+    Then the text slice error mentions "Text slice failed: confirmation error"
+
+  Scenario: Text slice rejects a confirmation result that yields no slices
+    When I attempt to apply text slice where confirmation inserts a marker but no slices are returned
+    Then the text slice error mentions "Text slice produced no slices"

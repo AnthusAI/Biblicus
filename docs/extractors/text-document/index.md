@@ -2,6 +2,17 @@
 
 Basic text extraction from structured documents and plain text formats.
 
+```{toctree}
+:maxdepth: 1
+:caption: Text & Document Extractors
+
+pass-through
+metadata
+pdf
+markitdown
+unstructured
+```
+
 ## Overview
 
 Text and document extractors handle files with explicit text content or structured document formats. These extractors are ideal for:

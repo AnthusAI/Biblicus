@@ -38,7 +38,7 @@ extraction_run: pipeline:RUN_ID
 ## Build a run
 
 ```
-python3 -m biblicus build --corpus corpora/example --backend vector --config extraction_run=pipeline:RUN_ID
+python -m biblicus build --corpus corpora/example --backend vector --config extraction_run=pipeline:RUN_ID
 ```
 
 The vector backend does not create artifacts beyond the run manifest, so builds are fast and deterministic.
@@ -46,7 +46,7 @@ The vector backend does not create artifacts beyond the run manifest, so builds 
 ## Query a run
 
 ```
-python3 -m biblicus query --corpus corpora/example --run vector:RUN_ID --query "semantic match"
+python -m biblicus query --corpus corpora/example --run vector:RUN_ID --query "semantic match"
 ```
 
 The evidence results include a `stage` value of `vector` and similarity scores for each match.

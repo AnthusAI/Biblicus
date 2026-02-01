@@ -1,0 +1,18 @@
+schema_version: 1
+text_source:
+  sample_size: 500
+llm_extraction:
+  enabled: false
+lexical_processing:
+  enabled: true
+  lowercase: true
+  strip_punctuation: true
+  collapse_whitespace: true
+bertopic_analysis:
+  parameters:
+    nr_topics: 8
+  vectorizer:
+    ngram_range: [1, 1]
+    stop_words: english
+llm_fine_tuning:
+  enabled: false

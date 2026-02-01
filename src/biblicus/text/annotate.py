@@ -15,7 +15,7 @@ from .markup import (
     strip_span_tags,
 )
 from .models import TextAnnotateRequest, TextAnnotateResult
-from .tool_loop import run_tool_loop
+from .tool_loop import request_confirmation, run_tool_loop
 
 DEFAULT_ANNOTATION_ATTRIBUTES = ["label", "phase", "role", "evidence", "entity"]
 
@@ -28,7 +28,8 @@ def apply_text_annotate(request: TextAnnotateRequest) -> TextAnnotateResult:
     :type request: TextAnnotateRequest
     :return: Text annotate result.
     :rtype: TextAnnotateResult
-    :raises ValueError: If model output is invalid or text is modified.
+    :raises ValueError: If model output is invalid or text is modified. Empty outputs trigger
+        a confirmation round and return a warning when confirmed.
     """
     warnings: List[str] = []
     allowed_attributes = _resolve_allowed_attributes(request.allowed_attributes)
@@ -36,6 +37,13 @@ def apply_text_annotate(request: TextAnnotateRequest) -> TextAnnotateResult:
         request.system_prompt,
         allowed_attributes=allowed_attributes,
     )
+
+    if request.mock_marked_up_text is not None:
+        return _build_mock_result(
+            request,
+            request.mock_marked_up_text,
+            allowed_attributes=allowed_attributes,
+        )
 
     result = run_tool_loop(
         text=request.text,
@@ -61,15 +69,62 @@ def apply_text_annotate(request: TextAnnotateRequest) -> TextAnnotateResult:
     if result.text == request.text:
         if result.last_error:
             raise ValueError(result.last_error)
-        raise ValueError("Text annotate produced no spans")
+        confirmation = request_confirmation(
+            result=result,
+            text=result.text,
+            client=request.client,
+            system_prompt=system_prompt,
+            prompt_template=request.prompt_template,
+            max_rounds=2,
+            max_edits_per_round=request.max_edits_per_round,
+            apply_str_replace=_apply_annotate_replace,
+            confirmation_message=_build_empty_confirmation_message(result.text),
+            validate_text=lambda current_text: _validate_annotation_markup(
+                current_text, allowed_attributes
+            ),
+            build_retry_message=lambda errors, current_text: _build_retry_message(
+                errors, current_text, allowed_attributes
+            ),
+        )
+        if not confirmation.done:
+            if confirmation.last_error:
+                raise ValueError(f"Text annotate failed: {confirmation.last_error}")
+            warnings.append("Text annotate confirmation reached max rounds without done=true")
+        _validate_preserved_text(original=request.text, marked_up=confirmation.text)
+        spans = parse_span_markup(confirmation.text)
+        validation_errors = _validate_annotation_spans(spans, allowed_attributes)
+        if validation_errors:
+            raise ValueError("; ".join(validation_errors))
+        if not spans:
+            warnings.append("Text annotate returned no spans; model confirmed empty result")
+        return TextAnnotateResult(
+            marked_up_text=confirmation.text,
+            spans=spans,
+            warnings=warnings,
+        )
 
     _validate_preserved_text(original=request.text, marked_up=result.text)
     spans = parse_span_markup(result.text)
+    validation_errors = _validate_annotation_spans(spans, allowed_attributes)
+    if validation_errors:
+        raise ValueError("; ".join(validation_errors))
+    return TextAnnotateResult(marked_up_text=result.text, spans=spans, warnings=warnings)
+
+
+def _build_mock_result(
+    request: TextAnnotateRequest,
+    marked_up_text: str,
+    *,
+    allowed_attributes: Sequence[str],
+) -> TextAnnotateResult:
+    if marked_up_text == request.text:
+        raise ValueError("Text annotate produced no spans")
+    _validate_preserved_text(original=request.text, marked_up=marked_up_text)
+    spans = parse_span_markup(marked_up_text)
     errors = _validate_annotation_spans(spans, allowed_attributes)
     if errors:
         raise ValueError("; ".join(errors))
-
-    return TextAnnotateResult(marked_up_text=result.text, spans=spans, warnings=warnings)
+    return TextAnnotateResult(marked_up_text=marked_up_text, spans=spans, warnings=[])
 
 
 def _resolve_allowed_attributes(allowed: Sequence[str] | None) -> List[str]:
@@ -155,4 +210,13 @@ def _build_retry_message(
         f"{', '.join(allowed_attributes)}. Try again.\n"
         "Current text:\n"
         f"---\n{current_text}\n---"
+    )
+
+
+def _build_empty_confirmation_message(text: str) -> str:
+    return (
+        "No annotated spans were inserted. If there are truly no spans to return, "
+        "call done again without changes. Otherwise insert span tags with the correct attributes.\n"
+        "Current text:\n"
+        f"---\n{text}\n---"
     )

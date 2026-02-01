@@ -96,6 +96,25 @@ def step_apply_text_redact_with_prompt(context, text: str) -> None:
     context.text_redact_result = apply_text_redact(request)
 
 
+@when('I apply text redact to text "{text}" with prompt template and default system prompt:')
+def step_apply_text_redact_with_prompt_default_system(context, text: str) -> None:
+    prompt_template = str(getattr(context, "text", "") or "")
+    request = TextRedactRequest(
+        text=text,
+        client=LlmClientConfig(
+            provider=AiProvider.OPENAI,
+            model="gpt-4o-mini",
+            api_key=None,
+            response_format="json_object",
+            timeout_seconds=300.0,
+        ),
+        prompt_template=prompt_template,
+        max_rounds=10,
+        max_edits_per_round=200,
+    )
+    context.text_redact_result = apply_text_redact(request)
+
+
 @when('I apply text redact to text "{text}" with redaction types "{types}"')
 def step_apply_text_redact_with_types(context, text: str, types: str) -> None:
     redaction_types = _parse_redaction_types(types)
@@ -234,7 +253,7 @@ def step_apply_text_redact_with_incomplete_tool_loop(context) -> None:
     replacement = "<span>Account</span>"
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=replacement, done=False, last_error=None)
+        return ToolLoopResult(text=replacement, done=False, last_error=None, messages=[])
 
     from biblicus.text import redact as redact_module
 
@@ -244,6 +263,98 @@ def step_apply_text_redact_with_incomplete_tool_loop(context) -> None:
         context.text_redact_result = apply_text_redact(request)
     finally:
         redact_module.run_tool_loop = original
+
+
+@when("I apply text redact with no edits and confirmation reaches max rounds without done")
+def step_apply_text_redact_confirmation_max_rounds_without_done(context) -> None:
+    request = _build_redact_request(
+        text="Account",
+        prompt_template="Return spans.",
+        redaction_types=["pii"],
+    )
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Account", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Account", done=False, last_error=None, messages=[])
+
+    from biblicus.text import redact as redact_module
+
+    original = redact_module.run_tool_loop
+    original_confirm = redact_module.request_confirmation
+    redact_module.run_tool_loop = fake_tool_loop
+    redact_module.request_confirmation = fake_confirmation
+    try:
+        context.text_redact_result = apply_text_redact(request)
+        context.text_redact_error = None
+    finally:
+        redact_module.run_tool_loop = original
+        redact_module.request_confirmation = original_confirm
+
+
+@when("I apply text redact with no edits and confirmation inserts spans")
+def step_apply_text_redact_confirmation_inserts_spans(context) -> None:
+    request = _build_redact_request(
+        text="Account",
+        prompt_template="Return spans.",
+        redaction_types=["pii"],
+    )
+    marked_up = '<span redact="pii">Account</span>'
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Account", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import redact as redact_module
+
+    original = redact_module.run_tool_loop
+    original_confirm = redact_module.request_confirmation
+    redact_module.run_tool_loop = fake_tool_loop
+    redact_module.request_confirmation = fake_confirmation
+    try:
+        context.text_redact_result = apply_text_redact(request)
+        context.text_redact_error = None
+    finally:
+        redact_module.run_tool_loop = original
+        redact_module.request_confirmation = original_confirm
+
+
+@when("I attempt text redact where confirmation fails with a last error")
+def step_attempt_text_redact_confirmation_last_error(context) -> None:
+    request = _build_redact_request(
+        text="Account",
+        prompt_template="Return spans.",
+        redaction_types=["pii"],
+    )
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Account", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(
+            text="Account",
+            done=False,
+            last_error="confirmation error",
+            messages=[],
+        )
+
+    from biblicus.text import redact as redact_module
+
+    original = redact_module.run_tool_loop
+    original_confirm = redact_module.request_confirmation
+    redact_module.run_tool_loop = fake_tool_loop
+    redact_module.request_confirmation = fake_confirmation
+    try:
+        apply_text_redact(request)
+        context.text_redact_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_redact_error = str(exc)
+    finally:
+        redact_module.run_tool_loop = original
+        redact_module.request_confirmation = original_confirm
 
 
 @then("the text redact warnings include max rounds")
@@ -257,7 +368,7 @@ def step_attempt_text_redact_tool_loop_error_done(context) -> None:
     request = _build_redact_request(text="Account", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Account", done=True, last_error="tool loop error")
+        return ToolLoopResult(text="Account", done=True, last_error="tool loop error", messages=[])
 
     from biblicus.text import redact as redact_module
 
@@ -277,19 +388,32 @@ def step_attempt_text_redact_no_spans(context) -> None:
     request = _build_redact_request(text="Account", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Account", done=True, last_error=None)
+        return ToolLoopResult(text="Account", done=True, last_error=None, messages=[])
 
     from biblicus.text import redact as redact_module
 
     original = redact_module.run_tool_loop
+    original_confirm = redact_module.request_confirmation
     redact_module.run_tool_loop = fake_tool_loop
+    redact_module.request_confirmation = (
+        lambda **_kwargs: ToolLoopResult(
+            text="Account", done=True, last_error=None, messages=[]
+        )
+    )
     try:
-        apply_text_redact(request)
+        context.text_redact_result = apply_text_redact(request)
         context.text_redact_error = None
     except Exception as exc:  # noqa: BLE001
         context.text_redact_error = str(exc)
     finally:
         redact_module.run_tool_loop = original
+        redact_module.request_confirmation = original_confirm
+
+
+@then('the text redact warnings include "{text}"')
+def step_text_redact_warnings_include(context, text: str) -> None:
+    warnings = context.text_redact_result.warnings
+    assert any(text in warning for warning in warnings)
 
 
 @when("I attempt text redact with invalid spans after the tool loop")
@@ -302,7 +426,7 @@ def step_attempt_text_redact_invalid_spans_after_loop(context) -> None:
     marked_up = "<span redact=\"bad\">Account</span>"
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=marked_up, done=True, last_error=None)
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
 
     from biblicus.text import redact as redact_module
 
@@ -315,6 +439,41 @@ def step_attempt_text_redact_invalid_spans_after_loop(context) -> None:
         context.text_redact_error = str(exc)
     finally:
         redact_module.run_tool_loop = original
+
+
+@when("I attempt text redact with invalid spans in confirmation")
+def step_attempt_text_redact_invalid_spans_in_confirmation(context) -> None:
+    request = _build_redact_request(
+        text="Account",
+        prompt_template="Return spans.",
+        redaction_types=["pii"],
+    )
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Account", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(
+            text='<span redact="bad">Account</span>',
+            done=True,
+            last_error=None,
+            messages=[],
+        )
+
+    from biblicus.text import redact as redact_module
+
+    original = redact_module.run_tool_loop
+    original_confirm = redact_module.request_confirmation
+    redact_module.run_tool_loop = fake_tool_loop
+    redact_module.request_confirmation = fake_confirmation
+    try:
+        apply_text_redact(request)
+        context.text_redact_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_redact_error = str(exc)
+    finally:
+        redact_module.run_tool_loop = original
+        redact_module.request_confirmation = original_confirm
 
 
 @when('I attempt redact replace with old_str "{old_str}" and new_str "{new_str}"')

@@ -12,10 +12,10 @@ pattern and returns structured spans, without forcing the model to re-emit the e
 
 ### Mechanism example
 
-Start with a system prompt that defines the edit protocol and embeds the current text:
+Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -33,7 +33,7 @@ USER PROMPT:
 Return all email addresses.
 ```
 
-The input text is the same content embedded in the system prompt:
+The input text is the same content embedded in the internal protocol:
 
 ```
 INPUT TEXT:
@@ -68,10 +68,10 @@ STRUCTURED DATA (result):
 
 ### Redaction types example
 
-You can enable redaction types by allowing a `redact` attribute in the system prompt:
+You can enable redaction types by allowing a `redact` attribute in the internal protocol:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -129,8 +129,11 @@ Text redact uses Pydantic models for strict validation:
 - `TextRedactRequest`: input text + LLM config + prompt template + optional redaction types.
 - `TextRedactResult`: marked-up text and redaction spans.
 
-System prompts must include `{text}`. Prompt templates must not include `{text}` and should only describe what to
-return. The system prompt template can interpolate redaction types via Jinja2.
+Internal protocol templates (advanced overrides) must include `{text}`. Prompt templates must not include `{text}` and
+should only describe what to return. The internal protocol template can interpolate redaction types via Jinja2.
+
+Most callers only supply the user prompt and text. Override `system_prompt` only when you need to customize the edit
+protocol.
 
 ## Output contract
 
@@ -157,40 +160,9 @@ Rules:
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextRedactRequest, apply_text_redact
 
-system_prompt = """
-You are a virtual file editor. Use the available tools to edit the text.
-Interpret the word "return" in the user's request as: wrap the returned text with
-<span>...</span> in-place in the current text.
-{% if redaction_types %}
-Each span must include a redact attribute with one of: {{ redaction_types | join(', ') }}.
-{% else %}
-Do not add any span attributes.
-{% endif %}
-
-Use the str_replace tool to insert span tags and the done tool when finished.
-When finished, call done. Do NOT return JSON in the assistant message.
-
-Rules:
-- Use str_replace only.
-- old_str must match exactly once in the current text.
-- old_str and new_str must be non-empty strings.
-- new_str must be identical to old_str with only <span ...> and </span> inserted.
-- Do not include <span or </span> inside old_str or new_str.
-- Do not insert nested spans.
-- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.
-- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.
-- Do not delete, reorder, or paraphrase text.
-
-Current text:
----
-{text}
----
-""".strip()
-
 request = TextRedactRequest(
     text="Account 1234 should be removed.",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
-    system_prompt=system_prompt,
     prompt_template="Return the account identifiers.",
     redaction_types=["pii"],
 )

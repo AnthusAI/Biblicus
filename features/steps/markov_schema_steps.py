@@ -428,6 +428,53 @@ def step_attempt_validate_markov_recipe_state_naming_prompt_contains_context_pac
         context.validation_error = exc
 
 
+@when("I attempt to validate a Markov recipe with topic modeling enabled and no recipe")
+def step_attempt_validate_markov_recipe_topic_modeling_enabled_without_recipe(context) -> None:
+    try:
+        MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "topic_modeling": {"enabled": True},
+                "model": {"family": "gaussian", "n_states": 2},
+                "observations": {"encoder": "tfidf"},
+            }
+        )
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
+@when("I attempt to validate a Markov recipe with topic modeling enabled and non-single LLM extraction")
+def step_attempt_validate_markov_recipe_topic_modeling_non_single_llm_extraction(context) -> None:
+    try:
+        MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "topic_modeling": {
+                    "enabled": True,
+                    "recipe": {
+                        "schema_version": 1,
+                        "llm_extraction": {
+                            "enabled": True,
+                            "method": "itemize",
+                            "client": {
+                                "provider": "openai",
+                                "model": "gpt-4o-mini",
+                                "api_key": "test-key",
+                            },
+                            "prompt_template": "{text}",
+                        },
+                    },
+                },
+                "model": {"family": "gaussian", "n_states": 2},
+                "observations": {"encoder": "tfidf"},
+            }
+        )
+        context.validation_error = None
+    except ValidationError as exc:
+        context.validation_error = exc
+
+
 @when("I validate a Markov recipe with span markup prompts")
 def step_validate_markov_recipe_span_markup_prompts(context) -> None:
     recipe = MarkovAnalysisRecipeConfig.model_validate(

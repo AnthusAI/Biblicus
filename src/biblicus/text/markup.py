@@ -186,7 +186,7 @@ def _parse_span_attributes(tag_text: str) -> Dict[str, str]:
     match = _OPEN_TAG_PATTERN.fullmatch(tag_text)
     if match is None:
         raise ValueError("Text markup contains an invalid span tag")
-    attr_text = match.group(1).strip()
+    attr_text = match.group(1).strip().replace('\\"', '"')
     if not attr_text:
         return {}
     attributes: Dict[str, str] = {}

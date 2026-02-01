@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import builtins
-from typing import Any, Callable, List
+import json
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from behave import then, when
+from behave import given, then, when
 
 from biblicus.analysis.markov import (
+    _add_boundary_segments,
+    _apply_boundary_labels,
     _apply_start_end_labels,
+    _apply_topic_modeling,
     _assign_state_names,
+    _build_states,
     _build_observations,
+    _compute_state_position_stats,
     _Document,
     _encode_observations,
     _fit_and_decode,
@@ -42,6 +50,7 @@ from biblicus.analysis.models import (
     MarkovAnalysisSpanMarkupSegmentationConfig,
     MarkovAnalysisState,
     MarkovAnalysisStateNamingConfig,
+    MarkovAnalysisTopicModelingConfig,
     MarkovAnalysisTransition,
 )
 from biblicus.text.markup import TextAnnotatedSpan
@@ -54,6 +63,453 @@ def _record_error(context, func: Callable[[], Any]) -> None:
         context.last_error = None
     except Exception as exc:  # noqa: BLE001 - BDD asserts error type and message explicitly
         context.last_error = exc
+
+
+@when("I add markov boundary segments for an empty segment list")
+def step_add_markov_boundary_segments_empty(context) -> None:
+    context.last_boundary_segments = _add_boundary_segments(segments=[])
+
+
+@then("the markov boundary segments result is empty")
+def step_boundary_segments_result_empty(context) -> None:
+    segments = getattr(context, "last_boundary_segments", None)
+    assert isinstance(segments, list)
+    assert segments == []
+
+
+@given("the Markov end label verifier returns:")
+def step_set_markov_end_label_verifier_response(context) -> None:
+    context.markov_end_label_verifier_response_text = str(context.text or "").strip()
+
+
+@when('I apply start/end labels to span-markup payloads for item "{item_id}":')
+def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None:
+    payloads = json.loads(str(context.text or "[]"))
+    assert isinstance(payloads, list)
+
+    import biblicus.analysis.markov as markov_module
+
+    original_generate_completion = markov_module.generate_completion
+    response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
+
+    def fake_generate_completion(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return response_text
+
+    try:
+        markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
+        config = MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "segmentation": {
+                    "method": "span_markup",
+                    "span_markup": {
+                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "prompt_template": "Return spans.",
+                        "system_prompt": "Current text:\n---\n{text}\n---\n",
+                        "start_label_value": "START",
+                        "end_label_value": "END",
+                        "end_reject_label_value": "END_REJECTED",
+                        "end_reject_reason_prefix": "Reason",
+                        "end_label_verifier": {
+                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "system_prompt": "Verify end:\n{text}",
+                            "prompt_template": "Return end decision.",
+                        },
+                    },
+                },
+                "model": {"family": "gaussian", "n_states": 2},
+                "observations": {"encoder": "tfidf"},
+            }
+        )
+        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+    finally:
+        markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
+
+
+@then("the start/end labeled segments include a prefixed START segment")
+def step_start_end_labeled_segments_include_start(context) -> None:
+    segments = getattr(context, "last_segments", None)
+    assert isinstance(segments, list)
+    assert segments
+    assert segments[0].text.startswith("START\n")
+
+
+@then("the start/end labeled segments include a rejected END segment with a reason")
+def step_start_end_labeled_segments_include_rejected_end(context) -> None:
+    segments = getattr(context, "last_segments", None)
+    assert isinstance(segments, list)
+    assert segments
+    assert segments[-1].text.startswith("END_REJECTED\nReason: truncated\n")
+
+
+@then("the end label is not applied to the final segment")
+def step_end_label_not_applied(context) -> None:
+    segments = getattr(context, "last_segments", None)
+    assert isinstance(segments, list)
+    assert segments
+    assert not segments[-1].text.startswith("END\n")
+    assert not segments[-1].text.startswith("END_REJECTED\n")
+
+
+@then("the rejected END segment includes no reason line")
+def step_rejected_end_no_reason_line(context) -> None:
+    segments = getattr(context, "last_segments", None)
+    assert isinstance(segments, list)
+    assert segments
+    assert segments[-1].text.startswith("END_REJECTED\n")
+    assert "Reason:" not in segments[-1].text
+
+
+@when('I apply start/end labels without an end label for item "{item_id}":')
+def step_apply_start_end_labels_without_end_label(context, item_id: str) -> None:
+    payloads = json.loads(str(context.text or "[]"))
+    assert isinstance(payloads, list)
+    config = MarkovAnalysisRecipeConfig.model_validate(
+        {
+            "schema_version": 1,
+            "segmentation": {
+                "method": "span_markup",
+                "span_markup": {
+                    "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                    "prompt_template": "Return spans.",
+                    "system_prompt": "Current text:\n---\n{text}\n---\n",
+                    "start_label_value": "START",
+                },
+            },
+            "model": {"family": "gaussian", "n_states": 2},
+            "observations": {"encoder": "tfidf"},
+        }
+    )
+    context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+
+
+@when('I apply start/end labels with rejected end but no rejection label for item "{item_id}":')
+def step_apply_start_end_labels_rejected_end_without_rejection_label(context, item_id: str) -> None:
+    payloads = json.loads(str(context.text or "[]"))
+    assert isinstance(payloads, list)
+
+    import biblicus.analysis.markov as markov_module
+
+    original_generate_completion = markov_module.generate_completion
+    response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
+
+    def fake_generate_completion(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return response_text
+
+    try:
+        markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
+        config = MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "segmentation": {
+                    "method": "span_markup",
+                    "span_markup": {
+                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "prompt_template": "Return spans.",
+                        "system_prompt": "Current text:\n---\n{text}\n---\n",
+                        "start_label_value": "START",
+                        "end_label_value": "END",
+                        "end_label_verifier": {
+                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "system_prompt": "Verify end:\n{text}",
+                            "prompt_template": "Return end decision.",
+                        },
+                    },
+                },
+                "model": {"family": "gaussian", "n_states": 2},
+                "observations": {"encoder": "tfidf"},
+            }
+        )
+        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+    finally:
+        markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
+
+
+@when('I apply start/end labels with rejected end and no reason for item "{item_id}":')
+def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: str) -> None:
+    payloads = json.loads(str(context.text or "[]"))
+    assert isinstance(payloads, list)
+
+    import biblicus.analysis.markov as markov_module
+
+    original_generate_completion = markov_module.generate_completion
+    response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
+
+    def fake_generate_completion(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return response_text
+
+    try:
+        markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
+        config = MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "segmentation": {
+                    "method": "span_markup",
+                    "span_markup": {
+                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                        "prompt_template": "Return spans.",
+                        "system_prompt": "Current text:\n---\n{text}\n---\n",
+                        "start_label_value": "START",
+                        "end_label_value": "END",
+                        "end_reject_label_value": "END_REJECTED",
+                        "end_reject_reason_prefix": "Reason",
+                        "end_label_verifier": {
+                            "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                            "system_prompt": "Verify end:\n{text}",
+                            "prompt_template": "Return end decision.",
+                        },
+                    },
+                },
+                "model": {"family": "gaussian", "n_states": 2},
+                "observations": {"encoder": "tfidf"},
+            }
+        )
+        context.last_segments = _apply_start_end_labels(item_id=item_id, payloads=payloads, config=config)
+    finally:
+        markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
+
+
+@when("I attempt to apply topic modeling with enabled true but no recipe")
+def step_attempt_apply_topic_modeling_missing_recipe(context) -> None:
+    config = MarkovAnalysisRecipeConfig.model_construct(
+        schema_version=1,
+        topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(enabled=True, recipe=None),  # type: ignore[arg-type]
+    )
+    observations: List[MarkovAnalysisObservation] = []
+
+    def _invoke() -> None:
+        _apply_topic_modeling(observations=observations, config=config)
+
+    _record_error(context, _invoke)
+
+
+@when("I attempt to apply topic modeling with only boundary segments")
+def step_attempt_apply_topic_modeling_only_boundaries(context) -> None:
+    config = MarkovAnalysisRecipeConfig.model_construct(
+        schema_version=1,
+        topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(
+            enabled=True, recipe=SimpleNamespace()
+        ),
+    )
+    observations: List[MarkovAnalysisObservation] = [
+        MarkovAnalysisObservation(
+            item_id="item",
+            segment_index=1,
+            segment_text="START",
+            topic_id=None,
+            topic_label=None,
+        ),
+        MarkovAnalysisObservation(
+            item_id="item",
+            segment_index=2,
+            segment_text="END",
+            topic_id=None,
+            topic_label=None,
+        ),
+    ]
+
+    def _invoke() -> None:
+        _apply_topic_modeling(observations=observations, config=config)
+
+    _record_error(context, _invoke)
+
+
+@when("I attempt to apply topic modeling that returns no assignment for a segment")
+def step_attempt_apply_topic_modeling_missing_assignment(context) -> None:
+    import biblicus.analysis.markov as markov_module
+
+    original_run_topic_modeling_for_documents = markov_module.run_topic_modeling_for_documents
+
+    def fake_run_topic_modeling_for_documents(*args, **kwargs):  # type: ignore[no-untyped-def]
+        missing_topic = SimpleNamespace(topic_id=0, label="Missing", document_ids=[])
+        return SimpleNamespace(topics=[missing_topic])
+
+    try:
+        markov_module.run_topic_modeling_for_documents = fake_run_topic_modeling_for_documents  # type: ignore[assignment]
+        config = MarkovAnalysisRecipeConfig.model_construct(
+            schema_version=1,
+            topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(
+                enabled=True, recipe=SimpleNamespace()
+            ),
+        )
+        observations: List[MarkovAnalysisObservation] = [
+            MarkovAnalysisObservation(
+                item_id="item",
+                segment_index=1,
+                segment_text="Alpha",
+                topic_id=None,
+                topic_label=None,
+            )
+        ]
+
+        def _invoke() -> None:
+            _apply_topic_modeling(observations=observations, config=config)
+
+        _record_error(context, _invoke)
+    finally:
+        markov_module.run_topic_modeling_for_documents = original_run_topic_modeling_for_documents  # type: ignore[assignment]
+
+
+@when("I build markov states with an out-of-range predicted state id")
+def step_build_markov_states_out_of_range(context) -> None:
+    segments = [MarkovAnalysisSegment(item_id="item", segment_index=1, text="Alpha")]
+    context.last_states = _build_states(
+        segments=segments,
+        predicted_states=[99],
+        n_states=2,
+        max_exemplars=5,
+    )
+
+
+@then("the built markov states include no exemplars for the unknown state id")
+def step_built_states_no_exemplars_for_unknown(context) -> None:
+    states = getattr(context, "last_states", None)
+    assert isinstance(states, list)
+    assert all(len(state.exemplars or []) == 0 for state in states)
+
+
+@when("I build markov states with max exemplars 1 and a boundary token")
+def step_build_markov_states_boundary_token_replaces(context) -> None:
+    segments = [
+        MarkovAnalysisSegment(item_id="item", segment_index=1, text="Alpha"),
+        MarkovAnalysisSegment(item_id="item", segment_index=2, text="START"),
+    ]
+    context.last_states = _build_states(
+        segments=segments,
+        predicted_states=[0, 0],
+        n_states=1,
+        max_exemplars=1,
+    )
+
+
+@then('the built markov state exemplars end with "START"')
+def step_built_states_exemplar_ends_with_start(context) -> None:
+    states = getattr(context, "last_states", None)
+    assert isinstance(states, list)
+    assert states
+    exemplars = states[0].exemplars or []
+    assert exemplars
+    assert exemplars[-1] == "START"
+
+
+@when("I assign markov state names with only START and END states")
+def step_assign_markov_state_names_only_boundaries(context) -> None:
+    config = MarkovAnalysisRecipeConfig.model_validate(
+        {
+            "schema_version": 1,
+            "report": {
+                "state_naming": {
+                    "enabled": True,
+                    "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test-key"},
+                    "system_prompt": "Context:\n{context_pack}",
+                    "prompt_template": "Return names for states: {state_ids}",
+                }
+            },
+        }
+    )
+    states = [
+        MarkovAnalysisState(state_id=0, label=None, exemplars=["START"]),
+        MarkovAnalysisState(state_id=1, label=None, exemplars=["END"]),
+    ]
+    context.last_states = _assign_state_names(states=states, decoded_paths=[], config=config)
+
+
+@then('the assigned markov state labels include "START"')
+def step_assigned_markov_state_labels_include_start(context) -> None:
+    states = getattr(context, "last_states", None)
+    assert isinstance(states, list)
+    labels = {state.label for state in states}
+    assert "START" in labels
+
+
+@then('the assigned markov state labels include "END"')
+def step_assigned_markov_state_labels_include_end(context) -> None:
+    states = getattr(context, "last_states", None)
+    assert isinstance(states, list)
+    labels = {state.label for state in states}
+    assert "END" in labels
+
+
+@when("I apply markov boundary labels with a middle state")
+def step_apply_markov_boundary_labels_with_middle_state(context) -> None:
+    states = [
+        MarkovAnalysisState(state_id=0, label="Alpha", exemplars=[]),
+        MarkovAnalysisState(state_id=1, label="Middle", exemplars=[]),
+        MarkovAnalysisState(state_id=2, label="Omega", exemplars=[]),
+    ]
+    context.last_states = _apply_boundary_labels(
+        states=states,
+        start_state_id=0,
+        end_state_id=2,
+    )
+
+
+@then('the middle markov state label remains "Middle"')
+def step_middle_markov_state_label_remains_middle(context) -> None:
+    states = getattr(context, "last_states", None)
+    assert isinstance(states, list)
+    middle_state = next(state for state in states if state.state_id == 1)
+    assert middle_state.label == "Middle"
+
+
+@when("I compute state position stats with a single-state decoded path")
+def step_compute_state_position_stats_single_state_path(context) -> None:
+    decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0])]
+    context.last_position_stats = _compute_state_position_stats(
+        decoded_paths=decoded_paths,
+        start_state_id=None,
+        end_state_id=None,
+    )
+
+
+@then("the computed position stats are empty")
+def step_computed_position_stats_empty(context) -> None:
+    stats = getattr(context, "last_position_stats", None)
+    assert isinstance(stats, dict)
+    assert stats == {}
+
+
+@when("I write a GraphViz file for a model with no boundary exemplars and an unobserved edge")
+def step_write_graphviz_no_boundary_exemplars_unobserved_edge(context) -> None:
+    run_dir = Path(context.workdir) / "graphviz-no-boundaries"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    graphviz = MarkovAnalysisArtifactsGraphVizConfig(
+        min_edge_weight=0.0,
+        rankdir="LR",
+        start_state_id=None,
+        end_state_id=None,
+    )
+    states = [
+        MarkovAnalysisState(state_id=0, label=None, exemplars=[]),
+        MarkovAnalysisState(state_id=1, label=None, exemplars=[]),
+        MarkovAnalysisState(state_id=2, label=None, exemplars=[]),
+    ]
+    transitions = [
+        MarkovAnalysisTransition(from_state=0, to_state=1, weight=1.0),
+        MarkovAnalysisTransition(from_state=0, to_state=2, weight=1.0),
+    ]
+    decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0, 1])]
+    _write_graphviz(
+        run_dir=run_dir,
+        transitions=transitions,
+        graphviz=graphviz,
+        states=states,
+        decoded_paths=decoded_paths,
+    )
+    context.graphviz_no_boundary_text = (run_dir / "transitions.dot").read_text(encoding="utf-8")
+
+
+@then("the GraphViz file does not include start and end ranks")
+def step_graphviz_file_omits_ranks(context) -> None:
+    text = getattr(context, "graphviz_no_boundary_text", "")
+    assert "rank=min" not in text
+    assert "rank=max" not in text
+
+
+@then('the GraphViz file does not contain "0 -> 2"')
+def step_graphviz_file_omits_unobserved_edge(context) -> None:
+    text = getattr(context, "graphviz_no_boundary_text", "")
+    assert "0 -> 2" not in text
 
 
 @when(
@@ -791,7 +1247,10 @@ def step_assign_state_names_with_provider_response(context) -> None:
             MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"]),
             MarkovAnalysisState(state_id=1, label=None, exemplars=["Payment questions"]),
         ]
-        context.last_named_states = _assign_state_names(states=states, config=config)
+        decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0, 1])]
+        context.last_named_states = _assign_state_names(
+            states=states, decoded_paths=decoded_paths, config=config
+        )
     finally:
         setattr(markov_module, "generate_completion", original_generate_completion)
 
@@ -833,8 +1292,9 @@ def step_assign_state_names_with_verb_phrase_response(context) -> None:
             MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"]),
             MarkovAnalysisState(state_id=1, label=None, exemplars=["Payment questions"]),
         ]
+        decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0, 1])]
         try:
-            _assign_state_names(states=states, config=config)
+            _assign_state_names(states=states, decoded_paths=decoded_paths, config=config)
         except ValueError as exc:
             context.last_state_naming_error = str(exc)
         else:
@@ -876,14 +1336,9 @@ def step_fit_and_decode_returns_predicted_states(context) -> None:
     assert predicted
 
 
-def _state_naming_validation_case(case: str) -> tuple[
-    MarkovStateNamingResponse, List[int], int, bool, bool, bool
-]:
+def _state_naming_validation_case(case: str) -> tuple[MarkovStateNamingResponse, List[int], int]:
     state_ids = [0, 1]
     max_name_words = 3
-    start_required = False
-    end_required = False
-    disconnection_required = False
     if case == "empty name":
         response = MarkovStateNamingResponse(
             state_names=[
@@ -905,13 +1360,6 @@ def _state_naming_validation_case(case: str) -> tuple[
                 MarkovStateName(state_id=1, name="billing"),
             ]
         )
-    elif case == "role keyword":
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="start state"),
-                MarkovStateName(state_id=1, name="billing"),
-            ]
-        )
     elif case == "duplicate state id":
         response = MarkovStateNamingResponse(
             state_names=[
@@ -930,82 +1378,26 @@ def _state_naming_validation_case(case: str) -> tuple[
         response = MarkovStateNamingResponse(
             state_names=[MarkovStateName(state_id=0, name="greeting")]
         )
-    elif case == "missing start id":
-        start_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ]
-        )
-    elif case == "invalid start id":
-        start_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ],
-            start_state_id=99,
-        )
-    elif case == "missing end id":
-        end_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ]
-        )
-    elif case == "invalid end id":
-        end_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ],
-            end_state_id=99,
-        )
-    elif case == "missing disconnection id":
-        disconnection_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ]
-        )
-    elif case == "invalid disconnection id":
-        disconnection_required = True
-        response = MarkovStateNamingResponse(
-            state_names=[
-                MarkovStateName(state_id=0, name="greeting"),
-                MarkovStateName(state_id=1, name="billing"),
-            ],
-            disconnection_state_id=99,
-        )
     else:
         raise AssertionError(f"Unknown state naming validation case: {case}")
-    return response, state_ids, max_name_words, start_required, end_required, disconnection_required
+    return response, state_ids, max_name_words
 
 
 @when('I validate state naming response with "{case}"')
 def step_validate_state_naming_response_case(context, case: str) -> None:
-    response, state_ids, max_name_words, start_required, end_required, disconnection_required = (
-        _state_naming_validation_case(case)
-    )
+    response, state_ids, max_name_words = _state_naming_validation_case(case)
 
     def _invoke() -> None:
         _validate_state_names(
             response=response,
             state_ids=state_ids,
             max_name_words=max_name_words,
-            start_required=start_required,
-            end_required=end_required,
-            disconnection_required=disconnection_required,
         )
 
     _record_error(context, _invoke)
 
 
-@when("I assign Markov state names with retries and role prefixes")
+@when("I assign Markov state names with retries")
 def step_assign_state_names_with_retries_and_prefixes(context) -> None:
     import biblicus.analysis.markov as markov_module
 
@@ -1014,17 +1406,13 @@ def step_assign_state_names_with_retries_and_prefixes(context) -> None:
         [
             (
                 '{\"state_names\":['
-                '{\"state_id\":0,\"name\":\"to greet\"},'
-                '{\"state_id\":1,\"name\":\"wrap up\"},'
-                '{\"state_id\":2,\"name\":\"call drop\"}'
+                '{\"state_id\":2,\"name\":\"is greeting\"}'
                 ']}'
             ),
             (
                 '{\"state_names\":['
-                '{\"state_id\":0,\"name\":\"Greeting\"},'
-                '{\"state_id\":1,\"name\":\"Wrap-up\"},'
-                '{\"state_id\":2,\"name\":\"Call drop\"}'
-                '],\"start_state_id\":0,\"end_state_id\":1,\"disconnection_state_id\":2}'
+                '{\"state_id\":2,\"name\":\"Initial contact\"}'
+                ']}'
             ),
         ]
     )
@@ -1053,11 +1441,14 @@ def step_assign_state_names_with_retries_and_prefixes(context) -> None:
             }
         )
         states = [
-            MarkovAnalysisState(state_id=0, label=None, exemplars=["start\nHello"]),
-            MarkovAnalysisState(state_id=1, label=None, exemplars=["end\nWrap-up"]),
-            MarkovAnalysisState(state_id=2, label=None, exemplars=["disconnection\nCall drop"]),
+            MarkovAnalysisState(state_id=0, label=None, exemplars=["START"]),
+            MarkovAnalysisState(state_id=1, label=None, exemplars=["END"]),
+            MarkovAnalysisState(state_id=2, label=None, exemplars=["Hello there"]),
         ]
-        context.last_named_states = _assign_state_names(states=states, config=config)
+        decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0, 2, 1])]
+        context.last_named_states = _assign_state_names(
+            states=states, decoded_paths=decoded_paths, config=config
+        )
     finally:
         setattr(markov_module, "generate_completion", original_generate_completion)
 
@@ -1079,7 +1470,7 @@ def step_attempt_assign_state_names_without_client(context) -> None:
     states = [MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"])]
 
     def _invoke() -> None:
-        _assign_state_names(states=states, config=config)
+        _assign_state_names(states=states, decoded_paths=[], config=config)
 
     _record_error(context, _invoke)
 
@@ -1099,29 +1490,44 @@ def step_assign_state_names_with_no_states(context) -> None:
             },
         }
     )
-    context.last_named_states = _assign_state_names(states=[], config=config)
+    context.last_named_states = _assign_state_names(states=[], decoded_paths=[], config=config)
 
 
-@when("I attempt to assign Markov state names with negative retries")
-def step_attempt_assign_state_names_negative_retries(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
-        schema_version=1,
-        report=MarkovAnalysisReportConfig.model_construct(
-            state_naming=MarkovAnalysisStateNamingConfig.model_construct(
-                enabled=True,
-                client={"provider": "openai", "model": "gpt-4o-mini", "api_key": "test"},
-                system_prompt="Context:\n{context_pack}",
-                prompt_template="Return names for states: {state_ids}",
-                max_retries=-1,
-            )
-        ),
-    )
-    states = [MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"])]
+@when("I attempt to assign Markov state names with retries exhausted")
+def step_attempt_assign_state_names_retries_exhausted(context) -> None:
+    import biblicus.analysis.markov as markov_module
 
-    def _invoke() -> None:
-        _assign_state_names(states=states, config=config)
+    original_generate_completion = markov_module.generate_completion
 
-    _record_error(context, _invoke)
+    def fake_generate_completion(*args: object, **kwargs: object) -> str:
+        _ = args, kwargs
+        return '{"state_names":[{"state_id":0,"name":"is greeting"}]}'
+
+    setattr(markov_module, "generate_completion", fake_generate_completion)
+    try:
+        config = MarkovAnalysisRecipeConfig.model_validate(
+            {
+                "schema_version": 1,
+                "report": {
+                    "state_naming": {
+                        "enabled": True,
+                        "client": {"provider": "openai", "model": "gpt-4o-mini", "api_key": "test"},
+                        "system_prompt": "Context:\n{context_pack}",
+                        "prompt_template": "Return names for states: {state_ids}",
+                        "max_retries": 0,
+                        "max_name_words": 3,
+                    }
+                },
+            }
+        )
+        states = [MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"])]
+
+        def _invoke() -> None:
+            _assign_state_names(states=states, decoded_paths=[], config=config)
+
+        _record_error(context, _invoke)
+    finally:
+        setattr(markov_module, "generate_completion", original_generate_completion)
 
 
 @when("I assign Markov state names with a missing label in validation output")
@@ -1165,7 +1571,10 @@ def step_assign_state_names_with_missing_label_in_validation_output(context) -> 
             MarkovAnalysisState(state_id=0, label=None, exemplars=["Hello there"]),
             MarkovAnalysisState(state_id=1, label=None, exemplars=["Payment questions"]),
         ]
-        context.last_named_states = _assign_state_names(states=states, config=config)
+        decoded_paths = [MarkovAnalysisDecodedPath(item_id="item", state_sequence=[0, 1])]
+        context.last_named_states = _assign_state_names(
+            states=states, decoded_paths=decoded_paths, config=config
+        )
     finally:
         setattr(markov_module, "_validate_state_names", original_validate_state_names)
         setattr(markov_module, "generate_completion", original_generate_completion)

@@ -20,7 +20,7 @@ from biblicus.text.tool_loop import ToolLoopResult
 def _link_system_prompt_template() -> str:
     return (
         "You are a virtual file editor. Use the available tools to edit the text.\n"
-        "Interpret the word 'return' in the user's request as: wrap the returned text with "
+        "Interpret the user's request as: wrap the requested text with "
         "<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.\n"
         "Each span must include exactly one attribute: id for first mentions and ref for repeats.\n"
         "Id values must start with '{{ id_prefix }}'.\n\n"
@@ -29,6 +29,7 @@ def _link_system_prompt_template() -> str:
         "Rules:\n"
         "- Use str_replace only.\n"
         "- old_str must match exactly once in the current text.\n"
+        "- When choosing old_str, copy the exact substring (including punctuation/case) from the current text.\n"
         "- old_str and new_str must be non-empty strings.\n"
         "- new_str must be identical to old_str with only <span ...> and </span> inserted.\n"
         "- Do not include <span or </span> inside old_str or new_str.\n"
@@ -81,6 +82,26 @@ def step_apply_text_link_with_prompt(context, text: str) -> None:
         prompt_template=prompt_template,
         api_key=None,
         timeout_seconds=300.0,
+    )
+    context.text_link_result = apply_text_link(request)
+
+
+@when('I apply text link to text "{text}" with prompt template and default system prompt:')
+def step_apply_text_link_with_prompt_default_system(context, text: str) -> None:
+    prompt_template = str(getattr(context, "text", "") or "")
+    request = TextLinkRequest(
+        text=text,
+        client=LlmClientConfig(
+            provider=AiProvider.OPENAI,
+            model="gpt-4o-mini",
+            api_key=None,
+            response_format="json_object",
+            timeout_seconds=300.0,
+        ),
+        prompt_template=prompt_template,
+        id_prefix="link_",
+        max_rounds=10,
+        max_edits_per_round=200,
     )
     context.text_link_result = apply_text_link(request)
 
@@ -179,11 +200,11 @@ def step_text_link_retry_message_has_context(context) -> None:
 
 @when("I apply text link with a non-done tool loop result")
 def step_apply_text_link_with_incomplete_tool_loop(context) -> None:
-    request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
-    replacement = "<span id=\"link_1\">Acme</span>"
+    request = _build_link_request(text="Acme Acme", prompt_template="Return the requested text.")
+    replacement = "<span id=\"link_1\">Acme</span> <span ref=\"link_1\">Acme</span>"
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=replacement, done=False, last_error=None)
+        return ToolLoopResult(text=replacement, done=False, last_error=None, messages=[])
 
     from biblicus.text import link as link_module
 
@@ -206,7 +227,7 @@ def step_attempt_text_link_tool_loop_error_done(context) -> None:
     request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Acme", done=True, last_error="tool loop error")
+        return ToolLoopResult(text="Acme", done=True, last_error="tool loop error", messages=[])
 
     from biblicus.text import link as link_module
 
@@ -226,7 +247,41 @@ def step_attempt_text_link_no_spans(context) -> None:
     request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text="Acme", done=True, last_error=None)
+        return ToolLoopResult(text="Acme", done=True, last_error=None, messages=[])
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    original_confirm = link_module.request_confirmation
+    link_module.run_tool_loop = fake_tool_loop
+    link_module.request_confirmation = (
+        lambda **_kwargs: ToolLoopResult(
+            text="Acme", done=True, last_error=None, messages=[]
+        )
+    )
+    try:
+        context.text_link_result = apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+        link_module.request_confirmation = original_confirm
+
+
+@then('the text link warnings include "{text}"')
+def step_text_link_warnings_include(context, text: str) -> None:
+    warnings = context.text_link_result.warnings
+    assert any(text in warning for warning in warnings)
+
+
+@when("I attempt text link with invalid spans after the tool loop")
+def step_attempt_text_link_invalid_spans_after_loop(context) -> None:
+    request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
+    marked_up = "<span label=\"x\">Acme</span>"
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
 
     from biblicus.text import link as link_module
 
@@ -241,20 +296,157 @@ def step_attempt_text_link_no_spans(context) -> None:
         link_module.run_tool_loop = original
 
 
-@when("I attempt text link with invalid spans after the tool loop")
-def step_attempt_text_link_invalid_spans_after_loop(context) -> None:
-    request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
-    marked_up = "<span label=\"x\">Acme</span>"
+@when("I apply text link and recover from missing coverage in a non-done tool loop")
+def step_apply_text_link_missing_coverage_recovery(context) -> None:
+    request = _build_link_request(text="Acme launched. Acme updated.", prompt_template="Return the requested text.")
+    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
 
     def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
-        return ToolLoopResult(text=marked_up, done=True, last_error=None)
+        return ToolLoopResult(text=marked_up, done=False, last_error="validation error", messages=[])
 
     from biblicus.text import link as link_module
 
     original = link_module.run_tool_loop
     link_module.run_tool_loop = fake_tool_loop
     try:
+        context.text_link_result = apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+
+
+@when("I attempt text link where confirmation fails with a last error")
+def step_attempt_text_link_confirmation_last_error(context) -> None:
+    request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Acme", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Acme", done=False, last_error="confirmation error", messages=[])
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    original_confirm = link_module.request_confirmation
+    link_module.run_tool_loop = fake_tool_loop
+    link_module.request_confirmation = fake_confirmation
+    try:
         apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+        link_module.request_confirmation = original_confirm
+
+
+@when("I attempt text link where confirmation returns invalid linked spans")
+def step_attempt_text_link_confirmation_invalid_spans(context) -> None:
+    request = _build_link_request(text="Acme", prompt_template="Return the requested text.")
+    marked_up = "<span id=\"bad_1\">Acme</span>"
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Acme", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    original_confirm = link_module.request_confirmation
+    link_module.run_tool_loop = fake_tool_loop
+    link_module.request_confirmation = fake_confirmation
+    try:
+        apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+        link_module.request_confirmation = original_confirm
+
+
+@when("I apply text link where confirmation inserts linked spans")
+def step_apply_text_link_confirmation_inserts_linked_spans(context) -> None:
+    request = _build_link_request(
+        text="Acme launched. Acme updated.",
+        prompt_template="Return the requested text.",
+    )
+    marked_up = (
+        "<span id=\"link_1\">Acme</span> launched. "
+        "<span ref=\"link_1\">Acme</span> updated."
+    )
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=request.text, done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    original_confirm = link_module.request_confirmation
+    link_module.run_tool_loop = fake_tool_loop
+    link_module.request_confirmation = fake_confirmation
+    try:
+        context.text_link_result = apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+        link_module.request_confirmation = original_confirm
+
+
+@when("I attempt text link where autofill returns invalid linked spans")
+def step_attempt_text_link_autofill_invalid_spans(context) -> None:
+    request = _build_link_request(
+        text="Acme launched. Acme updated.",
+        prompt_template="Return the requested text.",
+    )
+    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    def fake_autofill(marked_up_text: str, spans):  # type: ignore[no-untyped-def]
+        return marked_up_text, list(spans), ["Autofilled ref spans (no-op)"]
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    original_autofill = link_module._autofill_ref_spans
+    link_module.run_tool_loop = fake_tool_loop
+    link_module._autofill_ref_spans = fake_autofill
+    try:
+        apply_text_link(request)
+        context.text_link_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_link_error = str(exc)
+    finally:
+        link_module.run_tool_loop = original
+        link_module._autofill_ref_spans = original_autofill
+
+
+@when("I apply text link and autofill missing ref spans")
+def step_apply_text_link_autofill_missing_refs(context) -> None:
+    request = _build_link_request(text="Acme launched. Acme updated.", prompt_template="Return the requested text.")
+    marked_up = "<span id=\"link_1\">Acme</span> launched. Acme updated."
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import link as link_module
+
+    original = link_module.run_tool_loop
+    link_module.run_tool_loop = fake_tool_loop
+    try:
+        context.text_link_result = apply_text_link(request)
         context.text_link_error = None
     except Exception as exc:  # noqa: BLE001
         context.text_link_error = str(exc)

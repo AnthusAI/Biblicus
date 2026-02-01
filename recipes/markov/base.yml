@@ -1,0 +1,20 @@
+schema_version: 1
+text_source:
+  sample_size: 500
+  min_text_characters: 200
+segmentation:
+  method: fixed_window
+  fixed_window:
+    max_characters: 800
+    overlap_characters: 120
+observations:
+  encoder: tfidf
+  tfidf:
+    max_features: 1500
+    ngram_range: [1, 1]
+model:
+  family: gaussian
+  n_states: 8
+artifacts:
+  graphviz:
+    enabled: true

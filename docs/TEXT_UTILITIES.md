@@ -9,8 +9,8 @@ utilities.
 
 ## The virtual file editor pattern
 
-Text utilities work by treating the input text as an in-memory file. The model receives that text plus a strict system
-prompt and then edits the file using tool calls:
+Text utilities work by treating the input text as an in-memory file. Biblicus supplies the editing protocol internally
+and the model edits the file using tool calls:
 
 - `str_replace(old_str, new_str)`
 - `view()`
@@ -27,27 +27,14 @@ This gives you:
 
 ### Mechanism example
 
-Start with a system prompt that explains the edit protocol and embeds the current text:
-
-```
-SYSTEM PROMPT (excerpt):
-You are a virtual file editor. Use the available tools to edit the text.
-Interpret the word "return" in the user's request as: wrap the returned text with
-<span>...</span> in-place in the current text.
-Current text:
----
-We run fast.
----
-```
-
-Then the user prompt focuses only on what to return:
+The user prompt focuses only on what to return:
 
 ```
 USER PROMPT:
 Return all the verbs.
 ```
 
-The input text is the same content shown in the system prompt:
+The input text is the same content used by the internal editor protocol:
 
 ```
 INPUT TEXT:
@@ -76,13 +63,20 @@ STRUCTURED DATA (result):
 
 ## Prompt contract
 
-The prompt contract is intentionally simple and split across two messages:
+The prompt contract is intentionally simple:
 
-- **System**: explains the editing protocol and the exact markup rules.
-- **User**: describes *what to return* (for example, “Return all verbs.”).
+- **User prompt**: describes *what to return* (for example, “Return all verbs.”).
 
-This keeps small models focused. They only need to understand one job at a time while the system message handles the
-editing mechanics.
+Biblicus supplies the editing protocol internally, so most callers only provide the user prompt and the input text.
+Override the internal protocol only if you need to change the mechanics.
+
+## Validation and confirmation
+
+Biblicus validates the marked-up output syntactically. If the markup fails to parse or violates the rules, Biblicus
+adds a feedback message to the conversation history (including prior tool calls) and retries.
+
+When a tool produces zero spans/markers, Biblicus asks the model to confirm the empty result. If the model confirms,
+Biblicus returns the empty result with a warning instead of raising an error.
 
 ## Human-facing utilities
 
@@ -98,7 +92,7 @@ one job at a time.
 - **Redact**: return spans to remove or mask.
   - Example: "Return all email addresses."
 - **Link**: return spans connected by id/ref relationships.
-  - Example: "Return repeated mentions of the same company and link repeats to the first mention."
+  - Example: "Link repeated mentions of the same company to the first mention."
 
 These utilities are intentionally simple at the prompt layer, even though they share the same internal tool loop.
 

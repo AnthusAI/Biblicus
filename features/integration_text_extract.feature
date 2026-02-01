@@ -11,6 +11,15 @@ Feature: Text extract integration
     Then the text extract has at least one span
     And the text extract does not split words
 
+  Scenario: Text extract uses the default system prompt with a live model
+    Given an OpenAI API key is configured for this scenario
+    When I apply text extract to text "Hello there. Please wrap the whole text in one span." with prompt template and default system prompt:
+      """
+      Return the entire text.
+      """
+    Then the text extract has at least one span
+    And the text extract does not split words
+
   Scenario: Text extract extracts paragraphs with a live model
     Given an OpenAI API key is configured for this scenario
     When I apply text extract to text "Para one. || Para two. || Para three." with prompt template:

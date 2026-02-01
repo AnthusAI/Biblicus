@@ -16,7 +16,7 @@ Feature: Analysis schema validation
   Scenario: LLM client config rejects invalid provider type
     When I attempt to validate an LLM client config with invalid provider type
     Then a model validation error is raised
-    And the validation error mentions "llm client provider must be a string or LlmProvider"
+    And the validation error mentions "llm client provider must be a string or AiProvider"
 
   Scenario: LLM extraction config accepts enum method
     When I validate an LLM extraction config with enum method

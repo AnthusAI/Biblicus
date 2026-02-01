@@ -12,10 +12,10 @@ pattern and returns structured spans without re-emitting the full text.
 
 ### Mechanism example
 
-Start with a system prompt that defines the edit protocol and embeds the current text:
+Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span ATTRIBUTE="VALUE">...</span> in-place in the current text.
@@ -31,10 +31,10 @@ Then provide a short user prompt describing what to return:
 
 ```
 USER PROMPT:
-Return repeated mentions of the same company and link repeats to the first mention.
+Link repeated mentions of the same company to the first mention.
 ```
 
-The input text is the same content embedded in the system prompt:
+The input text is the same content embedded in the internal protocol:
 
 ```
 INPUT TEXT:
@@ -81,8 +81,11 @@ Text link uses Pydantic models for strict validation:
 - `TextLinkRequest`: input text + LLM config + prompt template + id prefix.
 - `TextLinkResult`: marked-up text and linked spans.
 
-System prompts must include `{text}`. Prompt templates must not include `{text}` and should only describe what to
-return. The system prompt template can interpolate the id prefix via Jinja2.
+Internal protocol templates (advanced overrides) must include `{text}`. Prompt templates must not include `{text}` and
+should only describe what to return. The internal protocol template can interpolate the id prefix via Jinja2.
+
+Most callers only supply the user prompt and text. Override `system_prompt` only when you need to customize the edit
+protocol.
 
 ## Output contract
 
@@ -91,8 +94,8 @@ Text link is tool-driven. The model must use tool calls instead of returning JSO
 Tool call arguments:
 
 ```
-str_replace(old_str="Acme launched a product", new_str="<span id=\"link_1\">Acme launched a product</span>")
-str_replace(old_str="Acme reported results", new_str="<span ref=\"link_1\">Acme reported results</span>")
+str_replace(old_str="Acme launched a product", new_str="<span id=\"link_1\">Acme</span> launched a product")
+str_replace(old_str="Acme reported results", new_str="<span ref=\"link_1\">Acme</span> reported results")
 done()
 ```
 
@@ -103,6 +106,7 @@ Rules:
 - Each new_str must be the same text with span tags inserted.
 - Use id for first mentions and ref for repeats.
 - Id values must start with the configured prefix.
+- Id/ref spans must wrap the same repeated text (avoid wrapping extra words).
 
 ## Example: Python API
 
@@ -110,38 +114,10 @@ Rules:
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextLinkRequest, apply_text_link
 
-system_prompt = """
-You are a virtual file editor. Use the available tools to edit the text.
-Interpret the word "return" in the user's request as: wrap the returned text with
-<span ATTRIBUTE=\"VALUE\">...</span> in-place in the current text.
-Each span must include exactly one attribute: id for first mentions and ref for repeats.
-Id values must start with "{{ id_prefix }}".
-
-Use the str_replace tool to insert span tags and the done tool when finished.
-When finished, call done. Do NOT return JSON in the assistant message.
-
-Rules:
-- Use str_replace only.
-- old_str must match exactly once in the current text.
-- old_str and new_str must be non-empty strings.
-- new_str must be identical to old_str with only <span ...> and </span> inserted.
-- Do not include <span or </span> inside old_str or new_str.
-- Do not insert nested spans.
-- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.
-- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.
-- Do not delete, reorder, or paraphrase text.
-
-Current text:
----
-{text}
----
-""".strip()
-
 request = TextLinkRequest(
     text="Acme launched a product. Later, Acme reported results.",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
-    system_prompt=system_prompt,
-    prompt_template="Return repeated mentions of the same company and link repeats to the first mention.",
+    prompt_template="Link repeated mentions of the same company to the first mention.",
     id_prefix="link_",
 )
 result = apply_text_link(request)

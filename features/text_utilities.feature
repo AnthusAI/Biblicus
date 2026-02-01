@@ -36,7 +36,7 @@ Feature: Text utilities
   Scenario: Text link adds id/ref spans
     Given a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
       """
-      {"operations":[{"command":"str_replace","old_str":"Acme shipped.","new_str":"<span id=\"link_1\">Acme shipped.</span>"},{"command":"str_replace","old_str":"Acme sold.","new_str":"<span ref=\"link_1\">Acme sold.</span>"}],"done":true}
+      {"operations":[{"command":"str_replace","old_str":"Acme shipped.","new_str":"<span id=\"link_1\">Acme</span> shipped."},{"command":"str_replace","old_str":"Acme sold.","new_str":"<span ref=\"link_1\">Acme</span> sold."}],"done":true}
       """
     When I apply text link to text "Acme shipped. Acme sold."
     Then the text link has 2 spans

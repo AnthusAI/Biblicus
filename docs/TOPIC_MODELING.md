@@ -26,6 +26,36 @@ schema.
 - BERTopic produces topic assignments and keyword weights.
 - LLM fine-tuning optionally replaces topic labels based on sampled documents.
 
+## Run topic modeling from the CLI
+
+```
+biblicus analyze topics --corpus corpora/example --recipe recipes/topic-modeling.yml --extraction-run pipeline:RUN_ID
+```
+
+Topic modeling recipes support cascading composition. Pass multiple `--recipe` files; later recipes override earlier
+recipes via a deep merge:
+
+```
+biblicus analyze topics \
+  --corpus corpora/example \
+  --recipe recipes/topic-modeling/base.yml \
+  --recipe recipes/topic-modeling/ag-news.yml \
+  --extraction-run pipeline:RUN_ID
+```
+
+To override the composed configuration view from the command line, use `--config key=value` with dotted keys:
+
+```
+biblicus analyze topics \
+  --corpus corpora/example \
+  --recipe recipes/topic-modeling/base.yml \
+  --recipe recipes/topic-modeling/ag-news.yml \
+  --config bertopic_analysis.parameters.nr_topics=12 \
+  --extraction-run pipeline:RUN_ID
+```
+
+If you omit `--extraction-run`, Biblicus uses the latest extraction run and emits a reproducibility warning.
+
 ## Output structure
 
 Topic modeling writes a single `output.json` file under the analysis run directory. The output contains:
@@ -133,13 +163,13 @@ The integration script downloads AG News, runs extraction, and then runs topic m
 parameters. It prints a summary with the analysis run identifier and the output path.
 
 ```
-python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
+python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
 ### Example: raise topic count
 
 ```
-python3 scripts/topic_modeling_integration.py \
+python scripts/topic_modeling_integration.py \
   --corpus corpora/ag_news_demo \
   --force \
   --limit 10000 \
@@ -152,7 +182,7 @@ python3 scripts/topic_modeling_integration.py \
 ### Example: disable lexical processing and restrict inputs
 
 ```
-python3 scripts/topic_modeling_integration.py \
+python scripts/topic_modeling_integration.py \
   --corpus corpora/ag_news_demo \
   --force \
   --sample-size 200 \
@@ -163,7 +193,7 @@ python3 scripts/topic_modeling_integration.py \
 ### Example: keep lexical processing but preserve punctuation
 
 ```
-python3 scripts/topic_modeling_integration.py \
+python scripts/topic_modeling_integration.py \
   --corpus corpora/ag_news_demo \
   --force \
   --no-lexical-strip-punctuation
@@ -178,7 +208,7 @@ use a larger corpus if you receive a small-corpus error.
 AG News downloads require the `datasets` dependency. Install with:
 
 ```
-python3 -m pip install "biblicus[datasets,topic-modeling]"
+python -m pip install "biblicus[datasets,topic-modeling]"
 ```
 
 ## Tuning workflow

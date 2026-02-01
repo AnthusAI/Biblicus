@@ -13,7 +13,7 @@ from biblicus.ai.models import AiProvider, EmbeddingsClientConfig
 def step_generate_embeddings_for_texts(context, texts: str) -> None:
     client = EmbeddingsClientConfig(
         provider=AiProvider.OPENAI,
-        model="text-embedding-3-small",
+        model="openai/text-embedding-3-small",
         api_key="test-key",
         batch_size=16,
         parallelism=4,

@@ -2,6 +2,17 @@
 
 Meta-extractors for combining, selecting, and orchestrating extraction strategies.
 
+```{toctree}
+:maxdepth: 1
+:caption: Pipeline Utilities
+
+select-text
+select-longest
+select-override
+select-smart-override
+pipeline
+```
+
 ## Overview
 
 Pipeline utility extractors don't extract text themselves. Instead, they coordinate other extractors to:

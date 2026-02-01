@@ -75,6 +75,16 @@ Feature: Markov analysis schema validation
     Then a model validation error is raised
     And the validation error mentions "state_naming.prompt_template"
 
+  Scenario: Markov topic modeling requires a recipe when enabled
+    When I attempt to validate a Markov recipe with topic modeling enabled and no recipe
+    Then a model validation error is raised
+    And the validation error mentions "topic_modeling.recipe is required"
+
+  Scenario: Markov topic modeling requires single LLM extraction method
+    When I attempt to validate a Markov recipe with topic modeling enabled and non-single LLM extraction
+    Then a model validation error is raised
+    And the validation error mentions "topic_modeling.recipe.llm_extraction.method must be 'single'"
+
   Scenario: Markov span markup accepts valid prompts
     When I validate a Markov recipe with span markup prompts
     Then the Markov segmentation method equals "span_markup"

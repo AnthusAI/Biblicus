@@ -23,7 +23,7 @@ Biblicus exposes the knobs you use to shape lexical relevance without losing det
 Example configuration (SQLite full text search):
 
 ```
-python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \
+python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \
   --config chunk_size=200 \
   --config chunk_overlap=50 \
   --config snippet_characters=120 \
@@ -39,7 +39,7 @@ records rerank scores alongside retrieve scores in evidence metadata.
 Example configuration:
 
 ```
-python3 -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \
+python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \
   --config rerank_enabled=true \
   --config rerank_model=cross-encoder \
   --config rerank_top_k=10
@@ -53,7 +53,7 @@ scores with explicit weights, and then applies the final budget.
 Example configuration:
 
 ```
-python3 -m biblicus build --corpus corpora/demo --backend hybrid \
+python -m biblicus build --corpus corpora/demo --backend hybrid \
   --config lexical_backend=sqlite-full-text-search \
   --config embedding_backend=vector \
   --config lexical_weight=0.7 \

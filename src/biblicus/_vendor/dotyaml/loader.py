@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import yaml
 
@@ -80,6 +80,45 @@ def load_config(
                     config[key] = value
 
     return config
+
+
+def _merge_mapping_values(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
+    merged: Dict[str, Any] = dict(base)
+    for key, value in overlay.items():
+        existing = merged.get(key)
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = _merge_mapping_values(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def load_yaml_view(paths: Iterable[Union[str, Path]]) -> Dict[str, Any]:
+    """
+    Load and compose one or more YAML files into a single mapping.
+
+    :param paths: Iterable of YAML file paths in precedence order.
+    :type paths: Iterable[str | Path]
+    :return: Composed YAML mapping.
+    :rtype: dict[str, Any]
+    :raises ValueError: If any YAML file does not contain a mapping.
+    """
+
+    composed: Dict[str, Any] = {}
+    for raw_path in paths:
+        yaml_path = Path(raw_path)
+        with open(yaml_path, "r", encoding="utf-8") as file:
+            yaml_data = yaml.safe_load(file)
+
+        if yaml_data is None:
+            yaml_data = {}
+
+        if not isinstance(yaml_data, dict):
+            raise ValueError(f"YAML content must be a mapping for {yaml_path}")
+
+        yaml_data = interpolate_env_vars(yaml_data)
+        composed = _merge_mapping_values(composed, yaml_data)
+    return composed
 
 
 class ConfigLoader:

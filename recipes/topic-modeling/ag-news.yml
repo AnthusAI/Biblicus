@@ -1,0 +1,9 @@
+text_source:
+  sample_size: 2000
+bertopic_analysis:
+  parameters:
+    nr_topics: 12
+    min_topic_size: 10
+  vectorizer:
+    ngram_range: [1, 2]
+    stop_words: english

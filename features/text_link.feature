@@ -4,7 +4,7 @@ Feature: Text link
   Scenario: Text link produces id/ref spans
     Given a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
       """
-      {"operations":[{"command":"str_replace","old_str":"Acme launched.","new_str":"<span id=\"link_1\">Acme launched.</span>"},{"command":"str_replace","old_str":"Acme updated.","new_str":"<span ref=\"link_1\">Acme updated.</span>"}],"done":true}
+      {"operations":[{"command":"str_replace","old_str":"Acme launched.","new_str":"<span id=\"link_1\">Acme</span> launched."},{"command":"str_replace","old_str":"Acme updated.","new_str":"<span ref=\"link_1\">Acme</span> updated."}],"done":true}
       """
     When I apply text link to text "Acme launched. Acme updated."
     Then the text link has 2 spans
@@ -82,13 +82,50 @@ Feature: Text link
     When I apply text link with a non-done tool loop result
     Then the text link warnings include max rounds
 
+  Scenario: Text link warns when confirmation reaches max rounds without done
+    Given a fake OpenAI library is available
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    When I attempt to apply text link to text "Hello"
+    Then the text link warnings include "Text link reached max rounds without done=true"
+    And the text link warnings include "Text link confirmation reached max rounds without done=true"
+    And the text link has 0 spans
+
   Scenario: Text link surfaces tool loop errors with done
     When I attempt text link with a tool loop error and done
     Then the text link error mentions "tool loop error"
 
-  Scenario: Text link fails when no spans are produced
+  Scenario: Text link confirms when no spans are produced
     When I attempt text link with no spans and done
-    Then the text link error mentions "produced no spans"
+    Then the text link warnings include "Text link returned no spans; model confirmed empty result"
+    And the text link has 0 spans
+
+  Scenario: Text link can recover from missing coverage during a non-done tool loop
+    When I apply text link and recover from missing coverage in a non-done tool loop
+    Then the text link warnings include "Autofilled"
+    And the text link has at least 1 spans
+
+  Scenario: Text link surfaces confirmation last_error as a failure
+    When I attempt text link where confirmation fails with a last error
+    Then the text link error mentions "Text link failed: confirmation error"
+
+  Scenario: Text link rejects invalid linked spans returned during confirmation
+    When I attempt text link where confirmation returns invalid linked spans
+    Then the text link error mentions "must start"
+
+  Scenario: Text link can succeed when confirmation inserts linked spans
+    When I apply text link where confirmation inserts linked spans
+    Then the text link has 2 spans
+
+  Scenario: Text link surfaces autofill failures when spans remain invalid
+    When I attempt text link where autofill returns invalid linked spans
+    Then the text link error mentions "must have at least one ref span"
+
+  Scenario: Text link can autofill ref spans when ids lack references
+    When I apply text link and autofill missing ref spans
+    Then the text link warnings include "Autofilled"
+    And the text link has at least 1 spans
 
   Scenario: Text link validates spans after the tool loop
     When I attempt text link with invalid spans after the tool loop

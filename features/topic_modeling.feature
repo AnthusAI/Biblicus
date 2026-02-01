@@ -550,12 +550,12 @@ Feature: Topic modeling analysis
     Then the command fails with exit code 2
     And standard error includes "OPENAI_API_KEY"
 
-  Scenario: Topic analysis requires OpenAI dependency for LLM extraction
+  Scenario: Topic analysis requires DSPy dependency for LLM extraction
     Given I initialized a corpus at "corpus"
     And a fake BERTopic library is available with topic assignments "0" and keywords:
       | topic_id | keywords |
       | 0        | alpha    |
-    And the OpenAI dependency is unavailable
+    And the DSPy dependency is unavailable
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I build a "pipeline" extraction run in corpus "corpus" with steps:
       | extractor_id      | config_json |
@@ -581,7 +581,7 @@ Feature: Topic modeling analysis
       """
     And I run a topic analysis in corpus "corpus" using recipe "topic.yml" and the latest extraction run
     Then the command fails with exit code 2
-    And standard error includes "biblicus[openai]"
+    And standard error includes "biblicus[dspy]"
 
   Scenario: Topic analysis rejects missing LLM extraction prompt
     Given I initialized a corpus at "corpus"

@@ -8,7 +8,7 @@ import re
 from typing import List
 
 from .models import TextSliceRequest, TextSliceResult, TextSliceSegment
-from .tool_loop import run_tool_loop
+from .tool_loop import request_confirmation, run_tool_loop
 
 _SLICE_MARKER = "<slice/>"
 
@@ -21,8 +21,12 @@ def apply_text_slice(request: TextSliceRequest) -> TextSliceResult:
     :type request: TextSliceRequest
     :return: Text slice result.
     :rtype: TextSliceResult
-    :raises ValueError: If model output is invalid or text is modified.
+    :raises ValueError: If model output is invalid or text is modified. Empty outputs trigger
+        a confirmation round and return a warning when confirmed.
     """
+    if request.mock_marked_up_text is not None:
+        return _build_mock_result(request, request.mock_marked_up_text)
+
     warnings: List[str] = []
     result = run_tool_loop(
         text=request.text,
@@ -40,12 +44,47 @@ def apply_text_slice(request: TextSliceRequest) -> TextSliceResult:
     if result.text == request.text:
         if result.last_error:
             raise ValueError(result.last_error)
-        raise ValueError("Text slice produced no markers")
+        confirmation = request_confirmation(
+            result=result,
+            text=result.text,
+            client=request.client,
+            system_prompt=request.system_prompt,
+            prompt_template=request.prompt_template,
+            max_rounds=2,
+            max_edits_per_round=request.max_edits_per_round,
+            apply_str_replace=_apply_slice_replace,
+            confirmation_message=_build_empty_confirmation_message(result.text),
+        )
+        if not confirmation.done:
+            if confirmation.last_error:
+                raise ValueError(f"Text slice failed: {confirmation.last_error}")
+            warnings.append("Text slice confirmation reached max rounds without done=true")
+        _validate_preserved_text(original=request.text, marked_up=confirmation.text)
+        slices = _extract_slices(marked_up_text=confirmation.text)
+        if confirmation.text == request.text:
+            warnings.append("Text slice returned no markers; model confirmed single slice")
+        if not slices:
+            raise ValueError("Text slice produced no slices")
+        return TextSliceResult(
+            marked_up_text=confirmation.text,
+            slices=slices,
+            warnings=warnings,
+        )
     _validate_preserved_text(original=request.text, marked_up=result.text)
     slices = _extract_slices(marked_up_text=result.text)
     if not slices:
         raise ValueError("Text slice produced no slices")
     return TextSliceResult(marked_up_text=result.text, slices=slices, warnings=warnings)
+
+
+def _build_mock_result(
+    request: TextSliceRequest, marked_up_text: str
+) -> TextSliceResult:
+    if marked_up_text == request.text:
+        raise ValueError("Text slice produced no markers")
+    _validate_preserved_text(original=request.text, marked_up=marked_up_text)
+    slices = _extract_slices(marked_up_text=marked_up_text)
+    return TextSliceResult(marked_up_text=marked_up_text, slices=slices, warnings=[])
 
 
 def _apply_slice_replace(text: str, old_str: str, new_str: str) -> str:
@@ -106,3 +145,13 @@ def _extract_slices(*, marked_up_text: str) -> List[TextSliceSegment]:
         )
 
     return slices
+
+
+def _build_empty_confirmation_message(text: str) -> str:
+    return (
+        "No slice markers were inserted. If the text should remain a single slice, "
+        "call done again without changes. Otherwise insert <slice/> markers at the "
+        "boundaries of the requested slices.\n"
+        "Current text:\n"
+        f"---\n{text}\n---"
+    )

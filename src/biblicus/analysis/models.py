@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Field, field_validator, model_validator
 
+from ..ai.models import EmbeddingsClientConfig, LlmClientConfig
 from ..constants import ANALYSIS_SCHEMA_VERSION
 from ..models import ExtractionRunReference
-from .llm import LlmClientConfig
 from .schema import AnalysisSchemaModel
 
 
@@ -775,3 +775,757 @@ class TopicModelingOutput(AnalysisSchemaModel):
     generated_at: str
     run: AnalysisRunManifest
     report: TopicModelingReport
+
+
+class MarkovAnalysisStageStatus(str, Enum):
+    """
+    Status values for Markov analysis stages.
+    """
+
+    SKIPPED = "skipped"
+    COMPLETE = "complete"
+    FAILED = "failed"
+
+
+class MarkovAnalysisSegmentationMethod(str, Enum):
+    """
+    Segmentation method identifiers for Markov analysis.
+    """
+
+    SENTENCE = "sentence"
+    FIXED_WINDOW = "fixed_window"
+    LLM = "llm"
+    SPAN_MARKUP = "span_markup"
+
+
+class MarkovAnalysisLlmSegmentationConfig(AnalysisSchemaModel):
+    """
+    Provider-backed segmentation configuration.
+
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar prompt_template: Prompt template containing ``{text}``.
+    :vartype prompt_template: str
+    :ivar system_prompt: Optional system prompt.
+    :vartype system_prompt: str or None
+    """
+
+    client: LlmClientConfig
+    prompt_template: str = Field(min_length=1)
+    system_prompt: Optional[str] = None
+
+
+class MarkovAnalysisSpanMarkupSegmentationConfig(AnalysisSchemaModel):
+    """
+    Provider-backed text extract configuration.
+
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar prompt_template: Prompt template describing what to return (must not include ``{text}``).
+    :vartype prompt_template: str
+    :ivar system_prompt: System prompt containing ``{text}``.
+    :vartype system_prompt: str
+    :ivar max_rounds: Maximum number of edit rounds.
+    :vartype max_rounds: int
+    :ivar max_edits_per_round: Maximum edits per round.
+    :vartype max_edits_per_round: int
+    :ivar label_attribute: Optional attribute name used to extract segment labels.
+    :vartype label_attribute: str or None
+    :ivar prepend_label: Whether to prepend the label and a newline to segment text.
+    :vartype prepend_label: bool
+    :ivar start_label_value: Optional marker prepended to the first segment.
+    :vartype start_label_value: str or None
+    :ivar end_label_value: Optional marker prepended to the last segment when verified.
+    :vartype end_label_value: str or None
+    :ivar end_label_verifier: Optional LLM verifier for end-label assignment.
+    :vartype end_label_verifier: MarkovAnalysisSpanMarkupEndLabelVerifierConfig or None
+    :ivar end_reject_label_value: Optional marker prepended when the verifier rejects an end label.
+    :vartype end_reject_label_value: str or None
+    :ivar end_reject_reason_prefix: Prefix used for the verifier explanation line.
+    :vartype end_reject_reason_prefix: str
+    """
+
+    client: LlmClientConfig
+    prompt_template: str = Field(min_length=1)
+    system_prompt: str = Field(min_length=1)
+    max_rounds: int = Field(default=6, ge=1)
+    max_edits_per_round: int = Field(default=500, ge=1)
+    label_attribute: Optional[str] = Field(default=None, min_length=1)
+    prepend_label: bool = False
+    start_label_value: Optional[str] = Field(default=None, min_length=1)
+    end_label_value: Optional[str] = Field(default=None, min_length=1)
+    end_label_verifier: Optional["MarkovAnalysisSpanMarkupEndLabelVerifierConfig"] = None
+    end_reject_label_value: Optional[str] = Field(default=None, min_length=1)
+    end_reject_reason_prefix: str = Field(default="disconnection_reason", min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_prompt_template(self) -> "MarkovAnalysisSpanMarkupSegmentationConfig":
+        if "{text}" not in self.system_prompt:
+            raise ValueError("segmentation.span_markup.system_prompt must include {text}")
+        if "{text}" in self.prompt_template:
+            raise ValueError("segmentation.span_markup.prompt_template must not include {text}")
+        if self.prepend_label and not self.label_attribute:
+            raise ValueError(
+                "segmentation.span_markup.label_attribute is required when "
+                "segmentation.span_markup.prepend_label is true"
+            )
+        if self.end_label_value is not None and self.end_label_verifier is None:
+            raise ValueError(
+                "segmentation.span_markup.end_label_verifier is required when "
+                "segmentation.span_markup.end_label_value is set"
+            )
+        if self.end_reject_label_value is not None and self.end_label_verifier is None:
+            raise ValueError(
+                "segmentation.span_markup.end_label_verifier is required when "
+                "segmentation.span_markup.end_reject_label_value is set"
+            )
+        return self
+
+
+class MarkovAnalysisSpanMarkupEndLabelVerifierConfig(AnalysisSchemaModel):
+    """
+    Verifier configuration for end-label assignment.
+
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar system_prompt: System prompt containing ``{text}``.
+    :vartype system_prompt: str
+    :ivar prompt_template: Prompt template for the verifier (must not include ``{text}``).
+    :vartype prompt_template: str
+    """
+
+    client: LlmClientConfig
+    system_prompt: str = Field(min_length=1)
+    prompt_template: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_prompt_template(
+        self,
+    ) -> "MarkovAnalysisSpanMarkupEndLabelVerifierConfig":
+        if "{text}" not in self.system_prompt:
+            raise ValueError(
+                "segmentation.span_markup.end_label_verifier.system_prompt must include {text}"
+            )
+        if "{text}" in self.prompt_template:
+            raise ValueError(
+                "segmentation.span_markup.end_label_verifier.prompt_template must not include {text}"
+            )
+        return self
+
+
+class MarkovAnalysisTextSourceConfig(AnalysisSchemaModel):
+    """
+    Text source configuration for Markov analysis.
+
+    :ivar sample_size: Optional cap on number of documents included.
+    :vartype sample_size: int or None
+    :ivar min_text_characters: Optional minimum extracted text length.
+    :vartype min_text_characters: int or None
+    """
+
+    sample_size: Optional[int] = Field(default=None, ge=1)
+    min_text_characters: Optional[int] = Field(default=None, ge=1)
+
+
+class MarkovAnalysisFixedWindowSegmentationConfig(AnalysisSchemaModel):
+    """
+    Fixed window segmentation configuration.
+
+    :ivar max_characters: Maximum segment size in characters.
+    :vartype max_characters: int
+    :ivar overlap_characters: Overlap between consecutive segments.
+    :vartype overlap_characters: int
+    """
+
+    max_characters: int = Field(default=800, ge=1)
+    overlap_characters: int = Field(default=0, ge=0)
+
+
+class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
+    """
+    Segmentation configuration for Markov analysis.
+
+    :ivar method: Segmentation method identifier.
+    :vartype method: MarkovAnalysisSegmentationMethod
+    :ivar fixed_window: Fixed window settings for ``fixed_window`` method.
+    :vartype fixed_window: MarkovAnalysisFixedWindowSegmentationConfig
+    :ivar span_markup: Text extract settings for ``span_markup`` method.
+    :vartype span_markup: MarkovAnalysisSpanMarkupSegmentationConfig or None
+    """
+
+    method: MarkovAnalysisSegmentationMethod = Field(
+        default=MarkovAnalysisSegmentationMethod.SENTENCE
+    )
+    fixed_window: MarkovAnalysisFixedWindowSegmentationConfig = Field(
+        default_factory=MarkovAnalysisFixedWindowSegmentationConfig
+    )
+    llm: Optional[MarkovAnalysisLlmSegmentationConfig] = None
+    span_markup: Optional[MarkovAnalysisSpanMarkupSegmentationConfig] = None
+
+    @field_validator("method", mode="before")
+    @classmethod
+    def _parse_method(cls, value: object) -> MarkovAnalysisSegmentationMethod:
+        if isinstance(value, MarkovAnalysisSegmentationMethod):
+            return value
+        if isinstance(value, str):
+            return MarkovAnalysisSegmentationMethod(value)
+        raise ValueError("segmentation.method must be a string or MarkovAnalysisSegmentationMethod")
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> "MarkovAnalysisSegmentationConfig":
+        if self.method == MarkovAnalysisSegmentationMethod.LLM and self.llm is None:
+            raise ValueError("segmentation.llm is required when segmentation.method is 'llm'")
+        if (
+            self.method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP
+            and self.span_markup is None
+        ):
+            raise ValueError(
+                "segmentation.span_markup is required when segmentation.method is 'span_markup'"
+            )
+        return self
+
+
+class MarkovAnalysisLlmObservationsConfig(AnalysisSchemaModel):
+    """
+    Provider-backed observation extraction configuration.
+
+    :ivar enabled: Whether to enable provider-backed observation extraction.
+    :vartype enabled: bool
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar prompt_template: Prompt template containing ``{segment}``.
+    :vartype prompt_template: str
+    :ivar system_prompt: Optional system prompt.
+    :vartype system_prompt: str or None
+    """
+
+    enabled: bool = Field(default=False)
+    client: Optional[LlmClientConfig] = None
+    prompt_template: Optional[str] = None
+    system_prompt: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> "MarkovAnalysisLlmObservationsConfig":
+        if not self.enabled:
+            return self
+        if self.client is None:
+            raise ValueError(
+                "llm_observations.client is required when llm_observations.enabled is true"
+            )
+        if not self.prompt_template:
+            raise ValueError(
+                "llm_observations.prompt_template is required when llm_observations.enabled is true"
+            )
+        return self
+
+
+class MarkovAnalysisEmbeddingsConfig(AnalysisSchemaModel):
+    """
+    Provider-backed embeddings configuration.
+
+    :ivar enabled: Whether to generate embeddings.
+    :vartype enabled: bool
+    :ivar client: Embeddings client configuration.
+    :vartype client: biblicus.ai.models.EmbeddingsClientConfig
+    :ivar text_source: Which text field to embed (``segment_text`` or ``llm_summary``).
+    :vartype text_source: str
+    """
+
+    enabled: bool = Field(default=False)
+    client: Optional[EmbeddingsClientConfig] = None
+    text_source: str = Field(default="segment_text", min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> "MarkovAnalysisEmbeddingsConfig":
+        if not self.enabled:
+            return self
+        if self.client is None:
+            raise ValueError("embeddings.client is required when embeddings.enabled is true")
+        if self.text_source not in {"segment_text", "llm_summary"}:
+            raise ValueError("embeddings.text_source must be 'segment_text' or 'llm_summary'")
+        return self
+
+
+class MarkovAnalysisTopicModelingConfig(AnalysisSchemaModel):
+    """
+    Topic modeling configuration for Markov analysis observations.
+
+    :ivar enabled: Whether to run topic modeling on segments.
+    :vartype enabled: bool
+    :ivar recipe: Topic modeling recipe applied to segments.
+    :vartype recipe: TopicModelingRecipeConfig or None
+    """
+
+    enabled: bool = Field(default=False)
+    recipe: Optional["TopicModelingRecipeConfig"] = None
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> "MarkovAnalysisTopicModelingConfig":
+        if not self.enabled:
+            return self
+        if self.recipe is None:
+            raise ValueError("topic_modeling.recipe is required when topic_modeling.enabled is true")
+        if self.recipe.llm_extraction.enabled and (
+            self.recipe.llm_extraction.method != TopicModelingLlmExtractionMethod.SINGLE
+        ):
+            raise ValueError(
+                "topic_modeling.recipe.llm_extraction.method must be 'single' for Markov topic modeling"
+            )
+        return self
+
+
+class MarkovAnalysisObservationsEncoder(str, Enum):
+    """
+    Observation encoder identifiers.
+    """
+
+    TFIDF = "tfidf"
+    EMBEDDING = "embedding"
+    HYBRID = "hybrid"
+
+
+class MarkovAnalysisTfidfObservationConfig(AnalysisSchemaModel):
+    """
+    TF-IDF encoder configuration for local observations.
+
+    :ivar max_features: Maximum vocabulary size.
+    :vartype max_features: int
+    :ivar ngram_range: Inclusive n-gram range.
+    :vartype ngram_range: list[int]
+    """
+
+    max_features: int = Field(default=2000, ge=1)
+    ngram_range: List[int] = Field(default_factory=lambda: [1, 2])
+
+    @field_validator("ngram_range", mode="before")
+    @classmethod
+    def _validate_ngram_range(cls, value: object) -> object:
+        if value is None:
+            return value
+        if not isinstance(value, list) or len(value) != 2:
+            raise ValueError("tfidf.ngram_range must be a list of two integers")
+        if any(not isinstance(item, int) for item in value):
+            raise ValueError("tfidf.ngram_range must be a list of two integers")
+        if value[0] < 1 or value[1] < value[0]:
+            raise ValueError("tfidf.ngram_range must be a valid inclusive range")
+        return value
+
+
+class MarkovAnalysisObservationsConfig(AnalysisSchemaModel):
+    """
+    Observations configuration for Markov analysis.
+
+    :ivar encoder: Observation encoder identifier.
+    :vartype encoder: MarkovAnalysisObservationsEncoder
+    :ivar tfidf: TF-IDF encoder settings.
+    :vartype tfidf: MarkovAnalysisTfidfObservationConfig
+    :ivar text_source: Which text field to encode for ``tfidf`` (``segment_text`` or ``llm_summary``).
+    :vartype text_source: str
+    :ivar categorical_source: Which field provides categorical labels for hybrid/categorical use.
+    :vartype categorical_source: str
+    :ivar numeric_source: Which field provides a numeric scalar feature for hybrid use.
+    :vartype numeric_source: str
+    """
+
+    encoder: MarkovAnalysisObservationsEncoder = Field(
+        default=MarkovAnalysisObservationsEncoder.TFIDF
+    )
+    tfidf: MarkovAnalysisTfidfObservationConfig = Field(
+        default_factory=MarkovAnalysisTfidfObservationConfig
+    )
+    text_source: str = Field(default="segment_text", min_length=1)
+    categorical_source: str = Field(default="llm_label", min_length=1)
+    numeric_source: str = Field(default="llm_label_confidence", min_length=1)
+
+    @field_validator("encoder", mode="before")
+    @classmethod
+    def _parse_encoder(cls, value: object) -> MarkovAnalysisObservationsEncoder:
+        if isinstance(value, MarkovAnalysisObservationsEncoder):
+            return value
+        if isinstance(value, str):
+            return MarkovAnalysisObservationsEncoder(value)
+        raise ValueError(
+            "observations.encoder must be a string or MarkovAnalysisObservationsEncoder"
+        )
+
+    @model_validator(mode="after")
+    def _validate_sources(self) -> "MarkovAnalysisObservationsConfig":
+        if self.text_source not in {"segment_text", "llm_summary"}:
+            raise ValueError("observations.text_source must be 'segment_text' or 'llm_summary'")
+        return self
+
+
+class MarkovAnalysisModelFamily(str, Enum):
+    """
+    Markov model family identifiers.
+    """
+
+    GAUSSIAN = "gaussian"
+    CATEGORICAL = "categorical"
+
+
+class MarkovAnalysisModelConfig(AnalysisSchemaModel):
+    """
+    Model configuration for Markov analysis.
+
+    :ivar family: Model family identifier.
+    :vartype family: MarkovAnalysisModelFamily
+    :ivar n_states: Number of hidden states to learn.
+    :vartype n_states: int
+    """
+
+    family: MarkovAnalysisModelFamily = Field(default=MarkovAnalysisModelFamily.GAUSSIAN)
+    n_states: int = Field(default=8, ge=1)
+
+    @field_validator("family", mode="before")
+    @classmethod
+    def _parse_family(cls, value: object) -> MarkovAnalysisModelFamily:
+        if isinstance(value, MarkovAnalysisModelFamily):
+            return value
+        if isinstance(value, str):
+            return MarkovAnalysisModelFamily(value)
+        raise ValueError("model.family must be a string or MarkovAnalysisModelFamily")
+
+
+class MarkovAnalysisArtifactsGraphVizConfig(AnalysisSchemaModel):
+    """
+    GraphViz export configuration.
+
+    :ivar enabled: Whether to write GraphViz transitions output.
+    :vartype enabled: bool
+    :ivar rankdir: GraphViz rank direction (e.g., LR or TB).
+    :vartype rankdir: str
+    :ivar min_edge_weight: Minimum edge weight to include in GraphViz output.
+    :vartype min_edge_weight: float
+    :ivar start_state_id: Optional state id to pin at the start of the layout.
+    :vartype start_state_id: int or None
+    :ivar end_state_id: Optional state id to pin at the end of the layout.
+    :vartype end_state_id: int or None
+    """
+
+    enabled: bool = Field(default=False)
+    rankdir: str = Field(default="LR", min_length=1)
+    min_edge_weight: float = Field(default=0.0, ge=0.0)
+    start_state_id: Optional[int] = None
+    end_state_id: Optional[int] = None
+
+
+class MarkovAnalysisArtifactsConfig(AnalysisSchemaModel):
+    """
+    Artifact configuration for Markov analysis.
+
+    :ivar graphviz: GraphViz export settings.
+    :vartype graphviz: MarkovAnalysisArtifactsGraphVizConfig
+    """
+
+    graphviz: MarkovAnalysisArtifactsGraphVizConfig = Field(
+        default_factory=MarkovAnalysisArtifactsGraphVizConfig
+    )
+
+
+class MarkovAnalysisReportConfig(AnalysisSchemaModel):
+    """
+    Report configuration for Markov analysis.
+
+    :ivar max_state_exemplars: Maximum exemplar segments stored per state.
+    :vartype max_state_exemplars: int
+    :ivar state_naming: Optional provider-backed state naming configuration.
+    :vartype state_naming: MarkovAnalysisStateNamingConfig or None
+    """
+
+    max_state_exemplars: int = Field(default=5, ge=0)
+    state_naming: Optional["MarkovAnalysisStateNamingConfig"] = None
+
+
+class MarkovAnalysisStateNamingConfig(AnalysisSchemaModel):
+    """
+    Provider-backed configuration for naming Markov states.
+
+    :ivar enabled: Whether state naming is enabled.
+    :vartype enabled: bool
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar system_prompt: System prompt containing the context pack placeholder.
+    :vartype system_prompt: str
+    :ivar prompt_template: User prompt template for naming.
+    :vartype prompt_template: str
+    :ivar token_budget: Maximum tokens for the context pack text.
+    :vartype token_budget: int
+    :ivar max_exemplars_per_state: Maximum exemplars per state in the context pack.
+    :vartype max_exemplars_per_state: int
+    :ivar max_name_words: Maximum words allowed in each state name (short noun phrase).
+    :vartype max_name_words: int
+    :ivar max_retries: Maximum retries when the naming response is invalid.
+    :vartype max_retries: int
+    """
+
+    enabled: bool = False
+    client: Optional[LlmClientConfig] = None
+    system_prompt: Optional[str] = None
+    prompt_template: Optional[str] = None
+    token_budget: int = Field(default=256, ge=1)
+    max_exemplars_per_state: int = Field(default=3, ge=1)
+    max_name_words: int = Field(default=4, ge=1)
+    max_retries: int = Field(default=1, ge=0)
+
+    @model_validator(mode="after")
+    def _validate_state_naming(self) -> "MarkovAnalysisStateNamingConfig":
+        if not self.enabled:
+            return self
+        if self.client is None:
+            raise ValueError("report.state_naming.client is required when enabled")
+        if self.system_prompt is None or not str(self.system_prompt).strip():
+            raise ValueError("report.state_naming.system_prompt is required when enabled")
+        if "{context_pack}" not in self.system_prompt:
+            raise ValueError(
+                'report.state_naming.system_prompt must include the "{context_pack}" placeholder'
+            )
+        if self.prompt_template is None or not str(self.prompt_template).strip():
+            raise ValueError("report.state_naming.prompt_template is required when enabled")
+        if "{context_pack}" in self.prompt_template:
+            raise ValueError(
+                'report.state_naming.prompt_template must not include "{context_pack}"'
+            )
+        return self
+
+
+class MarkovAnalysisRecipeConfig(AnalysisSchemaModel):
+    """
+    Recipe configuration for Markov analysis.
+
+    :ivar schema_version: Analysis schema version.
+    :vartype schema_version: int
+    :ivar text_source: Text source configuration.
+    :vartype text_source: MarkovAnalysisTextSourceConfig
+    :ivar segmentation: Segmentation configuration.
+    :vartype segmentation: MarkovAnalysisSegmentationConfig
+    :ivar observations: Observation encoder configuration.
+    :vartype observations: MarkovAnalysisObservationsConfig
+    :ivar model: Markov model configuration.
+    :vartype model: MarkovAnalysisModelConfig
+    :ivar topic_modeling: Topic modeling configuration.
+    :vartype topic_modeling: MarkovAnalysisTopicModelingConfig
+    :ivar artifacts: Artifact configuration.
+    :vartype artifacts: MarkovAnalysisArtifactsConfig
+    :ivar report: Report configuration.
+    :vartype report: MarkovAnalysisReportConfig
+    """
+
+    schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
+    text_source: MarkovAnalysisTextSourceConfig = Field(
+        default_factory=MarkovAnalysisTextSourceConfig
+    )
+    segmentation: MarkovAnalysisSegmentationConfig = Field(
+        default_factory=MarkovAnalysisSegmentationConfig
+    )
+    observations: MarkovAnalysisObservationsConfig = Field(
+        default_factory=MarkovAnalysisObservationsConfig
+    )
+    model: MarkovAnalysisModelConfig = Field(default_factory=MarkovAnalysisModelConfig)
+    topic_modeling: MarkovAnalysisTopicModelingConfig = Field(
+        default_factory=MarkovAnalysisTopicModelingConfig
+    )
+    llm_observations: MarkovAnalysisLlmObservationsConfig = Field(
+        default_factory=MarkovAnalysisLlmObservationsConfig
+    )
+    embeddings: MarkovAnalysisEmbeddingsConfig = Field(
+        default_factory=MarkovAnalysisEmbeddingsConfig
+    )
+    artifacts: MarkovAnalysisArtifactsConfig = Field(default_factory=MarkovAnalysisArtifactsConfig)
+    report: MarkovAnalysisReportConfig = Field(default_factory=MarkovAnalysisReportConfig)
+
+    @model_validator(mode="after")
+    def _validate_schema_version(self) -> "MarkovAnalysisRecipeConfig":
+        if self.schema_version != ANALYSIS_SCHEMA_VERSION:
+            raise ValueError(f"Unsupported analysis schema version: {self.schema_version}")
+        return self
+
+
+class MarkovAnalysisTextCollectionReport(AnalysisSchemaModel):
+    """
+    Report for Markov analysis text collection stage.
+
+    :ivar status: Stage status.
+    :vartype status: MarkovAnalysisStageStatus
+    :ivar source_items: Count of items in extraction run.
+    :vartype source_items: int
+    :ivar documents: Count of documents included.
+    :vartype documents: int
+    :ivar sample_size: Sample size applied.
+    :vartype sample_size: int or None
+    :ivar min_text_characters: Minimum length filter applied.
+    :vartype min_text_characters: int or None
+    :ivar empty_texts: Count of empty extracted texts.
+    :vartype empty_texts: int
+    :ivar skipped_items: Count of items skipped for missing/invalid text.
+    :vartype skipped_items: int
+    :ivar warnings: Warning messages.
+    :vartype warnings: list[str]
+    :ivar errors: Error messages.
+    :vartype errors: list[str]
+    """
+
+    status: MarkovAnalysisStageStatus
+    source_items: int = Field(ge=0)
+    documents: int = Field(ge=0)
+    sample_size: Optional[int] = None
+    min_text_characters: Optional[int] = None
+    empty_texts: int = Field(ge=0)
+    skipped_items: int = Field(ge=0)
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
+class MarkovAnalysisSegment(AnalysisSchemaModel):
+    """
+    Segment record for Markov analysis.
+
+    :ivar item_id: Source item identifier.
+    :vartype item_id: str
+    :ivar segment_index: One-based segment index within the item.
+    :vartype segment_index: int
+    :ivar text: Segment text.
+    :vartype text: str
+    """
+
+    item_id: str = Field(min_length=1)
+    segment_index: int = Field(ge=1)
+    text: str = Field(min_length=1)
+
+
+class MarkovAnalysisObservation(AnalysisSchemaModel):
+    """
+    Observation record for a single segment.
+
+    :ivar item_id: Source item identifier.
+    :vartype item_id: str
+    :ivar segment_index: One-based segment index within the item.
+    :vartype segment_index: int
+    :ivar segment_text: Segment text.
+    :vartype segment_text: str
+    :ivar llm_label: Optional provider-proposed label.
+    :vartype llm_label: str or None
+    :ivar llm_label_confidence: Optional provider-proposed confidence.
+    :vartype llm_label_confidence: float or None
+    :ivar llm_summary: Optional provider-proposed summary.
+    :vartype llm_summary: str or None
+    :ivar topic_id: Optional topic identifier from topic modeling.
+    :vartype topic_id: int or None
+    :ivar topic_label: Optional topic label from topic modeling.
+    :vartype topic_label: str or None
+    :ivar embedding: Optional embedding vector for the configured embedding text source.
+    :vartype embedding: list[float] or None
+    """
+
+    item_id: str = Field(min_length=1)
+    segment_index: int = Field(ge=1)
+    segment_text: str = Field(min_length=1)
+    llm_label: Optional[str] = None
+    llm_label_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    llm_summary: Optional[str] = None
+    topic_id: Optional[int] = None
+    topic_label: Optional[str] = None
+    embedding: Optional[List[float]] = None
+
+
+class MarkovAnalysisState(AnalysisSchemaModel):
+    """
+    State record for Markov analysis.
+
+    :ivar state_id: State identifier.
+    :vartype state_id: int
+    :ivar label: Optional human-readable label.
+    :vartype label: str or None
+    :ivar exemplars: Example segments representative of the state.
+    :vartype exemplars: list[str]
+    """
+
+    state_id: int = Field(ge=0)
+    label: Optional[str] = None
+    exemplars: List[str] = Field(default_factory=list)
+
+
+class MarkovAnalysisTransition(AnalysisSchemaModel):
+    """
+    Directed transition edge between two states.
+
+    :ivar from_state: Source state identifier.
+    :vartype from_state: int
+    :ivar to_state: Destination state identifier.
+    :vartype to_state: int
+    :ivar weight: Transition weight.
+    :vartype weight: float
+    """
+
+    from_state: int = Field(ge=0)
+    to_state: int = Field(ge=0)
+    weight: float
+
+
+class MarkovAnalysisDecodedPath(AnalysisSchemaModel):
+    """
+    Decoded state sequence for a single item.
+
+    :ivar item_id: Source item identifier.
+    :vartype item_id: str
+    :ivar state_sequence: Most likely state sequence over segments.
+    :vartype state_sequence: list[int]
+    """
+
+    item_id: str = Field(min_length=1)
+    state_sequence: List[int] = Field(default_factory=list)
+
+
+class MarkovAnalysisReport(AnalysisSchemaModel):
+    """
+    Markov analysis report data.
+
+    :ivar text_collection: Text collection report.
+    :vartype text_collection: MarkovAnalysisTextCollectionReport
+    :ivar status: Overall analysis status.
+    :vartype status: MarkovAnalysisStageStatus
+    :ivar states: State records.
+    :vartype states: list[MarkovAnalysisState]
+    :ivar transitions: Transition edges.
+    :vartype transitions: list[MarkovAnalysisTransition]
+    :ivar decoded_paths: Per-item decoded paths.
+    :vartype decoded_paths: list[MarkovAnalysisDecodedPath]
+    :ivar topic_modeling: Optional topic modeling report for segment topics.
+    :vartype topic_modeling: TopicModelingReport or None
+    :ivar warnings: Warning messages.
+    :vartype warnings: list[str]
+    :ivar errors: Error messages.
+    :vartype errors: list[str]
+    """
+
+    text_collection: MarkovAnalysisTextCollectionReport
+    status: MarkovAnalysisStageStatus
+    states: List[MarkovAnalysisState] = Field(default_factory=list)
+    transitions: List[MarkovAnalysisTransition] = Field(default_factory=list)
+    decoded_paths: List[MarkovAnalysisDecodedPath] = Field(default_factory=list)
+    topic_modeling: Optional[TopicModelingReport] = None
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
+class MarkovAnalysisOutput(AnalysisSchemaModel):
+    """
+    Output bundle for Markov analysis.
+
+    :ivar schema_version: Analysis schema version.
+    :vartype schema_version: int
+    :ivar analysis_id: Analysis backend identifier.
+    :vartype analysis_id: str
+    :ivar generated_at: International Organization for Standardization 8601 timestamp for output creation.
+    :vartype generated_at: str
+    :ivar run: Analysis run manifest.
+    :vartype run: AnalysisRunManifest
+    :ivar report: Markov analysis report data.
+    :vartype report: MarkovAnalysisReport
+    """
+
+    schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
+    analysis_id: str
+    generated_at: str
+    run: AnalysisRunManifest
+    report: MarkovAnalysisReport

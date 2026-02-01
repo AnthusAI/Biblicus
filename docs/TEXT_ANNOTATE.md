@@ -15,10 +15,10 @@ The model never re-emits the full text. It only inserts tags in-place.
 
 ### Mechanism example
 
-Start with a system prompt that defines the edit protocol, allowed attributes, and embeds the current text:
+Biblicus supplies an internal protocol that defines the edit protocol, allowed attributes, and embeds the current text:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span ATTRIBUTE="VALUE">...</span> in-place in the current text.
@@ -36,7 +36,7 @@ USER PROMPT:
 Return all the verbs.
 ```
 
-The input text is the same content embedded in the system prompt:
+The input text is the same content embedded in the internal protocol:
 
 ```
 INPUT TEXT:
@@ -76,8 +76,12 @@ Text annotate uses Pydantic models for strict validation:
 - `TextAnnotateRequest`: input text + LLM config + prompt template + allowed attributes.
 - `TextAnnotateResult`: marked-up text and attributed spans.
 
-System prompts must include `{text}`. Prompt templates must not include `{text}` and should only describe what to
-return. The system prompt template can interpolate the allowed attributes list via Jinja2.
+Internal protocol templates (advanced overrides) must include `{text}`. Prompt templates must not include `{text}` and
+should only describe what to return. The internal protocol template can interpolate the allowed attributes list via
+Jinja2.
+
+Most callers only supply the user prompt and text. Override `system_prompt` only when you need to customize the edit
+protocol.
 
 ## Output contract
 
@@ -105,37 +109,9 @@ Rules:
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextAnnotateRequest, apply_text_annotate
 
-system_prompt = """
-You are a virtual file editor. Use the available tools to edit the text.
-Interpret the word "return" in the user's request as: wrap the returned text with
-<span ATTRIBUTE="VALUE">...</span> in-place in the current text.
-Each span must include exactly one attribute. Allowed attributes:
-{{ allowed_attributes | join(', ') }}.
-
-Use the str_replace tool to insert span tags and the done tool when finished.
-When finished, call done. Do NOT return JSON in the assistant message.
-
-Rules:
-- Use str_replace only.
-- old_str must match exactly once in the current text.
-- old_str and new_str must be non-empty strings.
-- new_str must be identical to old_str with only <span ...> and </span> inserted.
-- Do not include <span or </span> inside old_str or new_str.
-- Do not insert nested spans.
-- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.
-- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.
-- Do not delete, reorder, paraphrase, or label text outside the span attributes.
-
-Current text:
----
-{text}
----
-""".strip()
-
 request = TextAnnotateRequest(
     text="We run fast.",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
-    system_prompt=system_prompt,
     prompt_template="Return all the verbs.",
     allowed_attributes=["label", "phase", "role"],
 )

@@ -10,6 +10,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..ai.models import LlmClientConfig
 from .markup import TextAnnotatedSpan
+from .prompts import (
+    DEFAULT_ANNOTATE_SYSTEM_PROMPT,
+    DEFAULT_EXTRACT_SYSTEM_PROMPT,
+    DEFAULT_LINK_SYSTEM_PROMPT,
+    DEFAULT_PROMPT_TEMPLATE,
+    DEFAULT_REDACT_SYSTEM_PROMPT,
+    DEFAULT_SLICE_SYSTEM_PROMPT,
+)
 
 
 class TextToolLoopRequest(BaseModel):
@@ -22,23 +30,27 @@ class TextToolLoopRequest(BaseModel):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt template containing ``{text}`` and optional Jinja2
-        ``allowed_attributes`` interpolation.
+    :param system_prompt: System prompt template containing ``{text}``. The base request requires
+        callers to supply this. Specific utility requests provide built-in defaults so callers
+        can typically omit it.
     :type system_prompt: str
     :param max_rounds: Maximum number of edit rounds.
     :type max_rounds: int
     :param max_edits_per_round: Maximum edits per round.
     :type max_edits_per_round: int
+    :param mock_marked_up_text: Optional pre-rendered markup for deterministic tests.
+    :type mock_marked_up_text: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     text: str = Field(min_length=1)
     client: LlmClientConfig
-    prompt_template: str = Field(min_length=1)
+    prompt_template: str = Field(default=DEFAULT_PROMPT_TEMPLATE, min_length=1)
     system_prompt: str = Field(min_length=1)
     max_rounds: int = Field(default=6, ge=1)
     max_edits_per_round: int = Field(default=500, ge=1)
+    mock_marked_up_text: Optional[str] = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
     def _validate_prompts(self) -> "TextToolLoopRequest":
@@ -59,14 +71,16 @@ class TextExtractRequest(TextToolLoopRequest):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt template containing ``{text}`` and optional Jinja2
-        ``redaction_types`` interpolation.
+    :param system_prompt: System prompt template containing ``{text}``. Defaults to the built-in
+        text extract system prompt.
     :type system_prompt: str
     :param max_rounds: Maximum number of edit rounds.
     :type max_rounds: int
     :param max_edits_per_round: Maximum edits per round.
     :type max_edits_per_round: int
     """
+
+    system_prompt: str = Field(default=DEFAULT_EXTRACT_SYSTEM_PROMPT, min_length=1)
 
 
 class TextSliceRequest(TextToolLoopRequest):
@@ -79,14 +93,16 @@ class TextSliceRequest(TextToolLoopRequest):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt template containing ``{text}`` and optional Jinja2
-        ``id_prefix`` interpolation.
+    :param system_prompt: System prompt template containing ``{text}``. Defaults to the built-in
+        text slice system prompt.
     :type system_prompt: str
     :param max_rounds: Maximum number of edit rounds.
     :type max_rounds: int
     :param max_edits_per_round: Maximum edits per round.
     :type max_edits_per_round: int
     """
+
+    system_prompt: str = Field(default=DEFAULT_SLICE_SYSTEM_PROMPT, min_length=1)
 
 
 class TextAnnotateRequest(TextToolLoopRequest):
@@ -99,7 +115,8 @@ class TextAnnotateRequest(TextToolLoopRequest):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt containing ``{text}``.
+    :param system_prompt: System prompt containing ``{text}``. Defaults to the built-in
+        text annotate system prompt.
     :type system_prompt: str
     :param allowed_attributes: Optional list of allowed span attribute names.
     :type allowed_attributes: list[str] or None
@@ -109,6 +126,7 @@ class TextAnnotateRequest(TextToolLoopRequest):
     :type max_edits_per_round: int
     """
 
+    system_prompt: str = Field(default=DEFAULT_ANNOTATE_SYSTEM_PROMPT, min_length=1)
     allowed_attributes: Optional[List[str]] = None
 
 
@@ -122,7 +140,8 @@ class TextRedactRequest(TextToolLoopRequest):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt containing ``{text}``.
+    :param system_prompt: System prompt containing ``{text}``. Defaults to the built-in
+        text redact system prompt.
     :type system_prompt: str
     :param redaction_types: Optional list of allowed redaction types. When omitted, no attributes are allowed.
     :type redaction_types: list[str] or None
@@ -132,6 +151,7 @@ class TextRedactRequest(TextToolLoopRequest):
     :type max_edits_per_round: int
     """
 
+    system_prompt: str = Field(default=DEFAULT_REDACT_SYSTEM_PROMPT, min_length=1)
     redaction_types: Optional[List[str]] = None
 
 
@@ -145,7 +165,8 @@ class TextLinkRequest(TextToolLoopRequest):
     :type client: biblicus.ai.models.LlmClientConfig
     :param prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :type prompt_template: str
-    :param system_prompt: System prompt containing ``{text}``.
+    :param system_prompt: System prompt containing ``{text}``. Defaults to the built-in
+        text link system prompt.
     :type system_prompt: str
     :param id_prefix: Prefix required for id attributes.
     :type id_prefix: str
@@ -155,6 +176,7 @@ class TextLinkRequest(TextToolLoopRequest):
     :type max_edits_per_round: int
     """
 
+    system_prompt: str = Field(default=DEFAULT_LINK_SYSTEM_PROMPT, min_length=1)
     id_prefix: str = Field(default="link_", min_length=1)
 
 

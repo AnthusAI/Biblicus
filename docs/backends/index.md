@@ -2,6 +2,15 @@
 
 Biblicus provides pluggable retrieval backends that implement different search and ranking strategies. Each backend defines how evidence is retrieved from your corpus.
 
+```{toctree}
+:maxdepth: 1
+:caption: Retrieval Backends
+
+scan
+sqlite-full-text-search
+vector
+```
+
 ## Available Backends
 
 ### [scan](scan.md)

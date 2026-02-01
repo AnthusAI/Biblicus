@@ -19,10 +19,11 @@ The model never re-emits the full text, which lowers cost and reduces timeouts o
 
 ### Mechanism example
 
-Start with a system prompt that defines the edit protocol and embeds the current text:
+Biblicus supplies the internal edit protocol and embeds the current text. This excerpt shows the
+protocol the model sees:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -39,7 +40,7 @@ USER PROMPT:
 Return all the verbs.
 ```
 
-The input text is the same content embedded in the system prompt:
+The input text is the same content embedded in the internal protocol:
 
 ```
 INPUT TEXT:
@@ -73,13 +74,17 @@ Text extract uses Pydantic models for strict validation:
 - `TextExtractRequest`: input text + LLM config + prompt template.
 - `TextExtractResult`: marked-up text and extracted spans.
 
-System prompts must include `{text}`. Both system prompts and prompt templates support `{text_length}` placeholders
-(plus `{error}` for retry hints). Prompt templates must not include `{text}` and should only describe what to return.
+If you override the internal protocol, your prompt must include `{text}`. Prompt templates support `{text_length}`
+placeholders (plus `{error}` for retry hints). Prompt templates must not include `{text}` and should only describe
+what to return.
 
 The structured output contains **spans only**. Any interstitial text remains in the marked-up string.
 
 Text extract expects tags to land on word boundaries. Prompts should instruct the model to avoid inserting tags
 inside words so spans stay aligned to human-readable text.
+
+Most callers only supply the user prompt and text. The internal protocol is built in; override it only when you need
+to customize the mechanics.
 
 ## Output contract
 
@@ -106,12 +111,9 @@ Rules:
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextExtractRequest, apply_text_extract
 
-system_prompt = \"\"\"\nYou are a virtual file editor. Use the available tools to edit the text.\nInterpret the word “return” in the user’s request as: wrap the returned text\nwith <span>...</span> in-place in the current text.\n\nUse the str_replace tool to insert <span>...</span> tags and the done tool\nwhen finished. When finished, call done. Do NOT return JSON in the assistant message.\n\nRules:\n- Use str_replace only.\n- old_str must match exactly once in the current text.\n- old_str and new_str must be non-empty strings.\n- new_str must be identical to old_str with only <span> and </span> inserted.\n- Do not include <span> or </span> inside old_str or new_str.\n- Do not insert nested spans.\n- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.\n- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.\n- Do not delete, reorder, paraphrase, or label text.\n\nCurrent text:\n---\n{text}\n---\n\"\"\".strip()
-
 request = TextExtractRequest(
     text="Hello world",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
-    system_prompt=system_prompt,
     prompt_template="Return the entire text.",
 )
 result = apply_text_extract(request)
@@ -119,10 +121,10 @@ result = apply_text_extract(request)
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -169,14 +171,11 @@ STRUCTURED DATA (result):
 ## Example: Verb markup task
 
 ```
-system_prompt = \"\"\"\nYou are a virtual file editor. Use the available tools to edit the text.\nInterpret the word “return” in the user’s request as: wrap the returned text\nwith <span>...</span> in-place in the current text.\n\nUse the str_replace tool to insert <span>...</span> tags and the done tool\nwhen finished. When finished, call done. Do NOT return JSON in the assistant message.\n\nRules:\n- Use str_replace only.\n- old_str must match exactly once in the current text.\n- old_str and new_str must be non-empty strings.\n- new_str must be identical to old_str with only <span> and </span> inserted.\n- Do not include <span> or </span> inside old_str or new_str.\n- Do not insert nested spans.\n- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.\n- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.\n- Do not delete, reorder, paraphrase, or label text.\n\nCurrent text:\n---\n{text}\n---\n\"\"\".strip()
-
 prompt_template = \"\"\"\nReturn the verbs.\nInclude auxiliary verbs and main verbs.\nPreserve all whitespace and punctuation.\n\"\"\".strip()
 
 request = TextExtractRequest(
     text=\"I can try to get help, but I promise nothing.\",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model=\"gpt-4o-mini\"),
-    system_prompt=system_prompt,
     prompt_template=prompt_template,
 )
 result = apply_text_extract(request)
@@ -184,10 +183,10 @@ result = apply_text_extract(request)
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -256,10 +255,10 @@ Expected behavior: the model inserts `<span>...</span>` around each paragraph.
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -323,10 +322,10 @@ Expected behavior: the model wraps the first sentence of each paragraph in spans
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -389,10 +388,10 @@ Expected behavior: the quoted statement is wrapped in a span and preserved verba
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -454,10 +453,10 @@ Expected behavior: each verb is wrapped in a span without splitting words.
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -520,10 +519,10 @@ Expected behavior: agent text is grouped in one span and customer text in anothe
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -574,10 +573,10 @@ Use the `span_markup` segmentation method in Markov recipes.
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -635,28 +634,6 @@ segmentation:
       model: gpt-4o-mini
       api_key: null
       response_format: json_object
-    system_prompt: |
-      You are a virtual file editor. Use the available tools to edit the text.
-      Interpret the word “return” in the user’s request as: wrap the returned text
-      with <span>...</span> in-place in the current text.
-
-      Use the str_replace tool to insert <span>...</span> tags and the done tool
-      when finished. When finished, call done. Do NOT return JSON in the assistant message.
-
-      Rules:
-      - Use str_replace only.
-      - old_str must match exactly once in the current text.
-      - old_str and new_str must be non-empty strings.
-      - new_str must be identical to old_str with only <span> and </span> inserted.
-      - Do not include <span> or </span> inside old_str or new_str.
-      - Do not insert nested spans.
-      - If a tool call fails due to non-unique old_str, retry with a longer unique old_str.
-      - If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.
-      - Do not delete, reorder, paraphrase, or label text.
-      Current text:
-      ---
-      {text}
-      ---
     prompt_template: |
       Return the segments that represent contiguous phases in the text.
 

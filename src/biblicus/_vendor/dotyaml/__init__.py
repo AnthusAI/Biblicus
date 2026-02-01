@@ -8,6 +8,6 @@ loading and interpolating YAML configuration files.
 from __future__ import annotations
 
 from .interpolation import interpolate_env_vars
-from .loader import ConfigLoader, load_config
+from .loader import ConfigLoader, load_config, load_yaml_view
 
-__all__ = ["ConfigLoader", "interpolate_env_vars", "load_config"]
+__all__ = ["ConfigLoader", "interpolate_env_vars", "load_config", "load_yaml_view"]

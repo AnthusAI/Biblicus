@@ -15,7 +15,7 @@ from .markup import (
     strip_span_tags,
 )
 from .models import TextRedactRequest, TextRedactResult
-from .tool_loop import run_tool_loop
+from .tool_loop import request_confirmation, run_tool_loop
 
 DEFAULT_REDACTION_TYPES = ["pii", "pci", "phi"]
 
@@ -28,7 +28,8 @@ def apply_text_redact(request: TextRedactRequest) -> TextRedactResult:
     :type request: TextRedactRequest
     :return: Text redact result.
     :rtype: TextRedactResult
-    :raises ValueError: If model output is invalid or text is modified.
+    :raises ValueError: If model output is invalid or text is modified. Empty outputs trigger
+        a confirmation round and return a warning when confirmed.
     """
     warnings: List[str] = []
     redaction_types = _resolve_redaction_types(request.redaction_types)
@@ -36,6 +37,13 @@ def apply_text_redact(request: TextRedactRequest) -> TextRedactResult:
         request.system_prompt,
         redaction_types=redaction_types,
     )
+
+    if request.mock_marked_up_text is not None:
+        return _build_mock_result(
+            request,
+            request.mock_marked_up_text,
+            redaction_types=redaction_types,
+        )
 
     result = run_tool_loop(
         text=request.text,
@@ -61,15 +69,62 @@ def apply_text_redact(request: TextRedactRequest) -> TextRedactResult:
     if result.text == request.text:
         if result.last_error:
             raise ValueError(result.last_error)
-        raise ValueError("Text redact produced no spans")
+        confirmation = request_confirmation(
+            result=result,
+            text=result.text,
+            client=request.client,
+            system_prompt=system_prompt,
+            prompt_template=request.prompt_template,
+            max_rounds=2,
+            max_edits_per_round=request.max_edits_per_round,
+            apply_str_replace=_apply_redact_replace,
+            confirmation_message=_build_empty_confirmation_message(result.text),
+            validate_text=lambda current_text: _validate_redaction_markup(
+                current_text, redaction_types
+            ),
+            build_retry_message=lambda errors, current_text: _build_retry_message(
+                errors, current_text, redaction_types
+            ),
+        )
+        if not confirmation.done:
+            if confirmation.last_error:
+                raise ValueError(f"Text redact failed: {confirmation.last_error}")
+            warnings.append("Text redact confirmation reached max rounds without done=true")
+        _validate_preserved_text(original=request.text, marked_up=confirmation.text)
+        spans = parse_span_markup(confirmation.text)
+        validation_errors = _validate_redaction_spans(spans, redaction_types)
+        if validation_errors:
+            raise ValueError("; ".join(validation_errors))
+        if not spans:
+            warnings.append("Text redact returned no spans; model confirmed empty result")
+        return TextRedactResult(
+            marked_up_text=confirmation.text,
+            spans=spans,
+            warnings=warnings,
+        )
 
     _validate_preserved_text(original=request.text, marked_up=result.text)
     spans = parse_span_markup(result.text)
+    validation_errors = _validate_redaction_spans(spans, redaction_types)
+    if validation_errors:
+        raise ValueError("; ".join(validation_errors))
+    return TextRedactResult(marked_up_text=result.text, spans=spans, warnings=warnings)
+
+
+def _build_mock_result(
+    request: TextRedactRequest,
+    marked_up_text: str,
+    *,
+    redaction_types: Sequence[str] | None,
+) -> TextRedactResult:
+    if marked_up_text == request.text:
+        raise ValueError("Text redact produced no spans")
+    _validate_preserved_text(original=request.text, marked_up=marked_up_text)
+    spans = parse_span_markup(marked_up_text)
     errors = _validate_redaction_spans(spans, redaction_types)
     if errors:
         raise ValueError("; ".join(errors))
-
-    return TextRedactResult(marked_up_text=result.text, spans=spans, warnings=warnings)
+    return TextRedactResult(marked_up_text=marked_up_text, spans=spans, warnings=[])
 
 
 def _resolve_redaction_types(redaction_types: Sequence[str] | None) -> List[str] | None:
@@ -166,4 +221,13 @@ def _build_retry_message(
         f"{type_message} Try again.\n"
         "Current text:\n"
         f"---\n{current_text}\n---"
+    )
+
+
+def _build_empty_confirmation_message(text: str) -> str:
+    return (
+        "No redaction spans were inserted. If there are truly no spans to return, "
+        "call done again without changes. Otherwise insert the appropriate span tags.\n"
+        "Current text:\n"
+        f"---\n{text}\n---"
     )

@@ -126,16 +126,50 @@ Feature: Text annotate
     When I apply text annotate with a non-done tool loop result
     Then the text annotate warnings include max rounds
 
+  Scenario: Text annotate warns when confirmation reaches max rounds without done
+    Given a fake OpenAI library is available
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    When I apply text annotate to text "Hello"
+    Then the text annotate warnings include "Text annotate reached max rounds without done=true"
+    And the text annotate warnings include "Text annotate confirmation reached max rounds without done=true"
+    And the text annotate has 0 spans
+
   Scenario: Text annotate surfaces tool loop errors with done
     When I attempt text annotate with a tool loop error and done
     Then the text annotate error mentions "tool loop error"
 
-  Scenario: Text annotate fails when no spans are produced
+  Scenario: Text annotate confirms when no spans are produced
     When I attempt text annotate with no spans and done
-    Then the text annotate error mentions "produced no spans"
+    Then the text annotate warnings include "Text annotate returned no spans; model confirmed empty result"
+    And the text annotate has 0 spans
+
+  Scenario: Text annotate warns when confirmation reaches max rounds without done in the confirmation loop
+    When I apply text annotate with no edits and confirmation reaches max rounds without done
+    Then the text annotate warnings include "Text annotate confirmation reached max rounds without done=true"
+    And the text annotate warnings include "Text annotate returned no spans; model confirmed empty result"
+    And the text annotate has 0 spans
+
+  Scenario: Text annotate allows confirmation to insert spans after an empty first pass
+    When I apply text annotate with no edits and confirmation inserts spans
+    Then the text annotate has at least 1 spans
+
+  Scenario: Text annotate surfaces confirmation last_error as a failure
+    When I attempt text annotate where confirmation fails with a last error
+    Then the text annotate error mentions "Text annotate failed: confirmation error"
 
   Scenario: Text annotate validates spans after the tool loop
     When I attempt text annotate with invalid spans after the tool loop
+    Then the text annotate error mentions "Allowed attributes"
+
+  Scenario: Text annotate validates spans after confirmation
+    When I attempt text annotate with invalid spans in confirmation
     Then the text annotate error mentions "Allowed attributes"
 
   Scenario: Text annotate rejects missing or non-unique replacements

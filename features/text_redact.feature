@@ -74,16 +74,50 @@ Feature: Text redact
     When I apply text redact with a non-done tool loop result
     Then the text redact warnings include max rounds
 
+  Scenario: Text redact warns when confirmation reaches max rounds without done
+    Given a fake OpenAI library is available
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    When I apply text redact to text "Account" without redaction types
+    Then the text redact warnings include "Text redact reached max rounds without done=true"
+    And the text redact warnings include "Text redact confirmation reached max rounds without done=true"
+    And the text redact has 0 spans
+
   Scenario: Text redact surfaces tool loop errors with done
     When I attempt text redact with a tool loop error and done
     Then the text redact error mentions "tool loop error"
 
-  Scenario: Text redact fails when no spans are produced
+  Scenario: Text redact confirms when no spans are produced
     When I attempt text redact with no spans and done
-    Then the text redact error mentions "produced no spans"
+    Then the text redact warnings include "Text redact returned no spans; model confirmed empty result"
+    And the text redact has 0 spans
+
+  Scenario: Text redact warns when confirmation reaches max rounds without done in the confirmation loop
+    When I apply text redact with no edits and confirmation reaches max rounds without done
+    Then the text redact warnings include "Text redact confirmation reached max rounds without done=true"
+    And the text redact warnings include "Text redact returned no spans; model confirmed empty result"
+    And the text redact has 0 spans
+
+  Scenario: Text redact allows confirmation to insert spans after an empty first pass
+    When I apply text redact with no edits and confirmation inserts spans
+    Then the text redact has at least 1 spans
+
+  Scenario: Text redact surfaces confirmation last_error as a failure
+    When I attempt text redact where confirmation fails with a last error
+    Then the text redact error mentions "Text redact failed: confirmation error"
 
   Scenario: Text redact validates spans after the tool loop
     When I attempt text redact with invalid spans after the tool loop
+    Then the text redact error mentions "Allowed types"
+
+  Scenario: Text redact validates spans after confirmation
+    When I attempt text redact with invalid spans in confirmation
     Then the text redact error mentions "Allowed types"
 
   Scenario: Text redact rejects missing or non-unique replacements

@@ -1,0 +1,61 @@
+schema_version: 1
+text_source:
+  sample_size: 500
+  min_text_characters: 200
+segmentation:
+  method: llm
+  llm:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+    system_prompt: null
+    prompt_template: |
+      Split the input text into a JSON array of segments.
+
+      Requirements:
+      - Each segment must be a short, contiguous passage from the input text.
+      - Preserve original order.
+      - Return only JSON.
+
+      Text:
+      ---
+      {text}
+      ---
+llm_observations:
+  enabled: true
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: null
+  prompt_template: |
+    You are extracting structured observations for Markov analysis.
+    Return only JSON.
+
+    Output JSON object keys:
+    - label: short phrase describing the segment role
+    - label_confidence: number from 0 to 1
+    - summary: one sentence summary of the segment
+
+    Segment:
+    ---
+    {segment}
+    ---
+embeddings:
+  enabled: true
+  client:
+    provider: openai
+    model: text-embedding-3-small
+    api_key: null
+  text_source: llm_summary
+observations:
+  encoder: hybrid
+  categorical_source: llm_label
+  numeric_source: llm_label_confidence
+model:
+  family: gaussian
+  n_states: 16
+artifacts:
+  graphviz:
+    enabled: true

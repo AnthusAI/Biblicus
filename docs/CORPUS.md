@@ -36,19 +36,19 @@ The simplest ingestion flows use the command line interface.
 Create a corpus:
 
 ```
-python3 -m biblicus init corpora/example
+python -m biblicus init corpora/example
 ```
 
 Ingest a local file:
 
 ```
-python3 -m biblicus ingest --corpus corpora/example path/to/file.pdf --tag paper
+python -m biblicus ingest --corpus corpora/example path/to/file.pdf --tag paper
 ```
 
 Ingest a web address:
 
 ```
-python3 -m biblicus ingest --corpus corpora/example https://example.com --tag web
+python -m biblicus ingest --corpus corpora/example https://example.com --tag web
 ```
 
 ## Crawl a website prefix
@@ -56,7 +56,7 @@ python3 -m biblicus ingest --corpus corpora/example https://example.com --tag we
 To build a corpus from a website section, crawl a root uniform resource locator and restrict the crawl to an allowed prefix.
 
 ```
-python3 -m biblicus crawl --corpus corpora/example \\
+python -m biblicus crawl --corpus corpora/example \\
   --root-url https://example.com/docs/index.html \\
   --allowed-prefix https://example.com/docs/ \\
   --max-items 50 \\
@@ -68,19 +68,19 @@ The crawl command only follows links within the allowed prefix, and it respects 
 Ingest a text note:
 
 ```
-python3 -m biblicus ingest --corpus corpora/example --note "Hello" --title "First note" --tag notes
+python -m biblicus ingest --corpus corpora/example --note "Hello" --title "First note" --tag notes
 ```
 
 List items:
 
 ```
-python3 -m biblicus list --corpus corpora/example
+python -m biblicus list --corpus corpora/example
 ```
 
 Show an item:
 
 ```
-python3 -m biblicus show --corpus corpora/example ITEM_ID
+python -m biblicus show --corpus corpora/example ITEM_ID
 ```
 
 ## Metadata
@@ -123,7 +123,7 @@ Create a `.biblicusignore` file in the corpus root and add ignore patterns.
 To ingest an existing folder tree into a corpus while preserving relative paths, use the import command.
 
 ```
-python3 -m biblicus import-tree --corpus corpora/example /path/to/folder/tree --tag imported
+python -m biblicus import-tree --corpus corpora/example /path/to/folder/tree --tag imported
 ```
 
 ## Reindex
@@ -131,7 +131,7 @@ python3 -m biblicus import-tree --corpus corpora/example /path/to/folder/tree --
 The catalog is rebuildable. If you edit files or sidecar metadata, refresh the catalog.
 
 ```
-python3 -m biblicus reindex --corpus corpora/example
+python -m biblicus reindex --corpus corpora/example
 ```
 
 ## Reproducibility checklist
@@ -151,5 +151,5 @@ python3 -m biblicus reindex --corpus corpora/example
 Purging deletes all items and derived artifacts under the corpus. It requires you to type the corpus name as confirmation.
 
 ```
-python3 -m biblicus purge --corpus corpora/example --confirm example
+python -m biblicus purge --corpus corpora/example --confirm example
 ```

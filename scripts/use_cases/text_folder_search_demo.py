@@ -1,0 +1,108 @@
+"""
+Use case demo: folder of text files -> extraction -> indexing -> retrieval evidence.
+
+This demo uses bundled demo text files and runs without external services.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Dict, List
+
+from biblicus.backends import get_backend
+from biblicus.corpus import Corpus
+from biblicus.extraction import build_extraction_run
+from biblicus.models import QueryBudget
+
+
+def _prepare_corpus(*, corpus_path: Path, force: bool) -> Corpus:
+    if (corpus_path / ".biblicus" / "config.json").is_file():
+        corpus = Corpus.open(corpus_path)
+        if force:
+            corpus.purge(confirm=corpus.name)
+        return corpus
+    return Corpus.init(corpus_path, force=True)
+
+
+def _demo_source_files(repo_root: Path) -> List[Path]:
+    items_dir = repo_root / "datasets" / "retrieval_lab" / "items"
+    return sorted(items_dir.glob("*.txt"))
+
+
+def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, object]:
+    corpus = _prepare_corpus(corpus_path=corpus_path, force=force)
+
+    ingested_item_ids: List[str] = []
+    for source_path in _demo_source_files(repo_root):
+        ingest_result = corpus.ingest_source(
+            str(source_path),
+            tags=["use-case", "retrieval-lab"],
+            source_uri=source_path.resolve().as_uri(),
+        )
+        ingested_item_ids.append(ingest_result.item_id)
+    corpus.reindex()
+
+    extraction_manifest = build_extraction_run(
+        corpus,
+        extractor_id="pipeline",
+        recipe_name="Use case: pass-through text",
+        config={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+    )
+
+    backend = get_backend("sqlite-full-text-search")
+    run = backend.build_run(
+        corpus,
+        recipe_name="Use case: sqlite full text search",
+        config={
+            "chunk_size": 200,
+            "chunk_overlap": 50,
+            "snippet_characters": 120,
+            "extraction_run": f"pipeline:{extraction_manifest.run_id}",
+        },
+    )
+    budget = QueryBudget(max_total_items=5, max_total_characters=10000, max_items_per_source=5)
+    result = backend.query(
+        corpus,
+        run=run,
+        query_text="Beta unique signal for retrieval lab",
+        budget=budget,
+    )
+    if not result.evidence:
+        raise AssertionError("Expected non-empty evidence list from retrieval")
+
+    return {
+        "corpus_path": str(corpus_path),
+        "backend_id": run.recipe.backend_id,
+        "extraction_run_id": extraction_manifest.run_id,
+        "retrieval_run_id": run.run_id,
+        "ingested_item_ids": ingested_item_ids,
+        "query_text": result.query_text,
+        "evidence": [e.model_dump() for e in result.evidence],
+    }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Use case demo: folder of text files -> extraction -> indexing -> retrieval."
+    )
+    parser.add_argument("--corpus", required=True, help="Corpus path.")
+    parser.add_argument("--force", action="store_true", help="Purge corpus before running.")
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    payload = run_demo(
+        repo_root=repo_root,
+        corpus_path=Path(args.corpus).resolve(),
+        force=bool(args.force),
+    )
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

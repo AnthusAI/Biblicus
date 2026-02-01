@@ -5,9 +5,9 @@ from typing import Dict
 from behave import then, when
 from pydantic import ValidationError
 
+from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.analysis import get_analysis_backend
 from biblicus.analysis.base import CorpusAnalysisBackend
-from biblicus.analysis.llm import LlmClientConfig, LlmProvider
 from biblicus.analysis.models import (
     ProfilingRecipeConfig,
     TopicModelingKeyword,
@@ -20,9 +20,9 @@ from biblicus.analysis.models import (
 )
 from biblicus.analysis.profiling import _ordered_catalog_items, _percentile_value
 from biblicus.analysis.topic_modeling import (
+    TopicModelingDocument,
     _apply_llm_fine_tuning,
     _parse_itemized_response,
-    _TopicDocument,
 )
 from biblicus.models import CatalogItem, ExtractionRunReference
 from features.steps.openai_steps import (
@@ -91,7 +91,7 @@ def step_analysis_not_implemented_error(context) -> None:
 @when("I validate an LLM client config with enum provider")
 def step_validate_llm_client_config_enum(context) -> None:
     context.llm_client_config = LlmClientConfig(
-        provider=LlmProvider.OPENAI,
+        provider=AiProvider.OPENAI,
         model="gpt-4o-mini",
     )
 
@@ -100,7 +100,7 @@ def step_validate_llm_client_config_enum(context) -> None:
 def step_llm_client_config_provider_equals(context, provider: str) -> None:
     config = getattr(context, "llm_client_config", None)
     assert config is not None
-    assert config.provider.value == provider
+    assert config.provider == provider
 
 
 @when("I attempt to validate an LLM client config with invalid provider type")
@@ -148,7 +148,7 @@ def step_run_llm_fine_tuning_missing_documents(context) -> None:
     _install_fake_openai_module(context)
     behaviors = _ensure_fake_openai_chat_behaviors(context)
     behaviors.append(_FakeOpenAiChatBehavior(response="Label"))
-    client = LlmClientConfig(provider=LlmProvider.OPENAI, model="gpt-4o-mini", api_key="test-key")
+    client = LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini", api_key="test-key")
     config = TopicModelingLlmFineTuningConfig(
         enabled=True,
         client=client,
@@ -165,7 +165,9 @@ def step_run_llm_fine_tuning_missing_documents(context) -> None:
             document_ids=["missing"],
         )
     ]
-    documents = [_TopicDocument(document_id="present", source_item_id="present", text="Text")]
+    documents = [
+        TopicModelingDocument(document_id="present", source_item_id="present", text="Text")
+    ]
     report, labeled_topics = _apply_llm_fine_tuning(
         topics=topics,
         documents=documents,

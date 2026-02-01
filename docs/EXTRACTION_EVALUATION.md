@@ -114,7 +114,7 @@ A runnable demo is provided in `scripts/extraction_evaluation_demo.py`. It downl
 dataset from the ingested items, and evaluates the extraction run:
 
 ```
-python3 scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
+python scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
 ```
 
 ## Extraction evaluation lab
@@ -123,7 +123,7 @@ For a fast, fully local walkthrough, use the bundled lab. It ingests a tiny set 
 dataset, and evaluates the run in seconds.
 
 ```
-python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
+python scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
 ```
 
 The lab uses the bundled files under `datasets/extraction_lab/items` and writes the generated dataset to
@@ -135,7 +135,7 @@ inspect the metrics immediately.
 1) Run the lab:
 
 ```
-python3 scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
+python scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab --force
 ```
 
 2) Inspect the generated dataset:

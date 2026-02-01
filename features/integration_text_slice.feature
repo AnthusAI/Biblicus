@@ -10,6 +10,14 @@ Feature: Text slice integration
       """
     Then the text slice has at least 3 slices
 
+  Scenario: Text slice uses the default system prompt with a live model
+    Given an OpenAI API key is configured for this scenario
+    When I apply text slice to text "First one. Second one. Third one." with prompt template and default system prompt:
+      """
+      Return each sentence as a slice.
+      """
+    Then the text slice has at least 3 slices
+
   Scenario: Text slice groups agent and customer statements with a live model
     Given an OpenAI API key is configured for this scenario
     When I apply text slice to text "Agent: Hello. Agent: I can help. Customer: I need support. Customer: Thanks." with prompt template:

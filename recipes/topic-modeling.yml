@@ -1,0 +1,6 @@
+schema_version: 1
+text_source:
+  sample_size: 500
+bertopic_analysis:
+  parameters:
+    nr_topics: 8

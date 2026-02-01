@@ -1,0 +1,59 @@
+schema_version: 1
+text_source:
+  sample_size: 200
+  min_text_characters: 50
+segmentation:
+  method: sentence
+topic_modeling:
+  enabled: true
+  recipe:
+    schema_version: 1
+    llm_extraction:
+      enabled: false
+    lexical_processing:
+      enabled: false
+    bertopic_analysis:
+      parameters: {}
+observations:
+  categorical_source: topic_label
+model:
+  family: categorical
+  n_states: 8
+artifacts:
+  graphviz:
+    enabled: true
+    rankdir: TB
+report:
+  max_state_exemplars: 25
+  state_naming:
+    enabled: true
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    token_budget: 2048
+    max_exemplars_per_state: 20
+    max_name_words: 4
+    max_retries: 2
+    system_prompt: |
+      You are naming Markov states from exemplar segments.
+
+      Requirements:
+      - Use short noun phrases (2-4 words).
+      - Names must be unique and human-friendly.
+      - If a state's exemplars include START, name it START.
+      - If a state's exemplars include END, name it END.
+      - Use position hints to prefer opening-style names for states that often follow START,
+        and closing-style names for states that often precede END.
+
+      Context pack:
+      {context_pack}
+    prompt_template: |
+      Return a JSON object with:
+      - state_names: list of objects with keys "state_id" and "name"
+      - start_state_id (optional)
+      - end_state_id (optional)
+
+      Name every state_id exactly once. Use short noun phrases.
+      State ids: {state_ids}

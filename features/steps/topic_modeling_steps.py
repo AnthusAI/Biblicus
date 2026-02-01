@@ -248,6 +248,51 @@ def step_run_topic_analysis_with_recipe(context, corpus_name: str, recipe_file: 
         context.last_analysis_output = _parse_json_output(result.stdout)
 
 
+@when(
+    'I run a topic analysis in corpus "{corpus_name}" using recipes "{recipe_files}" '
+    "and the latest extraction run with config overrides:"
+)
+def step_run_topic_analysis_with_recipes_and_overrides(
+    context, corpus_name: str, recipe_files: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    recipe_paths = []
+    for token in recipe_files.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        recipe_paths.append(str(Path(workdir) / token))
+    if not recipe_paths:
+        raise AssertionError("Expected at least one recipe file")
+
+    run_ref = _run_reference_from_context(context)
+    args = ["--corpus", str(corpus), "analyze", "topics"]
+    for recipe_path in recipe_paths:
+        args.extend(["--recipe", recipe_path])
+    for row in context.table:
+        key = str(row["key"]).strip()
+        value = str(row["value"]).strip()
+        args.extend(["--config", f"{key}={value}"])
+    args.extend(["--extraction-run", run_ref])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_analysis_output = _parse_json_output(result.stdout)
+
+
+@then('the topic analysis report includes BERTopic parameter "{key}" with value {value:d}')
+def step_topic_analysis_report_includes_bertopic_parameter_int(
+    context, key: str, value: int
+) -> None:
+    output = context.last_analysis_output
+    report = output["report"]["bertopic_analysis"]
+    parameters = report.get("parameters")
+    assert isinstance(parameters, dict)
+    assert parameters.get(key) == value
+
+
 @then("the topic analysis output includes {count:d} topics")
 def step_topic_analysis_output_includes_topic_count(context, count: int) -> None:
     output = context.last_analysis_output

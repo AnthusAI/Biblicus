@@ -18,10 +18,10 @@ The model never re-emits the full text, which lowers cost and reduces timeouts o
 
 ### Mechanism example
 
-Start with a system prompt that defines the edit protocol and embeds the current text:
+Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -38,7 +38,7 @@ USER PROMPT:
 Return each sentence as a slice.
 ```
 
-The input text is the same content embedded in the system prompt:
+The input text is the same content embedded in the internal protocol:
 
 ```
 INPUT TEXT:
@@ -73,8 +73,12 @@ Text slice uses Pydantic models for strict validation:
 - `TextSliceRequest`: input text + LLM config + prompt template.
 - `TextSliceResult`: marked-up text and extracted slices.
 
-System prompts must include `{text}`. Both system prompts and prompt templates support `{text_length}` placeholders
-(plus `{error}` for retry hints). Prompt templates must not include `{text}` and should only describe what to return.
+Internal protocol templates (advanced overrides) must include `{text}`. Both internal protocols and prompt templates
+support `{text_length}` placeholders (plus `{error}` for retry hints). Prompt templates must not include `{text}` and
+should only describe what to return.
+
+Most callers only supply the user prompt and text. Override `system_prompt` only when you need to customize the edit
+protocol.
 
 ## Output contract
 
@@ -100,32 +104,9 @@ Rules:
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextSliceRequest, apply_text_slice
 
-system_prompt = """
-You are a virtual file editor. Use the available tools to edit the text.
-Interpret the word “return” in the user’s request as: insert <slice/> markers
-at the boundaries of the returned slices in the current text.
-
-Use the str_replace tool to insert <slice/> markers and the done tool
-when finished. When finished, call done. Do NOT return JSON in the assistant message.
-
-Rules:
-- Use str_replace only.
-- old_str must match exactly once in the current text.
-- old_str and new_str must be non-empty strings.
-- new_str must be identical to old_str with only <slice/> inserted.
-- If a tool call fails, read the error and keep editing. Do not call done until slices are inserted.
-- Do not delete, reorder, paraphrase, or label text.
-
-Current text:
----
-{text}
----
-""".strip()
-
 request = TextSliceRequest(
     text="One. Two. Three.",
     client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
-    system_prompt=system_prompt,
     prompt_template="Return each sentence as a slice.",
 )
 result = apply_text_slice(request)
@@ -133,10 +114,10 @@ result = apply_text_slice(request)
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -204,10 +185,10 @@ Expected behavior: `<slice/>` markers are inserted between sentences, producing 
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -271,10 +252,10 @@ Expected behavior: slices are grouped into one agent segment and one customer se
 
 Example snippet:
 
-System prompt excerpt:
+Internal protocol excerpt:
 
 ```
-SYSTEM PROMPT (excerpt):
+INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.

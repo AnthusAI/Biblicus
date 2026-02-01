@@ -13,12 +13,12 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
+from ..ai.llm import generate_completion
 from ..corpus import Corpus
 from ..models import ExtractionRunReference
 from ..retrieval import hash_text
 from ..time import utc_now_iso
 from .base import CorpusAnalysisBackend
-from .llm import generate_completion
 from .models import (
     AnalysisRecipeManifest,
     AnalysisRunInput,
@@ -45,7 +45,7 @@ from .models import (
 
 
 @dataclass
-class _TopicDocument:
+class TopicModelingDocument:
     document_id: str
     source_item_id: str
     text: str
@@ -190,6 +190,74 @@ def _run_topic_modeling(
     return output
 
 
+def run_topic_modeling_for_documents(
+    *,
+    documents: List[TopicModelingDocument],
+    config: TopicModelingRecipeConfig,
+) -> TopicModelingReport:
+    """
+    Run topic modeling using caller-provided documents.
+
+    :param documents: Pre-collected documents to model.
+    :type documents: list[TopicModelingDocument]
+    :param config: Topic modeling recipe configuration.
+    :type config: TopicModelingRecipeConfig
+    :return: Topic modeling report with topic assignments.
+    :rtype: TopicModelingReport
+    """
+    text_report = TopicModelingTextCollectionReport(
+        status=TopicModelingStageStatus.COMPLETE,
+        source_items=len({doc.source_item_id for doc in documents}),
+        documents=len(documents),
+        sample_size=config.text_source.sample_size,
+        min_text_characters=config.text_source.min_text_characters,
+        empty_texts=len([doc for doc in documents if not doc.text.strip()]),
+        skipped_items=0,
+        warnings=[],
+        errors=[],
+    )
+
+    llm_extraction_report, extracted_documents = _apply_llm_extraction(
+        documents=documents,
+        config=config.llm_extraction,
+    )
+
+    lexical_report, lexical_documents = _apply_lexical_processing(
+        documents=extracted_documents,
+        config=config.lexical_processing,
+    )
+
+    bertopic_report, topics = _run_bertopic(
+        documents=lexical_documents,
+        config=config.bertopic_analysis,
+    )
+
+    fine_tuning_report, labeled_topics = _apply_llm_fine_tuning(
+        topics=topics,
+        documents=lexical_documents,
+        config=config.llm_fine_tuning,
+    )
+
+    return TopicModelingReport(
+        text_collection=text_report,
+        llm_extraction=llm_extraction_report,
+        lexical_processing=lexical_report,
+        bertopic_analysis=bertopic_report,
+        llm_fine_tuning=fine_tuning_report,
+        topics=labeled_topics,
+        warnings=(
+            text_report.warnings
+            + llm_extraction_report.warnings
+            + bertopic_report.warnings
+            + fine_tuning_report.warnings
+        ),
+        errors=text_report.errors
+        + llm_extraction_report.errors
+        + bertopic_report.errors
+        + fine_tuning_report.errors,
+    )
+
+
 def _create_recipe_manifest(
     *, name: str, config: TopicModelingRecipeConfig
 ) -> AnalysisRecipeManifest:
@@ -226,14 +294,14 @@ def _collect_documents(
     corpus: Corpus,
     extraction_run: ExtractionRunReference,
     config: TopicModelingTextSourceConfig,
-) -> Tuple[List[_TopicDocument], TopicModelingTextCollectionReport]:
+) -> Tuple[List[TopicModelingDocument], TopicModelingTextCollectionReport]:
     manifest = corpus.load_extraction_run_manifest(
         extractor_id=extraction_run.extractor_id,
         run_id=extraction_run.run_id,
     )
     warnings: List[str] = []
     errors: List[str] = []
-    documents: List[_TopicDocument] = []
+    documents: List[TopicModelingDocument] = []
     skipped_items = 0
     empty_texts = 0
 
@@ -256,7 +324,7 @@ def _collect_documents(
             skipped_items += 1
             continue
         documents.append(
-            _TopicDocument(
+            TopicModelingDocument(
                 document_id=item_result.item_id,
                 source_item_id=item_result.item_id,
                 text=text_value,
@@ -286,9 +354,9 @@ def _collect_documents(
 
 def _apply_llm_extraction(
     *,
-    documents: List[_TopicDocument],
+    documents: List[TopicModelingDocument],
     config: TopicModelingLlmExtractionConfig,
-) -> Tuple[TopicModelingLlmExtractionReport, List[_TopicDocument]]:
+) -> Tuple[TopicModelingLlmExtractionReport, List[TopicModelingDocument]]:
     if not config.enabled:
         report = TopicModelingLlmExtractionReport(
             status=TopicModelingStageStatus.SKIPPED,
@@ -300,7 +368,7 @@ def _apply_llm_extraction(
         )
         return report, list(documents)
 
-    extracted_documents: List[_TopicDocument] = []
+    extracted_documents: List[TopicModelingDocument] = []
     errors: List[str] = []
 
     for document in documents:
@@ -315,7 +383,7 @@ def _apply_llm_extraction(
                 errors.append(f"LLM extraction returned empty output for {document.document_id}")
                 continue
             extracted_documents.append(
-                _TopicDocument(
+                TopicModelingDocument(
                     document_id=document.document_id,
                     source_item_id=document.source_item_id,
                     text=response_text,
@@ -328,7 +396,7 @@ def _apply_llm_extraction(
             continue
         for index, item_text in enumerate(items, start=1):
             extracted_documents.append(
-                _TopicDocument(
+                TopicModelingDocument(
                     document_id=f"{document.document_id}:{index}",
                     source_item_id=document.source_item_id,
                     text=item_text,
@@ -381,9 +449,9 @@ def _parse_itemized_response(response_text: str) -> List[str]:
 
 def _apply_lexical_processing(
     *,
-    documents: List[_TopicDocument],
+    documents: List[TopicModelingDocument],
     config: TopicModelingLexicalProcessingConfig,
-) -> Tuple[TopicModelingLexicalProcessingReport, List[_TopicDocument]]:
+) -> Tuple[TopicModelingLexicalProcessingReport, List[TopicModelingDocument]]:
     if not config.enabled:
         report = TopicModelingLexicalProcessingReport(
             status=TopicModelingStageStatus.SKIPPED,
@@ -395,7 +463,7 @@ def _apply_lexical_processing(
         )
         return report, list(documents)
 
-    processed: List[_TopicDocument] = []
+    processed: List[TopicModelingDocument] = []
     for document in documents:
         text_value = document.text
         if config.lowercase:
@@ -405,7 +473,7 @@ def _apply_lexical_processing(
         if config.collapse_whitespace:
             text_value = re.sub(r"\s+", " ", text_value).strip()
         processed.append(
-            _TopicDocument(
+            TopicModelingDocument(
                 document_id=document.document_id,
                 source_item_id=document.source_item_id,
                 text=text_value,
@@ -425,7 +493,7 @@ def _apply_lexical_processing(
 
 def _run_bertopic(
     *,
-    documents: List[_TopicDocument],
+    documents: List[TopicModelingDocument],
     config: TopicModelingBerTopicConfig,
 ) -> Tuple[TopicModelingBerTopicReport, List[TopicModelingTopic]]:
     try:
@@ -496,9 +564,9 @@ def _run_bertopic(
 
 
 def _group_documents_by_topic(
-    documents: List[_TopicDocument], assignments: List[int]
-) -> Dict[int, List[_TopicDocument]]:
-    grouped: Dict[int, List[_TopicDocument]] = {}
+    documents: List[TopicModelingDocument], assignments: List[int]
+) -> Dict[int, List[TopicModelingDocument]]:
+    grouped: Dict[int, List[TopicModelingDocument]] = {}
     for index, topic_id in enumerate(assignments):
         grouped.setdefault(int(topic_id), []).append(documents[index])
     return grouped
@@ -514,7 +582,7 @@ def _resolve_topic_keywords(*, topic_model: Any, topic_id: int) -> List[TopicMod
 def _apply_llm_fine_tuning(
     *,
     topics: List[TopicModelingTopic],
-    documents: List[_TopicDocument],
+    documents: List[TopicModelingDocument],
     config: TopicModelingLlmFineTuningConfig,
 ) -> Tuple[TopicModelingLlmFineTuningReport, List[TopicModelingTopic]]:
     if not config.enabled:

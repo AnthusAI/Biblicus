@@ -140,12 +140,12 @@ Competing extractors are different. Competing extractors both claim they can han
 
 ```
 rm -rf corpora/extraction-demo
-python3 -m biblicus init corpora/extraction-demo
+python -m biblicus init corpora/extraction-demo
 
 printf 'x' > /tmp/image.png
-python3 -m biblicus ingest --corpus corpora/extraction-demo /tmp/image.png --tag extracted
+python -m biblicus ingest --corpus corpora/extraction-demo /tmp/image.png --tag extracted
 
-python3 -m biblicus extract build --corpus corpora/extraction-demo \
+python -m biblicus extract build --corpus corpora/extraction-demo \
   --step pass-through-text \
   --step pdf-text \
   --step metadata-text
@@ -158,7 +158,7 @@ The extracted text for the image comes from the `metadata-text` step because the
 Selection is a pipeline step that chooses extracted text from previous pipeline steps. Selection is just another extractor in the pipeline, and it decides which prior output to carry forward.
 
 ```
-python3 -m biblicus extract build --corpus corpora/extraction-demo \
+python -m biblicus extract build --corpus corpora/extraction-demo \
   --step pass-through-text \
   --step metadata-text \
   --step select-text
@@ -171,7 +171,7 @@ The pipeline run produces one extraction run under `pipeline`. You can point ret
 Try text extraction first, fall back to OCR for scanned documents:
 
 ```
-python3 -m biblicus extract build --corpus corpora/extraction-demo \
+python -m biblicus extract build --corpus corpora/extraction-demo \
   --step pdf-text \
   --step ocr-rapidocr \
   --step select-text
@@ -184,7 +184,7 @@ This pipeline tries `pdf-text` first for PDFs with text layers, falls back to `o
 Use vision-language models for documents with complex layouts:
 
 ```
-python3 -m biblicus extract build --corpus corpora/extraction-demo \
+python -m biblicus extract build --corpus corpora/extraction-demo \
   --step docling-granite
 ```
 
@@ -195,8 +195,8 @@ The `docling-granite` extractor uses IBM Research's Granite Docling-258M VLM for
 Extraction runs are stored under the corpus and can be listed and inspected.
 
 ```
-python3 -m biblicus extract list --corpus corpora/extraction-demo
-python3 -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:EXTRACTION_RUN_ID
+python -m biblicus extract list --corpus corpora/extraction-demo
+python -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:EXTRACTION_RUN_ID
 ```
 
 ## Common pitfalls
@@ -208,7 +208,7 @@ python3 -m biblicus extract show --corpus corpora/extraction-demo --run pipeline
 Deletion is explicit and requires typing the exact run reference as confirmation:
 
 ```
-python3 -m biblicus extract delete --corpus corpora/extraction-demo \
+python -m biblicus extract delete --corpus corpora/extraction-demo \
   --run pipeline:EXTRACTION_RUN_ID \
   --confirm pipeline:EXTRACTION_RUN_ID
 ```
@@ -218,9 +218,9 @@ python3 -m biblicus extract delete --corpus corpora/extraction-demo \
 Retrieval backends can build and query using a selected extraction run. This is configured by passing `extraction_run=extractor_id:run_id` to the backend build command.
 
 ```
-python3 -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full-text-search \
+python -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full-text-search \
   --config extraction_run=pipeline:EXTRACTION_RUN_ID
-python3 -m biblicus query --corpus corpora/extraction-demo --query extracted
+python -m biblicus query --corpus corpora/extraction-demo --query extracted
 ```
 
 ## Evaluate extraction quality

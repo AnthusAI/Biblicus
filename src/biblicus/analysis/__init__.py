@@ -7,8 +7,6 @@ from __future__ import annotations
 from typing import Dict, Type
 
 from .base import CorpusAnalysisBackend
-from .profiling import ProfilingBackend
-from .topic_modeling import TopicModelingBackend
 
 
 def available_analysis_backends() -> Dict[str, Type[CorpusAnalysisBackend]]:
@@ -18,9 +16,14 @@ def available_analysis_backends() -> Dict[str, Type[CorpusAnalysisBackend]]:
     :return: Mapping of analysis identifiers to backend classes.
     :rtype: dict[str, Type[CorpusAnalysisBackend]]
     """
+    from .markov import MarkovBackend
+    from .profiling import ProfilingBackend
+    from .topic_modeling import TopicModelingBackend
+
     return {
         ProfilingBackend.analysis_id: ProfilingBackend,
         TopicModelingBackend.analysis_id: TopicModelingBackend,
+        MarkovBackend.analysis_id: MarkovBackend,
     }
 
 

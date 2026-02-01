@@ -2,6 +2,14 @@
 
 Traditional OCR extractors for text recognition from images and scanned documents.
 
+```{toctree}
+:maxdepth: 1
+:caption: OCR Extractors
+
+rapidocr
+paddleocr-vl
+```
+
 ## Overview
 
 OCR extractors use computer vision to recognize text in images, scanned documents, and visual content. They are ideal for:

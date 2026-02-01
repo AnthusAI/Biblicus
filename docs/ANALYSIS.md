@@ -58,12 +58,17 @@ Pydantic model that is serialized to JavaScript Object Notation for storage.
 ## Choosing an analysis backend
 
 Start with profiling when you need fast, deterministic baselines. Use topic modeling when you want thematic clustering
-and exploratory labels. Combine both for a clear view of corpus composition and themes.
+and exploratory labels. Use Markov analysis when you want state-transition structure over sequences of segments.
+Combine multiple backends for a clear view of corpus composition, themes, and state dynamics.
 
 ## Recipe files
 
 Analysis recipes are optional JavaScript Object Notation or YAML files that capture configuration in a repeatable way.
 They are useful for sharing experiments and keeping runs reproducible.
+
+Recipes support cascading composition. When a command accepts `--recipe`, you can pass multiple recipe files. Biblicus
+merges them in order, where later recipes override earlier recipes via a deep merge. You can then apply `--config`
+overrides on top of the composed view.
 
 Minimal profiling recipe:
 
@@ -82,6 +87,19 @@ bertopic_analysis:
     nr_topics: 8
 ```
 
+Minimal Markov analysis recipe:
+
+```
+schema_version: 1
+model:
+  family: gaussian
+  n_states: 8
+segmentation:
+  method: sentence
+observations:
+  encoder: tfidf
+```
+
 ## Topic modeling
 
 Topic modeling is the first analysis backend. It uses BERTopic to cluster extracted text, produces per-topic evidence,
@@ -90,11 +108,20 @@ and optionally labels topics using an LLM. See `docs/TOPIC_MODELING.md` for deta
 The integration demo script is a working reference you can use as a starting point:
 
 ```
-python3 scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
+python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
 The command prints the analysis run identifier and the output path. Open the resulting `output.json` to inspect per-topic
 labels, keywords, and document examples.
+
+## Markov analysis
+
+Markov analysis learns a directed, weighted state transition graph over sequences of text segments. The output includes
+per-state exemplars, per-item decoded paths, and optional GraphViz exports. See `docs/MARKOV_ANALYSIS.md` for detailed
+configuration and examples.
+
+Text extract is available as a segmentation strategy for long texts. It inserts XML tags in-place using a virtual file
+editing loop, then extracts spans without requiring the model to re-emit the full transcript.
 
 ## Profiling analysis
 
@@ -104,7 +131,7 @@ deterministic counts and distribution metrics. See `docs/PROFILING.md` for the f
 ### Minimal profiling run
 
 ```
-python3 -m biblicus analyze profile --corpus corpora/example --extraction-run pipeline:RUN_ID
+python -m biblicus analyze profile --corpus corpora/example --extraction-run pipeline:RUN_ID
 ```
 
 The command writes an analysis run directory and prints the run identifier.

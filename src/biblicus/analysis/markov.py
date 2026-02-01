@@ -49,7 +49,9 @@ from .models import (
     MarkovAnalysisTextCollectionReport,
     MarkovAnalysisTextSourceConfig,
     MarkovAnalysisTransition,
+    TopicModelingReport,
 )
+from .topic_modeling import TopicModelingDocument, run_topic_modeling_for_documents
 
 
 class MarkovStateName(BaseModel):
@@ -84,20 +86,6 @@ class MarkovStateNamingResponse(BaseModel):
     start_state_id: Optional[int] = None
     end_state_id: Optional[int] = None
     disconnection_state_id: Optional[int] = None
-
-
-class _EndLabelDecision(BaseModel):
-    """
-    Structured response for end-label verification.
-
-    :ivar is_end: Whether the segment represents a proper call ending.
-    :vartype is_end: bool
-    :ivar reason: Optional explanation for the decision.
-    :vartype reason: str or None
-    """
-
-    is_end: bool
-    reason: Optional[str] = None
 
 
 @dataclass
@@ -185,6 +173,7 @@ def _run_markov(
     )
     segments = _segment_documents(documents=documents, config=config)
     observations = _build_observations(segments=segments, config=config)
+    observations, topic_report = _apply_topic_modeling(observations=observations, config=config)
     observation_matrix, lengths = _encode_observations(observations=observations, config=config)
 
     predicted_states, transitions, state_count = _fit_and_decode(
@@ -200,7 +189,11 @@ def _run_markov(
         n_states=state_count,
         max_exemplars=config.report.max_state_exemplars,
     )
-    states = _assign_state_names(states=states, config=config)
+    states = _assign_state_names(
+        states=states,
+        decoded_paths=decoded_paths,
+        config=config,
+    )
 
     artifact_paths: List[str] = [
         "output.json",
@@ -211,6 +204,10 @@ def _run_markov(
     _write_segments(run_dir=run_dir, segments=segments)
     _write_observations(run_dir=run_dir, observations=observations)
     _write_transitions_json(run_dir=run_dir, transitions=transitions)
+    if topic_report is not None:
+        _write_topic_modeling_report(run_dir=run_dir, report=topic_report)
+        _write_topic_assignments(run_dir=run_dir, observations=observations)
+        artifact_paths.extend(["topic_modeling.json", "topic_assignments.jsonl"])
 
     if config.artifacts.graphviz.enabled:
         _write_graphviz(
@@ -222,14 +219,21 @@ def _run_markov(
         )
         artifact_paths.append("transitions.dot")
 
+    warnings = list(text_report.warnings)
+    errors = list(text_report.errors)
+    if topic_report is not None:
+        warnings.extend(topic_report.warnings)
+        errors.extend(topic_report.errors)
+
     report = MarkovAnalysisReport(
         text_collection=text_report,
         status=MarkovAnalysisStageStatus.COMPLETE,
         states=states,
         transitions=transitions,
         decoded_paths=decoded_paths,
-        warnings=list(text_report.warnings),
-        errors=list(text_report.errors),
+        topic_modeling=topic_report,
+        warnings=warnings,
+        errors=errors,
     )
 
     run_stats = {
@@ -238,6 +242,8 @@ def _run_markov(
         "states": len(states),
         "transitions": len(transitions),
     }
+    if topic_report is not None:
+        run_stats["topics"] = len(topic_report.topics)
     run_manifest = run_manifest.model_copy(
         update={"artifact_paths": artifact_paths, "stats": run_stats}
     )
@@ -368,7 +374,63 @@ def _segment_documents(
         raise ValueError(f"Unsupported segmentation method: {method}")
     if not segments:
         raise ValueError("Markov analysis produced no segments")
-    return segments
+    return _add_boundary_segments(segments=segments)
+
+
+def _add_boundary_segments(
+    *, segments: Sequence[MarkovAnalysisSegment]
+) -> List[MarkovAnalysisSegment]:
+    """
+    Add synthetic START/END boundary segments for each item sequence.
+
+    This is a deterministic, programmatic boundary signal that keeps the LLM
+    segmentation focused only on natural text phases. We insert:
+    - a leading START segment per item
+    - a trailing END segment per item
+
+    These boundaries are added after segmentation for all methods (sentence,
+    fixed-window, llm, span-markup) so the model never has to edit or reason
+    about them during extraction.
+
+    :param segments: Ordered segments grouped by item_id.
+    :type segments: Sequence[MarkovAnalysisSegment]
+    :return: Segments with START/END boundaries per item.
+    :rtype: list[MarkovAnalysisSegment]
+    """
+    if not segments:
+        return []
+    enriched: List[MarkovAnalysisSegment] = []
+    current_item: Optional[str] = None
+    buffer: List[MarkovAnalysisSegment] = []
+
+    def flush() -> None:
+        item_id = buffer[0].item_id
+        index = 1
+        enriched.append(
+            MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="START")
+        )
+        for segment in buffer:
+            index += 1
+            enriched.append(
+                MarkovAnalysisSegment(
+                    item_id=item_id, segment_index=index, text=segment.text
+                )
+            )
+        index += 1
+        enriched.append(
+            MarkovAnalysisSegment(item_id=item_id, segment_index=index, text="END")
+        )
+
+    for segment in segments:
+        if current_item is None:
+            current_item = segment.item_id
+        if segment.item_id != current_item:
+            flush()
+            buffer = []
+            current_item = segment.item_id
+        buffer.append(segment)
+    flush()
+    return enriched
 
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
@@ -495,29 +557,37 @@ def _span_markup_segments(
         segment_payloads.append(
             {"segment_index": index, "body": segment_body, "text": segment_text}
         )
-    return _apply_start_end_labels(
-        item_id=item_id,
-        payloads=segment_payloads,
-        config=config,
-    )
+    segments: List[MarkovAnalysisSegment] = []
+    for payload in segment_payloads:
+        segments.append(
+            MarkovAnalysisSegment(
+                item_id=item_id,
+                segment_index=int(payload["segment_index"]),
+                text=str(payload["text"]),
+            )
+        )
+    return segments
 
 
 def _verify_end_label(
     *, text: str, config: MarkovAnalysisRecipeConfig
-) -> Optional[_EndLabelDecision]:
+) -> Optional[Dict[str, object]]:
     markup_config = config.segmentation.span_markup
     if markup_config is None or markup_config.end_label_verifier is None:
         return None
     verifier = markup_config.end_label_verifier
-    system_prompt = str(verifier.system_prompt).format(text=text)
-    user_prompt = str(verifier.prompt_template)
+    system_prompt = verifier.system_prompt.replace("{text}", text)
+    user_prompt = verifier.prompt_template.replace("{text}", text)
     response_text = generate_completion(
         client=verifier.client,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
     ).strip()
-    payload = _parse_json_object(response_text, error_label="Markov end label verifier")
-    return _EndLabelDecision.model_validate(payload)
+    payload = _parse_json_object(response_text, error_label="End label verifier")
+    return {
+        "is_end": bool(payload.get("is_end")),
+        "reason": payload.get("reason"),
+    }
 
 
 def _apply_start_end_labels(
@@ -525,52 +595,45 @@ def _apply_start_end_labels(
     item_id: str,
     payloads: Sequence[Dict[str, object]],
     config: MarkovAnalysisRecipeConfig,
-    end_decision: Optional[_EndLabelDecision] = None,
 ) -> List[MarkovAnalysisSegment]:
     markup_config = config.segmentation.span_markup
     if markup_config is None:
-        raise ValueError(
-            "segmentation.span_markup is required when segmentation.method is 'span_markup'"
-        )
-    start_label_value = markup_config.start_label_value
-    end_label_value = markup_config.end_label_value
-    end_reject_label_value = markup_config.end_reject_label_value
-    reason_prefix = markup_config.end_reject_reason_prefix
+        raise ValueError("segmentation.span_markup is required for start/end labels")
     segments: List[MarkovAnalysisSegment] = []
-    if not payloads:
+    for payload in payloads:
+        segment_text = str(payload.get("text") or payload.get("body") or "").strip()
+        if not segment_text:
+            continue
+        segments.append(
+            MarkovAnalysisSegment(
+                item_id=item_id,
+                segment_index=int(payload.get("segment_index") or len(segments) + 1),
+                text=segment_text,
+            )
+        )
+    if not segments:
         return segments
-    decision = end_decision
-    if decision is None and (end_label_value or end_reject_label_value):
-        last_body = str(payloads[-1]["body"])
-        decision = _verify_end_label(text=last_body, config=config)
-    for offset, payload in enumerate(payloads):
-        text_value = str(payload["text"])
-        prefix_lines: List[str] = []
-        if offset == 0 and start_label_value:
-            prefix_lines.append(start_label_value)
-        if offset == len(payloads) - 1 and end_label_value and decision and decision.is_end:
-            prefix_lines.append(end_label_value)
-        if prefix_lines:
-            text_value = "\n".join(prefix_lines + [text_value])
-        segments.append(
-            MarkovAnalysisSegment(
-                item_id=item_id,
-                segment_index=int(payload["segment_index"]),
-                text=text_value,
-            )
+    if markup_config.start_label_value:
+        segments[0] = segments[0].model_copy(
+            update={"text": f"{markup_config.start_label_value}\n{segments[0].text}"}
         )
-    if decision and not decision.is_end and end_reject_label_value:
-        reason_value = decision.reason or "call ended abruptly"
-        reason_line = f"{reason_prefix}: {reason_value}" if reason_prefix else reason_value
-        synthetic_text = "\n".join([end_reject_label_value, reason_line])
-        segments.append(
-            MarkovAnalysisSegment(
-                item_id=item_id,
-                segment_index=int(payloads[-1]["segment_index"]) + 1,
-                text=synthetic_text,
+    if markup_config.end_label_value:
+        decision = _verify_end_label(text=segments[-1].text, config=config)
+        if decision and decision.get("is_end"):
+            segments[-1] = segments[-1].model_copy(
+                update={"text": f"{markup_config.end_label_value}\n{segments[-1].text}"}
             )
-        )
+        elif decision and not decision.get("is_end") and markup_config.end_reject_label_value:
+            reason = decision.get("reason")
+            prefix = markup_config.end_reject_label_value
+            if reason:
+                prefix = f"{prefix}\n{markup_config.end_reject_reason_prefix}: {reason}"
+            segments[-1] = segments[-1].model_copy(
+                update={"text": f"{prefix}\n{segments[-1].text}"}
+            )
     return segments
+
+
 
 
 def _parse_json_list(raw: str, *, error_label: str) -> List[object]:
@@ -672,6 +735,77 @@ def _build_observations(
         observations = updated
 
     return observations
+
+
+def _topic_document_id(*, item_id: str, segment_index: int) -> str:
+    return f"{item_id}:{segment_index}"
+
+
+def _apply_topic_modeling(
+    *,
+    observations: Sequence[MarkovAnalysisObservation],
+    config: MarkovAnalysisRecipeConfig,
+) -> Tuple[List[MarkovAnalysisObservation], Optional[TopicModelingReport]]:
+    topic_config = config.topic_modeling
+    if not topic_config.enabled:
+        return list(observations), None
+    if topic_config.recipe is None:
+        raise ValueError("topic_modeling.recipe is required when topic_modeling.enabled is true")
+
+    documents: List[TopicModelingDocument] = []
+    for observation in observations:
+        if observation.segment_text in {"START", "END"}:
+            continue
+        documents.append(
+            TopicModelingDocument(
+                document_id=_topic_document_id(
+                    item_id=observation.item_id,
+                    segment_index=observation.segment_index,
+                ),
+                source_item_id=observation.item_id,
+                text=observation.segment_text,
+            )
+        )
+
+    if not documents:
+        raise ValueError("Topic modeling requires at least one non-boundary segment")
+
+    report = run_topic_modeling_for_documents(
+        documents=documents,
+        config=topic_config.recipe,
+    )
+
+    topic_lookup: Dict[str, Tuple[int, str]] = {}
+    for topic in report.topics:
+        label = str(topic.label or "").strip()
+        for document_id in topic.document_ids:
+            topic_lookup[str(document_id)] = (int(topic.topic_id), label)
+
+    updated: List[MarkovAnalysisObservation] = []
+    for observation in observations:
+        if observation.segment_text in {"START", "END"}:
+            updated.append(
+                observation.model_copy(
+                    update={
+                        "topic_id": None,
+                        "topic_label": observation.segment_text,
+                    }
+                )
+            )
+            continue
+        document_id = _topic_document_id(
+            item_id=observation.item_id, segment_index=observation.segment_index
+        )
+        assignment = topic_lookup.get(document_id)
+        if assignment is None:
+            raise ValueError(
+                f"Topic modeling did not return an assignment for segment {document_id}"
+            )
+        topic_id, topic_label = assignment
+        updated.append(
+            observation.model_copy(update={"topic_id": topic_id, "topic_label": topic_label})
+        )
+    return updated, report
 
 
 def _encode_observations(
@@ -953,7 +1087,16 @@ def _build_states(
     exemplars: Dict[int, List[str]] = {idx: [] for idx in range(n_states)}
     for segment, state in zip(segments, predicted_states):
         exemplar_list = exemplars.get(int(state))
-        if exemplar_list is None or len(exemplar_list) >= max_exemplars:
+        if exemplar_list is None:
+            continue
+        boundary_token = str(segment.text).strip().upper()
+        if boundary_token in {"START", "END"} and boundary_token not in exemplar_list:
+            if max_exemplars > 0 and len(exemplar_list) >= max_exemplars:
+                exemplar_list[-1] = boundary_token
+                continue
+            exemplar_list.append(boundary_token)
+            continue
+        if len(exemplar_list) >= max_exemplars:
             continue
         exemplar_list.append(segment.text)
     states: List[MarkovAnalysisState] = []
@@ -969,7 +1112,10 @@ def _build_states(
 
 
 def _state_naming_context_pack(
-    *, states: Sequence[MarkovAnalysisState], config: MarkovAnalysisRecipeConfig
+    *,
+    states: Sequence[MarkovAnalysisState],
+    config: MarkovAnalysisRecipeConfig,
+    position_stats: Optional[Dict[int, Dict[str, float]]] = None,
 ) -> Tuple[ContextPack, ContextPackPolicy]:
     naming = config.report.state_naming
     if naming is None or not naming.enabled:
@@ -977,6 +1123,33 @@ def _state_naming_context_pack(
     evidence: List[Evidence] = []
     rank = 1
     for state in states:
+        stats = (position_stats or {}).get(state.state_id)
+        if stats:
+            after_start = stats.get("after_start_pct", 0.0) * 100.0
+            before_end = stats.get("before_end_pct", 0.0) * 100.0
+            avg_position = stats.get("avg_position_pct", 0.0) * 100.0
+            hint_text = (
+                "Position hints:\n"
+                f"- After START: {after_start:.1f}% of transitions from START\n"
+                f"- Before END: {before_end:.1f}% of transitions to END\n"
+                f"- Average position: {avg_position:.1f}% of call length"
+            )
+            evidence.append(
+                Evidence(
+                    item_id=f"state-{state.state_id}",
+                    source_uri=None,
+                    media_type="text/plain",
+                    score=1.0,
+                    rank=rank,
+                    text=f"State {state.state_id}:\n{hint_text}",
+                    stage="state-naming",
+                    stage_scores=None,
+                    recipe_id="state-naming",
+                    run_id="state-naming",
+                    hash=None,
+                )
+            )
+            rank += 1
         exemplars = list(state.exemplars)[: naming.max_exemplars_per_state]
         for index, exemplar in enumerate(exemplars, start=1):
             text = f"State {state.state_id} exemplar {index}:\n{exemplar}"
@@ -1021,9 +1194,6 @@ def _validate_state_names(
     response: MarkovStateNamingResponse,
     state_ids: Sequence[int],
     max_name_words: int,
-    start_required: bool,
-    end_required: bool,
-    disconnection_required: bool,
 ) -> Dict[int, str]:
     def require_short_noun_phrase(name: str, max_words: int) -> None:
         raw_name = str(name).strip()
@@ -1065,9 +1235,6 @@ def _validate_state_names(
         }
         if any(token in forbidden_auxiliaries for token in lower_tokens):
             raise ValueError("State names must be short noun phrases without verbs")
-        forbidden_role_tokens = {"start", "end", "disconnection"}
-        if any(token in forbidden_role_tokens for token in lower_tokens):
-            raise ValueError("State names must not include role prefixes")
 
     names: Dict[int, str] = {}
     seen_names: Dict[str, int] = {}
@@ -1084,26 +1251,14 @@ def _validate_state_names(
     missing = [state_id for state_id in state_ids if state_id not in names]
     if missing:
         raise ValueError("State naming response missing required state_id values")
-    if start_required:
-        if response.start_state_id is None:
-            raise ValueError("State naming must include start_state_id")
-        if response.start_state_id not in state_ids:
-            raise ValueError("start_state_id must reference a known state")
-    if end_required:
-        if response.end_state_id is None:
-            raise ValueError("State naming must include end_state_id")
-        if response.end_state_id not in state_ids:
-            raise ValueError("end_state_id must reference a known state")
-    if disconnection_required:
-        if response.disconnection_state_id is None:
-            raise ValueError("State naming must include disconnection_state_id")
-        if response.disconnection_state_id not in state_ids:
-            raise ValueError("disconnection_state_id must reference a known state")
     return names
 
 
 def _assign_state_names(
-    *, states: Sequence[MarkovAnalysisState], config: MarkovAnalysisRecipeConfig
+    *,
+    states: Sequence[MarkovAnalysisState],
+    decoded_paths: Sequence[MarkovAnalysisDecodedPath],
+    config: MarkovAnalysisRecipeConfig,
 ) -> List[MarkovAnalysisState]:
     naming = config.report.state_naming
     if naming is None or not naming.enabled:
@@ -1112,23 +1267,40 @@ def _assign_state_names(
         raise ValueError("report.state_naming.client is required when enabled")
     if not states:
         return list(states)
-    state_ids = [state.state_id for state in states]
-    start_required = any(
-        exemplar.strip().lower().startswith("start\n")
-        for state in states
-        for exemplar in (state.exemplars or [])
+    start_state_id = _select_boundary_state_id(states=states, boundary_label="START")
+    end_state_id = _select_boundary_state_id(states=states, boundary_label="END")
+    sanitized_states = _strip_boundary_exemplars(
+        states=states,
+        boundary_label="START",
+        allowed_state_id=start_state_id,
     )
-    end_required = any(
-        exemplar.strip().lower().startswith("end\n")
-        for state in states
-        for exemplar in (state.exemplars or [])
+    sanitized_states = _strip_boundary_exemplars(
+        states=sanitized_states,
+        boundary_label="END",
+        allowed_state_id=end_state_id,
     )
-    disconnection_required = any(
-        exemplar.strip().lower().startswith("disconnection\n")
-        for state in states
-        for exemplar in (state.exemplars or [])
+    naming_states = [
+        state
+        for state in sanitized_states
+        if state.state_id not in {start_state_id, end_state_id}
+    ]
+    if not naming_states:
+        return _apply_boundary_labels(
+            states=sanitized_states,
+            start_state_id=start_state_id,
+            end_state_id=end_state_id,
+        )
+    state_ids = [state.state_id for state in naming_states]
+    position_stats = _compute_state_position_stats(
+        decoded_paths=decoded_paths,
+        start_state_id=start_state_id,
+        end_state_id=end_state_id,
     )
-    context_pack, _policy = _state_naming_context_pack(states=states, config=config)
+    context_pack, _policy = _state_naming_context_pack(
+        states=naming_states,
+        config=config,
+        position_stats=position_stats,
+    )
     system_prompt = str(naming.system_prompt or "").format(context_pack=context_pack.text)
     user_prompt = str(naming.prompt_template or "").format(
         state_ids=", ".join(str(state_id) for state_id in state_ids),
@@ -1152,35 +1324,135 @@ def _assign_state_names(
                 response=response,
                 state_ids=state_ids,
                 max_name_words=naming.max_name_words,
-                start_required=start_required,
-                end_required=end_required,
-                disconnection_required=disconnection_required,
             )
         except ValueError as exc:
             last_error = f"{response_text}\n\nError: {exc}"
             continue
         updated_states: List[MarkovAnalysisState] = []
-        for state in states:
+        for state in sanitized_states:
+            if start_state_id is not None and state.state_id == start_state_id:
+                updated_states.append(state.model_copy(update={"label": "START"}))
+                continue
+            if end_state_id is not None and state.state_id == end_state_id:
+                updated_states.append(state.model_copy(update={"label": "END"}))
+                continue
             base_label = names.get(state.state_id)
             if base_label is None:
                 updated_states.append(state)
                 continue
-            prefix_parts: List[str] = []
-            if response.start_state_id == state.state_id:
-                prefix_parts.append("Start")
-            if response.end_state_id == state.state_id:
-                prefix_parts.append("End")
-            if response.disconnection_state_id == state.state_id:
-                prefix_parts.append("Disconnection")
-            if prefix_parts:
-                label = f"{' '.join(prefix_parts)} — {base_label}"
-            else:
-                label = base_label
-            updated_states.append(state.model_copy(update={"label": label}))
+            updated_states.append(state.model_copy(update={"label": base_label}))
         return updated_states
-    if last_error is None:
-        raise ValueError("Markov state naming failed after retries")
-    raise ValueError(f"Markov state naming failed after retries: {last_error}")
+    error_text = last_error or "unknown error"
+    raise ValueError(f"Markov state naming failed after retries: {error_text}")
+
+
+def _select_boundary_state_id(
+    *, states: Sequence[MarkovAnalysisState], boundary_label: str
+) -> Optional[int]:
+    candidates: List[Tuple[int, int, int]] = []
+    normalized_label = boundary_label.strip().upper()
+    for state in states:
+        exemplars = [str(exemplar).strip().upper() for exemplar in (state.exemplars or [])]
+        match_count = sum(1 for exemplar in exemplars if exemplar == normalized_label)
+        if match_count:
+            candidates.append((match_count, len(exemplars), state.state_id))
+    if not candidates:
+        return None
+    candidates.sort(reverse=True)
+    return candidates[0][2]
+
+
+def _strip_boundary_exemplars(
+    *,
+    states: Sequence[MarkovAnalysisState],
+    boundary_label: str,
+    allowed_state_id: Optional[int],
+) -> List[MarkovAnalysisState]:
+    normalized_label = boundary_label.strip().upper()
+    updated_states: List[MarkovAnalysisState] = []
+    for state in states:
+        exemplars = list(state.exemplars or [])
+        if allowed_state_id is None or state.state_id != allowed_state_id:
+            exemplars = [
+                exemplar
+                for exemplar in exemplars
+                if str(exemplar).strip().upper() != normalized_label
+            ]
+        updated_states.append(state.model_copy(update={"exemplars": exemplars}))
+    return updated_states
+
+
+def _apply_boundary_labels(
+    *,
+    states: Sequence[MarkovAnalysisState],
+    start_state_id: Optional[int],
+    end_state_id: Optional[int],
+) -> List[MarkovAnalysisState]:
+    updated_states: List[MarkovAnalysisState] = []
+    for state in states:
+        if start_state_id is not None and state.state_id == start_state_id:
+            updated_states.append(state.model_copy(update={"label": "START"}))
+            continue
+        if end_state_id is not None and state.state_id == end_state_id:
+            updated_states.append(state.model_copy(update={"label": "END"}))
+            continue
+        updated_states.append(state)
+    return updated_states
+
+
+def _compute_state_position_stats(
+    *,
+    decoded_paths: Sequence[MarkovAnalysisDecodedPath],
+    start_state_id: Optional[int],
+    end_state_id: Optional[int],
+) -> Dict[int, Dict[str, float]]:
+    after_start_counts: Dict[int, int] = {}
+    before_end_counts: Dict[int, int] = {}
+    avg_position_sums: Dict[int, float] = {}
+    avg_position_counts: Dict[int, int] = {}
+    total_after_start = 0
+    total_before_end = 0
+
+    for path in decoded_paths:
+        sequence = list(path.state_sequence)
+        if len(sequence) < 2:
+            continue
+        last_index = max(1, len(sequence) - 1)
+        for index, state_id in enumerate(sequence):
+            if state_id in {start_state_id, end_state_id}:
+                continue
+            avg_position_sums[state_id] = avg_position_sums.get(state_id, 0.0) + (
+                float(index) / float(last_index)
+            )
+            avg_position_counts[state_id] = avg_position_counts.get(state_id, 0) + 1
+        for from_state, to_state in zip(sequence, sequence[1:]):
+            if start_state_id is not None and from_state == start_state_id:
+                total_after_start += 1
+                after_start_counts[to_state] = after_start_counts.get(to_state, 0) + 1
+            if end_state_id is not None and to_state == end_state_id:
+                total_before_end += 1
+                before_end_counts[from_state] = before_end_counts.get(from_state, 0) + 1
+
+    stats: Dict[int, Dict[str, float]] = {}
+    state_ids = set(avg_position_counts) | set(after_start_counts) | set(before_end_counts)
+    for state_id in state_ids:
+        avg_count = avg_position_counts.get(state_id, 0)
+        stats[state_id] = {
+            "after_start_pct": (
+                after_start_counts.get(state_id, 0) / total_after_start
+                if total_after_start
+                else 0.0
+            ),
+            "before_end_pct": (
+                before_end_counts.get(state_id, 0) / total_before_end
+                if total_before_end
+                else 0.0
+            ),
+            "avg_position_pct": (
+                avg_position_sums.get(state_id, 0.0) / avg_count if avg_count else 0.0
+            ),
+        }
+    return stats
 
 
 def _write_analysis_run_manifest(*, run_dir: Path, manifest: AnalysisRunManifest) -> None:
@@ -1207,6 +1479,32 @@ def _write_transitions_json(
     payload = [transition.model_dump() for transition in transitions]
     (run_dir / "transitions.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def _write_topic_modeling_report(*, run_dir: Path, report: TopicModelingReport) -> None:
+    (run_dir / "topic_modeling.json").write_text(
+        report.model_dump_json(indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def _write_topic_assignments(
+    *,
+    run_dir: Path,
+    observations: Sequence[MarkovAnalysisObservation],
+) -> None:
+    lines: List[str] = []
+    for observation in observations:
+        payload = {
+            "item_id": observation.item_id,
+            "segment_index": observation.segment_index,
+            "segment_text": observation.segment_text,
+            "topic_id": observation.topic_id,
+            "topic_label": observation.topic_label,
+        }
+        lines.append(json.dumps(payload, ensure_ascii=True))
+    (run_dir / "topic_assignments.jsonl").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
     )
 
 
@@ -1274,16 +1572,17 @@ def _write_graphviz(
     lines.append(f'  rankdir="{rankdir}";')
     label_by_state: Dict[int, str] = {}
     exemplars_by_state: Dict[int, int] = {}
+    exemplar_start: Dict[int, bool] = {}
+    exemplar_end: Dict[int, bool] = {}
     for state in states:
         label_by_state[state.state_id] = str(state.label or "")
         exemplars_by_state[state.state_id] = len(state.exemplars or [])
         base_label = str(state.label or str(state.state_id))
-        normalized_base = base_label.lower()
-        has_start_marker = any(
-            exemplar.strip().lower().startswith("start\n") for exemplar in (state.exemplars or [])
+        exemplar_start[state.state_id] = any(
+            str(exemplar).strip().upper() == "START" for exemplar in (state.exemplars or [])
         )
-        has_end_marker = any(
-            exemplar.strip().lower().startswith("end\n") for exemplar in (state.exemplars or [])
+        exemplar_end[state.state_id] = any(
+            str(exemplar).strip().upper() == "END" for exemplar in (state.exemplars or [])
         )
         label = base_label
         safe_label = label.replace('"', '\\"')
@@ -1291,52 +1590,60 @@ def _write_graphviz(
     start_state_id = graphviz.start_state_id
     end_state_id = graphviz.end_state_id
     if start_state_id is None:
-        start_state_id = infer_state_id_by_label(
-            label_by_state,
-            ("start", "greeting", "opening"),
-            exemplars_by_state,
-        )
+        matching = [state_id for state_id, has in exemplar_start.items() if has]
+        if matching:
+            start_state_id = max(matching, key=lambda state_id: exemplars_by_state.get(state_id, 0))
+        else:
+            start_state_id = infer_state_id_by_label(
+                label_by_state,
+                ("start", "greeting", "opening"),
+                exemplars_by_state,
+            )
     if end_state_id is None:
-        end_state_id = infer_state_id_by_label(
-            label_by_state,
-            ("end", "closing", "goodbye", "wrap-up"),
-            exemplars_by_state,
-        )
+        matching = [state_id for state_id, has in exemplar_end.items() if has]
+        if matching:
+            end_state_id = max(matching, key=lambda state_id: exemplars_by_state.get(state_id, 0))
+        else:
+            end_state_id = infer_state_id_by_label(
+                label_by_state,
+                ("end", "closing", "goodbye", "wrap-up"),
+                exemplars_by_state,
+            )
     if start_state_id is not None:
         lines.append(f"  {{ rank=min; {start_state_id}; }}")
-        lines.append(f'  {start_state_id} [shape="circle"];')
+        lines.append(
+            f'  {start_state_id} [shape="ellipse", peripheries=2, style="bold", color="#2b8a3e"];'
+        )
     if end_state_id is not None:
         lines.append(f"  {{ rank=max; {end_state_id}; }}")
-        lines.append(f'  {end_state_id} [shape="doublecircle"];')
+        lines.append(
+            f'  {end_state_id} [shape="ellipse", peripheries=2, color="#b42318"];'
+        )
     observed_counts: Dict[Tuple[int, int], int] = {}
-    observed_total = 0
+    observed_totals_by_state: Dict[int, int] = {}
     for path in decoded_paths:
         sequence = list(path.state_sequence)
         for from_state, to_state in zip(sequence, sequence[1:]):
             observed_counts[(from_state, to_state)] = (
                 observed_counts.get((from_state, to_state), 0) + 1
             )
-            observed_total += 1
+            observed_totals_by_state[from_state] = (
+                observed_totals_by_state.get(from_state, 0) + 1
+            )
 
     for transition in transitions:
         if end_state_id is not None and transition.from_state == end_state_id:
             continue
-        model_weight = transition.weight
         observed_count = observed_counts.get((transition.from_state, transition.to_state), 0)
+        observed_total = observed_totals_by_state.get(transition.from_state, 0)
         observed_weight = (
-            observed_count / observed_total if observed_total else model_weight
+            observed_count / observed_total if observed_total else transition.weight
         )
+        if observed_total and observed_count == 0:
+            continue
         if observed_weight < graphviz.min_edge_weight:
             continue
-        model_percentage = model_weight * 100.0
-        observed_percentage = observed_weight * 100.0
-        if observed_total:
-            label = (
-                f"{observed_percentage:.1f}% ({observed_count}/{observed_total})"
-                f" | model {model_percentage:.1f}%"
-            )
-        else:
-            label = f"{model_percentage:.1f}%"
+        label = f"{observed_weight * 100.0:.1f}%"
         lines.append(
             f'  {transition.from_state} -> {transition.to_state} [label="{label}"];'
         )

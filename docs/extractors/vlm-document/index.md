@@ -2,6 +2,14 @@
 
 Advanced VLM-based document understanding with layout analysis, semantic structure preservation, and intelligent content extraction.
 
+```{toctree}
+:maxdepth: 1
+:caption: VLM Extractors
+
+docling-smol
+docling-granite
+```
+
 ## Overview
 
 Vision-Language Model extractors use multimodal AI to understand documents holistically, combining visual layout analysis with semantic text extraction. They excel at:

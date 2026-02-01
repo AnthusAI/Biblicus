@@ -1,0 +1,85 @@
+schema_version: 1
+text_source:
+  sample_size: 50
+  min_text_characters: 200
+segmentation:
+  method: llm
+  llm:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    system_prompt: null
+    prompt_template: |
+      You are segmenting a news article into contiguous phases.
+
+      Return ONLY a JSON object with a single key named "segments", which is a JSON array of strings.
+      Each string is a contiguous segment copied from the input text.
+      Do not wrap the JSON in markdown or code fences. Do not include any extra text before or after the JSON.
+
+      Rules:
+      - Preserve original order.
+      - Do not add labels, summaries, or commentary.
+      - Do not paraphrase. Copy exact text spans.
+      - Prefer natural boundaries when possible: headline, byline, lead/lede, background, quotes, statistics, wrap-up, etc.
+      - If the article clearly contains structural components (headline/byline/subheading), include them as their own segments.
+      - If you are unsure, still segment by coherent units rather than fixed-length chunks.
+      - Aim for 4 to 12 segments for typical articles, but allow fewer/more when appropriate.
+      - Avoid extremely short trailing fragments; merge tiny leftovers into the previous segment.
+
+      Examples (illustrative only; do not force these exact boundaries):
+
+      Example 1 input:
+      HEADLINE
+      By Author
+      First paragraph sets the scene.
+      Additional context paragraph.
+      Quote: \"...\"
+      Final wrap-up sentence.
+
+      Example 1 output (JSON object):
+      {{
+        \"segments\": [
+          \"HEADLINE\",
+          \"By Author\",
+          \"First paragraph sets the scene.\",
+          \"Additional context paragraph.\",
+          \"Quote: \\\"...\\\"\",
+          \"Final wrap-up sentence.\"
+        ]
+      }}
+
+      Example 2 input:
+      SPORTS HEADLINE
+      Lead paragraph summarizing the result.
+      Key play-by-play detail.
+      Coach quote.
+      Player statistics and standings update.
+
+      Example 2 output:
+      {{
+        \"segments\": [
+          \"SPORTS HEADLINE\",
+          \"Lead paragraph summarizing the result.\",
+          \"Key play-by-play detail.\",
+          \"Coach quote.\",
+          \"Player statistics and standings update.\"
+        ]
+      }}
+
+      Now segment this text:
+      ---
+      {text}
+      ---
+observations:
+  encoder: tfidf
+  tfidf:
+    max_features: 2000
+    ngram_range: [1, 2]
+model:
+  family: gaussian
+  n_states: 2
+artifacts:
+  graphviz:
+    enabled: true

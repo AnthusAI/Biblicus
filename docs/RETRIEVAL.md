@@ -30,15 +30,15 @@ This walkthrough uses the full text search backend and produces evidence you can
 
 ```
 rm -rf corpora/retrieval_demo
-python3 -m biblicus init corpora/retrieval_demo
+python -m biblicus init corpora/retrieval_demo
 printf "alpha beta\n" > /tmp/retrieval-alpha.txt
 printf "beta gamma\n" > /tmp/retrieval-beta.txt
-python3 -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-alpha.txt
-python3 -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-beta.txt
+python -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-alpha.txt
+python -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-beta.txt
 
-python3 -m biblicus extract build --corpus corpora/retrieval_demo --step pass-through-text
-python3 -m biblicus build --corpus corpora/retrieval_demo --backend sqlite-full-text-search
-python3 -m biblicus query --corpus corpora/retrieval_demo --query "beta"
+python -m biblicus extract build --corpus corpora/retrieval_demo --step pass-through-text
+python -m biblicus build --corpus corpora/retrieval_demo --backend sqlite-full-text-search
+python -m biblicus query --corpus corpora/retrieval_demo --query "beta"
 ```
 
 The query output is structured evidence with identifiers and scores. That evidence is the primary output for evaluation
@@ -75,9 +75,9 @@ When you want to understand a result end to end:
 Example:
 
 ```
-python3 -m biblicus query --corpus corpora/demo --query "beta" > /tmp/retrieval_output.json
-python3 -c "import json; data=json.load(open('/tmp/retrieval_output.json')); print(data['evidence'][:2])"
-python3 -m biblicus show --corpus corpora/demo ITEM_ID
+python -m biblicus query --corpus corpora/demo --query "beta" > /tmp/retrieval_output.json
+python -c "import json; data=json.load(open('/tmp/retrieval_output.json')); print(data['evidence'][:2])"
+python -m biblicus show --corpus corpora/demo ITEM_ID
 ```
 
 ## Saving evidence for later analysis
@@ -85,7 +85,7 @@ python3 -m biblicus show --corpus corpora/demo ITEM_ID
 Evidence output is stable JSON. Save it alongside your experiments so you can compare runs later:
 
 ```
-python3 -m biblicus query --corpus corpora/demo --query "beta" > artifacts/retrieval/beta.json
+python -m biblicus query --corpus corpora/demo --query "beta" > artifacts/retrieval/beta.json
 ```
 
 Record the run identifier and budget values in the same folder so you can reproduce the query.
@@ -95,7 +95,7 @@ Record the run identifier and budget values in the same folder so you can reprod
 When you want a repeatable example with bundled data, use the retrieval evaluation lab:
 
 ```
-python3 scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
+python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
 ```
 
 The lab builds a tiny corpus, runs extraction, builds a retrieval run, and evaluates it. It prints the dataset path and

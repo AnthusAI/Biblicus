@@ -1,0 +1,51 @@
+schema_version: 1
+text_source:
+  sample_size: 500
+  min_text_characters: 200
+segmentation:
+  method: sentence
+llm_observations:
+  enabled: true
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: null
+  prompt_template: |
+    You are extracting structured observations for Markov analysis.
+    Return only JSON.
+
+    Output JSON object keys:
+    - label: one of the known states listed below, or "other" if none fit
+    - label_confidence: number from 0 to 1
+    - summary: one sentence summary of the segment
+
+    Known states:
+    - introduction
+    - request
+    - information_gathering
+    - resolution
+    - closing
+    - other
+
+    Segment:
+    ---
+    {segment}
+    ---
+embeddings:
+  enabled: true
+  client:
+    provider: openai
+    model: text-embedding-3-small
+    api_key: null
+  text_source: segment_text
+observations:
+  encoder: hybrid
+  categorical_source: llm_label
+  numeric_source: llm_label_confidence
+model:
+  family: gaussian
+  n_states: 12
+artifacts:
+  graphviz:
+    enabled: true

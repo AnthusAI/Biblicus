@@ -4,6 +4,22 @@ from behave import then, when
 
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text.extract import TextExtractRequest, _validate_preserved_text, apply_text_extract
+from biblicus.text.tool_loop import ToolLoopResult
+
+
+def _build_extract_request(text: str) -> TextExtractRequest:
+    return TextExtractRequest(
+        text=text,
+        client=LlmClientConfig(
+            provider=AiProvider.OPENAI,
+            model="gpt-4o-mini",
+            api_key="test-openai-key",
+            response_format="json_object",
+        ),
+        prompt_template="Return spans.",
+        max_rounds=2,
+        max_edits_per_round=2,
+    )
 
 
 @when('I apply text extract to text "{text}"')
@@ -17,6 +33,7 @@ def step_apply_text_extract(context, text: str) -> None:
         "Rules:\n"
         "- Use str_replace only.\n"
         "- old_str must match exactly once in the current text.\n"
+        "- When choosing old_str, copy the exact substring (including punctuation/case) from the current text.\n"
         "- old_str and new_str must be non-empty strings.\n"
         "- new_str must be identical to old_str with only <span> and </span> inserted.\n"
         "- Do not include <span> or </span> inside old_str or new_str.\n"
@@ -54,6 +71,7 @@ def step_apply_text_extract_multiline(context) -> None:
         "Rules:\n"
         "- Use str_replace only.\n"
         "- old_str must match exactly once in the current text.\n"
+        "- When choosing old_str, copy the exact substring (including punctuation/case) from the current text.\n"
         "- old_str and new_str must be non-empty strings.\n"
         "- new_str must be identical to old_str with only <span> and </span> inserted.\n"
         "- Do not include <span> or </span> inside old_str or new_str.\n"
@@ -91,6 +109,7 @@ def step_apply_text_extract_with_prompt(context, text: str) -> None:
         "Rules:\n"
         "- Use str_replace only.\n"
         "- old_str must match exactly once in the current text.\n"
+        "- When choosing old_str, copy the exact substring (including punctuation/case) from the current text.\n"
         "- old_str and new_str must be non-empty strings.\n"
         "- new_str must be identical to old_str with only <span> and </span> inserted.\n"
         "- Do not include <span> or </span> inside old_str or new_str.\n"
@@ -117,6 +136,25 @@ def step_apply_text_extract_with_prompt(context, text: str) -> None:
     context.text_extract_result = apply_text_extract(request)
 
 
+@when('I apply text extract to text "{text}" with prompt template and default system prompt:')
+def step_apply_text_extract_with_prompt_default_system(context, text: str) -> None:
+    prompt_template = str(getattr(context, "text", "") or "")
+    request = TextExtractRequest(
+        text=text,
+        client=LlmClientConfig(
+            provider=AiProvider.OPENAI,
+            model="gpt-4o-mini",
+            api_key=None,
+            response_format="json_object",
+            timeout_seconds=300.0,
+        ),
+        prompt_template=prompt_template,
+        max_rounds=10,
+        max_edits_per_round=200,
+    )
+    context.text_extract_result = apply_text_extract(request)
+
+
 @when('I attempt to apply text extract to text "{text}"')
 def step_attempt_apply_text_extract(context, text: str) -> None:
     system_prompt = (
@@ -128,6 +166,7 @@ def step_attempt_apply_text_extract(context, text: str) -> None:
         "Rules:\n"
         "- Use str_replace only.\n"
         "- old_str must match exactly once in the current text.\n"
+        "- When choosing old_str, copy the exact substring (including punctuation/case) from the current text.\n"
         "- old_str and new_str must be non-empty strings.\n"
         "- new_str must be identical to old_str with only <span> and </span> inserted.\n"
         "- Do not include <span> or </span> inside old_str or new_str.\n"
@@ -357,3 +396,87 @@ def step_text_extract_error_mentions(context, text: str) -> None:
     error = context.text_extract_error
     assert error is not None
     assert text in error
+
+
+@when("I apply text extract with no edits and confirmation reaches max rounds without done")
+def step_apply_text_extract_confirmation_max_rounds_without_done(context) -> None:
+    request = _build_extract_request("Hello")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=False, last_error=None, messages=[])
+
+    from biblicus.text import extract as extract_module
+
+    original = extract_module.run_tool_loop
+    original_confirm = extract_module.request_confirmation
+    extract_module.run_tool_loop = fake_tool_loop
+    extract_module.request_confirmation = fake_confirmation
+    try:
+        context.text_extract_result = apply_text_extract(request)
+        context.text_extract_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_extract_error = str(exc)
+    finally:
+        extract_module.run_tool_loop = original
+        extract_module.request_confirmation = original_confirm
+
+
+@when("I attempt text extract where confirmation fails with a last error")
+def step_attempt_text_extract_confirmation_last_error(context) -> None:
+    request = _build_extract_request("Hello")
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(
+            text="Hello",
+            done=False,
+            last_error="confirmation error",
+            messages=[],
+        )
+
+    from biblicus.text import extract as extract_module
+
+    original = extract_module.run_tool_loop
+    original_confirm = extract_module.request_confirmation
+    extract_module.run_tool_loop = fake_tool_loop
+    extract_module.request_confirmation = fake_confirmation
+    try:
+        apply_text_extract(request)
+        context.text_extract_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_extract_error = str(exc)
+    finally:
+        extract_module.run_tool_loop = original
+        extract_module.request_confirmation = original_confirm
+
+
+@when("I apply text extract with no edits and confirmation inserts spans")
+def step_apply_text_extract_confirmation_inserts_spans(context) -> None:
+    request = _build_extract_request("Hello")
+    marked_up = "<span>Hello</span>"
+
+    def fake_tool_loop(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text="Hello", done=True, last_error=None, messages=[])
+
+    def fake_confirmation(**_kwargs: object) -> ToolLoopResult:
+        return ToolLoopResult(text=marked_up, done=True, last_error=None, messages=[])
+
+    from biblicus.text import extract as extract_module
+
+    original = extract_module.run_tool_loop
+    original_confirm = extract_module.request_confirmation
+    extract_module.run_tool_loop = fake_tool_loop
+    extract_module.request_confirmation = fake_confirmation
+    try:
+        context.text_extract_result = apply_text_extract(request)
+        context.text_extract_error = None
+    except Exception as exc:  # noqa: BLE001
+        context.text_extract_error = str(exc)
+    finally:
+        extract_module.run_tool_loop = original
+        extract_module.request_confirmation = original_confirm

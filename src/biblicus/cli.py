@@ -394,7 +394,7 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    import yaml
+    from .recipes import load_recipe_view
 
     corpus = (
         Corpus.open(arguments.corpus)
@@ -404,11 +404,11 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
 
     # Load recipe from file if --recipe is provided
     if getattr(arguments, "recipe", None):
-        recipe_path = Path(arguments.recipe)
-        if not recipe_path.exists():
-            raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
-        with open(recipe_path, "r", encoding="utf-8") as f:
-            recipe_data = yaml.safe_load(f)
+        recipe_data = load_recipe_view(
+            arguments.recipe,
+            recipe_label="Recipe file",
+            mapping_error_message="Extraction recipe must be a mapping/object",
+        )
         loaded_extractor_id = recipe_data.get("extractor_id", "pipeline")
         loaded_config = recipe_data.get("config", {})
 
@@ -713,19 +713,20 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    import yaml
+    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
 
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    recipe_path = Path(arguments.recipe)
-    if not recipe_path.is_file():
-        raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
-    recipe_data = yaml.safe_load(recipe_path.read_text(encoding="utf-8")) or {}
-    if not isinstance(recipe_data, dict):
-        raise ValueError("Topic modeling recipe must be a mapping/object")
+    recipe_data = load_recipe_view(
+        arguments.recipe,
+        recipe_label="Recipe file",
+        mapping_error_message="Topic modeling recipe must be a mapping/object",
+    )
+    overrides = parse_dotted_overrides(arguments.config)
+    recipe_data = apply_dotted_overrides(recipe_data, overrides)
 
     if arguments.extraction_run:
         extraction_run = parse_extraction_run_reference(arguments.extraction_run)
@@ -761,7 +762,7 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    import yaml
+    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
 
     corpus = (
         Corpus.open(arguments.corpus)
@@ -771,13 +772,17 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
 
     recipe_data: dict[str, object] = {}
     if arguments.recipe is not None:
-        recipe_path = Path(arguments.recipe)
-        if not recipe_path.is_file():
-            raise FileNotFoundError(f"Recipe file not found: {recipe_path}")
-        recipe_raw = yaml.safe_load(recipe_path.read_text(encoding="utf-8")) or {}
-        if not isinstance(recipe_raw, dict):
-            raise ValueError("Profiling recipe must be a mapping/object")
-        recipe_data = recipe_raw
+        recipe_data = load_recipe_view(
+            arguments.recipe,
+            recipe_label="Recipe file",
+            mapping_error_message="Profiling recipe must be a mapping/object",
+        )
+        overrides = parse_dotted_overrides(arguments.config)
+        recipe_data = apply_dotted_overrides(recipe_data, overrides)
+    else:
+        overrides = parse_dotted_overrides(arguments.config)
+        if overrides:
+            recipe_data = apply_dotted_overrides(recipe_data, overrides)
 
     if arguments.extraction_run:
         extraction_run = parse_extraction_run_reference(arguments.extraction_run)
@@ -800,6 +805,55 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
         )
     except ValidationError as exc:
         raise ValueError(f"Invalid profiling recipe: {exc}") from exc
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
+    """
+    Run Markov analysis for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    recipe_data = load_recipe_view(
+        arguments.recipe,
+        recipe_label="Recipe file",
+        mapping_error_message="Markov analysis recipe must be a mapping/object",
+    )
+    overrides = parse_dotted_overrides(arguments.config)
+    recipe_data = apply_dotted_overrides(recipe_data, overrides)
+
+    if arguments.extraction_run:
+        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    else:
+        extraction_run = corpus.latest_extraction_run_reference()
+        if extraction_run is None:
+            raise ValueError("Markov analysis requires an extraction run to supply text inputs")
+        print(
+            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            file=sys.stderr,
+        )
+
+    backend = get_analysis_backend("markov")
+    try:
+        output = backend.run_analysis(
+            corpus,
+            recipe_name=arguments.recipe_name,
+            config=recipe_data,
+            extraction_run=extraction_run,
+        )
+    except ValidationError as exc:
+        raise ValueError(f"Invalid Markov analysis recipe: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
 
@@ -912,6 +966,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_extract_build.add_argument(
         "--recipe",
         default=None,
+        action="append",
         help="Path to YAML recipe file. If provided, --step arguments are ignored.",
     )
     p_extract_build.add_argument(
@@ -1067,7 +1122,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_analyze_topics.add_argument(
         "--recipe",
         required=True,
-        help="Path to topic modeling recipe YAML.",
+        action="append",
+        help="Path to topic modeling recipe YAML. Repeatable; later recipes override earlier recipes.",
+    )
+    p_analyze_topics.add_argument(
+        "--config",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
     )
     p_analyze_topics.add_argument(
         "--recipe-name",
@@ -1086,7 +1148,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_analyze_profile.add_argument(
         "--recipe",
         default=None,
-        help="Optional profiling recipe YAML file.",
+        action="append",
+        help="Optional profiling recipe YAML file. Repeatable; later recipes override earlier recipes.",
+    )
+    p_analyze_profile.add_argument(
+        "--config",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
     )
     p_analyze_profile.add_argument(
         "--recipe-name",
@@ -1099,6 +1168,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction run reference in the form extractor_id:run_id.",
     )
     p_analyze_profile.set_defaults(func=cmd_analyze_profile)
+
+    p_analyze_markov = analyze_sub.add_parser("markov", help="Run Markov analysis.")
+    _add_common_corpus_arg(p_analyze_markov)
+    p_analyze_markov.add_argument(
+        "--recipe",
+        required=True,
+        action="append",
+        help="Path to Markov analysis recipe YAML. Repeatable; later recipes override earlier recipes.",
+    )
+    p_analyze_markov.add_argument(
+        "--config",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
+    )
+    p_analyze_markov.add_argument(
+        "--recipe-name",
+        default="default",
+        help="Human-readable recipe name.",
+    )
+    p_analyze_markov.add_argument(
+        "--extraction-run",
+        default=None,
+        help="Extraction run reference in the form extractor_id:run_id.",
+    )
+    p_analyze_markov.set_defaults(func=cmd_analyze_markov)
 
     return parser
 

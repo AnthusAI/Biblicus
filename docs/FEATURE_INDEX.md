@@ -251,6 +251,151 @@ Primary implementation:
 
 - `src/biblicus/knowledge_base.py`
 
+## Text utilities
+
+What it does:
+
+- Provides reusable utilities that edit a virtual in-memory text file using tool calls.
+- Supports extraction, slicing, annotation, redaction, and linking with consistent validation.
+- Keeps prompts small and focused for reliability with small models.
+
+Documentation:
+
+- `docs/TEXT_UTILITIES.md`
+- `docs/TEXT_EXTRACT.md`
+- `docs/TEXT_SLICE.md`
+- `docs/TEXT_ANNOTATE.md`
+- `docs/TEXT_REDACT.md`
+- `docs/TEXT_LINK.md`
+
+Behavior specifications:
+
+- `features/text_extract.feature`
+- `features/text_slice.feature`
+- `features/text_annotate.feature`
+- `features/text_redact.feature`
+- `features/text_link.feature`
+- `features/text_utilities.feature`
+- `features/integration_text_extract.feature`
+- `features/integration_text_slice.feature`
+- `features/integration_text_annotate.feature`
+- `features/integration_text_redact.feature`
+- `features/integration_text_link.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/`
+
+## Text extract
+
+What it does:
+
+- Inserts XML span tags into long texts using a virtual file edit loop.
+- Produces ordered spans without re-emitting the full document.
+- Validates that only tags were inserted.
+
+Documentation:
+
+- `docs/TEXT_EXTRACT.md`
+
+Behavior specifications:
+
+- `features/text_extract.feature`
+- `features/integration_text_extract.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/extract.py`
+- `src/biblicus/text/models.py`
+
+## Text slice
+
+What it does:
+
+- Inserts `<slice/>` markers into long texts using a virtual file edit loop.
+- Produces ordered slices without re-emitting the full document.
+- Validates that only slice markers were inserted.
+
+Documentation:
+
+- `docs/TEXT_SLICE.md`
+
+Behavior specifications:
+
+- `features/text_slice.feature`
+- `features/integration_text_slice.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/slice.py`
+- `src/biblicus/text/models.py`
+
+## Text annotate
+
+What it does:
+
+- Inserts XML span tags with attributes into long texts using a virtual file edit loop.
+- Produces ordered spans with attributes without re-emitting the full document.
+- Validates attribute allow lists and tag structure.
+
+Documentation:
+
+- `docs/TEXT_ANNOTATE.md`
+
+Behavior specifications:
+
+- `features/text_annotate.feature`
+- `features/integration_text_annotate.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/annotate.py`
+- `src/biblicus/text/models.py`
+
+## Text redact
+
+What it does:
+
+- Inserts XML span tags around redacted text using a virtual file edit loop.
+- Supports optional redaction types via a redact attribute.
+- Validates that only tags were inserted.
+
+Documentation:
+
+- `docs/TEXT_REDACT.md`
+
+Behavior specifications:
+
+- `features/text_redact.feature`
+- `features/integration_text_redact.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/redact.py`
+- `src/biblicus/text/models.py`
+
+## Text link
+
+What it does:
+
+- Inserts id/ref span tags to connect repeated mentions.
+- Produces ordered linked spans without re-emitting the full document.
+- Validates id prefix and reference ordering.
+
+Documentation:
+
+- `docs/TEXT_LINK.md`
+
+Behavior specifications:
+
+- `features/text_link.feature`
+- `features/integration_text_link.feature`
+
+Primary implementation:
+
+- `src/biblicus/text/link.py`
+- `src/biblicus/text/models.py`
+
 ## Testing, coverage, and documentation build
 
 What it does:

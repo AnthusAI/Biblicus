@@ -2,6 +2,14 @@
 
 Audio transcription extractors for converting spoken content into text.
 
+```{toctree}
+:maxdepth: 1
+:caption: Speech-to-Text Extractors
+
+openai
+deepgram
+```
+
 ## Overview
 
 Speech-to-text extractors transcribe audio from video and audio files. They are ideal for:

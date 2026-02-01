@@ -140,6 +140,15 @@ def _load_markov_segments(context, corpus_name: str = "corpus") -> List[dict[str
     return [json.loads(line) for line in lines]
 
 
+def _load_markov_observations(context, corpus_name: str = "corpus") -> List[dict[str, object]]:
+    output = context.last_analysis_output
+    run_id = output["run"]["run_id"]
+    corpus = _corpus_path(context, corpus_name)
+    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "observations.jsonl"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [json.loads(line) for line in lines]
+
+
 def _latest_extraction_run_manifest_path(context, corpus_name: str) -> Path:
     corpus = _corpus_path(context, corpus_name)
     extractor_id = context.last_extractor_id
@@ -342,6 +351,15 @@ def step_markov_run_includes_observations_file(context) -> None:
     assert path.is_file()
 
 
+@then('the markov observations include topic labels "{labels}"')
+def step_markov_observations_include_topic_labels(context, labels: str) -> None:
+    expected = {token.strip() for token in labels.split(",") if token.strip()}
+    observations = _load_markov_observations(context)
+    found = {str(obs.get("topic_label", "")).strip() for obs in observations}
+    for label in expected:
+        assert label in found
+
+
 @given("I append a non-extracted item to the latest extraction run manifest")
 @when("I append a non-extracted item to the latest extraction run manifest")
 def step_append_non_extracted_item_to_manifest(context) -> None:
@@ -407,15 +425,20 @@ def step_markov_text_collection_report_warnings_include(context, snippet: str) -
     assert snippet in combined
 
 
-@then("every Markov state report has 0 exemplars")
-def step_every_markov_state_report_has_zero_exemplars(context) -> None:
+@then("every Markov state report has no non-boundary exemplars")
+def step_every_markov_state_report_has_no_non_boundary_exemplars(context) -> None:
     output = context.last_analysis_output
     states = output["report"]["states"]
     for state in states:
         assert isinstance(state, dict)
         exemplars = state.get("exemplars", [])
         assert isinstance(exemplars, list)
-        assert len(exemplars) == 0
+        non_boundary = [
+            exemplar
+            for exemplar in exemplars
+            if str(exemplar).strip().upper() not in {"START", "END"}
+        ]
+        assert non_boundary == []
 
 
 @then("the graphviz transitions file contains no edges")

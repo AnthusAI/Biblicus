@@ -68,6 +68,33 @@ Feature: Text extract
     And the text extract span 3 text equals "get"
     And the text extract span 4 text equals "promise"
 
+  Scenario: Text extract confirms empty results
+    Given a fake OpenAI library is available that returns chat completion for prompt containing "No spans were inserted.":
+      """
+      {"operations":[],"done":true}
+      """
+    And a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
+      """
+      {"operations":[],"done":true}
+      """
+    When I apply text extract to text "Hello"
+    Then the text extract has 0 span
+    And the text extract warnings include "Text extract returned no spans; model confirmed empty result"
+
+  Scenario: Text extract warns when confirmation reaches max rounds without done
+    Given a fake OpenAI library is available
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    And a fake OpenAI tool call is queued for "view"
+    When I apply text extract to text "Hello"
+    Then the text extract warnings include "Text extract reached max rounds without done=true"
+    And the text extract warnings include "Text extract confirmation reached max rounds without done=true"
+
   Scenario: Text extract rejects invalid edits
     Given a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
       """
@@ -81,14 +108,18 @@ Feature: Text extract
     When I attempt to apply text extract to text "Hello"
     Then the text extract error mentions "tool calls"
 
-  Scenario: Text extract rejects unsupported providers
+  Scenario: Text extract supports non-OpenAI providers
+    Given a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
+      """
+      {"operations":[{"command":"str_replace","old_str":"Hello","new_str":"<span>Hello</span>"}],"done":true}
+      """
     When I attempt to apply text extract using provider "bedrock" on text "Hello"
-    Then the text extract error mentions "Unsupported provider"
+    Then the text extract has 1 span
 
-  Scenario: Text extract fails when OpenAI dependency is unavailable
-    Given the OpenAI dependency is unavailable
+  Scenario: Text extract fails when DSPy dependency is unavailable
+    Given the DSPy dependency is unavailable
     When I attempt to apply text extract to text "Hello"
-    Then the text extract error mentions "biblicus[openai]"
+    Then the text extract error mentions "biblicus[dspy]"
 
   Scenario: Text extract rejects missing replacements
     Given a fake OpenAI library is available that returns chat completion for prompt containing "Current text":
@@ -155,11 +186,27 @@ Feature: Text extract
     Then the text extract warnings include "Text extract reached max rounds without done=true"
     And the text extract has 1 span
 
-  Scenario: Text extract rejects empty output after view
+  Scenario: Text extract confirms empty output after view
     Given a fake OpenAI tool call is queued for "view"
     And a fake OpenAI tool call is queued for "done"
+    And a fake OpenAI tool call is queued for "done"
     When I attempt to apply text extract to text "Hello"
-    Then the text extract error mentions "produced no spans"
+    Then the text extract warnings include "Text extract returned no spans; model confirmed empty result"
+    And the text extract has 0 span
+
+  Scenario: Text extract warns when confirmation reaches max rounds without done in the confirmation loop
+    When I apply text extract with no edits and confirmation reaches max rounds without done
+    Then the text extract warnings include "Text extract confirmation reached max rounds without done=true"
+    And the text extract warnings include "Text extract returned no spans; model confirmed empty result"
+    And the text extract has 0 span
+
+  Scenario: Text extract allows confirmation to insert spans after an empty first pass
+    When I apply text extract with no edits and confirmation inserts spans
+    Then the text extract has at least 1 spans
+
+  Scenario: Text extract surfaces confirmation last_error as a failure
+    When I attempt text extract where confirmation fails with a last error
+    Then the text extract error mentions "Text extract failed: confirmation error"
 
   Scenario: Text extract rejects unknown tools
     Given a fake OpenAI tool call is queued for "mystery"
