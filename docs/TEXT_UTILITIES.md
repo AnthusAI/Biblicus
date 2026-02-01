@@ -1,11 +1,18 @@
 # Text utilities
 
-Biblicus text utilities are small, repeatable building blocks that transform text using a **virtual file editor** pattern.
-They are designed for ETL-style pipelines where you need reliable structure without forcing a model to re-emit the entire
-document.
+Someone drops a long document in your lap and asks a simple question:
 
-This page explains the common mechanism, the human-facing menu of utilities, and how the internal patterns map to those
-utilities.
+“Can you pull out the parts that matter?”
+
+That might mean extracting quotes, marking entities, splitting a document into sections, or removing sensitive text. You
+can do that with a one-off prompt, but that approach breaks down when you need the result to be repeatable, verifiable,
+and easy to plug into other code.
+
+Biblicus text utilities are small, reusable building blocks for extracting information from text and transforming text
+strings. They all share the same underlying mechanism: a **virtual file editor** pattern that lets a model “edit” the
+original text in-place instead of re-emitting the whole document.
+
+This page explains the common mechanism and the utilities built on top of it.
 
 ## The virtual file editor pattern
 
