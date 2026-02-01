@@ -4,14 +4,15 @@
 ![Coverage][coverage-badge]
 ![Documentation][documentation-badge]
 
-Make your documents usable by your assistant, then decide later how you will search and retrieve them.
-
-<img
-  src="docs/_static/Biblicus-logo.png"
-  alt="Biblicus logo"
-  style="float:right; margin:0 0 16px 16px; width:216px; height:auto;"
-/>
-
+<p>
+  <img
+    src="docs/_static/Biblicus-logo.png"
+    alt="Biblicus logo"
+    align="right"
+    width="216"
+  />
+  Make your documents usable by your assistant, then decide later how you will search and retrieve them.
+</p>
 If you are building an assistant in Python, you probably have material you want it to use: notes, documents, web pages, and reference files. A common approach is retrieval augmented generation, where a system retrieves relevant material and uses it as evidence when generating a response.
 
 The first practical problem is not retrieval. It is collection and care. You need a stable place to put raw items, you need a small amount of metadata so you can find them again, and you need a way to evolve your retrieval approach over time without rewriting ingestion.
