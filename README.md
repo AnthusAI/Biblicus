@@ -6,6 +6,12 @@
 
 Make your documents usable by your assistant, then decide later how you will search and retrieve them.
 
+<img
+  src="docs/_static/Biblicus-logo.png"
+  alt="Biblicus logo"
+  style="float:right; margin:0 0 16px 16px; width:216px; height:auto;"
+/>
+
 If you are building an assistant in Python, you probably have material you want it to use: notes, documents, web pages, and reference files. A common approach is retrieval augmented generation, where a system retrieves relevant material and uses it as evidence when generating a response.
 
 The first practical problem is not retrieval. It is collection and care. You need a stable place to put raw items, you need a small amount of metadata so you can find them again, and you need a way to evolve your retrieval approach over time without rewriting ingestion.
@@ -485,7 +491,7 @@ Three backends are included.
 
 - `scan` is a minimal baseline that scans raw items directly.
 - `sqlite-full-text-search` is a practical baseline that builds a full text search index in SQLite.
-- `vector` is a deterministic term-frequency vector baseline with cosine similarity scoring.
+- `tf-vector` is a deterministic term-frequency vector baseline with cosine similarity scoring.
 
 For detailed documentation including configuration options, performance characteristics, and usage examples, see the [Backend Reference][backend-reference].
 

@@ -1,6 +1,12 @@
 Biblicus
 ========
 
+.. image:: _static/Biblicus-logo.png
+   :alt: Biblicus logo
+   :align: right
+   :width: 216
+   :class: docs-logo
+
 You have a folder full of files. Nobody knows what is in it. Someone wants answers anyway.
 
 Biblicus is a Python toolkit that turns unstructured data into something you can manage, search,
@@ -146,6 +152,8 @@ cover baseline retrieval, hybrid strategies, and how to evaluate retrieval quali
    RETRIEVAL
    RETRIEVAL_QUALITY
    RETRIEVAL_EVALUATION
+   EMBEDDING_RETRIEVAL
+   CHUNKING
 
 Analysis and Modeling
 ---------------------
@@ -210,4 +218,5 @@ implementation details or when you want a catalog of features.
    ARCHITECTURE
    ARCHITECTURE_DETAIL
    PR_FAQ_TEXT_ANNOTATE
+   PR_FAQ_EMBEDDING_RETRIEVAL
    api
