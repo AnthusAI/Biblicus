@@ -1,6 +1,30 @@
 # CHANGELOG
 
 
+## v0.16.0 (2026-02-01)
+
+### Bug Fixes
+
+- Normalize front matter body
+  ([`eb6b3e7`](https://github.com/AnthusAI/Biblicus/commit/eb6b3e78d6df086085675fe24fad0a9d56c5142e))
+
+### Documentation
+
+- Add biblicus theme styling
+  ([`10b81a4`](https://github.com/AnthusAI/Biblicus/commit/10b81a42079cdcd7dceda62fba492e2160404ebe))
+
+- Reorganize retrieval and backend docs
+  ([`2831456`](https://github.com/AnthusAI/Biblicus/commit/2831456a72edf2bd70cff8784aea4bb07fce124c))
+
+### Features
+
+- Add chunked retrievers and offset pagination
+  ([`cbfe57f`](https://github.com/AnthusAI/Biblicus/commit/cbfe57f911929c36efdbe38426fb255a8ecff575))
+
+- Harden markov boundary embeddings
+  ([`e3b525e`](https://github.com/AnthusAI/Biblicus/commit/e3b525eee25d2e989f31fd4de197d0025d85f869))
+
+
 ## v0.15.1 (2026-02-01)
 
 ### Bug Fixes
