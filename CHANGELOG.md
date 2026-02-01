@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v0.15.1 (2026-02-01)
+
+### Bug Fixes
+
+- Align logo in readme
+  ([`d21e422`](https://github.com/AnthusAI/Biblicus/commit/d21e4226b8ee06fc41afe8250670b63c3bfc4550))
+
+### Documentation
+
+- Update roadmap
+  ([`e4a033e`](https://github.com/AnthusAI/Biblicus/commit/e4a033eada6ede8db56032ef92a5964811f04d67))
+
+### Testing
+
+- Fetch and cache wikitext2 fixtures in CI
+  ([`bf72e89`](https://github.com/AnthusAI/Biblicus/commit/bf72e892779d2ec1604e215305eccc33d784538c))
+
+
 ## v0.15.0 (2026-02-01)
 
 ### Bug Fixes
