@@ -11,6 +11,12 @@ htmlcov/
 reports/
 
 .venv/
+.pytest_cache/
+.ruff_cache/
+
+# Test fixtures and caches (downloaded in CI / locally as-needed)
+tests/fixtures/cache/
+tests/fixtures/wikitext2_raw/
 venv/
 
 docs/_build/

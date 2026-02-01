@@ -31,12 +31,24 @@ jobs:
       - name: Install build and release tooling
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,datasets]"
           python -m pip install build
 
       - name: Clean distribution directory
         run: |
           rm -rf dist
+
+      - name: Cache test fixtures
+        uses: actions/cache@v4
+        with:
+          path: |
+            tests/fixtures/cache
+            tests/fixtures/wikitext2_raw
+          key: wikitext2-raw-${{ runner.os }}-py312-v1
+
+      - name: Fetch WikiText-2 raw fixture (for release tests)
+        run: |
+          python tests/fixtures/fetch_wikitext2.py
 
       - name: Run tests
         run: |
