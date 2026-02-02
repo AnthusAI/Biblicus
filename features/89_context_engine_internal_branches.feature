@@ -27,6 +27,11 @@ Feature: Context engine internal branches
     When I assemble messages with an empty context pack
     Then the assembled messages should be empty
 
+  Scenario: Context assembler inserts non-empty pack content
+    Given a retriever registry with a corpus-backed retriever
+    When I assemble messages with a non-empty context pack
+    Then the assembled messages should include the pack content
+
   Scenario: Context assembler raises when no retriever is available
     Given a retriever registry with a corpus-backed retriever
     When I render that retriever pack without a retriever function

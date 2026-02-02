@@ -902,6 +902,8 @@ class ContextAssembler:
                 context_values[directive.name] = pack_content or ""
                 if pack_content:
                     assembled_messages.append({"role": "system", "content": pack_content})
+                else:
+                    context_values[directive.name] = ""
                 continue
             if isinstance(directive, SystemMessageSpec):
                 assembled_messages.append(
