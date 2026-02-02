@@ -108,3 +108,21 @@ Feature: Retrieval can use extracted text artifacts
       | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence count is 0
+
+  Scenario: Retrieval build without extraction_run uses latest run and warns for reproducibility
+    Given I initialized a corpus at "corpus"
+    And a Portable Document Format file "doc.pdf" exists with text "fallback reproducibility"
+    When I ingest the file "doc.pdf" into corpus "corpus"
+    And I build a "pdf-text" extraction run in corpus "corpus"
+    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" without extraction_run in the recipe with config:
+      | key                | value |
+      | chunk_size         | 200   |
+      | chunk_overlap      | 50    |
+      | snippet_characters | 120   |
+    Then standard error includes "reproducibility"
+    When I query with the latest run for "fallback reproducibility" and budget:
+      | key                 | value |
+      | max_total_items     | 5     |
+      | maximum_total_characters| 10000 |
+      | max_items_per_source| 5     |
+    Then the query evidence includes the last ingested item identifier

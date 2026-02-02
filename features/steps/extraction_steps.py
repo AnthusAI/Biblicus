@@ -636,6 +636,22 @@ def step_attempt_build_retrieval_run_with_extraction_run(
     context.last_result = run_biblicus(context, args)
 
 
+@when(
+    'I build a "{backend}" retrieval run in corpus "{corpus_name}" without extraction_run in the recipe with config:'
+)
+def step_build_retrieval_run_without_extraction_run(context, backend: str, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
+    for row in context.table:
+        key, value = _table_key_value(row)
+        args.extend(["--config", f"{key}={value}"])
+    result = run_biblicus(context, args)
+    context.last_result = result
+    assert result.returncode == 0, result.stderr
+    context.last_run = _parse_json_output(result.stdout)
+    context.last_run_id = context.last_run.get("run_id")
+
+
 @given('a recipe file "{filename}" exists with content:')
 @when('a recipe file "{filename}" exists with content:')
 def step_recipe_file_exists(context, filename: str) -> None:
