@@ -234,8 +234,8 @@ class QueryBudget(BaseModel):
         This enables simple pagination by re-running the same query with a
         higher offset.
     :vartype offset: int
-    :ivar max_total_characters: Optional maximum total characters across evidence text.
-    :vartype max_total_characters: int or None
+    :ivar maximum_total_characters: Optional maximum total characters across evidence text.
+    :vartype maximum_total_characters: int or None
     :ivar max_items_per_source: Optional cap per source uniform resource identifier.
     :vartype max_items_per_source: int or None
     """
@@ -244,7 +244,7 @@ class QueryBudget(BaseModel):
 
     max_total_items: int = Field(ge=1)
     offset: int = Field(default=0, ge=0)
-    max_total_characters: Optional[int] = Field(default=None, ge=1)
+    maximum_total_characters: Optional[int] = Field(default=None, ge=1)
     max_items_per_source: Optional[int] = Field(default=None, ge=1)
 
 
@@ -278,6 +278,8 @@ class Evidence(BaseModel):
     :vartype recipe_id: str
     :ivar run_id: Retrieval run identifier.
     :vartype run_id: str
+    :ivar metadata: Optional metadata payload from the catalog item.
+    :vartype metadata: dict[str, Any]
     :ivar hash: Optional content hash for provenance.
     :vartype hash: str or None
     """
@@ -297,6 +299,7 @@ class Evidence(BaseModel):
     stage_scores: Optional[Dict[str, float]] = None
     recipe_id: str
     run_id: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
     @model_validator(mode="after")

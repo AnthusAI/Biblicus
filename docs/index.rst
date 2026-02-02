@@ -123,6 +123,7 @@ stays the same even when the pipeline changes*.
    BACKENDS
    backends/index
    CONTEXT_PACK
+   CONTEXT_ENGINE
 
 Extraction and Ingestion
 ------------------------

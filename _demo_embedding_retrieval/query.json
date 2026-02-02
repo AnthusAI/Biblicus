@@ -2,7 +2,7 @@
   "query_text": "United States",
   "budget": {
     "max_total_items": 5,
-    "max_total_characters": 1000,
+    "maximum_total_characters": 1000,
     "max_items_per_source": 5
   },
   "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",

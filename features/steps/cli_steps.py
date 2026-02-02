@@ -40,11 +40,16 @@ def _parse_ingest_standard_output(standard_output: str) -> Dict[str, str]:
 
 
 def _record_ingest(context, result) -> None:
+    context.last_result = result
     context.last_ingest = (
         _parse_ingest_standard_output(result.stdout) if result.returncode == 0 else None
     )
     if context.last_ingest:
         context.ingested_ids.append(context.last_ingest["id"])
+        if hasattr(context, "ingested_relpaths"):
+            context.ingested_relpaths.append(context.last_ingest["relpath"])
+        if hasattr(context, "ingested_sources") and getattr(context, "last_source", None):
+            context.ingested_sources.append(context.last_source)
 
 
 def _parse_markdown_front_matter(text: str) -> Dict[str, Any]:
@@ -208,6 +213,7 @@ def step_corpus_has_catalog(context) -> None:
 def step_ingest_text(context, text: str, title: str, tags: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
+    context.last_source = None
     args = ["--corpus", str(corpus), "ingest", "--note", text, "--title", title]
     for tag in [t.strip() for t in tags.split(",") if t.strip()]:
         args.extend(["--tag", tag])
@@ -219,6 +225,7 @@ def step_ingest_text(context, text: str, title: str, tags: str, corpus_name: str
 def step_ingest_text_minimal(context, text: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
+    context.last_source = None
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", "--note", text])
     _record_ingest(context, result)
 
@@ -300,6 +307,7 @@ def step_ingest_file(context, filename: str, tags: str, corpus_name: str) -> Non
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
     path = (context.workdir / filename).resolve()
+    context.last_source = path.as_uri()
     args = ["--corpus", str(corpus), "ingest", str(path)]
     for tag in [t.strip() for t in tags.split(",") if t.strip()]:
         args.extend(["--tag", tag])
@@ -316,6 +324,7 @@ def step_ingest_file_no_tags(context, filename: str, corpus_name: str) -> None:
 def step_ingest_url(context, url: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
+    context.last_source = url
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", url])
     _record_ingest(context, result)
 
@@ -356,6 +365,20 @@ def step_last_item_has_provenance_source(context, source: str) -> None:
     assert isinstance(bib, dict)
     assert bib.get("id") == context.last_ingest["id"]
     assert bib.get("source") == source
+
+
+@then('the last ingested item has biblicus provenance with source prefix "{prefix}"')
+def step_last_item_has_provenance_source_prefix(context, prefix: str) -> None:
+    assert context.last_ingest is not None
+    relpath = context.last_ingest["relpath"]
+    content = (context.last_corpus_root / relpath).read_text(encoding="utf-8")
+    meta = _parse_markdown_front_matter(content)
+    bib = meta.get("biblicus")
+    assert isinstance(bib, dict)
+    assert bib.get("id") == context.last_ingest["id"]
+    source = bib.get("source")
+    assert isinstance(source, str)
+    assert source.startswith(prefix)
 
 
 @given('a file "{filename}" exists with markdown front matter:')
@@ -430,7 +453,9 @@ def step_binary_file_exists_with_size(context, filename: str, size: int) -> None
 
 @given('a text file "{filename}" exists with contents "{contents}"')
 def step_text_file_exists(context, filename: str, contents: str) -> None:
-    (context.workdir / filename).write_text(contents, encoding="utf-8")
+    path = context.workdir / filename
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(contents, encoding="utf-8")
 
 
 @given('a file "{filename}" exists with invalid Yet Another Markup Language front matter list')
@@ -517,6 +542,24 @@ def step_last_ingested_relpath_endswith(context, suffix: str) -> None:
     assert relpath.endswith(suffix), relpath
 
 
+@then("the ingested relpaths are distinct")
+def step_ingested_relpaths_distinct(context) -> None:
+    relpaths = getattr(context, "ingested_relpaths", [])
+    assert len(relpaths) >= 2, "At least two ingests are required"
+    assert len(relpaths) == len(set(relpaths)), f"Duplicate relpaths found: {relpaths}"
+
+
+@then("each ingested relpath includes the percent-encoded source uniform resource identifier")
+def step_relpaths_include_encoded_sources(context) -> None:
+    relpaths = getattr(context, "ingested_relpaths", [])
+    sources = getattr(context, "ingested_sources", [])
+    assert relpaths, "No ingests recorded"
+    assert len(relpaths) == len(sources), "Mismatch between ingests and recorded sources"
+    for relpath, source in zip(relpaths, sources):
+        encoded = quote(source, safe="")
+        assert encoded in relpath, f"Expected {encoded} in {relpath}"
+
+
 @given("a hypertext transfer protocol server is serving the workdir")
 def step_http_server_serving(context) -> None:
     class QuietHandler(SimpleHTTPRequestHandler):
@@ -580,10 +623,9 @@ def step_ingest_file_url(context, filename: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
     url = (context.workdir / filename).resolve().as_uri()
+    context.last_source = url
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", url])
-    context.last_ingest = (
-        _parse_ingest_standard_output(result.stdout) if result.returncode == 0 else None
-    )
+    _record_ingest(context, result)
 
 
 @when(
@@ -595,10 +637,9 @@ def step_ingest_http_url(context, filename: str, corpus_name: str) -> None:
     base = getattr(context, "http_base_url", None)
     assert isinstance(base, str) and base
     url = base + quote(filename)
+    context.last_source = url
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", url])
-    context.last_ingest = (
-        _parse_ingest_standard_output(result.stdout) if result.returncode == 0 else None
-    )
+    _record_ingest(context, result)
 
 
 @then(
@@ -871,6 +912,24 @@ def step_standard_error_includes(context, text: str) -> None:
     assert text in stderr, f"Expected '{text}' in stderr but got: {stderr}"
 
 
+@then("standard error includes the last source uniform resource identifier")
+def step_standard_error_includes_last_source(context) -> None:
+    assert context.last_result is not None
+    stderr = context.last_result.stderr or ""
+    source = getattr(context, "last_source", None)
+    assert isinstance(source, str) and source, "last_source was not recorded"
+    assert source in stderr, f"Expected '{source}' in stderr but got: {stderr}"
+
+
+@then("standard error includes the first ingested item id")
+def step_standard_error_includes_first_ingested_item_id(context) -> None:
+    assert context.last_result is not None
+    stderr = context.last_result.stderr or ""
+    assert getattr(context, "ingested_ids", None), "No ingested item ids recorded"
+    first_ingested = context.ingested_ids[0]
+    assert first_ingested in stderr, f"Expected '{first_ingested}' in stderr but got: {stderr}"
+
+
 @then('the corpus "{corpus_name}" raw folder is empty')
 def step_corpus_raw_folder_empty(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
@@ -933,6 +992,13 @@ def step_last_ingested_item_filename_includes(context, part: str) -> None:
     assert context.last_ingest is not None
     name = Path(context.last_ingest["relpath"]).name
     assert part in name
+
+
+@then('the last ingested item filename does not include "{part}"')
+def step_last_ingested_item_filename_excludes(context, part: str) -> None:
+    assert context.last_ingest is not None
+    name = Path(context.last_ingest["relpath"]).name
+    assert part not in name
 
 
 @then('the last ingest sha256 matches the file "{filename}"')

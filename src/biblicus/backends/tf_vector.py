@@ -8,7 +8,7 @@ import math
 import re
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
@@ -28,16 +28,16 @@ class TfVectorRecipeConfig(BaseModel):
     """
     Configuration for the term-frequency vector retrieval backend.
 
-    :ivar snippet_characters: Maximum characters to include in evidence snippets.
-    :vartype snippet_characters: int
     :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
     :vartype extraction_run: str or None
+    :ivar snippet_characters: Optional maximum character count for returned evidence text.
+    :vartype snippet_characters: int or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    snippet_characters: int = Field(default=400, ge=1)
     extraction_run: Optional[str] = None
+    snippet_characters: Optional[int] = None
 
 
 class TfVectorBackend:
@@ -125,8 +125,8 @@ class TfVectorBackend:
             query_tokens=query_tokens,
             query_vector=query_vector,
             query_norm=query_norm,
-            snippet_characters=recipe_config.snippet_characters,
             extraction_reference=extraction_reference,
+            snippet_characters=recipe_config.snippet_characters,
         )
         sorted_candidates = sorted(
             scored_candidates,
@@ -359,20 +359,12 @@ def _find_first_match(text: str, tokens: List[str]) -> Optional[Tuple[int, int]]
     return best_start, best_end
 
 
-def _build_snippet(text: str, span: Optional[Tuple[int, int]], *, max_chars: int) -> str:
-    """
-    Build a snippet around a match span, constrained by a character budget.
-
-    :param text: Source text to slice.
-    :type text: str
-    :param span: Match span to center on.
-    :type span: tuple[int, int] or None
-    :param max_chars: Maximum snippet length.
-    :type max_chars: int
-    :return: Snippet text.
-    :rtype: str
-    """
+def _build_snippet(text: str, span: Optional[Tuple[int, int]], *, max_chars: Optional[int]) -> str:
+    if max_chars is None:
+        return text
     if not text:
+        return ""
+    if max_chars <= 0:
         return ""
     if span is None:
         return text[:max_chars]
@@ -390,8 +382,8 @@ def _score_items(
     query_tokens: List[str],
     query_vector: Dict[str, float],
     query_norm: float,
-    snippet_characters: int,
     extraction_reference: Optional[ExtractionRunReference],
+    snippet_characters: Optional[int],
 ) -> List[Evidence]:
     """
     Score catalog items and return evidence candidates.
@@ -406,10 +398,10 @@ def _score_items(
     :type query_vector: dict[str, float]
     :param query_norm: Query vector norm.
     :type query_norm: float
-    :param snippet_characters: Snippet length budget.
-    :type snippet_characters: int
     :param extraction_reference: Optional extraction run reference.
     :type extraction_reference: ExtractionRunReference or None
+    :param snippet_characters: Optional maximum character count for returned evidence text.
+    :type snippet_characters: int or None
     :return: Evidence candidates with provisional ranks.
     :rtype: list[Evidence]
     """
@@ -437,9 +429,9 @@ def _score_items(
         if similarity <= 0:
             continue
         span = _find_first_match(item_text, query_tokens)
-        snippet = _build_snippet(item_text, span, max_chars=snippet_characters)
         span_start = span[0] if span else None
         span_end = span[1] if span else None
+        evidence_text = _build_snippet(item_text, span, max_chars=snippet_characters)
         evidence_items.append(
             Evidence(
                 item_id=str(getattr(catalog_item, "id")),
@@ -447,14 +439,15 @@ def _score_items(
                 media_type=str(media_type),
                 score=float(similarity),
                 rank=1,
-                text=snippet,
+                text=evidence_text,
                 content_ref=None,
                 span_start=span_start,
                 span_end=span_end,
                 stage="tf-vector",
                 recipe_id="",
                 run_id="",
-                hash=hash_text(snippet),
+                metadata=getattr(catalog_item, "metadata", {}) or {},
+                hash=hash_text(evidence_text or ""),
             )
         )
     return evidence_items

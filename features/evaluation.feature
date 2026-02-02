@@ -15,7 +15,7 @@ Feature: Retrieval evaluation
     And I evaluate the latest run with dataset "dataset.json" and budget:
       | key                  | value |
       | max_total_items      | 3     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the evaluation reports mean reciprocal rank 1.0
 
@@ -27,7 +27,7 @@ Feature: Retrieval evaluation
     And I evaluate the latest run with dataset "dataset.json" and budget:
       | key                  | value |
       | max_total_items      | 3     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the evaluation reports hit_rate 1.0
 
@@ -40,7 +40,7 @@ Feature: Retrieval evaluation
     And I evaluate the latest run with dataset "dataset.json" and budget:
       | key                  | value |
       | max_total_items      | 3     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the evaluation reports hit_rate 0.0
 
@@ -55,7 +55,7 @@ Feature: Retrieval evaluation
     And I evaluate the latest run with dataset "dataset.json" and budget:
       | key                  | value |
       | max_total_items      | 3     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the evaluation reports hit_rate 0.0
     And the evaluation reports mean reciprocal rank 0.0
@@ -75,6 +75,6 @@ Feature: Retrieval evaluation
     And I evaluate the latest run with dataset "dataset.json" and budget:
       | key                  | value |
       | max_total_items      | 3     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the evaluation system reports index_bytes greater than 0

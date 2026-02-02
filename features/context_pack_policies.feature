@@ -56,6 +56,46 @@ Feature: Context pack policies
       alpha
       """
 
+  Scenario: Metadata fields filter extra metadata
+    Given a retrieval result exists with metadata evidence:
+      | source_uri | score | text  | category | published |
+      | source-a   | 10.0  | alpha | news     | 2024-01-01 |
+    When I build a context pack from that retrieval result with policy:
+      | key              | value |
+      | join_with        | \n\n |
+      | ordering         | rank |
+      | include_metadata | true |
+      | metadata_fields  | category |
+    Then the context pack text equals:
+      """
+      item_id: item-1
+      source_uri: source-a
+      score: 10.0
+      stage: scan
+      category: news
+      alpha
+      """
+
+  Scenario: Metadata ignores duplicate core keys
+    Given a retrieval result exists with sourced evidence:
+      | source_uri | score | text  |
+      | source-a   | 10.0  | alpha |
+    And I add evidence metadata key "score" with value "99.0"
+    And I add evidence metadata key "source_uri" with value "shadow"
+    When I build a context pack from that retrieval result with policy:
+      | key              | value |
+      | join_with        | \n\n |
+      | ordering         | rank |
+      | include_metadata | true |
+    Then the context pack text equals:
+      """
+      item_id: item-1
+      source_uri: source-a
+      score: 10.0
+      stage: scan
+      alpha
+      """
+
   Scenario: Character budgets drop trailing blocks
     Given a retrieval result exists with evidence text:
       | text |

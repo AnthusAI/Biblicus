@@ -72,7 +72,9 @@ def _build_evidence_items(texts: Iterable[str]) -> List[Evidence]:
     return evidence_items
 
 
-def _evidence_keys_from_query(query_json: Dict[str, Any]) -> set[tuple[object, object, object, object]]:
+def _evidence_keys_from_query(
+    query_json: Dict[str, Any],
+) -> set[tuple[object, object, object, object]]:
     evidence = query_json.get("evidence") or []
     keys: set[tuple[object, object, object, object]] = set()
     for item in evidence:
@@ -191,7 +193,7 @@ def step_query_latest_run_invalid_budget(context) -> None:
         "test",
         "--max-total-items",
         "0",
-        "--max-total-characters",
+        "--maximum-total-characters",
         "10",
         "--max-items-per-source",
         "1",
@@ -318,6 +320,13 @@ def step_eval_index_bytes_value(context, expected: float) -> None:
     'for query "{query_text}"'
 )
 def step_create_source_uri_dataset(context, filename: str, query_text: str) -> None:
+    source_uri = "text"
+    last_ingest = getattr(context, "last_ingest", None)
+    if last_ingest is not None:
+        item_id = last_ingest.get("id")
+        if isinstance(item_id, str):
+            corpus = Corpus.open(_corpus_path(context, "corpus"))
+            source_uri = corpus.get_item(item_id).source_uri
     dataset = {
         "schema_version": 1,
         "name": "source-uniform-resource-identifier-dataset",
@@ -326,7 +335,7 @@ def step_create_source_uri_dataset(context, filename: str, query_text: str) -> N
             {
                 "query_id": "q1",
                 "query_text": query_text,
-                "expected_source_uri": "text",
+                "expected_source_uri": source_uri,
                 "kind": "gold",
             }
         ],
@@ -472,7 +481,18 @@ def step_sqlite_full_text_search_index_exists(context) -> None:
 @when("I apply a budget with no per-source or character limits")
 def step_apply_budget_without_limits(context) -> None:
     evidence = _build_evidence_items(["alpha", "beta", "gamma"])
-    budget = QueryBudget(max_total_items=2, max_total_characters=None, max_items_per_source=None)
+    budget = QueryBudget(
+        max_total_items=2, maximum_total_characters=None, max_items_per_source=None
+    )
+    context.budgeted_evidence = apply_budget(evidence, budget)
+
+
+@when("I apply a budget with a per-source limit of {limit:d}")
+def step_apply_budget_with_per_source_limit(context, limit: int) -> None:
+    evidence = _build_evidence_items(["alpha", "beta", "gamma"])
+    budget = QueryBudget(
+        max_total_items=5, maximum_total_characters=None, max_items_per_source=limit
+    )
     context.budgeted_evidence = apply_budget(evidence, budget)
 
 
@@ -541,7 +561,7 @@ def step_eval_latest_run_invalid_dataset(context, filename: str) -> None:
         str(path),
         "--max-total-items",
         "3",
-        "--max-total-characters",
+        "--maximum-total-characters",
         "2000",
         "--max-items-per-source",
         "5",

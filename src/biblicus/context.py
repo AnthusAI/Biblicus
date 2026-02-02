@@ -25,6 +25,8 @@ class ContextPackPolicy(BaseModel):
     :vartype ordering: str
     :ivar include_metadata: Whether to include evidence metadata lines in each block.
     :vartype include_metadata: bool
+    :ivar metadata_fields: Optional evidence metadata fields to include.
+    :vartype metadata_fields: list[str] or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -32,6 +34,7 @@ class ContextPackPolicy(BaseModel):
     join_with: str = Field(default="\n\n")
     ordering: str = Field(default="rank", min_length=1)
     include_metadata: bool = Field(default=False)
+    metadata_fields: Optional[List[str]] = None
 
 
 class ContextPack(BaseModel):
@@ -132,7 +135,9 @@ def build_context_pack(result: RetrievalResult, *, policy: ContextPackPolicy) ->
         trimmed_text = evidence.text.strip()
         if not trimmed_text:
             continue
-        metadata = _metadata_for_evidence(evidence) if policy.include_metadata else None
+        metadata = (
+            _metadata_for_evidence(evidence, policy=policy) if policy.include_metadata else None
+        )
         block_text = _format_block_text(trimmed_text, metadata=metadata)
         selected_blocks.append(
             ContextPackBlock(
@@ -276,7 +281,11 @@ def _order_evidence(
     raise ValueError(f"Unknown context pack ordering: {policy.ordering}")
 
 
-def _metadata_for_evidence(evidence: Evidence) -> Dict[str, object]:
+def _metadata_for_evidence(
+    evidence: Evidence,
+    *,
+    policy: ContextPackPolicy,
+) -> Dict[str, object]:
     """
     Build metadata for a context pack block.
 
@@ -285,12 +294,19 @@ def _metadata_for_evidence(evidence: Evidence) -> Dict[str, object]:
     :return: Metadata mapping.
     :rtype: dict[str, object]
     """
-    return {
+    metadata = {
         "item_id": evidence.item_id,
         "source_uri": evidence.source_uri or "none",
         "score": evidence.score,
         "stage": evidence.stage,
     }
+    extra = evidence.metadata or {}
+    if policy.metadata_fields is not None:
+        extra = {key: extra.get(key) for key in policy.metadata_fields if key in extra}
+    for key, value in extra.items():
+        if key not in metadata:
+            metadata[key] = value
+    return metadata
 
 
 def _format_block_text(text: str, *, metadata: Optional[Dict[str, object]]) -> str:
@@ -306,12 +322,11 @@ def _format_block_text(text: str, *, metadata: Optional[Dict[str, object]]) -> s
     """
     if not metadata:
         return text
-    metadata_lines = "\n".join(
-        [
-            f"item_id: {metadata['item_id']}",
-            f"source_uri: {metadata['source_uri']}",
-            f"score: {metadata['score']}",
-            f"stage: {metadata['stage']}",
-        ]
-    )
-    return f"{metadata_lines}\n{text}"
+    ordered_keys = ["item_id", "source_uri", "score", "stage"]
+    metadata_lines = [f"{key}: {metadata[key]}" for key in ordered_keys if key in metadata]
+    for key in sorted(metadata.keys()):
+        if key in ordered_keys:
+            continue
+        metadata_lines.append(f"{key}: {metadata[key]}")
+    metadata_text = "\n".join(metadata_lines)
+    return f"{metadata_text}\n{text}"

@@ -16,7 +16,7 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
       | tag |
       | a   |
       | b   |
-    And the last ingested item has biblicus provenance with source "text"
+    And the last ingested item has biblicus provenance with source prefix "text:"
 
   Scenario: Ingest a markdown file and merge tags
     Given I initialized a corpus at "corpus"

@@ -217,9 +217,9 @@ def _expand_component_budget(budget: QueryBudget, *, multiplier: int = 5) -> Que
     :return: Expanded budget for component backends.
     :rtype: QueryBudget
     """
-    max_total_characters = budget.max_total_characters
+    maximum_total_characters = budget.maximum_total_characters
     expanded_characters = (
-        max_total_characters * multiplier if max_total_characters is not None else None
+        maximum_total_characters * multiplier if maximum_total_characters is not None else None
     )
     expanded_max_items_per_source = (
         budget.max_items_per_source * multiplier
@@ -230,7 +230,7 @@ def _expand_component_budget(budget: QueryBudget, *, multiplier: int = 5) -> Que
     return QueryBudget(
         max_total_items=requested_items * multiplier,
         offset=0,
-        max_total_characters=expanded_characters,
+        maximum_total_characters=expanded_characters,
         max_items_per_source=expanded_max_items_per_source,
     )
 
@@ -285,6 +285,7 @@ def _fuse_evidence(
                 stage_scores={"lexical": lexical_score, "embedding": embedding_score},
                 recipe_id="",
                 run_id="",
+                metadata=base_evidence.metadata,
                 hash=base_evidence.hash,
             )
         )

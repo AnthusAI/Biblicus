@@ -86,7 +86,7 @@ Use these fields to understand how a candidate moved through the pipeline and wh
 Budgets shape every retrieval comparison:
 
 - `max_total_items` limits the evidence list length and defines the denominator for precision-at-k.
-- `max_total_characters` controls how much text can survive into evidence outputs.
+- `maximum_total_characters` controls how much text can survive into evidence outputs.
 - `max_items_per_source` prevents one source from dominating the final list.
 
 When you compare backends, keep budgets constant and note any candidate expansion in hybrid runs so fused rankings are

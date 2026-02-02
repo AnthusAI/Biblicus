@@ -56,7 +56,9 @@ def run_demo(*, corpus_path: Path, force: bool) -> Dict[str, object]:
 
     backend = get_backend("scan")
     run = backend.build_run(corpus, recipe_name="Use case: notes to context pack", config={})
-    budget = QueryBudget(max_total_items=5, max_total_characters=4000, max_items_per_source=None)
+    budget = QueryBudget(
+        max_total_items=5, maximum_total_characters=4000, max_items_per_source=None
+    )
     result = backend.query(
         corpus,
         run=run,

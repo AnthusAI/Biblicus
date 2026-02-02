@@ -5,3 +5,7 @@ Feature: Retrieval budget behavior
     When I apply a budget with no per-source or character limits
     Then the budget returns 2 evidence items
     And the budget returns evidence ranks "1,2"
+
+  Scenario: Budget enforces per-source limits
+    When I apply a budget with a per-source limit of 1
+    Then the budget returns 1 evidence items

@@ -47,8 +47,6 @@ class EmbeddingIndexRecipeConfig(BaseModel):
     """
     Configuration for embedding-index retrieval backends.
 
-    :ivar snippet_characters: Maximum characters to include in evidence snippets.
-    :vartype snippet_characters: int
     :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
     :vartype extraction_run: str or None
     :ivar chunker: Chunker configuration.
@@ -57,15 +55,50 @@ class EmbeddingIndexRecipeConfig(BaseModel):
     :vartype tokenizer: biblicus.chunking.TokenizerConfig or None
     :ivar embedding_provider: Embedding provider configuration.
     :vartype embedding_provider: biblicus.embedding_providers.EmbeddingProviderConfig
+    :ivar snippet_characters: Optional maximum character count for returned evidence text.
+    :vartype snippet_characters: int or None
+    :ivar maximum_cache_total_items: Optional maximum number of vectors cached per scan batch.
+    :vartype maximum_cache_total_items: int or None
+    :ivar maximum_cache_total_characters: Optional maximum characters cached per scan batch.
+    :vartype maximum_cache_total_characters: int or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    snippet_characters: int = Field(default=400, ge=1)
+    snippet_characters: Optional[int] = Field(default=None, ge=1)
+    maximum_cache_total_items: Optional[int] = Field(default=None, ge=1)
+    maximum_cache_total_characters: Optional[int] = Field(default=None, ge=1)
     extraction_run: Optional[str] = None
     chunker: ChunkerConfig = Field(default_factory=lambda: ChunkerConfig(chunker_id="paragraph"))
     tokenizer: Optional[TokenizerConfig] = None
     embedding_provider: EmbeddingProviderConfig
+
+
+def _extract_span_text(text: Optional[str], span: Tuple[int, int]) -> Optional[str]:
+    if not isinstance(text, str):
+        return None
+    span_start, span_end = span
+    if span_start < 0 or span_end <= span_start:
+        return text
+    return text[span_start:span_end]
+
+
+def _build_snippet(
+    text: Optional[str], span: Tuple[int, int], max_chars: Optional[int]
+) -> Optional[str]:
+    if not isinstance(text, str):
+        return None
+    if max_chars is None:
+        return _extract_span_text(text, span)
+    if max_chars <= 0:
+        return ""
+    span_start, span_end = span
+    if span_start < 0 or span_end <= span_start:
+        return text[:max_chars]
+    half_window = max_chars // 2
+    snippet_start = max(span_start - half_window, 0)
+    snippet_end = min(span_end + half_window, len(text))
+    return text[snippet_start:snippet_end]
 
 
 def resolve_extraction_reference(

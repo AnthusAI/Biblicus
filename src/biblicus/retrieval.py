@@ -124,8 +124,8 @@ def apply_budget(evidence: Iterable[Evidence], budget: QueryBudget) -> List[Evid
                 continue
 
         text_character_count = len(candidate_evidence.text or "")
-        if budget.max_total_characters is not None:
-            if total_characters + text_character_count > budget.max_total_characters:
+        if budget.maximum_total_characters is not None:
+            if total_characters + text_character_count > budget.maximum_total_characters:
                 continue
 
         selected_evidence.append(candidate_evidence)

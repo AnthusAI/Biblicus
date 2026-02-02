@@ -16,6 +16,8 @@ from ..time import utc_now_iso
 from .embedding_index_common import (
     ChunkRecord,
     EmbeddingIndexRecipeConfig,
+    _build_snippet,
+    _extract_span_text,
     artifact_paths_for_run,
     chunks_to_records,
     collect_chunks,
@@ -26,7 +28,6 @@ from .embedding_index_common import (
     write_chunks_jsonl,
     write_embeddings,
 )
-from .scan import _build_snippet
 
 
 class EmbeddingIndexFileBackend:
@@ -132,10 +133,12 @@ class EmbeddingIndexFileBackend:
         if query_embedding.shape[0] != 1:
             raise ValueError("Embedding provider returned an invalid query embedding shape")
 
+        batch_rows = recipe_config.maximum_cache_total_items or 4096
         candidates = _top_indices_batched(
             embeddings=embeddings,
             query_vector=query_embedding[0],
             limit=_candidate_limit(budget.max_total_items + budget.offset),
+            batch_rows=batch_rows,
         )
         evidence_items = _build_evidence(
             corpus,
@@ -222,9 +225,11 @@ def _build_evidence(
             media_type=str(getattr(catalog_item, "media_type")),
             extraction_reference=extraction_reference,
         )
-        snippet = _build_snippet(
-            text, (record.span_start, record.span_end), max_chars=recipe_config.snippet_characters
+        span_text = _build_snippet(
+            text, (record.span_start, record.span_end), recipe_config.snippet_characters
         )
+        if span_text is None:
+            span_text = _extract_span_text(text, (record.span_start, record.span_end))
         score = float(cosine_similarity_scores(embeddings[idx : idx + 1], query_vector)[0])
         evidence_items.append(
             Evidence(
@@ -233,7 +238,7 @@ def _build_evidence(
                 media_type=str(getattr(catalog_item, "media_type")),
                 score=score,
                 rank=1,
-                text=snippet,
+                text=span_text,
                 content_ref=None,
                 span_start=record.span_start,
                 span_end=record.span_end,
@@ -241,7 +246,8 @@ def _build_evidence(
                 stage_scores=None,
                 recipe_id=run.recipe.recipe_id,
                 run_id=run.run_id,
-                hash=hash_text(snippet),
+                metadata=getattr(catalog_item, "metadata", {}) or {},
+                hash=hash_text(span_text or ""),
             )
         )
     return evidence_items

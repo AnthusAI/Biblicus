@@ -11,6 +11,7 @@ import shutil
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
+from urllib.parse import quote, unquote, urlparse
 
 import yaml
 from pydantic import ValidationError
@@ -24,6 +25,7 @@ from .constants import (
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
 )
+from .errors import IngestCollisionError
 from .frontmatter import parse_front_matter, render_front_matter
 from .hook_manager import HookManager
 from .hooks import HookPoint
@@ -110,7 +112,10 @@ def _preferred_extension_for_media_type(media_type: str) -> Optional[str]:
     """
     media_type_overrides = {
         "image/jpeg": ".jpg",
+        "audio/mpeg": ".mp3",
         "audio/ogg": ".ogg",
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
     }
     if media_type in media_type_overrides:
         return media_type_overrides[media_type]
@@ -136,12 +141,70 @@ def _ensure_filename_extension(filename: str, *, media_type: str) -> str:
         return raw_name + ".md"
 
     if Path(raw_name).suffix:
-        return raw_name
+        if "%2F" in raw_name or "%3A" in raw_name:
+            decoded = unquote(raw_name)
+            parsed = urlparse(decoded)
+            decoded_path = parsed.path if parsed.scheme else decoded
+            if not Path(decoded_path).suffix:
+                pass
+            else:
+                return raw_name
+        else:
+            return raw_name
 
     ext = _preferred_extension_for_media_type(media_type)
     if not ext:
         return raw_name
     return raw_name + ext
+
+
+def _encode_source_uri_for_filename(source_uri: str) -> str:
+    """
+    Percent-encode a source uniform resource identifier for filename use.
+
+    :param source_uri: Source uniform resource identifier to encode.
+    :type source_uri: str
+    :return: Percent-encoded uniform resource identifier safe for filenames.
+    :rtype: str
+    """
+    return quote(source_uri, safe="")
+
+
+def _storage_filename_for_ingest(
+    *, filename: Optional[str], media_type: str, source_uri: Optional[str]
+) -> str:
+    """
+    Derive a collision-safe filename for corpus storage.
+
+    If a source uniform resource identifier is provided, the full uniform resource identifier is
+    percent-encoded to namespace the stored file, preventing collisions between identical basenames
+    from different sources. When no uniform resource identifier is available, fall back to a
+    sanitized filename.
+
+    :param filename: Optional filename hint from the caller.
+    :type filename: str or None
+    :param media_type: Media type of the payload.
+    :type media_type: str
+    :param source_uri: Optional source uniform resource identifier for provenance.
+    :type source_uri: str or None
+    :return: Storage filename with an appropriate extension, or an empty string when no hint exists.
+    :rtype: str
+    """
+    base_name = ""
+    if source_uri:
+        base_name = _encode_source_uri_for_filename(source_uri)
+        if filename and not source_uri.startswith("file:"):
+            sanitized = _sanitize_filename(filename)
+            if sanitized:
+                base_name = f"{base_name}--{sanitized}"
+    if not base_name and filename:
+        base_name = _sanitize_filename(filename)
+    if not base_name:
+        return ""
+    if len(base_name) > 180:
+        digest = hashlib.sha256(base_name.encode("utf-8")).hexdigest()
+        base_name = f"hash-{digest}"
+    return _ensure_filename_extension(base_name, media_type=media_type)
 
 
 def _merge_tags(explicit: Sequence[str], from_frontmatter: Any) -> List[str]:
@@ -520,6 +583,24 @@ class Corpus:
         temp_path.write_text(catalog.model_dump_json(indent=2) + "\n", encoding="utf-8")
         temp_path.replace(self.catalog_path)
 
+    def _find_item_by_source_uri(self, source_uri: str) -> Optional[CatalogItem]:
+        """
+        Locate an existing catalog item by source uniform resource identifier.
+
+        :param source_uri: Source uniform resource identifier to search for.
+        :type source_uri: str
+        :return: Matching catalog item or None.
+        :rtype: CatalogItem or None
+        """
+        if not source_uri:
+            return None
+        self._init_catalog()
+        catalog = self._load_catalog()
+        for item in catalog.items.values():
+            if item.source_uri == source_uri:
+                return item
+        return None
+
     @property
     def runs_dir(self) -> Path:
         """
@@ -817,18 +898,26 @@ class Corpus:
         :return: Ingestion result summary.
         :rtype: IngestResult
         :raises ValueError: If markdown is not Unicode Transformation Format 8.
+        :raises IngestCollisionError: If a source uniform resource identifier is already ingested.
         """
-        item_id = str(uuid.uuid4())
-        safe_filename = _sanitize_filename(filename) if filename else ""
+        existing_item = self._find_item_by_source_uri(source_uri)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+            )
 
-        if safe_filename:
-            safe_filename = _ensure_filename_extension(safe_filename, media_type=media_type)
+        item_id = str(uuid.uuid4())
+        storage_filename = _storage_filename_for_ingest(
+            filename=filename, media_type=media_type, source_uri=source_uri
+        )
 
         if media_type == "text/markdown":
-            output_name = f"{item_id}--{safe_filename}" if safe_filename else f"{item_id}.md"
+            output_name = f"{item_id}--{storage_filename}" if storage_filename else f"{item_id}.md"
         else:
-            if safe_filename:
-                output_name = f"{item_id}--{safe_filename}"
+            if storage_filename:
+                output_name = f"{item_id}--{storage_filename}"
             else:
                 extension = _preferred_extension_for_media_type(media_type) or ""
                 output_name = f"{item_id}{extension}" if extension else f"{item_id}"
@@ -991,13 +1080,21 @@ class Corpus:
         if media_type == "text/markdown":
             raise ValueError("Stream ingestion is not supported for Markdown")
 
-        item_id = str(uuid.uuid4())
-        safe_filename = _sanitize_filename(filename) if filename else ""
-        if safe_filename:
-            safe_filename = _ensure_filename_extension(safe_filename, media_type=media_type)
+        existing_item = self._find_item_by_source_uri(source_uri)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+            )
 
-        if safe_filename:
-            output_name = f"{item_id}--{safe_filename}"
+        item_id = str(uuid.uuid4())
+        storage_filename = _storage_filename_for_ingest(
+            filename=filename, media_type=media_type, source_uri=source_uri
+        )
+
+        if storage_filename:
+            output_name = f"{item_id}--{storage_filename}"
         else:
             extension = _preferred_extension_for_media_type(media_type) or ""
             output_name = f"{item_id}{extension}" if extension else f"{item_id}"
@@ -1085,7 +1182,7 @@ class Corpus:
         *,
         title: Optional[str] = None,
         tags: Sequence[str] = (),
-        source_uri: str = "text",
+        source_uri: Optional[str] = None,
     ) -> IngestResult:
         """
         Ingest a text note as Markdown.
@@ -1096,11 +1193,15 @@ class Corpus:
         :type title: str or None
         :param tags: Tags to associate with the note.
         :type tags: Sequence[str]
-        :param source_uri: Source uniform resource identifier for provenance.
-        :type source_uri: str
+        :param source_uri: Optional source uniform resource identifier for provenance.
+        :type source_uri: str or None
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
+        if source_uri is None:
+            digest_source = (title or "") + "\n" + text
+            digest = hashlib.sha256(digest_source.encode("utf-8")).hexdigest()
+            source_uri = f"text:{digest}"
         data = text.encode("utf-8")
         return self.ingest_item(
             data,

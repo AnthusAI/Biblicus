@@ -74,7 +74,7 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
             "extraction_run": f"pipeline:{extraction_manifest.run_id}",
         },
     )
-    budget = QueryBudget(max_total_items=5, max_total_characters=10000, max_items_per_source=5)
+    budget = QueryBudget(max_total_items=5, maximum_total_characters=10000, max_items_per_source=5)
     result = backend.query(
         corpus,
         run=run,

@@ -6,6 +6,7 @@ Feature: Unstructured extraction integration
   non-text format in the mixed integration corpus.
 
   Scenario: Unstructured extracts text from a document and does not crash on other non-text items
+    Given a fake Unstructured library is available that returns text "Extracted from docx" for filename "demo.docx"
     When I download a mixed corpus into "corpus"
     And I build a "unstructured" extraction run in corpus "corpus"
     Then the extracted text for the item tagged "docx-sample" is not empty in the latest extraction run

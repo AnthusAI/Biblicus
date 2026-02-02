@@ -24,7 +24,7 @@ from .context import (
 )
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
-from .errors import ExtractionRunFatalError
+from .errors import ExtractionRunFatalError, IngestCollisionError
 from .evaluation import evaluate_run, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_run
@@ -117,18 +117,28 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
 
     results = []
 
-    if arguments.note is not None or arguments.stdin:
-        text = arguments.note if arguments.note is not None else sys.stdin.read()
-        ingest_result = corpus.ingest_note(
-            text,
-            title=arguments.title,
-            tags=tags,
-            source_uri="stdin" if arguments.stdin else "text",
-        )
-        results.append(ingest_result)
+    try:
+        if arguments.note is not None or arguments.stdin:
+            text = arguments.note if arguments.note is not None else sys.stdin.read()
+            ingest_result = corpus.ingest_note(
+                text,
+                title=arguments.title,
+                tags=tags,
+                source_uri=None if arguments.stdin else None,
+            )
+            results.append(ingest_result)
 
-    for source_path in arguments.files or []:
-        results.append(corpus.ingest_source(source_path, tags=tags))
+        for source_path in arguments.files or []:
+            results.append(corpus.ingest_source(source_path, tags=tags))
+    except IngestCollisionError as error:
+        print(
+            "Ingest failed: source already ingested\n"
+            f"source_uri: {error.source_uri}\n"
+            f"existing_item_id: {error.existing_item_id}\n"
+            f"existing_relpath: {error.existing_relpath}",
+            file=sys.stderr,
+        )
+        return 3
 
     if not results:
         print("Nothing to ingest: provide file paths, --note, or --stdin", file=sys.stderr)
@@ -374,7 +384,7 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
     return QueryBudget(
         max_total_items=arguments.max_total_items,
         offset=getattr(arguments, "offset", 0),
-        max_total_characters=arguments.max_total_characters,
+        maximum_total_characters=arguments.maximum_total_characters,
         max_items_per_source=arguments.max_items_per_source,
     )
 
@@ -1071,7 +1081,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip this many ranked candidates before selecting evidence (pagination).",
     )
     p_query.add_argument("--max-total-items", type=int, default=5)
-    p_query.add_argument("--max-total-characters", type=int, default=2000)
+    p_query.add_argument("--maximum-total-characters", type=int, default=2000)
     p_query.add_argument("--max-items-per-source", type=int, default=5)
     p_query.add_argument(
         "--reranker-id",
@@ -1131,7 +1141,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to dataset JavaScript Object Notation file.",
     )
     p_eval.add_argument("--max-total-items", type=int, default=5)
-    p_eval.add_argument("--max-total-characters", type=int, default=2000)
+    p_eval.add_argument("--maximum-total-characters", type=int, default=2000)
     p_eval.add_argument("--max-items-per-source", type=int, default=5)
     p_eval.set_defaults(func=cmd_eval)
 

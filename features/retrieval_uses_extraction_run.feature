@@ -15,7 +15,7 @@ Feature: Retrieval can use extracted text artifacts
     And I query with the latest run for "Portable Document Format retrieval" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence includes the last ingested item identifier
 
@@ -32,7 +32,7 @@ Feature: Retrieval can use extracted text artifacts
     And I query with the latest run for "unique extracted phrase" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence includes the last ingested item identifier
 
@@ -55,7 +55,7 @@ Feature: Retrieval can use extracted text artifacts
     And I query with the latest run for "scan extracted phrase" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence includes the last ingested item identifier
 
@@ -88,7 +88,7 @@ Feature: Retrieval can use extracted text artifacts
     And I query with the latest run for "anything" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence count is 0
 
@@ -105,6 +105,6 @@ Feature: Retrieval can use extracted text artifacts
     And I query with the latest run for "anything" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence count is 0

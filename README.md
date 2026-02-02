@@ -239,7 +239,7 @@ for note_title, note_text in notes:
 
 backend = get_backend("scan")
 run = backend.build_run(corpus, recipe_name="Story demo", config={})
-budget = QueryBudget(max_total_items=5, max_total_characters=2000, max_items_per_source=None)
+budget = QueryBudget(max_total_items=5, maximum_total_characters=2000, max_items_per_source=None)
 result = backend.query(
     corpus,
     run=run,
@@ -279,7 +279,7 @@ Example output:
   "query_text": "Primary button style preference",
   "budget": {
     "max_total_items": 5,
-    "max_total_characters": 2000,
+    "maximum_total_characters": 2000,
     "max_items_per_source": null
   },
   "run_id": "RUN_ID",

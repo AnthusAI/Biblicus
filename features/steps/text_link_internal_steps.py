@@ -5,9 +5,11 @@ from typing import Iterable, List, Optional, Sequence
 from behave import given, then, when
 
 from biblicus.text.link import (
+    _apply_link_replace,
     _attempt_missing_coverage_recovery,
     _autofill_ref_spans,
     _build_coverage_guidance,
+    _build_retry_message,
     _is_ref_coverage_error,
     _promote_ref_spans_to_id,
     _render_span_markup,
@@ -377,3 +379,33 @@ def step_attempt_missing_coverage_recovery_invalid_autofill(context) -> None:
         context.missing_coverage_recovery_warnings = warnings
     finally:
         link_module._autofill_ref_spans = original_autofill  # type: ignore[assignment]
+
+
+@when('I attempt to replace "{old_str}" with "{new_str}" in the text "{text}"')
+def step_attempt_link_replace(context, old_str: str, new_str: str, text: str) -> None:
+    unescaped_old = old_str.replace('\\"', '"')
+    unescaped_new = new_str.replace('\\"', '"')
+    context.replacement_error = None
+    try:
+        _apply_link_replace(text, unescaped_old, unescaped_new)
+    except ValueError as exc:
+        context.replacement_error = exc
+
+
+@then('the replacement error mentions "{message}"')
+def step_replacement_error_mentions(context, message: str) -> None:
+    error = getattr(context, "replacement_error", None)
+    assert error is not None
+    assert message in str(error)
+
+
+@when("I build a text link retry message with nested span errors")
+def step_build_retry_message_nested(context) -> None:
+    errors = ["nested span detected in markup"]
+    context.retry_message = _build_retry_message(errors, "text", "link_")
+
+
+@then('the retry message includes "{message}"')
+def step_retry_message_includes(context, message: str) -> None:
+    retry_message = getattr(context, "retry_message", "")
+    assert message in retry_message

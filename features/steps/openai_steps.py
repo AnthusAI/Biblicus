@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from urllib.parse import unquote
 
 from behave import given, then
 
@@ -273,6 +275,12 @@ def _install_fake_openai_module(context) -> None:
             normalized_name = base_name.split("--", 1)[-1] if "--" in base_name else base_name
             openai_module.last_transcription_filename = normalized_name  # type: ignore[attr-defined]
             behavior = behaviors.get(normalized_name)
+            if behavior is None:
+                decoded_name = unquote(normalized_name)
+                decoded_basename = decoded_name.rsplit("/", 1)[-1]
+                behavior = behaviors.get(decoded_basename)
+                if behavior is None:
+                    behavior = behaviors.get(decoded_basename.split("--")[-1])
             transcript = behavior.transcript if behavior is not None else ""
             transcript_text = str(transcript or "")
             if behavior is not None and behavior.result_kind == "dict":
@@ -651,11 +659,23 @@ def step_dspy_chat_used_response_format(context, response_format: str) -> None:
 
 @given("an OpenAI API key is configured for this scenario")
 def step_openai_api_key_configured(context) -> None:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        scenario = getattr(context, "scenario", None)
+        tags = set(getattr(scenario, "tags", [])) if scenario else set()
+        feature = getattr(context, "feature", None)
+        if feature is not None:
+            tags.update(getattr(feature, "tags", []))
+        if "openai" in tags or "integration" in tags:
+            if scenario is not None:
+                scenario.skip("OPENAI_API_KEY is required for OpenAI integration scenarios.")
+            return
+        api_key = "test-openai-key"
     extra_env = getattr(context, "extra_env", None)
     if extra_env is None:
         extra_env = {}
         context.extra_env = extra_env
-    extra_env["OPENAI_API_KEY"] = "test-openai-key"
+    extra_env["OPENAI_API_KEY"] = api_key
 
 
 @given("the OpenAI dependency is unavailable")

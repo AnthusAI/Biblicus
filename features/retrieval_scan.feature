@@ -10,7 +10,7 @@ Feature: Retrieval with scan backend
     And I query with the latest run for "bravo" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "scan"
     And the query evidence includes the last ingested item identifier
@@ -25,30 +25,18 @@ Feature: Retrieval with scan backend
     And I query with the latest run for "topic" and budget:
       | key                  | value |
       | max_total_items      | 1     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 1
 
-  Scenario: Scan query respects the max_items_per_source budget
-    Given I initialized a corpus at "corpus"
-    When I ingest the text "shared term one" with title "First" and tags "a" into corpus "corpus"
-    And I ingest the text "shared term two" with title "Second" and tags "b" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "shared" and budget:
-      | key                  | value |
-      | max_total_items      | 5     |
-      | max_total_characters | 2000  |
-      | max_items_per_source | 1     |
-    Then the query evidence count is 1
-
-  Scenario: Scan query respects the max_total_characters budget
+  Scenario: Scan query respects the maximum_total_characters budget
     Given I initialized a corpus at "corpus"
     When I ingest the text "longtext longtext longtext longtext" with title "Long" and tags "a" into corpus "corpus"
     And I build a "scan" retrieval run in corpus "corpus"
     And I query with the latest run for "longtext" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1     |
+      | maximum_total_characters | 1     |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
@@ -60,7 +48,7 @@ Feature: Retrieval with scan backend
     And I query with the latest run for "blob" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
@@ -72,6 +60,6 @@ Feature: Retrieval with scan backend
     And I query with the latest run for "plain" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 1

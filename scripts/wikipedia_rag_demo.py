@@ -141,7 +141,7 @@ def run_demo(*, corpus_path: Path, limit: int, force: bool, query: str) -> Dict[
             "snippet_characters": 160,
         },
     )
-    budget = QueryBudget(max_total_items=5, max_total_characters=1600, max_items_per_source=1)
+    budget = QueryBudget(max_total_items=5, maximum_total_characters=1600, max_items_per_source=1)
     retrieval_result = backend.query(corpus, run=run, query_text=query, budget=budget)
 
     policy = ContextPackPolicy(join_with="\n\n")

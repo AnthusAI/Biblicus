@@ -10,6 +10,7 @@ import sys
 import types
 from dataclasses import dataclass, field
 from typing import Dict, Optional
+from urllib.parse import unquote
 
 from behave import given
 
@@ -158,6 +159,12 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
             base_name = filename.rsplit("/", 1)[-1]
             normalized_name = base_name.split("--", 1)[-1] if "--" in base_name else base_name
             behavior = behaviors.get(normalized_name)
+            if behavior is None:
+                decoded_name = unquote(normalized_name)
+                decoded_basename = decoded_name.rsplit("/", 1)[-1]
+                behavior = behaviors.get(decoded_basename)
+                if behavior is None:
+                    behavior = behaviors.get(decoded_basename.split("--")[-1])
             if behavior is None:
                 return _FakeConversionResult("", {})
             if behavior.mode == "error":

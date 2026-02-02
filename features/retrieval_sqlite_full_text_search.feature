@@ -14,7 +14,7 @@ Feature: Retrieval with SQLite full-text search backend
     And I query with the latest run for "bravo" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "full-text-search"
 

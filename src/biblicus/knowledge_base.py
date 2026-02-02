@@ -44,7 +44,7 @@ class KnowledgeBaseDefaults(BaseModel):
     query_budget: QueryBudget = Field(
         default_factory=lambda: QueryBudget(
             max_total_items=5,
-            max_total_characters=2000,
+            maximum_total_characters=2000,
             max_items_per_source=None,
         )
     )

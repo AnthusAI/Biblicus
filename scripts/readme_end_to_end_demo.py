@@ -46,7 +46,7 @@ if __name__ == "__main__":
         run = backend.build_run(corpus, recipe_name="Story demo", config={})
         budget = QueryBudget(
             max_total_items=5,
-            max_total_characters=2000,
+            maximum_total_characters=2000,
             max_items_per_source=None,
         )
         result = backend.query(

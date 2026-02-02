@@ -28,6 +28,8 @@ Behavior specifications:
 - `features/corpus_edge_cases.feature`
 - `features/corpus_purge.feature`
 - `features/ingest_sources.feature`
+- `features/source_helper_internal_branches.feature`
+- `features/corpus_internal_branches.feature`
 
 Primary implementation:
 
@@ -87,6 +89,7 @@ Behavior specifications:
 - `features/hook_config_validation.feature`
 - `features/hook_error_handling.feature`
 - `features/python_hook_logging.feature`
+- `features/hook_logging_internal_branches.feature`
 
 Primary implementation:
 
@@ -188,6 +191,9 @@ Behavior specifications:
 - `features/retrieval_budget.feature`
 - `features/retrieval_utilities.feature`
 - `features/backend_validation.feature`
+- `features/embedding_index_internal_branches.feature`
+- `features/90_embedding_index_evidence_fallback.feature`
+- `features/91_tf_vector_internal_branches.feature`
 
 Primary implementation:
 
@@ -235,6 +241,49 @@ Behavior specifications:
 Primary implementation:
 
 - `src/biblicus/context.py`
+
+## Context engine
+
+What it does:
+
+- Assembles elastic, budget-aware prompt contexts from messages and packs.
+- Compacts or expands retriever packs based on policy.
+- Supports pagination via `offset` and `limit` for retriever expansion.
+
+Documentation:
+
+- `docs/CONTEXT_ENGINE.md`
+
+Behavior specifications:
+
+- `features/context_engine_retrieve_context_pack.feature`
+- `features/context_engine_retrieval_internal_branches.feature`
+- `features/70_context_retriever.feature`
+- `features/71_context_compaction.feature`
+- `features/72_context_history_compaction.feature`
+- `features/73_context_nested_compaction.feature`
+- `features/74_context_regeneration.feature`
+- `features/75_context_default_regeneration.feature`
+- `features/76_context_pack_budget_weights.feature`
+- `features/77_context_default_pack_priority.feature`
+- `features/78_context_default_pack_weights.feature`
+- `features/79_context_nested_context_packs.feature`
+- `features/80_context_nested_pack_budget_cap.feature`
+- `features/81_context_nested_regeneration.feature`
+- `features/82_context_explicit_regeneration.feature`
+- `features/83_context_explicit_pack_priority.feature`
+- `features/84_context_explicit_pack_weights.feature`
+- `features/85_context_expansion.feature`
+- `features/86_context_engine_errors.feature`
+- `features/87_context_compactor_strategies.feature`
+- `features/88_context_engine_model_validation.feature`
+- `features/89_context_engine_internal_branches.feature`
+
+Primary implementation:
+
+- `src/biblicus/context_engine/assembler.py`
+- `src/biblicus/context_engine/models.py`
+- `src/biblicus/context_engine/compaction.py`
 
 ## Knowledge base
 

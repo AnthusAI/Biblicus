@@ -117,11 +117,58 @@ def given_retrieval_result_exists_with_sourced_evidence(context) -> None:
     )
 
 
+@given("a retrieval result exists with metadata evidence:")
+def given_retrieval_result_exists_with_metadata_evidence(context) -> None:
+    evidence_items = []
+    for rank_value, row in enumerate(context.table, start=1):
+        score_value = float(row["score"])
+        source_uri_value = row["source_uri"]
+        text_value = row["text"]
+        metadata = {
+            key: value for key, value in row.items() if key not in {"source_uri", "score", "text"}
+        }
+        content_ref_value = None if str(text_value).strip() else "content-ref"
+        evidence_items.append(
+            Evidence(
+                item_id=f"item-{rank_value}",
+                source_uri=source_uri_value,
+                media_type="text/plain",
+                score=score_value,
+                rank=rank_value,
+                text=text_value,
+                content_ref=content_ref_value,
+                stage="scan",
+                recipe_id="recipe",
+                run_id="run",
+                metadata=metadata,
+            )
+        )
+
+    context.retrieval_result = RetrievalResult(
+        query_text="query",
+        budget=QueryBudget(max_total_items=10),
+        run_id="run",
+        recipe_id="recipe",
+        backend_id="scan",
+        generated_at=utc_now_iso(),
+        evidence=evidence_items,
+        stats={},
+    )
+
+
 @given("the second evidence item has no text payload")
 def given_second_evidence_item_has_no_text_payload(context) -> None:
     context.retrieval_result.evidence[1] = context.retrieval_result.evidence[1].model_copy(
         update={"text": None, "content_ref": "content-ref"}
     )
+
+
+@given('I add evidence metadata key "{key}" with value "{value}"')
+def given_add_evidence_metadata(context, key: str, value: str) -> None:
+    for evidence in context.retrieval_result.evidence:
+        metadata = dict(evidence.metadata or {})
+        metadata[key] = value
+        evidence.metadata = metadata
 
 
 @when('I build a context pack from that retrieval result joining with "{join_with}"')
@@ -147,11 +194,18 @@ def when_build_context_pack_from_retrieval_result_with_policy(context) -> None:
     join_with_raw = settings.get("join_with", "\\n\\n")
     ordering = settings.get("ordering", "rank")
     include_metadata = settings.get("include_metadata", "false").lower() == "true"
+    metadata_fields_raw = settings.get("metadata_fields")
+    metadata_fields = None
+    if metadata_fields_raw:
+        metadata_fields = [
+            field.strip() for field in metadata_fields_raw.split(",") if field.strip()
+        ]
     decoded_join_with = bytes(join_with_raw, "utf-8").decode("unicode_escape")
     context.context_pack_policy = ContextPackPolicy(
         join_with=decoded_join_with,
         ordering=ordering,
         include_metadata=include_metadata,
+        metadata_fields=metadata_fields,
     )
     context.context_pack = build_context_pack(
         context.retrieval_result, policy=context.context_pack_policy

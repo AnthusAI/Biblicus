@@ -368,6 +368,7 @@ def _score_items(
                 stage="scan",
                 recipe_id="",
                 run_id="",
+                metadata=getattr(catalog_item, "metadata", {}) or {},
                 hash=hash_text(snippet),
             )
         )

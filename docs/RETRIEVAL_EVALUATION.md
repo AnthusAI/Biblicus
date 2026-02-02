@@ -43,7 +43,7 @@ Use the command-line interface to evaluate a retrieval run against a dataset:
 
 ```bash
 biblicus eval --corpus corpora/example --run <run_id> --dataset datasets/retrieval.json \
-  --max-total-items 5 --max-total-characters 2000 --max-items-per-source 5
+  --max-total-items 5 --maximum-total-characters 2000 --max-items-per-source 5
 ```
 
 If `--run` is omitted, the latest retrieval run is used. Evaluations are deterministic for the same corpus, run, and
@@ -85,7 +85,7 @@ Replace `ITEM_ID_FOR_ALPHA` with the item identifier from `biblicus list`, then 
 
 ```
 python -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/retrieval_eval_dataset.json \
-  --max-total-items 3 --max-total-characters 2000 --max-items-per-source 5
+  --max-total-items 3 --maximum-total-characters 2000 --max-items-per-source 5
 ```
 
 ## Authoring a dataset from a corpus
@@ -206,7 +206,7 @@ from biblicus.models import QueryBudget
 corpus = Corpus.open("corpora/example")
 run = corpus.load_run("<run_id>")
 dataset = load_dataset(Path("datasets/retrieval.json"))
-budget = QueryBudget(max_total_items=5, max_total_characters=2000, max_items_per_source=5)
+budget = QueryBudget(max_total_items=5, maximum_total_characters=2000, max_items_per_source=5)
 result = evaluate_run(corpus=corpus, run=run, dataset=dataset, budget=budget)
 print(result.model_dump_json(indent=2))
 ```

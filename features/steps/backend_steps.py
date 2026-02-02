@@ -112,7 +112,7 @@ def step_call_abstract_backend(context) -> None:
         artifact_paths=[],
         stats={},
     )
-    budget = QueryBudget(max_total_items=1, max_total_characters=1, max_items_per_source=1)
+    budget = QueryBudget(max_total_items=1, maximum_total_characters=1, max_items_per_source=1)
     try:
         backend.query(corpus, run=run, query_text="test", budget=budget)
         context.abstract_query_error = None

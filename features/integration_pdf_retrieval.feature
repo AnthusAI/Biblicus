@@ -14,7 +14,7 @@ Feature: Portable Document Format extraction and retrieval integration
     And I query with the latest run for "Dummy PDF file" and budget:
       | key                 | value |
       | max_total_items     | 5     |
-      | max_total_characters| 10000 |
+      | maximum_total_characters| 10000 |
       | max_items_per_source| 5     |
     Then the query evidence includes the last ingested item identifier
 

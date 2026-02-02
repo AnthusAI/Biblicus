@@ -55,7 +55,7 @@ kb = KnowledgeBase.from_folder(
     "notes",
     backend_id="scan",
     recipe_name="Knowledge base demo",
-    query_budget=QueryBudget(max_total_items=10, max_total_characters=4000, max_items_per_source=None),
+    query_budget=QueryBudget(max_total_items=10, maximum_total_characters=4000, max_items_per_source=None),
     tags=["memory"],
     corpus_root="corpora/knowledge-base",
 )

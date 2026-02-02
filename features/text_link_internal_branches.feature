@@ -97,6 +97,14 @@ Feature: Text link internal helpers
     When I render span markup for text "Hello" with an attribute-less span
     Then the rendered markup equals "<span>Hello</span>"
 
+  Scenario: Replacement rejects span tags in the target text
+    When I attempt to replace "<span>Acme</span>" with "<span id=\"link_1\">Acme</span>" in the text "<span>Acme</span> launched"
+    Then the replacement error mentions "must target plain text without span tags"
+
+  Scenario: Retry message includes guidance for nested spans
+    When I build a text link retry message with nested span errors
+    Then the retry message includes "Do not create nested or overlapping spans"
+
   Scenario: Missing coverage only classification includes repeated-text errors
     When I classify repeated-text errors as coverage-only
     Then the repeated-text error is treated as coverage-only

@@ -94,7 +94,7 @@ def step_attempt_query_hybrid_without_components(context) -> None:
     run = create_run_manifest(corpus, recipe=recipe, stats={}, artifact_paths=[])
     budget = QueryBudget(
         max_total_items=5,
-        max_total_characters=2000,
+        maximum_total_characters=2000,
         max_items_per_source=5,
     )
     try:

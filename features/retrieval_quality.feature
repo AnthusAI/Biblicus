@@ -48,7 +48,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "the" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
@@ -66,7 +66,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "rerank"
     And the query evidence includes stage score "retrieve"
@@ -86,7 +86,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "hybrid"
     And the query evidence includes stage score "lexical"
@@ -154,7 +154,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "tf-vector"
 
@@ -166,7 +166,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "alpha bravo charlie" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "tf-vector"
 
@@ -178,7 +178,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "!!!" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
@@ -197,7 +197,7 @@ Feature: Retrieval quality upgrades
     And I query with the latest run for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 2000  |
+      | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
     Then the latest run stats include text_items 2
 

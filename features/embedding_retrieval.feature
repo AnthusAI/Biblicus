@@ -19,7 +19,7 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "embedding-index-file"
     And the query evidence includes span offsets
@@ -40,14 +40,14 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 2     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     And I remember the query evidence keys
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 2     |
       | offset               | 2     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query evidence keys are disjoint from the remembered keys
 
@@ -82,7 +82,7 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "embedding-index-inmemory"
     And the query evidence includes span offsets
@@ -104,7 +104,7 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "embedding-index-inmemory"
     And the query evidence includes span offsets
@@ -122,7 +122,7 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query returns evidence with stage "embedding-index-file"
 
@@ -140,7 +140,7 @@ Feature: Embedding retrieval and chunking
     When I attempt to query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the command fails with exit code 2
     And standard error includes "artifacts"
@@ -158,7 +158,7 @@ Feature: Embedding retrieval and chunking
     When I attempt to query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the command fails with exit code 2
     And standard error includes "artifacts"
@@ -174,7 +174,7 @@ Feature: Embedding retrieval and chunking
     When I query with the latest run for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
-      | max_total_characters | 1000  |
+      | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
@@ -190,7 +190,7 @@ Feature: Embedding retrieval and chunking
     Then the command fails with exit code 2
     And standard error includes "Unknown embedding provider_id"
 
-  Scenario: In-memory embedding index enforces max_chunks during builds
+  Scenario: In-memory embedding index enforces maximum_cache_total_items during builds
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
@@ -202,9 +202,9 @@ Feature: Embedding retrieval and chunking
       | chunker.overlap_characters     | 0                 |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 16                |
-      | max_chunks                     | 1                 |
+      | maximum_cache_total_items                     | 1                 |
     Then the command fails with exit code 2
-    And standard error includes "max_chunks"
+    And standard error includes "maximum_cache_total_items"
 
   Scenario: Build fails fast when a referenced extraction run is missing
     Given I initialized a corpus at "corpus"

@@ -61,7 +61,7 @@ Feature: Command-line interface error behavior (human-friendly failures)
     And a text file "weird🔥.txt" exists with contents "x"
     When I ingest the file "weird🔥.txt" into corpus "corpus"
     Then the last ingest succeeds
-    And the last ingested item filename includes "--weird_.txt"
+    And the last ingested item filename does not include "🔥"
 
   Scenario: Split and deduplicate tags from --tags
     Given I initialized a corpus at "corpus"
@@ -100,7 +100,7 @@ Feature: Command-line interface error behavior (human-friendly failures)
 
   Scenario: Reject query without a run
     Given I initialized a corpus at "corpus"
-    When I run "query --query test --max-total-items 1 --max-total-characters 10 --max-items-per-source 1" in corpus "corpus"
+    When I run "query --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "No run identifier provided"
 

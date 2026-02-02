@@ -301,7 +301,7 @@ def step_attempt_query_invalid_query_embedding_shape(context, backend_id: str) -
         backend = EmbeddingIndexInMemoryBackend()
     else:
         raise AssertionError(f"Unsupported backend in this scenario: {backend_id}")
-    budget = QueryBudget(max_total_items=5, max_total_characters=1000, max_items_per_source=5)
+    budget = QueryBudget(max_total_items=5, maximum_total_characters=1000, max_items_per_source=5)
 
     recipe_provider_config = EmbeddingProviderConfig.model_validate(
         run.recipe.config["embedding_provider"]
@@ -345,7 +345,7 @@ def step_attempt_query_inconsistent_artifacts(context, backend_id: str) -> None:
     assert raw_lines
     chunks_path.write_text("\n".join(raw_lines[:-1]) + "\n", encoding="utf-8")
 
-    budget = QueryBudget(max_total_items=5, max_total_characters=1000, max_items_per_source=5)
+    budget = QueryBudget(max_total_items=5, maximum_total_characters=1000, max_items_per_source=5)
     try:
         backend.query(corpus, run=run, query_text="United States", budget=budget)
         context.last_error = None

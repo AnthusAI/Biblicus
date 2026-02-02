@@ -8,7 +8,7 @@ import mimetypes
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -35,6 +35,27 @@ def _filename_from_url_path(path: str) -> str:
     """
     filename = Path(unquote(path)).name
     return filename or "download"
+
+
+def _sanitize_filename_component(name: str) -> str:
+    allowed_characters = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._() ")
+    sanitized_name = "".join(
+        (character if character in allowed_characters else "_") for character in name
+    ).strip()
+    return sanitized_name or "file"
+
+
+def _namespaced_filename(
+    *, source_uri: Optional[str], fallback_name: Optional[str], media_type: str
+) -> str:
+    base_name = ""
+    if source_uri:
+        base_name = quote(source_uri, safe="")
+    if not base_name and fallback_name:
+        base_name = _sanitize_filename_component(fallback_name)
+    if not base_name:
+        base_name = "file"
+    return _ensure_extension_for_media_type(base_name, media_type)
 
 
 def _media_type_from_filename(name: str) -> str:
@@ -119,8 +140,16 @@ def _ensure_extension_for_media_type(filename: str, media_type: str) -> str:
     """
     if Path(filename).suffix:
         return filename
-    if media_type == "audio/ogg":
-        ext = ".ogg"
+    media_type_overrides = {
+        "audio/mpeg": ".mp3",
+        "audio/ogg": ".ogg",
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
+        "image/jpeg": ".jpg",
+        "text/html": ".html",
+    }
+    if media_type in media_type_overrides:
+        ext = media_type_overrides[media_type]
     else:
         ext = mimetypes.guess_extension(media_type) or ""
     return filename + ext if ext else filename
@@ -165,11 +194,12 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
         media_type = _media_type_from_filename(path.name)
         if path.suffix.lower() in {".md", ".markdown"}:
             media_type = "text/markdown"
+        resolved_source_uri = source_uri or path.as_uri()
         return SourcePayload(
             data=path.read_bytes(),
             filename=path.name,
             media_type=media_type,
-            source_uri=source_uri or path.as_uri(),
+            source_uri=resolved_source_uri,
         )
 
     if _looks_like_uri(source):
@@ -187,21 +217,26 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
             with urlopen(request, timeout=30) as response:
                 response_bytes = response.read()
                 content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip()
-                filename = _filename_from_url_path(parsed.path)
-                media_type = content_type or _media_type_from_filename(filename)
+                fallback_filename = _filename_from_url_path(parsed.path)
+                media_type = content_type or _media_type_from_filename(fallback_filename)
                 if media_type == "application/octet-stream":
                     sniffed = _sniff_media_type_from_bytes(response_bytes)
                     if sniffed:
                         media_type = sniffed
-                        filename = _ensure_extension_for_media_type(filename, media_type)
-                media_type = _normalize_media_type(filename=filename, media_type=media_type)
-                if Path(filename).suffix.lower() in {".md", ".markdown"}:
+                        fallback_filename = _ensure_extension_for_media_type(
+                            fallback_filename, media_type
+                        )
+                media_type = _normalize_media_type(
+                    filename=fallback_filename, media_type=media_type
+                )
+                if Path(fallback_filename).suffix.lower() in {".md", ".markdown"}:
                     media_type = "text/markdown"
+                resolved_source_uri = source_uri or source
                 return SourcePayload(
                     data=response_bytes,
-                    filename=filename,
+                    filename=fallback_filename,
                     media_type=media_type,
-                    source_uri=source_uri or source,
+                    source_uri=resolved_source_uri,
                 )
 
         raise NotImplementedError(

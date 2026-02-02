@@ -16,6 +16,8 @@ from ..time import utc_now_iso
 from .embedding_index_common import (
     ChunkRecord,
     EmbeddingIndexRecipeConfig,
+    _build_snippet,
+    _extract_span_text,
     artifact_paths_for_run,
     chunks_to_records,
     collect_chunks,
@@ -26,20 +28,19 @@ from .embedding_index_common import (
     write_chunks_jsonl,
     write_embeddings,
 )
-from .scan import _build_snippet
 
 
 class EmbeddingIndexInMemoryRecipeConfig(EmbeddingIndexRecipeConfig):
     """
     Configuration for embedding-index-inmemory retrieval.
 
-    :ivar max_chunks: Maximum chunks allowed for in-memory query loading.
-    :vartype max_chunks: int
+    :ivar maximum_cache_total_items: Maximum chunks allowed for in-memory query loading.
+    :vartype maximum_cache_total_items: int
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    max_chunks: int = Field(default=25000, ge=1)
+    maximum_cache_total_items: int = Field(default=25000, ge=1)
 
 
 class EmbeddingIndexInMemoryBackend:
@@ -66,10 +67,10 @@ class EmbeddingIndexInMemoryBackend:
         """
         recipe_config = EmbeddingIndexInMemoryRecipeConfig.model_validate(config)
         chunks, text_items = collect_chunks(corpus, recipe_config=recipe_config)
-        if len(chunks) > recipe_config.max_chunks:
+        if len(chunks) > recipe_config.maximum_cache_total_items:
             raise ValueError(
-                "embedding-index-inmemory exceeded max_chunks. "
-                "Use embedding-index-file or increase max_chunks."
+                "embedding-index-inmemory exceeded maximum_cache_total_items. "
+                "Use embedding-index-file or increase maximum_cache_total_items."
             )
 
         provider = recipe_config.embedding_provider.build_provider()
@@ -225,9 +226,9 @@ def _build_evidence(
             media_type=media_type,
             extraction_reference=extraction_reference,
         )
-        snippet = _build_snippet(
-            text, (span_start, span_end), max_chars=recipe_config.snippet_characters
-        )
+        span_text = _build_snippet(text, (span_start, span_end), recipe_config.snippet_characters)
+        if span_text is None:
+            span_text = _extract_span_text(text, (span_start, span_end))
         evidence_items.append(
             Evidence(
                 item_id=item_id,
@@ -235,7 +236,7 @@ def _build_evidence(
                 media_type=media_type,
                 score=float(scores[idx]),
                 rank=1,
-                text=snippet,
+                text=span_text,
                 content_ref=None,
                 span_start=span_start,
                 span_end=span_end,
@@ -243,7 +244,8 @@ def _build_evidence(
                 stage_scores=None,
                 recipe_id=run.recipe.recipe_id,
                 run_id=run.run_id,
-                hash=hash_text(snippet),
+                metadata=getattr(catalog_item, "metadata", {}) or {},
+                hash=hash_text(span_text or ""),
             )
         )
     return evidence_items

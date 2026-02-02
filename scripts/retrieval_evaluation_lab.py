@@ -201,7 +201,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     dataset_path.parent.mkdir(parents=True, exist_ok=True)
     dataset_path.write_text(evaluation_dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
-    budget = QueryBudget(max_total_items=arguments.max_total_items, max_total_characters=2000)
+    budget = QueryBudget(max_total_items=arguments.max_total_items, maximum_total_characters=2000)
     result = evaluate_run(
         corpus=corpus,
         run=retrieval_run,

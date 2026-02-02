@@ -57,6 +57,8 @@ DEFAULT_ANNOTATE_SYSTEM_PROMPT = (
     "- new_str must be identical to old_str with only <span ...> and </span> inserted.\n"
     "- Do not include <span or </span> inside old_str or new_str.\n"
     "- Do not insert nested spans.\n"
+    "- Do not wrap text that is already inside a span; spans must never overlap.\n"
+    "- If a name appears inside an existing span, leave it alone and wrap only bare text.\n"
     "- If a tool call fails due to non-unique old_str, retry with a longer unique old_str.\n"
     "- If a tool call fails, read the error and keep editing. Do not call done until spans are inserted.\n"
     "- Do not delete, reorder, paraphrase, or label text beyond the span attributes.\n\n"

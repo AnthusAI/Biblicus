@@ -62,7 +62,10 @@ def before_scenario(context, scenario) -> None:
     context.last_result = None
     context.last_ingest = None
     context.last_shown = None
+    context.last_source = None
     context.ingested_ids = []
+    context.ingested_relpaths = []
+    context.ingested_sources = []
 
 
 def after_scenario(context, scenario) -> None:

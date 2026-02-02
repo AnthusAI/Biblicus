@@ -159,6 +159,8 @@ def _apply_link_replace(text: str, old_str: str, new_str: str) -> str:
 
 
 def _validate_replace_text(old_str: str, new_str: str) -> None:
+    if "<span" in old_str or "</span>" in old_str:
+        raise ValueError("Text link replacements must target plain text without span tags")
     if strip_span_tags(old_str) != strip_span_tags(new_str):
         raise ValueError("Text link replacements may only insert span tags")
 
@@ -460,12 +462,16 @@ def _build_retry_message(errors: Sequence[str], current_text: str, id_prefix: st
     error_lines = "\n".join(f"- {error}" for error in errors)
     context_section = build_span_context_section(current_text, errors)
     coverage_guidance = _build_coverage_guidance(errors)
+    nested_guidance = ""
+    if any("nested span" in error for error in errors):
+        nested_guidance = "Do not create nested or overlapping spans. Remove nested spans and wrap only bare text.\n"
     return (
         "Your last edit did not validate.\n"
         "Issues:\n"
         f"{error_lines}\n\n"
         f"{context_section}"
         f"{coverage_guidance}"
+        f"{nested_guidance}"
         "Please fix the markup using str_replace. Use id for first mentions and ref for repeats. "
         "Reuse the same id for identical names and do not assign multiple ids to the same name. "
         f"Ids must start with '{id_prefix}'. Try again.\n"
