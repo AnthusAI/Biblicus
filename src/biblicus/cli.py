@@ -419,6 +419,11 @@ def cmd_build(arguments: argparse.Namespace) -> int:
     config = apply_dotted_overrides(base_config, overrides)
 
     run = backend.build_run(corpus, recipe_name=arguments.recipe_name, config=config)
+    if run.recipe.config.get("extraction_run") and not config.get("extraction_run"):
+        print(
+            "Warning: using latest extraction run; set extraction_run in the recipe for reproducibility.",
+            file=sys.stderr,
+        )
     print(run.model_dump_json(indent=2))
     return 0
 
