@@ -22,6 +22,11 @@ Feature: Context engine internal branches
     When I render that retriever pack with a template query
     Then the rendered retriever pack equals "pack text"
 
+  Scenario: Context assembler skips empty pack content
+    Given a retriever registry with a corpus-backed retriever
+    When I assemble messages with an empty context pack
+    Then the assembled messages should be empty
+
   Scenario: Context assembler raises when no retriever is available
     Given a retriever registry with a corpus-backed retriever
     When I render that retriever pack without a retriever function

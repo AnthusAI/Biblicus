@@ -140,6 +140,35 @@ def step_render_retriever_pack(context) -> None:
     )
 
 
+@when("I assemble messages with an empty context pack")
+def step_assemble_messages_with_empty_pack(context) -> None:
+    def fake_retrieve(_request):
+        return ContextPack(text="", evidence_count=0, blocks=[])
+
+    context_spec = ContextDeclaration(
+        name="ctx",
+        policy=ContextPolicySpec(
+            input_budget=ContextBudgetSpec(max_tokens=10),
+            pack_budget=ContextPackBudgetSpec(default_max_tokens=5),
+        ),
+        messages=[ContextInsertSpec(type="context", name="search")],
+    )
+    context.assembled_messages = context.assembler._build_messages(
+        context_spec,
+        history_messages=[],
+        template_context={"input": {"query": "hello"}, "context": {}},
+        retriever_override=fake_retrieve,
+        policy=context_spec.policy,
+        tighten_pack_budget=False,
+        total_pack_budget_override=None,
+    )
+
+
+@then("the assembled messages should be empty")
+def step_assert_assembled_messages_empty(context) -> None:
+    assert context.assembled_messages == []
+
+
 @when("I render that retriever pack without a retriever function")
 def step_render_retriever_pack_no_fn(context) -> None:
     context.error = None
