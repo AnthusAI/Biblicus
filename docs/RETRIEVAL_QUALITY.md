@@ -55,7 +55,7 @@ Example configuration:
 ```
 python -m biblicus build --corpus corpora/demo --backend hybrid \
   --config lexical_backend=sqlite-full-text-search \
-  --config embedding_backend=vector \
+  --config embedding_backend=tf-vector \
   --config lexical_weight=0.7 \
   --config embedding_weight=0.3
 ```

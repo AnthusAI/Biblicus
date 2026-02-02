@@ -61,4 +61,4 @@ See:
 
 - `biblicus.backends.scan.ScanBackend` (minimal baseline)
 - `biblicus.backends.sqlite_full_text_search.SqliteFullTextSearchBackend` (practical local backend)
-- `biblicus.backends.vector.VectorBackend` (term-frequency vector baseline; `tf-vector`)
+- `biblicus.backends.tf_vector.TfVectorBackend` (term-frequency vector baseline; `tf-vector`)
