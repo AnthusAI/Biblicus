@@ -169,16 +169,19 @@ class SqliteFullTextSearchBackend:
         """
         recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(config)
         catalog = corpus.load_catalog()
+        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
+        recipe_config_dict = recipe_config.model_dump()
+        if extraction_reference is not None:
+            recipe_config_dict["extraction_run"] = extraction_reference.as_string()
         recipe = create_recipe_manifest(
             backend_id=self.backend_id,
             name=recipe_name,
-            config=recipe_config.model_dump(),
+            config=recipe_config_dict,
         )
         run = create_run_manifest(corpus, recipe=recipe, stats={}, artifact_paths=[])
         db_relpath = str(Path(CORPUS_DIR_NAME) / RUNS_DIR_NAME / f"{run.run_id}.sqlite")
         db_path = corpus.root / db_relpath
         corpus.runs_dir.mkdir(parents=True, exist_ok=True)
-        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
         stats = _build_full_text_search_index(
             db_path=db_path,
             corpus=corpus,
@@ -613,6 +616,11 @@ def _resolve_extraction_reference(
     """
     Resolve an extraction run reference from a recipe config.
 
+    When extraction_run is not set in config, falls back to the latest extraction
+    run so that PDFs and images (which have no raw text on disk) are indexed from
+    extracted text. When no extraction run exists, returns None and only raw
+    text items are indexed.
+
     :param corpus: Corpus associated with the recipe.
     :type corpus: Corpus
     :param recipe_config: Parsed backend recipe configuration.
@@ -621,16 +629,16 @@ def _resolve_extraction_reference(
     :rtype: ExtractionRunReference or None
     :raises FileNotFoundError: If an extraction run is referenced but not present.
     """
-    if not recipe_config.extraction_run:
-        return None
-    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
-    run_dir = corpus.extraction_run_dir(
-        extractor_id=extraction_reference.extractor_id,
-        run_id=extraction_reference.run_id,
-    )
-    if not run_dir.is_dir():
-        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
-    return extraction_reference
+    if recipe_config.extraction_run:
+        extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
+        run_dir = corpus.extraction_run_dir(
+            extractor_id=extraction_reference.extractor_id,
+            run_id=extraction_reference.run_id,
+        )
+        if not run_dir.is_dir():
+            raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+        return extraction_reference
+    return corpus.latest_extraction_run_reference()
 
 
 def _iter_chunks(
