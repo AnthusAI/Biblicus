@@ -219,6 +219,9 @@ biblicus extract my-corpus --extractor pdf-text
 # Build backend with extraction run
 biblicus build my-corpus --backend sqlite-full-text-search \
   --config extraction_run=pdf-text:EXTRACTION_RUN_ID
+
+# Or omit extraction_run: backend uses latest extraction run if one exists
+biblicus build my-corpus --backend sqlite-full-text-search
 ```
 
 ## Backend Configuration

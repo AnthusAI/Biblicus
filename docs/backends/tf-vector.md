@@ -26,7 +26,7 @@ similarity. It builds no persistent index and scores items at query time. This m
 The backend accepts these configuration fields:
 
 - `snippet_characters`: maximum characters to include in evidence snippets.
-- `extraction_run`: optional extraction run reference (`extractor_id:run_id`).
+- `extraction_run`: optional extraction run reference (`extractor_id:run_id`). When omitted, the backend uses the latest extraction run if one exists; otherwise only raw text items are indexed. Pass explicitly for reproducible builds.
 
 Example recipe:
 

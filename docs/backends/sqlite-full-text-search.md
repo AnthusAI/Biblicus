@@ -72,7 +72,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
 | `chunk_size` | int | `800` | Maximum characters per chunk (must be >= 1) |
 | `chunk_overlap` | int | `200` | Overlap characters between chunks (must be < chunk_size) |
 | `snippet_characters` | int | `400` | Maximum characters in evidence snippets |
-| `extraction_run` | str | `None` | Optional extraction run reference (extractor_id:run_id) |
+| `extraction_run` | str | `None` | Extraction run reference (extractor_id:run_id). When omitted, the backend uses the latest extraction run if one exists, so PDFs and images are indexed from extracted text; otherwise only raw text items are indexed. Pass explicitly for reproducible builds. |
 
 ### Chunking Strategy
 

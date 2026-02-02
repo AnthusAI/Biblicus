@@ -215,11 +215,16 @@ python -m biblicus extract delete --corpus corpora/extraction-demo \
 
 ## Use extracted text in retrieval
 
-Retrieval backends can build and query using a selected extraction run. This is configured by passing `extraction_run=extractor_id:run_id` to the backend build command.
+Retrieval backends can build and query using a selected extraction run. Pass `extraction_run=extractor_id:run_id` to the backend build command to use a specific run. When `extraction_run` is omitted, backends fall back to the **latest** extraction run (if any), so PDFs and images are indexed from extracted text; when no extraction run exists, only raw text items are indexed. For reproducible builds, pass the extraction run reference explicitly.
 
 ```
+# Explicit extraction run (recommended for reproducibility)
 python -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full-text-search \
   --config extraction_run=pipeline:EXTRACTION_RUN_ID
+python -m biblicus query --corpus corpora/extraction-demo --query extracted
+
+# Omit extraction_run: backend uses latest extraction run if one exists
+python -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full-text-search
 python -m biblicus query --corpus corpora/extraction-demo --query extracted
 ```
 
