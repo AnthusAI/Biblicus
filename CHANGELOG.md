@@ -1,6 +1,37 @@
 # CHANGELOG
 
 
+## v1.1.2 (2026-02-03)
+
+### Bug Fixes
+
+- **sqlite-fts**: Strip punctuation from query tokens to avoid FTS5 syntax errors
+  ([#1](https://github.com/AnthusAI/Biblicus/pull/1),
+  [`1cdac23`](https://github.com/AnthusAI/Biblicus/commit/1cdac2309f25d2551fd2cdd3c33106c149120d07))
+
+Strip punctuation from query tokens to prevent FTS5 syntax errors.
+
+Fixes queries like 'what agreement do we have with Acme?' where '?' was being interpreted as FTS5
+  wildcard syntax.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+### Documentation
+
+- Fix class path references in backends.md
+  ([`9ddefa4`](https://github.com/AnthusAI/Biblicus/commit/9ddefa46993ec9775248feae57d0ff7a8baa0861))
+
+Update references from old backend class names to current retriever names: -
+  biblicus.backends.scan.ScanBackend → biblicus.retrievers.scan.ScanRetriever -
+  biblicus.backends.sqlite_full_text_search.SqliteFullTextSearchBackend →
+  biblicus.retrievers.sqlite_full_text_search.SqliteFullTextSearchRetriever -
+  biblicus.backends.vector.VectorBackend → biblicus.retrievers.tf_vector.TfVectorRetriever
+
+Thanks to @uokesita for identifying this inconsistency in PR #3.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+
 ## v1.1.1 (2026-02-03)
 
 ### Bug Fixes
