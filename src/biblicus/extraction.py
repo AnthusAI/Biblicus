@@ -65,6 +65,8 @@ class ExtractionStepResult(BaseModel):
     :vartype source_step_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
+    :ivar metadata_relpath: Relative path to the step metadata artifact, when present.
+    :vartype metadata_relpath: str or None
     :ivar error_type: Optional error type name for errored steps.
     :vartype error_type: str or None
     :ivar error_message: Optional error message for errored steps.
@@ -81,6 +83,7 @@ class ExtractionStepResult(BaseModel):
     producer_extractor_id: Optional[str] = None
     source_step_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    metadata_relpath: Optional[str] = None
     error_type: Optional[str] = None
     error_message: Optional[str] = None
 
@@ -95,6 +98,8 @@ class ExtractionItemResult(BaseModel):
     :vartype status: str
     :ivar final_text_relpath: Relative path to the final extracted text artifact, when extracted.
     :vartype final_text_relpath: str or None
+    :ivar final_metadata_relpath: Relative path to the final metadata artifact, when present.
+    :vartype final_metadata_relpath: str or None
     :ivar final_step_index: Pipeline step index that produced the final text.
     :vartype final_step_index: int or None
     :ivar final_step_extractor_id: Extractor identifier of the step that produced the final text.
@@ -116,6 +121,7 @@ class ExtractionItemResult(BaseModel):
     item_id: str
     status: str
     final_text_relpath: Optional[str] = None
+    final_metadata_relpath: Optional[str] = None
     final_step_index: Optional[int] = Field(default=None, ge=1)
     final_step_extractor_id: Optional[str] = None
     final_producer_extractor_id: Optional[str] = None
@@ -295,6 +301,65 @@ def write_pipeline_step_text_artifact(
     return relpath
 
 
+def write_extracted_metadata_artifact(
+    *, snapshot_dir: Path, item: CatalogItem, metadata: Dict[str, Any]
+) -> Optional[str]:
+    """
+    Write an extracted metadata artifact for an item into the snapshot directory.
+
+    :param snapshot_dir: Extraction snapshot directory.
+    :type snapshot_dir: Path
+    :param item: Catalog item being extracted.
+    :type item: CatalogItem
+    :param metadata: Metadata dictionary to persist.
+    :type metadata: dict[str, Any]
+    :return: Relative path to the stored metadata artifact, or None if empty.
+    :rtype: str or None
+    """
+    if not metadata:
+        return None
+    metadata_dir = snapshot_dir / "metadata"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    relpath = str(Path("metadata") / f"{item.id}.json")
+    path = snapshot_dir / relpath
+    path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return relpath
+
+
+def write_pipeline_step_metadata_artifact(
+    *,
+    snapshot_dir: Path,
+    step_index: int,
+    extractor_id: str,
+    item: CatalogItem,
+    metadata: Dict[str, Any],
+) -> Optional[str]:
+    """
+    Write a pipeline step metadata artifact for an item.
+
+    :param snapshot_dir: Extraction snapshot directory.
+    :type snapshot_dir: Path
+    :param step_index: One-based pipeline step index.
+    :type step_index: int
+    :param extractor_id: Extractor identifier for the step.
+    :type extractor_id: str
+    :param item: Catalog item being extracted.
+    :type item: CatalogItem
+    :param metadata: Metadata dictionary to persist.
+    :type metadata: dict[str, Any]
+    :return: Relative path to the stored step metadata artifact, or None if empty.
+    :rtype: str or None
+    """
+    if not metadata:
+        return None
+    step_dir_name = _pipeline_step_dir_name(step_index=step_index, extractor_id=extractor_id)
+    metadata_dir = snapshot_dir / "steps" / step_dir_name / "metadata"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    relpath = str(Path("steps") / step_dir_name / "metadata" / f"{item.id}.json")
+    (snapshot_dir / relpath).write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return relpath
+
+
 def _final_output_from_steps(
     step_outputs: List[ExtractionStepOutput],
 ) -> Optional[ExtractionStepOutput]:
@@ -447,6 +512,13 @@ def build_extraction_snapshot(
                 item=item,
                 text=extracted_text.text,
             )
+            metadata_relpath = write_pipeline_step_metadata_artifact(
+                snapshot_dir=snapshot_dir,
+                step_index=step_index,
+                extractor_id=step.extractor_id,
+                item=item,
+                metadata=extracted_text.metadata,
+            )
             text_characters = len(extracted_text.text)
             step_results.append(
                 ExtractionStepResult(
@@ -458,6 +530,7 @@ def build_extraction_snapshot(
                     producer_extractor_id=extracted_text.producer_extractor_id,
                     source_step_index=extracted_text.source_step_index,
                     confidence=extracted_text.confidence,
+                    metadata_relpath=metadata_relpath,
                     error_type=None,
                     error_message=None,
                 )
@@ -472,6 +545,7 @@ def build_extraction_snapshot(
                     producer_extractor_id=extracted_text.producer_extractor_id,
                     source_step_index=extracted_text.source_step_index,
                     confidence=extracted_text.confidence,
+                    metadata=extracted_text.metadata,
                     error_type=None,
                     error_message=None,
                 )
@@ -489,6 +563,7 @@ def build_extraction_snapshot(
                     item_id=item.id,
                     status=status,
                     final_text_relpath=None,
+                    final_metadata_relpath=None,
                     final_step_index=None,
                     final_step_extractor_id=None,
                     final_producer_extractor_id=None,
@@ -504,6 +579,9 @@ def build_extraction_snapshot(
         final_text_relpath = write_extracted_text_artifact(
             snapshot_dir=snapshot_dir, item=item, text=final_text
         )
+        final_metadata_relpath = write_extracted_metadata_artifact(
+            snapshot_dir=snapshot_dir, item=item, metadata=final_output.metadata
+        )
         extracted_count += 1
         if final_text.strip():
             extracted_nonempty_count += 1
@@ -517,6 +595,7 @@ def build_extraction_snapshot(
                 item_id=item.id,
                 status="extracted",
                 final_text_relpath=final_text_relpath,
+                final_metadata_relpath=final_metadata_relpath,
                 final_step_index=final_output.step_index,
                 final_step_extractor_id=final_output.extractor_id,
                 final_producer_extractor_id=final_output.producer_extractor_id,

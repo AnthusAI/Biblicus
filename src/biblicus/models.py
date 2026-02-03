@@ -416,6 +416,8 @@ class ExtractedText(BaseModel):
     :vartype source_step_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
+    :ivar metadata: Optional structured metadata for passing data between pipeline stages.
+    :vartype metadata: dict[str, Any]
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -424,6 +426,7 @@ class ExtractedText(BaseModel):
     producer_extractor_id: str = Field(min_length=1)
     source_step_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ExtractionStepOutput(BaseModel):
@@ -446,6 +449,8 @@ class ExtractionStepOutput(BaseModel):
     :vartype source_step_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
+    :ivar metadata: Optional structured metadata for passing data between pipeline stages.
+    :vartype metadata: dict[str, Any]
     :ivar error_type: Optional error type name for errored steps.
     :vartype error_type: str or None
     :ivar error_message: Optional error message for errored steps.
@@ -462,5 +467,6 @@ class ExtractionStepOutput(BaseModel):
     producer_extractor_id: Optional[str] = None
     source_step_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     error_type: Optional[str] = None
     error_message: Optional[str] = None
