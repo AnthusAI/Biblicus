@@ -1,5 +1,5 @@
 """
-Shared retrieval helpers for Biblicus backends.
+Shared retrieval helpers for Biblicus retrievers.
 """
 
 from __future__ import annotations
@@ -9,75 +9,82 @@ import json
 from typing import Any, Dict, Iterable, List, Optional
 
 from .corpus import Corpus
-from .models import Evidence, QueryBudget, RecipeManifest, RetrievalRun
+from .models import (
+    ConfigurationManifest,
+    Evidence,
+    QueryBudget,
+    RetrievalSnapshot,
+)
 from .time import utc_now_iso
 
 
-def create_recipe_manifest(
+def create_configuration_manifest(
     *,
-    backend_id: str,
+    retriever_id: str,
     name: str,
-    config: Dict[str, Any],
+    configuration: Dict[str, Any],
     description: Optional[str] = None,
-) -> RecipeManifest:
+) -> ConfigurationManifest:
     """
-    Create a deterministic recipe manifest from a backend configuration.
+    Create a deterministic configuration manifest from a retriever configuration.
 
-    :param backend_id: Backend identifier for the recipe.
-    :type backend_id: str
-    :param name: Human-readable recipe name.
+    :param retriever_id: Retriever identifier for the configuration.
+    :type retriever_id: str
+    :param name: Human-readable configuration name.
     :type name: str
-    :param config: Backend-specific configuration values.
-    :type config: dict[str, Any]
-    :param description: Optional recipe description.
+    :param configuration: Retriever-specific configuration values.
+    :type configuration: dict[str, Any]
+    :param description: Optional configuration description.
     :type description: str or None
-    :return: Deterministic recipe manifest.
-    :rtype: RecipeManifest
+    :return: Deterministic configuration manifest.
+    :rtype: ConfigurationManifest
     """
-    config_json = json.dumps(config, sort_keys=True, separators=(",", ":"))
-    recipe_seed = f"{backend_id}:{config_json}"
-    recipe_id = hashlib.sha256(recipe_seed.encode("utf-8")).hexdigest()
-    return RecipeManifest(
-        recipe_id=recipe_id,
-        backend_id=backend_id,
+    config_json = json.dumps(configuration, sort_keys=True, separators=(",", ":"))
+    configuration_seed = f"{retriever_id}:{config_json}"
+    configuration_id = hashlib.sha256(configuration_seed.encode("utf-8")).hexdigest()
+    return ConfigurationManifest(
+        configuration_id=configuration_id,
+        retriever_id=retriever_id,
         name=name,
         created_at=utc_now_iso(),
-        config=config,
+        configuration=configuration,
         description=description,
     )
 
 
-def create_run_manifest(
+def create_snapshot_manifest(
     corpus: Corpus,
     *,
-    recipe: RecipeManifest,
+    configuration: ConfigurationManifest,
     stats: Dict[str, Any],
-    artifact_paths: Optional[List[str]] = None,
-) -> RetrievalRun:
+    snapshot_artifacts: Optional[List[str]] = None,
+) -> RetrievalSnapshot:
     """
-    Create a retrieval run manifest tied to the current catalog snapshot.
+    Create a retrieval snapshot manifest tied to the current catalog snapshot.
 
-    :param corpus: Corpus used to generate the run.
+    :param corpus: Corpus used to generate the snapshot.
     :type corpus: Corpus
-    :param recipe: Recipe manifest for the run.
-    :type recipe: RecipeManifest
-    :param stats: Backend-specific run statistics.
+    :param configuration: Configuration manifest for the snapshot.
+    :type configuration: ConfigurationManifest
+    :param stats: Retriever-specific snapshot statistics.
     :type stats: dict[str, Any]
-    :param artifact_paths: Optional relative paths to materialized artifacts.
-    :type artifact_paths: list[str] or None
-    :return: Run manifest.
-    :rtype: RetrievalRun
+    :param snapshot_artifacts: Optional relative paths to materialized artifacts.
+    :type snapshot_artifacts: list[str] or None
+    :return: Snapshot manifest.
+    :rtype: RetrievalSnapshot
     """
     catalog = corpus.load_catalog()
     created_at = utc_now_iso()
-    run_id = hashlib.sha256(f"{recipe.recipe_id}:{created_at}".encode("utf-8")).hexdigest()
-    return RetrievalRun(
-        run_id=run_id,
-        recipe=recipe,
+    snapshot_id = hashlib.sha256(
+        f"{configuration.configuration_id}:{created_at}".encode("utf-8")
+    ).hexdigest()
+    return RetrievalSnapshot(
+        snapshot_id=snapshot_id,
+        configuration=configuration,
         corpus_uri=catalog.corpus_uri,
         catalog_generated_at=catalog.generated_at,
         created_at=created_at,
-        artifact_paths=list(artifact_paths or []),
+        snapshot_artifacts=list(snapshot_artifacts or []),
         stats=stats,
     )
 

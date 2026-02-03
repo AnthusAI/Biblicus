@@ -8,7 +8,7 @@ text segments in a corpus. It is an exploratory analysis tool that produces stru
 - A per-item decoded path that shows how each item traversed the state graph.
 - Optional GraphViz exports for visualization.
 
-Markov analysis is configured using YAML recipes, validated strictly, and stored as versioned run artifacts under the
+Markov analysis is configured using YAML configurations, validated strictly, and stored as versioned snapshot artifacts under the
 corpus. It is designed for experimentation across segmentation strategies and observation encodings.
 
 ## Observation encoder configurability
@@ -26,7 +26,7 @@ without changing the pipeline code.
 Markov analysis can run topic modeling over segments and use the resulting topic labels as categorical observations.
 This is useful when you want topic buckets to act as the observation symbols.
 
-The topic modeling recipe is embedded inside the Markov recipe:
+The topic modeling configuration is embedded inside the Markov configuration:
 
 ```
 schema_version: 1
@@ -34,7 +34,7 @@ segmentation:
   method: sentence
 topic_modeling:
   enabled: true
-  recipe:
+  configuration:
     schema_version: 1
     llm_extraction:
       enabled: false
@@ -91,8 +91,9 @@ Example snippet:
 
 System prompt excerpt:
 
+**System prompt (excerpt):**
+
 ```
-SYSTEM PROMPT (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -104,29 +105,33 @@ Greeting. Verification. Resolution.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the segments that represent contiguous phases in the text.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Greeting. Verification. Resolution.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>Greeting.</span> <span>Verification.</span> <span>Resolution.</span>
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>Greeting.</span> <span>Verification.</span> <span>Resolution.</span>",
   "spans": [
@@ -141,10 +146,10 @@ STRUCTURED DATA (result):
 ## Run Markov analysis from the CLI
 
 ```
-biblicus analyze markov --corpus corpora/ag_news_demo_2k --recipe recipes/markov/local-discovery.yml
+biblicus analyze markov --corpus corpora/ag_news_demo_2k --configuration configurations/markov/local-discovery.yml
 ```
 
-Example span markup recipe (text extract provider-backed):
+Example span markup configuration (text extract provider-backed):
 
 ```
 schema_version: 1
@@ -196,25 +201,25 @@ observations:
   encoder: tfidf
 ```
 
-To keep runs reproducible, pass an extraction run explicitly:
+To keep runs reproducible, pass an extraction snapshot explicitly:
 
 ```
 biblicus analyze markov \
   --corpus corpora/ag_news_demo_2k \
-  --recipe recipes/markov/local-discovery.yml \
+  --configuration configurations/markov/local-discovery.yml \
   --extraction-run pipeline:RUN_ID
 ```
 
-### Cascading recipes and CLI overrides
+### Cascading configurations and CLI overrides
 
-Markov analysis recipes support cascading composition. You can pass multiple `--recipe` files; later recipes override
-earlier recipes via a deep merge:
+Markov analysis configurations support cascading composition. You can pass multiple `--configuration` files; later configurations override
+earlier configurations via a deep merge:
 
 ```
 biblicus analyze markov \
   --corpus corpora/ag_news_demo_2k \
-  --recipe recipes/markov/base.yml \
-  --recipe recipes/markov/guided.yml
+  --configuration configurations/markov/base.yml \
+  --configuration configurations/markov/guided.yml
 ```
 
 To override the composed configuration view from the command line, use `--config key=value` with dotted keys:
@@ -222,8 +227,8 @@ To override the composed configuration view from the command line, use `--config
 ```
 biblicus analyze markov \
   --corpus corpora/ag_news_demo_2k \
-  --recipe recipes/markov/base.yml \
-  --recipe recipes/markov/guided.yml \
+  --configuration configurations/markov/base.yml \
+  --configuration configurations/markov/guided.yml \
   --config model.n_states=14
 ```
 
@@ -234,10 +239,10 @@ Omitted fields use the default values from the Markov analysis schema. Missing r
 Markov analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/markov/<run_id>/
+.biblicus/runs/analysis/markov/<snapshot_id>/
 ```
 
-The run directory contains a manifest and structured artifacts. The canonical output is `output.json`. Additional files
+The snapshot directory contains a manifest and structured artifacts. The canonical output is `output.json`. Additional files
 provide intermediate visibility, such as segments and observations used to fit the model. When enabled, GraphViz output
 is written as `transitions.dot`.
 
@@ -258,5 +263,5 @@ Markov analysis requires an optional dependency:
 python -m pip install "biblicus[markov-analysis]"
 ```
 
-The demo builds or reuses an extraction run, executes Markov analysis with example recipes, and prints the resulting run
+The demo builds or reuses an extraction snapshot, executes Markov analysis with example configurations, and prints the resulting run
 paths. Inspect the emitted `output.json` and graph artifacts to understand states and transitions.

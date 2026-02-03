@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 
 from behave import given, then, when
 
+from biblicus.corpus import Corpus
 from features.environment import run_biblicus
 
 
@@ -131,43 +132,53 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(standard_output)
 
 
-def _load_markov_segments(context, corpus_name: str = "corpus") -> List[dict[str, object]]:
+def _analysis_snapshot_dir(context, corpus_name: str = "corpus") -> Path:
     output = context.last_analysis_output
-    run_id = output["run"]["run_id"]
-    corpus = _corpus_path(context, corpus_name)
-    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "segments.jsonl"
+    snapshot_id = output["snapshot"]["snapshot_id"]
+    corpus_path = _corpus_path(context, corpus_name)
+    corpus = Corpus.open(corpus_path)
+    return corpus.analysis_run_dir(analysis_id="markov", snapshot_id=snapshot_id)
+
+
+def _load_markov_segments(context, corpus_name: str = "corpus") -> List[dict[str, object]]:
+    path = _analysis_snapshot_dir(context, corpus_name) / "segments.jsonl"
     lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     return [json.loads(line) for line in lines]
 
 
 def _load_markov_observations(context, corpus_name: str = "corpus") -> List[dict[str, object]]:
-    output = context.last_analysis_output
-    run_id = output["run"]["run_id"]
-    corpus = _corpus_path(context, corpus_name)
-    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "observations.jsonl"
+    path = _analysis_snapshot_dir(context, corpus_name) / "observations.jsonl"
     lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     return [json.loads(line) for line in lines]
 
 
-def _latest_extraction_run_manifest_path(context, corpus_name: str) -> Path:
+def _latest_extraction_snapshot_manifest_path(context, corpus_name: str) -> Path:
     corpus = _corpus_path(context, corpus_name)
     extractor_id = context.last_extractor_id
-    run_id = context.last_extraction_run_id
+    snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(extractor_id, str) and extractor_id
-    assert isinstance(run_id, str) and run_id
-    return corpus / ".biblicus" / "runs" / "extraction" / extractor_id / run_id / "manifest.json"
+    assert isinstance(snapshot_id, str) and snapshot_id
+    return (
+        corpus
+        / ".biblicus"
+        / "snapshots"
+        / "extraction"
+        / extractor_id
+        / snapshot_id
+        / "manifest.json"
+    )
 
 
-def _latest_extraction_run_root(context, corpus_name: str) -> Path:
-    return _latest_extraction_run_manifest_path(context, corpus_name).parent
+def _latest_extraction_snapshot_root(context, corpus_name: str) -> Path:
+    return _latest_extraction_snapshot_manifest_path(context, corpus_name).parent
 
 
-def _run_reference_from_context(context) -> str:
+def _snapshot_reference_from_context(context) -> str:
     extractor_id = context.last_extractor_id
-    run_id = context.last_extraction_run_id
+    snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(extractor_id, str) and extractor_id
-    assert isinstance(run_id, str) and run_id
-    return f"{extractor_id}:{run_id}"
+    assert isinstance(snapshot_id, str) and snapshot_id
+    return f"{extractor_id}:{snapshot_id}"
 
 
 @given('a fake hmmlearn library is available with predicted states "{states}"')
@@ -219,25 +230,26 @@ def step_hmmlearn_dependency_unavailable(context) -> None:
 
 
 @when(
-    'I run a markov analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run'
+    'I snapshot a markov analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "and the latest extraction snapshot"
 )
 def step_run_markov_analysis_with_latest_extraction(
-    context, corpus_name: str, recipe_file: str
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    run_ref = _run_reference_from_context(context)
+    configuration_path = Path(workdir) / configuration_file
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = [
         "--corpus",
         str(corpus),
         "analyze",
         "markov",
-        "--recipe",
-        str(recipe_path),
-        "--extraction-run",
-        run_ref,
+        "--configuration",
+        str(configuration_path),
+        "--extraction-snapshot",
+        snapshot_ref,
     ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
@@ -247,26 +259,26 @@ def step_run_markov_analysis_with_latest_extraction(
 
 
 @when(
-    'I attempt to run a markov analysis in corpus "{corpus_name}" using recipe "{recipe_file}" '
-    "and the latest extraction run"
+    'I attempt to snapshot a markov analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "and the latest extraction snapshot"
 )
 def step_attempt_run_markov_analysis_with_latest_extraction(
-    context, corpus_name: str, recipe_file: str
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    run_ref = _run_reference_from_context(context)
+    configuration_path = Path(workdir) / configuration_file
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = [
         "--corpus",
         str(corpus),
         "analyze",
         "markov",
-        "--recipe",
-        str(recipe_path),
-        "--extraction-run",
-        run_ref,
+        "--configuration",
+        str(configuration_path),
+        "--extraction-snapshot",
+        snapshot_ref,
     ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
@@ -274,21 +286,23 @@ def step_attempt_run_markov_analysis_with_latest_extraction(
         context.last_analysis_output = _parse_json_output(result.stdout)
 
 
-@when('I run a markov analysis in corpus "{corpus_name}" using recipe "{recipe_file}"')
-def step_run_markov_analysis_without_extraction_run(
-    context, corpus_name: str, recipe_file: str
+@when(
+    'I snapshot a markov analysis in corpus "{corpus_name}" using configuration "{configuration_file}"'
+)
+def step_run_markov_analysis_without_extraction_snapshot(
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
+    configuration_path = Path(workdir) / configuration_file
     args = [
         "--corpus",
         str(corpus),
         "analyze",
         "markov",
-        "--recipe",
-        str(recipe_path),
+        "--configuration",
+        str(configuration_path),
     ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
@@ -320,34 +334,28 @@ def step_markov_output_includes_decoded_path_count(context, count: int) -> None:
     assert len(paths) == count
 
 
-@then("the analysis run includes a graphviz transitions file")
+@then("the analysis snapshot includes a graphviz transitions file")
 def step_markov_run_includes_graphviz_file(context) -> None:
-    output = context.last_analysis_output
-    run_id = output["run"]["run_id"]
-    corpus = _corpus_path(context, "corpus")
-    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "transitions.dot"
+    path = _analysis_snapshot_dir(context) / "transitions.dot"
     assert path.is_file()
 
 
-@then("the markov analysis run includes more than 1 segment")
+@then("the markov analysis snapshot includes more than 1 segment")
 def step_markov_run_includes_more_than_one_segment(context) -> None:
     segments = _load_markov_segments(context)
     assert len(segments) > 1
 
 
-@then("the markov analysis run includes a segment with text:")
+@then("the markov analysis snapshot includes a segment with text:")
 def step_markov_run_includes_segment_text(context) -> None:
     expected = str(getattr(context, "text", "") or "").strip()
     segments = _load_markov_segments(context)
     assert any(str(segment.get("text", "")).strip() == expected for segment in segments)
 
 
-@then("the markov analysis run includes an observations file")
+@then("the markov analysis snapshot includes an observations file")
 def step_markov_run_includes_observations_file(context) -> None:
-    output = context.last_analysis_output
-    run_id = output["run"]["run_id"]
-    corpus = _corpus_path(context, "corpus")
-    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "observations.jsonl"
+    path = _analysis_snapshot_dir(context) / "observations.jsonl"
     assert path.is_file()
 
 
@@ -360,10 +368,10 @@ def step_markov_observations_include_topic_labels(context, labels: str) -> None:
         assert label in found
 
 
-@given("I append a non-extracted item to the latest extraction run manifest")
-@when("I append a non-extracted item to the latest extraction run manifest")
+@given("I append a non-extracted item to the latest extraction snapshot manifest")
+@when("I append a non-extracted item to the latest extraction snapshot manifest")
 def step_append_non_extracted_item_to_manifest(context) -> None:
-    manifest_path = _latest_extraction_run_manifest_path(context, "corpus")
+    manifest_path = _latest_extraction_snapshot_manifest_path(context, "corpus")
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     items = payload.get("items", [])
     assert isinstance(items, list)
@@ -381,15 +389,15 @@ def step_append_non_extracted_item_to_manifest(context) -> None:
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
-@given("I blank the extracted text for the 4th ingested item in the latest extraction run")
-@when("I blank the extracted text for the 4th ingested item in the latest extraction run")
+@given("I blank the extracted text for the 4th ingested item in the latest extraction snapshot")
+@when("I blank the extracted text for the 4th ingested item in the latest extraction snapshot")
 def step_blank_extracted_text_for_fourth_item(context) -> None:
     ingested_ids = getattr(context, "ingested_ids", None)
     assert isinstance(ingested_ids, list)
     assert len(ingested_ids) >= 4
     target_id = str(ingested_ids[3])
 
-    manifest_path = _latest_extraction_run_manifest_path(context, "corpus")
+    manifest_path = _latest_extraction_snapshot_manifest_path(context, "corpus")
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     items = payload.get("items", [])
     assert isinstance(items, list)
@@ -401,7 +409,7 @@ def step_blank_extracted_text_for_fourth_item(context) -> None:
     assert target_item is not None
     relpath = target_item.get("final_text_relpath")
     assert isinstance(relpath, str) and relpath
-    text_path = _latest_extraction_run_root(context, "corpus") / relpath
+    text_path = _latest_extraction_snapshot_root(context, "corpus") / relpath
     text_path.write_text("", encoding="utf-8")
 
 
@@ -443,9 +451,6 @@ def step_every_markov_state_report_has_no_non_boundary_exemplars(context) -> Non
 
 @then("the graphviz transitions file contains no edges")
 def step_graphviz_transitions_file_contains_no_edges(context) -> None:
-    output = context.last_analysis_output
-    run_id = output["run"]["run_id"]
-    corpus = _corpus_path(context, "corpus")
-    path = corpus / ".biblicus" / "runs" / "analysis" / "markov" / run_id / "transitions.dot"
+    path = _analysis_snapshot_dir(context) / "transitions.dot"
     contents = path.read_text(encoding="utf-8")
     assert "->" not in contents

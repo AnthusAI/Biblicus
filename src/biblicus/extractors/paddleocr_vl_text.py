@@ -16,7 +16,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..inference import ApiProvider, InferenceBackendConfig, InferenceBackendMode, resolve_api_key
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
@@ -26,8 +26,8 @@ class PaddleOcrVlExtractorConfig(BaseModel):
     """
     Configuration for the PaddleOCR-VL extractor.
 
-    :ivar backend: Inference backend configuration for local or application programming interface execution.
-    :vartype backend: InferenceBackendConfig
+    :ivar retriever: Inference retriever configuration for local or application programming interface execution.
+    :vartype retriever: InferenceBackendConfig
     :ivar min_confidence: Minimum confidence threshold for including text.
     :vartype min_confidence: float
     :ivar joiner: String used to join recognized text lines.
@@ -38,9 +38,11 @@ class PaddleOcrVlExtractorConfig(BaseModel):
     :vartype lang: str
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    backend: InferenceBackendConfig = Field(default_factory=InferenceBackendConfig)
+    retriever: InferenceBackendConfig = Field(
+        default_factory=InferenceBackendConfig, alias="backend"
+    )
     min_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     joiner: str = Field(default="\n")
     use_angle_cls: bool = Field(default=True)
@@ -70,7 +72,7 @@ class PaddleOcrVlExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed configuration model.
         :rtype: PaddleOcrVlExtractorConfig
-        :raises ExtractionRunFatalError: If required dependencies are missing.
+        :raises ExtractionSnapshotFatalError: If required dependencies are missing.
         """
         import json
 
@@ -86,26 +88,26 @@ class PaddleOcrVlExtractor(TextExtractor):
 
         parsed = PaddleOcrVlExtractorConfig.model_validate(parsed_config)
 
-        if parsed.backend.mode == InferenceBackendMode.LOCAL:
+        if parsed.retriever.mode == InferenceBackendMode.LOCAL:
             try:
                 from paddleocr import PaddleOCR  # noqa: F401
             except ImportError as import_error:
-                raise ExtractionRunFatalError(
+                raise ExtractionSnapshotFatalError(
                     "PaddleOCR-VL extractor (local mode) requires paddleocr. "
                     'Install it with pip install "biblicus[paddleocr]".'
                 ) from import_error
         else:
             # api_provider is guaranteed to be set by InferenceBackendConfig validator
             api_key = resolve_api_key(
-                parsed.backend.api_provider,
-                config_override=parsed.backend.api_key,
+                parsed.retriever.api_provider,
+                config_override=parsed.retriever.api_key,
             )
             if api_key is None:
-                provider_name = parsed.backend.api_provider.value.upper()
-                raise ExtractionRunFatalError(
+                provider_name = parsed.retriever.api_provider.value.upper()
+                raise ExtractionSnapshotFatalError(
                     f"PaddleOCR-VL extractor (API mode) requires an API key for {provider_name}. "
                     f"Set {provider_name}_API_KEY environment variable or configure "
-                    f"{parsed.backend.api_provider.value} in user config."
+                    f"{parsed.retriever.api_provider.value} in user config."
                 )
 
         return parsed
@@ -145,12 +147,12 @@ class PaddleOcrVlExtractor(TextExtractor):
 
         source_path = corpus.root / item.relpath
 
-        if parsed_config.backend.mode == InferenceBackendMode.LOCAL:
+        if parsed_config.retriever.mode == InferenceBackendMode.LOCAL:
             text, confidence = self._extract_local(source_path, parsed_config)
         else:
             api_key = resolve_api_key(
-                parsed_config.backend.api_provider,
-                config_override=parsed_config.backend.api_key,
+                parsed_config.retriever.api_provider,
+                config_override=parsed_config.retriever.api_key,
             )
             text, confidence = self._extract_via_api(source_path, parsed_config, api_key)
 
@@ -228,7 +230,7 @@ class PaddleOcrVlExtractor(TextExtractor):
         :return: Tuple of extracted text and confidence score.
         :rtype: tuple[str, float or None]
         """
-        if config.backend.api_provider == ApiProvider.HUGGINGFACE:
+        if config.retriever.api_provider == ApiProvider.HUGGINGFACE:
             return self._extract_via_huggingface_api(source_path, config, api_key)
         else:
             return "", None
@@ -257,7 +259,7 @@ class PaddleOcrVlExtractor(TextExtractor):
 
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        model_id = config.backend.model_id or "PaddlePaddle/PaddleOCR-VL"
+        model_id = config.retriever.model_id or "PaddlePaddle/PaddleOCR-VL"
         api_url = f"https://api-inference.huggingface.co/models/{model_id}"
         response = requests.post(
             api_url,

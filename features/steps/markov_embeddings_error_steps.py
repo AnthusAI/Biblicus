@@ -6,7 +6,7 @@ from unittest.mock import patch
 from behave import when
 
 from biblicus.analysis.markov import _build_observations
-from biblicus.analysis.models import MarkovAnalysisRecipeConfig, MarkovAnalysisSegment
+from biblicus.analysis.models import MarkovAnalysisConfiguration, MarkovAnalysisSegment
 
 
 def _segments_from_csv(*, csv_text: str) -> List[MarkovAnalysisSegment]:
@@ -17,8 +17,8 @@ def _segments_from_csv(*, csv_text: str) -> List[MarkovAnalysisSegment]:
     return segments
 
 
-def _recipe_with_embeddings_enabled() -> MarkovAnalysisRecipeConfig:
-    return MarkovAnalysisRecipeConfig.model_validate(
+def _recipe_with_embeddings_enabled() -> MarkovAnalysisConfiguration:
+    return MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "embeddings": {

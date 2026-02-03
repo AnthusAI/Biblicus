@@ -1,12 +1,11 @@
 # Text extract
 
 Text extract is a reusable utility for extracting spans from long texts with a language model without requiring the model to
-re-emit every token. Instead of asking for a fully labeled transcript, Biblicus asks the model to insert XML tags into
-an in-memory copy of the text. The model returns a small edit script (str_replace only), and Biblicus applies it and
-parses the result into spans.
+re-emit every token.
 
-Text extract is part of a growing library of text utilities that focus on reliability, validation, and
-reusable structure.
+If you ask a model to "extract all the quotes" and return them as a list, you pay for every output token, and you risk the model hallucinating or paraphrasing the quotes.
+
+Text extract solves this by using the **virtual file pattern**. Biblicus asks the model to insert XML tags into an in-memory copy of the text. The model returns a small edit script (`str_replace` only), and Biblicus applies it and parses the result into spans. The model points to the text it wants to extract by wrapping it, without ever repeating the content.
 
 ## How text extract works
 
@@ -22,8 +21,9 @@ The model never re-emits the full text, which lowers cost and reduces timeouts o
 Biblicus supplies the internal edit protocol and embeds the current text. This excerpt shows the
 protocol the model sees:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -35,29 +35,33 @@ We run fast.
 
 Then provide a short user prompt describing what to return:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return all the verbs.
 ```
 
 The input text is the same content embedded in the internal protocol:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 We run fast.
 ```
 
 The model edits the virtual file by inserting tags in-place:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 We <span>run</span> fast.
 ```
 
 Biblicus returns structured data parsed from the markup:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "We <span>run</span> fast.",
   "spans": [
@@ -123,8 +127,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -136,29 +141,33 @@ Hello world.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the entire text.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Hello world.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>Hello world.</span>
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>Hello world.</span>",
   "spans": [
@@ -171,11 +180,15 @@ STRUCTURED DATA (result):
 ## Example: Verb markup task
 
 ```
-prompt_template = \"\"\"\nReturn the verbs.\nInclude auxiliary verbs and main verbs.\nPreserve all whitespace and punctuation.\n\"\"\".strip()
+prompt_template = """
+Return the verbs.
+Include auxiliary verbs and main verbs.
+Preserve all whitespace and punctuation.
+""".strip()
 
 request = TextExtractRequest(
-    text=\"I can try to get help, but I promise nothing.\",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model=\"gpt-4o-mini\"),
+    text="I can try to get help, but I promise nothing.",
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
     prompt_template=prompt_template,
 )
 result = apply_text_extract(request)
@@ -185,8 +198,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -198,29 +212,33 @@ I can try to get help, but I promise nothing.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the verbs.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 I can try to get help, but I promise nothing.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 I <span>can</span> <span>try</span> to <span>get</span> help, but I <span>promise</span> nothing.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "I <span>can</span> <span>try</span> to <span>get</span> help, but I <span>promise</span> nothing.",
   "spans": [
@@ -257,8 +275,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -270,29 +289,33 @@ Para one. || Para two. || Para three.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return each paragraph.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Para one. || Para two. || Para three.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>Para one.</span> || <span>Para two.</span> || <span>Para three.</span>
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>Para one.</span> || <span>Para two.</span> || <span>Para three.</span>",
   "spans": [
@@ -324,8 +347,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -337,29 +361,33 @@ First one. Second one. || Alpha first. Alpha second.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the first sentence from each paragraph.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 First one. Second one. || Alpha first. Alpha second.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>First one.</span> Second one. || <span>Alpha first.</span> Alpha second.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>First one.</span> Second one. || <span>Alpha first.</span> Alpha second.",
   "spans": [
@@ -390,8 +418,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -403,29 +432,33 @@ She said "PAYMENT_QUOTE_001: I will pay $20 today." Then she left.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the quoted payment statement exactly as written, including the quotation marks.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 She said "PAYMENT_QUOTE_001: I will pay $20 today." Then she left.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 She said <span>"PAYMENT_QUOTE_001: I will pay $20 today."</span> Then she left.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "She said <span>\"PAYMENT_QUOTE_001: I will pay $20 today.\"</span> Then she left.",
   "spans": [
@@ -455,8 +488,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -468,29 +502,33 @@ We run fast. They agree.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return all the verbs.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 We run fast. They agree.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 We <span>run</span> fast. They <span>agree</span>.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "We <span>run</span> fast. They <span>agree</span>.",
   "spans": [
@@ -521,8 +559,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -534,29 +573,33 @@ Agent: Hello. Agent: I can help. Customer: I need support. Customer: Thanks.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return things that the agent said grouped together, and things the customer said in separate groups.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Agent: Hello. Agent: I can help. Customer: I need support. Customer: Thanks.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>Agent: Hello. Agent: I can help.</span> <span>Customer: I need support. Customer: Thanks.</span>
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>Agent: Hello. Agent: I can help.</span> <span>Customer: I need support. Customer: Thanks.</span>",
   "spans": [
@@ -569,14 +612,15 @@ STRUCTURED DATA (result):
 
 ## Example: Markov analysis segmentation
 
-Use the `span_markup` segmentation method in Markov recipes.
+Use the `span_markup` segmentation method in Markov configurations.
 
 Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -588,29 +632,33 @@ Greeting. Verification. Resolution.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the segments that represent contiguous phases in the text.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Greeting. Verification. Resolution.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span>Greeting.</span> <span>Verification.</span> <span>Resolution.</span>
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span>Greeting.</span> <span>Verification.</span> <span>Resolution.</span>",
   "spans": [
@@ -622,7 +670,7 @@ STRUCTURED DATA (result):
 }
 ```
 
-Recipe example (text extract provider-backed):
+Configuration example (text extract provider-backed):
 
 ```
 schema_version: 1
@@ -667,5 +715,7 @@ Text extract supports two modes of testing:
 
 - **Mocked unit tests** using a fake OpenAI client.
 - **Integration tests** that call the live model and apply real edits.
+
+Unit tests also assert the long-span behavior: the system prompt instructs the model to insert `<span>` and `</span>` in separate `str_replace` calls for long passages. See `tests/test_text_extract_tool_calls.py`.
 
 See `features/text_extract.feature` and `features/integration_text_extract.feature`.

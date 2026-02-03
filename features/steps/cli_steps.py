@@ -65,7 +65,7 @@ def _parse_markdown_front_matter(text: str) -> Dict[str, Any]:
     return dict(data)
 
 
-@when('I run "context-pack build" joining with "{join_with}"')
+@when('I snapshot "context-pack build" joining with "{join_with}"')
 def step_context_pack_build_from_standard_input(context, join_with: str) -> None:
     decoded_join_with = bytes(join_with, "utf-8").decode("unicode_escape")
     retrieval_result_json = context.retrieval_result.model_dump_json(indent=2)
@@ -79,7 +79,7 @@ def step_context_pack_build_from_standard_input(context, join_with: str) -> None
     context.context_pack_build_output = json.loads(result.stdout)
 
 
-@when('I run "context-pack build" joining with "{join_with}" and token budget {max_tokens:d}')
+@when('I snapshot "context-pack build" joining with "{join_with}" and token budget {max_tokens:d}')
 def step_context_pack_build_with_token_budget_from_standard_input(
     context, join_with: str, max_tokens: int
 ) -> None:
@@ -103,7 +103,7 @@ def step_context_pack_build_with_token_budget_from_standard_input(
 
 
 @when(
-    'I run "context-pack build" joining with "{join_with}" ordering "{ordering}" and including metadata'
+    'I snapshot "context-pack build" joining with "{join_with}" ordering "{ordering}" and including metadata'
 )
 def step_context_pack_build_with_metadata_from_standard_input(
     context, join_with: str, ordering: str
@@ -129,7 +129,7 @@ def step_context_pack_build_with_metadata_from_standard_input(
 
 
 @when(
-    'I run "context-pack build" joining with "{join_with}" and character budget {max_characters:d}'
+    'I snapshot "context-pack build" joining with "{join_with}" and character budget {max_characters:d}'
 )
 def step_context_pack_build_with_character_budget_from_standard_input(
     context, join_with: str, max_characters: int
@@ -153,7 +153,7 @@ def step_context_pack_build_with_character_budget_from_standard_input(
     context.context_pack_build_output = json.loads(result.stdout)
 
 
-@when('I run "context-pack build" with empty standard input')
+@when('I snapshot "context-pack build" with empty standard input')
 def step_context_pack_build_with_empty_standard_input(context) -> None:
     result = run_biblicus(context, ["context-pack", "build", "--join-with", "\n\n"], input_text="")
     context.last_result = result
@@ -236,12 +236,12 @@ def step_ingest_note_items_table(context, corpus_name: str) -> None:
         step_ingest_text_minimal(context, row["text"], corpus_name)
 
 
-@given('I built a scan run for corpus "{corpus_name}"')
+@given('I built a scan snapshot for corpus "{corpus_name}"')
 def step_build_scan_run(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = run_biblicus(
         context,
-        ["--corpus", str(corpus), "build", "--backend", "scan"],
+        ["--corpus", str(corpus), "build", "--retriever", "scan"],
     )
     assert result.returncode == 0, result.stderr
 
@@ -859,25 +859,25 @@ def step_list_from_within(context, path: str) -> None:
     run_biblicus(context, ["list"], cwd=cwd)
 
 
-@when('I run "{cmdline}" without specifying a corpus')
+@when('I snapshot "{cmdline}" without specifying a corpus')
 def step_run_cmdline_without_corpus(context, cmdline: str) -> None:
     run_biblicus(context, shlex.split(cmdline))
 
 
-@when('I run "{cmdline}" in corpus "{corpus_name}"')
+@when('I snapshot "{cmdline}" in corpus "{corpus_name}"')
 def step_run_cmdline_in_corpus(context, cmdline: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     args = ["--corpus", str(corpus), *shlex.split(cmdline)]
     run_biblicus(context, args)
 
 
-@when('I run "{cmdline}" with corpus uniform resource identifier "{corpus_uri}"')
+@when('I snapshot "{cmdline}" with corpus uniform resource identifier "{corpus_uri}"')
 def step_run_cmdline_with_corpus_uri(context, cmdline: str, corpus_uri: str) -> None:
     args = ["--corpus", corpus_uri, *shlex.split(cmdline)]
     run_biblicus(context, args)
 
 
-@when('I run the biblicus module with "{arg}"')
+@when('I snapshot the biblicus module with "{arg}"')
 def step_run_module_entry_point(context, arg: str) -> None:
     import contextlib
     import io

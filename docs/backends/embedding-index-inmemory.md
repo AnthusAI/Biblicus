@@ -11,7 +11,7 @@ external vector database.
 
 ## What it builds
 
-This backend builds a retrieval run that materializes:
+This backend builds a retrieval snapshot that materializes:
 
 - chunk records (text + boundaries + provenance)
 - embedding vectors for each chunk
@@ -21,7 +21,7 @@ not accidentally consume unbounded memory.
 
 ## Chunking
 
-Embeddings are computed over chunks. Chunking is configured per recipe by selecting a chunker and its configuration.
+Embeddings are computed over chunks. Chunking is configured per configuration by selecting a chunker and its configuration.
 
 Chunking is part of the index contract: evidence references chunk boundaries so you can trace retrieval outputs back to
 the original item text.

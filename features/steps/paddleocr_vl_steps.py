@@ -12,6 +12,11 @@ from behave import given
 class _BlockPaddleImportHook:
     """Import hook that blocks paddle-related imports."""
 
+    def find_spec(self, fullname, path=None, target=None):  # type: ignore[no-untyped-def]
+        if "paddle" in fullname.lower():
+            raise ImportError(f"Paddle module {fullname!r} is unavailable for testing")
+        return None
+
     def find_module(self, fullname, path=None):  # type: ignore[no-untyped-def]
         if "paddle" in fullname.lower():
             return self

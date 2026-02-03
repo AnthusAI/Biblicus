@@ -62,7 +62,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     chunk_size: int = 800                  # Maximum characters per chunk
     chunk_overlap: int = 200               # Overlap between chunks
     snippet_characters: int = 400          # Maximum snippet length
-    extraction_run: Optional[str] = None   # Extraction run reference
+    extraction_snapshot: Optional[str] = None   # Extraction run reference
 ```
 
 ### Configuration Options
@@ -72,7 +72,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
 | `chunk_size` | int | `800` | Maximum characters per chunk (must be >= 1) |
 | `chunk_overlap` | int | `200` | Overlap characters between chunks (must be < chunk_size) |
 | `snippet_characters` | int | `400` | Maximum characters in evidence snippets |
-| `extraction_run` | str | `None` | Optional extraction run reference (extractor_id:run_id) |
+| `extraction_snapshot` | str | `None` | Optional extraction snapshot reference (extractor_id:snapshot_id) |
 
 ### Chunking Strategy
 
@@ -121,25 +121,25 @@ biblicus build my-corpus --backend sqlite-full-text-search \
   --config chunk_overlap=300 \
   --config snippet_characters=600
 
-# With extraction run
+# With extraction snapshot
 biblicus build my-corpus --backend sqlite-full-text-search \
-  --config extraction_run=pdf-text:abc123
+  --config extraction_snapshot=pdf-text:abc123
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 backend_id: sqlite-full-text-search
-recipe_name: "Production FTS index"
+configuration_name: "Production FTS index"
 config:
   chunk_size: 800
   chunk_overlap: 200
   snippet_characters: 400
-  extraction_run: null
+  extraction_snapshot: null
 ```
 
 ```bash
-biblicus build my-corpus --recipe recipe.yml
+biblicus build my-corpus --configuration configuration.yml
 ```
 
 ### Python API
@@ -158,14 +158,14 @@ backend = get_backend("sqlite-full-text-search")
 # Build index
 run = backend.build_run(
     corpus,
-    recipe_name="Production index",
+    configuration_name="Production index",
     config={
         "chunk_size": 800,
         "chunk_overlap": 200
     }
 )
 
-print(f"Built index: {run.run_id}")
+print(f"Built index: {run.snapshot_id}")
 print(f"Stats: {run.stats}")
 
 # Query
@@ -186,16 +186,16 @@ for evidence in result.evidence:
 
 ```python
 # Extract text from PDFs
-extraction_run = corpus.extract_text(
+extraction_snapshot = corpus.extract_text(
     extractor_id="pdf-text"
 )
 
 # Build FTS with extraction
 run = backend.build_run(
     corpus,
-    recipe_name="FTS with PDF extraction",
+    configuration_name="FTS with PDF extraction",
     config={
-        "extraction_run": f"pdf-text:{extraction_run.run_id}",
+        "extraction_snapshot": f"pdf-text:{extraction_snapshot.snapshot_id}",
         "chunk_size": 1000
     }
 )
@@ -257,7 +257,7 @@ BM25 provides better ranking than simple term frequency by considering term rari
 ### Disk Usage
 
 - **~1-5 MB per 1,000 items**: Depends on text density and chunking
-- Stored in `.biblicus/runs/<run_id>.sqlite`
+- Stored in `.biblicus/runs/<snapshot_id>.sqlite`
 
 ## Examples
 
@@ -269,7 +269,7 @@ biblicus init prod-corpus
 biblicus ingest prod-corpus documents/
 biblicus extract prod-corpus --extractor pdf-text
 biblicus build prod-corpus --backend sqlite-full-text-search \
-  --config extraction_run=pdf-text:latest
+  --config extraction_snapshot=pdf-text:latest
 
 # Fast repeated queries
 biblicus query prod-corpus --query "customer retention"
@@ -285,7 +285,7 @@ backend = get_backend("sqlite-full-text-search")
 
 run = backend.build_run(
     corpus,
-    recipe_name="Academic papers index",
+    configuration_name="Academic papers index",
     config={
         "chunk_size": 1500,      # Larger chunks
         "chunk_overlap": 400,    # More overlap
@@ -303,7 +303,7 @@ biblicus extract corpus --extractor select-text \
 
 # Build unified index
 biblicus build corpus --backend sqlite-full-text-search \
-  --config extraction_run=select-text:latest
+  --config extraction_snapshot=select-text:latest
 ```
 
 ### Query with Context
@@ -413,10 +413,10 @@ RuntimeError: SQLite full-text search version five is required but not available
 ### Missing Extraction Run
 
 ```
-FileNotFoundError: Missing extraction run: pdf-text:abc123
+FileNotFoundError: Missing extraction snapshot: pdf-text:abc123
 ```
 
-**Fix**: Verify extraction run exists or run extraction first.
+**Fix**: Verify extraction snapshot exists or run extraction first.
 
 ### Invalid Configuration
 
@@ -456,7 +456,7 @@ The backend creates a SQLite database stored at:
 corpus/
   .biblicus/
     runs/
-      <run_id>.sqlite  # FTS5 index database
+      <snapshot_id>.sqlite  # FTS5 index database
 ```
 
 Database schema:

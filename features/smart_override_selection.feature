@@ -15,7 +15,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -31,7 +31,7 @@ Feature: Smart override selection extractor
               min_text_length: 5
       """
     Then the extracted text for the last ingested item equals "Good OCR"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: Smart override falls back to previous when last has low confidence
     Given I initialized a corpus at "corpus"
@@ -46,7 +46,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -62,13 +62,13 @@ Feature: Smart override selection extractor
               min_confidence_threshold: 0.7
       """
     Then the extracted text for the last ingested item equals "Legacy OCR"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override uses last extraction for non-matching media types
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
     And I ingest the text "beta" with title "Beta" and tags "b" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -82,7 +82,7 @@ Feature: Smart override selection extractor
               media_type_patterns:
                 - "image/*"
       """
-    Then the extraction run includes extracted text for all items
+    Then the extraction snapshot includes extracted text for all items
 
   Scenario: Smart override requires minimum text length
     Given I initialized a corpus at "corpus"
@@ -97,7 +97,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -113,7 +113,7 @@ Feature: Smart override selection extractor
               min_text_length: 10
       """
     Then the extracted text for the last ingested item equals "Longer text result"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override handles empty text in last extraction
     Given I initialized a corpus at "corpus"
@@ -126,7 +126,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -142,7 +142,7 @@ Feature: Smart override selection extractor
               min_confidence_threshold: 0.7
       """
     Then the extracted text for the last ingested item equals "Fallback text"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override handles extraction with no confidence score
     Given I initialized a corpus at "corpus"
@@ -157,7 +157,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -173,7 +173,7 @@ Feature: Smart override selection extractor
               min_confidence_threshold: 0.7
       """
     Then the extracted text for the last ingested item equals "Good result"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: Smart override prefers previous extraction when last has short text and previous has high confidence
     Given I initialized a corpus at "corpus"
@@ -188,7 +188,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -205,12 +205,12 @@ Feature: Smart override selection extractor
               min_text_length: 10
       """
     Then the extracted text for the last ingested item equals "High confidence previous text"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override returns None when no candidates have text
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -220,7 +220,7 @@ Feature: Smart override selection extractor
               media_type_patterns:
                 - "text/*"
       """
-    Then the extraction run does not include extracted text for the last ingested item
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: Smart override falls back to last when all previous have low confidence
     Given I initialized a corpus at "corpus"
@@ -235,7 +235,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -253,7 +253,7 @@ Feature: Smart override selection extractor
               min_text_length: 5
       """
     Then the extracted text for the last ingested item equals "Last"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: Smart override skips previous extraction with good length but low confidence
     Given I initialized a corpus at "corpus"
@@ -268,7 +268,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -285,7 +285,7 @@ Feature: Smart override selection extractor
               min_text_length: 10
       """
     Then the extracted text for the last ingested item equals "Final extraction works"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: Smart override rejects last extraction with good length but low confidence
     Given I initialized a corpus at "corpus"
@@ -300,7 +300,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -317,7 +317,7 @@ Feature: Smart override selection extractor
               min_text_length: 5
       """
     Then the extracted text for the last ingested item equals "Previous good text"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override skips multiple previous with good length but low confidence
     Given I initialized a corpus at "corpus"
@@ -332,7 +332,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -351,7 +351,7 @@ Feature: Smart override selection extractor
               min_text_length: 10
       """
     Then the extracted text for the last ingested item equals "First extraction high conf"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override loops through multiple previous extractions with low confidence
     Given I initialized a corpus at "corpus"
@@ -366,7 +366,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -387,7 +387,7 @@ Feature: Smart override selection extractor
               min_text_length: 10
       """
     Then the extracted text for the last ingested item equals "First high confidence"
-    And the extraction run item provenance uses extractor "ocr-rapidocr"
+    And the extraction snapshot item provenance uses extractor "ocr-rapidocr"
 
   Scenario: Smart override handles malformed JSON in config gracefully
     Given I initialized a corpus at "corpus"
@@ -399,7 +399,7 @@ Feature: Smart override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id             | config_json                              |
       | ocr-rapidocr             | {}                                       |
       | select-smart-override    | {"media_type_patterns":"[bad json"}     |

@@ -88,7 +88,7 @@ biblicus extract my-corpus --extractor markitdown \
   --config enable_plugins=true
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: markitdown
@@ -97,7 +97,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

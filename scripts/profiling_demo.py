@@ -10,11 +10,11 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-from biblicus.analysis.models import ProfilingRecipeConfig
+from biblicus.analysis.models import ProfilingConfiguration
 from biblicus.analysis.profiling import ProfilingBackend
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
-from biblicus.models import ExtractionRunReference
+from biblicus.extraction import build_extraction_snapshot
+from biblicus.models import ExtractionSnapshotReference
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -85,17 +85,17 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
             }
         ]
     }
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name=arguments.extraction_recipe_name,
-        config=extraction_config,
+        configuration_name=arguments.extraction_configuration_name,
+        configuration=extraction_config,
     )
-    extraction_run = ExtractionRunReference(
+    extraction_snapshot = ExtractionSnapshotReference(
         extractor_id="pipeline",
-        run_id=extraction_manifest.run_id,
+        snapshot_id=extraction_manifest.snapshot_id,
     )
-    recipe_config = ProfilingRecipeConfig(
+    configuration_config = ProfilingConfiguration(
         schema_version=1,
         sample_size=arguments.sample_size,
         min_text_characters=arguments.min_text_characters,
@@ -106,25 +106,25 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     backend = ProfilingBackend()
     output = backend.run_analysis(
         corpus,
-        recipe_name=arguments.recipe_name,
-        config=recipe_config.model_dump(),
-        extraction_run=extraction_run,
+        configuration_name=arguments.configuration_name,
+        configuration=configuration_config.model_dump(),
+        extraction_snapshot=extraction_snapshot,
     )
     output_path = (
         corpus.analysis_run_dir(
             analysis_id=ProfilingBackend.analysis_id,
-            run_id=output.run.run_id,
+            snapshot_id=output.snapshot.snapshot_id,
         )
         / "output.json"
     )
     return {
         "corpus": str(corpus_path),
         "ingestion": ingestion_stats,
-        "extraction_run": extraction_run.as_string(),
-        "analysis_run": output.run.run_id,
+        "extraction_snapshot": extraction_snapshot.as_string(),
+        "analysis_run": output.snapshot.snapshot_id,
         "output_path": str(output_path),
-        "raw_items": output.run.stats.get("raw_items"),
-        "extracted_nonempty_items": output.run.stats.get("extracted_nonempty_items"),
+        "raw_items": output.snapshot.stats.get("raw_items"),
+        "extracted_nonempty_items": output.snapshot.stats.get("extracted_nonempty_items"),
     }
 
 
@@ -151,17 +151,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--extraction-step",
         default="pass-through-text",
-        help="Extractor step to use for the extraction run.",
+        help="Extractor step to use for the extraction snapshot.",
     )
     parser.add_argument(
-        "--extraction-recipe-name",
+        "--extraction-configuration-name",
         default="default",
-        help="Recipe name for the extraction run.",
+        help="Configuration name for the extraction snapshot.",
     )
     parser.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="default",
-        help="Recipe name for the profiling analysis.",
+        help="Configuration name for the profiling analysis.",
     )
     parser.add_argument(
         "--sample-size",

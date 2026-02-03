@@ -71,7 +71,7 @@ biblicus extract my-corpus --extractor ocr-rapidocr \
   --config joiner=" "
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: ocr-rapidocr
@@ -81,7 +81,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

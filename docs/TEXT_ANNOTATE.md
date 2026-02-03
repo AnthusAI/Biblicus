@@ -1,8 +1,10 @@
 # Text annotate
 
-Text annotate is a reusable utility for extracting spans **with attributes** using a language model. It uses the same
-virtual file editor pattern as text extract, but each span carries exactly one attribute so downstream tools can reason
-about labels and categories.
+Text annotate is a reusable utility for attaching structured attributes (labels, phases, roles) to spans of text without re-emitting the document.
+
+If you ask a model to "return all the verbs with their types" as a JSON list, you pay for the output tokens of every word, and you risk the model hallucinating words that aren't there.
+
+Text annotate uses the **virtual file pattern** to solve this. Biblicus gives the model a virtual file and asks it to insert XML tags with attributes in-place (e.g., `<span label="verb">...</span>`). The model returns a small edit script (`str_replace` only), and Biblicus applies it and parses the result into structured, attributed spans. You get rich metadata without the cost or risk of text regeneration.
 
 ## How text annotate works
 
@@ -17,8 +19,9 @@ The model never re-emits the full text. It only inserts tags in-place.
 
 Biblicus supplies an internal protocol that defines the edit protocol, allowed attributes, and embeds the current text:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span ATTRIBUTE="VALUE">...</span> in-place in the current text.
@@ -31,29 +34,33 @@ We run fast.
 
 Then provide a short user prompt describing what to return:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return all the verbs.
 ```
 
 The input text is the same content embedded in the internal protocol:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 We run fast.
 ```
 
 The model edits the virtual file by inserting tags in-place:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 We <span label="verb">run</span> fast.
 ```
 
 Biblicus returns structured data parsed from the markup:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "We <span label=\"verb\">run</span> fast.",
   "spans": [
@@ -103,9 +110,11 @@ Rules:
 - Each span must include exactly one attribute.
 - Attributes must be on the allow list.
 
+Long-span handling: the system prompt instructs the model to insert `<span>` and `</span>` in separate `str_replace` calls for long passages (single-call insertion is allowed for short spans). This is covered by unit tests in `tests/test_text_utility_tool_calls.py`.
+
 ## Example: Python API
 
-```
+```python
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextAnnotateRequest, apply_text_annotate
 
@@ -117,3 +126,24 @@ request = TextAnnotateRequest(
 )
 result = apply_text_annotate(request)
 ```
+
+## Concept: Text Annotate FAQ
+
+### What problem does this solve?
+
+Some ETL pipelines need **labeled spans**, not just extracted spans. For example, you may want phases of a conversation (greeting, verification, resolution) or roles (agent vs customer). Existing extract/slice utilities can return spans, but they cannot attach structured attributes in a consistent way. Text annotate provides a standardized way to attach attributes while preserving the original text.
+
+### How is it different from text extract?
+
+- **Extract** returns spans only (no attributes).
+- **Annotate** returns spans with attributes (when labels are required).
+
+This keeps prompts simple for small models by using annotate only when needed.
+
+### Why not just use JSON output?
+
+The virtual file editor pattern avoids re-emitting the full document, which reduces token cost and improves reliability on long texts. It also allows deterministic validation of the original text.
+
+### Is this a replacement for NER or classification models?
+
+No. It is a **text utility** for structured annotation within a single document. It’s designed for ETL pipelines that need deterministic output and traceability, not generalized model training.

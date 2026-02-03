@@ -29,13 +29,13 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Context budgeting** governs evidence selection (token, unit, and per-source limits), not a fixed count.
 - **Deterministic lexical baseline, hybrid target**: deterministic lexical backend first; hybrid retrieval is the strategic direction.
 - **Evaluation datasets are mixed**: human-labeled for truth, synthetic for scale.
-- **Corpus runs are versioned**: reindex and snapshot runs get identifiers for reproducibility.
+- **Corpus snapshots are versioned**: reindex and snapshot builds get identifiers for reproducibility.
 
 ## Agent orientation
 
 - **Primary objective**: Biblicus manages raw corpora and evaluates retrieval and retrieval-augmented generation backends used by Tactus.
-- **Canonical vocabulary**: `corpus`, `item`, `catalog`, `recipe`, `evidence`, `materialization`, `pipeline stage`.
-- **Non‑negotiables**: evidence is the primary output; multi‑stage retrieval; context budgets; deterministic lexical baseline and hybrid target; mixed evaluation datasets; versioned runs.
+- **Canonical vocabulary**: `corpus`, `item`, `catalog` (internal-only), `configuration`, `evidence`, `snapshot`, `snapshot artifacts`, `pipeline stage`.
+- **Non‑negotiables**: evidence is the primary output; multi‑stage retrieval; context budgets; deterministic lexical baseline and hybrid target; mixed evaluation datasets; versioned snapshots.
 - **Behavior-driven development discipline**: specifications first; every behavior specified; one official way (no fallbacks).
 - **Modeling discipline**: Pydantic at boundaries; validation errors must be clear.
 - **Development flow**: update `features/*.feature`, implement, run tests; use the command-line interface to ingest; `reindex` refreshes catalog.

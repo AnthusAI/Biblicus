@@ -1,5 +1,5 @@
 """
-Deterministic term-frequency vector retrieval backend.
+Deterministic term-frequency vector retriever.
 """
 
 from __future__ import annotations
@@ -14,87 +14,97 @@ from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
 from ..models import (
     Evidence,
-    ExtractionRunReference,
+    ExtractionSnapshotReference,
     QueryBudget,
     RetrievalResult,
-    RetrievalRun,
-    parse_extraction_run_reference,
+    RetrievalSnapshot,
+    parse_extraction_snapshot_reference,
 )
-from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
+from ..retrieval import (
+    apply_budget,
+    create_configuration_manifest,
+    create_snapshot_manifest,
+    hash_text,
+)
 from ..time import utc_now_iso
 
 
-class TfVectorRecipeConfig(BaseModel):
+class TfVectorConfiguration(BaseModel):
     """
-    Configuration for the term-frequency vector retrieval backend.
+    Configuration for the term-frequency vector retriever.
 
-    :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
-    :vartype extraction_run: str or None
+    :ivar extraction_snapshot: Optional extraction snapshot reference in the form extractor_id:snapshot_id.
+    :vartype extraction_snapshot: str or None
     :ivar snippet_characters: Optional maximum character count for returned evidence text.
     :vartype snippet_characters: int or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    extraction_run: Optional[str] = None
+    extraction_snapshot: Optional[str] = None
     snippet_characters: Optional[int] = None
 
 
-class TfVectorBackend:
+class TfVectorRetriever:
     """
-    Deterministic vector backend using term-frequency cosine similarity.
+    Deterministic vector retriever using term-frequency cosine similarity.
 
-    :ivar backend_id: Backend identifier.
-    :vartype backend_id: str
+    :ivar retriever_id: Retriever identifier.
+    :vartype retriever_id: str
     """
 
-    backend_id = "tf-vector"
+    retriever_id = "tf-vector"
 
-    def build_run(
-        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
-    ) -> RetrievalRun:
+    def build_snapshot(
+        self, corpus: Corpus, *, configuration_name: str, configuration: Dict[str, object]
+    ) -> RetrievalSnapshot:
         """
-        Register a vector backend run (no materialization).
+        Register a vector retriever snapshot (no snapshot artifacts).
 
         :param corpus: Corpus to build against.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Backend-specific configuration values.
-        :type config: dict[str, object]
-        :return: Run manifest describing the build.
-        :rtype: RetrievalRun
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Retriever-specific configuration values.
+        :type configuration: dict[str, object]
+        :return: Snapshot manifest describing the build.
+        :rtype: RetrievalSnapshot
         """
-        recipe_config = TfVectorRecipeConfig.model_validate(config)
+        parsed_config = TfVectorConfiguration.model_validate(configuration)
         catalog = corpus.load_catalog()
-        recipe = create_recipe_manifest(
-            backend_id=self.backend_id,
-            name=recipe_name,
-            config=recipe_config.model_dump(),
+        configuration_manifest = create_configuration_manifest(
+            retriever_id=self.retriever_id,
+            name=configuration_name,
+            configuration=parsed_config.model_dump(),
         )
         stats = {
             "items": len(catalog.items),
-            "text_items": _count_text_items(corpus, catalog.items.values(), recipe_config),
+            "text_items": _count_text_items(corpus, catalog.items.values(), parsed_config),
         }
-        run = create_run_manifest(corpus, recipe=recipe, stats=stats, artifact_paths=[])
-        corpus.write_run(run)
-        return run
+        snapshot = create_snapshot_manifest(
+            corpus,
+            configuration=configuration_manifest,
+            stats=stats,
+            snapshot_artifacts=[],
+        )
+        corpus.write_snapshot(snapshot)
+        return snapshot
 
     def query(
         self,
         corpus: Corpus,
         *,
-        run: RetrievalRun,
+        snapshot: RetrievalSnapshot,
         query_text: str,
         budget: QueryBudget,
     ) -> RetrievalResult:
         """
         Query the corpus using term-frequency cosine similarity.
 
-        :param corpus: Corpus associated with the run.
+        :param corpus: Corpus associated with the snapshot.
         :type corpus: Corpus
-        :param run: Run manifest to use for querying.
-        :type run: RetrievalRun
+        :param snapshot: Snapshot manifest to use for querying.
+        :type snapshot: RetrievalSnapshot
         :param query_text: Query text to execute.
         :type query_text: str
         :param budget: Evidence selection budget.
@@ -102,15 +112,15 @@ class TfVectorBackend:
         :return: Retrieval results containing evidence.
         :rtype: RetrievalResult
         """
-        recipe_config = TfVectorRecipeConfig.model_validate(run.recipe.config)
+        parsed_config = TfVectorConfiguration.model_validate(snapshot.configuration.configuration)
         query_tokens = _tokenize_text(query_text)
         if not query_tokens:
             return RetrievalResult(
                 query_text=query_text,
                 budget=budget,
-                run_id=run.run_id,
-                recipe_id=run.recipe.recipe_id,
-                backend_id=self.backend_id,
+                snapshot_id=snapshot.snapshot_id,
+                configuration_id=snapshot.configuration.configuration_id,
+                retriever_id=snapshot.configuration.retriever_id,
                 generated_at=utc_now_iso(),
                 evidence=[],
                 stats={"candidates": 0, "returned": 0},
@@ -118,7 +128,7 @@ class TfVectorBackend:
         query_vector = _term_frequencies(query_tokens)
         query_norm = _vector_norm(query_vector)
         catalog = corpus.load_catalog()
-        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
+        extraction_reference = _resolve_extraction_reference(corpus, parsed_config)
         scored_candidates = _score_items(
             corpus,
             catalog.items.values(),
@@ -126,7 +136,7 @@ class TfVectorBackend:
             query_vector=query_vector,
             query_norm=query_norm,
             extraction_reference=extraction_reference,
-            snippet_characters=recipe_config.snippet_characters,
+            snippet_characters=parsed_config.snippet_characters,
         )
         sorted_candidates = sorted(
             scored_candidates,
@@ -136,8 +146,8 @@ class TfVectorBackend:
             evidence_item.model_copy(
                 update={
                     "rank": index,
-                    "recipe_id": run.recipe.recipe_id,
-                    "run_id": run.run_id,
+                    "configuration_id": snapshot.configuration.configuration_id,
+                    "snapshot_id": snapshot.snapshot_id,
                 }
             )
             for index, evidence_item in enumerate(sorted_candidates, start=1)
@@ -147,9 +157,9 @@ class TfVectorBackend:
         return RetrievalResult(
             query_text=query_text,
             budget=budget,
-            run_id=run.run_id,
-            recipe_id=run.recipe.recipe_id,
-            backend_id=self.backend_id,
+            snapshot_id=snapshot.snapshot_id,
+            configuration_id=snapshot.configuration.configuration_id,
+            retriever_id=snapshot.configuration.retriever_id,
             generated_at=utc_now_iso(),
             evidence=evidence,
             stats=stats,
@@ -157,33 +167,33 @@ class TfVectorBackend:
 
 
 def _resolve_extraction_reference(
-    corpus: Corpus, recipe_config: TfVectorRecipeConfig
-) -> Optional[ExtractionRunReference]:
+    corpus: Corpus, configuration: TfVectorConfiguration
+) -> Optional[ExtractionSnapshotReference]:
     """
-    Resolve an extraction run reference from a recipe config.
+    Resolve an extraction snapshot reference from a configuration.
 
-    :param corpus: Corpus associated with the recipe.
+    :param corpus: Corpus associated with the configuration.
     :type corpus: Corpus
-    :param recipe_config: Parsed vector recipe configuration.
-    :type recipe_config: TfVectorRecipeConfig
+    :param configuration: Parsed vector configuration.
+    :type configuration: TfVectorConfiguration
     :return: Parsed extraction reference or None.
-    :rtype: ExtractionRunReference or None
-    :raises FileNotFoundError: If an extraction run is referenced but not present.
+    :rtype: ExtractionSnapshotReference or None
+    :raises FileNotFoundError: If an extraction snapshot is referenced but not present.
     """
-    if not recipe_config.extraction_run:
+    if not configuration.extraction_snapshot:
         return None
-    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
-    run_dir = corpus.extraction_run_dir(
+    extraction_reference = parse_extraction_snapshot_reference(configuration.extraction_snapshot)
+    snapshot_dir = corpus.extraction_snapshot_dir(
         extractor_id=extraction_reference.extractor_id,
-        run_id=extraction_reference.run_id,
+        snapshot_id=extraction_reference.snapshot_id,
     )
-    if not run_dir.is_dir():
-        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+    if not snapshot_dir.is_dir():
+        raise FileNotFoundError(f"Missing extraction snapshot: {extraction_reference.as_string()}")
     return extraction_reference
 
 
 def _count_text_items(
-    corpus: Corpus, items: Iterable[object], recipe_config: TfVectorRecipeConfig
+    corpus: Corpus, items: Iterable[object], configuration: TfVectorConfiguration
 ) -> int:
     """
     Count catalog items that represent text content.
@@ -192,19 +202,19 @@ def _count_text_items(
     :type corpus: Corpus
     :param items: Catalog items to inspect.
     :type items: Iterable[object]
-    :param recipe_config: Parsed vector recipe configuration.
-    :type recipe_config: TfVectorRecipeConfig
+    :param configuration: Parsed vector configuration.
+    :type configuration: TfVectorConfiguration
     :return: Number of text items.
     :rtype: int
     """
     text_item_count = 0
-    extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
+    extraction_reference = _resolve_extraction_reference(corpus, configuration)
     for catalog_item in items:
         item_id = str(getattr(catalog_item, "id", ""))
         if extraction_reference and item_id:
             extracted_text = corpus.read_extracted_text(
                 extractor_id=extraction_reference.extractor_id,
-                run_id=extraction_reference.run_id,
+                snapshot_id=extraction_reference.snapshot_id,
                 item_id=item_id,
             )
             if isinstance(extracted_text, str) and extracted_text.strip():
@@ -292,7 +302,7 @@ def _load_text_from_item(
     item_id: str,
     relpath: str,
     media_type: str,
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> Optional[str]:
     """
     Load a text payload from a catalog item.
@@ -305,15 +315,15 @@ def _load_text_from_item(
     :type relpath: str
     :param media_type: Media type for the stored content.
     :type media_type: str
-    :param extraction_reference: Optional extraction run reference.
-    :type extraction_reference: ExtractionRunReference or None
+    :param extraction_reference: Optional extraction snapshot reference.
+    :type extraction_reference: ExtractionSnapshotReference or None
     :return: Text payload or None if not decodable as text.
     :rtype: str or None
     """
     if extraction_reference:
         extracted_text = corpus.read_extracted_text(
             extractor_id=extraction_reference.extractor_id,
-            run_id=extraction_reference.run_id,
+            snapshot_id=extraction_reference.snapshot_id,
             item_id=item_id,
         )
         if isinstance(extracted_text, str) and extracted_text.strip():
@@ -382,7 +392,7 @@ def _score_items(
     query_tokens: List[str],
     query_vector: Dict[str, float],
     query_norm: float,
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
     snippet_characters: Optional[int],
 ) -> List[Evidence]:
     """
@@ -398,8 +408,8 @@ def _score_items(
     :type query_vector: dict[str, float]
     :param query_norm: Query vector norm.
     :type query_norm: float
-    :param extraction_reference: Optional extraction run reference.
-    :type extraction_reference: ExtractionRunReference or None
+    :param extraction_reference: Optional extraction snapshot reference.
+    :type extraction_reference: ExtractionSnapshotReference or None
     :param snippet_characters: Optional maximum character count for returned evidence text.
     :type snippet_characters: int or None
     :return: Evidence candidates with provisional ranks.
@@ -444,8 +454,8 @@ def _score_items(
                 span_start=span_start,
                 span_end=span_end,
                 stage="tf-vector",
-                recipe_id="",
-                run_id="",
+                configuration_id="",
+                snapshot_id="",
                 metadata=getattr(catalog_item, "metadata", {}) or {},
                 hash=hash_text(evidence_text or ""),
             )

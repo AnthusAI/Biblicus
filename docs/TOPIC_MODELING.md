@@ -20,7 +20,7 @@ schema.
 
 ## Pipeline stages
 
-- Text collection reads extracted text artifacts from an extraction run.
+- Text collection reads extracted text artifacts from an extraction snapshot.
 - LLM extraction optionally transforms each document into one or more analysis documents.
 - Lexical processing optionally normalizes text before BERTopic.
 - BERTopic produces topic assignments and keyword weights.
@@ -29,17 +29,17 @@ schema.
 ## Run topic modeling from the CLI
 
 ```
-biblicus analyze topics --corpus corpora/example --recipe recipes/topic-modeling.yml --extraction-run pipeline:RUN_ID
+biblicus analyze topics --corpus corpora/example --configuration configurations/topic-modeling.yml --extraction-run pipeline:RUN_ID
 ```
 
-Topic modeling recipes support cascading composition. Pass multiple `--recipe` files; later recipes override earlier
-recipes via a deep merge:
+Topic modeling configurations support cascading composition. Pass multiple `--configuration` files; later configurations override earlier
+configurations via a deep merge:
 
 ```
 biblicus analyze topics \
   --corpus corpora/example \
-  --recipe recipes/topic-modeling/base.yml \
-  --recipe recipes/topic-modeling/ag-news.yml \
+  --configuration configurations/topic-modeling/base.yml \
+  --configuration configurations/topic-modeling/ag-news.yml \
   --extraction-run pipeline:RUN_ID
 ```
 
@@ -48,19 +48,19 @@ To override the composed configuration view from the command line, use `--config
 ```
 biblicus analyze topics \
   --corpus corpora/example \
-  --recipe recipes/topic-modeling/base.yml \
-  --recipe recipes/topic-modeling/ag-news.yml \
+  --configuration configurations/topic-modeling/base.yml \
+  --configuration configurations/topic-modeling/ag-news.yml \
   --config bertopic_analysis.parameters.nr_topics=12 \
   --extraction-run pipeline:RUN_ID
 ```
 
-If you omit `--extraction-run`, Biblicus uses the latest extraction run and emits a reproducibility warning.
+If you omit `--extraction-run`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
 ## Output structure
 
-Topic modeling writes a single `output.json` file under the analysis run directory. The output contains:
+Topic modeling writes a single `output.json` file under the analysis snapshot directory. The output contains:
 
-- `run.run_id` and `run.stats` for reproducible tracking.
+- `run.snapshot_id` and `run.stats` for reproducible tracking.
 - `report.topics` with the modeled topics.
 - `report.text_collection`, `report.llm_extraction`, `report.lexical_processing`, `report.bertopic_analysis`,
   and `report.llm_fine_tuning` describing each pipeline stage.
@@ -104,7 +104,7 @@ Use `document_examples` as a sanity check, then trace `document_ids` back to the
 
 ## Configuration reference
 
-Topic modeling recipes use a strict schema. Unknown fields or type mismatches are errors.
+Topic modeling configurations use a strict schema. Unknown fields or type mismatches are errors.
 
 ### Text source
 
@@ -160,7 +160,7 @@ bertopic_analysis:
 ## Repeatable integration script
 
 The integration script downloads AG News, runs extraction, and then runs topic modeling with the selected
-parameters. It prints a summary with the analysis run identifier and the output path.
+parameters. It prints a summary with the analysis snapshot identifier and the output path.
 
 ```
 python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force

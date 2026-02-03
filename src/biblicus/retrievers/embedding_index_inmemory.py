@@ -1,5 +1,5 @@
 """
-Embedding-index retrieval backend that loads the full embedding matrix into memory at query time.
+Embedding-index retriever that loads the full embedding matrix into memory at query time.
 """
 
 from __future__ import annotations
@@ -10,15 +10,26 @@ import numpy as np
 from pydantic import ConfigDict, Field
 
 from ..corpus import Corpus
-from ..models import Evidence, ExtractionRunReference, QueryBudget, RetrievalResult, RetrievalRun
-from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
+from ..models import (
+    Evidence,
+    ExtractionSnapshotReference,
+    QueryBudget,
+    RetrievalResult,
+    RetrievalSnapshot,
+)
+from ..retrieval import (
+    apply_budget,
+    create_configuration_manifest,
+    create_snapshot_manifest,
+    hash_text,
+)
 from ..time import utc_now_iso
 from .embedding_index_common import (
     ChunkRecord,
-    EmbeddingIndexRecipeConfig,
+    EmbeddingIndexConfiguration,
     _build_snippet,
     _extract_span_text,
-    artifact_paths_for_run,
+    artifact_paths_for_snapshot,
     chunks_to_records,
     collect_chunks,
     cosine_similarity_scores,
@@ -30,7 +41,7 @@ from .embedding_index_common import (
 )
 
 
-class EmbeddingIndexInMemoryRecipeConfig(EmbeddingIndexRecipeConfig):
+class EmbeddingIndexInMemoryConfiguration(EmbeddingIndexConfiguration):
     """
     Configuration for embedding-index-inmemory retrieval.
 
@@ -43,52 +54,59 @@ class EmbeddingIndexInMemoryRecipeConfig(EmbeddingIndexRecipeConfig):
     maximum_cache_total_items: int = Field(default=25000, ge=1)
 
 
-class EmbeddingIndexInMemoryBackend:
+class EmbeddingIndexInMemoryRetriever:
     """
-    Embedding retrieval backend using an in-memory similarity scan.
+    Embedding retrieval retriever using an in-memory similarity scan.
     """
 
-    backend_id = "embedding-index-inmemory"
+    retriever_id = "embedding-index-inmemory"
 
-    def build_run(
-        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
-    ) -> RetrievalRun:
+    def build_snapshot(
+        self, corpus: Corpus, *, configuration_name: str, configuration: Dict[str, object]
+    ) -> RetrievalSnapshot:
         """
-        Build an embedding index run by chunking text payloads and materializing embeddings.
+        Build an embedding index snapshot by chunking text payloads and materializing embeddings.
 
         :param corpus: Corpus to build against.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Backend-specific configuration values.
-        :type config: dict[str, object]
-        :return: Run manifest describing the build.
-        :rtype: biblicus.models.RetrievalRun
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Retriever-specific configuration values.
+        :type configuration: dict[str, object]
+        :return: Snapshot manifest describing the build.
+        :rtype: biblicus.models.RetrievalSnapshot
         """
-        recipe_config = EmbeddingIndexInMemoryRecipeConfig.model_validate(config)
-        chunks, text_items = collect_chunks(corpus, recipe_config=recipe_config)
-        if len(chunks) > recipe_config.maximum_cache_total_items:
+        parsed_config = EmbeddingIndexInMemoryConfiguration.model_validate(configuration)
+        chunks, text_items = collect_chunks(corpus, configuration=parsed_config)
+        if len(chunks) > parsed_config.maximum_cache_total_items:
             raise ValueError(
                 "embedding-index-inmemory exceeded maximum_cache_total_items. "
                 "Use embedding-index-file or increase maximum_cache_total_items."
             )
 
-        provider = recipe_config.embedding_provider.build_provider()
+        provider = parsed_config.embedding_provider.build_provider()
         chunk_texts = [chunk.text for chunk in chunks]
         embeddings = provider.embed_texts(chunk_texts)
         embeddings = embeddings.astype(np.float32)
 
-        recipe = create_recipe_manifest(
-            backend_id=self.backend_id,
-            name=recipe_name,
-            config=recipe_config.model_dump(),
+        configuration_manifest = create_configuration_manifest(
+            retriever_id=self.retriever_id,
+            name=configuration_name,
+            configuration=parsed_config.model_dump(),
         )
-        run = create_run_manifest(corpus, recipe=recipe, stats={}, artifact_paths=[])
+        snapshot = create_snapshot_manifest(
+            corpus,
+            configuration=configuration_manifest,
+            stats={},
+            snapshot_artifacts=[],
+        )
 
-        paths = artifact_paths_for_run(run_id=run.run_id, backend_id=self.backend_id)
+        paths = artifact_paths_for_snapshot(
+            snapshot_id=snapshot.snapshot_id, retriever_id=self.retriever_id
+        )
         embeddings_path = corpus.root / paths["embeddings"]
         chunks_path = corpus.root / paths["chunks"]
-        corpus.runs_dir.mkdir(parents=True, exist_ok=True)
+        corpus.snapshots_dir.mkdir(parents=True, exist_ok=True)
 
         write_embeddings(embeddings_path, embeddings)
         write_chunks_jsonl(chunks_path, chunks_to_records(chunks))
@@ -100,30 +118,33 @@ class EmbeddingIndexInMemoryBackend:
             "dimensions": (
                 int(embeddings.shape[1])
                 if embeddings.size
-                else recipe_config.embedding_provider.dimensions
+                else parsed_config.embedding_provider.dimensions
             ),
         }
-        run = run.model_copy(
-            update={"artifact_paths": [paths["embeddings"], paths["chunks"]], "stats": stats}
+        snapshot = snapshot.model_copy(
+            update={
+                "snapshot_artifacts": [paths["embeddings"], paths["chunks"]],
+                "stats": stats,
+            }
         )
-        corpus.write_run(run)
-        return run
+        corpus.write_snapshot(snapshot)
+        return snapshot
 
     def query(
         self,
         corpus: Corpus,
         *,
-        run: RetrievalRun,
+        snapshot: RetrievalSnapshot,
         query_text: str,
         budget: QueryBudget,
     ) -> RetrievalResult:
         """
-        Query an embedding index run and return ranked evidence.
+        Query an embedding index snapshot and return ranked evidence.
 
-        :param corpus: Corpus associated with the run.
+        :param corpus: Corpus associated with the snapshot.
         :type corpus: Corpus
-        :param run: Run manifest to use for querying.
-        :type run: biblicus.models.RetrievalRun
+        :param snapshot: Snapshot manifest to use for querying.
+        :type snapshot: biblicus.models.RetrievalSnapshot
         :param query_text: Query text to embed.
         :type query_text: str
         :param budget: Evidence selection budget.
@@ -131,14 +152,18 @@ class EmbeddingIndexInMemoryBackend:
         :return: Retrieval results containing evidence.
         :rtype: biblicus.models.RetrievalResult
         """
-        recipe_config = EmbeddingIndexInMemoryRecipeConfig.model_validate(run.recipe.config)
-        extraction_reference = resolve_extraction_reference(corpus, recipe_config)
+        parsed_config = EmbeddingIndexInMemoryConfiguration.model_validate(
+            snapshot.configuration.configuration
+        )
+        extraction_reference = resolve_extraction_reference(corpus, parsed_config)
 
-        paths = artifact_paths_for_run(run_id=run.run_id, backend_id=self.backend_id)
+        paths = artifact_paths_for_snapshot(
+            snapshot_id=snapshot.snapshot_id, retriever_id=self.retriever_id
+        )
         embeddings_path = corpus.root / paths["embeddings"]
         chunks_path = corpus.root / paths["chunks"]
         if not embeddings_path.is_file() or not chunks_path.is_file():
-            raise FileNotFoundError("Embedding index artifacts are missing for this run")
+            raise FileNotFoundError("Embedding index artifacts are missing for this snapshot")
 
         embeddings = read_embeddings(embeddings_path, mmap=False).astype(np.float32)
         chunk_records = read_chunks_jsonl(chunks_path)
@@ -148,7 +173,7 @@ class EmbeddingIndexInMemoryBackend:
                 "embeddings row count does not match chunk record count"
             )
 
-        provider = recipe_config.embedding_provider.build_provider()
+        provider = parsed_config.embedding_provider.build_provider()
         query_embedding = provider.embed_texts([query_text]).astype(np.float32)
         if query_embedding.shape[0] != 1:
             raise ValueError("Embedding provider returned an invalid query embedding shape")
@@ -160,8 +185,8 @@ class EmbeddingIndexInMemoryBackend:
         )
         evidence_items = _build_evidence(
             corpus,
-            run=run,
-            recipe_config=recipe_config,
+            snapshot=snapshot,
+            configuration=parsed_config,
             candidates=candidates,
             scores=scores,
             chunk_records=chunk_records,
@@ -169,7 +194,11 @@ class EmbeddingIndexInMemoryBackend:
         )
         ranked = [
             item.model_copy(
-                update={"rank": index, "recipe_id": run.recipe.recipe_id, "run_id": run.run_id}
+                update={
+                    "rank": index,
+                    "configuration_id": snapshot.configuration.configuration_id,
+                    "snapshot_id": snapshot.snapshot_id,
+                }
             )
             for index, item in enumerate(evidence_items, start=1)
         ]
@@ -177,9 +206,9 @@ class EmbeddingIndexInMemoryBackend:
         return RetrievalResult(
             query_text=query_text,
             budget=budget,
-            run_id=run.run_id,
-            recipe_id=run.recipe.recipe_id,
-            backend_id=self.backend_id,
+            snapshot_id=snapshot.snapshot_id,
+            configuration_id=snapshot.configuration.configuration_id,
+            retriever_id=snapshot.configuration.retriever_id,
             generated_at=utc_now_iso(),
             evidence=evidence,
             stats={"candidates": len(evidence_items), "returned": len(evidence)},
@@ -202,12 +231,12 @@ def _top_indices(scores: np.ndarray, *, limit: int) -> List[int]:
 def _build_evidence(
     corpus: Corpus,
     *,
-    run: RetrievalRun,
-    recipe_config: EmbeddingIndexInMemoryRecipeConfig,
+    snapshot: RetrievalSnapshot,
+    configuration: EmbeddingIndexInMemoryConfiguration,
     candidates: List[int],
     scores: np.ndarray,
     chunk_records: List[ChunkRecord],
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> List[Evidence]:
     catalog = corpus.load_catalog()
     evidence_items: List[Evidence] = []
@@ -226,7 +255,7 @@ def _build_evidence(
             media_type=media_type,
             extraction_reference=extraction_reference,
         )
-        span_text = _build_snippet(text, (span_start, span_end), recipe_config.snippet_characters)
+        span_text = _build_snippet(text, (span_start, span_end), configuration.snippet_characters)
         if span_text is None:
             span_text = _extract_span_text(text, (span_start, span_end))
         evidence_items.append(
@@ -240,10 +269,10 @@ def _build_evidence(
                 content_ref=None,
                 span_start=span_start,
                 span_end=span_end,
-                stage=EmbeddingIndexInMemoryBackend.backend_id,
+                stage=EmbeddingIndexInMemoryRetriever.retriever_id,
                 stage_scores=None,
-                recipe_id=run.recipe.recipe_id,
-                run_id=run.run_id,
+                configuration_id=snapshot.configuration.configuration_id,
+                snapshot_id=snapshot.snapshot_id,
                 metadata=getattr(catalog_item, "metadata", {}) or {},
                 hash=hash_text(span_text or ""),
             )
@@ -257,7 +286,7 @@ def _load_text_for_evidence(
     item_id: str,
     relpath: str,
     media_type: str,
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> Optional[str]:
     from .embedding_index_common import _load_text_from_item
 

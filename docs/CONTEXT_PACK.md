@@ -127,7 +127,7 @@ biblicus query --corpus corpora/example --query "primary button style preference
 
 ## Common pitfalls
 
-- Building context packs from different retrieval runs while comparing the results.
+- Building context packs from different retrieval snapshots while comparing the results.
 - Comparing outputs with different `ordering` or `include_metadata` values.
 - Relying on token counts without recording the tokenizer identifier.
 

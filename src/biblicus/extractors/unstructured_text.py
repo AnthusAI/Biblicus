@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
@@ -48,12 +48,12 @@ class UnstructuredExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed config.
         :rtype: UnstructuredExtractorConfig
-        :raises ExtractionRunFatalError: If the optional dependency is not installed.
+        :raises ExtractionSnapshotFatalError: If the optional dependency is not installed.
         """
         try:
             from unstructured.partition.auto import partition  # noqa: F401
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "Unstructured extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[unstructured]".'
             ) from import_error

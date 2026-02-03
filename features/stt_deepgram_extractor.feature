@@ -10,7 +10,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "stt-deepgram" extraction run in corpus "corpus"
+    And I attempt to build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "biblicus[deepgram]"
 
@@ -19,8 +19,8 @@ Feature: Deepgram speech to text extraction
     And a fake Deepgram library is available
     And a Deepgram API key is configured for this scenario
     When I ingest the text "alpha" with no metadata into corpus "corpus"
-    And I build a "stt-deepgram" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "stt-deepgram" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: Deepgram speech to text extractor requires a Deepgram API key
     Given I initialized a corpus at "corpus"
@@ -30,7 +30,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "stt-deepgram" extraction run in corpus "corpus"
+    And I attempt to build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "DEEPGRAM_API_KEY"
     And standard error includes "config.yml"
@@ -44,9 +44,9 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-deepgram" extraction run in corpus "corpus"
+    And I build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "Hello from Deepgram"
-    And the extraction run item provenance uses extractor "stt-deepgram"
+    And the extraction snapshot item provenance uses extractor "stt-deepgram"
 
   Scenario: Deepgram speech to text extractor accepts model configuration
     Given I initialized a corpus at "corpus"
@@ -57,7 +57,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id | config_json                           |
       | stt-deepgram | {"model":"nova-3","language":"en"}    |
     Then the extracted text for the last ingested item equals "Nova-3 transcript"
@@ -72,7 +72,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id | config_json                                    |
       | stt-deepgram | {"smart_format":true,"punctuate":true}         |
     Then the extracted text for the last ingested item equals "Formatted transcript"
@@ -98,12 +98,12 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" with tags "audio,example" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id   | config_json |
       | metadata-text  | {}          |
       | stt-deepgram   | {}          |
     Then the extracted text for the last ingested item equals "Deepgram transcript wins"
-    And the extraction run item provenance uses extractor "stt-deepgram"
+    And the extraction snapshot item provenance uses extractor "stt-deepgram"
 
   Scenario: Deepgram speech to text returns empty when response has no results
     Given I initialized a corpus at "corpus"
@@ -114,7 +114,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-deepgram" extraction run in corpus "corpus"
+    And I build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty
 
   Scenario: Deepgram speech to text returns empty when response has empty channels
@@ -126,7 +126,7 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-deepgram" extraction run in corpus "corpus"
+    And I build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty
 
   Scenario: Deepgram speech to text returns empty when response has empty alternatives
@@ -138,5 +138,5 @@ Feature: Deepgram speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-deepgram" extraction run in corpus "corpus"
+    And I build a "stt-deepgram" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty

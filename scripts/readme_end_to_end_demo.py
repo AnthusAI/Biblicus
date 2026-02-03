@@ -1,7 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from biblicus.backends import get_backend
 from biblicus.context import (
     ContextPackPolicy,
     TokenBudget,
@@ -10,12 +9,13 @@ from biblicus.context import (
 )
 from biblicus.corpus import Corpus
 from biblicus.models import QueryBudget
+from biblicus.retrievers import get_retriever
 
 if __name__ == "__main__":
     with TemporaryDirectory(prefix="biblicus-readme-demo-") as temp_dir:
         # This script is a narrative demonstration of the README flow using the Python API.
         # It keeps each stage explicit so the sequence reads like a story: collect memories,
-        # build a retrieval run, query for evidence, then shape a context pack for a model.
+        # build a retrieval snapshot, query for evidence, then shape a context pack for a model.
 
         corpus_path = Path(temp_dir) / "corpora" / "story"
         corpus = Corpus.init(corpus_path)
@@ -39,11 +39,15 @@ if __name__ == "__main__":
         for note_title, note_text in notes:
             corpus.ingest_note(note_text, title=note_title, tags=["memory"])
 
-        # Stage 2: Build a retrieval run and ask a question that should surface the preference.
-        # The scan backend is a simple lexical baseline that makes this demonstration deterministic.
+        # Stage 2: Build a retrieval snapshot and ask a question that should surface the preference.
+        # The scan retriever is a simple lexical baseline that makes this demonstration deterministic.
 
-        backend = get_backend("scan")
-        run = backend.build_run(corpus, recipe_name="Story demo", config={})
+        backend = get_retriever("scan")
+        snapshot = backend.build_snapshot(
+            corpus,
+            configuration_name="Story demo",
+            configuration={},
+        )
         budget = QueryBudget(
             max_total_items=5,
             maximum_total_characters=2000,
@@ -51,7 +55,7 @@ if __name__ == "__main__":
         )
         result = backend.query(
             corpus,
-            run=run,
+            snapshot=snapshot,
             query_text="Primary button style preference",
             budget=budget,
         )

@@ -5,10 +5,10 @@ Feature: Markov analysis
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0,1,1"
     When I ingest the text "Alpha. Beta. Gamma." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -28,9 +28,9 @@ Feature: Markov analysis
         graphviz:
           enabled: true
       """
-    And I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    And I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes 2 states
     And the markov analysis output includes a transition from state 0 to state 1
     And the markov analysis output includes 1 decoded item path
-    And the analysis run includes a graphviz transitions file
+    And the analysis snapshot includes a graphviz transitions file
 

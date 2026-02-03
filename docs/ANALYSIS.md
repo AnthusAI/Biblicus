@@ -1,31 +1,31 @@
 # Corpus analysis
 
 Biblicus supports analysis backends that run on extracted text artifacts without changing the raw corpus. Analysis is a
-pluggable phase that reads an extraction run, produces structured output, and stores artifacts under the corpus runs
+pluggable phase that reads an extraction snapshot, produces structured output, and stores artifacts under the corpus runs
 folder. Each analysis backend declares its own configuration schema and output contract, and all schemas are validated
 strictly.
 
-## How analysis runs work
+## How analysis snapshots work
 
-- Analysis runs are tied to a corpus state via the extraction run reference.
-- The analysis output is written under `.biblicus/runs/analysis/<analysis-id>/<run_id>/`.
-- Analysis is reproducible when you supply the same extraction run and corpus catalog state.
-- Analysis configuration is stored as a recipe manifest in the run metadata.
+- Analysis runs are tied to a corpus state via the extraction snapshot reference.
+- The analysis output is written under `.biblicus/runs/analysis/<analysis-id>/<snapshot_id>/`.
+- Analysis is reproducible when you supply the same extraction snapshot and corpus catalog state.
+- Analysis configuration is stored as a configuration manifest in the run metadata.
 
-If you omit the extraction run, Biblicus uses the most recent extraction run and emits a reproducibility warning. For
-repeatable analysis runs, always pass the extraction run reference explicitly.
+If you omit the extraction snapshot, Biblicus uses the most recent extraction snapshot and emits a reproducibility warning. For
+repeatable analysis snapshots, always pass the extraction snapshot reference explicitly.
 
-## Analysis run artifacts
+## Analysis snapshot artifacts
 
-Every analysis run records a manifest alongside the output:
+Every analysis snapshot records a manifest alongside the output:
 
 ```
-.biblicus/runs/analysis/<analysis-id>/<run_id>/
+.biblicus/runs/analysis/<analysis-id>/<snapshot_id>/
   manifest.json
   output.json
 ```
 
-The manifest captures the recipe, extraction run reference, and catalog timestamp so results can be reproduced and
+The manifest captures the configuration, extraction snapshot reference, and catalog timestamp so results can be reproduced and
 compared later.
 
 ## Inspecting output
@@ -38,21 +38,21 @@ cat corpora/example/.biblicus/runs/analysis/profiling/RUN_ID/output.json
 
 Each analysis backend defines its own `report` payload. The run metadata is consistent across backends.
 
-## Comparing analysis runs
+## Comparing analysis snapshots
 
 When you compare analysis results, record:
 
 - Corpus path and catalog timestamp.
 - Extraction run reference.
-- Analysis recipe name and configuration.
-- Analysis run identifier and output path.
+- Analysis configuration name and configuration.
+- Analysis snapshot identifier and output path.
 
 These make it possible to rerun the analysis and explain differences.
 
 ## Pluggable analysis backends
 
 Analysis backends implement the `CorpusAnalysisBackend` interface and are registered under `biblicus.analysis`.
-A backend receives the corpus, a recipe name, a configuration mapping, and an extraction run reference. It returns a
+A backend receives the corpus, a configuration name, a configuration mapping, and an extraction snapshot reference. It returns a
 Pydantic model that is serialized to JavaScript Object Notation for storage.
 
 ## Choosing an analysis backend
@@ -61,22 +61,22 @@ Start with profiling when you need fast, deterministic baselines. Use topic mode
 and exploratory labels. Use Markov analysis when you want state-transition structure over sequences of segments.
 Combine multiple backends for a clear view of corpus composition, themes, and state dynamics.
 
-## Recipe files
+## Configuration files
 
-Analysis recipes are optional JavaScript Object Notation or YAML files that capture configuration in a repeatable way.
+Analysis configurations are optional JavaScript Object Notation or YAML files that capture configuration in a repeatable way.
 They are useful for sharing experiments and keeping runs reproducible.
 
-Recipes support cascading composition. When a command accepts `--recipe`, you can pass multiple recipe files. Biblicus
-merges them in order, where later recipes override earlier recipes via a deep merge. You can then apply `--config`
+Recipes support cascading composition. When a command accepts `--configuration`, you can pass multiple configuration files. Biblicus
+merges them in order, where later configurations override earlier configurations via a deep merge. You can then apply `--config`
 overrides on top of the composed view.
 
-Minimal profiling recipe:
+Minimal profiling configuration:
 
 ```
 schema_version: 1
 ```
 
-Minimal topic modeling recipe:
+Minimal topic modeling configuration:
 
 ```
 schema_version: 1
@@ -87,7 +87,7 @@ bertopic_analysis:
     nr_topics: 8
 ```
 
-Minimal Markov analysis recipe:
+Minimal Markov analysis configuration:
 
 ```
 schema_version: 1
@@ -111,7 +111,7 @@ The integration demo script is a working reference you can use as a starting poi
 python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
-The command prints the analysis run identifier and the output path. Open the resulting `output.json` to inspect per-topic
+The command prints the analysis snapshot identifier and the output path. Open the resulting `output.json` to inspect per-topic
 labels, keywords, and document examples.
 
 ## Markov analysis
@@ -134,7 +134,7 @@ deterministic counts and distribution metrics. See `docs/PROFILING.md` for the f
 python -m biblicus analyze profile --corpus corpora/example --extraction-run pipeline:RUN_ID
 ```
 
-The command writes an analysis run directory and prints the run identifier.
+The command writes an analysis snapshot directory and prints the snapshot identifier.
 
 Run profiling from the CLI:
 

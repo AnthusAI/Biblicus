@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from ..user_config import resolve_deepgram_api_key
 from .base import TextExtractor
@@ -66,19 +66,19 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed configuration model.
         :rtype: DeepgramSpeechToTextExtractorConfig
-        :raises ExtractionRunFatalError: If the optional dependency or required environment is missing.
+        :raises ExtractionSnapshotFatalError: If the optional dependency or required environment is missing.
         """
         try:
             from deepgram import DeepgramClient  # noqa: F401
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "Deepgram speech to text extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[deepgram]".'
             ) from import_error
 
         api_key = resolve_deepgram_api_key()
         if api_key is None:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "Deepgram speech to text extractor requires a Deepgram API key. "
                 "Set DEEPGRAM_API_KEY or configure it in ~/.biblicus/config.yml or ./.biblicus/config.yml under "
                 "deepgram.api_key."
@@ -107,7 +107,7 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
         :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
         :return: Extracted text payload, or None when the item is not audio.
         :rtype: ExtractedText or None
-        :raises ExtractionRunFatalError: If the optional dependency or required configuration is missing.
+        :raises ExtractionSnapshotFatalError: If the optional dependency or required configuration is missing.
         """
         _ = previous_extractions
         if not item.media_type.startswith("audio/"):
@@ -121,7 +121,7 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
 
         api_key = resolve_deepgram_api_key()
         if api_key is None:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "Deepgram speech to text extractor requires a Deepgram API key. "
                 "Set DEEPGRAM_API_KEY or configure it in ~/.biblicus/config.yml or ./.biblicus/config.yml under "
                 "deepgram.api_key."
@@ -130,7 +130,7 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
         try:
             from deepgram import DeepgramClient
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "Deepgram speech to text extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[deepgram]".'
             ) from import_error

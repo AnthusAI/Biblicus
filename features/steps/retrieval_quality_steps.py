@@ -6,15 +6,15 @@ from typing import Dict
 from behave import then, when
 from pydantic import ValidationError
 
-from biblicus.backends.hybrid import HybridBackend
-from biblicus.backends.sqlite_full_text_search import (
-    SqliteFullTextSearchRecipeConfig,
-    _resolve_stop_words,
-)
-from biblicus.backends.tf_vector import _build_snippet, _find_first_match
 from biblicus.corpus import Corpus
 from biblicus.models import QueryBudget
-from biblicus.retrieval import create_recipe_manifest, create_run_manifest
+from biblicus.retrieval import create_configuration_manifest, create_snapshot_manifest
+from biblicus.retrievers.hybrid import HybridRetriever
+from biblicus.retrievers.sqlite_full_text_search import (
+    SqliteFullTextSearchConfiguration,
+    _resolve_stop_words,
+)
+from biblicus.retrievers.tf_vector import _build_snippet, _find_first_match
 
 
 def _corpus_path(context, name: str):
@@ -61,7 +61,7 @@ def _normalize_empty_marker(text: str) -> str:
 @when("I validate sqlite full-text search stop words list:")
 def step_validate_sqlite_stop_words_list(context) -> None:
     values = [row["value"] if "value" in row.headings else row[0] for row in context.table]
-    config = SqliteFullTextSearchRecipeConfig.model_validate({"stop_words": values})
+    config = SqliteFullTextSearchConfiguration.model_validate({"stop_words": values})
     context.sqlite_stop_words = _resolve_stop_words(config.stop_words)
     context.validation_error = None
 
@@ -70,35 +70,40 @@ def step_validate_sqlite_stop_words_list(context) -> None:
 def step_attempt_validate_sqlite_stop_words_list(context) -> None:
     values = [row["value"] if "value" in row.headings else row[0] for row in context.table]
     try:
-        config = SqliteFullTextSearchRecipeConfig.model_validate({"stop_words": values})
+        config = SqliteFullTextSearchConfiguration.model_validate({"stop_words": values})
         context.sqlite_stop_words = _resolve_stop_words(config.stop_words)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
 
 
-@when("I attempt to query a hybrid run without component runs")
+@when("I attempt to query a hybrid snapshot without component runs")
 def step_attempt_query_hybrid_without_components(context) -> None:
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    backend = HybridBackend()
-    recipe = create_recipe_manifest(
-        backend_id=backend.backend_id,
+    retriever = HybridRetriever()
+    configuration = create_configuration_manifest(
+        retriever_id=retriever.retriever_id,
         name="hybrid-missing-components",
-        config={
-            "lexical_backend": "sqlite-full-text-search",
-            "embedding_backend": "tf-vector",
+        configuration={
+            "lexical_retriever": "sqlite-full-text-search",
+            "embedding_retriever": "tf-vector",
             "lexical_weight": 0.5,
             "embedding_weight": 0.5,
         },
     )
-    run = create_run_manifest(corpus, recipe=recipe, stats={}, artifact_paths=[])
+    snapshot = create_snapshot_manifest(
+        corpus,
+        configuration=configuration,
+        stats={},
+        snapshot_artifacts=[],
+    )
     budget = QueryBudget(
         max_total_items=5,
         maximum_total_characters=2000,
         max_items_per_source=5,
     )
     try:
-        backend.query(corpus, run=run, query_text="alpha", budget=budget)
+        retriever.query(corpus, snapshot=snapshot, query_text="alpha", budget=budget)
         context.validation_error = None
     except Exception as exc:
         context.validation_error = exc
@@ -146,15 +151,15 @@ def step_sqlite_stop_words_include(context, token: str) -> None:
     assert token in stop_words
 
 
-@then("the latest run recipe config includes:")
-def step_latest_run_recipe_config_includes(context) -> None:
-    run = context.last_run
-    config = run.get("recipe", {}).get("config", {})
+@then("the latest snapshot configuration config includes:")
+def step_latest_snapshot_configuration_includes(context) -> None:
+    snapshot = context.last_snapshot
+    config = snapshot.get("configuration", {}).get("configuration", {})
     for row in context.table:
         key = row["key"].strip() if "key" in row.headings else row[0].strip()
         value = row["value"].strip() if "value" in row.headings else row[1].strip()
         expected = _parse_expected_value(value)
-        assert key in config, f"Missing recipe config key {key!r}"
+        assert key in config, f"Missing configuration key {key!r}"
         assert config[key] == expected
 
 

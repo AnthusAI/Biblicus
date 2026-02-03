@@ -13,7 +13,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
+    And I attempt to build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "biblicus[paddleocr]"
 
@@ -21,8 +21,8 @@ Feature: PaddleOCR-VL extractor plugin
     Given I initialized a corpus at "corpus"
     And a fake PaddleOCR library is available
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: PaddleOCR-VL extractor produces extracted text for an image item
     Given I initialized a corpus at "corpus"
@@ -34,10 +34,10 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
-    Then the extraction run includes extracted text for the last ingested item
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot includes extracted text for the last ingested item
     And the extracted text for the last ingested item equals "Hello world!"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: PaddleOCR-VL extractor records empty output when no text is recognized
     Given I initialized a corpus at "corpus"
@@ -47,9 +47,9 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "blank.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty
-    And the extraction run stats include extracted_empty_items 1
+    And the extraction snapshot stats include extracted_empty_items 1
 
   Scenario: PaddleOCR-VL extractor filters lines by minimum confidence threshold
     Given I initialized a corpus at "corpus"
@@ -62,7 +62,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "test.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "High conf"
 
   Scenario: PaddleOCR-VL extractor API mode requires api_provider
@@ -72,11 +72,11 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
       """
     Then the command fails with exit code 2
@@ -90,9 +90,9 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item equals "API extracted text"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: PaddleOCR-VL extractor parses API string response format
     Given I initialized a corpus at "corpus"
@@ -103,7 +103,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item equals "Simple string response"
 
   Scenario: PaddleOCR-VL extractor parses API list response format
@@ -115,7 +115,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item equals "List format response"
 
 
@@ -129,9 +129,9 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id     | config_json          |
-      | ocr-paddleocr-vl | {"backend":"{bad"} |
+      | ocr-paddleocr-vl | {"retriever":"{bad"} |
     Then the command fails with exit code 2
 
   Scenario: PaddleOCR-VL extractor handles malformed OCR output gracefully
@@ -142,7 +142,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "bad.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty
 
   Scenario: PaddleOCR-VL extractor requires api_provider in API mode
@@ -152,11 +152,11 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
       """
     Then the command fails with exit code 2
@@ -171,7 +171,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item equals "No confidence"
 
   Scenario: PaddleOCR-VL API list response without confidence field
@@ -183,7 +183,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item equals "List no confidence"
 
   Scenario: PaddleOCR-VL API malformed response returns empty
@@ -195,7 +195,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"api\",\"api_provider\":\"huggingface\",\"model_id\":\"PaddlePaddle/PaddleOCR-VL\"}"
     Then the extracted text for the last ingested item is empty
 
   Scenario: PaddleOCR-VL local mode handles malformed OCR output
@@ -206,7 +206,7 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus"
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "valid"
 
   Scenario: PaddleOCR-VL local mode without library installed fails
@@ -217,14 +217,14 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
         steps:
           - extractor_id: ocr-paddleocr-vl
             config:
-              backend:
+              retriever:
                 mode: local
       """
     Then standard error includes "PaddleOCR-VL extractor (local mode) requires paddleocr"
@@ -238,14 +238,14 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
         steps:
           - extractor_id: ocr-paddleocr-vl
             config:
-              backend:
+              retriever:
                 mode: api
                 api_provider: openai
                 model_id: gpt-4o
@@ -261,14 +261,14 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
         steps:
           - extractor_id: ocr-paddleocr-vl
             config:
-              backend:
+              retriever:
                 mode: api
                 api_provider: huggingface
                 model_id: PaddlePaddle/PaddleOCR-VL
@@ -284,14 +284,14 @@ Feature: PaddleOCR-VL extractor plugin
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
         steps:
           - extractor_id: ocr-paddleocr-vl
             config:
-              backend:
+              retriever:
                 mode: api
                 api_provider: huggingface
                 model_id: PaddlePaddle/PaddleOCR-VL

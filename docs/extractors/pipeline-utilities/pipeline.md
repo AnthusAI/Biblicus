@@ -60,7 +60,7 @@ biblicus extract my-corpus --extractor pipeline \
   --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"select-text"}]'
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: pipeline
@@ -73,7 +73,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API
@@ -395,12 +395,12 @@ steps:
   - extractor_id: select-longest-text
 ```
 
-### Use Recipe Files
+### Use Configuration Files
 
-For complex pipelines, always use recipe files:
+For complex pipelines, always use configuration files:
 
 ```yaml
-# recipe.yml
+# configuration.yml
 extractor_id: pipeline
 config:
   steps:
@@ -427,7 +427,7 @@ Always test pipelines on representative samples:
 
 ```bash
 # Test on small corpus first
-biblicus extract test-corpus --recipe pipeline.yml
+biblicus extract test-corpus --configuration pipeline.yml
 ```
 
 ## Common Pipeline Recipes
@@ -539,4 +539,4 @@ Steps cannot directly communicate. They only share via the extraction results li
 - [Pipeline Utilities Overview](index.md)
 - [Extractors Index](../index.md)
 - [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Recipe File Format](../../EXTRACTION.md#recipe-files)
+- [Configuration File Format](../../EXTRACTION.md#configuration-files)

@@ -64,7 +64,7 @@ Deliverables:
 
 Acceptance checks:
 
-- HMM analysis is reproducible for the same corpus state and extraction run.
+- HMM analysis is reproducible for the same corpus state and extraction snapshot.
 - Reports are exportable and readable without custom tooling.
 
 ### Text utilities

@@ -11,7 +11,7 @@ vector database.
 
 ## What it builds
 
-This backend builds a retrieval run that materializes run artifacts under the corpus, for example:
+This backend builds a retrieval snapshot that materializes snapshot artifacts under the corpus, for example:
 
 - an embedding matrix stored as a NumPy array on disk
 - an id mapping from chunk identifiers to embedding row offsets
@@ -22,7 +22,7 @@ than available RAM.
 
 ## Chunking
 
-Embeddings are computed over chunks. Chunking is configured per recipe by selecting a chunker and its configuration.
+Embeddings are computed over chunks. Chunking is configured per configuration by selecting a chunker and its configuration.
 
 Chunking is part of the index contract: evidence references chunk boundaries so you can trace retrieval outputs back to
 the original item text.

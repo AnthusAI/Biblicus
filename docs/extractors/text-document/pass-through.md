@@ -51,7 +51,7 @@ This extractor is intentionally minimal and accepts no configuration options.
 biblicus extract my-corpus --extractor pass-through-text
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: pass-through-text
@@ -59,7 +59,7 @@ config: {}
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API
@@ -185,7 +185,7 @@ Non-text items are silently skipped (returns `None`). This allows the extractor 
 
 ### Encoding Errors
 
-UTF-8 decoding errors cause per-item failures recorded in `errored_items` but do not halt the entire extraction run.
+UTF-8 decoding errors cause per-item failures recorded in `errored_items` but do not halt the entire extraction snapshot.
 
 ### Missing Files
 

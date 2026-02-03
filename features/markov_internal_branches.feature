@@ -13,11 +13,11 @@ Feature: Markov analysis internal utilities
     And the ValueError message includes "must be smaller than max_characters"
 
   Scenario: Fixed window segmentation skips empty chunks and supports overlaps
-    When I run fixed window segmentation on text "AAAAA     BBBBB" with max_characters 5 and overlap_characters 0
+    When I snapshot fixed window segmentation on text "AAAAA     BBBBB" with max_characters 5 and overlap_characters 0
     Then the fixed window segmentation returns 2 segments
-    When I run fixed window segmentation on empty text with max_characters 5 and overlap_characters 0
+    When I snapshot fixed window segmentation on empty text with max_characters 5 and overlap_characters 0
     Then the fixed window segmentation returns 0 segments
-    When I run fixed window segmentation on text "ABCDEFGHIJ" with max_characters 5 and overlap_characters 2
+    When I snapshot fixed window segmentation on text "ABCDEFGHIJ" with max_characters 5 and overlap_characters 2
     Then the fixed window segmentation returns more than 1 segment
 
   Scenario: Markov JSON parsing helpers reject empty outputs, invalid JSON, and wrong types
@@ -64,14 +64,14 @@ Feature: Markov analysis internal utilities
     When I attempt llm segmentation with json object segments not a list
     Then a ValueError is raised
     And the ValueError message includes "segments' list"
-    When I run llm segmentation that returns an empty segment and "Alpha"
+    When I snapshot llm segmentation that returns an empty segment and "Alpha"
     Then the llm segmentation returns 1 segment
 
   Scenario: Span markup segmentation requires config and skips empty spans
     When I attempt span markup segmentation with missing config
     Then a ValueError is raised
     And the ValueError message includes "segmentation.span_markup is required"
-    When I run span markup segmentation with an empty span and "Alpha"
+    When I snapshot span markup segmentation with an empty span and "Alpha"
     Then the span markup segmentation returns 1 segment
 
   Scenario: TFIDF encoding validates inputs and ignores out-of-vocabulary terms
@@ -259,10 +259,10 @@ Feature: Markov analysis internal utilities
       """
     Then the rejected END segment includes no reason line
 
-  Scenario: Topic modeling stage rejects missing recipe and missing documents
-    When I attempt to apply topic modeling with enabled true but no recipe
+  Scenario: Topic modeling stage rejects missing configuration and missing documents
+    When I attempt to apply topic modeling with enabled true but no configuration
     Then a ValueError is raised
-    And the ValueError message includes "topic_modeling.recipe is required"
+    And the ValueError message includes "topic_modeling.configuration is required"
     When I attempt to apply topic modeling with only boundary segments
     Then a ValueError is raised
     And the ValueError message includes "requires at least one non-boundary segment"

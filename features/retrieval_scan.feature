@@ -1,13 +1,13 @@
-Feature: Retrieval with scan backend
-  The scan backend performs deterministic full-text scans across markdown and text
+Feature: Retrieval with scan retriever
+  The scan retriever performs deterministic full-text scans across markdown and text
   items without materializing external indexes.
 
-  Scenario: Build a scan run and query for evidence
+  Scenario: Build a scan snapshot and query for evidence
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo charlie"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "bravo" and budget:
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "bravo" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -21,8 +21,8 @@ Feature: Retrieval with scan backend
     And a text file "two.md" exists with contents "topic two"
     When I ingest the file "one.md" into corpus "corpus"
     And I ingest the file "two.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "topic" and budget:
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "topic" and budget:
       | key                  | value |
       | max_total_items      | 1     |
       | maximum_total_characters | 2000  |
@@ -32,20 +32,20 @@ Feature: Retrieval with scan backend
   Scenario: Scan query respects the maximum_total_characters budget
     Given I initialized a corpus at "corpus"
     When I ingest the text "longtext longtext longtext longtext" with title "Long" and tags "a" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "longtext" and budget:
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "longtext" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1     |
       | max_items_per_source | 5     |
     Then the query evidence count is 0
 
-  Scenario: Scan backend ignores non-text items
+  Scenario: Scan retriever ignores non-text items
     Given I initialized a corpus at "corpus"
     And a binary file "blob.bin" exists
     When I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "blob" and budget:
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "blob" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -56,8 +56,8 @@ Feature: Retrieval with scan backend
     Given I initialized a corpus at "corpus"
     And a text file "plain.txt" exists with contents "plain content"
     When I ingest the file "plain.txt" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I query with the latest run for "plain" and budget:
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "plain" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |

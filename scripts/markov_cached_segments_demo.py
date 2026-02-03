@@ -1,8 +1,8 @@
 """
-Run Markov analysis with cached span-markup segmentation.
+Snapshot Markov analysis with cached span-markup segmentation.
 
 This demo script performs the span-markup segmentation once, caches the marked-up text and
-segments, and reuses that cache for subsequent HMM runs. It keeps caching in application-level
+segments, and reuses that cache for subsequent HMM snapshots. It keeps caching in application-level
 code rather than the text utilities or analysis backend.
 """
 
@@ -18,35 +18,39 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from biblicus.analysis.markov import (
     MarkovBackend,
     _add_boundary_segments,
-    _analysis_run_id,
+    _analysis_snapshot_id,
     _assign_state_names,
     _build_observations,
     _build_states,
     _collect_documents,
-    _create_recipe_manifest,
+    _create_configuration_manifest,
     _encode_observations,
     _fit_and_decode,
     _group_decoded_paths,
-    _write_analysis_run_manifest,
+    _write_analysis_snapshot_manifest,
     _write_graphviz,
     _write_observations,
     _write_segments,
     _write_transitions_json,
 )
 from biblicus.analysis.models import (
-    AnalysisRunInput,
-    AnalysisRunManifest,
+    AnalysisSnapshotInput,
+    AnalysisSnapshotManifest,
+    MarkovAnalysisConfiguration,
     MarkovAnalysisOutput,
-    MarkovAnalysisRecipeConfig,
     MarkovAnalysisReport,
     MarkovAnalysisSegment,
     MarkovAnalysisSegmentationMethod,
     MarkovAnalysisStageStatus,
     MarkovAnalysisTextCollectionReport,
 )
+from biblicus.configuration import (
+    apply_dotted_overrides,
+    load_configuration_view,
+    parse_dotted_overrides,
+)
 from biblicus.corpus import Corpus
-from biblicus.models import ExtractionRunReference, parse_extraction_run_reference
-from biblicus.recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+from biblicus.models import ExtractionSnapshotReference, parse_extraction_snapshot_reference
 from biblicus.retrieval import hash_text
 from biblicus.text.annotate import TextAnnotateRequest, apply_text_annotate
 from biblicus.text.extract import TextExtractRequest, apply_text_extract
@@ -72,26 +76,26 @@ def _parse_list(raw: Optional[Iterable[str]]) -> List[str]:
     return values
 
 
-def _load_recipe_config(
-    *, recipe_paths: List[str], overrides: Dict[str, object]
-) -> MarkovAnalysisRecipeConfig:
+def _load_configuration_config(
+    *, configuration_paths: List[str], overrides: Dict[str, object]
+) -> MarkovAnalysisConfiguration:
     """
-    Load and validate a Markov analysis recipe configuration.
+    Load and validate a Markov analysis configuration configuration.
 
-    :param recipe_paths: Ordered list of recipe file paths.
-    :type recipe_paths: list[str]
+    :param configuration_paths: Ordered list of configuration file paths.
+    :type configuration_paths: list[str]
     :param overrides: Dotted key overrides applied after composition.
     :type overrides: dict[str, object]
-    :return: Validated recipe configuration.
-    :rtype: MarkovAnalysisRecipeConfig
+    :return: Validated configuration configuration.
+    :rtype: MarkovAnalysisConfiguration
     """
-    view = load_recipe_view(recipe_paths, recipe_label="Recipe file")
+    view = load_configuration_view(configuration_paths, configuration_label="Configuration file")
     if overrides:
         view = apply_dotted_overrides(view, overrides)
-    return MarkovAnalysisRecipeConfig.model_validate(view)
+    return MarkovAnalysisConfiguration.model_validate(view)
 
 
-def _segmentation_signature(*, config: MarkovAnalysisRecipeConfig) -> str:
+def _segmentation_signature(*, config: MarkovAnalysisConfiguration) -> str:
     segmentation_payload = config.segmentation.model_dump()
     span_markup = segmentation_payload.get("span_markup")
     if isinstance(span_markup, dict):
@@ -145,7 +149,7 @@ def _segment_with_markup(
     *,
     item_id: str,
     text: str,
-    config: MarkovAnalysisRecipeConfig,
+    config: MarkovAnalysisConfiguration,
 ) -> Tuple[List[Dict[str, object]], str]:
     markup_config = config.segmentation.span_markup
     if markup_config is None:
@@ -235,8 +239,8 @@ def _payloads_from_cache(
 def _build_cached_segments(
     *,
     corpus: Corpus,
-    extraction_run: ExtractionRunReference,
-    config: MarkovAnalysisRecipeConfig,
+    extraction_snapshot: ExtractionSnapshotReference,
+    config: MarkovAnalysisConfiguration,
     cache_dir: Path,
     workers: int,
     refresh_cache: bool,
@@ -247,7 +251,7 @@ def _build_cached_segments(
     signature = _segmentation_signature(config=config)
     documents, text_report = _collect_documents(
         corpus=corpus,
-        extraction_run=extraction_run,
+        extraction_snapshot=extraction_snapshot,
         config=config.text_source,
     )
 
@@ -338,12 +342,12 @@ def _build_cached_segments(
         warnings = list(text_report.warnings) + segmentation_errors
         text_report = text_report.model_copy(update={"warnings": warnings})
     segments_with_boundaries = _add_boundary_segments(segments=segments)
-    _write_segments(run_dir=cache_dir, segments=segments_with_boundaries)
+    _write_segments(snapshot_dir=cache_dir, segments=segments_with_boundaries)
     _write_marked_up_texts(cache_dir=cache_dir, records=marked_up_texts)
     manifest_payload: Dict[str, object] = {
         "cache_id": cache_dir.name,
         "created_at": utc_now_iso(),
-        "extraction_run": extraction_run.as_string(),
+        "extraction_snapshot": extraction_snapshot.as_string(),
         "catalog_generated_at": corpus.load_catalog().generated_at,
         "text_collection": text_report.model_dump(),
         "text_source": config.text_source.model_dump(),
@@ -357,34 +361,36 @@ def _build_cached_segments(
     return segments_with_boundaries, manifest_payload
 
 
-def _run_hmm_from_segments(
+def _snapshot_hmm_from_segments(
     *,
     corpus: Corpus,
-    recipe_name: str,
-    config: MarkovAnalysisRecipeConfig,
-    extraction_run: ExtractionRunReference,
+    configuration_name: str,
+    config: MarkovAnalysisConfiguration,
+    extraction_snapshot: ExtractionSnapshotReference,
     segments: Sequence[MarkovAnalysisSegment],
     text_collection_payload: Dict[str, object],
 ) -> Dict[str, object]:
-    recipe_manifest = _create_recipe_manifest(name=recipe_name, config=config)
+    configuration_manifest = _create_configuration_manifest(name=configuration_name, config=config)
     catalog = corpus.load_catalog()
-    run_id = _analysis_run_id(
-        recipe_id=recipe_manifest.recipe_id,
-        extraction_run=extraction_run,
+    snapshot_id = _analysis_snapshot_id(
+        configuration_id=configuration_manifest.configuration_id,
+        extraction_snapshot=extraction_snapshot,
         catalog_generated_at=catalog.generated_at,
     )
-    run_manifest = AnalysisRunManifest(
-        run_id=run_id,
-        recipe=recipe_manifest,
+    snapshot_manifest = AnalysisSnapshotManifest(
+        snapshot_id=snapshot_id,
+        configuration=configuration_manifest,
         corpus_uri=catalog.corpus_uri,
         catalog_generated_at=catalog.generated_at,
         created_at=utc_now_iso(),
-        input=AnalysisRunInput(extraction_run=extraction_run),
+        input=AnalysisSnapshotInput(extraction_snapshot=extraction_snapshot),
         artifact_paths=[],
         stats={},
     )
-    run_dir = corpus.analysis_run_dir(analysis_id=MarkovBackend.analysis_id, run_id=run_id)
-    run_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_dir = corpus.analysis_snapshot_dir(
+        analysis_id=MarkovBackend.analysis_id, snapshot_id=snapshot_id
+    )
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
 
     observations = _build_observations(segments=segments, config=config)
     observation_matrix, lengths = _encode_observations(observations=observations, config=config)
@@ -408,13 +414,13 @@ def _run_hmm_from_segments(
         "observations.jsonl",
         "transitions.json",
     ]
-    _write_segments(run_dir=run_dir, segments=segments)
-    _write_observations(run_dir=run_dir, observations=observations)
-    _write_transitions_json(run_dir=run_dir, transitions=transitions)
+    _write_segments(snapshot_dir=snapshot_dir, segments=segments)
+    _write_observations(snapshot_dir=snapshot_dir, observations=observations)
+    _write_transitions_json(snapshot_dir=snapshot_dir, transitions=transitions)
 
     if config.artifacts.graphviz.enabled:
         _write_graphviz(
-            run_dir=run_dir,
+            snapshot_dir=snapshot_dir,
             transitions=transitions,
             graphviz=config.artifacts.graphviz,
             states=states,
@@ -450,34 +456,38 @@ def _run_hmm_from_segments(
     output = MarkovAnalysisOutput(
         analysis_id=MarkovBackend.analysis_id,
         generated_at=utc_now_iso(),
-        run=run_manifest,
+        snapshot=snapshot_manifest,
         report=report,
     )
 
-    run_stats = {
+    snapshot_stats = {
         "items": len({segment.item_id for segment in segments}),
         "segments": len(segments),
         "states": len(states),
         "transitions": len(transitions),
     }
-    run_manifest = run_manifest.model_copy(
-        update={"artifact_paths": artifact_paths, "stats": run_stats}
+    snapshot_manifest = snapshot_manifest.model_copy(
+        update={"artifact_paths": artifact_paths, "stats": snapshot_stats}
     )
-    _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
-    (run_dir / "output.json").write_text(output.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    _write_analysis_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=snapshot_manifest)
+    (snapshot_dir / "output.json").write_text(
+        output.model_dump_json(indent=2) + "\n", encoding="utf-8"
+    )
 
     return {
-        "run_id": run_id,
-        "run_dir": str(run_dir),
-        "output_path": str(run_dir / "output.json"),
+        "snapshot_id": snapshot_id,
+        "snapshot_dir": str(snapshot_dir),
+        "output_path": str(snapshot_dir / "output.json"),
         "transitions_dot": (
-            str(run_dir / "transitions.dot") if (run_dir / "transitions.dot").is_file() else None
+            str(snapshot_dir / "transitions.dot")
+            if (snapshot_dir / "transitions.dot").is_file()
+            else None
         ),
-        "stats": run_stats,
+        "stats": snapshot_stats,
     }
 
 
-def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
+def snapshot_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     """
     Execute the cached segmentation Markov demo workflow.
 
@@ -494,13 +504,15 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
         )
 
     corpus = Corpus.open(corpus_path)
-    extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
 
     overrides = parse_dotted_overrides(_parse_list(arguments.config))
-    recipe_paths = _parse_list(arguments.recipe) or [
-        str(REPO_ROOT / "recipes" / "markov" / "openai-enriched.yml")
+    configuration_paths = _parse_list(arguments.configuration) or [
+        str(REPO_ROOT / "configurations" / "markov" / "openai-enriched.yml")
     ]
-    config = _load_recipe_config(recipe_paths=recipe_paths, overrides=overrides)
+    config = _load_configuration_config(
+        configuration_paths=configuration_paths, overrides=overrides
+    )
     if config.segmentation.method != MarkovAnalysisSegmentationMethod.SPAN_MARKUP:
         raise SystemExit("This demo expects segmentation.method to be span_markup.")
 
@@ -509,26 +521,26 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
 
     segments, manifest_payload = _build_cached_segments(
         corpus=corpus,
-        extraction_run=extraction_run,
+        extraction_snapshot=extraction_snapshot,
         config=config,
         cache_dir=cache_dir,
         workers=arguments.workers,
         refresh_cache=arguments.refresh_cache,
     )
 
-    hmm_summary = _run_hmm_from_segments(
+    hmm_summary = _snapshot_hmm_from_segments(
         corpus=corpus,
-        recipe_name=arguments.recipe_name,
+        configuration_name=arguments.configuration_name,
         config=config,
-        extraction_run=extraction_run,
+        extraction_snapshot=extraction_snapshot,
         segments=segments,
         text_collection_payload=manifest_payload.get("text_collection", {}),
     )
 
     return {
         "corpus": str(corpus_path),
-        "extraction_run": extraction_run.as_string(),
-        "recipe_paths": recipe_paths,
+        "extraction_snapshot": extraction_snapshot.as_string(),
+        "configuration_paths": configuration_paths,
         "cache_dir": str(cache_dir),
         "marked_up_texts": str(cache_dir / "marked_up_texts.jsonl"),
         "segments": str(cache_dir / "segments.jsonl"),
@@ -544,23 +556,23 @@ def build_parser() -> argparse.ArgumentParser:
     :rtype: argparse.ArgumentParser
     """
     parser = argparse.ArgumentParser(
-        description="Run Markov analysis with cached span-markup segmentation."
+        description="Snapshot Markov analysis with cached span-markup segmentation."
     )
     parser.add_argument("--corpus", required=True, help="Corpus path to analyze.")
     parser.add_argument(
-        "--extraction-run",
+        "--extraction-snapshot",
         required=True,
-        help="Extraction run reference (e.g. pipeline:<run_id>).",
+        help="Extraction snapshot reference (e.g. pipeline:<snapshot_id>).",
     )
     parser.add_argument(
-        "--recipe",
+        "--configuration",
         action="append",
-        help="Markov recipe path (repeatable; later recipes override earlier ones).",
+        help="Markov configuration path (repeatable; later configurations override earlier ones).",
     )
     parser.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="cached-span-markup",
-        help="Recipe name stored in the analysis run manifest.",
+        help="Configuration name stored in the analysis snapshot manifest.",
     )
     parser.add_argument(
         "--cache-dir",
@@ -574,7 +586,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config",
         action="append",
-        help="Dotted config override key=value (repeatable; applied after recipe composition).",
+        help="Dotted config override key=value (repeatable; applied after configuration composition).",
     )
     parser.add_argument(
         "--workers",
@@ -594,7 +606,7 @@ def main() -> int:
     """
     parser = build_parser()
     args = parser.parse_args()
-    summary = run_demo(args)
+    summary = snapshot_demo(args)
     print(json.dumps(summary, indent=2))
     return 0
 

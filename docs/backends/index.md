@@ -89,7 +89,7 @@ biblicus ingest my-corpus document.pdf
 # Extract text
 biblicus extract my-corpus --extractor pdf-text
 
-# Build retrieval run with a backend
+# Build retrieval snapshot with a backend
 biblicus build my-corpus --backend sqlite-full-text-search
 
 # Query the run
@@ -113,7 +113,7 @@ backend = get_backend("sqlite-full-text-search")
 # Build run
 run = backend.build_run(
     corpus,
-    recipe_name="My search index",
+    configuration_name="My search index",
     config={}
 )
 
@@ -143,14 +143,14 @@ See `docs/RETRIEVAL_EVALUATION.md` for evaluation workflows and dataset formats.
 
 ## Reproducibility checklist
 
-- Record the extraction run reference used for the backend build.
-- Keep backend recipe configurations in source control.
+- Record the extraction snapshot reference used for the backend build.
+- Keep backend configuration configurations in source control.
 - Reuse the same `QueryBudget` when comparing backends.
 
 ## Common pitfalls
 
 - Comparing runs built from different extraction outputs.
-- Forgetting to persist the run identifier for later evaluation.
+- Forgetting to persist the snapshot identifier for later evaluation.
 - Using different budget settings and expecting metrics to be comparable.
 
 ## Performance Comparison
@@ -200,8 +200,8 @@ Compare backends using the same corpus:
 
 ```bash
 # Build with both backends
-biblicus build my-corpus --backend scan --recipe scan-baseline
-biblicus build my-corpus --backend sqlite-full-text-search --recipe fts-index
+biblicus build my-corpus --backend scan --configuration scan-baseline
+biblicus build my-corpus --backend sqlite-full-text-search --configuration fts-index
 
 # Query both
 biblicus query my-corpus --run scan:RUN_ID --query "test"
@@ -210,15 +210,15 @@ biblicus query my-corpus --run sqlite-full-text-search:RUN_ID --query "test"
 
 ### Using Extracted Text
 
-All backends support extraction runs for non-text content:
+All backends support extraction snapshots for non-text content:
 
 ```bash
 # Extract text from PDFs
 biblicus extract my-corpus --extractor pdf-text
 
-# Build backend with extraction run
+# Build backend with extraction snapshot
 biblicus build my-corpus --backend sqlite-full-text-search \
-  --config extraction_run=pdf-text:EXTRACTION_RUN_ID
+  --config extraction_snapshot=pdf-text:EXTRACTION_SNAPSHOT_ID
 ```
 
 ## Backend Configuration
@@ -230,7 +230,7 @@ All backends support these configuration options:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `snippet_characters` | int | 400 | Maximum characters in evidence snippets |
-| `extraction_run` | str | None | Extraction run reference (extractor_id:run_id) |
+| `extraction_snapshot` | str | None | Extraction run reference (extractor_id:snapshot_id) |
 
 ### Backend-Specific Options
 
@@ -255,8 +255,8 @@ All backends implement the `RetrievalBackend` interface:
 class RetrievalBackend:
     backend_id: str
 
-    def build_run(self, corpus, *, recipe_name, config) -> RetrievalRun:
-        """Build a retrieval run (may create artifacts)."""
+    def build_run(self, corpus, *, configuration_name, config) -> RetrievalRun:
+        """Build a retrieval snapshot (may create artifacts)."""
 
     def query(self, corpus, *, run, query_text, budget) -> RetrievalResult:
         """Query the run and return evidence."""
@@ -277,8 +277,8 @@ class Evidence:
     span_start: Optional[int]     # Span start offset
     span_end: Optional[int]       # Span end offset
     stage: str                    # Processing stage
-    recipe_id: str                # Recipe identifier
-    run_id: str                   # Run identifier
+    configuration_id: str                # Configuration identifier
+    snapshot_id: str                   # Run identifier
     hash: str                     # Content hash
 ```
 

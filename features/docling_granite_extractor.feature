@@ -6,20 +6,20 @@ Feature: DoclingGranite extractor plugin
     And the Docling dependency is unavailable
     And a Portable Document Format file "hello.pdf" exists with text "Hello"
     When I ingest the file "hello.pdf" into corpus "corpus"
-    And I attempt to build a "docling-granite" extraction run in corpus "corpus"
+    And I attempt to build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "biblicus[docling]"
 
-  Scenario: DoclingGranite extractor requires MLX backend when configured
+  Scenario: DoclingGranite extractor requires MLX retriever when configured
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available without MLX support
     And a Portable Document Format file "hello.pdf" exists with text "Hello"
     When I ingest the file "hello.pdf" into corpus "corpus"
-    And I attempt to build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
-        backend: mlx
+        retriever: mlx
       """
     Then the command fails with exit code 2
     And standard error includes "biblicus[docling-mlx]"
@@ -28,41 +28,41 @@ Feature: DoclingGranite extractor plugin
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: DoclingGranite extractor skips Markdown items
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available
     And a file "doc.md" exists with contents "# Hello"
     When I ingest the file "doc.md" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: DoclingGranite extractor skips audio items
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available
     And a binary file "audio.mp3" exists
     When I ingest the file "audio.mp3" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: DoclingGranite extractor produces extracted text for a PDF
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available that returns text "Extracted by Docling" for filename "doc.pdf"
     And a Portable Document Format file "doc.pdf" exists with text "Original"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
-    Then the extraction run includes extracted text for the last ingested item
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot includes extracted text for the last ingested item
     And the extracted text for the last ingested item equals "Extracted by Docling"
-    And the extraction run item provenance uses extractor "docling-granite"
+    And the extraction snapshot item provenance uses extractor "docling-granite"
 
   Scenario: DoclingGranite extractor produces extracted text for DOCX
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available that returns text "DOCX content" for filename "doc.docx"
     And a binary file "doc.docx" exists
     When I ingest the file "doc.docx" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "DOCX content"
 
   Scenario: DoclingGranite extractor produces extracted text for XLSX
@@ -70,7 +70,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "XLSX content" for filename "data.xlsx"
     And a binary file "data.xlsx" exists
     When I ingest the file "data.xlsx" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "XLSX content"
 
   Scenario: DoclingGranite extractor produces extracted text for PPTX
@@ -78,7 +78,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "PPTX content" for filename "slides.pptx"
     And a binary file "slides.pptx" exists
     When I ingest the file "slides.pptx" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "PPTX content"
 
   Scenario: DoclingGranite extractor produces extracted text for HTML
@@ -86,7 +86,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "HTML content" for filename "page.html"
     And a text file "page.html" exists with contents "<html><body>Test</body></html>"
     When I ingest the file "page.html" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "HTML content"
 
   Scenario: DoclingGranite extractor produces extracted text for PNG images
@@ -94,7 +94,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "Image text" for filename "scan.png"
     And a binary file "scan.png" exists
     When I ingest the file "scan.png" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "Image text"
 
   Scenario: DoclingGranite extractor produces extracted text for JPEG images
@@ -102,7 +102,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "JPEG text" for filename "photo.jpg"
     And a binary file "photo.jpg" exists
     When I ingest the file "photo.jpg" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "JPEG text"
 
   Scenario: DoclingGranite extractor produces extracted text for uncommon image types
@@ -110,7 +110,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns text "SVG text" for filename "image.svg"
     And a binary file "image.svg" exists
     When I ingest the file "image.svg" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "SVG text"
 
   Scenario: DoclingGranite extractor records empty output when it cannot extract text
@@ -118,9 +118,9 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns empty output for filename "empty.pdf"
     And a Portable Document Format file "empty.pdf" exists with no extractable text
     When I ingest the file "empty.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item is empty
-    And the extraction run stats include extracted_empty_items 1
+    And the extraction snapshot stats include extracted_empty_items 1
 
   Scenario: DoclingGranite extractor records per-item errors and continues
     Given I initialized a corpus at "corpus"
@@ -130,22 +130,22 @@ Feature: DoclingGranite extractor plugin
     And a Portable Document Format file "ok.pdf" exists with text "good"
     When I ingest the file "boom.pdf" into corpus "corpus"
     And I ingest the file "ok.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus"
+    And I build a "docling-granite" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "ok"
-    And the extraction run includes an errored result for the first ingested item
-    And the extraction run error type for the first ingested item equals "RuntimeError"
-    And the extraction run stats include errored_items 1
+    And the extraction snapshot includes an errored result for the first ingested item
+    And the extraction snapshot error type for the first ingested item equals "RuntimeError"
+    And the extraction snapshot stats include errored_items 1
 
-  Scenario: DoclingGranite extractor uses transformers backend when configured
+  Scenario: DoclingGranite extractor uses transformers retriever when configured
     Given I initialized a corpus at "corpus"
-    And a fake Docling library is available with transformers backend that returns text "Transformers output" for filename "doc.pdf"
+    And a fake Docling library is available with transformers retriever that returns text "Transformers output" for filename "doc.pdf"
     And a Portable Document Format file "doc.pdf" exists with text "Test"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
-        backend: transformers
+        retriever: transformers
       """
     Then the extracted text for the last ingested item equals "Transformers output"
 
@@ -154,7 +154,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns HTML "<p>Content</p>" for filename "doc.pdf"
     And a Portable Document Format file "doc.pdf" exists with text "Test"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
@@ -167,7 +167,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available that returns plain text "Plain content" for filename "doc.pdf"
     And a Portable Document Format file "doc.pdf" exists with text "Test"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
@@ -180,7 +180,7 @@ Feature: DoclingGranite extractor plugin
     And a fake Docling library is available
     And a Portable Document Format file "doc.pdf" exists with text "Test"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I attempt to build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
@@ -188,15 +188,15 @@ Feature: DoclingGranite extractor plugin
       """
     Then the command fails with exit code 2
 
-  Scenario: DoclingGranite extractor rejects invalid backend
+  Scenario: DoclingGranite extractor rejects invalid retriever
     Given I initialized a corpus at "corpus"
     And a fake Docling library is available
     And a Portable Document Format file "doc.pdf" exists with text "Test"
     When I ingest the file "doc.pdf" into corpus "corpus"
-    And I attempt to build a "docling-granite" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "docling-granite" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: docling-granite
       config:
-        backend: invalid
+        retriever: invalid
       """
     Then the command fails with exit code 2

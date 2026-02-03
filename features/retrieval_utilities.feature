@@ -29,15 +29,15 @@ Feature: Retrieval utilities
     When I split text "<empty>" into sqlite chunks with size 5 and overlap 2
     Then the sqlite chunk count is 0
 
-  Scenario: Missing run artifacts contribute zero bytes
+  Scenario: Missing snapshot artifacts contribute zero bytes
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha apple"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    And I build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key                | value |
       | chunk_size         | 200   |
       | chunk_overlap      | 50    |
       | snippet_characters | 120   |
-    And I delete the latest run artifacts
-    And I measure the latest run artifact bytes
-    Then the run artifact bytes are 0
+    And I delete the latest snapshot artifacts
+    And I measure the latest snapshot artifact bytes
+    Then the snapshot artifact bytes are 0

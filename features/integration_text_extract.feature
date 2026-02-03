@@ -49,12 +49,12 @@ Feature: Text extract integration
 
   Scenario: Text extract returns all verbs with a live model
     Given an OpenAI API key is configured for this scenario
-    When I apply text extract to text "We run fast. They agree." with prompt template:
+    When I apply text extract to text "We snapshot fast. They agree." with prompt template:
       """
       Return all the verbs.
       """
     Then the text extract has at least one span
-    And the text extract has a span containing "run"
+    And the text extract has a span containing "snapshot"
     And the text extract does not split words
 
   Scenario: Text extract groups agent and customer statements with a live model

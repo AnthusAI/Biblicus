@@ -12,20 +12,20 @@ from typing import Dict, Iterable, List, Sequence
 from pydantic import BaseModel
 
 from ..corpus import Corpus
-from ..models import CatalogItem, ExtractionRunReference
+from ..models import CatalogItem, ExtractionSnapshotReference
 from ..retrieval import hash_text
 from ..time import utc_now_iso
 from .base import CorpusAnalysisBackend
 from .models import (
-    AnalysisRecipeManifest,
+    AnalysisConfigurationManifest,
     AnalysisRunInput,
     AnalysisRunManifest,
+    ProfilingConfiguration,
     ProfilingDistributionReport,
     ProfilingExtractedTextReport,
     ProfilingOutput,
     ProfilingPercentileValue,
     ProfilingRawItemsReport,
-    ProfilingRecipeConfig,
     ProfilingReport,
     ProfilingTagCount,
     ProfilingTagReport,
@@ -46,62 +46,67 @@ class ProfilingBackend(CorpusAnalysisBackend):
         self,
         corpus: Corpus,
         *,
-        recipe_name: str,
-        config: Dict[str, object],
-        extraction_run: ExtractionRunReference,
+        configuration_name: str,
+        configuration: Dict[str, object],
+        extraction_snapshot: ExtractionSnapshotReference,
     ) -> BaseModel:
         """
         Run the profiling analysis pipeline.
 
         :param corpus: Corpus to analyze.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Analysis configuration values.
-        :type config: dict[str, object]
-        :param extraction_run: Extraction run reference for text inputs.
-        :type extraction_run: biblicus.models.ExtractionRunReference
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Analysis configuration values.
+        :type configuration: dict[str, object]
+        :param extraction_snapshot: Extraction snapshot reference for text inputs.
+        :type extraction_snapshot: biblicus.models.ExtractionSnapshotReference
         :return: Profiling output model.
         :rtype: pydantic.BaseModel
         """
         parsed_config = (
-            config
-            if isinstance(config, ProfilingRecipeConfig)
-            else ProfilingRecipeConfig.model_validate(config)
+            configuration
+            if isinstance(configuration, ProfilingConfiguration)
+            else ProfilingConfiguration.model_validate(configuration)
         )
         return _run_profiling(
             corpus=corpus,
-            recipe_name=recipe_name,
+            configuration_name=configuration_name,
             config=parsed_config,
-            extraction_run=extraction_run,
+            extraction_snapshot=extraction_snapshot,
         )
 
 
 def _run_profiling(
     *,
     corpus: Corpus,
-    recipe_name: str,
-    config: ProfilingRecipeConfig,
-    extraction_run: ExtractionRunReference,
+    configuration_name: str,
+    config: ProfilingConfiguration,
+    extraction_snapshot: ExtractionSnapshotReference,
 ) -> ProfilingOutput:
-    recipe = _create_recipe_manifest(name=recipe_name, config=config)
+    configuration_manifest = _create_configuration_manifest(
+        name=configuration_name,
+        config=config,
+    )
     catalog = corpus.load_catalog()
-    run_id = _analysis_run_id(
-        recipe_id=recipe.recipe_id,
-        extraction_run=extraction_run,
+    snapshot_id = _analysis_snapshot_id(
+        configuration_id=configuration_manifest.configuration_id,
+        extraction_snapshot=extraction_snapshot,
         catalog_generated_at=catalog.generated_at,
     )
     run_manifest = AnalysisRunManifest(
-        run_id=run_id,
-        recipe=recipe,
+        snapshot_id=snapshot_id,
+        configuration=configuration_manifest,
         corpus_uri=catalog.corpus_uri,
         catalog_generated_at=catalog.generated_at,
         created_at=utc_now_iso(),
-        input=AnalysisRunInput(extraction_run=extraction_run),
+        input=AnalysisRunInput(extraction_snapshot=extraction_snapshot),
         artifact_paths=[],
         stats={},
     )
-    run_dir = corpus.analysis_run_dir(analysis_id=ProfilingBackend.analysis_id, run_id=run_id)
+    run_dir = corpus.analysis_run_dir(
+        analysis_id=ProfilingBackend.analysis_id, snapshot_id=snapshot_id
+    )
     output_path = run_dir / "output.json"
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -109,7 +114,7 @@ def _run_profiling(
     raw_report = _build_raw_items_report(items=ordered_items, config=config)
     extracted_report = _build_extracted_text_report(
         corpus=corpus,
-        extraction_run=extraction_run,
+        extraction_snapshot=extraction_snapshot,
         config=config,
     )
 
@@ -133,15 +138,17 @@ def _run_profiling(
     output = ProfilingOutput(
         analysis_id=ProfilingBackend.analysis_id,
         generated_at=utc_now_iso(),
-        run=run_manifest,
+        snapshot=run_manifest,
         report=report,
     )
     _write_profiling_output(path=output_path, output=output)
     return output
 
 
-def _create_recipe_manifest(*, name: str, config: ProfilingRecipeConfig) -> AnalysisRecipeManifest:
-    recipe_payload = json.dumps(
+def _create_configuration_manifest(
+    *, name: str, config: ProfilingConfiguration
+) -> AnalysisConfigurationManifest:
+    configuration_payload = json.dumps(
         {
             "analysis_id": ProfilingBackend.analysis_id,
             "name": name,
@@ -149,9 +156,9 @@ def _create_recipe_manifest(*, name: str, config: ProfilingRecipeConfig) -> Anal
         },
         sort_keys=True,
     )
-    recipe_id = hash_text(recipe_payload)
-    return AnalysisRecipeManifest(
-        recipe_id=recipe_id,
+    configuration_id = hash_text(configuration_payload)
+    return AnalysisConfigurationManifest(
+        configuration_id=configuration_id,
         analysis_id=ProfilingBackend.analysis_id,
         name=name,
         created_at=utc_now_iso(),
@@ -159,10 +166,13 @@ def _create_recipe_manifest(*, name: str, config: ProfilingRecipeConfig) -> Anal
     )
 
 
-def _analysis_run_id(
-    *, recipe_id: str, extraction_run: ExtractionRunReference, catalog_generated_at: str
+def _analysis_snapshot_id(
+    *,
+    configuration_id: str,
+    extraction_snapshot: ExtractionSnapshotReference,
+    catalog_generated_at: str,
 ) -> str:
-    run_seed = f"{recipe_id}:{extraction_run.as_string()}:{catalog_generated_at}"
+    run_seed = f"{configuration_id}:{extraction_snapshot.as_string()}:{catalog_generated_at}"
     return hash_text(run_seed)
 
 
@@ -186,7 +196,7 @@ def _ordered_catalog_items(
 
 
 def _build_raw_items_report(
-    *, items: Sequence[CatalogItem], config: ProfilingRecipeConfig
+    *, items: Sequence[CatalogItem], config: ProfilingConfiguration
 ) -> ProfilingRawItemsReport:
     media_type_counts: Dict[str, int] = {}
     for item in items:
@@ -205,7 +215,7 @@ def _build_raw_items_report(
 
 
 def _build_tag_report(
-    *, items: Sequence[CatalogItem], config: ProfilingRecipeConfig
+    *, items: Sequence[CatalogItem], config: ProfilingConfiguration
 ) -> ProfilingTagReport:
     tag_filters = config.tag_filters
     tag_filter_set = set(tag_filters or [])
@@ -236,20 +246,20 @@ def _build_tag_report(
 def _build_extracted_text_report(
     *,
     corpus: Corpus,
-    extraction_run: ExtractionRunReference,
-    config: ProfilingRecipeConfig,
+    extraction_snapshot: ExtractionSnapshotReference,
+    config: ProfilingConfiguration,
 ) -> ProfilingExtractedTextReport:
-    manifest = corpus.load_extraction_run_manifest(
-        extractor_id=extraction_run.extractor_id,
-        run_id=extraction_run.run_id,
+    manifest = corpus.load_extraction_snapshot_manifest(
+        extractor_id=extraction_snapshot.extractor_id,
+        snapshot_id=extraction_snapshot.snapshot_id,
     )
     nonempty_items = 0
     empty_items = 0
     missing_items = 0
     text_lengths: List[int] = []
-    text_dir = corpus.extraction_run_dir(
-        extractor_id=extraction_run.extractor_id,
-        run_id=extraction_run.run_id,
+    text_dir = corpus.extraction_snapshot_dir(
+        extractor_id=extraction_snapshot.extractor_id,
+        snapshot_id=extraction_snapshot.snapshot_id,
     )
 
     for item_result in manifest.items:

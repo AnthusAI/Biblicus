@@ -6,7 +6,7 @@ segmentation:
   method: sentence
 topic_modeling:
   enabled: true
-  recipe:
+  configuration:
     schema_version: 1
     llm_extraction:
       enabled: false

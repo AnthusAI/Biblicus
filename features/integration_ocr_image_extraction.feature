@@ -1,6 +1,6 @@
 @integration @ocr
 Feature: Optical character recognition integration
-  A corpus can build a real optical character recognition extraction run for image items.
+  A corpus can build a real optical character recognition extraction snapshot for image items.
 
   The repository does not include third-party image files. Integration tests download public sample assets at runtime.
 
@@ -10,6 +10,6 @@ Feature: Optical character recognition integration
       | Hello_world.png | Hello world | 0.99       |
     And a fake RapidOCR library is available that returns empty output for filename "blank.png"
     When I download an image corpus into "corpus"
-    And I build a "ocr-rapidocr" extraction run in corpus "corpus"
-    Then the extracted text for the item tagged "image-with-text" is not empty in the latest extraction run
-    And the extracted text for the item tagged "image-without-text" is empty in the latest extraction run
+    And I build a "ocr-rapidocr" extraction snapshot in corpus "corpus"
+    Then the extracted text for the item tagged "image-with-text" is not empty in the latest extraction snapshot
+    And the extracted text for the item tagged "image-without-text" is empty in the latest extraction snapshot

@@ -1,5 +1,5 @@
 """
-Evaluation utilities for Biblicus retrieval runs.
+Evaluation utilities for Biblicus retrieval snapshots.
 """
 
 from __future__ import annotations
@@ -11,10 +11,10 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .backends import get_backend
 from .constants import DATASET_SCHEMA_VERSION
 from .corpus import Corpus
-from .models import QueryBudget, RetrievalResult, RetrievalRun
+from .models import QueryBudget, RetrievalResult, RetrievalSnapshot
+from .retrievers import get_retriever
 from .time import utc_now_iso
 
 
@@ -85,10 +85,10 @@ class EvaluationResult(BaseModel):
 
     :ivar dataset: Dataset metadata.
     :vartype dataset: dict[str, object]
-    :ivar backend_id: Backend identifier.
-    :vartype backend_id: str
-    :ivar run_id: Retrieval run identifier.
-    :vartype run_id: str
+    :ivar retriever_id: Retriever identifier.
+    :vartype retriever_id: str
+    :ivar snapshot_id: Retrieval snapshot identifier.
+    :vartype snapshot_id: str
     :ivar evaluated_at: International Organization for Standardization 8601 evaluation timestamp.
     :vartype evaluated_at: str
     :ivar metrics: Quality metrics for retrieval.
@@ -100,8 +100,8 @@ class EvaluationResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     dataset: Dict[str, object]
-    backend_id: str
-    run_id: str
+    retriever_id: str
+    snapshot_id: str
     evaluated_at: str
     metrics: Dict[str, float]
     system: Dict[str, float]
@@ -120,20 +120,20 @@ def load_dataset(path: Path) -> EvaluationDataset:
     return EvaluationDataset.model_validate(data)
 
 
-def evaluate_run(
+def evaluate_snapshot(
     *,
     corpus: Corpus,
-    run: RetrievalRun,
+    snapshot: RetrievalSnapshot,
     dataset: EvaluationDataset,
     budget: QueryBudget,
 ) -> EvaluationResult:
     """
-    Evaluate a retrieval run against a dataset.
+    Evaluate a retrieval snapshot against a dataset.
 
-    :param corpus: Corpus associated with the run.
+    :param corpus: Corpus associated with the snapshot.
     :type corpus: Corpus
-    :param run: Retrieval run manifest.
-    :type run: RetrievalRun
+    :param snapshot: Retrieval snapshot manifest.
+    :type snapshot: RetrievalSnapshot
     :param dataset: Evaluation dataset.
     :type dataset: EvaluationDataset
     :param budget: Evidence selection budget.
@@ -141,14 +141,16 @@ def evaluate_run(
     :return: Evaluation result bundle.
     :rtype: EvaluationResult
     """
-    backend = get_backend(run.recipe.backend_id)
+    retriever = get_retriever(snapshot.configuration.retriever_id)
     latency_seconds: List[float] = []
     hit_count = 0
     reciprocal_ranks: List[float] = []
 
     for query in dataset.queries:
         timer_start = time.perf_counter()
-        result = backend.query(corpus, run=run, query_text=query.query_text, budget=budget)
+        result = retriever.query(
+            corpus, snapshot=snapshot, query_text=query.query_text, budget=budget
+        )
         elapsed_seconds = time.perf_counter() - timer_start
         latency_seconds.append(elapsed_seconds)
         expected_rank = _expected_rank(result, query)
@@ -172,7 +174,7 @@ def evaluate_run(
     system = {
         "average_latency_milliseconds": _average_latency_milliseconds(latency_seconds),
         "percentile_95_latency_milliseconds": _percentile_95_latency_milliseconds(latency_seconds),
-        "index_bytes": float(_run_artifact_bytes(corpus, run)),
+        "index_bytes": float(_snapshot_artifact_bytes(corpus, snapshot)),
     }
     dataset_meta = {
         "name": dataset.name,
@@ -181,8 +183,8 @@ def evaluate_run(
     }
     return EvaluationResult(
         dataset=dataset_meta,
-        backend_id=run.recipe.backend_id,
-        run_id=run.run_id,
+        retriever_id=snapshot.configuration.retriever_id,
+        snapshot_id=snapshot.snapshot_id,
         evaluated_at=utc_now_iso(),
         metrics=metrics,
         system=system,
@@ -238,19 +240,19 @@ def _percentile_95_latency_milliseconds(latencies: List[float]) -> float:
     return sorted_latencies[percentile_index] * 1000.0
 
 
-def _run_artifact_bytes(corpus: Corpus, run: RetrievalRun) -> int:
+def _snapshot_artifact_bytes(corpus: Corpus, snapshot: RetrievalSnapshot) -> int:
     """
-    Sum artifact sizes for a retrieval run.
+    Sum artifact sizes for a retrieval snapshot.
 
     :param corpus: Corpus that owns the artifacts.
     :type corpus: Corpus
-    :param run: Retrieval run manifest.
-    :type run: RetrievalRun
+    :param snapshot: Retrieval snapshot manifest.
+    :type snapshot: RetrievalSnapshot
     :return: Total artifact bytes.
     :rtype: int
     """
     total_bytes = 0
-    for artifact_relpath in run.artifact_paths:
+    for artifact_relpath in snapshot.snapshot_artifacts:
         artifact_path = corpus.root / artifact_relpath
         if artifact_path.exists():
             total_bytes += artifact_path.stat().st_size

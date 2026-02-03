@@ -10,7 +10,7 @@ from typing import Dict
 from pydantic import BaseModel
 
 from ..corpus import Corpus
-from ..models import ExtractionRunReference
+from ..models import ExtractionSnapshotReference
 
 
 class CorpusAnalysisBackend(ABC):
@@ -28,21 +28,21 @@ class CorpusAnalysisBackend(ABC):
         self,
         corpus: Corpus,
         *,
-        recipe_name: str,
-        config: Dict[str, object],
-        extraction_run: ExtractionRunReference,
+        configuration_name: str,
+        configuration: Dict[str, object],
+        extraction_snapshot: ExtractionSnapshotReference,
     ) -> BaseModel:
         """
         Run an analysis pipeline for a corpus.
 
         :param corpus: Corpus to analyze.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Analysis configuration values.
-        :type config: dict[str, object]
-        :param extraction_run: Extraction run reference for text inputs.
-        :type extraction_run: biblicus.models.ExtractionRunReference
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Analysis configuration values.
+        :type configuration: dict[str, object]
+        :param extraction_snapshot: Extraction snapshot reference for text inputs.
+        :type extraction_snapshot: biblicus.models.ExtractionSnapshotReference
         :return: Analysis output model.
         :rtype: pydantic.BaseModel
         """

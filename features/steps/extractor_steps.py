@@ -5,7 +5,7 @@ from typing import Any, Dict
 from behave import then, when
 
 from biblicus.corpus import Corpus
-from biblicus.errors import ExtractionRunFatalError
+from biblicus.errors import ExtractionSnapshotFatalError
 from biblicus.extractors.base import TextExtractor
 from biblicus.extractors.pipeline import (
     PipelineExtractor,
@@ -94,4 +94,4 @@ def step_call_pipeline_extractor_directly(context) -> None:
 
 @then("the pipeline extractor raises a fatal extraction error")
 def step_pipeline_extractor_fatal_error(context) -> None:
-    assert isinstance(context.pipeline_error, ExtractionRunFatalError)
+    assert isinstance(context.pipeline_error, ExtractionSnapshotFatalError)

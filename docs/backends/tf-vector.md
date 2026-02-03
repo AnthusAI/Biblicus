@@ -26,22 +26,22 @@ similarity. It builds no persistent index and scores items at query time. This m
 The backend accepts these configuration fields:
 
 - `snippet_characters`: maximum characters to include in evidence snippets.
-- `extraction_run`: optional extraction run reference (`extractor_id:run_id`).
+- `extraction_snapshot`: optional extraction snapshot reference (`extractor_id:snapshot_id`).
 
-Example recipe:
+Example configuration:
 
 ```yaml
 snippet_characters: 320
-extraction_run: pipeline:RUN_ID
+extraction_snapshot: pipeline:RUN_ID
 ```
 
 ## Build a run
 
 ```
-python -m biblicus build --corpus corpora/example --backend tf-vector --config extraction_run=pipeline:RUN_ID
+python -m biblicus build --corpus corpora/example --backend tf-vector --config extraction_snapshot=pipeline:RUN_ID
 ```
 
-This backend does not create artifacts beyond the run manifest.
+This backend does not create artifacts beyond the snapshot manifest.
 
 ## Query a run
 

@@ -6,13 +6,18 @@ from typing import Dict
 
 from behave import then, when
 
-from biblicus.backends.base import RetrievalBackend
-from biblicus.backends.sqlite_full_text_search import (
-    _ensure_full_text_search_version_five,
-    _resolve_run_db_path,
-)
 from biblicus.corpus import Corpus
-from biblicus.models import QueryBudget, RecipeManifest, RetrievalResult, RetrievalRun
+from biblicus.models import (
+    ConfigurationManifest,
+    QueryBudget,
+    RetrievalResult,
+    RetrievalSnapshot,
+)
+from biblicus.retrievers.base import Retriever
+from biblicus.retrievers.sqlite_full_text_search import (
+    _ensure_full_text_search_version_five,
+    _resolve_snapshot_db_path,
+)
 
 
 class _FailingConnection:
@@ -20,23 +25,25 @@ class _FailingConnection:
         raise sqlite3.OperationalError("full-text search version five unavailable")
 
 
-class _AbstractBackend(RetrievalBackend):
-    backend_id = "abstract"
+class _AbstractRetriever(Retriever):
+    retriever_id = "abstract"
 
-    def build_run(
-        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
-    ) -> RetrievalRun:
-        return super().build_run(corpus, recipe_name=recipe_name, config=config)
+    def build_snapshot(
+        self, corpus: Corpus, *, configuration_name: str, configuration: Dict[str, object]
+    ) -> RetrievalSnapshot:
+        return super().build_snapshot(
+            corpus, configuration_name=configuration_name, configuration=configuration
+        )
 
     def query(
         self,
         corpus: Corpus,
         *,
-        run: RetrievalRun,
+        snapshot: RetrievalSnapshot,
         query_text: str,
         budget: QueryBudget,
     ) -> RetrievalResult:
-        return super().query(corpus, run=run, query_text=query_text, budget=budget)
+        return super().query(corpus, snapshot=snapshot, query_text=query_text, budget=budget)
 
 
 @when("I check full-text search version five availability against a failing connection")
@@ -48,79 +55,79 @@ def step_check_full_text_search_version_five_failure(context) -> None:
         context.backend_error = exc
 
 
-@then("a backend prerequisite error is raised")
+@then("a retriever prerequisite error is raised")
 def step_backend_error_raised(context) -> None:
     assert context.backend_error is not None
 
 
-@when("I attempt to resolve a run without artifacts")
-def step_resolve_run_without_artifacts(context) -> None:
-    recipe = RecipeManifest(
-        recipe_id="recipe",
-        backend_id="sqlite-full-text-search",
+@when("I attempt to resolve a snapshot without artifacts")
+def step_resolve_snapshot_without_artifacts(context) -> None:
+    configuration = ConfigurationManifest(
+        configuration_id="configuration",
+        retriever_id="sqlite-full-text-search",
         name="default",
         created_at="2025-01-01T00:00:00+00:00",
-        config={},
+        configuration={},
         description=None,
     )
-    run = RetrievalRun(
-        run_id="run",
-        recipe=recipe,
+    snapshot = RetrievalSnapshot(
+        snapshot_id="snapshot",
+        configuration=configuration,
         corpus_uri="file:///tmp/corpus",
         catalog_generated_at="2025-01-01T00:00:00+00:00",
         created_at="2025-01-01T00:00:00+00:00",
-        artifact_paths=[],
+        snapshot_artifacts=[],
         stats={},
     )
     corpus = Corpus.init(Path(context.workdir / "corpus"))
     try:
-        _resolve_run_db_path(corpus, run)
+        _resolve_snapshot_db_path(corpus, snapshot)
         context.backend_error = None
     except FileNotFoundError as exc:
         context.backend_error = exc
 
 
-@then("a backend artifact error is raised")
+@then("a retriever artifact error is raised")
 def step_backend_artifact_error(context) -> None:
     assert context.backend_error is not None
 
 
-@when("I call the abstract backend methods")
+@when("I call the abstract retriever methods")
 def step_call_abstract_backend(context) -> None:
     corpus = Corpus.init(Path(context.workdir / "abstract"))
-    backend = _AbstractBackend()
+    retriever = _AbstractRetriever()
     try:
-        backend.build_run(corpus, recipe_name="default", config={})
+        retriever.build_snapshot(corpus, configuration_name="default", configuration={})
         context.abstract_build_error = None
     except NotImplementedError as exc:
         context.abstract_build_error = exc
 
-    recipe = RecipeManifest(
-        recipe_id="recipe",
-        backend_id="abstract",
+    configuration = ConfigurationManifest(
+        configuration_id="configuration",
+        retriever_id="abstract",
         name="default",
         created_at="2025-01-01T00:00:00+00:00",
-        config={},
+        configuration={},
         description=None,
     )
-    run = RetrievalRun(
-        run_id="run",
-        recipe=recipe,
+    snapshot = RetrievalSnapshot(
+        snapshot_id="snapshot",
+        configuration=configuration,
         corpus_uri="file:///tmp/corpus",
         catalog_generated_at="2025-01-01T00:00:00+00:00",
         created_at="2025-01-01T00:00:00+00:00",
-        artifact_paths=[],
+        snapshot_artifacts=[],
         stats={},
     )
     budget = QueryBudget(max_total_items=1, maximum_total_characters=1, max_items_per_source=1)
     try:
-        backend.query(corpus, run=run, query_text="test", budget=budget)
+        retriever.query(corpus, snapshot=snapshot, query_text="test", budget=budget)
         context.abstract_query_error = None
     except NotImplementedError as exc:
         context.abstract_query_error = exc
 
 
-@then("the abstract backend errors are raised")
-def step_abstract_backend_errors(context) -> None:
+@then("the abstract retriever errors are raised")
+def step_abstract_retriever_errors(context) -> None:
     assert context.abstract_build_error is not None
     assert context.abstract_query_error is not None

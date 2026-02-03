@@ -1,11 +1,11 @@
 # Text slice
 
 Text slice is a reusable utility for cutting long texts into ordered slices with a language model without requiring the
-model to re-emit the full content. Instead of asking for a fully labeled transcript, Biblicus gives the model a virtual
-file and asks it to insert `<slice/>` markers in-place. The model returns a small edit script (str_replace only), and
-Biblicus applies it and parses the result into slices.
+model to re-emit the full content.
 
-Text slice is an agentic text utility focused on reliability, validation, and repeatable extraction patterns.
+If you ask a model to "split this text into sections" and return the text of each section, you double your token costs and wait for the generation of content you already have.
+
+Text slice uses the **virtual file pattern** to avoid this. Biblicus gives the model a virtual file and asks it to insert `<slice/>` markers in-place. The model returns a small edit script (`str_replace` only), and Biblicus applies it and parses the result into slices. You get perfect boundary detection without paying for the content tokens.
 
 ## How text slice works
 
@@ -20,8 +20,9 @@ The model never re-emits the full text, which lowers cost and reduces timeouts o
 
 Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -33,29 +34,33 @@ One. Two.
 
 Then provide a short user prompt describing what to return:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return each sentence as a slice.
 ```
 
 The input text is the same content embedded in the internal protocol:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 One. Two.
 ```
 
 The model edits the virtual file by inserting markers in-place:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 One.<slice/> Two.
 ```
 
 Biblicus returns structured data parsed from the markup:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "One.<slice/> Two.",
   "slices": [
@@ -116,8 +121,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -129,29 +135,33 @@ One. Two. Three.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return each sentence as a slice.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 One. Two. Three.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 One.<slice/> Two.<slice/> Three.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "One.<slice/> Two.<slice/> Three.",
   "slices": [
@@ -187,8 +197,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -200,29 +211,33 @@ First one. Second one. Third one.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return each sentence as a slice.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 First one. Second one. Third one.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 First one.<slice/> Second one.<slice/> Third one.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "First one.<slice/> Second one.<slice/> Third one.",
   "slices": [
@@ -254,8 +269,9 @@ Example snippet:
 
 Internal protocol excerpt:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: insert <slice/> markers
 at the boundaries of the returned slices in the current text.
@@ -267,29 +283,33 @@ Agent: Hello. Agent: I can help. Customer: I need support. Customer: Thanks.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return things that the agent said grouped together, and things the customer said in separate groups.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Agent: Hello. Agent: I can help. Customer: I need support. Customer: Thanks.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 Agent: Hello. Agent: I can help.<slice/> Customer: I need support. Customer: Thanks.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "Agent: Hello. Agent: I can help.<slice/> Customer: I need support. Customer: Thanks.",
   "slices": [

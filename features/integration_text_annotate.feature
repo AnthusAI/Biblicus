@@ -4,7 +4,7 @@ Feature: Text annotate integration
 
   Scenario: Text annotate labels verbs with a live model
     Given an OpenAI API key is configured for this scenario
-    When I apply text annotate to text "We run fast. They agree." with allowed attributes "label,phase,role" and prompt template:
+    When I apply text annotate to text "We snapshot fast. They agree." with allowed attributes "label,phase,role" and prompt template:
       """
       Return all the verbs.
       """
@@ -14,7 +14,7 @@ Feature: Text annotate integration
 
   Scenario: Text annotate uses the default system prompt with a live model
     Given an OpenAI API key is configured for this scenario
-    When I apply text annotate to text "We run fast. They agree." with prompt template and default system prompt:
+    When I apply text annotate to text "We snapshot fast. They agree." with prompt template and default system prompt:
       """
       Return all the verbs.
       """

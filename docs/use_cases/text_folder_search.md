@@ -34,6 +34,6 @@ This tutorial runs an extraction pipeline with a single step:
 
 - `pass-through-text` reads the text of existing text items.
 
-Then it builds a `sqlite-full-text-search` retrieval run using the latest extraction run as the
+Then it builds a `sqlite-full-text-search` retrieval snapshot using the latest extraction snapshot as the
 indexing source.
 

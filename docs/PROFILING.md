@@ -20,22 +20,22 @@ The output is structured JSON that can be stored, versioned, and compared across
 biblicus analyze profile --corpus corpora/example --extraction-run pipeline:RUN_ID
 ```
 
-If you omit `--extraction-run`, Biblicus uses the latest extraction run and emits a reproducibility warning.
+If you omit `--extraction-run`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
-To customize profiling metrics, pass a recipe file:
+To customize profiling metrics, pass a configuration file:
 
 ```
-biblicus analyze profile --corpus corpora/example --recipe recipes/profiling.yml --extraction-run pipeline:RUN_ID
+biblicus analyze profile --corpus corpora/example --configuration configurations/profiling.yml --extraction-run pipeline:RUN_ID
 ```
 
-Profiling recipes support cascading composition. Pass multiple `--recipe` files; later recipes override earlier recipes
+Profiling configurations support cascading composition. Pass multiple `--configuration` files; later configurations override earlier configurations
 via a deep merge:
 
 ```
 biblicus analyze profile \
   --corpus corpora/example \
-  --recipe recipes/profiling/base.yml \
-  --recipe recipes/profiling/strict.yml \
+  --configuration configurations/profiling/base.yml \
+  --configuration configurations/profiling/strict.yml \
   --extraction-run pipeline:RUN_ID
 ```
 
@@ -44,14 +44,14 @@ To override the composed configuration view from the command line, use `--config
 ```
 biblicus analyze profile \
   --corpus corpora/example \
-  --recipe recipes/profiling/base.yml \
+  --configuration configurations/profiling/base.yml \
   --config sample_size=200 \
   --extraction-run pipeline:RUN_ID
 ```
 
-### Profiling recipe configuration
+### Profiling configuration configuration
 
-Profiling recipes use the analysis schema version and accept these fields:
+Profiling configurations use the analysis schema version and accept these fields:
 
 - `schema_version`: analysis schema version, currently `1`
 - `sample_size`: optional cap for distribution calculations
@@ -60,7 +60,7 @@ Profiling recipes use the analysis schema version and accept these fields:
 - `top_tag_count`: maximum number of tags to list in `top_tags`
 - `tag_filters`: optional list of tags to include in tag coverage metrics
 
-Example recipe:
+Example configuration:
 
 ```
 schema_version: 1
@@ -84,7 +84,7 @@ corpus = Corpus.open(Path("corpora/example"))
 backend = get_analysis_backend("profiling")
 output = backend.run_analysis(
     corpus,
-    recipe_name="default",
+    configuration_name="default",
     config={
         "schema_version": 1,
         "sample_size": 500,
@@ -93,9 +93,9 @@ output = backend.run_analysis(
         "top_tag_count": 10,
         "tag_filters": ["ag_news"],
     },
-    extraction_run=ExtractionRunReference(
+    extraction_snapshot=ExtractionRunReference(
         extractor_id="pipeline",
-        run_id="RUN_ID",
+        snapshot_id="RUN_ID",
     ),
 )
 print(output.model_dump())
@@ -106,7 +106,7 @@ print(output.model_dump())
 Profiling output is stored under:
 
 ```
-.biblicus/runs/analysis/profiling/<run_id>/output.json
+.biblicus/runs/analysis/profiling/<snapshot_id>/output.json
 ```
 
 ## Reading the report
@@ -138,17 +138,17 @@ through extraction and how much was missing or empty.
 
 ## Comparing profiling runs
 
-Use the same extraction run and recipe configuration whenever you compare profiling outputs:
+Use the same extraction snapshot and configuration configuration whenever you compare profiling outputs:
 
 1) Run profiling on two corpus snapshots.
 2) Compare `raw_items.total_items`, media type counts, and tag coverage.
 3) Compare `extracted_text` coverage to spot extraction regressions.
 
-Record the run identifiers and catalog timestamps so you can trace differences later.
+Record the snapshot identifiers and catalog timestamps so you can trace differences later.
 
 ## Common pitfalls
 
-- Profiling without specifying an extraction run, which makes comparisons harder to reproduce.
+- Profiling without specifying an extraction snapshot, which makes comparisons harder to reproduce.
 - Comparing runs with different `sample_size` or `min_text_characters` settings.
 - Interpreting tag counts without noting the `tag_filters` applied.
 

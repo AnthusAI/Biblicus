@@ -1,5 +1,5 @@
 """
-Recipe loading utilities for Biblicus.
+Configuration loading utilities for Biblicus.
 """
 
 from __future__ import annotations
@@ -103,34 +103,34 @@ def apply_dotted_overrides(
     return updated
 
 
-def load_recipe_view(
-    recipe_paths: Iterable[str],
+def load_configuration_view(
+    configuration_paths: Iterable[str],
     *,
-    recipe_label: str = "Recipe",
+    configuration_label: str = "Configuration",
     mapping_error_message: Optional[str] = None,
 ) -> Dict[str, object]:
     """
-    Load a composed recipe view from one or more YAML files.
+    Load a composed configuration view from one or more YAML files.
 
-    :param recipe_paths: Iterable of recipe file paths in precedence order.
-    :type recipe_paths: Iterable[str]
-    :param recipe_label: Label used in error messages (for example: "Recipe file").
-    :type recipe_label: str
+    :param configuration_paths: Iterable of configuration file paths in precedence order.
+    :type configuration_paths: Iterable[str]
+    :param configuration_label: Label used in error messages (for example: "Configuration file").
+    :type configuration_label: str
     :return: Composed configuration view.
     :rtype: dict[str, object]
-    :raises FileNotFoundError: If any recipe file is missing.
-    :raises ValueError: If any recipe file is not a mapping/object.
+    :raises FileNotFoundError: If any configuration file is missing.
+    :raises ValueError: If any configuration file is not a mapping/object.
     """
     from biblicus._vendor.dotyaml import load_yaml_view
 
-    paths: List[str] = [str(path) for path in recipe_paths]
+    paths: List[str] = [str(path) for path in configuration_paths]
     for raw in paths:
         candidate = Path(raw)
         if not candidate.is_file():
-            raise FileNotFoundError(f"{recipe_label} not found: {candidate}")
+            raise FileNotFoundError(f"{configuration_label} not found: {candidate}")
     try:
         view = load_yaml_view(paths)
     except ValueError as exc:
-        message = mapping_error_message or f"{recipe_label} must be a mapping/object"
+        message = mapping_error_message or f"{configuration_label} must be a mapping/object"
         raise ValueError(message) from exc
     return view

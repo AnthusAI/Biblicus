@@ -11,7 +11,7 @@ Feature: Command-line step spec parsing with JSON values
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:backend={\"mode\":\"local\"},min_confidence=0.5"
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:retriever={\"mode\":\"local\"},min_confidence=0.5"
     Then the extracted text for the last ingested item equals "JSON"
 
   Scenario: Parse step spec with multiple config values including JSON
@@ -24,8 +24,8 @@ Feature: Command-line step spec parsing with JSON values
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\\n,backend={\"mode\":\"local\"},use_angle_cls=true"
-    Then the extraction run includes extracted text for the last ingested item
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\\n,retriever={\"mode\":\"local\"},use_angle_cls=true"
+    Then the extraction snapshot includes extracted text for the last ingested item
 
   Scenario: Parse step spec with quoted string value
     Given I initialized a corpus at "corpus"
@@ -37,5 +37,5 @@ Feature: Command-line step spec parsing with JSON values
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build an extraction run in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\", \",backend={\"mode\":\"local\"}"
-    Then the extraction run includes extracted text for the last ingested item
+    And I build an extraction snapshot in corpus "corpus" using extractor "ocr-paddleocr-vl" with step spec "ocr-paddleocr-vl:joiner=\", \",retriever={\"mode\":\"local\"}"
+    Then the extraction snapshot includes extracted text for the last ingested item

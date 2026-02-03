@@ -1,7 +1,10 @@
 # Text link
 
-Text link is a reusable utility for connecting repeated mentions with id/ref spans. It uses the virtual file editor
-pattern and returns structured spans without re-emitting the full text.
+Text link is a reusable utility for connecting repeated mentions (coreference resolution) without re-emitting the text.
+
+If you ask a model to "return a list of all entity mentions and their canonical IDs," you face the same hallucination and cost issues as other extraction tasks.
+
+Text link uses the **virtual file pattern** to handle this in-place. Biblicus asks the model to wrap mentions in XML tags with ID/REF attributes (e.g., `<span id="link_1">...</span>` and `<span ref="link_1">...</span>`). The model returns a small edit script, and Biblicus parses it into a graph of connected spans. This lets you resolve entities and structure relationships without regenerating the content.
 
 ## How text link works
 
@@ -14,8 +17,9 @@ pattern and returns structured spans without re-emitting the full text.
 
 Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span ATTRIBUTE="VALUE">...</span> in-place in the current text.
@@ -29,29 +33,33 @@ Acme launched a product. Later, Acme reported results.
 
 Then provide a short user prompt describing what to return:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Link repeated mentions of the same company to the first mention.
 ```
 
 The input text is the same content embedded in the internal protocol:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Acme launched a product. Later, Acme reported results.
 ```
 
 The model edits the virtual file by inserting tags in-place:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span id="link_1">Acme launched a product</span>. Later, <span ref="link_1">Acme reported results</span>.
 ```
 
 Biblicus returns structured data parsed from the markup:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span id=\"link_1\">Acme launched a product</span>. Later, <span ref=\"link_1\">Acme reported results</span>.",
   "spans": [
@@ -108,9 +116,11 @@ Rules:
 - Id values must start with the configured prefix.
 - Id/ref spans must wrap the same repeated text (avoid wrapping extra words).
 
+Long-span handling: the system prompt instructs the model to insert `<span>` and `</span>` in separate `str_replace` calls for long passages (single-call insertion is allowed for short spans). This is covered by unit tests in `tests/test_text_utility_tool_calls.py`.
+
 ## Example: Python API
 
-```
+```python
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextLinkRequest, apply_text_link
 

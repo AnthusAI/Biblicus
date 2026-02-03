@@ -1,6 +1,6 @@
 from behave import then, when
 
-from biblicus.backends.embedding_index_common import _build_snippet, _extract_span_text
+from biblicus.retrievers.embedding_index_common import _build_snippet, _extract_span_text
 
 
 @when("I extract span text from non-text with span {start:d} {end:d}")

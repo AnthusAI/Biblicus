@@ -1,5 +1,5 @@
 """
-Shared primitives for embedding-index retrieval backends.
+Shared primitives for embedding-index retrievers.
 """
 
 from __future__ import annotations
@@ -12,10 +12,11 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..chunking import ChunkerConfig, TextChunk, TokenizerConfig
-from ..corpus import CORPUS_DIR_NAME, RUNS_DIR_NAME, Corpus
+from ..constants import CORPUS_DIR_NAME, SNAPSHOTS_DIR_NAME
+from ..corpus import Corpus
 from ..embedding_providers import EmbeddingProviderConfig, _l2_normalize_rows
 from ..frontmatter import parse_front_matter
-from ..models import ExtractionRunReference, parse_extraction_run_reference
+from ..models import ExtractionSnapshotReference, parse_extraction_snapshot_reference
 
 
 class ChunkRecord(BaseModel):
@@ -43,12 +44,12 @@ class ChunkRecord(BaseModel):
         return self
 
 
-class EmbeddingIndexRecipeConfig(BaseModel):
+class EmbeddingIndexConfiguration(BaseModel):
     """
-    Configuration for embedding-index retrieval backends.
+    Configuration for embedding-index retrievers.
 
-    :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
-    :vartype extraction_run: str or None
+    :ivar extraction_snapshot: Optional extraction snapshot reference in the form extractor_id:snapshot_id.
+    :vartype extraction_snapshot: str or None
     :ivar chunker: Chunker configuration.
     :vartype chunker: biblicus.chunking.ChunkerConfig
     :ivar tokenizer: Optional tokenizer configuration.
@@ -68,7 +69,7 @@ class EmbeddingIndexRecipeConfig(BaseModel):
     snippet_characters: Optional[int] = Field(default=None, ge=1)
     maximum_cache_total_items: Optional[int] = Field(default=None, ge=1)
     maximum_cache_total_characters: Optional[int] = Field(default=None, ge=1)
-    extraction_run: Optional[str] = None
+    extraction_snapshot: Optional[str] = None
     chunker: ChunkerConfig = Field(default_factory=lambda: ChunkerConfig(chunker_id="paragraph"))
     tokenizer: Optional[TokenizerConfig] = None
     embedding_provider: EmbeddingProviderConfig
@@ -102,28 +103,28 @@ def _build_snippet(
 
 
 def resolve_extraction_reference(
-    corpus: Corpus, recipe_config: EmbeddingIndexRecipeConfig
-) -> Optional[ExtractionRunReference]:
+    corpus: Corpus, configuration: EmbeddingIndexConfiguration
+) -> Optional[ExtractionSnapshotReference]:
     """
-    Resolve an extraction run reference from an embedding-index recipe config.
+    Resolve an extraction snapshot reference from an embedding-index configuration.
 
-    :param corpus: Corpus associated with the recipe.
+    :param corpus: Corpus associated with the configuration.
     :type corpus: Corpus
-    :param recipe_config: Parsed embedding-index recipe configuration.
-    :type recipe_config: EmbeddingIndexRecipeConfig
+    :param configuration: Parsed embedding-index configuration.
+    :type configuration: EmbeddingIndexConfiguration
     :return: Parsed extraction reference or None.
-    :rtype: ExtractionRunReference or None
-    :raises FileNotFoundError: If an extraction run is referenced but not present.
+    :rtype: ExtractionSnapshotReference or None
+    :raises FileNotFoundError: If an extraction snapshot is referenced but not present.
     """
-    if not recipe_config.extraction_run:
+    if not configuration.extraction_snapshot:
         return None
-    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
-    run_dir = corpus.extraction_run_dir(
+    extraction_reference = parse_extraction_snapshot_reference(configuration.extraction_snapshot)
+    snapshot_dir = corpus.extraction_snapshot_dir(
         extractor_id=extraction_reference.extractor_id,
-        run_id=extraction_reference.run_id,
+        snapshot_id=extraction_reference.snapshot_id,
     )
-    if not run_dir.is_dir():
-        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+    if not snapshot_dir.is_dir():
+        raise FileNotFoundError(f"Missing extraction snapshot: {extraction_reference.as_string()}")
     return extraction_reference
 
 
@@ -133,12 +134,12 @@ def _load_text_from_item(
     item_id: str,
     relpath: str,
     media_type: str,
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> Optional[str]:
     if extraction_reference:
         extracted_text = corpus.read_extracted_text(
             extractor_id=extraction_reference.extractor_id,
-            run_id=extraction_reference.run_id,
+            snapshot_id=extraction_reference.snapshot_id,
             item_id=item_id,
         )
         if isinstance(extracted_text, str):
@@ -153,7 +154,7 @@ def _load_text_from_item(
 
 
 def iter_text_payloads(
-    corpus: Corpus, *, extraction_reference: Optional[ExtractionRunReference]
+    corpus: Corpus, *, extraction_reference: Optional[ExtractionSnapshotReference]
 ) -> Iterator[Tuple[object, str]]:
     """
     Yield catalog items and their text payloads.
@@ -161,7 +162,7 @@ def iter_text_payloads(
     :param corpus: Corpus containing the items.
     :type corpus: Corpus
     :param extraction_reference: Optional extraction reference.
-    :type extraction_reference: ExtractionRunReference or None
+    :type extraction_reference: ExtractionSnapshotReference or None
     :yield: (catalog_item, text) pairs.
     :rtype: Iterator[tuple[object, str]]
     """
@@ -185,21 +186,21 @@ def iter_text_payloads(
 
 
 def collect_chunks(
-    corpus: Corpus, *, recipe_config: EmbeddingIndexRecipeConfig
+    corpus: Corpus, *, configuration: EmbeddingIndexConfiguration
 ) -> Tuple[List[TextChunk], int]:
     """
     Collect chunks from text payloads in a corpus.
 
     :param corpus: Corpus to chunk.
     :type corpus: Corpus
-    :param recipe_config: Parsed embedding-index recipe configuration.
-    :type recipe_config: EmbeddingIndexRecipeConfig
+    :param configuration: Parsed embedding-index configuration.
+    :type configuration: EmbeddingIndexConfiguration
     :return: (chunks, text_item_count)
     :rtype: tuple[list[TextChunk], int]
     """
-    tokenizer = recipe_config.tokenizer.build_tokenizer() if recipe_config.tokenizer else None
-    chunker = recipe_config.chunker.build_chunker(tokenizer=tokenizer)
-    extraction_reference = resolve_extraction_reference(corpus, recipe_config)
+    tokenizer = configuration.tokenizer.build_tokenizer() if configuration.tokenizer else None
+    chunker = configuration.chunker.build_chunker(tokenizer=tokenizer)
+    extraction_reference = resolve_extraction_reference(corpus, configuration)
 
     chunks: List[TextChunk] = []
     next_chunk_id = 0
@@ -317,18 +318,20 @@ def cosine_similarity_scores(embeddings: np.ndarray, query_vector: np.ndarray) -
     return embeddings @ query_vector
 
 
-def artifact_paths_for_run(*, run_id: str, backend_id: str) -> Dict[str, str]:
+def artifact_paths_for_snapshot(*, snapshot_id: str, retriever_id: str) -> Dict[str, str]:
     """
-    Build deterministic artifact relative paths for an embedding index run.
+    Build deterministic artifact relative paths for an embedding index snapshot.
 
-    :param run_id: Run identifier.
-    :type run_id: str
-    :param backend_id: Backend identifier.
-    :type backend_id: str
+    :param snapshot_id: Snapshot identifier.
+    :type snapshot_id: str
+    :param retriever_id: Retriever identifier.
+    :type retriever_id: str
     :return: Mapping with keys embeddings and chunks.
     :rtype: dict[str, str]
     """
-    prefix = f"{run_id}.{backend_id}"
-    embeddings_relpath = str(Path(CORPUS_DIR_NAME) / RUNS_DIR_NAME / f"{prefix}.embeddings.npy")
-    chunks_relpath = str(Path(CORPUS_DIR_NAME) / RUNS_DIR_NAME / f"{prefix}.chunks.jsonl")
+    prefix = f"{snapshot_id}.{retriever_id}"
+    embeddings_relpath = str(
+        Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{prefix}.embeddings.npy"
+    )
+    chunks_relpath = str(Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{prefix}.chunks.jsonl")
     return {"embeddings": embeddings_relpath, "chunks": chunks_relpath}

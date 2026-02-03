@@ -9,10 +9,10 @@ Feature: Markov analysis topic modeling
       | 1        | refund,credit    |
     And a fake hmmlearn library is available with predicted states "0,1,0,1"
     When I ingest the text "Billing question. Refund request." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -22,7 +22,7 @@ Feature: Markov analysis topic modeling
         method: sentence
       topic_modeling:
         enabled: true
-        recipe:
+        configuration:
           schema_version: 1
           llm_extraction:
             enabled: false
@@ -36,5 +36,5 @@ Feature: Markov analysis topic modeling
         family: categorical
         n_states: 2
       """
-    And I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    And I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov observations include topic labels "billing,refund"

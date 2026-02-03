@@ -1,5 +1,5 @@
-Feature: Inference backend configuration
-  The inference backend abstraction supports local and API execution modes.
+Feature: Inference retriever configuration
+  The inference retriever abstraction supports local and API execution modes.
 
   Scenario: API mode requires api_provider to be set
     Given I initialized a corpus at "corpus"
@@ -8,11 +8,11 @@ Feature: Inference backend configuration
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
       """
     Then the command fails with exit code 2
@@ -24,11 +24,11 @@ Feature: Inference backend configuration
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I attempt to build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
           api_provider: huggingface
       """
@@ -43,11 +43,11 @@ Feature: Inference backend configuration
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
           api_provider: huggingface
           model_id: "PaddlePaddle/PaddleOCR-VL"
@@ -63,11 +63,11 @@ Feature: Inference backend configuration
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
           api_provider: huggingface
           model_id: "PaddlePaddle/PaddleOCR-VL"
@@ -82,11 +82,11 @@ Feature: Inference backend configuration
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "ocr-paddleocr-vl" extraction run in corpus "corpus" using the recipe:
+    And I build a "ocr-paddleocr-vl" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: ocr-paddleocr-vl
       config:
-        backend:
+        retriever:
           mode: api
           api_provider: huggingface
           api_key: "override-key"

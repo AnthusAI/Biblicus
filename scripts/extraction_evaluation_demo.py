@@ -11,11 +11,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
+from biblicus.extraction import build_extraction_snapshot
 from biblicus.extraction_evaluation import (
     ExtractionEvaluationDataset,
     ExtractionEvaluationItem,
-    evaluate_extraction_run,
+    evaluate_extraction_snapshot,
     write_extraction_evaluation_result,
 )
 from biblicus.frontmatter import parse_front_matter
@@ -99,11 +99,11 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
         resume=arguments.resume,
     )
     corpus = Corpus.open(corpus_path)
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name=arguments.extraction_recipe_name,
-        config={
+        configuration_name=arguments.extraction_configuration_name,
+        configuration={
             "steps": [
                 {
                     "extractor_id": arguments.extraction_step,
@@ -123,21 +123,21 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
         dataset=dataset,
         dataset_path=Path(arguments.dataset_path).resolve(),
     )
-    result = evaluate_extraction_run(
+    result = evaluate_extraction_snapshot(
         corpus=corpus,
-        run=extraction_manifest,
+        snapshot=extraction_manifest,
         extractor_id="pipeline",
         dataset=dataset,
     )
     output_path = write_extraction_evaluation_result(
         corpus=corpus,
-        run_id=extraction_manifest.run_id,
+        snapshot_id=extraction_manifest.snapshot_id,
         result=result,
     )
     return {
         "corpus": str(corpus_path),
         "ingestion": ingestion_stats,
-        "extraction_run": f"pipeline:{extraction_manifest.run_id}",
+        "extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}",
         "dataset_path": str(dataset_path),
         "evaluation_output_path": str(output_path),
         "metrics": result.metrics,
@@ -167,12 +167,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--extraction-step",
         default="pass-through-text",
-        help="Extractor step to use for the extraction run.",
+        help="Extractor step to use for the extraction snapshot.",
     )
     parser.add_argument(
-        "--extraction-recipe-name",
+        "--extraction-configuration-name",
         default="default",
-        help="Recipe name for the extraction run.",
+        help="Configuration name for the extraction snapshot.",
     )
     parser.add_argument(
         "--dataset-limit",

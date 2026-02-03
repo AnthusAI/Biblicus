@@ -1,6 +1,6 @@
 # Retrieval evaluation
 
-Biblicus evaluates retrieval runs against deterministic datasets so quality comparisons are repeatable across backends
+Biblicus evaluates retrieval snapshots against deterministic datasets so quality comparisons are repeatable across backends
 and corpora. Evaluations keep the evidence-first model intact by reporting per-query evidence alongside summary
 metrics.
 
@@ -39,19 +39,19 @@ These metrics are deterministic for the same corpus, run, dataset, and budget.
 
 ## Running an evaluation
 
-Use the command-line interface to evaluate a retrieval run against a dataset:
+Use the command-line interface to evaluate a retrieval snapshot against a dataset:
 
 ```bash
-biblicus eval --corpus corpora/example --run <run_id> --dataset datasets/retrieval.json \
+biblicus eval --corpus corpora/example --run <snapshot_id> --dataset datasets/retrieval.json \
   --max-total-items 5 --maximum-total-characters 2000 --max-items-per-source 5
 ```
 
-If `--run` is omitted, the latest retrieval run is used. Evaluations are deterministic for the same corpus, run, and
+If `--run` is omitted, the latest retrieval snapshot is used. Evaluations are deterministic for the same corpus, run, and
 budget.
 
 ## End-to-end evaluation example
 
-This example builds a tiny corpus, creates a retrieval run, and evaluates it against a minimal dataset:
+This example builds a tiny corpus, creates a retrieval snapshot, and evaluates it against a minimal dataset:
 
 ```
 rm -rf corpora/retrieval_eval_demo
@@ -93,7 +93,7 @@ python -m biblicus eval --corpus corpora/retrieval_eval_demo --dataset /tmp/retr
 Use this workflow when you want to build a small, hand-labeled dataset:
 
 1) Ingest a small, representative subset of items.
-2) Run extraction and build a retrieval run.
+2) Run extraction and build a retrieval snapshot.
 3) Use `biblicus list` to capture item identifiers.
 4) Write a dataset JSON that maps queries to `expected_item_id` values.
 
@@ -124,7 +124,7 @@ without external dependencies.
 python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
 ```
 
-The script prints a summary that includes the generated dataset path, the retrieval run identifier, and the evaluation
+The script prints a summary that includes the generated dataset path, the retrieval snapshot identifier, and the evaluation
 output path.
 
 ## Output
@@ -148,7 +148,7 @@ Example snippet:
     "queries": 1
   },
   "backend_id": "sqlite-full-text-search",
-  "run_id": "RUN_ID",
+  "snapshot_id": "RUN_ID",
   "evaluated_at": "2024-01-01T00:00:00Z",
   "metrics": {
     "hit_rate": 1.0,
@@ -178,11 +178,11 @@ Use this inspection to decide whether to adjust extraction, retrieval configurat
 
 ## What to record for comparisons
 
-When you compare retrieval runs, capture the same inputs every time:
+When you compare retrieval snapshots, capture the same inputs every time:
 
 - Corpus path (and whether the catalog has been reindexed).
-- Extraction run identifier used by the retrieval run.
-- Retrieval backend identifier and run identifier.
+- Extraction snapshot identifier used by the retrieval snapshot.
+- Retrieval backend identifier and snapshot identifier.
 - Evaluation dataset path and schema version.
 - Evidence budget values.
 
@@ -190,7 +190,7 @@ This metadata allows you to rerun the evaluation and explain differences between
 
 ## Common pitfalls
 
-- Evaluating against a dataset built for a different corpus or extraction run.
+- Evaluating against a dataset built for a different corpus or extraction snapshot.
 - Changing budgets between runs and expecting metrics to be comparable.
 - Using stale item identifiers after reindexing or re-ingesting content.
 
@@ -204,7 +204,7 @@ from biblicus.evaluation import evaluate_run, load_dataset
 from biblicus.models import QueryBudget
 
 corpus = Corpus.open("corpora/example")
-run = corpus.load_run("<run_id>")
+run = corpus.load_run("<snapshot_id>")
 dataset = load_dataset(Path("datasets/retrieval.json"))
 budget = QueryBudget(max_total_items=5, maximum_total_characters=2000, max_items_per_source=5)
 result = evaluate_run(corpus=corpus, run=run, dataset=dataset, budget=budget)
@@ -213,6 +213,6 @@ print(result.model_dump_json(indent=2))
 
 ## Design notes
 
-- Evaluation is reproducible by construction: the run manifest, dataset, and budget fully determine the results.
-- The evaluation workflow expects retrieval stages to remain explicit in the run artifacts.
+- Evaluation is reproducible by construction: the snapshot manifest, dataset, and budget fully determine the results.
+- The evaluation workflow expects retrieval stages to remain explicit in the snapshot artifacts.
 - Reports are portable, so comparisons across backends and corpora are straightforward.

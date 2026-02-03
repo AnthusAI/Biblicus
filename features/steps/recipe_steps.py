@@ -5,7 +5,11 @@ from typing import Dict, List
 
 from behave import given, then, when
 
-from biblicus.recipes import apply_dotted_overrides, parse_dotted_overrides, parse_override_value
+from biblicus.configuration import (
+    apply_dotted_overrides,
+    parse_dotted_overrides,
+    parse_override_value,
+)
 
 
 @when("I parse override values:")

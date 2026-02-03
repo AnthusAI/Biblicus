@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
@@ -40,14 +40,14 @@ class DoclingSmolExtractorConfig(BaseModel):
 
     :ivar output_format: Output format for extracted content (markdown, text, or html).
     :vartype output_format: str
-    :ivar backend: Inference backend (mlx or transformers).
-    :vartype backend: str
+    :ivar retriever: Inference retriever (mlx or transformers).
+    :vartype retriever: str
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     output_format: str = Field(default="markdown", pattern="^(markdown|text|html)$")
-    backend: str = Field(default="mlx", pattern="^(mlx|transformers)$")
+    retriever: str = Field(default="mlx", pattern="^(mlx|transformers)$", alias="backend")
 
 
 class DoclingSmolExtractor(TextExtractor):
@@ -71,7 +71,7 @@ class DoclingSmolExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed config.
         :rtype: DoclingSmolExtractorConfig
-        :raises ExtractionRunFatalError: If the optional dependency is not installed.
+        :raises ExtractionSnapshotFatalError: If the optional dependency is not installed.
         """
         parsed = DoclingSmolExtractorConfig.model_validate(config)
 
@@ -82,19 +82,19 @@ class DoclingSmolExtractor(TextExtractor):
                 vlm_model_specs,
             )
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "DoclingSmol extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[docling]".'
             ) from import_error
 
-        if parsed.backend == "mlx":
+        if parsed.retriever == "mlx":
             try:
                 from docling.pipeline_options import vlm_model_specs
 
                 _ = vlm_model_specs.SMOLDOCLING_MLX
             except (ImportError, AttributeError) as exc:
-                raise ExtractionRunFatalError(
-                    "DoclingSmol extractor with MLX backend requires MLX support. "
+                raise ExtractionSnapshotFatalError(
+                    "DoclingSmol extractor with MLX retriever requires MLX support. "
                     'Install it with pip install "biblicus[docling-mlx]".'
                 ) from exc
 
@@ -167,7 +167,7 @@ class DoclingSmolExtractor(TextExtractor):
         from docling.format_options import InputFormat, PdfFormatOption
         from docling.pipeline_options import VlmPipelineOptions, vlm_model_specs
 
-        if config.backend == "mlx":
+        if config.retriever == "mlx":
             vlm_options = vlm_model_specs.SMOLDOCLING_MLX
         else:
             vlm_options = vlm_model_specs.SMOLDOCLING_TRANSFORMERS

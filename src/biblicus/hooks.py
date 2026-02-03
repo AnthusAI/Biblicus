@@ -18,8 +18,8 @@ class HookPoint(str, Enum):
     :cvar after_ingest: Called after an item is ingested and indexed.
     :cvar before_reindex: Called before a catalog rebuild starts.
     :cvar after_reindex: Called after a catalog rebuild completes.
-    :cvar before_build_run: Called before a backend run build starts.
-    :cvar after_build_run: Called after a backend run build completes.
+    :cvar before_build_snapshot: Called before a retriever snapshot build starts.
+    :cvar after_build_snapshot: Called after a retriever snapshot build completes.
     :cvar before_query: Called before a query is executed.
     :cvar after_query: Called after a query completes.
     :cvar before_evaluate_run: Called before an evaluation starts.
@@ -30,8 +30,8 @@ class HookPoint(str, Enum):
     after_ingest = "after_ingest"
     before_reindex = "before_reindex"
     after_reindex = "after_reindex"
-    before_build_run = "before_build_run"
-    after_build_run = "after_build_run"
+    before_build_snapshot = "before_build_snapshot"
+    after_build_snapshot = "after_build_snapshot"
     before_query = "before_query"
     after_query = "after_query"
     before_evaluate_run = "before_evaluate_run"

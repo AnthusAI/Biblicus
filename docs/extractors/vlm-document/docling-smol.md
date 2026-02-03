@@ -86,7 +86,7 @@ biblicus extract my-corpus --extractor docling-smol \
   --config backend=transformers
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: docling-smol
@@ -96,7 +96,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API
@@ -242,7 +242,7 @@ Documents that cannot be processed produce empty extracted text and are counted 
 
 ### Per-Item Errors
 
-Processing errors for individual items are recorded in the extraction run but don't halt the entire extraction. Check `errored_items` in extraction statistics.
+Processing errors for individual items are recorded in the extraction snapshot but don't halt the entire extraction. Check `errored_items` in extraction statistics.
 
 ## Related Extractors
 

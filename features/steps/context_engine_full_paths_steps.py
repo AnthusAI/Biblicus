@@ -88,10 +88,10 @@ def step_exercise_context_assembly_helpers(context) -> None:
                 "maximum_items_per_source": 2,
                 "include_metadata": True,
                 "metadata_fields": ["published"],
-                "backend_id": "backend-one",
-                "run_id": "run-1",
-                "recipe_name": "recipe",
-                "recipe_config": {"type": "example"},
+                "retriever_id": "retriever-one",
+                "snapshot_id": "snapshot-1",
+                "configuration_name": "configuration",
+                "configuration": {"type": "example"},
                 "corpus": "corpus-one",
                 "join_with": " | ",
             }
@@ -104,11 +104,11 @@ def step_exercise_context_assembly_helpers(context) -> None:
                 "split": "train",
                 "maximum_cache_total_items": 11,
                 "maximum_cache_total_characters": 1200,
-                "backend_id": "backend-corpus",
+                "retriever_id": "retriever-corpus",
                 "corpus_root": "/tmp/corpus",
-                "run_id": "run-2",
-                "recipe_name": "recipe-corpus",
-                "recipe_config": {"source": "fixture"},
+                "snapshot_id": "snapshot-2",
+                "configuration_name": "configuration-corpus",
+                "configuration": {"source": "fixture"},
             }
         )
     }

@@ -20,8 +20,8 @@ def step_create_invalid_evidence(context) -> None:
             span_start=None,
             span_end=None,
             stage="scan",
-            recipe_id="recipe",
-            run_id="run",
+            configuration_id="configuration",
+            snapshot_id="snapshot",
             hash=None,
         )
         context.validation_error = None

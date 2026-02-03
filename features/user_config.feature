@@ -11,7 +11,7 @@ Feature: User configuration files
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-openai" extraction run in corpus "corpus"
+    And I build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "ok"
     And the OpenAI client was configured with API key "local-key"
 
@@ -25,7 +25,7 @@ Feature: User configuration files
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-openai" extraction run in corpus "corpus"
+    And I build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the OpenAI client was configured with API key "local-key"
 
   Scenario: Non-mapping YAML configuration is treated as empty configuration

@@ -41,5 +41,5 @@ def get_analysis_backend(analysis_id: str) -> CorpusAnalysisBackend:
     backend_class = registry.get(analysis_id)
     if backend_class is None:
         known = ", ".join(sorted(registry))
-        raise KeyError(f"Unknown analysis backend '{analysis_id}'. Known backends: {known}")
+        raise KeyError(f"Unknown analysis retriever '{analysis_id}'. Known retrievers: {known}")
     return backend_class()

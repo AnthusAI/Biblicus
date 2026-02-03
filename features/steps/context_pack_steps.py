@@ -31,17 +31,17 @@ def given_retrieval_result_exists_with_evidence_text(context) -> None:
                 text=text_value,
                 content_ref=content_ref_value,
                 stage="scan",
-                recipe_id="recipe",
-                run_id="run",
+                configuration_id="configuration",
+                snapshot_id="snapshot",
             )
         )
 
     context.retrieval_result = RetrievalResult(
         query_text="query",
         budget=QueryBudget(max_total_items=10),
-        run_id="run",
-        recipe_id="recipe",
-        backend_id="scan",
+        snapshot_id="snapshot",
+        configuration_id="configuration",
+        retriever_id="scan",
         generated_at=utc_now_iso(),
         evidence=evidence_items,
         stats={},
@@ -65,17 +65,17 @@ def given_retrieval_result_exists_with_scored_evidence(context) -> None:
                 text=text_value,
                 content_ref=content_ref_value,
                 stage="scan",
-                recipe_id="recipe",
-                run_id="run",
+                configuration_id="configuration",
+                snapshot_id="snapshot",
             )
         )
 
     context.retrieval_result = RetrievalResult(
         query_text="query",
         budget=QueryBudget(max_total_items=10),
-        run_id="run",
-        recipe_id="recipe",
-        backend_id="scan",
+        snapshot_id="snapshot",
+        configuration_id="configuration",
+        retriever_id="scan",
         generated_at=utc_now_iso(),
         evidence=evidence_items,
         stats={},
@@ -100,17 +100,17 @@ def given_retrieval_result_exists_with_sourced_evidence(context) -> None:
                 text=text_value,
                 content_ref=content_ref_value,
                 stage="scan",
-                recipe_id="recipe",
-                run_id="run",
+                configuration_id="configuration",
+                snapshot_id="snapshot",
             )
         )
 
     context.retrieval_result = RetrievalResult(
         query_text="query",
         budget=QueryBudget(max_total_items=10),
-        run_id="run",
-        recipe_id="recipe",
-        backend_id="scan",
+        snapshot_id="snapshot",
+        configuration_id="configuration",
+        retriever_id="scan",
         generated_at=utc_now_iso(),
         evidence=evidence_items,
         stats={},
@@ -138,8 +138,8 @@ def given_retrieval_result_exists_with_metadata_evidence(context) -> None:
                 text=text_value,
                 content_ref=content_ref_value,
                 stage="scan",
-                recipe_id="recipe",
-                run_id="run",
+                configuration_id="configuration",
+                snapshot_id="snapshot",
                 metadata=metadata,
             )
         )
@@ -147,9 +147,9 @@ def given_retrieval_result_exists_with_metadata_evidence(context) -> None:
     context.retrieval_result = RetrievalResult(
         query_text="query",
         budget=QueryBudget(max_total_items=10),
-        run_id="run",
-        recipe_id="recipe",
-        backend_id="scan",
+        snapshot_id="snapshot",
+        configuration_id="configuration",
+        retriever_id="scan",
         generated_at=utc_now_iso(),
         evidence=evidence_items,
         stats={},

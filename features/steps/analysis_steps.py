@@ -9,7 +9,7 @@ from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.analysis import get_analysis_backend
 from biblicus.analysis.base import CorpusAnalysisBackend
 from biblicus.analysis.models import (
-    ProfilingRecipeConfig,
+    ProfilingConfiguration,
     TopicModelingKeyword,
     TopicModelingLabelSource,
     TopicModelingLlmExtractionConfig,
@@ -24,7 +24,7 @@ from biblicus.analysis.topic_modeling import (
     _apply_llm_fine_tuning,
     _parse_itemized_response,
 )
-from biblicus.models import CatalogItem, ExtractionRunReference
+from biblicus.models import CatalogItem, ExtractionSnapshotReference
 from features.steps.openai_steps import (
     _ensure_fake_openai_chat_behaviors,
     _FakeOpenAiChatBehavior,
@@ -39,19 +39,19 @@ class _DummyAnalysisBackend(CorpusAnalysisBackend):
         self,
         corpus,
         *,
-        recipe_name: str,
-        config: Dict[str, object],
-        extraction_run: ExtractionRunReference,
+        configuration_name: str,
+        configuration: Dict[str, object],
+        extraction_snapshot: ExtractionSnapshotReference,
     ):
         return super().run_analysis(
             corpus,
-            recipe_name=recipe_name,
-            config=config,
-            extraction_run=extraction_run,
+            configuration_name=configuration_name,
+            configuration=configuration,
+            extraction_snapshot=extraction_snapshot,
         )
 
 
-@when('I attempt to resolve analysis backend "{analysis_id}"')
+@when('I attempt to resolve analysis retriever "{analysis_id}"')
 def step_attempt_resolve_analysis_backend(context, analysis_id: str) -> None:
     try:
         get_analysis_backend(analysis_id)
@@ -60,22 +60,25 @@ def step_attempt_resolve_analysis_backend(context, analysis_id: str) -> None:
         context.analysis_error = exc
 
 
-@then('the analysis backend error mentions "{text}"')
+@then('the analysis retriever error mentions "{text}"')
 def step_analysis_backend_error_mentions(context, text: str) -> None:
     error = getattr(context, "analysis_error", None)
     assert error is not None
     assert text in str(error)
 
 
-@when("I invoke the analysis backend base class")
+@when("I invoke the analysis retriever base class")
 def step_invoke_analysis_backend_base(context) -> None:
-    backend = _DummyAnalysisBackend()
+    retriever = _DummyAnalysisBackend()
     try:
-        backend.run_analysis(
+        retriever.run_analysis(
             None,
-            recipe_name="test",
-            config={},
-            extraction_run=ExtractionRunReference(extractor_id="pipeline", run_id="run"),
+            configuration_name="test",
+            configuration={},
+            extraction_snapshot=ExtractionSnapshotReference(
+                extractor_id="pipeline",
+                snapshot_id="snapshot",
+            ),
         )
         context.analysis_error = None
     except NotImplementedError as exc:
@@ -143,7 +146,7 @@ def step_validation_error_mentions(context, text: str) -> None:
     assert text in str(error)
 
 
-@when("I run LLM fine-tuning with missing document references")
+@when("I snapshot LLM fine-tuning with missing document references")
 def step_run_llm_fine_tuning_missing_documents(context) -> None:
     _install_fake_openai_module(context)
     behaviors = _ensure_fake_openai_chat_behaviors(context)
@@ -254,7 +257,7 @@ def step_vectorizer_stop_words_absent(context) -> None:
 @when("I attempt to validate a profiling config with sample size {value:d}")
 def step_validate_profiling_sample_size(context, value: int) -> None:
     try:
-        ProfilingRecipeConfig(sample_size=value)
+        ProfilingConfiguration(sample_size=value)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -264,7 +267,7 @@ def step_validate_profiling_sample_size(context, value: int) -> None:
 def step_validate_profiling_percentiles(context, values: str) -> None:
     try:
         percentiles = [int(value.strip()) for value in values.split(",") if value.strip()]
-        ProfilingRecipeConfig(percentiles=percentiles)
+        ProfilingConfiguration(percentiles=percentiles)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -274,7 +277,7 @@ def step_validate_profiling_percentiles(context, values: str) -> None:
 def step_validate_profiling_tag_filters(context, values: str) -> None:
     try:
         tags = [value.strip() for value in values.split(",")]
-        ProfilingRecipeConfig(tag_filters=tags)
+        ProfilingConfiguration(tag_filters=tags)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -283,7 +286,7 @@ def step_validate_profiling_tag_filters(context, values: str) -> None:
 @when("I attempt to validate a profiling config with schema version {value:d}")
 def step_validate_profiling_schema_version(context, value: int) -> None:
     try:
-        ProfilingRecipeConfig(schema_version=value)
+        ProfilingConfiguration(schema_version=value)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -292,7 +295,7 @@ def step_validate_profiling_schema_version(context, value: int) -> None:
 @when("I attempt to validate a profiling config with empty percentiles")
 def step_validate_profiling_empty_percentiles(context) -> None:
     try:
-        ProfilingRecipeConfig(percentiles=[])
+        ProfilingConfiguration(percentiles=[])
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -301,7 +304,7 @@ def step_validate_profiling_empty_percentiles(context) -> None:
 @when('I attempt to validate a profiling config with tag filters string "{value}"')
 def step_validate_profiling_tag_filters_string(context, value: str) -> None:
     try:
-        ProfilingRecipeConfig(tag_filters=value)
+        ProfilingConfiguration(tag_filters=value)
         context.validation_error = None
     except ValidationError as exc:
         context.validation_error = exc
@@ -309,13 +312,13 @@ def step_validate_profiling_tag_filters_string(context, value: str) -> None:
 
 @when("I validate a profiling config with tag filters None")
 def step_validate_profiling_tag_filters_none(context) -> None:
-    context.last_model = ProfilingRecipeConfig(tag_filters=None)
+    context.last_model = ProfilingConfiguration(tag_filters=None)
 
 
 @when('I validate a profiling config with tag filters list "{values}"')
 def step_validate_profiling_tag_filters_list(context, values: str) -> None:
     tags = [value.strip() for value in values.split(",")]
-    context.last_model = ProfilingRecipeConfig(tag_filters=tags)
+    context.last_model = ProfilingConfiguration(tag_filters=tags)
 
 
 @then("the profiling tag filters are absent")

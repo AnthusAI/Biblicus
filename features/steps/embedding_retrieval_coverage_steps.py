@@ -8,16 +8,6 @@ from unittest.mock import patch
 import numpy as np
 from behave import then, when
 
-from biblicus.backends.embedding_index_common import (
-    ChunkRecord,
-    EmbeddingIndexRecipeConfig,
-    _load_text_from_item,
-    collect_chunks,
-    iter_text_payloads,
-    read_chunks_jsonl,
-)
-from biblicus.backends.embedding_index_file import EmbeddingIndexFileBackend, _top_indices_batched
-from biblicus.backends.embedding_index_inmemory import EmbeddingIndexInMemoryBackend, _top_indices
 from biblicus.chunking import (
     Chunker,
     ChunkerConfig,
@@ -35,7 +25,23 @@ from biblicus.embedding_providers import (
     EmbeddingProviderConfig,
     HashEmbeddingProvider,
 )
-from biblicus.models import ExtractionRunReference, QueryBudget
+from biblicus.models import ExtractionSnapshotReference, QueryBudget
+from biblicus.retrievers.embedding_index_common import (
+    ChunkRecord,
+    EmbeddingIndexConfiguration,
+    _load_text_from_item,
+    collect_chunks,
+    iter_text_payloads,
+    read_chunks_jsonl,
+)
+from biblicus.retrievers.embedding_index_file import (
+    EmbeddingIndexFileRetriever,
+    _top_indices_batched,
+)
+from biblicus.retrievers.embedding_index_inmemory import (
+    EmbeddingIndexInMemoryRetriever,
+    _top_indices,
+)
 
 
 @then("a NotImplementedError is raised")
@@ -240,7 +246,9 @@ def step_load_markdown_text_front_matter(context, filename: str) -> None:
         media_type="text/markdown",
         extraction_reference=None,
     )
-    extraction_reference = ExtractionRunReference(extractor_id="extractor", run_id="missing")
+    extraction_reference = ExtractionSnapshotReference(
+        extractor_id="extractor", snapshot_id="missing"
+    )
     with patch.object(Corpus, "read_extracted_text", return_value=None):
         context.loaded_markdown_text_with_missing_extraction = _load_text_from_item(
             corpus,
@@ -289,22 +297,22 @@ def step_chunk_record_count(context, count: int) -> None:
     assert len(records) == count
 
 
-@when('I attempt to query backend "{backend_id}" with an invalid query embedding shape')
+@when('I attempt to query retriever "{backend_id}" with an invalid query embedding shape')
 def step_attempt_query_invalid_query_embedding_shape(context, backend_id: str) -> None:
     corpus_root = (context.workdir / "corpus").resolve()
     corpus = Corpus(corpus_root)
-    run = corpus.load_run(str(getattr(context, "last_run_id")))
+    snapshot = corpus.load_snapshot(str(getattr(context, "last_snapshot_id")))
 
-    if backend_id == EmbeddingIndexFileBackend.backend_id:
-        backend = EmbeddingIndexFileBackend()
-    elif backend_id == EmbeddingIndexInMemoryBackend.backend_id:
-        backend = EmbeddingIndexInMemoryBackend()
+    if backend_id == EmbeddingIndexFileRetriever.retriever_id:
+        retriever = EmbeddingIndexFileRetriever()
+    elif backend_id == EmbeddingIndexInMemoryRetriever.retriever_id:
+        retriever = EmbeddingIndexInMemoryRetriever()
     else:
-        raise AssertionError(f"Unsupported backend in this scenario: {backend_id}")
+        raise AssertionError(f"Unsupported retriever in this scenario: {backend_id}")
     budget = QueryBudget(max_total_items=5, maximum_total_characters=1000, max_items_per_source=5)
 
     recipe_provider_config = EmbeddingProviderConfig.model_validate(
-        run.recipe.config["embedding_provider"]
+        snapshot.configuration.configuration["embedding_provider"]
     )
 
     class BadQueryShapeProvider(HashEmbeddingProvider):
@@ -319,26 +327,28 @@ def step_attempt_query_invalid_query_embedding_shape(context, backend_id: str) -
             "build_provider",
             return_value=BadQueryShapeProvider(dimensions=recipe_provider_config.dimensions),
         ):
-            backend.query(corpus, run=run, query_text="United States", budget=budget)
+            retriever.query(corpus, snapshot=snapshot, query_text="United States", budget=budget)
         context.last_error = None
     except Exception as exc:  # noqa: BLE001 - BDD asserts error type and message explicitly
         context.last_error = exc
 
 
-@when('I attempt to query backend "{backend_id}" with inconsistent artifacts')
+@when('I attempt to query retriever "{backend_id}" with inconsistent artifacts')
 def step_attempt_query_inconsistent_artifacts(context, backend_id: str) -> None:
     corpus_root = (context.workdir / "corpus").resolve()
     corpus = Corpus(corpus_root)
-    run = corpus.load_run(str(getattr(context, "last_run_id")))
+    snapshot = corpus.load_snapshot(str(getattr(context, "last_snapshot_id")))
 
-    if backend_id == EmbeddingIndexFileBackend.backend_id:
-        backend = EmbeddingIndexFileBackend()
-    elif backend_id == EmbeddingIndexInMemoryBackend.backend_id:
-        backend = EmbeddingIndexInMemoryBackend()
+    if backend_id == EmbeddingIndexFileRetriever.retriever_id:
+        retriever = EmbeddingIndexFileRetriever()
+    elif backend_id == EmbeddingIndexInMemoryRetriever.retriever_id:
+        retriever = EmbeddingIndexInMemoryRetriever()
     else:
-        raise AssertionError(f"Unsupported backend in this scenario: {backend_id}")
+        raise AssertionError(f"Unsupported retriever in this scenario: {backend_id}")
 
-    chunks_relpath = next((p for p in run.artifact_paths if p.endswith(".chunks.jsonl")), None)
+    chunks_relpath = next(
+        (p for p in snapshot.snapshot_artifacts if p.endswith(".chunks.jsonl")), None
+    )
     assert isinstance(chunks_relpath, str)
     chunks_path = corpus.root / chunks_relpath
     raw_lines = chunks_path.read_text(encoding="utf-8").splitlines()
@@ -347,7 +357,7 @@ def step_attempt_query_inconsistent_artifacts(context, backend_id: str) -> None:
 
     budget = QueryBudget(max_total_items=5, maximum_total_characters=1000, max_items_per_source=5)
     try:
-        backend.query(corpus, run=run, query_text="United States", budget=budget)
+        retriever.query(corpus, snapshot=snapshot, query_text="United States", budget=budget)
         context.last_error = None
     except Exception as exc:  # noqa: BLE001 - BDD asserts error type and message explicitly
         context.last_error = exc
@@ -434,7 +444,7 @@ def step_collect_chunks_when_chunker_returns_no_chunks(context) -> None:
     )
     corpus.load_catalog = lambda: catalog  # type: ignore[method-assign]
 
-    recipe_config = EmbeddingIndexRecipeConfig.model_validate(
+    recipe_config = EmbeddingIndexConfiguration.model_validate(
         {
             "chunker": {"chunker_id": "paragraph"},
             "embedding_provider": {"provider_id": "hash-embedding", "dimensions": 8},
@@ -448,6 +458,6 @@ def step_collect_chunks_when_chunker_returns_no_chunks(context) -> None:
             return []
 
     with patch.object(ChunkerConfig, "build_chunker", return_value=ChunkerThatReturnsNoChunks()):
-        chunks, text_items = collect_chunks(corpus, recipe_config=recipe_config)
+        chunks, text_items = collect_chunks(corpus, configuration=recipe_config)
     assert text_items == 1
     context.last_chunk_count = len(chunks)

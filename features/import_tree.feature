@@ -14,12 +14,12 @@ Feature: Importing a folder tree
     And the corpus "corpus" has an item with source suffix "/source_tree/a.txt"
     And the corpus "corpus" has an item with source suffix "/source_tree/docs/b.md"
 
-  Scenario: Import can run without specifying tags
+  Scenario: Import can snapshot without specifying tags
     Given I initialized a corpus at "corpus"
     And the directory "source_tree" contains files:
       | relpath | contents |
       | a.txt   | alpha    |
-    When I run "import-tree source_tree" in corpus "corpus"
+    When I snapshot "import-tree source_tree" in corpus "corpus"
     Then the command succeeds
     And the corpus "corpus" has at least 1 items
 
@@ -42,7 +42,7 @@ Feature: Importing a folder tree
 
   Scenario: Import fails when source root does not exist
     Given I initialized a corpus at "corpus"
-    When I run "import-tree missing-tree --tags imported" in corpus "corpus"
+    When I snapshot "import-tree missing-tree --tags imported" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Import source root does not exist"
 

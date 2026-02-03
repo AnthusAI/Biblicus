@@ -6,7 +6,7 @@ quality is expressed in runs and how to interpret the signals in artifacts and e
 ## Goals
 
 - Improve relevance without losing determinism or reproducibility.
-- Keep retrieval stages explicit and visible in run artifacts.
+- Keep retrieval stages explicit and visible in snapshot artifacts.
 - Preserve the evidence-first output model.
 
 ## Available upgrades
@@ -54,8 +54,8 @@ Example configuration:
 
 ```
 python -m biblicus build --corpus corpora/demo --backend hybrid \
-  --config lexical_backend=sqlite-full-text-search \
-  --config embedding_backend=vector \
+  --config lexical_retriever=sqlite-full-text-search \
+  --config embedding_retriever=vector \
   --config lexical_weight=0.7 \
   --config embedding_weight=0.3
 ```
@@ -74,7 +74,7 @@ Evaluation keeps the retrieval stages explicit and makes comparisons easy:
 
 ## Interpreting evidence signals
 
-Evidence returned by retrieval runs includes a `stage` label and optional `stage_scores` map:
+Evidence returned by retrieval snapshots includes a `stage` label and optional `stage_scores` map:
 
 - `stage` identifies the last stage that produced the evidence (for example, `retrieve`, `rerank`, `hybrid`).
 - `stage_scores` contains per-stage scores so you can compare lexical and vector contributions in hybrid runs.
@@ -96,7 +96,7 @@ drawn from comparable pools.
 
 - Inspect `stage` and `stage_scores` to see where ranking changes occurred.
 - Compare `score` against `stage_scores` to understand fusion effects.
-- Use `recipe_id` and `run_id` to map evidence back to run manifests.
+- Use `configuration_id` and `snapshot_id` to map evidence back to snapshot manifests.
 
 ## Non-goals
 

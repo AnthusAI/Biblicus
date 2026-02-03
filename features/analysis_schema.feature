@@ -1,12 +1,12 @@
 Feature: Analysis schema validation
   Analysis schemas are strict and raise explicit errors on invalid inputs.
 
-  Scenario: Unknown analysis backend is rejected
-    When I attempt to resolve analysis backend "unknown-backend"
-    Then the analysis backend error mentions "Unknown analysis backend"
+  Scenario: Unknown analysis retriever is rejected
+    When I attempt to resolve analysis retriever "unknown-retriever"
+    Then the analysis retriever error mentions "Unknown analysis retriever"
 
-  Scenario: Analysis backend base class is not implemented
-    When I invoke the analysis backend base class
+  Scenario: Analysis retriever base class is not implemented
+    When I invoke the analysis retriever base class
     Then a not implemented error is raised
 
   Scenario: LLM client config accepts enum provider
@@ -28,7 +28,7 @@ Feature: Analysis schema validation
     And the validation error mentions "llm_extraction.method must be a string or TopicModelingLlmExtractionMethod"
 
   Scenario: LLM fine-tuning handles missing document references
-    When I run LLM fine-tuning with missing document references
+    When I snapshot LLM fine-tuning with missing document references
     Then the fine-tuning topics labeled equals 1
 
   Scenario: Itemized response parses JSON string

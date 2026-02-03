@@ -16,12 +16,12 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(standard_output)
 
 
-def _run_reference_from_context(context) -> str:
+def _snapshot_reference_from_context(context) -> str:
     extractor_id = context.last_extractor_id
-    run_id = context.last_extraction_run_id
+    snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(extractor_id, str) and extractor_id
-    assert isinstance(run_id, str) and run_id
-    return f"{extractor_id}:{run_id}"
+    assert isinstance(snapshot_id, str) and snapshot_id
+    return f"{extractor_id}:{snapshot_id}"
 
 
 def _require_profiling_output(context) -> dict[str, object]:
@@ -32,18 +32,27 @@ def _require_profiling_output(context) -> dict[str, object]:
     return context.last_analysis_output
 
 
-@when('I run a profiling analysis in corpus "{corpus_name}" using the latest extraction run')
+@when(
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using the latest extraction snapshot'
+)
 def step_run_profiling_analysis_with_latest_extraction(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    run_ref = _run_reference_from_context(context)
-    args = ["--corpus", str(corpus), "analyze", "profile", "--extraction-run", run_ref]
+    snapshot_ref = _snapshot_reference_from_context(context)
+    args = [
+        "--corpus",
+        str(corpus),
+        "analyze",
+        "profile",
+        "--extraction-snapshot",
+        snapshot_ref,
+    ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
         context.last_analysis_output = _parse_json_output(result.stdout)
 
 
-@when('I run a profiling analysis in corpus "{corpus_name}"')
+@when('I snapshot a profiling analysis in corpus "{corpus_name}"')
 def step_run_profiling_analysis(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     args = ["--corpus", str(corpus), "analyze", "profile"]
@@ -54,23 +63,26 @@ def step_run_profiling_analysis(context, corpus_name: str) -> None:
 
 
 @when(
-    'I run a profiling analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run'
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "and the latest extraction snapshot"
 )
-def step_run_profiling_analysis_with_recipe(context, corpus_name: str, recipe_file: str) -> None:
+def step_run_profiling_analysis_with_configuration(
+    context, corpus_name: str, configuration_file: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    run_ref = _run_reference_from_context(context)
+    configuration_path = Path(workdir) / configuration_file
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = [
         "--corpus",
         str(corpus),
         "analyze",
         "profile",
-        "--recipe",
-        str(recipe_path),
-        "--extraction-run",
-        run_ref,
+        "--configuration",
+        str(configuration_path),
+        "--extraction-snapshot",
+        snapshot_ref,
     ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
@@ -79,30 +91,24 @@ def step_run_profiling_analysis_with_recipe(context, corpus_name: str, recipe_fi
 
 
 @when(
-    'I run a profiling analysis in corpus "{corpus_name}" using recipes "{recipe_files}" '
-    "and the latest extraction run with config overrides:"
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "without extraction snapshot"
 )
-def step_run_profiling_analysis_with_recipes_and_overrides(
-    context, corpus_name: str, recipe_files: str
+def step_run_profiling_analysis_without_extraction_snapshot(
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_paths = []
-    for token in recipe_files.split(","):
-        token = token.strip()
-        if not token:
-            continue
-        recipe_paths.append(str(Path(workdir) / token))
-    run_ref = _run_reference_from_context(context)
-    args = ["--corpus", str(corpus), "analyze", "profile"]
-    for recipe_path in recipe_paths:
-        args.extend(["--recipe", recipe_path])
-    for row in context.table:
-        key = str(row["key"]).strip()
-        value = str(row["value"]).strip()
-        args.extend(["--config", f"{key}={value}"])
-    args.extend(["--extraction-run", run_ref])
+    configuration_path = Path(workdir) / configuration_file
+    args = [
+        "--corpus",
+        str(corpus),
+        "analyze",
+        "profile",
+        "--configuration",
+        str(configuration_path),
+    ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
@@ -110,17 +116,48 @@ def step_run_profiling_analysis_with_recipes_and_overrides(
 
 
 @when(
-    'I run a profiling analysis in corpus "{corpus_name}" using the latest extraction run with config overrides:'
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using configurations "{configuration_files}" '
+    "and the latest extraction snapshot with config overrides:"
+)
+def step_run_profiling_analysis_with_recipes_and_overrides(
+    context, corpus_name: str, configuration_files: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    configuration_paths = []
+    for token in configuration_files.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        configuration_paths.append(str(Path(workdir) / token))
+    snapshot_ref = _snapshot_reference_from_context(context)
+    args = ["--corpus", str(corpus), "analyze", "profile"]
+    for configuration_path in configuration_paths:
+        args.extend(["--configuration", configuration_path])
+    for row in context.table:
+        key = str(row["key"]).strip()
+        value = str(row["value"]).strip()
+        args.extend(["--override", f"{key}={value}"])
+    args.extend(["--extraction-snapshot", snapshot_ref])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_analysis_output = _parse_json_output(result.stdout)
+
+
+@when(
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using the latest extraction snapshot with config overrides:'
 )
 def step_run_profiling_analysis_with_overrides_only(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    run_ref = _run_reference_from_context(context)
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = ["--corpus", str(corpus), "analyze", "profile"]
     for row in context.table:
         key = str(row["key"]).strip()
         value = str(row["value"]).strip()
-        args.extend(["--config", f"{key}={value}"])
-    args.extend(["--extraction-run", run_ref])
+        args.extend(["--override", f"{key}={value}"])
+    args.extend(["--extraction-snapshot", snapshot_ref])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
@@ -142,16 +179,24 @@ def step_profiling_analysis_report_includes_min_text_characters(context, value: 
 
 
 @when(
-    'I run a profiling analysis in corpus "{corpus_name}" using recipe "{recipe_file}" without extraction run'
+    'I snapshot a profiling analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "without an extraction snapshot"
 )
 def step_run_profiling_analysis_with_recipe_without_extraction(
-    context, corpus_name: str, recipe_file: str
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    args = ["--corpus", str(corpus), "analyze", "profile", "--recipe", str(recipe_path)]
+    configuration_path = Path(workdir) / configuration_file
+    args = [
+        "--corpus",
+        str(corpus),
+        "analyze",
+        "profile",
+        "--configuration",
+        str(configuration_path),
+    ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
@@ -218,8 +263,8 @@ def step_profiling_analysis_output_includes_percentile(context, percentile: int)
     assert percentile in values
 
 
-@when('I create a profiling recipe file "{filename}" with:')
-def step_create_profiling_recipe_file(context, filename: str) -> None:
+@when('I create a profiling configuration file "{filename}" with:')
+def step_create_profiling_configuration_file(context, filename: str) -> None:
     path = context.workdir / filename
     path.write_text(context.text, encoding="utf-8")
 

@@ -55,7 +55,7 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
 
     :param context: Behave context.
     :type context: behave.runner.Context
-    :param with_mlx: Whether to include MLX backend support.
+    :param with_mlx: Whether to include MLX retriever support.
     :type with_mlx: bool
     """
     already_installed = getattr(context, "_fake_docling_installed", False)
@@ -123,7 +123,7 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
         @property
         def SMOLDOCLING_MLX(self):
             if not self._with_mlx:
-                raise AttributeError("MLX backend not available")
+                raise AttributeError("MLX retriever not available")
             return "smoldocling-mlx"
 
         @property
@@ -133,7 +133,7 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
         @property
         def GRANITE_DOCLING_MLX(self):
             if not self._with_mlx:
-                raise AttributeError("MLX backend not available")
+                raise AttributeError("MLX retriever not available")
             return "granite-docling-mlx"
 
         @property
@@ -238,7 +238,7 @@ def step_fake_docling_available(context) -> None:
 @given("a fake Docling library is available without MLX support")
 def step_fake_docling_without_mlx(context) -> None:
     """
-    Install a fake Docling library without MLX backend support.
+    Install a fake Docling library without MLX retriever support.
 
     :param context: Behave context.
     :type context: behave.runner.Context
@@ -334,11 +334,11 @@ def step_fake_docling_returns_plain_text(context, text: str, filename: str) -> N
 
 
 @given(
-    'a fake Docling library is available with transformers backend that returns text "{text}" for filename "{filename}"'
+    'a fake Docling library is available with transformers retriever that returns text "{text}" for filename "{filename}"'
 )
 def step_fake_docling_transformers_returns_text(context, text: str, filename: str) -> None:
     """
-    Configure fake Docling with transformers backend to return text for a filename.
+    Configure fake Docling with transformers retriever to return text for a filename.
 
     :param context: Behave context.
     :type context: behave.runner.Context

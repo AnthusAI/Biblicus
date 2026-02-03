@@ -5,8 +5,8 @@
     "maximum_total_characters": 1000,
     "max_items_per_source": 5
   },
-  "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
-  "recipe_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
+  "snapshot_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
+  "configuration_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
   "backend_id": "embedding-index-file",
   "generated_at": "2026-02-01T19:38:17.778273+00:00",
   "evidence": [
@@ -22,8 +22,8 @@
       "span_end": 32000,
       "stage": "embedding-index-file",
       "stage_scores": null,
-      "recipe_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
-      "run_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
+      "configuration_id": "77ba44c65f24fcff35558b6d9d5333d7b44ba37996ad1e616a438ee283a19570",
+      "snapshot_id": "6123b3c0b26589d632a2aa99b9a2c36ba7608ef78a25e23b0299f5e9f07006c6",
       "hash": "ac8802930d1776fc2f46680905e288cd3d4a49dabdb0f027aa757342b3b479c9"
     }
   ],

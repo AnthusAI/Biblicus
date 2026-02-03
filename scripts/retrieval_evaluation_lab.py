@@ -12,11 +12,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from biblicus.backends import get_backend
 from biblicus.corpus import Corpus
-from biblicus.evaluation import EvaluationDataset, EvaluationQuery, evaluate_run
-from biblicus.extraction import build_extraction_run
+from biblicus.evaluation import EvaluationDataset, EvaluationQuery, evaluate_snapshot
+from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
+from biblicus.retrievers import get_retriever
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -177,11 +177,11 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     lab_dataset = _load_lab_dataset()
     filename_map = _ingest_lab_items(corpus)
 
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name=arguments.extraction_recipe_name,
-        config={
+        configuration_name=arguments.extraction_configuration_name,
+        configuration={
             "steps": [
                 {
                     "extractor_id": arguments.extraction_step,
@@ -190,11 +190,11 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
             ]
         },
     )
-    backend = get_backend("sqlite-full-text-search")
-    retrieval_run = backend.build_run(
+    backend = get_retriever("sqlite-full-text-search")
+    retrieval_snapshot = backend.build_snapshot(
         corpus,
-        recipe_name=arguments.retrieval_recipe_name,
-        config={"extraction_run": f"pipeline:{extraction_manifest.run_id}"},
+        configuration_name=arguments.retrieval_configuration_name,
+        configuration={"extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}"},
     )
     evaluation_dataset = _build_evaluation_dataset(lab_dataset, filename_map=filename_map)
     dataset_path = Path(arguments.dataset_path).resolve()
@@ -202,14 +202,14 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     dataset_path.write_text(evaluation_dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
     budget = QueryBudget(max_total_items=arguments.max_total_items, maximum_total_characters=2000)
-    result = evaluate_run(
+    result = evaluate_snapshot(
         corpus=corpus,
-        run=retrieval_run,
+        snapshot=retrieval_snapshot,
         dataset=evaluation_dataset,
         budget=budget,
     )
 
-    output_dir = corpus.runs_dir / "evaluation" / "retrieval" / retrieval_run.run_id
+    output_dir = corpus.snapshots_dir / "evaluation" / "retrieval" / retrieval_snapshot.snapshot_id
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "output.json"
     output_path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -217,8 +217,8 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     return {
         "corpus": str(corpus_path),
         "ingested_items": len(filename_map),
-        "extraction_run": f"pipeline:{extraction_manifest.run_id}",
-        "retrieval_run": f"{backend.backend_id}:{retrieval_run.run_id}",
+        "extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}",
+        "retrieval_snapshot": f"{backend.retriever_id}:{retrieval_snapshot.snapshot_id}",
         "dataset_path": str(dataset_path),
         "evaluation_output_path": str(output_path),
         "metrics": result.metrics,
@@ -240,17 +240,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--extraction-step",
         default="pass-through-text",
-        help="Extractor step to use for the extraction run.",
+        help="Extractor step to use for the extraction snapshot.",
     )
     parser.add_argument(
-        "--extraction-recipe-name",
+        "--extraction-configuration-name",
         default="default",
-        help="Recipe name for the extraction run.",
+        help="Configuration name for the extraction snapshot.",
     )
     parser.add_argument(
-        "--retrieval-recipe-name",
+        "--retrieval-configuration-name",
         default="default",
-        help="Recipe name for the retrieval run.",
+        help="Configuration name for the retrieval snapshot.",
     )
     parser.add_argument(
         "--dataset-path",

@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .constants import EXTRACTION_DATASET_SCHEMA_VERSION
 from .corpus import Corpus
-from .extraction import ExtractionRunManifest
+from .extraction import ExtractionSnapshotManifest
 from .models import CatalogItem
 from .time import utc_now_iso
 
@@ -118,12 +118,12 @@ class ExtractionEvaluationResult(BaseModel):
     :vartype dataset: dict[str, object]
     :ivar extractor_id: Extractor identifier.
     :vartype extractor_id: str
-    :ivar run_id: Extraction run identifier.
-    :vartype run_id: str
-    :ivar recipe_id: Extraction recipe identifier.
-    :vartype recipe_id: str
-    :ivar recipe_name: Extraction recipe name.
-    :vartype recipe_name: str
+    :ivar snapshot_id: Extraction snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration_id: Extraction configuration identifier.
+    :vartype configuration_id: str
+    :ivar configuration_name: Extraction configuration name.
+    :vartype configuration_name: str
     :ivar evaluated_at: International Organization for Standardization 8601 timestamp.
     :vartype evaluated_at: str
     :ivar metrics: Evaluation metrics for coverage and accuracy.
@@ -136,9 +136,9 @@ class ExtractionEvaluationResult(BaseModel):
 
     dataset: Dict[str, object]
     extractor_id: str
-    run_id: str
-    recipe_id: str
-    recipe_name: str
+    snapshot_id: str
+    configuration_id: str
+    configuration_name: str
     evaluated_at: str
     metrics: Dict[str, float]
     items: List[ExtractionEvaluationItemReport]
@@ -160,21 +160,21 @@ def load_extraction_dataset(path: Path) -> ExtractionEvaluationDataset:
     return ExtractionEvaluationDataset.model_validate(data)
 
 
-def evaluate_extraction_run(
+def evaluate_extraction_snapshot(
     *,
     corpus: Corpus,
-    run: ExtractionRunManifest,
+    snapshot: ExtractionSnapshotManifest,
     extractor_id: str,
     dataset: ExtractionEvaluationDataset,
 ) -> ExtractionEvaluationResult:
     """
-    Evaluate an extraction run against a dataset.
+    Evaluate an extraction snapshot against a dataset.
 
-    :param corpus: Corpus associated with the run.
+    :param corpus: Corpus associated with the snapshot.
     :type corpus: Corpus
-    :param run: Extraction run manifest.
-    :type run: ExtractionRunManifest
-    :param extractor_id: Extractor identifier for the run.
+    :param snapshot: Extraction snapshot manifest.
+    :type snapshot: ExtractionSnapshotManifest
+    :param extractor_id: Extractor identifier for the snapshot.
     :type extractor_id: str
     :param dataset: Extraction evaluation dataset.
     :type dataset: ExtractionEvaluationDataset
@@ -182,7 +182,7 @@ def evaluate_extraction_run(
     :rtype: ExtractionEvaluationResult
     """
     catalog = corpus.load_catalog()
-    item_index = {item.item_id: item for item in run.items}
+    item_index = {item.item_id: item for item in snapshot.items}
     coverage_present = 0
     coverage_empty = 0
     coverage_missing = 0
@@ -201,7 +201,7 @@ def evaluate_extraction_run(
             processable += 1
 
         extracted_text = corpus.read_extracted_text(
-            extractor_id=extractor_id, run_id=run.run_id, item_id=item_id
+            extractor_id=extractor_id, snapshot_id=snapshot.snapshot_id, item_id=item_id
         )
         coverage_status = _coverage_status(extracted_text)
         if coverage_status == "present":
@@ -245,9 +245,9 @@ def evaluate_extraction_run(
     return ExtractionEvaluationResult(
         dataset=dataset_meta,
         extractor_id=extractor_id,
-        run_id=run.run_id,
-        recipe_id=run.recipe.recipe_id,
-        recipe_name=run.recipe.name,
+        snapshot_id=snapshot.snapshot_id,
+        configuration_id=snapshot.configuration.configuration_id,
+        configuration_name=snapshot.configuration.name,
         evaluated_at=utc_now_iso(),
         metrics=metrics,
         items=item_reports,
@@ -255,21 +255,21 @@ def evaluate_extraction_run(
 
 
 def write_extraction_evaluation_result(
-    *, corpus: Corpus, run_id: str, result: ExtractionEvaluationResult
+    *, corpus: Corpus, snapshot_id: str, result: ExtractionEvaluationResult
 ) -> Path:
     """
     Persist extraction evaluation output under the corpus.
 
     :param corpus: Corpus associated with the evaluation.
     :type corpus: Corpus
-    :param run_id: Extraction run identifier.
-    :type run_id: str
+    :param snapshot_id: Extraction snapshot identifier.
+    :type snapshot_id: str
     :param result: Evaluation result to write.
     :type result: ExtractionEvaluationResult
     :return: Output path.
     :rtype: Path
     """
-    output_dir = corpus.runs_dir / "evaluation" / "extraction" / run_id
+    output_dir = corpus.snapshots_dir / "evaluation" / "extraction" / snapshot_id
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "output.json"
     output_path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")

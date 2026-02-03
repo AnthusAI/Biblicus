@@ -1,14 +1,25 @@
 # Context Engine
 
-The Context Engine is the Biblicus SDK for assembling elastic, budget-aware prompt contexts.
+The Context Engine is the Biblicus SDK for assembling elastic, budget-aware prompt contexts. It lets AI engineers describe *what* should be in an LLM request while Biblicus handles *how* to fit it into a budgeted context window.
+
 It turns a high-level plan into:
 
 - a system prompt
 - a history message list
 - a user message
 
-The Context Engine can **compact** content when it is too large and **expand** retriever packs by
-paginating with `offset` and `limit`.
+The Context Engine can **compact** content when it is too large and **expand** retriever packs by paginating with `offset` and `limit`.
+
+> “Context assembly is the most failure-prone part of agent engineering. Engineers need a reliable way to fit knowledge into limited context windows without hand-writing brittle logic.”
+
+## Why Context Engine?
+
+Context Engine provides a first-class, testable, and reusable context assembly surface. It is designed to be the shared foundation for both Python applications and Tactus procedures.
+
+- **Composable Context plans**: Mix system/user messages, nested contexts, and retriever packs.
+- **Budget-aware compaction**: Use pluggable compactor strategies.
+- **Budget-aware expansion**: Use retriever pagination (`offset` + `limit`) to fill remaining budget.
+- **Deterministic assembly**: Produce a predictable message history for model calls.
 
 ## Core Concepts
 
@@ -118,3 +129,17 @@ policy = {
 ```
 
 Custom compactors can be registered via `compactor_registry`.
+
+## FAQ
+
+### What does “elastic” mean?
+
+Elastic means the Context Engine can **contract** (compact) or **expand** (paginate) retrieval output depending on the current token budget. When a pack is too large it compacts; when it is too small and pagination is available, it can fetch additional pages.
+
+### How is pagination used?
+
+Retrievers accept `offset` and `limit`. The Context Engine uses those to request additional pages until a target budget is met or no more results are available.
+
+### Does this replace Context packs?
+
+No. Context packs are still derived from retrieval evidence. The Context Engine composes those packs into model messages and manages how they are sized and placed.

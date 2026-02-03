@@ -403,13 +403,15 @@ class ContextAssembler:
         maximum_items_per_source = None
         include_metadata = False
         metadata_fields = None
-        backend_id = None
+        retriever_id = None
         corpus_root = None
-        run_id = None
-        recipe_name = None
-        recipe_config = None
+        snapshot_id = None
+        configuration_name = None
+        configuration = None
         corpus_name = getattr(retriever_spec, "corpus", None)
         join_with = "\n\n"
+        pipeline_config = None
+        query_config = None
 
         if isinstance(config, dict):
             split = config.get("split", split)
@@ -424,13 +426,26 @@ class ContextAssembler:
             )
             include_metadata = config.get("include_metadata", include_metadata)
             metadata_fields = config.get("metadata_fields", metadata_fields)
-            backend_id = config.get("backend_id", backend_id)
-            run_id = config.get("run_id", run_id)
-            recipe_name = config.get("recipe_name", recipe_name)
-            recipe_config = config.get("recipe_config", config.get("recipe", recipe_config))
+            retriever_id = config.get("retriever_id", retriever_id)
+            snapshot_id = config.get("snapshot_id", snapshot_id)
+            configuration_name = config.get("configuration_name", configuration_name)
+            if isinstance(config.get("configuration"), dict):
+                configuration = config.get("configuration")
             corpus_name = config.get("corpus", corpus_name)
             join_with = config.get("join_with", join_with)
-
+            if isinstance(configuration, dict):
+                pipeline_config = configuration.get("pipeline")
+            if not isinstance(pipeline_config, dict) and isinstance(config.get("pipeline"), dict):
+                pipeline_config = config.get("pipeline")
+            if isinstance(pipeline_config, dict):
+                if isinstance(pipeline_config.get("query"), dict):
+                    query_config = pipeline_config.get("query") or {}
+                if configuration is None and isinstance(pipeline_config.get("index"), dict):
+                    configuration = pipeline_config.get("index") or {}
+            if configuration is None and isinstance(config.get("index"), dict):
+                configuration = config.get("index") or {}
+            if configuration is None and isinstance(pipeline_config, dict):
+                configuration = pipeline_config.get("index") or {}
         if corpus_name and corpus_name in self._corpus_registry:
             corpus_spec = self._corpus_registry[corpus_name]
             corpus_config = corpus_spec.config if hasattr(corpus_spec, "config") else {}
@@ -442,17 +457,32 @@ class ContextAssembler:
                 maximum_cache_total_characters = corpus_config.get(
                     "maximum_cache_total_characters", maximum_cache_total_characters
                 )
-                backend_id = corpus_config.get("backend_id", backend_id)
                 corpus_root = corpus_config.get(
                     "corpus_root",
                     corpus_config.get("root", corpus_root),
                 )
-                run_id = corpus_config.get("run_id", run_id)
-                recipe_name = corpus_config.get("recipe_name", recipe_name)
-                recipe_config = corpus_config.get(
-                    "recipe_config",
-                    corpus_config.get("recipe", recipe_config),
+        if query_config:
+            if "limit" in query_config:
+                limit = query_config.get("limit", limit)
+            if "offset" in query_config:
+                offset = query_config.get("offset", offset)
+            if "maximum_total_characters" in query_config:
+                maximum_total_characters = query_config.get(
+                    "maximum_total_characters", maximum_total_characters
                 )
+            if "maximum_items_per_source" in query_config:
+                maximum_items_per_source = query_config.get(
+                    "maximum_items_per_source",
+                    maximum_items_per_source,
+                )
+            if "max_items_per_source" in query_config and maximum_items_per_source is None:
+                maximum_items_per_source = query_config.get("max_items_per_source")
+            if "include_metadata" in query_config:
+                include_metadata = query_config.get("include_metadata", include_metadata)
+            if "metadata_fields" in query_config:
+                metadata_fields = query_config.get("metadata_fields", metadata_fields)
+            if "join_with" in query_config:
+                join_with = query_config.get("join_with", join_with)
 
         allocated_tokens = self._allocate_pack_budget(pack_budget, policy, weight)
         if allocated_tokens is not None:
@@ -486,11 +516,11 @@ class ContextAssembler:
                 "maximum_items_per_source": maximum_items_per_source,
                 "include_metadata": include_metadata,
                 "metadata_fields": metadata_fields,
-                "backend_id": backend_id,
+                "retriever_id": retriever_id,
                 "corpus_root": corpus_root,
-                "run_id": run_id,
-                "recipe_name": recipe_name,
-                "recipe_config": recipe_config,
+                "snapshot_id": snapshot_id,
+                "configuration_name": configuration_name,
+                "configuration": configuration,
             },
         )
         context_pack = self._retrieve_with_expansion(

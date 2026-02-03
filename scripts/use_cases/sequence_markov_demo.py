@@ -10,7 +10,7 @@ It uses a bundled set of conversation-style texts and runs:
 2) Extraction -> derived text artifacts (pass-through for already-text items)
 3) Markov analysis -> topic-driven categorical observations + state transition graph
 
-The Markov recipe in this demo includes an optional LLM state-naming step so the graph can use
+The Markov configuration in this demo includes an optional LLM state-naming step so the graph can use
 human-readable labels.
 """
 
@@ -22,10 +22,14 @@ from pathlib import Path
 from typing import Dict, List
 
 from biblicus.analysis.markov import MarkovBackend
+from biblicus.configuration import (
+    apply_dotted_overrides,
+    load_configuration_view,
+    parse_dotted_overrides,
+)
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
-from biblicus.models import ExtractionRunReference
-from biblicus.recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+from biblicus.extraction import build_extraction_snapshot
+from biblicus.models import ExtractionSnapshotReference
 
 
 def _prepare_corpus(*, corpus_path: Path, force: bool) -> Corpus:
@@ -48,10 +52,10 @@ def _demo_source_files(repo_root: Path) -> List[Path]:
     return sorted(dataset_dir.glob("*.txt"))
 
 
-def _load_markov_recipe(
-    *, recipe_paths: List[str], overrides: Dict[str, object]
+def _load_markov_configuration(
+    *, configuration_paths: List[str], overrides: Dict[str, object]
 ) -> Dict[str, object]:
-    view = load_recipe_view(recipe_paths, recipe_label="Recipe file")
+    view = load_configuration_view(configuration_paths, configuration_label="Configuration file")
     if overrides:
         view = apply_dotted_overrides(view, overrides)
     return view
@@ -63,7 +67,7 @@ def run_demo(
     corpus_path: Path,
     force: bool,
     ingest_limit: int,
-    recipe_paths: List[str],
+    configuration_paths: List[str],
     overrides: Dict[str, object],
 ) -> Dict[str, object]:
     """
@@ -77,11 +81,11 @@ def run_demo(
     :type force: bool
     :param ingest_limit: Maximum number of demo source files to ingest.
     :type ingest_limit: int
-    :param recipe_paths: Markov recipe paths (repeatable; later recipes override earlier ones).
-    :type recipe_paths: list[str]
-    :param overrides: Dotted key/value overrides applied after recipe composition.
+    :param configuration_paths: Markov configuration paths (repeatable; later files override earlier ones).
+    :type configuration_paths: list[str]
+    :param overrides: Dotted key/value overrides applied after configuration composition.
     :type overrides: dict[str, object]
-    :return: JSON-serializable demo output including run identifiers and artifact paths.
+    :return: JSON-serializable demo output including snapshot identifiers and artifact paths.
     :rtype: dict[str, object]
     """
     corpus = _prepare_corpus(corpus_path=corpus_path, force=force)
@@ -97,34 +101,36 @@ def run_demo(
 
     corpus.reindex()
 
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name="Use case: pass-through text",
-        config={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration_name="Use case: pass-through text",
+        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
-    extraction_run = ExtractionRunReference(
+    extraction_snapshot = ExtractionSnapshotReference(
         extractor_id="pipeline",
-        run_id=extraction_manifest.run_id,
+        snapshot_id=extraction_manifest.snapshot_id,
     )
 
-    markov_config = _load_markov_recipe(recipe_paths=recipe_paths, overrides=overrides)
+    markov_config = _load_markov_configuration(
+        configuration_paths=configuration_paths, overrides=overrides
+    )
     markov_output = MarkovBackend().run_analysis(
         corpus,
-        recipe_name="Use case: Markov sequence graph",
-        config=markov_config,
-        extraction_run=extraction_run,
+        configuration_name="Use case: Markov sequence graph",
+        configuration=markov_config,
+        extraction_snapshot=extraction_snapshot,
     )
 
-    run_id = str(markov_output.run.run_id)
-    run_dir = corpus_path / ".biblicus" / "runs" / "analysis" / "markov" / run_id
-    artifact_paths = [str(run_dir / relpath) for relpath in markov_output.run.artifact_paths]
+    snapshot_id = str(markov_output.snapshot.snapshot_id)
+    run_dir = corpus_path / ".biblicus" / "runs" / "analysis" / "markov" / snapshot_id
+    artifact_paths = [str(run_dir / relpath) for relpath in markov_output.snapshot.artifact_paths]
 
     return {
         "corpus_path": str(corpus_path),
         "ingested_items": len(ingested_item_ids),
-        "extraction_run": f"pipeline:{extraction_manifest.run_id}",
-        "markov_run_id": run_id,
+        "extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}",
+        "markov_snapshot_id": snapshot_id,
         "artifact_paths": artifact_paths,
         "transitions_dot_path": str(run_dir / "transitions.dot"),
     }
@@ -149,16 +155,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="How many bundled text files to ingest into the corpus.",
     )
     parser.add_argument(
-        "--recipe",
+        "--configuration",
         action="append",
-        default=["recipes/markov/topic-driven-named.yml"],
-        help="Markov recipe path (repeatable; later recipes override earlier ones).",
+        default=["configurations/markov/topic-driven-named.yml"],
+        help="Markov configuration path (repeatable; later files override earlier ones).",
     )
     parser.add_argument(
         "--config",
         action="append",
         default=[],
-        help="Dotted override key=value (repeatable; applied after recipe composition).",
+        help="Dotted override key=value (repeatable; applied after configuration composition).",
     )
     return parser
 
@@ -178,7 +184,7 @@ def main() -> int:
         corpus_path=Path(args.corpus).resolve(),
         force=bool(args.force),
         ingest_limit=int(args.ingest_limit),
-        recipe_paths=list(args.recipe),
+        configuration_paths=list(args.configuration),
         overrides=overrides,
     )
     print(json.dumps(payload, indent=2))

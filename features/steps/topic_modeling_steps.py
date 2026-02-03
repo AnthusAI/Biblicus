@@ -104,12 +104,12 @@ def _install_bertopic_unavailable_module(context) -> None:
     context._fake_bertopic_unavailable_original_modules = original_modules
 
 
-def _run_reference_from_context(context) -> str:
+def _snapshot_reference_from_context(context) -> str:
     extractor_id = context.last_extractor_id
-    run_id = context.last_extraction_run_id
+    snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(extractor_id, str) and extractor_id
-    assert isinstance(run_id, str) and run_id
-    return f"{extractor_id}:{run_id}"
+    assert isinstance(snapshot_id, str) and snapshot_id
+    return f"{extractor_id}:{snapshot_id}"
 
 
 @given("a fake BERTopic library is available")
@@ -209,25 +209,26 @@ def step_sklearn_dependency_unavailable(context) -> None:
 
 
 @when(
-    'I run a topic analysis in corpus "{corpus_name}" using recipe "{recipe_file}" and the latest extraction run'
+    'I snapshot a topic analysis in corpus "{corpus_name}" using configuration "{configuration_file}" '
+    "and the latest extraction snapshot"
 )
 def step_run_topic_analysis_with_latest_extraction(
-    context, corpus_name: str, recipe_file: str
+    context, corpus_name: str, configuration_file: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    run_ref = _run_reference_from_context(context)
+    configuration_path = Path(workdir) / configuration_file
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = [
         "--corpus",
         str(corpus),
         "analyze",
         "topics",
-        "--recipe",
-        str(recipe_path),
-        "--extraction-run",
-        run_ref,
+        "--configuration",
+        str(configuration_path),
+        "--extraction-snapshot",
+        snapshot_ref,
     ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
@@ -235,13 +236,24 @@ def step_run_topic_analysis_with_latest_extraction(
         context.last_analysis_output = _parse_json_output(result.stdout)
 
 
-@when('I run a topic analysis in corpus "{corpus_name}" using recipe "{recipe_file}"')
-def step_run_topic_analysis_with_recipe(context, corpus_name: str, recipe_file: str) -> None:
+@when(
+    'I snapshot a topic analysis in corpus "{corpus_name}" using configuration "{configuration_file}"'
+)
+def step_run_topic_analysis_with_configuration(
+    context, corpus_name: str, configuration_file: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_path = Path(workdir) / recipe_file
-    args = ["--corpus", str(corpus), "analyze", "topics", "--recipe", str(recipe_path)]
+    configuration_path = Path(workdir) / configuration_file
+    args = [
+        "--corpus",
+        str(corpus),
+        "analyze",
+        "topics",
+        "--configuration",
+        str(configuration_path),
+    ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
@@ -249,33 +261,33 @@ def step_run_topic_analysis_with_recipe(context, corpus_name: str, recipe_file: 
 
 
 @when(
-    'I run a topic analysis in corpus "{corpus_name}" using recipes "{recipe_files}" '
-    "and the latest extraction run with config overrides:"
+    'I snapshot a topic analysis in corpus "{corpus_name}" using configurations "{configuration_files}" '
+    "and the latest extraction snapshot with config overrides:"
 )
 def step_run_topic_analysis_with_recipes_and_overrides(
-    context, corpus_name: str, recipe_files: str
+    context, corpus_name: str, configuration_files: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     workdir = getattr(context, "workdir", None)
     assert workdir is not None
-    recipe_paths = []
-    for token in recipe_files.split(","):
+    configuration_paths = []
+    for token in configuration_files.split(","):
         token = token.strip()
         if not token:
             continue
-        recipe_paths.append(str(Path(workdir) / token))
-    if not recipe_paths:
-        raise AssertionError("Expected at least one recipe file")
+        configuration_paths.append(str(Path(workdir) / token))
+    if not configuration_paths:
+        raise AssertionError("Expected at least one configuration file")
 
-    run_ref = _run_reference_from_context(context)
+    snapshot_ref = _snapshot_reference_from_context(context)
     args = ["--corpus", str(corpus), "analyze", "topics"]
-    for recipe_path in recipe_paths:
-        args.extend(["--recipe", recipe_path])
+    for configuration_path in configuration_paths:
+        args.extend(["--configuration", configuration_path])
     for row in context.table:
         key = str(row["key"]).strip()
         value = str(row["value"]).strip()
-        args.extend(["--config", f"{key}={value}"])
-    args.extend(["--extraction-run", run_ref])
+        args.extend(["--override", f"{key}={value}"])
+    args.extend(["--extraction-snapshot", snapshot_ref])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     context.last_result = result
     if result.returncode == 0:
@@ -358,10 +370,10 @@ def step_topic_analysis_output_llm_documents(context, count: int) -> None:
     assert report["output_documents"] == count
 
 
-@then("the topic analysis output uses the latest extraction run reference")
+@then("the topic analysis output uses the latest extraction snapshot reference")
 def step_topic_analysis_output_uses_latest_extraction(context) -> None:
     output = context.last_analysis_output
-    run_input = output["run"]["input"]
-    extraction_run = run_input["extraction_run"]
-    assert extraction_run["extractor_id"] == context.last_extractor_id
-    assert extraction_run["run_id"] == context.last_extraction_run_id
+    run_input = output["snapshot"]["input"]
+    extraction_snapshot = run_input["extraction_snapshot"]
+    assert extraction_snapshot["extractor_id"] == context.last_extractor_id
+    assert extraction_snapshot["snapshot_id"] == context.last_extraction_snapshot_id

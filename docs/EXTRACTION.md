@@ -8,9 +8,9 @@ For detailed documentation on specific extractors, see [Extractor Reference](ext
 
 ## What extraction produces
 
-An extraction run produces:
+An extraction snapshot produces:
 
-- A run manifest
+- A snapshot manifest
 - Per item extracted text files for the final output
 - Per step extracted text artifacts for all pipeline steps
 - Per item result status, including extracted, skipped, and errored outcomes
@@ -23,7 +23,7 @@ corpus/
     runs/
       extraction/
         pipeline/
-          <run id>/
+          <snapshot id>/
             manifest.json
             text/
               <item id>.txt
@@ -35,13 +35,13 @@ corpus/
 
 ### Output structure
 
-Extraction output is structured and inspectable. The manifest captures the recipe and per-item status:
+Extraction output is structured and inspectable. The manifest captures the configuration and per-item status:
 
 ```json
 {
-  "run_id": "RUN_ID",
+  "snapshot_id": "RUN_ID",
   "extractor_id": "pipeline",
-  "recipe": {
+  "configuration": {
     "name": "default",
     "steps": ["pass-through-text", "metadata-text"]
   },
@@ -58,9 +58,9 @@ The `text/` folder contains the final extracted text for each item, while `steps
 
 ## Reproducibility checklist
 
-- Record the extraction run identifier (`extractor_id:run_id`).
-- Keep the pipeline steps and step order in source control (recipe files are preferred).
-- Capture the catalog timestamp when comparing extraction runs.
+- Record the extraction snapshot identifier (`extractor_id:snapshot_id`).
+- Keep the pipeline steps and step order in source control (configuration files are preferred).
+- Capture the catalog timestamp when comparing extraction snapshots.
 
 ## Available Extractors
 
@@ -164,7 +164,7 @@ python -m biblicus extract build --corpus corpora/extraction-demo \
   --step select-text
 ```
 
-The pipeline run produces one extraction run under `pipeline`. You can point retrieval backends at that run.
+The pipeline run produces one extraction snapshot under `pipeline`. You can point retrieval backends at that run.
 
 ## Example: PDF with OCR fallback
 
@@ -190,42 +190,42 @@ python -m biblicus extract build --corpus corpora/extraction-demo \
 
 The `docling-granite` extractor uses IBM Research's Granite Docling-258M VLM for high-accuracy extraction of tables, code blocks, and equations.
 
-## Inspecting and deleting extraction runs
+## Inspecting and deleting extraction snapshots
 
 Extraction runs are stored under the corpus and can be listed and inspected.
 
 ```
 python -m biblicus extract list --corpus corpora/extraction-demo
-python -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:EXTRACTION_RUN_ID
+python -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:EXTRACTION_SNAPSHOT_ID
 ```
 
 ## Common pitfalls
 
-- Comparing extraction runs built from different pipeline step orders.
-- Forgetting to capture the extraction run reference before building retrieval runs.
+- Comparing extraction snapshots built from different pipeline step orders.
+- Forgetting to capture the extraction snapshot reference before building retrieval snapshots.
 - Assuming selection steps choose the “best” output rather than the first usable output.
 
 Deletion is explicit and requires typing the exact run reference as confirmation:
 
 ```
 python -m biblicus extract delete --corpus corpora/extraction-demo \
-  --run pipeline:EXTRACTION_RUN_ID \
-  --confirm pipeline:EXTRACTION_RUN_ID
+  --run pipeline:EXTRACTION_SNAPSHOT_ID \
+  --confirm pipeline:EXTRACTION_SNAPSHOT_ID
 ```
 
 ## Use extracted text in retrieval
 
-Retrieval backends can build and query using a selected extraction run. This is configured by passing `extraction_run=extractor_id:run_id` to the backend build command.
+Retrieval backends can build and query using a selected extraction snapshot. This is configured by passing `extraction_snapshot=extractor_id:snapshot_id` to the backend build command.
 
 ```
 python -m biblicus build --corpus corpora/extraction-demo --backend sqlite-full-text-search \
-  --config extraction_run=pipeline:EXTRACTION_RUN_ID
+  --config extraction_snapshot=pipeline:EXTRACTION_SNAPSHOT_ID
 python -m biblicus query --corpus corpora/extraction-demo --query extracted
 ```
 
 ## Evaluate extraction quality
 
-Extraction evaluation measures coverage and accuracy for a given extractor recipe. See `docs/EXTRACTION_EVALUATION.md`
+Extraction evaluation measures coverage and accuracy for a given extractor configuration. See `docs/EXTRACTION_EVALUATION.md`
 for the dataset format, command-line interface usage, and report interpretation.
 
 ## What extraction is not

@@ -11,10 +11,10 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
-from biblicus.backends import get_backend
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
+from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
+from biblicus.retrievers import get_retriever
 
 
 def _prepare_corpus(*, corpus_path: Path, force: bool) -> Corpus:
@@ -56,28 +56,28 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
         ingested_item_ids.append(ingest_result.item_id)
     corpus.reindex()
 
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name="Use case: pass-through text",
-        config={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration_name="Use case: pass-through text",
+        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
 
-    backend = get_backend("sqlite-full-text-search")
-    run = backend.build_run(
+    backend = get_retriever("sqlite-full-text-search")
+    run = backend.build_snapshot(
         corpus,
-        recipe_name="Use case: sqlite full text search",
-        config={
+        configuration_name="Use case: sqlite full text search",
+        configuration={
             "chunk_size": 200,
             "chunk_overlap": 50,
             "snippet_characters": 120,
-            "extraction_run": f"pipeline:{extraction_manifest.run_id}",
+            "extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}",
         },
     )
     budget = QueryBudget(max_total_items=5, maximum_total_characters=10000, max_items_per_source=5)
     result = backend.query(
         corpus,
-        run=run,
+        snapshot=run,
         query_text="Beta unique signal for retrieval lab",
         budget=budget,
     )
@@ -86,9 +86,9 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
 
     return {
         "corpus_path": str(corpus_path),
-        "backend_id": run.recipe.backend_id,
-        "extraction_run_id": extraction_manifest.run_id,
-        "retrieval_run_id": run.run_id,
+        "retriever_id": run.configuration.retriever_id,
+        "extraction_snapshot_id": extraction_manifest.snapshot_id,
+        "retrieval_snapshot_id": run.snapshot_id,
         "ingested_item_ids": ingested_item_ids,
         "query_text": result.query_text,
         "evidence": [e.model_dump() for e in result.evidence],

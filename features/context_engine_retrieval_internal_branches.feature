@@ -1,6 +1,6 @@
 Feature: Context engine retrieval internals
-  Retrieval helpers should handle cached runs with backend mismatches.
+  Retrieval helpers should handle cached runs with retriever mismatches.
 
-  Scenario: Retrieval run uses recipe config when latest run backend mismatches
-    When I resolve a context retrieval run with a mismatched latest backend
-    Then the resolved run backend equals "scan"
+  Scenario: Retrieval snapshot uses configuration config when latest snapshot retriever mismatches
+    When I resolve a context retrieval snapshot with a mismatched latest retriever
+    Then the resolved snapshot retriever equals "scan"

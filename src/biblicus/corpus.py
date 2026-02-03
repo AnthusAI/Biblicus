@@ -20,10 +20,10 @@ from .constants import (
     ANALYSIS_RUNS_DIR_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
-    EXTRACTION_RUNS_DIR_NAME,
-    RUNS_DIR_NAME,
+    EXTRACTION_SNAPSHOTS_DIR_NAME,
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
+    SNAPSHOTS_DIR_NAME,
 )
 from .errors import IngestCollisionError
 from .frontmatter import parse_front_matter, render_front_matter
@@ -34,10 +34,10 @@ from .models import (
     CatalogItem,
     CorpusCatalog,
     CorpusConfig,
-    ExtractionRunListEntry,
-    ExtractionRunReference,
+    ExtractionSnapshotListEntry,
+    ExtractionSnapshotReference,
     IngestResult,
-    RetrievalRun,
+    RetrievalSnapshot,
 )
 from .sources import load_source
 from .time import utc_now_iso
@@ -539,7 +539,7 @@ class Corpus:
             generated_at=utc_now_iso(),
             corpus_uri=normalize_corpus_uri(self.root),
             raw_dir=DEFAULT_RAW_DIR,
-            latest_run_id=None,
+            latest_snapshot_id=None,
             items={},
             order=[],
         )
@@ -602,69 +602,71 @@ class Corpus:
         return None
 
     @property
-    def runs_dir(self) -> Path:
+    def snapshots_dir(self) -> Path:
         """
-        Location of retrieval run manifests.
+        Location of retrieval snapshot manifests.
 
-        :return: Path to the runs directory.
+        :return: Path to the snapshots directory.
         :rtype: Path
         """
-        return self.meta_dir / RUNS_DIR_NAME
+        return self.meta_dir / SNAPSHOTS_DIR_NAME
 
     @property
-    def extraction_runs_dir(self) -> Path:
+    def extraction_snapshots_dir(self) -> Path:
         """
-        Location of extraction run artifacts.
+        Location of extraction snapshot artifacts.
 
-        :return: Path to the extraction runs directory.
+        :return: Path to the extraction snapshots directory.
         :rtype: Path
         """
-        return self.runs_dir / EXTRACTION_RUNS_DIR_NAME
+        return self.snapshots_dir / EXTRACTION_SNAPSHOTS_DIR_NAME
 
     @property
     def analysis_runs_dir(self) -> Path:
         """
-        Location of analysis run artifacts.
+        Location of analysis snapshot artifacts.
 
-        :return: Path to the analysis runs directory.
+        :return: Path to the analysis snapshots directory.
         :rtype: Path
         """
-        return self.runs_dir / ANALYSIS_RUNS_DIR_NAME
+        return self.snapshots_dir / ANALYSIS_RUNS_DIR_NAME
 
-    def extraction_run_dir(self, *, extractor_id: str, run_id: str) -> Path:
+    def extraction_snapshot_dir(self, *, extractor_id: str, snapshot_id: str) -> Path:
         """
-        Resolve an extraction run directory.
+        Resolve an extraction snapshot directory.
 
         :param extractor_id: Extractor plugin identifier.
         :type extractor_id: str
-        :param run_id: Extraction run identifier.
-        :type run_id: str
-        :return: Extraction run directory.
+        :param snapshot_id: Extraction snapshot identifier.
+        :type snapshot_id: str
+        :return: Extraction snapshot directory.
         :rtype: Path
         """
-        return self.extraction_runs_dir / extractor_id / run_id
+        return self.extraction_snapshots_dir / extractor_id / snapshot_id
 
-    def analysis_run_dir(self, *, analysis_id: str, run_id: str) -> Path:
+    def analysis_run_dir(self, *, analysis_id: str, snapshot_id: str) -> Path:
         """
-        Resolve an analysis run directory.
+        Resolve an analysis snapshot directory.
 
         :param analysis_id: Analysis backend identifier.
         :type analysis_id: str
-        :param run_id: Analysis run identifier.
-        :type run_id: str
-        :return: Analysis run directory.
+        :param snapshot_id: Analysis snapshot identifier.
+        :type snapshot_id: str
+        :return: Analysis snapshot directory.
         :rtype: Path
         """
-        return self.analysis_runs_dir / analysis_id / run_id
+        return self.analysis_runs_dir / analysis_id / snapshot_id
 
-    def read_extracted_text(self, *, extractor_id: str, run_id: str, item_id: str) -> Optional[str]:
+    def read_extracted_text(
+        self, *, extractor_id: str, snapshot_id: str, item_id: str
+    ) -> Optional[str]:
         """
-        Read extracted text for an item from an extraction run, when present.
+        Read extracted text for an item from an extraction snapshot, when present.
 
         :param extractor_id: Extractor plugin identifier.
         :type extractor_id: str
-        :param run_id: Extraction run identifier.
-        :type run_id: str
+        :param snapshot_id: Extraction snapshot identifier.
+        :type snapshot_id: str
         :param item_id: Item identifier.
         :type item_id: str
         :return: Extracted text or None if the artifact does not exist.
@@ -672,7 +674,7 @@ class Corpus:
         :raises OSError: If the file exists but cannot be read.
         """
         path = (
-            self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id)
+            self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
             / "text"
             / f"{item_id}.txt"
         )
@@ -680,72 +682,73 @@ class Corpus:
             return None
         return path.read_text(encoding="utf-8")
 
-    def load_extraction_run_manifest(self, *, extractor_id: str, run_id: str):
+    def load_extraction_snapshot_manifest(self, *, extractor_id: str, snapshot_id: str):
         """
-        Load an extraction run manifest from the corpus.
+        Load an extraction snapshot manifest from the corpus.
 
         :param extractor_id: Extractor plugin identifier.
         :type extractor_id: str
-        :param run_id: Extraction run identifier.
-        :type run_id: str
-        :return: Parsed extraction run manifest.
-        :rtype: biblicus.extraction.ExtractionRunManifest
+        :param snapshot_id: Extraction snapshot identifier.
+        :type snapshot_id: str
+        :return: Parsed extraction snapshot manifest.
+        :rtype: biblicus.extraction.ExtractionSnapshotManifest
         :raises FileNotFoundError: If the manifest file does not exist.
         :raises ValueError: If the manifest data is invalid.
         """
-        from .extraction import ExtractionRunManifest
+        from .extraction import ExtractionSnapshotManifest
 
         manifest_path = (
-            self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id) / "manifest.json"
+            self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
+            / "manifest.json"
         )
         if not manifest_path.is_file():
-            raise FileNotFoundError(f"Missing extraction run manifest: {manifest_path}")
+            raise FileNotFoundError(f"Missing extraction snapshot manifest: {manifest_path}")
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
-        return ExtractionRunManifest.model_validate(data)
+        return ExtractionSnapshotManifest.model_validate(data)
 
-    def list_extraction_runs(
+    def list_extraction_snapshots(
         self, *, extractor_id: Optional[str] = None
-    ) -> List[ExtractionRunListEntry]:
+    ) -> List[ExtractionSnapshotListEntry]:
         """
-        List extraction runs stored under the corpus.
+        List extraction snapshots stored under the corpus.
 
         :param extractor_id: Optional extractor identifier filter.
         :type extractor_id: str or None
-        :return: Summary list entries for each run.
-        :rtype: list[biblicus.models.ExtractionRunListEntry]
+        :return: Summary list entries for each snapshot.
+        :rtype: list[biblicus.models.ExtractionSnapshotListEntry]
         """
-        runs_root = self.extraction_runs_dir
-        if not runs_root.is_dir():
+        snapshots_root = self.extraction_snapshots_dir
+        if not snapshots_root.is_dir():
             return []
 
         extractor_dirs: List[Path]
         if extractor_id is None:
-            extractor_dirs = [path for path in sorted(runs_root.iterdir()) if path.is_dir()]
+            extractor_dirs = [path for path in sorted(snapshots_root.iterdir()) if path.is_dir()]
         else:
-            extractor_path = runs_root / extractor_id
+            extractor_path = snapshots_root / extractor_id
             extractor_dirs = [extractor_path] if extractor_path.is_dir() else []
 
-        entries: List[ExtractionRunListEntry] = []
+        entries: List[ExtractionSnapshotListEntry] = []
         for extractor_dir in extractor_dirs:
-            for run_dir in sorted(extractor_dir.iterdir()):
-                if not run_dir.is_dir():
+            for snapshot_dir in sorted(extractor_dir.iterdir()):
+                if not snapshot_dir.is_dir():
                     continue
-                manifest_path = run_dir / "manifest.json"
+                manifest_path = snapshot_dir / "manifest.json"
                 if not manifest_path.is_file():
                     continue
                 try:
-                    manifest = self.load_extraction_run_manifest(
+                    manifest = self.load_extraction_snapshot_manifest(
                         extractor_id=extractor_dir.name,
-                        run_id=run_dir.name,
+                        snapshot_id=snapshot_dir.name,
                     )
                 except (FileNotFoundError, ValueError):
                     continue
                 entries.append(
-                    ExtractionRunListEntry(
+                    ExtractionSnapshotListEntry(
                         extractor_id=extractor_dir.name,
-                        run_id=run_dir.name,
-                        recipe_id=manifest.recipe.recipe_id,
-                        recipe_name=manifest.recipe.name,
+                        snapshot_id=snapshot_dir.name,
+                        configuration_id=manifest.configuration.configuration_id,
+                        configuration_name=manifest.configuration.name,
                         catalog_generated_at=manifest.catalog_generated_at,
                         created_at=manifest.created_at,
                         stats=dict(manifest.stats),
@@ -753,95 +756,100 @@ class Corpus:
                 )
 
         entries.sort(
-            key=lambda entry: (entry.created_at, entry.extractor_id, entry.run_id), reverse=True
+            key=lambda entry: (entry.created_at, entry.extractor_id, entry.snapshot_id),
+            reverse=True,
         )
         return entries
 
-    def latest_extraction_run_reference(
+    def latest_extraction_snapshot_reference(
         self, *, extractor_id: Optional[str] = None
-    ) -> Optional[ExtractionRunReference]:
+    ) -> Optional[ExtractionSnapshotReference]:
         """
-        Return the most recent extraction run reference.
+        Return the most recent extraction snapshot reference.
 
         :param extractor_id: Optional extractor identifier filter.
         :type extractor_id: str or None
-        :return: Latest extraction run reference or None when no runs exist.
-        :rtype: biblicus.models.ExtractionRunReference or None
+        :return: Latest extraction snapshot reference or None when no snapshots exist.
+        :rtype: biblicus.models.ExtractionSnapshotReference or None
         """
-        entries = self.list_extraction_runs(extractor_id=extractor_id)
+        entries = self.list_extraction_snapshots(extractor_id=extractor_id)
         if not entries:
             return None
         latest = entries[0]
-        return ExtractionRunReference(extractor_id=latest.extractor_id, run_id=latest.run_id)
+        return ExtractionSnapshotReference(
+            extractor_id=latest.extractor_id, snapshot_id=latest.snapshot_id
+        )
 
-    def delete_extraction_run(self, *, extractor_id: str, run_id: str) -> None:
+    def delete_extraction_snapshot(self, *, extractor_id: str, snapshot_id: str) -> None:
         """
-        Delete an extraction run directory and its derived artifacts.
+        Delete an extraction snapshot directory and its derived artifacts.
 
         :param extractor_id: Extractor plugin identifier.
         :type extractor_id: str
-        :param run_id: Extraction run identifier.
-        :type run_id: str
+        :param snapshot_id: Extraction snapshot identifier.
+        :type snapshot_id: str
         :return: None.
         :rtype: None
-        :raises FileNotFoundError: If the extraction run directory does not exist.
+        :raises FileNotFoundError: If the extraction snapshot directory does not exist.
         """
-        run_dir = self.extraction_run_dir(extractor_id=extractor_id, run_id=run_id)
-        if not run_dir.is_dir():
-            raise FileNotFoundError(f"Missing extraction run directory: {run_dir}")
-        shutil.rmtree(run_dir)
+        snapshot_dir = self.extraction_snapshot_dir(
+            extractor_id=extractor_id, snapshot_id=snapshot_id
+        )
+        if not snapshot_dir.is_dir():
+            raise FileNotFoundError(f"Missing extraction snapshot directory: {snapshot_dir}")
+        shutil.rmtree(snapshot_dir)
 
-    def _ensure_runs_dir(self) -> None:
+    def _ensure_snapshots_dir(self) -> None:
         """
-        Ensure the retrieval runs directory exists.
+        Ensure the retrieval snapshots directory exists.
 
-        :return: None.
-        :rtype: None
-        """
-        self.runs_dir.mkdir(parents=True, exist_ok=True)
-
-    def write_run(self, run: RetrievalRun) -> None:
-        """
-        Persist a retrieval run manifest and update the catalog pointer.
-
-        :param run: Run manifest to persist.
-        :type run: RetrievalRun
         :return: None.
         :rtype: None
         """
-        self._ensure_runs_dir()
-        path = self.runs_dir / f"{run.run_id}.json"
-        path.write_text(run.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_snapshot(self, snapshot: RetrievalSnapshot) -> None:
+        """
+        Persist a retrieval snapshot manifest and update the catalog pointer.
+
+        :param snapshot: Snapshot manifest to persist.
+        :type snapshot: RetrievalSnapshot
+        :return: None.
+        :rtype: None
+        """
+        self._ensure_snapshots_dir()
+        path = self.snapshots_dir / f"{snapshot.snapshot_id}.json"
+        path.write_text(snapshot.model_dump_json(indent=2) + "\n", encoding="utf-8")
         catalog = self._load_catalog()
-        catalog.latest_run_id = run.run_id
+        catalog.latest_snapshot_id = snapshot.snapshot_id
         catalog.generated_at = utc_now_iso()
         self._write_catalog(catalog)
 
-    def load_run(self, run_id: str) -> RetrievalRun:
+    def load_snapshot(self, snapshot_id: str) -> RetrievalSnapshot:
         """
-        Load a retrieval run manifest by identifier.
+        Load a retrieval snapshot manifest by identifier.
 
-        :param run_id: Run identifier.
-        :type run_id: str
-        :return: Parsed run manifest.
-        :rtype: RetrievalRun
-        :raises FileNotFoundError: If the run manifest does not exist.
+        :param snapshot_id: Snapshot identifier.
+        :type snapshot_id: str
+        :return: Parsed snapshot manifest.
+        :rtype: RetrievalSnapshot
+        :raises FileNotFoundError: If the snapshot manifest does not exist.
         """
-        path = self.runs_dir / f"{run_id}.json"
+        path = self.snapshots_dir / f"{snapshot_id}.json"
         if not path.is_file():
-            raise FileNotFoundError(f"Missing run manifest: {path}")
+            raise FileNotFoundError(f"Missing snapshot manifest: {path}")
         data = json.loads(path.read_text(encoding="utf-8"))
-        return RetrievalRun.model_validate(data)
+        return RetrievalSnapshot.model_validate(data)
 
     @property
-    def latest_run_id(self) -> Optional[str]:
+    def latest_snapshot_id(self) -> Optional[str]:
         """
-        Latest retrieval run identifier recorded in the catalog.
+        Latest retrieval snapshot identifier recorded in the catalog.
 
-        :return: Latest run identifier or None.
+        :return: Latest snapshot identifier or None.
         :rtype: str or None
         """
-        return self._load_catalog().latest_run_id
+        return self._load_catalog().latest_snapshot_id
 
     def _upsert_catalog_item(self, item: CatalogItem) -> None:
         """
@@ -860,7 +868,7 @@ class Corpus:
         ordered_ids.insert(0, item.id)
         catalog.order = ordered_ids
         catalog.generated_at = utc_now_iso()
-        catalog.latest_run_id = None
+        catalog.latest_snapshot_id = None
 
         self._write_catalog(catalog)
 
@@ -1621,7 +1629,7 @@ class Corpus:
             generated_at=utc_now_iso(),
             corpus_uri=normalize_corpus_uri(self.root),
             raw_dir=DEFAULT_RAW_DIR,
-            latest_run_id=None,
+            latest_snapshot_id=None,
             items=new_items,
             order=order,
         )
@@ -1673,7 +1681,7 @@ class Corpus:
                 generated_at=utc_now_iso(),
                 corpus_uri=normalize_corpus_uri(self.root),
                 raw_dir=DEFAULT_RAW_DIR,
-                latest_run_id=None,
+                latest_snapshot_id=None,
                 items={},
                 order=[],
             )

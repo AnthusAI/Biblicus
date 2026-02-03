@@ -91,7 +91,7 @@ This extractor currently accepts no configuration. Optional extensions may expos
 biblicus extract my-corpus --extractor unstructured
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: unstructured
@@ -99,7 +99,7 @@ config: {}
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

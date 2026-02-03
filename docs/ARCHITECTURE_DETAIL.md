@@ -15,7 +15,7 @@ Design starts from strict behavior-driven development:
 - All changes should follow specification-first behavior-driven development: failing scenario,
   implementation, passing scenario, then refactor.
 - Behavior-driven development scenarios are not an afterthought: they are how we keep the domain
-  vocabulary consistent and the platform comparable across backends and recipes.
+  vocabulary consistent and the platform comparable across backends and configurations.
 - **Specification completeness** is mandatory: if behavior exists, it must be specified.
   Ambiguous or untestable behavior should be removed or turned into an explicit error.
 
@@ -42,7 +42,7 @@ core nouns:
 - I have a **corpus** at this path or uniform resource identifier.
 - I ingest an **item** with optional **metadata**.
 - I rebuild the derived **index** after edits.
-- I run a **recipe** against the same corpus.
+- I run a **configuration** against the same corpus.
 - I query and receive **evidence**.
 
 Anything that does not map cleanly to these nouns is either a derived helper or a backend-specific
@@ -72,13 +72,13 @@ requirements.
 - **Knowledge base backend**: an implementation that can ingest and retrieve from a corpus, such
   as scan, full text search, vector retrieval, or hybrid retrieval, exposed to procedures through
   retrieval primitives.
-- **Retrieval recipe**: a named configuration bundle for a backend, such as chunking rules,
+- **Retrieval configuration**: a named configuration bundle for a backend, such as chunking rules,
   embedding model and version, hybrid weights, reranker choice, and filters. This is what we
   benchmark and compare.
-- **Recipe manifest**: a reproducibility record describing the backend and recipe parameters,
-  plus any referenced materializations and build runs.
-- **Materialization**: an optional, persisted representation derived from raw content for a given
-  recipe and backend, such as chunks, embeddings, or indexes. Some backends intentionally have
+- **Configuration manifest**: a reproducibility record describing the backend and configuration parameters,
+  plus any referenced snapshot artifacts and build snapshots.
+- **Snapshot artifacts**: optional, persisted representations derived from raw content for a given
+  configuration and backend, such as chunks, embeddings, or indexes. Some backends intentionally have
   none and operate on demand.
 - **Evidence**: structured retrieval output from backend queries. Evidence includes spans, scores,
   and provenance used by downstream retrieval augmented generation procedures.
@@ -95,7 +95,7 @@ requirements.
 - **Minimal opinion raw store**: raw ingestion should work for a folder of files with optional
   lightweight tagging.
 - **Reproducibility by default**: comparisons require manifests (even when there are no persisted
-  materializations).
+  snapshot artifacts).
 - **Mutability is real**: corpora are edited, pruned, and reorganized; re-indexing must be a core
   workflow.
 - **Separation of concerns**: retrieval returns evidence; retrieval-augmented generation patterns
@@ -110,7 +110,7 @@ requirements.
 These are explicit, opinionated policies encoded into the project:
 
 - **Evidence schema strictness**: moderate-to-strong schema. Evidence must include stable
-  identifiers, provenance, and retrieval scores; richer fields (spans, stage, recipe and run
+  identifiers, provenance, and retrieval scores; richer fields (spans, stage, configuration and run
   identifiers) are expected.
 - **Retrieval stages**: multi-stage is explicit (retrieve, rerank, then filter). Pipelines are
   expressed through evidence metadata rather than hard-coded backends.
@@ -131,7 +131,7 @@ Evidence is the canonical output of retrieval. Required fields:
 - `score` and `rank`
 - `text` (or `content_ref` when non-text)
 - `stage` (for example, `scan`, `full-text-search`, `rerank`)
-- `recipe_id` / `run_id` (for reproducibility)
+- `configuration_id` / `snapshot_id` (for reproducibility)
 - Optional: `span_start`, `span_end`, `hash`
 
 ## Evidence lifecycle
@@ -220,12 +220,12 @@ The interface stays the same; topology is configuration.
 
 ### Reproducibility
 
-- Biblicus always records a **recipe manifest** for reproducibility.
-- When a backend produces persisted materializations, Biblicus treats them as **versioned build
-  runs** identified by `run_id` (rather than overwriting in place by default).
-- Manifests exist even for just-in-time backends (materializations may be empty).
+- Biblicus always records a **configuration manifest** for reproducibility.
+- When a backend produces persisted snapshot artifacts, Biblicus treats them as **versioned build
+  snapshots** identified by `snapshot_id` (rather than overwriting in place by default).
+- Manifests exist even for just-in-time backends (snapshot artifacts may be empty).
 - Full directed acyclic graph lineage is not included in version zero; revisit only if needed.
-- Optional: define **shared materialization formats** (canonical chunk and embedding stores) so
+- Optional: define **shared snapshot artifact formats** (canonical chunk and embedding stores) so
   multiple backends can reuse intermediates when it makes sense; keep it opt-in.
 
 ### Evaluation
@@ -243,8 +243,8 @@ The interface stays the same; topology is configuration.
   backend/tool can consume it without requiring a database engine.
 - Canonical version zero format is a single JavaScript Object Notation file at
   `.biblicus/catalog.json`, written atomically (temporary file and rename) on updates.
-- The catalog includes `latest_run_id` and run manifests are stored at
-  `.biblicus/runs/<run_id>.json`.
+- The catalog includes `latest_snapshot_id` and snapshot manifests are stored at
+  `.biblicus/snapshots/<snapshot_id>.json`.
 - If this becomes a bottleneck at very large scales, we **change the specification** (bump
   `schema_version`) rather than introduce multiple “supported” catalog storage modes.
 

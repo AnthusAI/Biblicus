@@ -11,7 +11,6 @@ from typing import Dict, Iterable, Tuple
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from biblicus.backends import get_backend
 from biblicus.context import (
     ContextPackPolicy,
     TokenBudget,
@@ -19,8 +18,9 @@ from biblicus.context import (
     fit_context_pack_to_token_budget,
 )
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
+from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
+from biblicus.retrievers import get_retriever
 
 DEFAULT_TITLES = [
     "Retrieval-augmented generation",
@@ -123,26 +123,26 @@ def run_demo(*, corpus_path: Path, limit: int, force: bool, query: str) -> Dict[
     titles = DEFAULT_TITLES[:limit]
     ingest_stats = ingest_wikipedia_summaries(corpus, titles)
 
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name="Wikipedia demo extraction",
-        config={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration_name="Wikipedia demo extraction",
+        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
 
-    backend = get_backend("sqlite-full-text-search")
-    run = backend.build_run(
+    backend = get_retriever("sqlite-full-text-search")
+    snapshot = backend.build_snapshot(
         corpus,
-        recipe_name="Wikipedia demo retrieval",
-        config={
-            "extraction_run": f"pipeline:{extraction_manifest.run_id}",
+        configuration_name="Wikipedia demo retrieval",
+        configuration={
+            "extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}",
             "chunk_size": 220,
             "chunk_overlap": 40,
             "snippet_characters": 160,
         },
     )
     budget = QueryBudget(max_total_items=5, maximum_total_characters=1600, max_items_per_source=1)
-    retrieval_result = backend.query(corpus, run=run, query_text=query, budget=budget)
+    retrieval_result = backend.query(corpus, snapshot=snapshot, query_text=query, budget=budget)
 
     policy = ContextPackPolicy(join_with="\n\n")
     context_pack = build_context_pack(retrieval_result, policy=policy)
@@ -155,8 +155,8 @@ def run_demo(*, corpus_path: Path, limit: int, force: bool, query: str) -> Dict[
 
     return {
         "ingest_stats": ingest_stats,
-        "extraction_run_id": extraction_manifest.run_id,
-        "retrieval_run_id": run.run_id,
+        "extraction_snapshot_id": extraction_manifest.snapshot_id,
+        "retrieval_snapshot_id": snapshot.snapshot_id,
         "query_text": query,
         "evidence": [evidence.model_dump() for evidence in retrieval_result.evidence],
         "context_pack_text": fitted_context_pack.text,

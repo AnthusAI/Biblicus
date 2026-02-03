@@ -1,11 +1,11 @@
-Feature: Retrieval build recipes
-  Retrieval builds can be configured via YAML recipe files that merge and allow CLI overrides.
+Feature: Retrieval build configurations
+  Retrieval builds can be configured via YAML configuration files that merge and allow CLI overrides.
 
-  Scenario: Build uses a recipe file for backend configuration
+  Scenario: Build uses a configuration file for retriever configuration
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 40 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I create a retrieval build recipe file "recipe.yml" with:
+    And I create a retrieval build configuration file "configuration.yml" with:
       """
       snippet_characters: 200
       chunker:
@@ -14,6 +14,6 @@ Feature: Retrieval build recipes
         provider_id: hash-embedding
         dimensions: 16
       """
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" using recipe file "recipe.yml"
-    Then the latest run backend id equals "embedding-index-file"
-    And the latest run recipe config includes "snippet_characters" with value 200
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" using configuration file "configuration.yml"
+    Then the latest snapshot retriever id equals "embedding-index-file"
+    And the latest snapshot configuration config includes "snippet_characters" with value 200

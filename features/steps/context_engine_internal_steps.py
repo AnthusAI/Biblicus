@@ -47,6 +47,22 @@ def _build_context_assembler() -> ContextAssembler:
     return ContextAssembler(context_registry={})
 
 
+def _register_retriever_with_config(context, retriever_config: dict) -> None:
+    corpus_registry = {"corpus": CorpusDeclaration(name="corpus", config={"retriever_id": "scan"})}
+    retriever_registry = {
+        "search": RetrieverDeclaration(
+            name="search",
+            corpus="corpus",
+            config=retriever_config,
+        )
+    }
+    context.assembler = ContextAssembler(
+        context_registry={},
+        retriever_registry=retriever_registry,
+        corpus_registry=corpus_registry,
+    )
+
+
 @when("I assemble a missing Context")
 def step_assemble_missing_context(context) -> None:
     assembler = _build_context_assembler()
@@ -106,7 +122,7 @@ def step_apply_context_budget_compaction(context) -> None:
 
 @given("a retriever registry with a corpus-backed retriever")
 def step_retriever_registry(context) -> None:
-    corpus_registry = {"corpus": CorpusDeclaration(name="corpus", config={"backend_id": "scan"})}
+    corpus_registry = {"corpus": CorpusDeclaration(name="corpus", config={"retriever_id": "scan"})}
     retriever_registry = {
         "search": RetrieverDeclaration(
             name="search",
@@ -119,6 +135,189 @@ def step_retriever_registry(context) -> None:
         retriever_registry=retriever_registry,
         corpus_registry=corpus_registry,
     )
+
+
+@given("a retriever registry with pipeline query and index config")
+def step_retriever_registry_pipeline_query(context) -> None:
+    _register_retriever_with_config(
+        context,
+        {
+            "retriever_id": "scan",
+            "configuration": "legacy",
+            "pipeline": {
+                "query": {
+                    "limit": 4,
+                    "offset": 2,
+                    "maximum_total_characters": 120,
+                    "max_items_per_source": 3,
+                    "include_metadata": True,
+                    "metadata_fields": ["published"],
+                    "join_with": "\n\n",
+                },
+                "index": {"snapshot_id": "snapshot-pipeline"},
+            },
+        },
+    )
+
+
+@given("a retriever registry with index-only config")
+def step_retriever_registry_index_only(context) -> None:
+    _register_retriever_with_config(
+        context,
+        {
+            "retriever_id": "scan",
+            "configuration": "legacy",
+            "index": {"snapshot_id": "snapshot-index"},
+        },
+    )
+
+
+@given("a retriever registry with pipeline query only")
+def step_retriever_registry_pipeline_query_only(context) -> None:
+    _register_retriever_with_config(
+        context,
+        {
+            "retriever_id": "scan",
+            "configuration": "legacy",
+            "pipeline": {
+                "query": "not-a-dict",
+            },
+        },
+    )
+
+
+@given("a retriever registry with pipeline query config missing limit")
+def step_retriever_registry_query_without_limit(context) -> None:
+    _register_retriever_with_config(
+        context,
+        {
+            "retriever_id": "scan",
+            "configuration": "legacy",
+            "pipeline": {
+                "query": {
+                    "maximum_items_per_source": 2,
+                }
+            },
+        },
+    )
+
+
+@when("I render that retriever pack with pipeline config")
+def step_render_retriever_pack_with_pipeline(context) -> None:
+    def fake_retrieve(request):
+        context.retriever_request = request
+        return ContextPack(text="pack text", evidence_count=1, blocks=[])
+
+    context.assembler._render_retriever_pack(
+        "search",
+        {"input": {"query": "hello"}, "context": {}},
+        fake_retrieve,
+        pack_budget=None,
+        policy=ContextPolicySpec(
+            pack_budget=ContextPackBudgetSpec(default_max_tokens=10),
+            input_budget=ContextBudgetSpec(max_tokens=20),
+        ),
+        tighten_pack_budget=False,
+        weight=None,
+    )
+
+
+@when("I render that retriever pack with index config")
+def step_render_retriever_pack_with_index(context) -> None:
+    def fake_retrieve(request):
+        context.retriever_request = request
+        return ContextPack(text="pack text", evidence_count=1, blocks=[])
+
+    context.assembler._render_retriever_pack(
+        "search",
+        {"input": {"query": "hello"}, "context": {}},
+        fake_retrieve,
+        pack_budget=None,
+        policy=ContextPolicySpec(
+            pack_budget=ContextPackBudgetSpec(default_max_tokens=10),
+            input_budget=ContextBudgetSpec(max_tokens=20),
+        ),
+        tighten_pack_budget=False,
+        weight=None,
+    )
+
+
+@when("I render that retriever pack with pipeline-only config")
+def step_render_retriever_pack_with_pipeline_only(context) -> None:
+    def fake_retrieve(request):
+        context.retriever_request = request
+        return ContextPack(text="pack text", evidence_count=1, blocks=[])
+
+    context.assembler._render_retriever_pack(
+        "search",
+        {"input": {"query": "hello"}, "context": {}},
+        fake_retrieve,
+        pack_budget=None,
+        policy=ContextPolicySpec(
+            pack_budget=ContextPackBudgetSpec(default_max_tokens=10),
+            input_budget=ContextBudgetSpec(max_tokens=20),
+        ),
+        tighten_pack_budget=False,
+        weight=None,
+    )
+
+
+@when("I render that retriever pack with missing-limit query config")
+def step_render_retriever_pack_with_missing_limit(context) -> None:
+    def fake_retrieve(request):
+        context.retriever_request = request
+        return ContextPack(text="pack text", evidence_count=1, blocks=[])
+
+    context.assembler._render_retriever_pack(
+        "search",
+        {"input": {"query": "hello"}, "context": {}},
+        fake_retrieve,
+        pack_budget=None,
+        policy=ContextPolicySpec(
+            pack_budget=ContextPackBudgetSpec(default_max_tokens=10),
+            input_budget=ContextBudgetSpec(max_tokens=20),
+        ),
+        tighten_pack_budget=False,
+        weight=None,
+    )
+
+
+@then("the retriever request should include pipeline query values")
+def step_assert_retriever_request_pipeline_query(context) -> None:
+    request = context.retriever_request
+    assert request.limit == 4
+    assert request.offset == 2
+    assert request.maximum_total_characters == 40
+    assert request.metadata["maximum_items_per_source"] == 3
+    assert request.metadata["include_metadata"] is True
+    assert request.metadata["metadata_fields"] == ["published"]
+
+
+@then("the retriever request should include pipeline index configuration")
+def step_assert_retriever_request_pipeline_index(context) -> None:
+    request = context.retriever_request
+    assert request.metadata["configuration"] == {"snapshot_id": "snapshot-pipeline"}
+
+
+@then("the retriever request should include index configuration")
+def step_assert_retriever_request_index_config(context) -> None:
+    request = context.retriever_request
+    assert request.metadata["configuration"] == {"snapshot_id": "snapshot-index"}
+
+
+@then("the retriever request should include empty configuration")
+def step_assert_retriever_request_empty_config(context) -> None:
+    request = context.retriever_request
+    assert request.metadata["configuration"] == {}
+
+
+@then("the retriever request should include query settings without limit")
+def step_assert_retriever_request_missing_limit(context) -> None:
+    request = context.retriever_request
+    assert request.limit == 3
+    assert request.offset == 0
+    assert request.metadata["maximum_items_per_source"] == 2
+    assert request.metadata["include_metadata"] is False
 
 
 @when("I render that retriever pack with a template query")

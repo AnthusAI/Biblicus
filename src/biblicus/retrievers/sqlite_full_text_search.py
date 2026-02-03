@@ -1,5 +1,5 @@
 """
-SQLite full-text search version five retrieval backend for Biblicus.
+SQLite full-text search version five retriever for Biblicus.
 """
 
 from __future__ import annotations
@@ -10,24 +10,29 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from ..constants import CORPUS_DIR_NAME, RUNS_DIR_NAME
+from ..constants import CORPUS_DIR_NAME, SNAPSHOTS_DIR_NAME
 from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
 from ..models import (
     Evidence,
-    ExtractionRunReference,
+    ExtractionSnapshotReference,
     QueryBudget,
     RetrievalResult,
-    RetrievalRun,
-    parse_extraction_run_reference,
+    RetrievalSnapshot,
+    parse_extraction_snapshot_reference,
 )
-from ..retrieval import apply_budget, create_recipe_manifest, create_run_manifest, hash_text
+from ..retrieval import (
+    apply_budget,
+    create_configuration_manifest,
+    create_snapshot_manifest,
+    hash_text,
+)
 from ..time import utc_now_iso
 
 
-class SqliteFullTextSearchRecipeConfig(BaseModel):
+class SqliteFullTextSearchConfiguration(BaseModel):
     """
-    Configuration for the SQLite full-text search backend.
+    Configuration for the SQLite full-text search retriever.
 
     :ivar chunk_size: Maximum characters per chunk.
     :vartype chunk_size: int
@@ -57,8 +62,8 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     :vartype rerank_model: str or None
     :ivar rerank_top_k: Number of candidates to rerank.
     :vartype rerank_top_k: int
-    :ivar extraction_run: Optional extraction run reference in the form extractor_id:run_id.
-    :vartype extraction_run: str or None
+    :ivar extraction_snapshot: Optional extraction snapshot reference in the form extractor_id:snapshot_id.
+    :vartype extraction_snapshot: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -77,7 +82,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
     rerank_enabled: bool = False
     rerank_model: Optional[str] = None
     rerank_top_k: int = Field(default=10, ge=1)
-    extraction_run: Optional[str] = None
+    extraction_snapshot: Optional[str] = None
 
     @field_validator("stop_words")
     @classmethod
@@ -97,7 +102,7 @@ class SqliteFullTextSearchRecipeConfig(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _validate_ngram_range(self) -> "SqliteFullTextSearchRecipeConfig":
+    def _validate_ngram_range(self) -> "SqliteFullTextSearchConfiguration":
         if self.ngram_min > self.ngram_max:
             raise ValueError("Invalid ngram range: ngram_min must be <= ngram_max")
         if self.rerank_enabled and not self.rerank_model:
@@ -142,69 +147,76 @@ _ENGLISH_STOP_WORDS: Set[str] = {
 }
 
 
-class SqliteFullTextSearchBackend:
+class SqliteFullTextSearchRetriever:
     """
-    SQLite full-text search version five backend for practical local retrieval.
+    SQLite full-text search version five retriever for practical local retrieval.
 
-    :ivar backend_id: Backend identifier.
-    :vartype backend_id: str
+    :ivar retriever_id: Retriever identifier.
+    :vartype retriever_id: str
     """
 
-    backend_id = "sqlite-full-text-search"
+    retriever_id = "sqlite-full-text-search"
 
-    def build_run(
-        self, corpus: Corpus, *, recipe_name: str, config: Dict[str, object]
-    ) -> RetrievalRun:
+    def build_snapshot(
+        self, corpus: Corpus, *, configuration_name: str, configuration: Dict[str, object]
+    ) -> RetrievalSnapshot:
         """
         Build a full-text search version five index for the corpus.
 
         :param corpus: Corpus to build against.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Backend-specific configuration values.
-        :type config: dict[str, object]
-        :return: Run manifest describing the build.
-        :rtype: RetrievalRun
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Retriever-specific configuration values.
+        :type configuration: dict[str, object]
+        :return: Snapshot manifest describing the build.
+        :rtype: RetrievalSnapshot
         """
-        recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(config)
+        parsed_config = SqliteFullTextSearchConfiguration.model_validate(configuration)
         catalog = corpus.load_catalog()
-        recipe = create_recipe_manifest(
-            backend_id=self.backend_id,
-            name=recipe_name,
-            config=recipe_config.model_dump(),
+        configuration_manifest = create_configuration_manifest(
+            retriever_id=self.retriever_id,
+            name=configuration_name,
+            configuration=parsed_config.model_dump(),
         )
-        run = create_run_manifest(corpus, recipe=recipe, stats={}, artifact_paths=[])
-        db_relpath = str(Path(CORPUS_DIR_NAME) / RUNS_DIR_NAME / f"{run.run_id}.sqlite")
+        snapshot = create_snapshot_manifest(
+            corpus,
+            configuration=configuration_manifest,
+            stats={},
+            snapshot_artifacts=[],
+        )
+        db_relpath = str(
+            Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{snapshot.snapshot_id}.sqlite"
+        )
         db_path = corpus.root / db_relpath
-        corpus.runs_dir.mkdir(parents=True, exist_ok=True)
-        extraction_reference = _resolve_extraction_reference(corpus, recipe_config)
+        corpus.snapshots_dir.mkdir(parents=True, exist_ok=True)
+        extraction_reference = _resolve_extraction_reference(corpus, parsed_config)
         stats = _build_full_text_search_index(
             db_path=db_path,
             corpus=corpus,
             items=catalog.items.values(),
-            recipe_config=recipe_config,
+            configuration=parsed_config,
             extraction_reference=extraction_reference,
         )
-        run = run.model_copy(update={"artifact_paths": [db_relpath], "stats": stats})
-        corpus.write_run(run)
-        return run
+        snapshot = snapshot.model_copy(update={"snapshot_artifacts": [db_relpath], "stats": stats})
+        corpus.write_snapshot(snapshot)
+        return snapshot
 
     def query(
         self,
         corpus: Corpus,
         *,
-        run: RetrievalRun,
+        snapshot: RetrievalSnapshot,
         query_text: str,
         budget: QueryBudget,
     ) -> RetrievalResult:
         """
         Query the SQLite full-text search index for evidence.
 
-        :param corpus: Corpus associated with the run.
+        :param corpus: Corpus associated with the snapshot.
         :type corpus: Corpus
-        :param run: Run manifest to use for querying.
-        :type run: RetrievalRun
+        :param snapshot: Snapshot manifest to use for querying.
+        :type snapshot: RetrievalSnapshot
         :param query_text: Query text to execute.
         :type query_text: str
         :param budget: Evidence selection budget.
@@ -212,46 +224,48 @@ class SqliteFullTextSearchBackend:
         :return: Retrieval results containing evidence.
         :rtype: RetrievalResult
         """
-        recipe_config = SqliteFullTextSearchRecipeConfig.model_validate(run.recipe.config)
+        parsed_config = SqliteFullTextSearchConfiguration.model_validate(
+            snapshot.configuration.configuration
+        )
         query_tokens = _tokenize_query(query_text)
-        stop_words = _resolve_stop_words(recipe_config.stop_words)
+        stop_words = _resolve_stop_words(parsed_config.stop_words)
         filtered_tokens = _apply_stop_words(query_tokens, stop_words)
         if not filtered_tokens:
             return RetrievalResult(
                 query_text=query_text,
                 budget=budget,
-                run_id=run.run_id,
-                recipe_id=run.recipe.recipe_id,
-                backend_id=self.backend_id,
+                snapshot_id=snapshot.snapshot_id,
+                configuration_id=snapshot.configuration.configuration_id,
+                retriever_id=snapshot.configuration.retriever_id,
                 generated_at=utc_now_iso(),
                 evidence=[],
                 stats={"candidates": 0, "returned": 0},
             )
-        db_path = _resolve_run_db_path(corpus, run)
+        db_path = _resolve_snapshot_db_path(corpus, snapshot)
         candidates = _query_full_text_search_index(
             db_path=db_path,
             query_text=" ".join(filtered_tokens),
             limit=_candidate_limit(budget.max_total_items + budget.offset),
-            snippet_characters=recipe_config.snippet_characters,
+            snippet_characters=parsed_config.snippet_characters,
         )
         sorted_candidates = _rank_candidates(candidates)
         evidence = _apply_rerank_if_enabled(
             sorted_candidates,
             query_tokens=filtered_tokens,
-            run=run,
+            snapshot=snapshot,
             budget=budget,
-            rerank_enabled=recipe_config.rerank_enabled,
-            rerank_top_k=recipe_config.rerank_top_k,
+            rerank_enabled=parsed_config.rerank_enabled,
+            rerank_top_k=parsed_config.rerank_top_k,
         )
         stats: Dict[str, object] = {"candidates": len(sorted_candidates), "returned": len(evidence)}
-        if recipe_config.rerank_enabled:
-            stats["reranked_candidates"] = min(len(sorted_candidates), recipe_config.rerank_top_k)
+        if parsed_config.rerank_enabled:
+            stats["reranked_candidates"] = min(len(sorted_candidates), parsed_config.rerank_top_k)
         return RetrievalResult(
             query_text=query_text,
             budget=budget,
-            run_id=run.run_id,
-            recipe_id=run.recipe.recipe_id,
-            backend_id=self.backend_id,
+            snapshot_id=snapshot.snapshot_id,
+            configuration_id=snapshot.configuration.configuration_id,
+            retriever_id=snapshot.configuration.retriever_id,
             generated_at=utc_now_iso(),
             evidence=evidence,
             stats=stats,
@@ -264,7 +278,7 @@ def _candidate_limit(max_total_items: int) -> int:
 
     :param max_total_items: Requested evidence count.
     :type max_total_items: int
-    :return: Candidate limit for backend search.
+    :return: Candidate limit for retriever search.
     :rtype: int
     """
     return max_total_items * 5
@@ -347,7 +361,7 @@ def _apply_rerank_if_enabled(
     candidates: List[Evidence],
     *,
     query_tokens: List[str],
-    run: RetrievalRun,
+    snapshot: RetrievalSnapshot,
     budget: QueryBudget,
     rerank_enabled: bool,
     rerank_top_k: int,
@@ -359,8 +373,8 @@ def _apply_rerank_if_enabled(
     :type candidates: list[Evidence]
     :param query_tokens: Query tokens used for reranking.
     :type query_tokens: list[str]
-    :param run: Retrieval run to annotate evidence with.
-    :type run: RetrievalRun
+    :param snapshot: Retrieval snapshot to annotate evidence with.
+    :type snapshot: RetrievalSnapshot
     :param budget: Evidence selection budget.
     :type budget: QueryBudget
     :param rerank_enabled: Whether reranking is enabled.
@@ -375,8 +389,8 @@ def _apply_rerank_if_enabled(
             evidence_item.model_copy(
                 update={
                     "rank": index,
-                    "recipe_id": run.recipe.recipe_id,
-                    "run_id": run.run_id,
+                    "configuration_id": snapshot.configuration.configuration_id,
+                    "snapshot_id": snapshot.snapshot_id,
                 }
             )
             for index, evidence_item in enumerate(candidates, start=1)
@@ -402,8 +416,8 @@ def _apply_rerank_if_enabled(
         evidence_item.model_copy(
             update={
                 "rank": index,
-                "recipe_id": run.recipe.recipe_id,
-                "run_id": run.run_id,
+                "configuration_id": snapshot.configuration.configuration_id,
+                "snapshot_id": snapshot.snapshot_id,
             }
         )
         for index, evidence_item in enumerate(reranked_sorted, start=1)
@@ -411,21 +425,21 @@ def _apply_rerank_if_enabled(
     return apply_budget(ranked, budget)
 
 
-def _resolve_run_db_path(corpus: Corpus, run: RetrievalRun) -> Path:
+def _resolve_snapshot_db_path(corpus: Corpus, snapshot: RetrievalSnapshot) -> Path:
     """
-    Resolve the SQLite index path for a retrieval run.
+    Resolve the SQLite index path for a retrieval snapshot.
 
-    :param corpus: Corpus containing run artifacts.
+    :param corpus: Corpus containing snapshot artifacts.
     :type corpus: Corpus
-    :param run: Retrieval run manifest.
-    :type run: RetrievalRun
+    :param snapshot: Retrieval snapshot manifest.
+    :type snapshot: RetrievalSnapshot
     :return: Path to the SQLite index file.
     :rtype: Path
-    :raises FileNotFoundError: If the run does not have artifact paths.
+    :raises FileNotFoundError: If the snapshot does not have artifact paths.
     """
-    if not run.artifact_paths:
-        raise FileNotFoundError("Run has no artifact paths to query")
-    return corpus.root / run.artifact_paths[0]
+    if not snapshot.snapshot_artifacts:
+        raise FileNotFoundError("Snapshot has no artifact paths to query")
+    return corpus.root / snapshot.snapshot_artifacts[0]
 
 
 def _ensure_full_text_search_version_five(conn: sqlite3.Connection) -> None:
@@ -480,8 +494,8 @@ def _build_full_text_search_index(
     db_path: Path,
     corpus: Corpus,
     items: Iterable[object],
-    recipe_config: SqliteFullTextSearchRecipeConfig,
-    extraction_reference: Optional[ExtractionRunReference],
+    configuration: SqliteFullTextSearchConfiguration,
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> Dict[str, int]:
     """
     Build a full-text search index from corpus items.
@@ -492,8 +506,8 @@ def _build_full_text_search_index(
     :type corpus: Corpus
     :param items: Catalog items to index.
     :type items: Iterable[object]
-    :param recipe_config: Chunking and snippet configuration.
-    :type recipe_config: SqliteFullTextSearchRecipeConfig
+    :param configuration: Chunking and snippet configuration.
+    :type configuration: SqliteFullTextSearchConfiguration
     :return: Index statistics.
     :rtype: dict[str, int]
     """
@@ -523,8 +537,8 @@ def _build_full_text_search_index(
             title = getattr(catalog_item, "title", None)
             for start_offset, end_offset, chunk in _iter_chunks(
                 item_text,
-                chunk_size=recipe_config.chunk_size,
-                chunk_overlap=recipe_config.chunk_overlap,
+                chunk_size=configuration.chunk_size,
+                chunk_overlap=configuration.chunk_overlap,
             ):
                 connection.execute(
                     """
@@ -568,7 +582,7 @@ def _load_text_from_item(
     item_id: str,
     relpath: str,
     media_type: str,
-    extraction_reference: Optional[ExtractionRunReference],
+    extraction_reference: Optional[ExtractionSnapshotReference],
 ) -> Optional[str]:
     """
     Load text content from a catalog item.
@@ -581,15 +595,15 @@ def _load_text_from_item(
     :type relpath: str
     :param media_type: Media type for the content.
     :type media_type: str
-    :param extraction_reference: Optional extraction run reference.
-    :type extraction_reference: ExtractionRunReference or None
+    :param extraction_reference: Optional extraction snapshot reference.
+    :type extraction_reference: ExtractionSnapshotReference or None
     :return: Text payload or None if not text.
     :rtype: str or None
     """
     if extraction_reference:
         extracted_text = corpus.read_extracted_text(
             extractor_id=extraction_reference.extractor_id,
-            run_id=extraction_reference.run_id,
+            snapshot_id=extraction_reference.snapshot_id,
             item_id=item_id,
         )
         if isinstance(extracted_text, str) and extracted_text.strip():
@@ -608,28 +622,28 @@ def _load_text_from_item(
 
 def _resolve_extraction_reference(
     corpus: Corpus,
-    recipe_config: SqliteFullTextSearchRecipeConfig,
-) -> Optional[ExtractionRunReference]:
+    configuration: SqliteFullTextSearchConfiguration,
+) -> Optional[ExtractionSnapshotReference]:
     """
-    Resolve an extraction run reference from a recipe config.
+    Resolve an extraction snapshot reference from a configuration.
 
-    :param corpus: Corpus associated with the recipe.
+    :param corpus: Corpus associated with the configuration.
     :type corpus: Corpus
-    :param recipe_config: Parsed backend recipe configuration.
-    :type recipe_config: SqliteFullTextSearchRecipeConfig
+    :param configuration: Parsed retriever configuration.
+    :type configuration: SqliteFullTextSearchConfiguration
     :return: Parsed extraction reference or None.
-    :rtype: ExtractionRunReference or None
-    :raises FileNotFoundError: If an extraction run is referenced but not present.
+    :rtype: ExtractionSnapshotReference or None
+    :raises FileNotFoundError: If an extraction snapshot is referenced but not present.
     """
-    if not recipe_config.extraction_run:
+    if not configuration.extraction_snapshot:
         return None
-    extraction_reference = parse_extraction_run_reference(recipe_config.extraction_run)
-    run_dir = corpus.extraction_run_dir(
+    extraction_reference = parse_extraction_snapshot_reference(configuration.extraction_snapshot)
+    snapshot_dir = corpus.extraction_snapshot_dir(
         extractor_id=extraction_reference.extractor_id,
-        run_id=extraction_reference.run_id,
+        snapshot_id=extraction_reference.snapshot_id,
     )
-    if not run_dir.is_dir():
-        raise FileNotFoundError(f"Missing extraction run: {extraction_reference.as_string()}")
+    if not snapshot_dir.is_dir():
+        raise FileNotFoundError(f"Missing extraction snapshot: {extraction_reference.as_string()}")
     return extraction_reference
 
 
@@ -723,8 +737,8 @@ def _query_full_text_search_index(
                     span_start=int(start_offset) if start_offset is not None else None,
                     span_end=int(end_offset) if end_offset is not None else None,
                     stage="full-text-search",
-                    recipe_id="",
-                    run_id="",
+                    configuration_id="",
+                    snapshot_id="",
                     hash=hash_text(snippet_text),
                 )
             )

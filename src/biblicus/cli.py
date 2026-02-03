@@ -13,7 +13,6 @@ from typing import Dict, Iterable, List, Optional
 from pydantic import ValidationError
 
 from .analysis import get_analysis_backend
-from .backends import get_backend
 from .context import (
     CharacterBudget,
     ContextPackPolicy,
@@ -24,16 +23,17 @@ from .context import (
 )
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
-from .errors import ExtractionRunFatalError, IngestCollisionError
-from .evaluation import evaluate_run, load_dataset
+from .errors import ExtractionSnapshotFatalError, IngestCollisionError
+from .evaluation import evaluate_snapshot, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
-from .extraction import build_extraction_run
+from .extraction import build_extraction_snapshot
 from .extraction_evaluation import (
-    evaluate_extraction_run,
+    evaluate_extraction_snapshot,
     load_extraction_dataset,
     write_extraction_evaluation_result,
 )
-from .models import QueryBudget, RetrievalResult, parse_extraction_run_reference
+from .models import QueryBudget, RetrievalResult, parse_extraction_snapshot_reference
+from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
 
 
@@ -391,48 +391,56 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
 
 def cmd_build(arguments: argparse.Namespace) -> int:
     """
-    Build a retrieval run for a backend.
+    Build a retrieval snapshot for a retriever.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
     :return: Exit code.
     :rtype: int
     """
-    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
 
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    backend = get_backend(arguments.backend)
+    retriever = get_retriever(arguments.retriever)
 
     base_config: Dict[str, object] = {}
-    if getattr(arguments, "recipe", None):
-        base_config = load_recipe_view(
-            arguments.recipe,
-            recipe_label="Recipe file",
-            mapping_error_message="Retrieval build recipe must be a mapping/object",
+    if getattr(arguments, "configuration", None):
+        base_config = load_configuration_view(
+            arguments.configuration,
+            configuration_label="Configuration file",
+            mapping_error_message="Retrieval snapshot configuration must be a mapping/object",
         )
 
-    overrides = parse_dotted_overrides(arguments.config)
-    config = apply_dotted_overrides(base_config, overrides)
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration = apply_dotted_overrides(base_config, overrides)
 
-    run = backend.build_run(corpus, recipe_name=arguments.recipe_name, config=config)
-    print(run.model_dump_json(indent=2))
+    snapshot = retriever.build_snapshot(
+        corpus,
+        configuration_name=arguments.configuration_name,
+        configuration=configuration,
+    )
+    print(snapshot.model_dump_json(indent=2))
     return 0
 
 
 def cmd_extract_build(arguments: argparse.Namespace) -> int:
     """
-    Build a text extraction run for the corpus using a pipeline of extractors.
+    Build a text extraction snapshot for the corpus using a pipeline of extractors.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
     :return: Exit code.
     :rtype: int
     """
-    from .recipes import load_recipe_view
+    from .configuration import load_configuration_view
 
     corpus = (
         Corpus.open(arguments.corpus)
@@ -440,17 +448,17 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         else Corpus.find(Path.cwd())
     )
 
-    # Load recipe from file if --recipe is provided
-    if getattr(arguments, "recipe", None):
-        recipe_data = load_recipe_view(
-            arguments.recipe,
-            recipe_label="Recipe file",
-            mapping_error_message="Extraction recipe must be a mapping/object",
+    # Load configuration from file if --configuration is provided
+    if getattr(arguments, "configuration", None):
+        configuration_data = load_configuration_view(
+            arguments.configuration,
+            configuration_label="Configuration file",
+            mapping_error_message="Extraction configuration must be a mapping/object",
         )
-        loaded_extractor_id = recipe_data.get("extractor_id", "pipeline")
-        loaded_config = recipe_data.get("config", {})
+        loaded_extractor_id = configuration_data.get("extractor_id", "pipeline")
+        loaded_config = configuration_data.get("configuration", {})
 
-        # If the recipe specifies a non-pipeline extractor, wrap it in a pipeline
+        # If the configuration specifies a non-pipeline extractor, wrap it in a pipeline
         if loaded_extractor_id != "pipeline":
             extractor_id = "pipeline"
             config = {
@@ -476,11 +484,11 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         config = {"steps": steps}
         extractor_id = "pipeline"
 
-    manifest = build_extraction_run(
+    manifest = build_extraction_snapshot(
         corpus,
         extractor_id=extractor_id,
-        recipe_name=arguments.recipe_name,
-        config=config,
+        configuration_name=arguments.configuration_name,
+        configuration=config,
     )
     print(manifest.model_dump_json(indent=2))
     return 0
@@ -488,7 +496,7 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
 
 def cmd_extract_list(arguments: argparse.Namespace) -> int:
     """
-    List extraction runs stored under the corpus.
+    List extraction snapshots stored under the corpus.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
@@ -500,14 +508,14 @@ def cmd_extract_list(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    runs = corpus.list_extraction_runs(extractor_id=arguments.extractor_id)
-    print(json.dumps([entry.model_dump() for entry in runs], indent=2))
+    snapshots = corpus.list_extraction_snapshots(extractor_id=arguments.extractor_id)
+    print(json.dumps([entry.model_dump() for entry in snapshots], indent=2))
     return 0
 
 
 def cmd_extract_show(arguments: argparse.Namespace) -> int:
     """
-    Show an extraction run manifest.
+    Show an extraction snapshot manifest.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
@@ -519,9 +527,9 @@ def cmd_extract_show(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    reference = parse_extraction_run_reference(arguments.run)
-    manifest = corpus.load_extraction_run_manifest(
-        extractor_id=reference.extractor_id, run_id=reference.run_id
+    reference = parse_extraction_snapshot_reference(arguments.snapshot)
+    manifest = corpus.load_extraction_snapshot_manifest(
+        extractor_id=reference.extractor_id, snapshot_id=reference.snapshot_id
     )
     print(manifest.model_dump_json(indent=2))
     return 0
@@ -529,7 +537,7 @@ def cmd_extract_show(arguments: argparse.Namespace) -> int:
 
 def cmd_extract_delete(arguments: argparse.Namespace) -> int:
     """
-    Delete an extraction run directory and its derived artifacts.
+    Delete an extraction snapshot directory and its derived artifacts.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
@@ -541,17 +549,19 @@ def cmd_extract_delete(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    if arguments.confirm != arguments.run:
-        raise ValueError("Refusing to delete extraction run without an exact --confirm match.")
-    reference = parse_extraction_run_reference(arguments.run)
-    corpus.delete_extraction_run(extractor_id=reference.extractor_id, run_id=reference.run_id)
-    print(json.dumps({"deleted": True, "run": arguments.run}, indent=2))
+    if arguments.confirm != arguments.snapshot:
+        raise ValueError("Refusing to delete extraction snapshot without an exact --confirm match.")
+    reference = parse_extraction_snapshot_reference(arguments.snapshot)
+    corpus.delete_extraction_snapshot(
+        extractor_id=reference.extractor_id, snapshot_id=reference.snapshot_id
+    )
+    print(json.dumps({"deleted": True, "snapshot": arguments.snapshot}, indent=2))
     return 0
 
 
 def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
     """
-    Evaluate an extraction run against a dataset.
+    Evaluate an extraction snapshot against a dataset.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
@@ -563,14 +573,14 @@ def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    if arguments.run:
-        run_ref = parse_extraction_run_reference(arguments.run)
+    if arguments.snapshot:
+        snapshot_ref = parse_extraction_snapshot_reference(arguments.snapshot)
     else:
-        run_ref = corpus.latest_extraction_run_reference()
-        if run_ref is None:
-            raise ValueError("Extraction evaluation requires an extraction run")
+        snapshot_ref = corpus.latest_extraction_snapshot_reference()
+        if snapshot_ref is None:
+            raise ValueError("Extraction evaluation requires an extraction snapshot")
         print(
-            "Warning: using latest extraction run; pass --run for reproducibility.",
+            "Warning: using latest extraction snapshot; pass --snapshot for reproducibility.",
             file=sys.stderr,
         )
 
@@ -582,17 +592,19 @@ def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
     except ValidationError as exc:
         raise ValueError(f"Invalid extraction dataset: {exc}") from exc
 
-    run = corpus.load_extraction_run_manifest(
-        extractor_id=run_ref.extractor_id,
-        run_id=run_ref.run_id,
+    snapshot = corpus.load_extraction_snapshot_manifest(
+        extractor_id=snapshot_ref.extractor_id,
+        snapshot_id=snapshot_ref.snapshot_id,
     )
-    result = evaluate_extraction_run(
+    result = evaluate_extraction_snapshot(
         corpus=corpus,
-        run=run,
-        extractor_id=run_ref.extractor_id,
+        snapshot=snapshot,
+        extractor_id=snapshot_ref.extractor_id,
         dataset=dataset,
     )
-    write_extraction_evaluation_result(corpus=corpus, run_id=run.run_id, result=result)
+    write_extraction_evaluation_result(
+        corpus=corpus, snapshot_id=snapshot.snapshot_id, result=result
+    )
     print(result.model_dump_json(indent=2))
     return 0
 
@@ -611,18 +623,21 @@ def cmd_query(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    run_id = arguments.run or corpus.latest_run_id
-    if not run_id:
-        raise ValueError("No run identifier provided and no latest run is recorded for this corpus")
-    run = corpus.load_run(run_id)
-    if arguments.backend and arguments.backend != run.recipe.backend_id:
+    snapshot_id = arguments.snapshot or corpus.latest_snapshot_id
+    if not snapshot_id:
         raise ValueError(
-            f"Backend mismatch: run uses {run.recipe.backend_id!r} but {arguments.backend!r} was requested"
+            "No snapshot identifier provided and no latest snapshot is recorded for this corpus"
         )
-    backend = get_backend(run.recipe.backend_id)
+    snapshot = corpus.load_snapshot(snapshot_id)
+    if arguments.retriever and arguments.retriever != snapshot.configuration.retriever_id:
+        raise ValueError(
+            "Retriever mismatch: snapshot uses "
+            f"{snapshot.configuration.retriever_id!r} but {arguments.retriever!r} was requested"
+        )
+    retriever = get_retriever(snapshot.configuration.retriever_id)
     query_text = arguments.query if arguments.query is not None else sys.stdin.read()
     budget = _budget_from_args(arguments)
-    result = backend.query(corpus, run=run, query_text=query_text, budget=budget)
+    result = retriever.query(corpus, snapshot=snapshot, query_text=query_text, budget=budget)
     processed_evidence = result.evidence
     if getattr(arguments, "reranker_id", None):
         processed_evidence = apply_evidence_reranker(
@@ -693,7 +708,7 @@ def cmd_context_pack_build(arguments: argparse.Namespace) -> int:
 
 def cmd_eval(arguments: argparse.Namespace) -> int:
     """
-    Evaluate a retrieval run against a dataset.
+    Evaluate a retrieval snapshot against a dataset.
 
     :param arguments: Parsed command-line interface arguments.
     :type arguments: argparse.Namespace
@@ -705,13 +720,15 @@ def cmd_eval(arguments: argparse.Namespace) -> int:
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    run_id = arguments.run or corpus.latest_run_id
-    if not run_id:
-        raise ValueError("No run identifier provided and no latest run is recorded for this corpus")
-    run = corpus.load_run(run_id)
+    snapshot_id = arguments.snapshot or corpus.latest_snapshot_id
+    if not snapshot_id:
+        raise ValueError(
+            "No snapshot identifier provided and no latest snapshot is recorded for this corpus"
+        )
+    snapshot = corpus.load_snapshot(snapshot_id)
     dataset = load_dataset(Path(arguments.dataset))
     budget = _budget_from_args(arguments)
-    result = evaluate_run(corpus=corpus, run=run, dataset=dataset, budget=budget)
+    result = evaluate_snapshot(corpus=corpus, snapshot=snapshot, dataset=dataset, budget=budget)
     print(result.model_dump_json(indent=2))
     return 0
 
@@ -751,29 +768,33 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
 
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    recipe_data = load_recipe_view(
-        arguments.recipe,
-        recipe_label="Recipe file",
-        mapping_error_message="Topic modeling recipe must be a mapping/object",
+    configuration_data = load_configuration_view(
+        arguments.configuration,
+        configuration_label="Configuration file",
+        mapping_error_message="Topic modeling configuration must be a mapping/object",
     )
-    overrides = parse_dotted_overrides(arguments.config)
-    recipe_data = apply_dotted_overrides(recipe_data, overrides)
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_run:
-        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    if arguments.extraction_snapshot:
+        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
     else:
-        extraction_run = corpus.latest_extraction_run_reference()
-        if extraction_run is None:
-            raise ValueError("Topic analysis requires an extraction run to supply text inputs")
+        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
+        if extraction_snapshot is None:
+            raise ValueError("Topic analysis requires an extraction snapshot to supply text inputs")
         print(
-            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
         )
 
@@ -781,12 +802,12 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     try:
         output = backend.run_analysis(
             corpus,
-            recipe_name=arguments.recipe_name,
-            config=recipe_data,
-            extraction_run=extraction_run,
+            configuration_name=arguments.configuration_name,
+            configuration=configuration_data,
+            extraction_snapshot=extraction_snapshot,
         )
     except ValidationError as exc:
-        raise ValueError(f"Invalid topic modeling recipe: {exc}") from exc
+        raise ValueError(f"Invalid topic modeling configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
 
@@ -800,7 +821,11 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
 
     corpus = (
         Corpus.open(arguments.corpus)
@@ -808,28 +833,30 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
         else Corpus.find(Path.cwd())
     )
 
-    recipe_data: dict[str, object] = {}
-    if arguments.recipe is not None:
-        recipe_data = load_recipe_view(
-            arguments.recipe,
-            recipe_label="Recipe file",
-            mapping_error_message="Profiling recipe must be a mapping/object",
+    configuration_data: dict[str, object] = {}
+    if arguments.configuration is not None:
+        configuration_data = load_configuration_view(
+            arguments.configuration,
+            configuration_label="Configuration file",
+            mapping_error_message="Profiling configuration must be a mapping/object",
         )
-        overrides = parse_dotted_overrides(arguments.config)
-        recipe_data = apply_dotted_overrides(recipe_data, overrides)
+        overrides = parse_dotted_overrides(arguments.override)
+        configuration_data = apply_dotted_overrides(configuration_data, overrides)
     else:
-        overrides = parse_dotted_overrides(arguments.config)
+        overrides = parse_dotted_overrides(arguments.override)
         if overrides:
-            recipe_data = apply_dotted_overrides(recipe_data, overrides)
+            configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_run:
-        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    if arguments.extraction_snapshot:
+        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
     else:
-        extraction_run = corpus.latest_extraction_run_reference()
-        if extraction_run is None:
-            raise ValueError("Profiling analysis requires an extraction run to supply text inputs")
+        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
+        if extraction_snapshot is None:
+            raise ValueError(
+                "Profiling analysis requires an extraction snapshot to supply text inputs"
+            )
         print(
-            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
         )
 
@@ -837,12 +864,12 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
     try:
         output = backend.run_analysis(
             corpus,
-            recipe_name=arguments.recipe_name,
-            config=recipe_data,
-            extraction_run=extraction_run,
+            configuration_name=arguments.configuration_name,
+            configuration=configuration_data,
+            extraction_snapshot=extraction_snapshot,
         )
     except ValidationError as exc:
-        raise ValueError(f"Invalid profiling recipe: {exc}") from exc
+        raise ValueError(f"Invalid profiling configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
 
@@ -856,29 +883,35 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
 
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
-    recipe_data = load_recipe_view(
-        arguments.recipe,
-        recipe_label="Recipe file",
-        mapping_error_message="Markov analysis recipe must be a mapping/object",
+    configuration_data = load_configuration_view(
+        arguments.configuration,
+        configuration_label="Configuration file",
+        mapping_error_message="Markov analysis configuration must be a mapping/object",
     )
-    overrides = parse_dotted_overrides(arguments.config)
-    recipe_data = apply_dotted_overrides(recipe_data, overrides)
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_run:
-        extraction_run = parse_extraction_run_reference(arguments.extraction_run)
+    if arguments.extraction_snapshot:
+        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
     else:
-        extraction_run = corpus.latest_extraction_run_reference()
-        if extraction_run is None:
-            raise ValueError("Markov analysis requires an extraction run to supply text inputs")
+        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
+        if extraction_snapshot is None:
+            raise ValueError(
+                "Markov analysis requires an extraction snapshot to supply text inputs"
+            )
         print(
-            "Warning: using latest extraction run; pass --extraction-run for reproducibility.",
+            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
         )
 
@@ -886,12 +919,12 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     try:
         output = backend.run_analysis(
             corpus,
-            recipe_name=arguments.recipe_name,
-            config=recipe_data,
-            extraction_run=extraction_run,
+            configuration_name=arguments.configuration_name,
+            configuration=configuration_data,
+            extraction_snapshot=extraction_snapshot,
         )
     except ValidationError as exc:
-        raise ValueError(f"Invalid Markov analysis recipe: {exc}") from exc
+        raise ValueError(f"Invalid Markov analysis configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
 
@@ -977,41 +1010,46 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_purge.set_defaults(func=cmd_purge)
 
-    p_build = sub.add_parser("build", help="Build a retrieval backend run for the corpus.")
+    p_build = sub.add_parser("build", help="Build a retrieval snapshot for the corpus.")
     _add_common_corpus_arg(p_build)
     p_build.add_argument(
-        "--backend",
+        "--retriever",
         required=True,
-        help="Backend identifier (for example, scan, sqlite-full-text-search).",
+        help="Retriever identifier (for example, scan, sqlite-full-text-search).",
     )
-    p_build.add_argument("--recipe-name", default="default", help="Human-readable recipe name.")
     p_build.add_argument(
-        "--recipe",
+        "--configuration-name", default="default", help="Human-readable configuration name."
+    )
+    p_build.add_argument(
+        "--configuration",
         default=None,
         action="append",
-        help="Path to YAML recipe file (repeatable). If provided, recipes are composed in precedence order.",
+        help="Path to YAML configuration file (repeatable). If provided, files are composed in precedence order.",
     )
     p_build.add_argument(
+        "--override",
         "--config",
         action="append",
         default=None,
-        help="Backend config override as key=value (repeatable). Dotted keys create nested config mappings.",
+        help="Configuration override as key=value (repeatable). Dotted keys create nested config mappings.",
     )
     p_build.set_defaults(func=cmd_build)
 
-    p_extract = sub.add_parser("extract", help="Work with text extraction runs for the corpus.")
+    p_extract = sub.add_parser(
+        "extract", help="Work with text extraction snapshots for the corpus."
+    )
     extract_sub = p_extract.add_subparsers(dest="extract_command", required=True)
 
-    p_extract_build = extract_sub.add_parser("build", help="Build a text extraction run.")
+    p_extract_build = extract_sub.add_parser("build", help="Build a text extraction snapshot.")
     _add_common_corpus_arg(p_extract_build)
     p_extract_build.add_argument(
-        "--recipe-name", default="default", help="Human-readable recipe name."
+        "--configuration-name", default="default", help="Human-readable configuration name."
     )
     p_extract_build.add_argument(
-        "--recipe",
+        "--configuration",
         default=None,
         action="append",
-        help="Path to YAML recipe file. If provided, --step arguments are ignored.",
+        help="Path to YAML configuration file. If provided, --step arguments are ignored.",
     )
     p_extract_build.add_argument(
         "--step",
@@ -1021,7 +1059,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_extract_build.set_defaults(func=cmd_extract_build)
 
-    p_extract_list = extract_sub.add_parser("list", help="List extraction runs.")
+    p_extract_list = extract_sub.add_parser("list", help="List extraction snapshots.")
     _add_common_corpus_arg(p_extract_list)
     p_extract_list.add_argument(
         "--extractor-id",
@@ -1030,37 +1068,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_extract_list.set_defaults(func=cmd_extract_list)
 
-    p_extract_show = extract_sub.add_parser("show", help="Show an extraction run manifest.")
+    p_extract_show = extract_sub.add_parser("show", help="Show an extraction snapshot manifest.")
     _add_common_corpus_arg(p_extract_show)
     p_extract_show.add_argument(
-        "--run",
+        "--snapshot",
         required=True,
-        help="Extraction run reference in the form extractor_id:run_id.",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_extract_show.set_defaults(func=cmd_extract_show)
 
-    p_extract_delete = extract_sub.add_parser("delete", help="Delete an extraction run directory.")
+    p_extract_delete = extract_sub.add_parser(
+        "delete", help="Delete an extraction snapshot directory."
+    )
     _add_common_corpus_arg(p_extract_delete)
     p_extract_delete.add_argument(
-        "--run",
+        "--snapshot",
         required=True,
-        help="Extraction run reference in the form extractor_id:run_id.",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_extract_delete.add_argument(
         "--confirm",
         required=True,
-        help="Type the exact extractor_id:run_id to confirm deletion.",
+        help="Type the exact extractor_id:snapshot_id to confirm deletion.",
     )
     p_extract_delete.set_defaults(func=cmd_extract_delete)
 
     p_extract_evaluate = extract_sub.add_parser(
-        "evaluate", help="Evaluate an extraction run against a dataset."
+        "evaluate", help="Evaluate an extraction snapshot against a dataset."
     )
     _add_common_corpus_arg(p_extract_evaluate)
     p_extract_evaluate.add_argument(
-        "--run",
+        "--snapshot",
         default=None,
-        help="Extraction run reference in the form extractor_id:run_id (defaults to latest run).",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id (defaults to latest snapshot).",
     )
     p_extract_evaluate.add_argument(
         "--dataset",
@@ -1071,8 +1111,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
-    p_query.add_argument("--run", default=None, help="Run identifier (defaults to latest run).")
-    p_query.add_argument("--backend", default=None, help="Validate backend identifier.")
+    p_query.add_argument(
+        "--snapshot", default=None, help="Snapshot identifier (defaults to latest snapshot)."
+    )
+    p_query.add_argument("--retriever", default=None, help="Validate retriever identifier.")
     p_query.add_argument("--query", default=None, help="Query text (defaults to standard input).")
     p_query.add_argument(
         "--offset",
@@ -1132,9 +1174,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_context_pack_build.set_defaults(func=cmd_context_pack_build)
 
-    p_eval = sub.add_parser("eval", help="Evaluate a run against a dataset.")
+    p_eval = sub.add_parser("eval", help="Evaluate a snapshot against a dataset.")
     _add_common_corpus_arg(p_eval)
-    p_eval.add_argument("--run", default=None, help="Run identifier (defaults to latest run).")
+    p_eval.add_argument(
+        "--snapshot", default=None, help="Snapshot identifier (defaults to latest snapshot)."
+    )
     p_eval.add_argument(
         "--dataset",
         required=True,
@@ -1170,78 +1214,81 @@ def build_parser() -> argparse.ArgumentParser:
     p_analyze_topics = analyze_sub.add_parser("topics", help="Run topic modeling analysis.")
     _add_common_corpus_arg(p_analyze_topics)
     p_analyze_topics.add_argument(
-        "--recipe",
+        "--configuration",
         required=True,
         action="append",
-        help="Path to topic modeling recipe YAML. Repeatable; later recipes override earlier recipes.",
+        help="Path to topic modeling configuration YAML. Repeatable; later files override earlier ones.",
     )
     p_analyze_topics.add_argument(
+        "--override",
         "--config",
         action="append",
         default=[],
-        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
     )
     p_analyze_topics.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="default",
-        help="Human-readable recipe name.",
+        help="Human-readable configuration name.",
     )
     p_analyze_topics.add_argument(
-        "--extraction-run",
+        "--extraction-snapshot",
         default=None,
-        help="Extraction run reference in the form extractor_id:run_id.",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_analyze_topics.set_defaults(func=cmd_analyze_topics)
 
     p_analyze_profile = analyze_sub.add_parser("profile", help="Run profiling analysis.")
     _add_common_corpus_arg(p_analyze_profile)
     p_analyze_profile.add_argument(
-        "--recipe",
+        "--configuration",
         default=None,
         action="append",
-        help="Optional profiling recipe YAML file. Repeatable; later recipes override earlier recipes.",
+        help="Optional profiling configuration YAML file. Repeatable; later files override earlier ones.",
     )
     p_analyze_profile.add_argument(
+        "--override",
         "--config",
         action="append",
         default=[],
-        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
     )
     p_analyze_profile.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="default",
-        help="Human-readable recipe name.",
+        help="Human-readable configuration name.",
     )
     p_analyze_profile.add_argument(
-        "--extraction-run",
+        "--extraction-snapshot",
         default=None,
-        help="Extraction run reference in the form extractor_id:run_id.",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_analyze_profile.set_defaults(func=cmd_analyze_profile)
 
     p_analyze_markov = analyze_sub.add_parser("markov", help="Run Markov analysis.")
     _add_common_corpus_arg(p_analyze_markov)
     p_analyze_markov.add_argument(
-        "--recipe",
+        "--configuration",
         required=True,
         action="append",
-        help="Path to Markov analysis recipe YAML. Repeatable; later recipes override earlier recipes.",
+        help="Path to Markov analysis configuration YAML. Repeatable; later files override earlier ones.",
     )
     p_analyze_markov.add_argument(
+        "--override",
         "--config",
         action="append",
         default=[],
-        help="Override key=value pairs applied after composing recipes (supports dotted keys).",
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
     )
     p_analyze_markov.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="default",
-        help="Human-readable recipe name.",
+        help="Human-readable configuration name.",
     )
     p_analyze_markov.add_argument(
-        "--extraction-run",
+        "--extraction-snapshot",
         default=None,
-        help="Extraction run reference in the form extractor_id:run_id.",
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_analyze_markov.set_defaults(func=cmd_analyze_markov)
 
@@ -1266,7 +1313,7 @@ def main(argument_list: Optional[List[str]] = None) -> int:
         FileExistsError,
         KeyError,
         ValueError,
-        ExtractionRunFatalError,
+        ExtractionSnapshotFatalError,
         NotImplementedError,
         ValidationError,
     ) as exception:

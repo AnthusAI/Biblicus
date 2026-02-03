@@ -177,9 +177,9 @@ python -m biblicus crawl --corpus corpora/crawl-demo \\
 python -m biblicus list --corpus corpora/crawl-demo
 ```
 
-### Build an extraction run
+### Build an extraction snapshot
 
-Text extraction is a separate pipeline stage from retrieval. An extraction run produces derived text artifacts under the corpus.
+Text extraction is a separate pipeline stage from retrieval. An extraction snapshot produces derived text artifacts under the corpus.
 
 This extractor reads text items and skips non-text items.
 
@@ -187,7 +187,7 @@ This extractor reads text items and skips non-text items.
 python -m biblicus extract build --corpus corpora/demo --step pass-through-text
 ```
 
-The output includes a `run_id` you can reuse when building a retrieval backend.
+The output includes a `snapshot_id` you can reuse when building a retrieval backend.
 
 Text extraction details: `docs/EXTRACTION.md`
 
@@ -208,7 +208,7 @@ Topic modeling details: `docs/TOPIC_MODELING.md`
 
 ### Extraction evaluation demo run
 
-Use the extraction evaluation demo to build an extraction run, write a labeled dataset from AG News items, and evaluate
+Use the extraction evaluation demo to build an extraction snapshot, write a labeled dataset from AG News items, and evaluate
 coverage and accuracy.
 
 Install optional dependencies first:
@@ -221,7 +221,7 @@ python -m pip install "biblicus[datasets]"
 python scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
 ```
 
-The script prints the dataset path, extraction run reference, and evaluation output path so you can inspect the results.
+The script prints the dataset path, extraction snapshot reference, and evaluation output path so you can inspect the results.
 
 Extraction evaluation details: `docs/EXTRACTION_EVALUATION.md`
 
@@ -246,7 +246,7 @@ against bundled labels:
 python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
 ```
 
-The script prints the dataset path, retrieval run identifier, and evaluation output location.
+The script prints the dataset path, retrieval snapshot identifier, and evaluation output location.
 
 Retrieval evaluation details: `docs/RETRIEVAL_EVALUATION.md`
 
@@ -263,7 +263,7 @@ python scripts/topic_modeling_integration.py \
   --bertopic-param min_topic_size=2
 ```
 
-The command prints the analysis run identifier and the output path. Open the `output.json` file to inspect per-topic labels,
+The command prints the analysis snapshot identifier and the output path. Open the `output.json` file to inspect per-topic labels,
 keywords, and document examples.
 
 ### Profiling analysis demo
@@ -287,11 +287,11 @@ python -m biblicus extract build --corpus corpora/demo \\
   --step select-text
 ```
 
-Copy the `run_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_RUN_ID` in the next command.
+Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_SNAPSHOT_ID` in the next command.
 
 ```
 python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \\
-  --config extraction_run=pipeline:EXTRACTION_RUN_ID
+  --config extraction_snapshot=pipeline:EXTRACTION_SNAPSHOT_ID
 ```
 
 Extraction pipeline details: `docs/EXTRACTION.md`
@@ -307,10 +307,10 @@ python scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
 python -m biblicus extract build --corpus corpora/pdf_samples --step pdf-text
 ```
 
-Copy the `run_id` from the JavaScript Object Notation output. Use it as `PDF_EXTRACTION_RUN_ID` in the next command.
+Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `PDF_EXTRACTION_SNAPSHOT_ID` in the next command.
 
 ```
-python -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_run=pipeline:PDF_EXTRACTION_RUN_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
+python -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text-search --config extraction_snapshot=pipeline:PDF_EXTRACTION_SNAPSHOT_ID --config chunk_size=200 --config chunk_overlap=50 --config snippet_characters=120
 python -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
 ```
 
@@ -353,7 +353,7 @@ To perform optical character recognition on the image items, install the optiona
 python -m pip install "biblicus[ocr]"
 ```
 
-Then build an extraction run:
+Then build an extraction snapshot:
 
 ```
 python -m biblicus extract build --corpus corpora/image_samples --step ocr-rapidocr
@@ -369,7 +369,7 @@ Install the optional dependency:
 python -m pip install "biblicus[unstructured]"
 ```
 
-Then build an extraction run:
+Then build an extraction snapshot:
 
 ```
 python -m biblicus extract build --corpus corpora/pdf_samples --step unstructured
@@ -433,10 +433,10 @@ Backend details: `docs/BACKENDS.md`
 
 ### Build and query the practical backend
 
-The sqlite full text search backend builds a local index under the run directory.
+The sqlite full text search backend builds a local index under the snapshot directory.
 
 ```
-python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_run=pipeline:EXTRACTION_RUN_ID
+python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search --config extraction_snapshot=pipeline:EXTRACTION_SNAPSHOT_ID
 python -m biblicus query --corpus corpora/demo --query "tiny"
 ```
 

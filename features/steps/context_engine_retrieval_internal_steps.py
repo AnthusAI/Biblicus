@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from behave import then, when
 
-from biblicus.context_engine.retrieval import _resolve_run
-from biblicus.models import RecipeManifest, RetrievalRun
+from biblicus.context_engine.retrieval import _resolve_snapshot
+from biblicus.models import ConfigurationManifest, RetrievalSnapshot
 from biblicus.time import utc_now_iso
 
 
@@ -29,32 +29,32 @@ class FakeCatalog:
 
 class FakeCorpus:
     """
-    Minimal corpus stub that tracks retrieval runs.
+    Minimal corpus stub that tracks retrieval snapshots.
     """
 
-    def __init__(self, run):
+    def __init__(self, snapshot):
         """
-        Initialize the stub with a latest run.
+        Initialize the stub with a latest snapshot.
 
-        :param run: Retrieval run to treat as latest.
-        :type run: RetrievalRun
+        :param snapshot: Retrieval snapshot to treat as latest.
+        :type snapshot: RetrievalSnapshot
         """
-        self.latest_run_id = run.run_id
-        self._run = run
-        self._runs = {}
+        self.latest_snapshot_id = snapshot.snapshot_id
+        self._snapshot = snapshot
+        self._snapshots = {}
 
-    def load_run(self, run_id: str) -> RetrievalRun:
+    def load_snapshot(self, snapshot_id: str) -> RetrievalSnapshot:
         """
-        Load a retrieval run by identifier.
+        Load a retrieval snapshot by identifier.
 
-        :param run_id: Retrieval run identifier.
-        :type run_id: str
-        :return: Retrieval run instance.
-        :rtype: RetrievalRun
+        :param snapshot_id: Retrieval snapshot identifier.
+        :type snapshot_id: str
+        :return: Retrieval snapshot instance.
+        :rtype: RetrievalSnapshot
         """
-        if run_id == self._run.run_id:
-            return self._run
-        return self._runs[run_id]
+        if snapshot_id == self._snapshot.snapshot_id:
+            return self._snapshot
+        return self._snapshots[snapshot_id]
 
     def load_catalog(self):
         """
@@ -65,49 +65,50 @@ class FakeCorpus:
         """
         return FakeCatalog(items={}, corpus_uri="corpus://test", generated_at=utc_now_iso())
 
-    def write_run(self, run: RetrievalRun) -> None:
+    def write_snapshot(self, snapshot: RetrievalSnapshot) -> None:
         """
-        Record a retrieval run by identifier.
+        Record a retrieval snapshot by identifier.
 
-        :param run: Retrieval run to store.
-        :type run: RetrievalRun
+        :param snapshot: Retrieval snapshot to store.
+        :type snapshot: RetrievalSnapshot
         :return: None.
         :rtype: None
         """
-        self._runs[run.run_id] = run
+        self._snapshots[snapshot.snapshot_id] = snapshot
 
 
-def _build_run(backend_id: str) -> RetrievalRun:
-    recipe = RecipeManifest(
-        recipe_id=f"recipe-{backend_id}",
-        backend_id=backend_id,
+def _build_snapshot(retriever_id: str) -> RetrievalSnapshot:
+    configuration = ConfigurationManifest(
+        configuration_id=f"configuration-{retriever_id}",
+        retriever_id=retriever_id,
         name="test",
         created_at=utc_now_iso(),
-        config={},
+        configuration={},
     )
-    return RetrievalRun(
-        run_id=f"run-{backend_id}",
-        recipe=recipe,
+    return RetrievalSnapshot(
+        snapshot_id=f"snapshot-{retriever_id}",
+        configuration=configuration,
         corpus_uri="corpus://test",
         catalog_generated_at=utc_now_iso(),
         created_at=utc_now_iso(),
+        snapshot_artifacts=[],
     )
 
 
-@when("I resolve a context retrieval run with a mismatched latest backend")
-def step_resolve_run_mismatch(context) -> None:
-    latest_run = _build_run("other")
-    corpus = FakeCorpus(latest_run)
-    resolved = _resolve_run(
+@when("I resolve a context retrieval snapshot with a mismatched latest retriever")
+def step_resolve_snapshot_mismatch(context) -> None:
+    latest_snapshot = _build_snapshot("other")
+    corpus = FakeCorpus(latest_snapshot)
+    resolved = _resolve_snapshot(
         corpus,
-        backend_id="scan",
-        run_id=None,
-        recipe_name="Context pack (scan)",
-        recipe_config={},
+        retriever_id="scan",
+        snapshot_id=None,
+        configuration_name="Context pack (scan)",
+        configuration={},
     )
-    context.resolved_run = resolved
+    context.resolved_snapshot = resolved
 
 
-@then('the resolved run backend equals "{backend_id}"')
-def step_resolved_run_backend(context, backend_id: str) -> None:
-    assert context.resolved_run.recipe.backend_id == backend_id
+@then('the resolved snapshot retriever equals "{retriever_id}"')
+def step_resolved_snapshot_retriever(context, retriever_id: str) -> None:
+    assert context.resolved_snapshot.configuration.retriever_id == retriever_id

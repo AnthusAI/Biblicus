@@ -2,8 +2,8 @@
 Run repeatable Markov analysis demos on AG News.
 
 This script exists to provide tangible, inspectable outputs early and often while iterating on Markov analysis
-configuration "recipes". It builds or reuses an extraction run, runs one or more Markov analyses, and prints the run
-directories so you can inspect intermediate artifacts such as segments, observations, and transitions.
+configurations. It builds or reuses an extraction snapshot, runs one or more Markov analyses, and prints the
+snapshot directories so you can inspect intermediate artifacts such as segments, observations, and transitions.
 """
 
 from __future__ import annotations
@@ -15,11 +15,15 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 from biblicus.analysis.markov import MarkovBackend
-from biblicus.analysis.models import MarkovAnalysisRecipeConfig
+from biblicus.analysis.models import MarkovAnalysisConfiguration
+from biblicus.configuration import (
+    apply_dotted_overrides,
+    load_configuration_view,
+    parse_dotted_overrides,
+)
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
-from biblicus.models import ExtractionRunReference
-from biblicus.recipes import apply_dotted_overrides, load_recipe_view, parse_dotted_overrides
+from biblicus.extraction import build_extraction_snapshot
+from biblicus.models import ExtractionSnapshotReference
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -41,70 +45,72 @@ def _parse_list(raw: Optional[Iterable[str]]) -> List[str]:
     return values
 
 
-def _load_recipe_config(
-    *, recipe_paths: List[str], overrides: Dict[str, object]
-) -> MarkovAnalysisRecipeConfig:
+def _load_configuration(
+    *, configuration_paths: List[str], overrides: Dict[str, object]
+) -> MarkovAnalysisConfiguration:
     """
-    Load and validate a Markov analysis recipe configuration.
+    Load and validate a Markov analysis configuration.
 
-    :param recipe_paths: Ordered list of recipe file paths.
-    :type recipe_paths: list[str]
+    :param configuration_paths: Ordered list of configuration file paths.
+    :type configuration_paths: list[str]
     :param overrides: Dotted key overrides applied after composition.
     :type overrides: dict[str, object]
-    :return: Validated recipe configuration.
-    :rtype: MarkovAnalysisRecipeConfig
+    :return: Validated configuration.
+    :rtype: MarkovAnalysisConfiguration
     """
-    view = load_recipe_view(recipe_paths, recipe_label="Recipe file")
+    view = load_configuration_view(configuration_paths, configuration_label="Configuration file")
     if overrides:
         view = apply_dotted_overrides(view, overrides)
-    return MarkovAnalysisRecipeConfig.model_validate(view)
+    return MarkovAnalysisConfiguration.model_validate(view)
 
 
 def _run_markov(
     *,
     corpus: Corpus,
-    recipe_name: str,
-    recipe_paths: List[str],
+    configuration_name: str,
+    configuration_paths: List[str],
     overrides: Dict[str, object],
-    extraction_run: ExtractionRunReference,
+    extraction_snapshot: ExtractionSnapshotReference,
 ) -> Dict[str, object]:
     """
     Run Markov analysis and return a compact summary.
 
     :param corpus: Corpus to analyze.
     :type corpus: Corpus
-    :param recipe_name: Human-readable recipe name stored in the run manifest.
-    :type recipe_name: str
-    :param recipe_paths: Composed recipe file paths.
-    :type recipe_paths: list[str]
+    :param configuration_name: Human-readable configuration name stored in the snapshot manifest.
+    :type configuration_name: str
+    :param configuration_paths: Composed configuration file paths.
+    :type configuration_paths: list[str]
     :param overrides: Dotted key overrides applied after composition.
     :type overrides: dict[str, object]
-    :param extraction_run: Extraction run reference to use as the text source.
-    :type extraction_run: ExtractionRunReference
+    :param extraction_snapshot: Extraction run reference to use as the text source.
+    :type extraction_snapshot: ExtractionSnapshotReference
     :return: Result summary.
     :rtype: dict[str, object]
     """
-    config = _load_recipe_config(recipe_paths=recipe_paths, overrides=overrides)
+    config = _load_configuration(configuration_paths=configuration_paths, overrides=overrides)
     backend = MarkovBackend()
     output = backend.run_analysis(
         corpus,
-        recipe_name=recipe_name,
-        config=config.model_dump(),
-        extraction_run=extraction_run,
+        configuration_name=configuration_name,
+        configuration=config.model_dump(),
+        extraction_snapshot=extraction_snapshot,
     )
-    run_dir = corpus.analysis_run_dir(
-        analysis_id=MarkovBackend.analysis_id, run_id=output.run.run_id
+    snapshot_dir = corpus.analysis_run_dir(
+        analysis_id=MarkovBackend.analysis_id, snapshot_id=output.snapshot.snapshot_id
     )
     return {
-        "recipe_name": recipe_name,
-        "recipe_paths": recipe_paths,
-        "run_id": output.run.run_id,
-        "run_dir": str(run_dir),
-        "output_path": str(run_dir / "output.json"),
+        "configuration_name": configuration_name,
+        "configuration_paths": configuration_paths,
+        "snapshot_id": output.snapshot.snapshot_id,
+        "snapshot_dir": str(snapshot_dir),
+        "output_path": str(snapshot_dir / "output.json"),
         "transitions_dot": (
-            str(run_dir / "transitions.dot") if (run_dir / "transitions.dot").is_file() else None
+            str(snapshot_dir / "transitions.dot")
+            if (snapshot_dir / "transitions.dot").is_file()
+            else None
         ),
-        "stats": dict(output.run.stats),
+        "stats": dict(output.snapshot.stats),
     }
 
 
@@ -140,65 +146,65 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
 
     corpus = Corpus.open(corpus_path)
     extraction_config = {"steps": [{"extractor_id": "pass-through-text", "config": {}}]}
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name=arguments.extraction_recipe_name,
-        config=extraction_config,
+        configuration_name=arguments.extraction_configuration_name,
+        configuration=extraction_config,
     )
-    extraction_run = ExtractionRunReference(
+    extraction_snapshot = ExtractionSnapshotReference(
         extractor_id="pipeline",
-        run_id=extraction_manifest.run_id,
+        snapshot_id=extraction_manifest.snapshot_id,
     )
 
     overrides = parse_dotted_overrides(_parse_list(arguments.config))
     runs: List[Dict[str, object]] = []
 
-    discovery_recipes = _parse_list(arguments.discovery_recipe) or [
-        str(REPO_ROOT / "recipes" / "markov" / "base.yml"),
-        str(REPO_ROOT / "recipes" / "markov" / "local-discovery.yml"),
+    discovery_configurations = _parse_list(arguments.discovery_configuration) or [
+        str(REPO_ROOT / "configurations" / "markov" / "base.yml"),
+        str(REPO_ROOT / "configurations" / "markov" / "local-discovery.yml"),
     ]
     runs.append(
         _run_markov(
             corpus=corpus,
-            recipe_name="local-discovery",
-            recipe_paths=discovery_recipes,
+            configuration_name="local-discovery",
+            configuration_paths=discovery_configurations,
             overrides=overrides,
-            extraction_run=extraction_run,
+            extraction_snapshot=extraction_snapshot,
         )
     )
 
     if arguments.run_openai:
-        openai_enriched_recipes = _parse_list(arguments.openai_recipe) or [
-            str(REPO_ROOT / "recipes" / "markov" / "openai-enriched.yml")
+        openai_enriched_configurations = _parse_list(arguments.openai_configuration) or [
+            str(REPO_ROOT / "configurations" / "markov" / "openai-enriched.yml")
         ]
         runs.append(
             _run_markov(
                 corpus=corpus,
-                recipe_name="openai-enriched",
-                recipe_paths=openai_enriched_recipes,
+                configuration_name="openai-enriched",
+                configuration_paths=openai_enriched_configurations,
                 overrides=overrides,
-                extraction_run=extraction_run,
+                extraction_snapshot=extraction_snapshot,
             )
         )
-        guided_recipes = _parse_list(arguments.guided_recipe) or [
-            str(REPO_ROOT / "recipes" / "markov" / "base.yml"),
-            str(REPO_ROOT / "recipes" / "markov" / "guided.yml"),
+        guided_configurations = _parse_list(arguments.guided_configuration) or [
+            str(REPO_ROOT / "configurations" / "markov" / "base.yml"),
+            str(REPO_ROOT / "configurations" / "markov" / "guided.yml"),
         ]
         runs.append(
             _run_markov(
                 corpus=corpus,
-                recipe_name="guided",
-                recipe_paths=guided_recipes,
+                configuration_name="guided",
+                configuration_paths=guided_configurations,
                 overrides=overrides,
-                extraction_run=extraction_run,
+                extraction_snapshot=extraction_snapshot,
             )
         )
 
     return {
         "corpus": str(corpus_path),
         "ingestion": ingestion_stats,
-        "extraction_run": extraction_run.as_string(),
+        "extraction_snapshot": extraction_snapshot.as_string(),
         "runs": runs,
     }
 
@@ -229,34 +235,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip items already ingested into the corpus.",
     )
     parser.add_argument(
-        "--extraction-recipe-name",
+        "--extraction-configuration-name",
         default="default",
-        help="Recipe name for the extraction run.",
+        help="Configuration name for the extraction snapshot.",
     )
     parser.add_argument(
-        "--discovery-recipe",
+        "--discovery-configuration",
         action="append",
-        help="Discovery Markov recipe path (repeatable; later recipes override earlier ones).",
+        help="Discovery Markov configuration path (repeatable; later configurations override earlier ones).",
     )
     parser.add_argument(
         "--run-openai",
         action="store_true",
-        help="Run provider-backed recipes (requires credentials; no fallback behavior).",
+        help="Run provider-backed configurations (requires credentials; no fallback behavior).",
     )
     parser.add_argument(
-        "--openai-recipe",
+        "--openai-configuration",
         action="append",
-        help="Provider-backed discovery recipe path (repeatable).",
+        help="Provider-backed discovery configuration path (repeatable).",
     )
     parser.add_argument(
-        "--guided-recipe",
+        "--guided-configuration",
         action="append",
-        help="Provider-backed guided recipe path (repeatable).",
+        help="Provider-backed guided configuration path (repeatable).",
     )
     parser.add_argument(
         "--config",
         action="append",
-        help="Dotted config override key=value (repeatable; applied after recipe composition).",
+        help="Dotted config override key=value (repeatable; applied after configuration composition).",
     )
     return parser
 

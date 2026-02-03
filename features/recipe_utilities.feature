@@ -1,5 +1,5 @@
-Feature: Recipe utilities
-  Recipe composition and override helpers are strict and predictable.
+Feature: Configuration utilities
+  Configuration composition and override helpers are strict and predictable.
 
   Scenario: Override parsing supports booleans, numbers, null, and JSON arrays
     When I parse override values:

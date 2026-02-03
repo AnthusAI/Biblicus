@@ -120,7 +120,7 @@ Primary implementation:
 
 What it does:
 
-- Builds extraction runs as a separate pipeline stage.
+- Builds extraction snapshots as a separate pipeline stage.
 - Stores extracted text artifacts under the corpus so multiple extractors can coexist.
 - Supports an explicit extractor pipeline through the `pipeline` extractor.
 - Includes a Portable Document Format text extractor plugin.
@@ -134,7 +134,7 @@ Documentation:
 
 Behavior specifications:
 
-- `features/text_extraction_runs.feature`
+- `features/text_extraction_snapshots.feature`
 - `features/extractor_pipeline.feature`
 - `features/extractor_validation.feature`
 - `features/extraction_selection.feature`
@@ -155,7 +155,7 @@ Primary implementation:
 
 What it does:
 
-- Evaluates extraction runs against labeled datasets.
+- Evaluates extraction snapshots against labeled datasets.
 - Reports coverage, accuracy, and processable fraction metrics.
 
 Documentation:
@@ -175,7 +175,7 @@ Primary implementation:
 
 What it does:
 
-- Builds and queries retrieval runs.
+- Builds and queries retrieval snapshots.
 - Returns evidence as structured output.
 - Supports a minimal scan backend and a practical Sqlite full text search backend.
 
@@ -187,7 +187,7 @@ Behavior specifications:
 
 - `features/retrieval_scan.feature`
 - `features/retrieval_sqlite_full_text_search.feature`
-- `features/retrieval_uses_extraction_run.feature`
+- `features/retrieval_uses_extraction_snapshot.feature`
 - `features/retrieval_budget.feature`
 - `features/retrieval_utilities.feature`
 - `features/backend_validation.feature`
@@ -204,7 +204,7 @@ Primary implementation:
 
 What it does:
 
-- Evaluates retrieval runs against datasets and budgets.
+- Evaluates retrieval snapshots against datasets and budgets.
 
 Documentation:
 

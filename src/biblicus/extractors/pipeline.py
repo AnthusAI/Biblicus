@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
@@ -20,14 +20,14 @@ class PipelineStepSpec(BaseModel):
 
     :ivar extractor_id: Extractor plugin identifier.
     :vartype extractor_id: str
-    :ivar config: Extractor configuration mapping.
-    :vartype config: dict[str, Any]
+    :ivar configuration: Extractor configuration mapping.
+    :vartype configuration: dict[str, Any]
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     extractor_id: str = Field(min_length=1)
-    config: Dict[str, Any] = Field(default_factory=dict)
+    configuration: Dict[str, Any] = Field(default_factory=dict, alias="config")
 
 
 class PipelineExtractorConfig(BaseModel):
@@ -92,7 +92,7 @@ class PipelineExtractor(TextExtractor):
         :type config: PipelineExtractorConfig
         :param previous_extractions: Prior step outputs for this item within the pipeline.
         :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
-        :raises ExtractionRunFatalError: Always, because the pipeline is executed by the runner.
+        :raises ExtractionSnapshotFatalError: Always, because the pipeline is executed by the runner.
         :return: None.
         :rtype: None
         """
@@ -100,6 +100,6 @@ class PipelineExtractor(TextExtractor):
         _ = item
         _ = config
         _ = previous_extractions
-        raise ExtractionRunFatalError(
-            "Pipeline extractor must be executed by the extraction runner."
+        raise ExtractionSnapshotFatalError(
+            "Pipeline extractor must be executed by the extraction snapshotner."
         )

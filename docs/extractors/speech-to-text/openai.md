@@ -90,7 +90,7 @@ biblicus extract my-corpus --extractor stt-openai \
   --config no_speech_probability_threshold=0.6
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: stt-openai
@@ -101,7 +101,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

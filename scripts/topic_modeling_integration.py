@@ -12,17 +12,17 @@ from typing import Dict, Iterable, Optional
 
 from biblicus.analysis.models import (
     TopicModelingBerTopicConfig,
+    TopicModelingConfiguration,
     TopicModelingLexicalProcessingConfig,
     TopicModelingLlmExtractionConfig,
     TopicModelingLlmFineTuningConfig,
-    TopicModelingRecipeConfig,
     TopicModelingTextSourceConfig,
     TopicModelingVectorizerConfig,
 )
 from biblicus.analysis.topic_modeling import TopicModelingBackend
 from biblicus.corpus import Corpus
-from biblicus.extraction import build_extraction_run
-from biblicus.models import ExtractionRunReference
+from biblicus.extraction import build_extraction_snapshot
+from biblicus.models import ExtractionSnapshotReference
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -65,16 +65,16 @@ def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
     return config
 
 
-def _build_recipe_config(
+def _build_configuration_config(
     arguments: argparse.Namespace, document_count: Optional[int]
-) -> TopicModelingRecipeConfig:
+) -> TopicModelingConfiguration:
     """
-    Build a validated topic modeling recipe from parsed arguments.
+    Build a validated topic modeling configuration from parsed arguments.
 
     :param arguments: Parsed command-line arguments.
     :type arguments: argparse.Namespace
-    :return: Topic modeling recipe configuration.
-    :rtype: TopicModelingRecipeConfig
+    :return: Topic modeling configuration configuration.
+    :rtype: TopicModelingConfiguration
     """
     text_source = TopicModelingTextSourceConfig(
         sample_size=arguments.sample_size,
@@ -95,7 +95,7 @@ def _build_recipe_config(
     )
     llm_extraction = TopicModelingLlmExtractionConfig(enabled=False)
     llm_fine_tuning = TopicModelingLlmFineTuningConfig(enabled=False)
-    return TopicModelingRecipeConfig(
+    return TopicModelingConfiguration(
         schema_version=1,
         text_source=text_source,
         llm_extraction=llm_extraction,
@@ -133,44 +133,44 @@ def run_integration(arguments: argparse.Namespace) -> Dict[str, object]:
             }
         ]
     }
-    extraction_manifest = build_extraction_run(
+    extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",
-        recipe_name=arguments.extraction_recipe_name,
-        config=extraction_config,
+        configuration_name=arguments.extraction_configuration_name,
+        configuration=extraction_config,
     )
-    extraction_run = ExtractionRunReference(
+    extraction_snapshot = ExtractionSnapshotReference(
         extractor_id="pipeline",
-        run_id=extraction_manifest.run_id,
+        snapshot_id=extraction_manifest.snapshot_id,
     )
     document_count = extraction_manifest.stats.get("extracted_nonempty_items")
     if document_count is not None and document_count < 16:
         raise ValueError(
             "BERTopic defaults require at least 16 documents. Increase --limit or use a larger corpus."
         )
-    recipe_config = _build_recipe_config(arguments, document_count)
+    configuration_config = _build_configuration_config(arguments, document_count)
     backend = TopicModelingBackend()
     output = backend.run_analysis(
         corpus,
-        recipe_name=arguments.recipe_name,
-        config=recipe_config.model_dump(),
-        extraction_run=extraction_run,
+        configuration_name=arguments.configuration_name,
+        config=configuration_config.model_dump(),
+        extraction_snapshot=extraction_snapshot,
     )
     output_path = (
         corpus.analysis_run_dir(
             analysis_id=TopicModelingBackend.analysis_id,
-            run_id=output.run.run_id,
+            snapshot_id=output.snapshot.snapshot_id,
         )
         / "output.json"
     )
     return {
         "corpus": str(corpus_path),
         "ingestion": ingestion_stats,
-        "extraction_run": extraction_run.as_string(),
-        "analysis_run": output.run.run_id,
+        "extraction_snapshot": extraction_snapshot.as_string(),
+        "analysis_snapshot": output.snapshot.snapshot_id,
         "output_path": str(output_path),
-        "topics": output.run.stats.get("topics"),
-        "documents": output.run.stats.get("documents"),
+        "topics": output.snapshot.stats.get("topics"),
+        "documents": output.snapshot.stats.get("documents"),
     }
 
 
@@ -227,17 +227,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--extraction-step",
         default="pass-through-text",
-        help="Extractor step to use inside the pipeline run.",
+        help="Extractor step to use inside the pipeline snapshot.",
     )
     parser.add_argument(
-        "--extraction-recipe-name",
+        "--extraction-configuration-name",
         default="integration",
-        help="Recipe name for the extraction run.",
+        help="Configuration name for the extraction snapshot.",
     )
     parser.add_argument(
-        "--recipe-name",
+        "--configuration-name",
         default="integration",
-        help="Recipe name for the topic modeling run.",
+        help="Configuration name for the topic modeling snapshot.",
     )
     parser.add_argument(
         "--sample-size",

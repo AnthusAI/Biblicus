@@ -1,6 +1,6 @@
 # Knowledge base
 
-The knowledge base is the high‑level, turnkey workflow that makes Biblicus feel effortless. You hand it a folder. It chooses sensible defaults, builds a retrieval run, and gives you evidence you can turn into context.
+The knowledge base is the high‑level, turnkey workflow that makes Biblicus feel effortless. You hand it a folder. It chooses sensible defaults, builds a retrieval snapshot, and gives you evidence you can turn into context.
 
 This is the right layer when you want to use Biblicus without spending time on setup. You can still override the defaults later when you want fine‑grained control.
 
@@ -8,7 +8,7 @@ This is the right layer when you want to use Biblicus without spending time on s
 
 - Creates or opens a corpus at a chosen location (or a temporary location if you do not provide one).
 - Imports a folder tree into that corpus.
-- Builds a retrieval run using a default backend.
+- Builds a retrieval snapshot using a default backend.
 - Exposes a simple `query` method that returns evidence.
 - Exposes a `context_pack` helper to shape evidence into model context.
 
@@ -54,7 +54,7 @@ from biblicus.models import QueryBudget
 kb = KnowledgeBase.from_folder(
     "notes",
     backend_id="scan",
-    recipe_name="Knowledge base demo",
+    configuration_name="Knowledge base demo",
     query_budget=QueryBudget(max_total_items=10, maximum_total_characters=4000, max_items_per_source=None),
     tags=["memory"],
     corpus_root="corpora/knowledge-base",
@@ -78,10 +78,10 @@ If the high‑level workflow is not enough, switch to `Corpus`, `get_backend`, a
 ## Reproducibility checklist
 
 - Record the corpus path and catalog timestamp.
-- Capture the backend run identifier used by the knowledge base.
+- Capture the backend snapshot identifier used by the knowledge base.
 - Persist the query budget used for comparisons.
 
 ## Common pitfalls
 
 - Comparing results from knowledge bases built on different corpus roots.
-- Forgetting to capture the run identifier before rebuilding the corpus.
+- Forgetting to capture the snapshot identifier before rebuilding the corpus.

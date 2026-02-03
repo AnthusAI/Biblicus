@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
@@ -54,12 +54,12 @@ class RapidOcrExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed configuration model.
         :rtype: RapidOcrExtractorConfig
-        :raises ExtractionRunFatalError: If the optional dependency is missing.
+        :raises ExtractionSnapshotFatalError: If the optional dependency is missing.
         """
         try:
             from rapidocr_onnxruntime import RapidOCR  # noqa: F401
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "RapidOCR extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[ocr]".'
             ) from import_error

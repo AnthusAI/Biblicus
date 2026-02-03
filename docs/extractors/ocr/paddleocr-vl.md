@@ -100,7 +100,7 @@ biblicus extract my-corpus --extractor ocr-paddleocr-vl \
   --config lang=japan
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: ocr-paddleocr-vl
@@ -113,7 +113,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

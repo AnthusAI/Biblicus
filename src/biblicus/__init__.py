@@ -16,13 +16,13 @@ from .context_engine import (
 from .corpus import Corpus
 from .knowledge_base import KnowledgeBase
 from .models import (
+    ConfigurationManifest,
     CorpusConfig,
     Evidence,
     IngestResult,
     QueryBudget,
-    RecipeManifest,
     RetrievalResult,
-    RetrievalRun,
+    RetrievalSnapshot,
 )
 
 __all__ = [
@@ -42,9 +42,9 @@ __all__ = [
     "IngestResult",
     "KnowledgeBase",
     "QueryBudget",
-    "RecipeManifest",
+    "ConfigurationManifest",
     "RetrievalResult",
-    "RetrievalRun",
+    "RetrievalSnapshot",
 ]
 
 __version__ = "0.16.0"

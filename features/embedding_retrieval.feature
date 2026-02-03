@@ -5,8 +5,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 200 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value |
       | snippet_characters             | 200   |
       | chunker.chunker_id             | fixed-char-window |
@@ -14,9 +14,9 @@ Feature: Embedding retrieval and chunking
       | chunker.overlap_characters     | 200   |
       | embedding_provider.provider_id | hash-embedding |
       | embedding_provider.dimensions  | 64    |
-    And I measure the latest run artifact bytes
-    Then the run artifact bytes are greater than 0
-    When I query with the latest run for "United States" and budget:
+    And I measure the latest snapshot artifact bytes
+    Then the snapshot artifact bytes are greater than 0
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -28,8 +28,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 200 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | snippet_characters             | 200               |
       | chunker.chunker_id             | fixed-char-window |
@@ -37,13 +37,13 @@ Feature: Embedding retrieval and chunking
       | chunker.overlap_characters     | 200               |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 2     |
       | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
     And I remember the query evidence keys
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 2     |
       | offset               | 2     |
@@ -55,8 +55,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 50 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I attempt to build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I attempt to build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                        | value |
       | chunker.chunker_id         | fixed-token-window |
       | chunker.window_tokens      | 200   |
@@ -70,8 +70,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 120 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | snippet_characters             | 200               |
       | chunker.chunker_id             | fixed-char-window |
@@ -79,7 +79,7 @@ Feature: Embedding retrieval and chunking
       | chunker.overlap_characters     | 200               |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -91,8 +91,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 120 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value              |
       | snippet_characters             | 200                |
       | chunker.chunker_id             | fixed-token-window |
@@ -101,7 +101,7 @@ Feature: Embedding retrieval and chunking
       | tokenizer.tokenizer_id         | whitespace         |
       | embedding_provider.provider_id | hash-embedding     |
       | embedding_provider.dimensions  | 16                 |
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -109,17 +109,17 @@ Feature: Embedding retrieval and chunking
     Then the query returns evidence with stage "embedding-index-inmemory"
     And the query evidence includes span offsets
 
-  Scenario: Embedding retrieval can build without an extraction run
+  Scenario: Embedding retrieval can build without an extraction snapshot
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" with config:
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" with config:
       | key                            | value             |
       | snippet_characters             | 200               |
       | chunker.chunker_id             | paragraph         |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -130,14 +130,14 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" with config:
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" with config:
       | key                            | value             |
       | snippet_characters             | 200               |
       | chunker.chunker_id             | paragraph         |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    And I delete the latest run artifacts
-    When I attempt to query with the latest run for "United States" and budget:
+    And I delete the latest snapshot artifacts
+    When I attempt to query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -149,13 +149,13 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" with config:
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" with config:
       | key                            | value          |
       | chunker.chunker_id             | paragraph      |
       | embedding_provider.provider_id | hash-embedding |
       | embedding_provider.dimensions  | 16             |
-    And I delete the latest run artifacts
-    When I attempt to query with the latest run for "United States" and budget:
+    And I delete the latest snapshot artifacts
+    When I attempt to query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -165,13 +165,13 @@ Feature: Embedding retrieval and chunking
 
   Scenario: An empty embedding index returns no evidence
     Given I initialized a corpus at "corpus"
-    When I build a "embedding-index-file" retrieval run in corpus "corpus" with config:
+    When I build a "embedding-index-file" retrieval snapshot in corpus "corpus" with config:
       | key                            | value          |
       | snippet_characters             | 200            |
       | chunker.chunker_id             | paragraph      |
       | embedding_provider.provider_id | hash-embedding |
       | embedding_provider.dimensions  | 16             |
-    When I query with the latest run for "United States" and budget:
+    When I query with the latest snapshot for "United States" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
@@ -182,7 +182,7 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 30 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I attempt to build a "embedding-index-file" retrieval run in corpus "corpus" with config:
+    And I attempt to build a "embedding-index-file" retrieval snapshot in corpus "corpus" with config:
       | key                            | value          |
       | chunker.chunker_id             | paragraph      |
       | embedding_provider.provider_id | not-a-provider |
@@ -194,8 +194,8 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I attempt to build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I attempt to build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | chunker.chunker_id             | fixed-char-window |
       | chunker.window_characters      | 200               |
@@ -206,18 +206,18 @@ Feature: Embedding retrieval and chunking
     Then the command fails with exit code 2
     And standard error includes "maximum_cache_total_items"
 
-  Scenario: Build fails fast when a referenced extraction run is missing
+  Scenario: Build fails fast when a referenced extraction snapshot is missing
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 20 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I attempt to build a "embedding-index-file" retrieval run in corpus "corpus" with config:
+    And I attempt to build a "embedding-index-file" retrieval snapshot in corpus "corpus" with config:
       | key                            | value               |
-      | extraction_run                 | pass-through-text:missing-run |
+      | extraction_snapshot                 | pass-through-text:missing-snapshot |
       | chunker.chunker_id             | paragraph           |
       | embedding_provider.provider_id | hash-embedding      |
       | embedding_provider.dimensions  | 16                  |
     Then the command fails with exit code 2
-    And standard error includes "Missing extraction run"
+    And standard error includes "Missing extraction snapshot"
 
   Scenario: Internal chunking validators reject invalid spans and window parameters
     When I attempt to validate an invalid token span
@@ -270,15 +270,15 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 60 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | chunker.chunker_id             | fixed-char-window |
       | chunker.window_characters      | 500               |
       | chunker.overlap_characters     | 100               |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    When I attempt to query backend "embedding-index-file" with an invalid query embedding shape
+    When I attempt to query retriever "embedding-index-file" with an invalid query embedding shape
     Then a ValueError is raised
     And the ValueError message includes "invalid query embedding shape"
 
@@ -286,15 +286,15 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 60 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | chunker.chunker_id             | fixed-char-window |
       | chunker.window_characters      | 500               |
       | chunker.overlap_characters     | 100               |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 32                |
-    When I attempt to query backend "embedding-index-inmemory" with an invalid query embedding shape
+    When I attempt to query retriever "embedding-index-inmemory" with an invalid query embedding shape
     Then a ValueError is raised
     And the ValueError message includes "invalid query embedding shape"
 
@@ -302,15 +302,15 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-file" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-file" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | chunker.chunker_id             | fixed-char-window |
       | chunker.window_characters      | 400               |
       | chunker.overlap_characters     | 0                 |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 16                |
-    When I attempt to query backend "embedding-index-file" with inconsistent artifacts
+    When I attempt to query retriever "embedding-index-file" with inconsistent artifacts
     Then a ValueError is raised
     And the ValueError message includes "inconsistent"
 
@@ -318,15 +318,15 @@ Feature: Embedding retrieval and chunking
     Given I initialized a corpus at "corpus"
     And a WikiText-2 raw sample file "wikitext_train.txt" exists with split "train" and first 80 lines
     When I ingest the file "wikitext_train.txt" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "embedding-index-inmemory" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "embedding-index-inmemory" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                            | value             |
       | chunker.chunker_id             | fixed-char-window |
       | chunker.window_characters      | 400               |
       | chunker.overlap_characters     | 0                 |
       | embedding_provider.provider_id | hash-embedding    |
       | embedding_provider.dimensions  | 16                |
-    When I attempt to query backend "embedding-index-inmemory" with inconsistent artifacts
+    When I attempt to query retriever "embedding-index-inmemory" with inconsistent artifacts
     Then a ValueError is raised
     And the ValueError message includes "inconsistent"
 

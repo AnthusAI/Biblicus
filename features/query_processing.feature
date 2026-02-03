@@ -7,7 +7,7 @@ Feature: Query processing stages
       | text |
       | short evidence |
       | a much longer evidence text |
-    And I built a scan run for corpus "corpus"
+    And I built a scan snapshot for corpus "corpus"
     When I query corpus "corpus" with query "evidence" reranking with "rerank-longest-text"
     Then the query result evidence text order is:
       | text |
@@ -20,7 +20,7 @@ Feature: Query processing stages
       | text |
       | keep keep |
       | keep |
-    And I built a scan run for corpus "corpus"
+    And I built a scan snapshot for corpus "corpus"
     When I query corpus "corpus" with query "keep" filtering with minimum score 2.0
     Then the query result evidence text order is:
       | text |

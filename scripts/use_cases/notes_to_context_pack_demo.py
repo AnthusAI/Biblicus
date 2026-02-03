@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 from typing import Dict, List
 
-from biblicus.backends import get_backend
 from biblicus.context import (
     ContextPackPolicy,
     TokenBudget,
@@ -20,6 +19,7 @@ from biblicus.context import (
 )
 from biblicus.corpus import Corpus
 from biblicus.models import QueryBudget
+from biblicus.retrievers import get_retriever
 
 
 def _prepare_corpus(*, corpus_path: Path, force: bool) -> Corpus:
@@ -54,14 +54,18 @@ def run_demo(*, corpus_path: Path, force: bool) -> Dict[str, object]:
     for note_title, note_text in notes:
         corpus.ingest_note(note_text, title=note_title, tags=["use-case", "notes"])
 
-    backend = get_backend("scan")
-    run = backend.build_run(corpus, recipe_name="Use case: notes to context pack", config={})
+    backend = get_retriever("scan")
+    snapshot = backend.build_snapshot(
+        corpus,
+        configuration_name="Use case: notes to context pack",
+        configuration={},
+    )
     budget = QueryBudget(
         max_total_items=5, maximum_total_characters=4000, max_items_per_source=None
     )
     result = backend.query(
         corpus,
-        run=run,
+        snapshot=snapshot,
         query_text="Primary button style preference",
         budget=budget,
     )
@@ -81,8 +85,8 @@ def run_demo(*, corpus_path: Path, force: bool) -> Dict[str, object]:
 
     return {
         "corpus_path": str(corpus_path),
-        "backend_id": run.recipe.backend_id,
-        "run_id": run.run_id,
+        "retriever_id": snapshot.configuration.retriever_id,
+        "snapshot_id": snapshot.snapshot_id,
         "query_text": result.query_text,
         "evidence": [e.model_dump() for e in result.evidence],
         "context_pack_text": fitted_context_pack.text,

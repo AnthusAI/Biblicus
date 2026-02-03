@@ -8,7 +8,7 @@ returns evidence with chunk boundaries so you can trace results back to the orig
 
 ## Chunkers are pluggable
 
-Chunking is a pluggable interface selected by identifier in a retrieval recipe:
+Chunking is a pluggable interface selected by identifier in a retrieval configuration:
 
 - `chunker_id`
 - `chunker_config` (Pydantic validated; `extra="forbid"`)

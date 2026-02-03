@@ -135,7 +135,7 @@
 - Add markov analysis and text utilities
   ([`fd46b2a`](https://github.com/AnthusAI/Biblicus/commit/fd46b2a326253af6f9bcf2113f561c4da9f330cd))
 
-- Add profiling recipes and override handling docs/tests
+- Add profiling configurations and override handling docs/tests
   ([`56c3302`](https://github.com/AnthusAI/Biblicus/commit/56c33024a2212080eb438f74f82ccf2bba398f13))
 
 - Align biblicus AI stack with DSPy
@@ -284,11 +284,11 @@ Update API documentation, extraction guide, user configuration, and README to re
 Add base analysis pipeline framework with support for LLM-driven extraction and topic modeling.
   Includes schema validation and model abstractions.
 
-- Add analysis run support to corpus
+- Add analysis snapshot support to corpus
   ([`d341c28`](https://github.com/AnthusAI/Biblicus/commit/d341c2830240e89cec6b86c84e9df83ff7636dee))
 
-Add analysis_runs_dir property and analysis_run_dir method. Add latest_extraction_run_reference
-  helper for retrieving the most recent extraction run.
+Add analysis_runs_dir property and analysis_run_dir method. Add latest_extraction_snapshot_reference
+  helper for retrieving the most recent extraction snapshot.
 
 - Add analysis schema constants
   ([`372d427`](https://github.com/AnthusAI/Biblicus/commit/372d4277ec4ea9a7829ff17220dc78315ac52543))
@@ -323,10 +323,10 @@ Add composable inference backend configuration for components that support both 
 Add Deepgram and HuggingFace user configuration support. Update extractors with confidence score
   support and refined implementations for Docling, PaddleOCR, RapidOCR, and selection utilities.
 
-- Add topic modeling analysis command and recipe file support
+- Add topic modeling analysis command and configuration file support
   ([`6a60f57`](https://github.com/AnthusAI/Biblicus/commit/6a60f576eb0b5e250df7d4fcaa0beceac6c301dd))
 
-Add biblicus analyze topics command with recipe file support. Improve step spec parsing to handle
+Add biblicus analyze topics command with configuration file support. Improve step spec parsing to handle
   nested structures (braces, brackets) in extraction pipeline configurations.
 
 - Propagate confidence scores through extraction pipeline
@@ -422,12 +422,12 @@ Add support for advanced optical character recognition with PaddleOCR vision-lan
 
 ### Features
 
-- **corpus**: Add crawl and extraction run lifecycle
+- **corpus**: Add crawl and extraction snapshot lifecycle
   ([`0727c08`](https://github.com/AnthusAI/Biblicus/commit/0727c0807705f5483aa1cd87a25e31314eb93a6d))
 
 Add a website crawl workflow with allowed-prefix enforcement and .biblicusignore filtering.\n\nAdd
-  extraction run lifecycle commands (build, list, show, delete) with deterministic, idempotent run
-  identifiers and inspectable run manifests.\n\nUpdate documentation and roadmap toward retrieval
+  extraction snapshot lifecycle commands (build, list, show, delete) with deterministic, idempotent run
+  identifiers and inspectable snapshot manifests.\n\nUpdate documentation and roadmap toward retrieval
   MVP.
 
 
@@ -472,7 +472,7 @@ Refocus next steps on runnable examples and rename corpus workflow notes to a st
 - **extraction**: Add pluggable extraction pipeline
   ([`b7bc0e7`](https://github.com/AnthusAI/Biblicus/commit/b7bc0e78332f4036f6f543704896b61d7892199b))
 
-Adds extraction runs with per-step artifacts and selection policies (select-text,
+Adds extraction snapshots with per-step artifacts and selection policies (select-text,
   select-longest-text).
 
 Includes optional extractors for PDF text (pdf-text), OCR (ocr-rapidocr), speech-to-text
@@ -535,7 +535,7 @@ Adds integration corpus download scripts and gated integration test flags, plus 
 Add practical corpus ingestion and management features (ingest sources, streaming ingest, import
   tree, ignore rules, and lifecycle hooks).
 
-Add a text extraction stage with extraction runs, composable extractors (pass-through-text,
+Add a text extraction stage with extraction snapshots, composable extractors (pass-through-text,
   metadata-text), and a cascade pipeline.
 
 Add Portable Document Format sample downloads, integration test selection via scripts/test.py

@@ -1,16 +1,16 @@
-Feature: Cascading YAML recipes
-  Biblicus composes multiple YAML recipe files into a single configuration view, then applies command-line overrides.
+Feature: Cascading YAML configurations
+  Biblicus composes multiple YAML configuration files into a single configuration view, then applies command-line overrides.
 
-  Scenario: Topic analysis composes multiple recipe files and applies --config overrides
+  Scenario: Topic analysis composes multiple configuration files and applies --config overrides
     Given I initialized a corpus at "corpus"
     And a fake BERTopic library is available with topic assignments "0" and keywords:
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "base.yml" exists with content:
+    And a configuration file "base.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -25,37 +25,37 @@ Feature: Cascading YAML recipes
       llm_fine_tuning:
         enabled: false
       """
-    And a recipe file "overlay.yml" exists with content:
+    And a configuration file "overlay.yml" exists with content:
       """
       bertopic_analysis:
         vectorizer:
           ngram_range: [1, 2]
       """
-    And I run a topic analysis in corpus "corpus" using recipes "base.yml,overlay.yml" and the latest extraction run with config overrides:
+    And I snapshot a topic analysis in corpus "corpus" using configurations "base.yml,overlay.yml" and the latest extraction snapshot with config overrides:
       | key                               | value |
       | bertopic_analysis.parameters.nr_topics | 7     |
     Then the BERTopic analysis report includes ngram range 1 and 2
     And the topic analysis report includes BERTopic parameter "nr_topics" with value 7
 
-  Scenario: Profiling analysis composes multiple recipe files and applies --config overrides
+  Scenario: Profiling analysis composes multiple configuration files and applies --config overrides
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering." with title "Beta" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "base.yml" exists with content:
+    And a configuration file "base.yml" exists with content:
       """
       schema_version: 1
       sample_size: 500
       min_text_characters: 10
       percentiles: [50, 90]
       """
-    And a recipe file "overlay.yml" exists with content:
+    And a configuration file "overlay.yml" exists with content:
       """
       min_text_characters: 200
       """
-    And I run a profiling analysis in corpus "corpus" using recipes "base.yml,overlay.yml" and the latest extraction run with config overrides:
+    And I snapshot a profiling analysis in corpus "corpus" using configurations "base.yml,overlay.yml" and the latest extraction snapshot with config overrides:
       | key                 | value |
       | percentiles          | [99]  |
     Then the profiling output includes extracted nonempty items 1

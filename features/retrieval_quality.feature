@@ -1,11 +1,11 @@
 Feature: Retrieval quality upgrades
   Retrieval quality upgrades keep multi-stage retrieval explicit while improving relevance.
 
-  Scenario: Lexical tuning parameters are recorded in the retrieval recipe
+  Scenario: Lexical tuning parameters are recorded in the retrieval configuration
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo charlie"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    And I build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key                | value |
       | chunk_size         | 200   |
       | chunk_overlap      | 50    |
@@ -18,7 +18,7 @@ Feature: Retrieval quality upgrades
       | field_weight_title | 2.0   |
       | field_weight_body  | 1.0   |
       | field_weight_tags  | 0.5   |
-    Then the latest run recipe config includes:
+    Then the latest snapshot configuration config includes:
       | key                | value |
       | bm25_k1            | 1.2   |
       | bm25_b             | 0.75  |
@@ -31,7 +31,7 @@ Feature: Retrieval quality upgrades
 
   Scenario: Lexical tuning rejects invalid ngram ranges
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key       | value |
       | ngram_min | 2     |
       | ngram_max | 1     |
@@ -42,10 +42,10 @@ Feature: Retrieval quality upgrades
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "the zebra"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    And I build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key        | value |
       | stop_words | english |
-    And I query with the latest run for "the" and budget:
+    And I query with the latest snapshot for "the" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -58,12 +58,12 @@ Feature: Retrieval quality upgrades
     And a text file "beta.md" exists with contents "alpha beta charlie"
     When I ingest the file "alpha.md" into corpus "corpus"
     And I ingest the file "beta.md" into corpus "corpus"
-    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    And I build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key                 | value |
       | rerank_enabled      | true  |
       | rerank_model        | cross-encoder |
       | rerank_top_k        | 2     |
-    And I query with the latest run for "alpha" and budget:
+    And I query with the latest snapshot for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -77,13 +77,13 @@ Feature: Retrieval quality upgrades
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo charlie"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "hybrid" retrieval run in corpus "corpus" with config:
+    And I build a "hybrid" retrieval snapshot in corpus "corpus" with config:
       | key              | value |
-      | lexical_backend  | sqlite-full-text-search |
-      | embedding_backend| tf-vector |
+      | lexical_retriever  | sqlite-full-text-search |
+      | embedding_retriever| tf-vector |
       | lexical_weight   | 0.7   |
       | embedding_weight | 0.3   |
-    And I query with the latest run for "alpha" and budget:
+    And I query with the latest snapshot for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -95,7 +95,7 @@ Feature: Retrieval quality upgrades
 
   Scenario: Hybrid retrieval rejects invalid weights
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "hybrid" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "hybrid" retrieval snapshot in corpus "corpus" with config:
       | key              | value |
       | lexical_weight   | 0.9   |
       | embedding_weight | 0.9   |
@@ -104,7 +104,7 @@ Feature: Retrieval quality upgrades
 
   Scenario: SQLite stop words reject invalid strings
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key        | value   |
       | stop_words | spanish |
     Then the command fails with exit code 2
@@ -132,7 +132,7 @@ Feature: Retrieval quality upgrades
 
   Scenario: Rerank requires a model identifier
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "sqlite-full-text-search" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" with config:
       | key            | value |
       | rerank_enabled | true  |
     Then the command fails with exit code 2
@@ -150,8 +150,8 @@ Feature: Retrieval quality upgrades
     And I ingest the file "delta.md" into corpus "corpus"
     And I ingest the file "punct.md" into corpus "corpus"
     And I ingest the file "data.bin" into corpus "corpus"
-    And I build a "tf-vector" retrieval run in corpus "corpus"
-    And I query with the latest run for "alpha" and budget:
+    And I build a "tf-vector" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -162,8 +162,8 @@ Feature: Retrieval quality upgrades
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "tf-vector" retrieval run in corpus "corpus"
-    And I query with the latest run for "alpha bravo charlie" and budget:
+    And I build a "tf-vector" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "alpha bravo charlie" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -174,8 +174,8 @@ Feature: Retrieval quality upgrades
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "tf-vector" retrieval run in corpus "corpus"
-    And I query with the latest run for "!!!" and budget:
+    And I build a "tf-vector" retrieval snapshot in corpus "corpus"
+    And I query with the latest snapshot for "!!!" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
@@ -190,22 +190,22 @@ Feature: Retrieval quality upgrades
     When I ingest the file "alpha.md" into corpus "corpus"
     And I ingest the file "whitespace.txt" into corpus "corpus"
     And I ingest the file "data.bin" into corpus "corpus"
-    And I build a "pass-through-text" extraction run in corpus "corpus"
-    And I build a "tf-vector" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pass-through-text" extraction snapshot in corpus "corpus"
+    And I build a "tf-vector" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                | value |
       | snippet_characters | 120   |
-    And I query with the latest run for "alpha" and budget:
+    And I query with the latest snapshot for "alpha" and budget:
       | key                  | value |
       | max_total_items      | 5     |
       | maximum_total_characters | 2000  |
       | max_items_per_source | 5     |
-    Then the latest run stats include text_items 2
+    Then the latest snapshot stats include text_items 2
 
-  Scenario: TF vector retrieval rejects missing extraction runs
+  Scenario: TF vector retrieval rejects missing extraction snapshots
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "tf-vector" retrieval run in corpus "corpus" with extraction run "missing:run"
+    When I attempt to build a "tf-vector" retrieval snapshot in corpus "corpus" with extraction snapshot "missing:snapshot"
     Then the command fails with exit code 2
-    And standard error includes "Missing extraction run"
+    And standard error includes "Missing extraction snapshot"
 
   Scenario: Vector snippet helpers handle missing spans
     When I compute a vector match span for text "alpha" with tokens "beta"
@@ -229,25 +229,25 @@ Feature: Retrieval quality upgrades
     Then the vector match span is None
     And the vector snippet for text "<empty>" with span "None" and max chars 5 equals "<empty>"
 
-  Scenario: Hybrid backend rejects nested lexical backends
+  Scenario: Hybrid retriever rejects nested lexical backends
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "hybrid" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "hybrid" retrieval snapshot in corpus "corpus" with config:
       | key             | value |
-      | lexical_backend | hybrid |
+      | lexical_retriever | hybrid |
     Then the command fails with exit code 2
     And standard error includes "lexical"
 
-  Scenario: Hybrid backend rejects nested embedding backends
+  Scenario: Hybrid retriever rejects nested embedding backends
     Given I initialized a corpus at "corpus"
-    When I attempt to build a "hybrid" retrieval run in corpus "corpus" with config:
+    When I attempt to build a "hybrid" retrieval snapshot in corpus "corpus" with config:
       | key              | value |
-      | lexical_backend  | sqlite-full-text-search |
-      | embedding_backend| hybrid |
+      | lexical_retriever  | sqlite-full-text-search |
+      | embedding_retriever| hybrid |
     Then the command fails with exit code 2
     And standard error includes "embedding"
 
   Scenario: Hybrid query requires component runs
     Given I initialized a corpus at "corpus"
-    When I attempt to query a hybrid run without component runs
+    When I attempt to query a hybrid snapshot without component runs
     Then a model validation error is raised
-    And the validation error mentions "Hybrid run missing lexical or embedding run identifiers"
+    And the validation error mentions "Hybrid snapshot missing lexical or embedding snapshot identifiers"

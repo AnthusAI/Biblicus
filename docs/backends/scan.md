@@ -42,7 +42,7 @@ No additional dependencies or setup required.
 ```python
 class ScanRecipeConfig(BaseModel):
     snippet_characters: int = 400       # Maximum characters in snippets
-    extraction_run: Optional[str] = None  # Extraction run reference
+    extraction_snapshot: Optional[str] = None  # Extraction run reference
 ```
 
 ### Configuration Options
@@ -50,7 +50,7 @@ class ScanRecipeConfig(BaseModel):
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `snippet_characters` | int | `400` | Maximum characters to include in evidence snippets |
-| `extraction_run` | str | `None` | Optional extraction run reference (extractor_id:run_id) |
+| `extraction_snapshot` | str | `None` | Optional extraction snapshot reference (extractor_id:snapshot_id) |
 
 ## Usage
 
@@ -73,23 +73,23 @@ biblicus query my-corpus --query "search terms"
 biblicus build my-corpus --backend scan \
   --config snippet_characters=800
 
-# With extraction run
+# With extraction snapshot
 biblicus build my-corpus --backend scan \
-  --config extraction_run=pdf-text:abc123
+  --config extraction_snapshot=pdf-text:abc123
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 backend_id: scan
-recipe_name: "Development scan"
+configuration_name: "Development scan"
 config:
   snippet_characters: 400
-  extraction_run: null
+  extraction_snapshot: null
 ```
 
 ```bash
-biblicus build my-corpus --recipe recipe.yml
+biblicus build my-corpus --configuration configuration.yml
 ```
 
 ### Python API
@@ -108,7 +108,7 @@ backend = get_backend("scan")
 # Build run (no index created)
 run = backend.build_run(
     corpus,
-    recipe_name="Quick scan",
+    configuration_name="Quick scan",
     config={}
 )
 
@@ -130,16 +130,16 @@ for evidence in result.evidence:
 
 ```python
 # Extract text first
-extraction_run = corpus.extract_text(
+extraction_snapshot = corpus.extract_text(
     extractor_id="pdf-text"
 )
 
 # Build scan with extraction
 run = backend.build_run(
     corpus,
-    recipe_name="Scan with extraction",
+    configuration_name="Scan with extraction",
     config={
-        "extraction_run": f"pdf-text:{extraction_run.run_id}"
+        "extraction_snapshot": f"pdf-text:{extraction_snapshot.snapshot_id}"
     }
 )
 ```
@@ -192,7 +192,7 @@ def score_item(item_text, query_tokens):
 
 ### Disk Usage
 
-- **None**: No artifacts created (only run manifest)
+- **None**: No artifacts created (only snapshot manifest)
 
 ## Examples
 
@@ -222,8 +222,8 @@ corpus = Corpus.from_directory("test-corpus")
 scan_backend = get_backend("scan")
 fts_backend = get_backend("sqlite-full-text-search")
 
-scan_run = scan_backend.build_run(corpus, recipe_name="Scan baseline", config={})
-fts_run = fts_backend.build_run(corpus, recipe_name="FTS index", config={})
+scan_run = scan_backend.build_run(corpus, configuration_name="Scan baseline", config={})
+fts_run = fts_backend.build_run(corpus, configuration_name="FTS index", config={})
 
 # Compare results
 query = "neural networks"
@@ -283,17 +283,17 @@ Consider switching to [sqlite-full-text-search](sqlite-full-text-search.md) when
 
 ### Missing Extraction Run
 
-If configured extraction run doesn't exist:
+If configured extraction snapshot doesn't exist:
 
 ```
-FileNotFoundError: Missing extraction run: pdf-text:abc123
+FileNotFoundError: Missing extraction snapshot: pdf-text:abc123
 ```
 
-**Fix**: Verify extraction run ID or run extraction first.
+**Fix**: Verify extraction snapshot ID or run extraction first.
 
 ### Non-Text Items
 
-Non-text items without extraction run are skipped automatically. No error raised.
+Non-text items without extraction snapshot are skipped automatically. No error raised.
 
 ## Statistics
 

@@ -17,7 +17,7 @@ Backends implement two operations:
 Backends store artifacts and manifests under:
 
 ```
-.biblicus/runs/retrieval/<backend_id>/<run_id>/
+.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/
   manifest.json
   <backend artifacts>
 ```
@@ -26,12 +26,12 @@ The manifest is the reproducible contract. Artifacts are backend-specific and li
 
 ## Implementation checklist
 
-1. **Define a Pydantic configuration model** for your backend recipe.
+1. **Define a Pydantic configuration model** for your backend configuration.
 2. **Implement `RetrievalBackend`**:
-   - `build_run(corpus, recipe_name, config)`
+   - `build_run(corpus, configuration_name, config)`
    - `query(corpus, run, query_text, budget)`
 3. **Emit `Evidence`** with required fields:
-   - `item_id`, `source_uri`, `media_type`, `score`, `rank`, `stage`, `recipe_id`, `run_id`
+   - `item_id`, `source_uri`, `media_type`, `score`, `rank`, `stage`, `configuration_id`, `snapshot_id`
    - `text` **or** `content_ref`
 4. **Register the backend** in `biblicus.backends.available_backends`.
 5. **Add behavior-driven development specifications** before implementation and make them pass with 100% coverage.
@@ -41,12 +41,12 @@ The manifest is the reproducible contract. Artifacts are backend-specific and li
 - Treat **runs** as immutable manifests with reproducible parameters.
 - If your backend needs artifacts, store them under `.biblicus/runs/` and record paths in `artifact_paths`.
 - Keep **text extraction** in explicit pipeline stages, not in backend ingestion.
-  See `docs/EXTRACTION.md` for how extraction runs are built and referenced from backend configs.
+  See `docs/EXTRACTION.md` for how extraction snapshots are built and referenced from backend configs.
 
 ## Reproducibility checklist
 
-- Record the extraction run reference used to build the backend.
-- Keep the backend recipe configuration in source control.
+- Record the extraction snapshot reference used to build the backend.
+- Keep the backend configuration configuration in source control.
 - Reuse the same `QueryBudget` when comparing backends.
 
 ## Common pitfalls

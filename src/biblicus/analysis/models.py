@@ -11,21 +11,21 @@ from pydantic import Field, field_validator, model_validator
 
 from ..ai.models import EmbeddingsClientConfig, LlmClientConfig
 from ..constants import ANALYSIS_SCHEMA_VERSION
-from ..models import ExtractionRunReference
+from ..models import ExtractionSnapshotReference
 from .schema import AnalysisSchemaModel
 
 
-class AnalysisRecipeManifest(AnalysisSchemaModel):
+class AnalysisConfigurationManifest(AnalysisSchemaModel):
     """
     Reproducible configuration for an analysis pipeline.
 
-    :ivar recipe_id: Deterministic recipe identifier.
-    :vartype recipe_id: str
+    :ivar configuration_id: Deterministic configuration identifier.
+    :vartype configuration_id: str
     :ivar analysis_id: Analysis backend identifier.
     :vartype analysis_id: str
-    :ivar name: Human-readable recipe name.
+    :ivar name: Human-readable configuration name.
     :vartype name: str
-    :ivar created_at: International Organization for Standardization 8601 timestamp for recipe creation.
+    :ivar created_at: International Organization for Standardization 8601 timestamp for configuration creation.
     :vartype created_at: str
     :ivar config: Analysis-specific configuration values.
     :vartype config: dict[str, Any]
@@ -33,7 +33,7 @@ class AnalysisRecipeManifest(AnalysisSchemaModel):
     :vartype description: str or None
     """
 
-    recipe_id: str
+    configuration_id: str
     analysis_id: str
     name: str
     created_at: str
@@ -43,30 +43,30 @@ class AnalysisRecipeManifest(AnalysisSchemaModel):
 
 class AnalysisRunInput(AnalysisSchemaModel):
     """
-    Inputs required to execute an analysis run.
+    Inputs required to execute an analysis snapshot.
 
-    :ivar extraction_run: Extraction run reference for analysis inputs.
-    :vartype extraction_run: biblicus.models.ExtractionRunReference
+    :ivar extraction_snapshot: Extraction snapshot reference for analysis inputs.
+    :vartype extraction_snapshot: biblicus.models.ExtractionSnapshotReference
     """
 
-    extraction_run: ExtractionRunReference
+    extraction_snapshot: ExtractionSnapshotReference
 
 
 class AnalysisRunManifest(AnalysisSchemaModel):
     """
-    Immutable record of an analysis run.
+    Immutable record of an analysis snapshot.
 
-    :ivar run_id: Unique run identifier.
-    :vartype run_id: str
-    :ivar recipe: Recipe manifest for this run.
-    :vartype recipe: AnalysisRecipeManifest
+    :ivar snapshot_id: Unique snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration: Configuration manifest for this run.
+    :vartype configuration: AnalysisConfigurationManifest
     :ivar corpus_uri: Canonical uniform resource identifier for the corpus root.
     :vartype corpus_uri: str
     :ivar catalog_generated_at: Catalog timestamp used for the run.
     :vartype catalog_generated_at: str
     :ivar created_at: International Organization for Standardization 8601 timestamp for run creation.
     :vartype created_at: str
-    :ivar input: Inputs used for this analysis run.
+    :ivar input: Inputs used for this analysis snapshot.
     :vartype input: AnalysisRunInput
     :ivar artifact_paths: Relative paths to materialized artifacts.
     :vartype artifact_paths: list[str]
@@ -74,8 +74,8 @@ class AnalysisRunManifest(AnalysisSchemaModel):
     :vartype stats: dict[str, Any]
     """
 
-    run_id: str
-    recipe: AnalysisRecipeManifest
+    snapshot_id: str
+    configuration: AnalysisConfigurationManifest
     corpus_uri: str
     catalog_generated_at: str
     created_at: str
@@ -84,9 +84,9 @@ class AnalysisRunManifest(AnalysisSchemaModel):
     stats: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ProfilingRecipeConfig(AnalysisSchemaModel):
+class ProfilingConfiguration(AnalysisSchemaModel):
     """
-    Recipe configuration for profiling analysis.
+    Configuration for profiling analysis.
 
     :ivar schema_version: Analysis schema version.
     :vartype schema_version: int
@@ -110,7 +110,7 @@ class ProfilingRecipeConfig(AnalysisSchemaModel):
     tag_filters: Optional[List[str]] = None
 
     @model_validator(mode="after")
-    def _validate_schema_version(self) -> "ProfilingRecipeConfig":
+    def _validate_schema_version(self) -> "ProfilingConfiguration":
         if self.schema_version != ANALYSIS_SCHEMA_VERSION:
             raise ValueError(f"Unsupported analysis schema version: {self.schema_version}")
         return self
@@ -237,7 +237,7 @@ class ProfilingExtractedTextReport(AnalysisSchemaModel):
     """
     Summary of extracted text coverage.
 
-    :ivar source_items: Count of source items in the extraction run.
+    :ivar source_items: Count of source items in the extraction snapshot.
     :vartype source_items: int
     :ivar extracted_nonempty_items: Count of extracted items with non-empty text.
     :vartype extracted_nonempty_items: int
@@ -286,8 +286,8 @@ class ProfilingOutput(AnalysisSchemaModel):
     :vartype analysis_id: str
     :ivar generated_at: International Organization for Standardization 8601 timestamp for output creation.
     :vartype generated_at: str
-    :ivar run: Analysis run manifest.
-    :vartype run: AnalysisRunManifest
+    :ivar snapshot: Analysis snapshot manifest.
+    :vartype snapshot: AnalysisRunManifest
     :ivar report: Profiling report data.
     :vartype report: ProfilingReport
     """
@@ -295,7 +295,7 @@ class ProfilingOutput(AnalysisSchemaModel):
     schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
     analysis_id: str
     generated_at: str
-    run: AnalysisRunManifest
+    snapshot: AnalysisRunManifest
     report: ProfilingReport
 
 
@@ -482,9 +482,9 @@ class TopicModelingLlmFineTuningConfig(AnalysisSchemaModel):
         return self
 
 
-class TopicModelingRecipeConfig(AnalysisSchemaModel):
+class TopicModelingConfiguration(AnalysisSchemaModel):
     """
-    Recipe configuration for topic modeling analysis.
+    Configuration for topic modeling analysis.
 
     :ivar schema_version: Analysis schema version.
     :vartype schema_version: int
@@ -518,7 +518,7 @@ class TopicModelingRecipeConfig(AnalysisSchemaModel):
     )
 
     @model_validator(mode="after")
-    def _validate_schema_version(self) -> "TopicModelingRecipeConfig":
+    def _validate_schema_version(self) -> "TopicModelingConfiguration":
         if self.schema_version != ANALYSIS_SCHEMA_VERSION:
             raise ValueError(f"Unsupported analysis schema version: {self.schema_version}")
         return self
@@ -764,8 +764,8 @@ class TopicModelingOutput(AnalysisSchemaModel):
     :vartype analysis_id: str
     :ivar generated_at: International Organization for Standardization 8601 timestamp for output creation.
     :vartype generated_at: str
-    :ivar run: Analysis run manifest.
-    :vartype run: AnalysisRunManifest
+    :ivar snapshot: Analysis snapshot manifest.
+    :vartype snapshot: AnalysisRunManifest
     :ivar report: Topic modeling report data.
     :vartype report: TopicModelingReport
     """
@@ -773,7 +773,7 @@ class TopicModelingOutput(AnalysisSchemaModel):
     schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
     analysis_id: str
     generated_at: str
-    run: AnalysisRunManifest
+    snapshot: AnalysisRunManifest
     report: TopicModelingReport
 
 
@@ -1049,26 +1049,26 @@ class MarkovAnalysisTopicModelingConfig(AnalysisSchemaModel):
 
     :ivar enabled: Whether to run topic modeling on segments.
     :vartype enabled: bool
-    :ivar recipe: Topic modeling recipe applied to segments.
-    :vartype recipe: TopicModelingRecipeConfig or None
+    :ivar configuration: Topic modeling configuration applied to segments.
+    :vartype configuration: TopicModelingConfiguration or None
     """
 
     enabled: bool = Field(default=False)
-    recipe: Optional["TopicModelingRecipeConfig"] = None
+    configuration: Optional["TopicModelingConfiguration"] = None
 
     @model_validator(mode="after")
     def _validate_requirements(self) -> "MarkovAnalysisTopicModelingConfig":
         if not self.enabled:
             return self
-        if self.recipe is None:
+        if self.configuration is None:
             raise ValueError(
-                "topic_modeling.recipe is required when topic_modeling.enabled is true"
+                "topic_modeling.configuration is required when topic_modeling.enabled is true"
             )
-        if self.recipe.llm_extraction.enabled and (
-            self.recipe.llm_extraction.method != TopicModelingLlmExtractionMethod.SINGLE
+        if self.configuration.llm_extraction.enabled and (
+            self.configuration.llm_extraction.method != TopicModelingLlmExtractionMethod.SINGLE
         ):
             raise ValueError(
-                "topic_modeling.recipe.llm_extraction.method must be 'single' for Markov topic modeling"
+                "topic_modeling.configuration.llm_extraction.method must be 'single' for Markov topic modeling"
             )
         return self
 
@@ -1288,9 +1288,9 @@ class MarkovAnalysisStateNamingConfig(AnalysisSchemaModel):
         return self
 
 
-class MarkovAnalysisRecipeConfig(AnalysisSchemaModel):
+class MarkovAnalysisConfiguration(AnalysisSchemaModel):
     """
-    Recipe configuration for Markov analysis.
+    Configuration for Markov analysis.
 
     :ivar schema_version: Analysis schema version.
     :vartype schema_version: int
@@ -1334,7 +1334,7 @@ class MarkovAnalysisRecipeConfig(AnalysisSchemaModel):
     report: MarkovAnalysisReportConfig = Field(default_factory=MarkovAnalysisReportConfig)
 
     @model_validator(mode="after")
-    def _validate_schema_version(self) -> "MarkovAnalysisRecipeConfig":
+    def _validate_schema_version(self) -> "MarkovAnalysisConfiguration":
         if self.schema_version != ANALYSIS_SCHEMA_VERSION:
             raise ValueError(f"Unsupported analysis schema version: {self.schema_version}")
         return self
@@ -1346,7 +1346,7 @@ class MarkovAnalysisTextCollectionReport(AnalysisSchemaModel):
 
     :ivar status: Stage status.
     :vartype status: MarkovAnalysisStageStatus
-    :ivar source_items: Count of items in extraction run.
+    :ivar source_items: Count of items in extraction snapshot.
     :vartype source_items: int
     :ivar documents: Count of documents included.
     :vartype documents: int
@@ -1517,8 +1517,8 @@ class MarkovAnalysisOutput(AnalysisSchemaModel):
     :vartype analysis_id: str
     :ivar generated_at: International Organization for Standardization 8601 timestamp for output creation.
     :vartype generated_at: str
-    :ivar run: Analysis run manifest.
-    :vartype run: AnalysisRunManifest
+    :ivar snapshot: Analysis snapshot manifest.
+    :vartype snapshot: AnalysisRunManifest
     :ivar report: Markov analysis report data.
     :vartype report: MarkovAnalysisReport
     """
@@ -1526,5 +1526,5 @@ class MarkovAnalysisOutput(AnalysisSchemaModel):
     schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
     analysis_id: str
     generated_at: str
-    run: AnalysisRunManifest
+    snapshot: AnalysisRunManifest
     report: MarkovAnalysisReport

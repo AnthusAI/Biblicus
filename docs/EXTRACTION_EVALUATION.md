@@ -1,6 +1,6 @@
 # Extraction evaluation
 
-Biblicus provides an extraction evaluation harness that measures how well an extractor recipe turns raw items into text.
+Biblicus provides an extraction evaluation harness that measures how well an extractor configuration turns raw items into text.
 It is designed to be deterministic, auditable, and useful for selecting a default extraction pipeline.
 
 ## What extraction evaluation measures
@@ -9,7 +9,7 @@ Extraction evaluation reports:
 
 - Coverage of extracted text (present, empty, missing)
 - Accuracy against labeled ground truth text
-- Processable fraction for each extractor recipe
+- Processable fraction for each extractor configuration
 - Optional system metrics such as latency and external cost
 
 The output is structured JSON so you can version it, compare it across runs, and use it in reports.
@@ -54,11 +54,11 @@ Fields:
 
 ```
 biblicus extract evaluate --corpus corpora/example \
-  --run pipeline:EXTRACTION_RUN_ID \
+  --run pipeline:EXTRACTION_SNAPSHOT_ID \
   --dataset datasets/extraction.json
 ```
 
-If you omit `--run`, Biblicus uses the latest extraction run and emits a reproducibility warning.
+If you omit `--run`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
 ## Run extraction evaluation from Python
 
@@ -66,13 +66,13 @@ If you omit `--run`, Biblicus uses the latest extraction run and emits a reprodu
 from pathlib import Path
 
 from biblicus.corpus import Corpus
-from biblicus.extraction_evaluation import evaluate_extraction_run, load_extraction_dataset
+from biblicus.extraction_evaluation import evaluate_extraction_snapshot, load_extraction_dataset
 from biblicus.models import ExtractionRunReference
 
 corpus = Corpus.open(Path("corpora/example"))
-run = corpus.load_extraction_run("pipeline", "RUN_ID")
+run = corpus.load_extraction_snapshot("pipeline", "RUN_ID")
 dataset = load_extraction_dataset(Path("datasets/extraction.json"))
-result = evaluate_extraction_run(corpus=corpus, run=run, dataset=dataset)
+result = evaluate_extraction_snapshot(corpus=corpus, run=run, dataset=dataset)
 print(result.model_dump())
 ```
 
@@ -81,7 +81,7 @@ print(result.model_dump())
 Extraction evaluation artifacts are stored under:
 
 ```
-.biblicus/runs/evaluation/extraction/<run_id>/output.json
+.biblicus/runs/evaluation/extraction/<snapshot_id>/output.json
 ```
 
 ## Reading the output
@@ -95,7 +95,7 @@ Evaluation outputs include metrics and dataset/run metadata. A shortened example
     "description": "Short labeled texts for extraction accuracy",
     "items": 2
   },
-  "run_id": "pipeline:RUN_ID",
+  "snapshot_id": "pipeline:RUN_ID",
   "metrics": {
     "coverage_present": 2.0,
     "coverage_empty": 0.0,
@@ -111,7 +111,7 @@ Use `coverage_*` to understand how much text was produced and `average_similarit
 ## Working demo
 
 A runnable demo is provided in `scripts/extraction_evaluation_demo.py`. It downloads AG News, runs extraction, builds a
-dataset from the ingested items, and evaluates the extraction run:
+dataset from the ingested items, and evaluates the extraction snapshot:
 
 ```
 python scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction_eval --force
@@ -149,13 +149,13 @@ The dataset is small and deterministic. Each entry maps a corpus item to the exp
 3) Inspect the evaluation output:
 
 ```
-cat corpora/extraction_eval_lab/.biblicus/runs/evaluation/extraction/<run_id>/output.json
+cat corpora/extraction_eval_lab/.biblicus/runs/evaluation/extraction/<snapshot_id>/output.json
 ```
 
 The output includes:
 
 - Coverage counts for present, empty, and missing extracted text.
-- Processable fraction for the extractor recipe.
+- Processable fraction for the extractor configuration.
 - Average similarity between expected and extracted text.
 
 4) Compare metrics to raw items:
@@ -173,5 +173,5 @@ non-empty items, the similarity score is 1.0 for those items.
 ## Common pitfalls
 
 - Evaluating a run with a dataset built from a different corpus.
-- Forgetting to record the extraction run reference in experiment logs.
+- Forgetting to record the extraction snapshot reference in experiment logs.
 - Comparing runs with different label sets or dataset sizes.

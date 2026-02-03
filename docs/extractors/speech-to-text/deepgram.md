@@ -94,7 +94,7 @@ biblicus extract my-corpus --extractor stt-deepgram \
   --config smart_format=false
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: stt-deepgram
@@ -107,7 +107,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

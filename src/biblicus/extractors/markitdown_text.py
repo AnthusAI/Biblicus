@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
-from ..errors import ExtractionRunFatalError
+from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
 from .base import TextExtractor
 
@@ -52,18 +52,18 @@ class MarkItDownExtractor(TextExtractor):
         :type config: dict[str, Any]
         :return: Parsed config.
         :rtype: MarkItDownExtractorConfig
-        :raises ExtractionRunFatalError: If the optional dependency is not installed.
+        :raises ExtractionSnapshotFatalError: If the optional dependency is not installed.
         """
         try:
             import markitdown
             from markitdown import MarkItDown  # noqa: F401
         except ImportError as import_error:
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "MarkItDown extractor requires an optional dependency. "
                 'Install it with pip install "biblicus[markitdown]".'
             ) from import_error
         if sys.version_info < (3, 10) and not getattr(markitdown, "__biblicus_fake__", False):
-            raise ExtractionRunFatalError(
+            raise ExtractionSnapshotFatalError(
                 "MarkItDown requires Python 3.10 or higher. "
                 "Upgrade your interpreter or use a compatible extractor."
             )

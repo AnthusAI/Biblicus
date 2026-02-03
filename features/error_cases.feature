@@ -3,30 +3,30 @@ Feature: Command-line interface error behavior (human-friendly failures)
 
   Scenario: Ingest requires input
     Given I initialized a corpus at "corpus"
-    When I run "ingest" in corpus "corpus"
+    When I snapshot "ingest" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Nothing to ingest"
 
   Scenario: Show fails for unknown identifier
     Given I initialized a corpus at "corpus"
-    When I run "show 00000000-0000-0000-0000-000000000000" in corpus "corpus"
+    When I snapshot "show 00000000-0000-0000-0000-000000000000" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Unknown item identifier"
 
   Scenario: List fails if the catalog file is missing
     Given I initialized a corpus at "corpus"
     And I delete the corpus catalog file in corpus "corpus"
-    When I run "list" in corpus "corpus"
+    When I snapshot "list" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Missing corpus catalog"
 
   Scenario: Reject non-file corpus uniform resource identifiers
-    When I run "list" with corpus uniform resource identifier "http://example.com/corpus"
+    When I snapshot "list" with corpus uniform resource identifier "http://example.com/corpus"
     Then the command fails with exit code 2
     And standard error includes "Only file:// corpus uniform resource identifiers are supported"
 
   Scenario: Reject file:// uniform resource identifiers with a non-local host
-    When I run "list" with corpus uniform resource identifier "file://example.com/tmp/corpus"
+    When I snapshot "list" with corpus uniform resource identifier "file://example.com/tmp/corpus"
     Then the command fails with exit code 2
     And standard error includes "Unsupported file uniform resource identifier host"
 
@@ -46,13 +46,13 @@ Feature: Command-line interface error behavior (human-friendly failures)
 
   Scenario: Reject ingest source uniform resource locators with a non-local file:// host
     Given I initialized a corpus at "corpus"
-    When I run "ingest file://example.com/tmp/hello.txt" in corpus "corpus"
+    When I snapshot "ingest file://example.com/tmp/hello.txt" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Unsupported file uniform resource identifier host"
 
   Scenario: Reject ingest source uniform resource locators with unsupported schemes
     Given I initialized a corpus at "corpus"
-    When I run "ingest ftp://example.com/hello.txt" in corpus "corpus"
+    When I snapshot "ingest ftp://example.com/hello.txt" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Unsupported source uniform resource identifier scheme"
 
@@ -72,21 +72,21 @@ Feature: Command-line interface error behavior (human-friendly failures)
       | a   |
       | b   |
 
-  Scenario: Reject unknown retrieval backend
+  Scenario: Reject unknown retrieval retriever
     Given I initialized a corpus at "corpus"
-    When I run "build --backend unknown --recipe-name default" in corpus "corpus"
+    When I snapshot "build --retriever unknown --configuration-name default" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "Unknown backend"
+    And standard error includes "Unknown retriever"
 
-  Scenario: Reject invalid backend config pairs
+  Scenario: Reject invalid retriever config pairs
     Given I initialized a corpus at "corpus"
-    When I run "build --backend scan --recipe-name default --config badpair" in corpus "corpus"
+    When I snapshot "build --retriever scan --configuration-name default --config badpair" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Config values must be key=value"
 
-  Scenario: Reject empty backend config keys
+  Scenario: Reject empty retriever config keys
     Given I initialized a corpus at "corpus"
-    When I run "build --backend scan --recipe-name default --config =123" in corpus "corpus"
+    When I snapshot "build --retriever scan --configuration-name default --config =123" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Config keys must be non-empty"
 
@@ -94,42 +94,42 @@ Feature: Command-line interface error behavior (human-friendly failures)
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha bravo"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I run "build --backend sqlite-full-text-search --recipe-name default --config chunk_size=100 --config chunk_overlap=100" in corpus "corpus"
+    And I snapshot "build --retriever sqlite-full-text-search --configuration-name default --config chunk_size=100 --config chunk_overlap=100" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "chunk_overlap must be smaller than chunk_size"
 
-  Scenario: Reject query without a run
+  Scenario: Reject query without a snapshot
     Given I initialized a corpus at "corpus"
-    When I run "query --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
+    When I snapshot "query --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "No run identifier provided"
+    And standard error includes "No snapshot identifier provided"
 
-  Scenario: Reject querying a missing run manifest
+  Scenario: Reject querying a missing snapshot manifest
     Given I initialized a corpus at "corpus"
-    When I run "query --run 00000000-0000-0000-0000-000000000000 --query test" in corpus "corpus"
+    When I snapshot "query --snapshot 00000000-0000-0000-0000-000000000000 --query test" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "Missing run manifest"
+    And standard error includes "Missing snapshot manifest"
 
-  Scenario: Reject backend mismatch on query
+  Scenario: Reject retriever mismatch on query
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I attempt to query the latest run with backend "sqlite-full-text-search"
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I attempt to query the latest snapshot with retriever "sqlite-full-text-search"
     Then the command fails with exit code 2
-    And standard error includes "Backend mismatch"
+    And standard error includes "Retriever mismatch"
 
   Scenario: Reject invalid corpus config schema version
     Given I initialized a corpus at "corpus"
     And I corrupt the corpus config schema version in corpus "corpus"
-    When I run "list" in corpus "corpus"
+    When I snapshot "list" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Unsupported corpus config schema version"
 
   Scenario: Reject invalid corpus catalog schema version
     Given I initialized a corpus at "corpus"
     And I corrupt the corpus catalog schema version in corpus "corpus"
-    When I run "list" in corpus "corpus"
+    When I snapshot "list" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Unsupported catalog schema version"
 
@@ -137,8 +137,8 @@ Feature: Command-line interface error behavior (human-friendly failures)
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
-    And I attempt to query the latest run with an invalid budget
+    And I build a "scan" retrieval snapshot in corpus "corpus"
+    And I attempt to query the latest snapshot with an invalid budget
     Then the command fails with exit code 2
     And standard error includes "greater than or equal to 1"
 
@@ -146,25 +146,25 @@ Feature: Command-line interface error behavior (human-friendly failures)
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
+    And I build a "scan" retrieval snapshot in corpus "corpus"
     And I create an invalid evaluation dataset at "dataset.json" for query "alpha"
-    And I attempt to evaluate the latest run with dataset "dataset.json"
+    And I attempt to evaluate the latest snapshot with dataset "dataset.json"
     Then the command fails with exit code 2
     And standard error includes "expected_item_id or expected_source_uri"
 
-  Scenario: Reject evaluation without a run
+  Scenario: Reject evaluation without a snapshot
     Given I initialized a corpus at "corpus"
     And I create an empty evaluation dataset at "dataset.json"
-    When I run "eval --dataset dataset.json" in corpus "corpus"
+    When I snapshot "eval --dataset dataset.json" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "No run identifier provided"
+    And standard error includes "No snapshot identifier provided"
 
   Scenario: Reject invalid dataset schema version
     Given I initialized a corpus at "corpus"
     And a text file "alpha.md" exists with contents "alpha"
     When I ingest the file "alpha.md" into corpus "corpus"
-    And I build a "scan" retrieval run in corpus "corpus"
+    And I build a "scan" retrieval snapshot in corpus "corpus"
     And I create an evaluation dataset at "dataset.json" with schema version 999
-    And I attempt to evaluate the latest run with dataset "dataset.json"
+    And I attempt to evaluate the latest snapshot with dataset "dataset.json"
     Then the command fails with exit code 2
     And standard error includes "Unsupported dataset schema version"

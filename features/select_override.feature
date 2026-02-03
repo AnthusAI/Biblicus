@@ -14,7 +14,7 @@ Feature: Simple override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -29,13 +29,13 @@ Feature: Simple override selection extractor
                 - "image/*"
       """
     Then the extracted text for the last ingested item equals "Second OCR"
-    And the extraction run item provenance uses extractor "ocr-paddleocr-vl"
+    And the extraction snapshot item provenance uses extractor "ocr-paddleocr-vl"
 
   Scenario: Simple override uses last extraction for non-matching media types
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
     And I ingest the text "beta" with title "Beta" and tags "b" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -49,13 +49,13 @@ Feature: Simple override selection extractor
               media_type_patterns:
                 - "image/*"
       """
-    Then the extraction run includes extracted text for all items
+    Then the extraction snapshot includes extracted text for all items
 
   Scenario: Simple override falls back to first extraction when enabled
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
     And I ingest the text "beta" with title "Beta" and tags "b" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -70,7 +70,7 @@ Feature: Simple override selection extractor
                 - "image/*"
               fallback_to_first: true
       """
-    Then the extraction run includes extracted text for all items
+    Then the extraction snapshot includes extracted text for all items
 
   Scenario: Simple override returns nothing when no prior extractions exist
     Given I initialized a corpus at "corpus"
@@ -80,7 +80,7 @@ Feature: Simple override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -97,7 +97,7 @@ Feature: Simple override selection extractor
   Scenario: Simple override returns None when no candidates have text
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" using the recipe:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" using the configuration:
       """
       extractor_id: pipeline
       config:
@@ -107,7 +107,7 @@ Feature: Simple override selection extractor
               media_type_patterns:
                 - "text/*"
       """
-    Then the extraction run does not include extracted text for the last ingested item
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: Simple override handles malformed JSON in config gracefully
     Given I initialized a corpus at "corpus"
@@ -119,7 +119,7 @@ Feature: Simple override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json                              |
       | ocr-rapidocr      | {}                                       |
       | select-override   | {"media_type_patterns":"[bad json"}     |

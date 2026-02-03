@@ -58,7 +58,7 @@ biblicus extract my-corpus --extractor metadata-text \
   --config include_tags=false
 ```
 
-#### Recipe File
+#### Configuration File
 
 ```yaml
 extractor_id: metadata-text
@@ -68,7 +68,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

@@ -57,7 +57,7 @@ biblicus extract my-corpus --extractor pipeline \
   --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-text"}]'
 ```
 
-### Recipe File
+### Configuration File
 
 ```yaml
 extractor_id: pipeline
@@ -69,7 +69,7 @@ config:
 ```
 
 ```bash
-biblicus extract my-corpus --recipe recipe.yml
+biblicus extract my-corpus --configuration configuration.yml
 ```
 
 ### Python API

@@ -1,7 +1,7 @@
 {
-  "run_id": "82323ce4b424975a6822dc6602e511c031b13e0dded423eae9011912b07c5220",
-  "recipe": {
-    "recipe_id": "d50fcff14405059208f1395d6bd4f7c1a0898b7190eb8bdd77620ba724d17b23",
+  "snapshot_id": "82323ce4b424975a6822dc6602e511c031b13e0dded423eae9011912b07c5220",
+  "configuration": {
+    "configuration_id": "d50fcff14405059208f1395d6bd4f7c1a0898b7190eb8bdd77620ba724d17b23",
     "extractor_id": "pipeline",
     "name": "default",
     "created_at": "2026-02-01T19:37:53.463371+00:00",

@@ -20,10 +20,10 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
 
 def _run_reference_from_context(context) -> str:
     extractor_id = context.last_extractor_id
-    run_id = context.last_extraction_run_id
+    snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(extractor_id, str) and extractor_id
-    assert isinstance(run_id, str) and run_id
-    return f"{extractor_id}:{run_id}"
+    assert isinstance(snapshot_id, str) and snapshot_id
+    return f"{extractor_id}:{snapshot_id}"
 
 
 def _require_extraction_evaluation_output(context) -> dict[str, object]:
@@ -140,8 +140,8 @@ def step_create_extraction_evaluation_dataset_with_source_uri(
 
 
 @when(
-    'I evaluate extraction run in corpus "{corpus_name}" using dataset "{filename}" '
-    "and the latest extraction run"
+    'I evaluate extraction snapshot in corpus "{corpus_name}" using dataset "{filename}" '
+    "and the latest extraction snapshot"
 )
 def step_evaluate_extraction_with_run(context, corpus_name: str, filename: str) -> None:
     corpus = _corpus_path(context, corpus_name)
@@ -152,7 +152,7 @@ def step_evaluate_extraction_with_run(context, corpus_name: str, filename: str) 
         str(corpus),
         "extract",
         "evaluate",
-        "--run",
+        "--snapshot",
         run_ref,
         "--dataset",
         str(dataset_path),
@@ -163,7 +163,7 @@ def step_evaluate_extraction_with_run(context, corpus_name: str, filename: str) 
         context.last_extraction_evaluation = _parse_json_output(result.stdout)
 
 
-@when('I evaluate extraction run in corpus "{corpus_name}" using dataset "{filename}"')
+@when('I evaluate extraction snapshot in corpus "{corpus_name}" using dataset "{filename}"')
 def step_evaluate_extraction_without_run(context, corpus_name: str, filename: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     dataset_path = context.workdir / filename

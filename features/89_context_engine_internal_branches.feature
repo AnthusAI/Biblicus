@@ -32,6 +32,27 @@ Feature: Context engine internal branches
     When I assemble messages with a non-empty context pack
     Then the assembled messages should include the pack content
 
+  Scenario: Context assembler applies pipeline query settings
+    Given a retriever registry with pipeline query and index config
+    When I render that retriever pack with pipeline config
+    Then the retriever request should include pipeline query values
+    And the retriever request should include pipeline index configuration
+
+  Scenario: Context assembler uses index config when pipeline is missing
+    Given a retriever registry with index-only config
+    When I render that retriever pack with index config
+    Then the retriever request should include index configuration
+
+  Scenario: Context assembler falls back to empty pipeline index config
+    Given a retriever registry with pipeline query only
+    When I render that retriever pack with pipeline-only config
+    Then the retriever request should include empty configuration
+
+  Scenario: Context assembler handles query config without limit
+    Given a retriever registry with pipeline query config missing limit
+    When I render that retriever pack with missing-limit query config
+    Then the retriever request should include query settings without limit
+
   Scenario: Context assembler raises when no retriever is available
     Given a retriever registry with a corpus-backed retriever
     When I render that retriever pack without a retriever function

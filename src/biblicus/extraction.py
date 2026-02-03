@@ -1,5 +1,5 @@
 """
-Text extraction runs for Biblicus.
+Text extraction snapshots for Biblicus.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from .corpus import Corpus
-from .errors import ExtractionRunFatalError
+from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
 from .extractors.base import TextExtractor
 from .extractors.pipeline import PipelineExtractorConfig, PipelineStepSpec
@@ -20,29 +20,29 @@ from .retrieval import hash_text
 from .time import utc_now_iso
 
 
-class ExtractionRecipeManifest(BaseModel):
+class ExtractionConfigurationManifest(BaseModel):
     """
-    Reproducible configuration for an extraction plugin run.
+    Reproducible configuration for an extraction plugin snapshot.
 
-    :ivar recipe_id: Deterministic recipe identifier.
-    :vartype recipe_id: str
+    :ivar configuration_id: Deterministic configuration identifier.
+    :vartype configuration_id: str
     :ivar extractor_id: Extractor plugin identifier.
     :vartype extractor_id: str
-    :ivar name: Human-readable recipe name.
+    :ivar name: Human-readable configuration name.
     :vartype name: str
     :ivar created_at: International Organization for Standardization 8601 timestamp.
     :vartype created_at: str
-    :ivar config: Extractor-specific configuration values.
-    :vartype config: dict[str, Any]
+    :ivar configuration: Extractor-specific configuration values.
+    :vartype configuration: dict[str, Any]
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    recipe_id: str
+    configuration_id: str
     extractor_id: str
     name: str
     created_at: str
-    config: Dict[str, Any] = Field(default_factory=dict)
+    configuration: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ExtractionStepResult(BaseModel):
@@ -87,7 +87,7 @@ class ExtractionStepResult(BaseModel):
 
 class ExtractionItemResult(BaseModel):
     """
-    Per-item result record for an extraction run.
+    Per-item result record for an extraction snapshot.
 
     :ivar item_id: Item identifier.
     :vartype item_id: str
@@ -125,30 +125,30 @@ class ExtractionItemResult(BaseModel):
     step_results: List[ExtractionStepResult] = Field(default_factory=list)
 
 
-class ExtractionRunManifest(BaseModel):
+class ExtractionSnapshotManifest(BaseModel):
     """
-    Immutable record describing an extraction run.
+    Immutable record describing an extraction snapshot.
 
-    :ivar run_id: Unique run identifier.
-    :vartype run_id: str
-    :ivar recipe: Recipe manifest for this run.
-    :vartype recipe: ExtractionRecipeManifest
+    :ivar snapshot_id: Unique snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration: Configuration manifest for this snapshot.
+    :vartype configuration: ExtractionConfigurationManifest
     :ivar corpus_uri: Canonical uniform resource identifier for the corpus root.
     :vartype corpus_uri: str
-    :ivar catalog_generated_at: Catalog timestamp used for the run.
+    :ivar catalog_generated_at: Catalog timestamp used for the snapshot.
     :vartype catalog_generated_at: str
-    :ivar created_at: International Organization for Standardization 8601 timestamp for run creation.
+    :ivar created_at: International Organization for Standardization 8601 timestamp for snapshot creation.
     :vartype created_at: str
     :ivar items: Per-item results.
     :vartype items: list[ExtractionItemResult]
-    :ivar stats: Run statistics.
+    :ivar stats: Snapshot statistics.
     :vartype stats: dict[str, Any]
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
-    recipe: ExtractionRecipeManifest
+    snapshot_id: str
+    configuration: ExtractionConfigurationManifest
     corpus_uri: str
     catalog_generated_at: str
     created_at: str
@@ -156,52 +156,53 @@ class ExtractionRunManifest(BaseModel):
     stats: Dict[str, Any] = Field(default_factory=dict)
 
 
-def create_extraction_recipe_manifest(
-    *, extractor_id: str, name: str, config: Dict[str, Any]
-) -> ExtractionRecipeManifest:
+def create_extraction_configuration_manifest(
+    *, extractor_id: str, name: str, configuration: Dict[str, Any]
+) -> ExtractionConfigurationManifest:
     """
-    Create a deterministic extraction recipe manifest.
+    Create a deterministic extraction configuration manifest.
 
     :param extractor_id: Extractor plugin identifier.
     :type extractor_id: str
-    :param name: Human recipe name.
+    :param name: Human configuration name.
     :type name: str
-    :param config: Extractor configuration.
-    :type config: dict[str, Any]
-    :return: Recipe manifest.
-    :rtype: ExtractionRecipeManifest
+    :param configuration: Extractor configuration.
+    :type configuration: dict[str, Any]
+    :return: Configuration manifest.
+    :rtype: ExtractionConfigurationManifest
     """
-    recipe_payload = json.dumps(
-        {"extractor_id": extractor_id, "name": name, "config": config}, sort_keys=True
+    configuration_payload = json.dumps(
+        {"extractor_id": extractor_id, "name": name, "configuration": configuration},
+        sort_keys=True,
     )
-    recipe_id = hash_text(recipe_payload)
-    return ExtractionRecipeManifest(
-        recipe_id=recipe_id,
+    configuration_id = hash_text(configuration_payload)
+    return ExtractionConfigurationManifest(
+        configuration_id=configuration_id,
         extractor_id=extractor_id,
         name=name,
         created_at=utc_now_iso(),
-        config=config,
+        configuration=configuration,
     )
 
 
-def create_extraction_run_manifest(
-    corpus: Corpus, *, recipe: ExtractionRecipeManifest
-) -> ExtractionRunManifest:
+def create_extraction_snapshot_manifest(
+    corpus: Corpus, *, configuration: ExtractionConfigurationManifest
+) -> ExtractionSnapshotManifest:
     """
-    Create a new extraction run manifest for a corpus.
+    Create a new extraction snapshot manifest for a corpus.
 
-    :param corpus: Corpus associated with the run.
+    :param corpus: Corpus associated with the snapshot.
     :type corpus: Corpus
-    :param recipe: Recipe manifest.
-    :type recipe: ExtractionRecipeManifest
-    :return: Run manifest.
-    :rtype: ExtractionRunManifest
+    :param configuration: Configuration manifest.
+    :type configuration: ExtractionConfigurationManifest
+    :return: Snapshot manifest.
+    :rtype: ExtractionSnapshotManifest
     """
     catalog = corpus.load_catalog()
-    run_id = hash_text(f"{recipe.recipe_id}:{catalog.generated_at}")
-    return ExtractionRunManifest(
-        run_id=run_id,
-        recipe=recipe,
+    snapshot_id = hash_text(f"{configuration.configuration_id}:{catalog.generated_at}")
+    return ExtractionSnapshotManifest(
+        snapshot_id=snapshot_id,
+        configuration=configuration,
         corpus_uri=corpus.uri,
         catalog_generated_at=catalog.generated_at,
         created_at=utc_now_iso(),
@@ -210,27 +211,29 @@ def create_extraction_run_manifest(
     )
 
 
-def write_extraction_run_manifest(*, run_dir: Path, manifest: ExtractionRunManifest) -> None:
+def write_extraction_snapshot_manifest(
+    *, snapshot_dir: Path, manifest: ExtractionSnapshotManifest
+) -> None:
     """
-    Persist an extraction run manifest to a run directory.
+    Persist an extraction snapshot manifest to a snapshot directory.
 
-    :param run_dir: Extraction run directory.
-    :type run_dir: Path
-    :param manifest: Run manifest to write.
-    :type manifest: ExtractionRunManifest
+    :param snapshot_dir: Extraction snapshot directory.
+    :type snapshot_dir: Path
+    :param manifest: Snapshot manifest to write.
+    :type manifest: ExtractionSnapshotManifest
     :return: None.
     :rtype: None
     """
-    manifest_path = run_dir / "manifest.json"
+    manifest_path = snapshot_dir / "manifest.json"
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
-def write_extracted_text_artifact(*, run_dir: Path, item: CatalogItem, text: str) -> str:
+def write_extracted_text_artifact(*, snapshot_dir: Path, item: CatalogItem, text: str) -> str:
     """
-    Write an extracted text artifact for an item into the run directory.
+    Write an extracted text artifact for an item into the snapshot directory.
 
-    :param run_dir: Extraction run directory.
-    :type run_dir: Path
+    :param snapshot_dir: Extraction snapshot directory.
+    :type snapshot_dir: Path
     :param item: Catalog item being extracted.
     :type item: CatalogItem
     :param text: Extracted text.
@@ -238,10 +241,10 @@ def write_extracted_text_artifact(*, run_dir: Path, item: CatalogItem, text: str
     :return: Relative path to the stored text artifact.
     :rtype: str
     """
-    text_dir = run_dir / "text"
+    text_dir = snapshot_dir / "text"
     text_dir.mkdir(parents=True, exist_ok=True)
     relpath = str(Path("text") / f"{item.id}.txt")
-    path = run_dir / relpath
+    path = snapshot_dir / relpath
     path.write_text(text, encoding="utf-8")
     return relpath
 
@@ -262,7 +265,7 @@ def _pipeline_step_dir_name(*, step_index: int, extractor_id: str) -> str:
 
 def write_pipeline_step_text_artifact(
     *,
-    run_dir: Path,
+    snapshot_dir: Path,
     step_index: int,
     extractor_id: str,
     item: CatalogItem,
@@ -271,8 +274,8 @@ def write_pipeline_step_text_artifact(
     """
     Write a pipeline step text artifact for an item.
 
-    :param run_dir: Extraction run directory.
-    :type run_dir: Path
+    :param snapshot_dir: Extraction snapshot directory.
+    :type snapshot_dir: Path
     :param step_index: One-based pipeline step index.
     :type step_index: int
     :param extractor_id: Extractor identifier for the step.
@@ -285,10 +288,10 @@ def write_pipeline_step_text_artifact(
     :rtype: str
     """
     step_dir_name = _pipeline_step_dir_name(step_index=step_index, extractor_id=extractor_id)
-    text_dir = run_dir / "steps" / step_dir_name / "text"
+    text_dir = snapshot_dir / "steps" / step_dir_name / "text"
     text_dir.mkdir(parents=True, exist_ok=True)
     relpath = str(Path("steps") / step_dir_name / "text" / f"{item.id}.txt")
-    (run_dir / relpath).write_text(text, encoding="utf-8")
+    (snapshot_dir / relpath).write_text(text, encoding="utf-8")
     return relpath
 
 
@@ -310,49 +313,51 @@ def _final_output_from_steps(
     return step_outputs[-1]
 
 
-def build_extraction_run(
+def build_extraction_snapshot(
     corpus: Corpus,
     *,
     extractor_id: str,
-    recipe_name: str,
-    config: Dict[str, Any],
-) -> ExtractionRunManifest:
+    configuration_name: str,
+    configuration: Dict[str, Any],
+) -> ExtractionSnapshotManifest:
     """
-    Build an extraction run for a corpus using the pipeline extractor.
+    Build an extraction snapshot for a corpus using the pipeline extractor.
 
     :param corpus: Corpus to extract from.
     :type corpus: Corpus
     :param extractor_id: Extractor plugin identifier (must be ``pipeline``).
     :type extractor_id: str
-    :param recipe_name: Human-readable recipe name.
-    :type recipe_name: str
-    :param config: Extractor configuration mapping.
-    :type config: dict[str, Any]
-    :return: Extraction run manifest describing the build.
-    :rtype: ExtractionRunManifest
+    :param configuration_name: Human-readable configuration name.
+    :type configuration_name: str
+    :param configuration: Extractor configuration mapping.
+    :type configuration: dict[str, Any]
+    :return: Extraction snapshot manifest describing the build.
+    :rtype: ExtractionSnapshotManifest
     :raises KeyError: If the extractor identifier is unknown.
     :raises ValueError: If the extractor configuration is invalid.
-    :raises OSError: If the run directory or artifacts cannot be written.
-    :raises ExtractionRunFatalError: If the extractor is not the pipeline.
+    :raises OSError: If the snapshot directory or artifacts cannot be written.
+    :raises ExtractionSnapshotFatalError: If the extractor is not the pipeline.
     """
     extractor = get_extractor(extractor_id)
-    parsed_config = extractor.validate_config(config)
-    recipe = create_extraction_recipe_manifest(
+    parsed_config = extractor.validate_config(configuration)
+    config_manifest = create_extraction_configuration_manifest(
         extractor_id=extractor_id,
-        name=recipe_name,
-        config=parsed_config.model_dump(),
+        name=configuration_name,
+        configuration=parsed_config.model_dump(),
     )
-    manifest = create_extraction_run_manifest(corpus, recipe=recipe)
-    run_dir = corpus.extraction_run_dir(extractor_id=extractor_id, run_id=manifest.run_id)
-    if run_dir.exists():
-        return corpus.load_extraction_run_manifest(
-            extractor_id=extractor_id, run_id=manifest.run_id
+    manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
+    snapshot_dir = corpus.extraction_snapshot_dir(
+        extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
+    )
+    if snapshot_dir.exists():
+        return corpus.load_extraction_snapshot_manifest(
+            extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
         )
-    run_dir.mkdir(parents=True, exist_ok=False)
+    snapshot_dir.mkdir(parents=True, exist_ok=False)
 
     catalog = corpus.load_catalog()
     if extractor_id != "pipeline":
-        raise ExtractionRunFatalError("Extraction runs must use the pipeline extractor")
+        raise ExtractionSnapshotFatalError("Extraction snapshots must use the pipeline extractor")
 
     pipeline_config = (
         parsed_config
@@ -363,7 +368,7 @@ def build_extraction_run(
     validated_steps: List[Tuple[PipelineStepSpec, TextExtractor, BaseModel]] = []
     for step in pipeline_config.steps:
         step_extractor = get_extractor(step.extractor_id)
-        parsed_step_config = step_extractor.validate_config(step.config)
+        parsed_step_config = step_extractor.validate_config(step.configuration)
         validated_steps.append((step, step_extractor, parsed_step_config))
 
     extracted_items: List[ExtractionItemResult] = []
@@ -400,7 +405,7 @@ def build_extraction_run(
                     previous_extractions=step_outputs,
                 )
             except Exception as extraction_error:
-                if isinstance(extraction_error, ExtractionRunFatalError):
+                if isinstance(extraction_error, ExtractionSnapshotFatalError):
                     raise
                 last_error_type = extraction_error.__class__.__name__
                 last_error_message = str(extraction_error)
@@ -436,7 +441,7 @@ def build_extraction_run(
                 continue
 
             relpath = write_pipeline_step_text_artifact(
-                run_dir=run_dir,
+                snapshot_dir=snapshot_dir,
                 step_index=step_index,
                 extractor_id=step.extractor_id,
                 item=item,
@@ -497,7 +502,7 @@ def build_extraction_run(
 
         final_text = final_output.text or ""
         final_text_relpath = write_extracted_text_artifact(
-            run_dir=run_dir, item=item, text=final_text
+            snapshot_dir=snapshot_dir, item=item, text=final_text
         )
         extracted_count += 1
         if final_text.strip():
@@ -534,5 +539,5 @@ def build_extraction_run(
         "converted_items": converted_item_count,
     }
     manifest = manifest.model_copy(update={"items": extracted_items, "stats": stats})
-    write_extraction_run_manifest(run_dir=run_dir, manifest=manifest)
+    write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
     return manifest

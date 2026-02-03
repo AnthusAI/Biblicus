@@ -7,16 +7,16 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from behave import given, then, when
 
-from biblicus.backends.scan import _build_snippet, _find_first_match
-from biblicus.backends.sqlite_full_text_search import (
-    SqliteFullTextSearchRecipeConfig,
+from biblicus.corpus import Corpus
+from biblicus.evaluation import _snapshot_artifact_bytes
+from biblicus.models import Evidence, QueryBudget
+from biblicus.retrieval import apply_budget
+from biblicus.retrievers.scan import _build_snippet, _find_first_match
+from biblicus.retrievers.sqlite_full_text_search import (
+    SqliteFullTextSearchConfiguration,
     _build_full_text_search_index,
     _iter_chunks,
 )
-from biblicus.corpus import Corpus
-from biblicus.evaluation import _run_artifact_bytes
-from biblicus.models import Evidence, QueryBudget
-from biblicus.retrieval import apply_budget
 from features.environment import run_biblicus
 
 
@@ -64,8 +64,8 @@ def _build_evidence_items(texts: Iterable[str]) -> List[Evidence]:
                 span_start=None,
                 span_end=None,
                 stage="scan",
-                recipe_id="recipe",
-                run_id="run",
+                configuration_id="configuration",
+                snapshot_id="snapshot",
                 hash=None,
             )
         )
@@ -89,51 +89,77 @@ def _evidence_keys_from_query(
     return keys
 
 
-@when('I build a "{backend}" retrieval run in corpus "{corpus_name}"')
-def step_build_run(context, backend: str, corpus_name: str) -> None:
+@when('I build a "{retriever_id}" retrieval snapshot in corpus "{corpus_name}"')
+def step_build_snapshot(context, retriever_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = run_biblicus(
         context,
-        ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"],
+        [
+            "--corpus",
+            str(corpus),
+            "build",
+            "--retriever",
+            retriever_id,
+            "--configuration-name",
+            "default",
+        ],
     )
     assert result.returncode == 0, result.stderr
-    context.last_run = _parse_json_output(result.stdout)
-    context.last_run_id = context.last_run.get("run_id")
+    context.last_snapshot = _parse_json_output(result.stdout)
+    context.last_snapshot_id = context.last_snapshot.get("snapshot_id")
 
 
-@when('I build a "{backend}" retrieval run in corpus "{corpus_name}" with config:')
-def step_build_run_with_config(context, backend: str, corpus_name: str) -> None:
+@when('I build a "{retriever_id}" retrieval snapshot in corpus "{corpus_name}" with config:')
+def step_build_snapshot_with_config(context, retriever_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
+    args = [
+        "--corpus",
+        str(corpus),
+        "build",
+        "--retriever",
+        retriever_id,
+        "--configuration-name",
+        "default",
+    ]
     for row in context.table:
         key, value = _table_key_value(row)
-        args.extend(["--config", f"{key}={value}"])
+        args.extend(["--override", f"{key}={value}"])
     result = run_biblicus(context, args)
     assert result.returncode == 0, result.stderr
-    context.last_run = _parse_json_output(result.stdout)
-    context.last_run_id = context.last_run.get("run_id")
+    context.last_snapshot = _parse_json_output(result.stdout)
+    context.last_snapshot_id = context.last_snapshot.get("snapshot_id")
 
 
-@when('I attempt to build a "{backend}" retrieval run in corpus "{corpus_name}" with config:')
-def step_attempt_build_run_with_config(context, backend: str, corpus_name: str) -> None:
+@when(
+    'I attempt to build a "{retriever_id}" retrieval snapshot in corpus "{corpus_name}" with config:'
+)
+def step_attempt_build_snapshot_with_config(context, retriever_id: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "build", "--backend", backend, "--recipe-name", "default"]
+    args = [
+        "--corpus",
+        str(corpus),
+        "build",
+        "--retriever",
+        retriever_id,
+        "--configuration-name",
+        "default",
+    ]
     for row in context.table:
         key, value = _table_key_value(row)
-        args.extend(["--config", f"{key}={value}"])
+        args.extend(["--override", f"{key}={value}"])
     context.last_result = run_biblicus(context, args)
 
 
-@when('I query with the latest run for "{query_text}" and budget:')
-def step_query_latest_run(context, query_text: str) -> None:
-    assert context.last_run_id
+@when('I query with the latest snapshot for "{query_text}" and budget:')
+def step_query_latest_snapshot(context, query_text: str) -> None:
+    assert context.last_snapshot_id
     corpus = _corpus_path(context, "corpus")
     args = [
         "--corpus",
         str(corpus),
         "query",
-        "--run",
-        context.last_run_id,
+        "--snapshot",
+        context.last_snapshot_id,
         "--query",
         query_text,
     ]
@@ -145,16 +171,16 @@ def step_query_latest_run(context, query_text: str) -> None:
     context.last_query = _parse_json_output(result.stdout)
 
 
-@when('I attempt to query with the latest run for "{query_text}" and budget:')
-def step_attempt_query_latest_run(context, query_text: str) -> None:
-    assert context.last_run_id
+@when('I attempt to query with the latest snapshot for "{query_text}" and budget:')
+def step_attempt_query_latest_snapshot(context, query_text: str) -> None:
+    assert context.last_snapshot_id
     corpus = _corpus_path(context, "corpus")
     args = [
         "--corpus",
         str(corpus),
         "query",
-        "--run",
-        context.last_run_id,
+        "--snapshot",
+        context.last_snapshot_id,
         "--query",
         query_text,
     ]
@@ -179,16 +205,16 @@ def step_query_evidence_keys_disjoint(context) -> None:
     assert not overlap
 
 
-@when("I attempt to query the latest run with an invalid budget")
-def step_query_latest_run_invalid_budget(context) -> None:
-    assert context.last_run_id
+@when("I attempt to query the latest snapshot with an invalid budget")
+def step_query_latest_snapshot_invalid_budget(context) -> None:
+    assert context.last_snapshot_id
     corpus = _corpus_path(context, "corpus")
     args = [
         "--corpus",
         str(corpus),
         "query",
-        "--run",
-        context.last_run_id,
+        "--snapshot",
+        context.last_snapshot_id,
         "--query",
         "test",
         "--max-total-items",
@@ -222,15 +248,15 @@ def step_query_includes_last_ingested(context) -> None:
     assert context.last_ingest["id"] in ids
 
 
-@then("the latest run stats include text_items {count:d}")
+@then("the latest snapshot stats include text_items {count:d}")
 def step_run_stats_text_items(context, count: int) -> None:
-    stats = context.last_run.get("stats") or {}
+    stats = context.last_snapshot.get("stats") or {}
     assert stats.get("text_items") == count
 
 
-@then("the latest run stats include chunks {count:d}")
+@then("the latest snapshot stats include chunks {count:d}")
 def step_run_stats_chunks(context, count: int) -> None:
-    stats = context.last_run.get("stats") or {}
+    stats = context.last_snapshot.get("stats") or {}
     assert stats.get("chunks") == count
 
 
@@ -270,16 +296,16 @@ def step_create_eval_dataset(context, filename: str) -> None:
     context.dataset_path = path
 
 
-@when('I evaluate the latest run with dataset "{filename}" and budget:')
+@when('I evaluate the latest snapshot with dataset "{filename}" and budget:')
 def step_eval_latest_run(context, filename: str) -> None:
-    assert context.last_run_id
+    assert context.last_snapshot_id
     path = context.workdir / filename
     args = [
         "--corpus",
         str(_corpus_path(context, "corpus")),
         "eval",
-        "--run",
-        context.last_run_id,
+        "--snapshot",
+        context.last_snapshot_id,
         "--dataset",
         str(path),
     ]
@@ -359,33 +385,33 @@ def step_create_empty_dataset(context, filename: str) -> None:
     context.dataset_path = path
 
 
-@when("I delete the latest run artifacts")
-def step_delete_latest_run_artifacts(context) -> None:
-    assert context.last_run_id
+@when("I delete the latest snapshot artifacts")
+def step_delete_latest_snapshot_artifacts(context) -> None:
+    assert context.last_snapshot_id
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    run = corpus.load_run(context.last_run_id)
-    for relpath in run.artifact_paths:
+    snapshot = corpus.load_snapshot(context.last_snapshot_id)
+    for relpath in snapshot.snapshot_artifacts:
         path = corpus.root / relpath
         if path.exists():
             path.unlink()
 
 
-@when("I measure the latest run artifact bytes")
-def step_measure_latest_run_artifacts(context) -> None:
-    assert context.last_run_id
+@when("I measure the latest snapshot artifact bytes")
+def step_measure_latest_snapshot_artifacts(context) -> None:
+    assert context.last_snapshot_id
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    run = corpus.load_run(context.last_run_id)
-    context.latest_run_bytes = _run_artifact_bytes(corpus, run)
+    snapshot = corpus.load_snapshot(context.last_snapshot_id)
+    context.latest_snapshot_bytes = _snapshot_artifact_bytes(corpus, snapshot)
 
 
-@then("the run artifact bytes are {count:d}")
-def step_run_artifact_bytes(context, count: int) -> None:
-    assert context.latest_run_bytes == count
+@then("the snapshot artifact bytes are {count:d}")
+def step_snapshot_artifact_bytes(context, count: int) -> None:
+    assert context.latest_snapshot_bytes == count
 
 
-@then("the run artifact bytes are greater than 0")
-def step_run_artifact_bytes_positive(context) -> None:
-    assert int(getattr(context, "latest_run_bytes", 0)) > 0
+@then("the snapshot artifact bytes are greater than 0")
+def step_snapshot_artifact_bytes_positive(context) -> None:
+    assert int(getattr(context, "latest_snapshot_bytes", 0)) > 0
 
 
 @then("the query evidence includes span offsets")
@@ -397,18 +423,18 @@ def step_query_evidence_includes_span_offsets(context) -> None:
         assert item.get("span_end") is not None
 
 
-@when('I attempt to query the latest run with backend "{backend}"')
-def step_query_latest_run_backend_mismatch(context, backend: str) -> None:
-    assert context.last_run_id
+@when('I attempt to query the latest snapshot with retriever "{retriever_id}"')
+def step_query_latest_snapshot_retriever_mismatch(context, retriever_id: str) -> None:
+    assert context.last_snapshot_id
     corpus = _corpus_path(context, "corpus")
     args = [
         "--corpus",
         str(corpus),
         "query",
-        "--run",
-        context.last_run_id,
-        "--backend",
-        backend,
+        "--snapshot",
+        context.last_snapshot_id,
+        "--retriever",
+        retriever_id,
         "--query",
         "test",
     ]
@@ -461,12 +487,14 @@ def step_rebuild_sqlite_full_text_search(context, corpus_name: str, relative_pat
     db_path = corpus.root / relative_path
     db_path.parent.mkdir(parents=True, exist_ok=True)
     db_path.write_text("stale", encoding="utf-8")
-    config = SqliteFullTextSearchRecipeConfig(chunk_size=5, chunk_overlap=2, snippet_characters=120)
+    config = SqliteFullTextSearchConfiguration(
+        chunk_size=5, chunk_overlap=2, snippet_characters=120
+    )
     stats = _build_full_text_search_index(
         db_path=db_path,
         corpus=corpus,
         items=corpus.load_catalog().items.values(),
-        recipe_config=config,
+        configuration=config,
         extraction_reference=None,
     )
     context.sqlite_full_text_search_path = db_path
@@ -547,16 +575,16 @@ def step_create_dataset_with_schema_version(context, filename: str, schema_versi
     context.dataset_path = path
 
 
-@when('I attempt to evaluate the latest run with dataset "{filename}"')
+@when('I attempt to evaluate the latest snapshot with dataset "{filename}"')
 def step_eval_latest_run_invalid_dataset(context, filename: str) -> None:
-    assert context.last_run_id
+    assert context.last_snapshot_id
     path = context.workdir / filename
     args = [
         "--corpus",
         str(_corpus_path(context, "corpus")),
         "eval",
-        "--run",
-        context.last_run_id,
+        "--snapshot",
+        context.last_snapshot_id,
         "--dataset",
         str(path),
         "--max-total-items",

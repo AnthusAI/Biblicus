@@ -7,7 +7,7 @@ Biblicus
    :width: 216
    :class: docs-logo
 
-You have a folder full of files. Nobody knows what is in it. Someone wants answers anyway.
+You have a big collection of files. You need answers about what is in it, and you want to be able to show it to an AI agent to talk about it.
 
 Biblicus is a Python toolkit that turns unstructured data into something you can manage, search,
 analyze, and reuse. It supports end-to-end pipelines: ingest and extract content from mixed file
@@ -109,9 +109,9 @@ Biblicus uses a small set of domain terms in its docs. The most important one is
 Core Building Blocks
 --------------------
 
-These pages define the vocabulary and invariants that keep Biblicus stable across backends and
-recipes. Read them when you want to understand *what is a corpus*, *what is evidence*, and *what
-stays the same even when the pipeline changes*.
+These pages define the vocabulary and invariants that keep Biblicus stable across retrievers and
+configurations. Read them when you want to understand *what is a corpus*, *what is evidence*, and
+*what stays the same even when the pipeline changes*.
 
 .. toctree::
    :maxdepth: 2
@@ -218,6 +218,4 @@ implementation details or when you want a catalog of features.
    ROADMAP
    ARCHITECTURE
    ARCHITECTURE_DETAIL
-   PR_FAQ_TEXT_ANNOTATE
-   PR_FAQ_EMBEDDING_RETRIEVAL
    api

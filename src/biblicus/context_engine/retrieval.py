@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from biblicus.backends import get_backend
 from biblicus.context import (
     ContextPack,
     ContextPackPolicy,
@@ -15,67 +14,72 @@ from biblicus.context import (
     fit_context_pack_to_token_budget,
 )
 from biblicus.corpus import Corpus
-from biblicus.models import QueryBudget, RetrievalRun
+from biblicus.models import QueryBudget, RetrievalSnapshot
+from biblicus.retrievers import get_retriever
 
 from .models import ContextRetrieverRequest
 
 
-def _resolve_run(
+def _resolve_snapshot(
     corpus: Corpus,
     *,
-    backend_id: str,
-    run_id: Optional[str],
-    recipe_name: Optional[str],
-    recipe_config: Optional[dict[str, Any]],
-) -> RetrievalRun:
-    if run_id:
-        return corpus.load_run(run_id)
+    retriever_id: str,
+    snapshot_id: Optional[str],
+    configuration_name: Optional[str],
+    configuration: Optional[dict[str, Any]],
+) -> RetrievalSnapshot:
+    if snapshot_id:
+        return corpus.load_snapshot(snapshot_id)
 
-    latest_run_id = corpus.latest_run_id
-    if latest_run_id:
-        candidate = corpus.load_run(latest_run_id)
-        if candidate.recipe.backend_id == backend_id:
+    latest_snapshot_id = corpus.latest_snapshot_id
+    if latest_snapshot_id:
+        candidate = corpus.load_snapshot(latest_snapshot_id)
+        if candidate.configuration.retriever_id == retriever_id:
             return candidate
 
-    if recipe_config is None:
+    if configuration is None:
         raise ValueError(
-            "No retrieval run available for the requested backend. "
-            "Provide run_id or recipe_config to build one."
+            "No retrieval snapshot available for the requested retriever. "
+            "Provide snapshot_id or configuration to build one."
         )
 
-    backend = get_backend(backend_id)
-    resolved_name = recipe_name or f"Context pack ({backend_id})"
-    return backend.build_run(corpus, recipe_name=resolved_name, config=recipe_config)
+    retriever = get_retriever(retriever_id)
+    resolved_name = configuration_name or f"Context pack ({retriever_id})"
+    return retriever.build_snapshot(
+        corpus,
+        configuration_name=resolved_name,
+        configuration=configuration,
+    )
 
 
 def retrieve_context_pack(
     *,
     request: ContextRetrieverRequest,
     corpus: Corpus,
-    backend_id: str,
-    run_id: Optional[str] = None,
-    recipe_name: Optional[str] = None,
-    recipe_config: Optional[dict[str, Any]] = None,
+    retriever_id: str,
+    snapshot_id: Optional[str] = None,
+    configuration_name: Optional[str] = None,
+    configuration: Optional[dict[str, Any]] = None,
     join_with: str = "\n\n",
     max_items_per_source: Optional[int] = None,
     include_metadata: bool = False,
     metadata_fields: Optional[list[str]] = None,
 ) -> ContextPack:
     """
-    Retrieve a context pack using a Biblicus backend.
+    Retrieve a context pack using a Biblicus retriever.
 
     :param request: Context retrieval request.
     :type request: biblicus.context_engine.ContextRetrieverRequest
     :param corpus: Corpus instance to query.
     :type corpus: biblicus.corpus.Corpus
-    :param backend_id: Retrieval backend identifier.
-    :type backend_id: str
-    :param run_id: Optional retrieval run identifier.
-    :type run_id: str or None
-    :param recipe_name: Optional recipe name for run builds.
-    :type recipe_name: str or None
-    :param recipe_config: Optional backend recipe configuration.
-    :type recipe_config: dict[str, Any] or None
+    :param retriever_id: Retrieval retriever identifier.
+    :type retriever_id: str
+    :param snapshot_id: Optional retrieval snapshot identifier.
+    :type snapshot_id: str or None
+    :param configuration_name: Optional configuration name for snapshot builds.
+    :type configuration_name: str or None
+    :param configuration: Optional retriever configuration.
+    :type configuration: dict[str, Any] or None
     :param join_with: Separator between context pack blocks.
     :type join_with: str
     :param max_items_per_source: Optional cap per source.
@@ -86,14 +90,14 @@ def retrieve_context_pack(
     :type metadata_fields: list[str] or None
     :return: Context pack derived from retrieval results.
     :rtype: biblicus.context.ContextPack
-    :raises ValueError: If no compatible retrieval run is available.
+    :raises ValueError: If no compatible retrieval snapshot is available.
     """
-    run = _resolve_run(
+    snapshot = _resolve_snapshot(
         corpus,
-        backend_id=backend_id,
-        run_id=run_id,
-        recipe_name=recipe_name,
-        recipe_config=recipe_config,
+        retriever_id=retriever_id,
+        snapshot_id=snapshot_id,
+        configuration_name=configuration_name,
+        configuration=configuration,
     )
 
     maximum_total_characters = request.maximum_total_characters
@@ -106,10 +110,10 @@ def retrieve_context_pack(
         maximum_total_characters=maximum_total_characters,
         max_items_per_source=max_items_per_source,
     )
-    backend = get_backend(backend_id)
-    result = backend.query(
+    retriever = get_retriever(retriever_id)
+    result = retriever.query(
         corpus,
-        run=run,
+        snapshot=snapshot,
         query_text=request.query,
         budget=budget,
     )

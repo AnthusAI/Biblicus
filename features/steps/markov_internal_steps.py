@@ -37,13 +37,13 @@ from biblicus.analysis.markov import (
 from biblicus.analysis.models import (
     MarkovAnalysisArtifactsConfig,
     MarkovAnalysisArtifactsGraphVizConfig,
+    MarkovAnalysisConfiguration,
     MarkovAnalysisDecodedPath,
     MarkovAnalysisEmbeddingsConfig,
     MarkovAnalysisLlmObservationsConfig,
     MarkovAnalysisModelConfig,
     MarkovAnalysisObservation,
     MarkovAnalysisObservationsConfig,
-    MarkovAnalysisRecipeConfig,
     MarkovAnalysisReportConfig,
     MarkovAnalysisSegment,
     MarkovAnalysisSegmentationConfig,
@@ -97,7 +97,7 @@ def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None
 
     try:
         markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -174,7 +174,7 @@ def step_rejected_end_no_reason_line(context) -> None:
 def step_apply_start_end_labels_without_end_label(context, item_id: str) -> None:
     payloads = json.loads(str(context.text or "[]"))
     assert isinstance(payloads, list)
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "segmentation": {
@@ -210,7 +210,7 @@ def step_apply_start_end_labels_rejected_end_without_rejection_label(context, it
 
     try:
         markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -262,7 +262,7 @@ def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: st
 
     try:
         markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -301,11 +301,11 @@ def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: st
         markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
 
 
-@when("I attempt to apply topic modeling with enabled true but no recipe")
-def step_attempt_apply_topic_modeling_missing_recipe(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+@when("I attempt to apply topic modeling with enabled true but no configuration")
+def step_attempt_apply_topic_modeling_missing_configuration(context) -> None:
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
-        topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(enabled=True, recipe=None),  # type: ignore[arg-type]
+        topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(enabled=True, configuration=None),  # type: ignore[arg-type]
     )
     observations: List[MarkovAnalysisObservation] = []
 
@@ -317,10 +317,10 @@ def step_attempt_apply_topic_modeling_missing_recipe(context) -> None:
 
 @when("I attempt to apply topic modeling with only boundary segments")
 def step_attempt_apply_topic_modeling_only_boundaries(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(
-            enabled=True, recipe=SimpleNamespace()
+            enabled=True, configuration=SimpleNamespace()
         ),
     )
     observations: List[MarkovAnalysisObservation] = [
@@ -358,10 +358,10 @@ def step_attempt_apply_topic_modeling_missing_assignment(context) -> None:
 
     try:
         markov_module.run_topic_modeling_for_documents = fake_run_topic_modeling_for_documents  # type: ignore[assignment]
-        config = MarkovAnalysisRecipeConfig.model_construct(
+        config = MarkovAnalysisConfiguration.model_construct(
             schema_version=1,
             topic_modeling=MarkovAnalysisTopicModelingConfig.model_construct(
-                enabled=True, recipe=SimpleNamespace()
+                enabled=True, configuration=SimpleNamespace()
             ),
         )
         observations: List[MarkovAnalysisObservation] = [
@@ -426,7 +426,7 @@ def step_built_states_exemplar_ends_with_start(context) -> None:
 
 @when("I assign markov state names with only START and END states")
 def step_assign_markov_state_names_only_boundaries(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "report": {
@@ -562,7 +562,7 @@ def step_attempt_fixed_window_validation(
 
 
 @when(
-    'I run fixed window segmentation on text "{text}" with max_characters {max_characters:d} and overlap_characters {overlap_characters:d}'
+    'I snapshot fixed window segmentation on text "{text}" with max_characters {max_characters:d} and overlap_characters {overlap_characters:d}'
 )
 def step_run_fixed_window_segmentation(
     context, text: str, max_characters: int, overlap_characters: int
@@ -578,7 +578,7 @@ def step_run_fixed_window_segmentation(
 
 
 @when(
-    "I run fixed window segmentation on empty text with max_characters {max_characters:d} and overlap_characters {overlap_characters:d}"
+    "I snapshot fixed window segmentation on empty text with max_characters {max_characters:d} and overlap_characters {overlap_characters:d}"
 )
 def step_run_fixed_window_segmentation_empty_text(
     context, max_characters: int, overlap_characters: int
@@ -631,7 +631,7 @@ def step_attempt_parse_json_object(context, raw_json: str, label_json: str) -> N
 
 @when("I attempt to segment documents with unsupported segmentation method")
 def step_attempt_segment_documents_unsupported_method(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         segmentation=MarkovAnalysisSegmentationConfig.model_construct(method="unsupported", fixed_window=None, llm=None),  # type: ignore[arg-type]
         observations=MarkovAnalysisObservationsConfig(),
@@ -650,7 +650,7 @@ def step_attempt_segment_documents_unsupported_method(context) -> None:
 
 @when("I attempt to segment documents that produce no segments")
 def step_attempt_segment_documents_produce_no_segments(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "segmentation": {"method": "sentence"},
@@ -667,7 +667,7 @@ def step_attempt_segment_documents_produce_no_segments(context) -> None:
 
 @when("I attempt to segment a document with llm method but missing llm config")
 def step_attempt_llm_segments_missing_llm_config(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         segmentation=MarkovAnalysisSegmentationConfig.model_construct(method="llm", fixed_window=None, llm=None),  # type: ignore[arg-type]
         observations=MarkovAnalysisObservationsConfig(),
@@ -694,7 +694,7 @@ def step_attempt_llm_segments_invalid_json_object(context) -> None:
 
     markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -721,7 +721,7 @@ def step_attempt_llm_segments_invalid_json_object(context) -> None:
         markov_module.generate_completion = original_generate_completion  # type: ignore[assignment]
 
 
-@when('I run llm segmentation that returns an empty segment and "Alpha"')
+@when('I snapshot llm segmentation that returns an empty segment and "Alpha"')
 def step_run_llm_segmentation_filters_empty(context) -> None:
     import biblicus.analysis.markov as markov_module
 
@@ -732,7 +732,7 @@ def step_run_llm_segmentation_filters_empty(context) -> None:
 
     markov_module.generate_completion = fake_generate_completion  # type: ignore[assignment]
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -758,7 +758,7 @@ def step_run_llm_segmentation_filters_empty(context) -> None:
 
 @when("I attempt span markup segmentation with missing config")
 def step_attempt_span_markup_segments_missing_config(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         segmentation=MarkovAnalysisSegmentationConfig.model_construct(
             method="span_markup", fixed_window=None, llm=None, span_markup=None  # type: ignore[arg-type]
@@ -776,7 +776,7 @@ def step_attempt_span_markup_segments_missing_config(context) -> None:
     _record_error(context, _invoke)
 
 
-@when('I run span markup segmentation with an empty span and "Alpha"')
+@when('I snapshot span markup segmentation with an empty span and "Alpha"')
 def step_run_span_markup_segments_filters_empty(context) -> None:
     import biblicus.analysis.markov as markov_module
 
@@ -794,7 +794,7 @@ def step_run_span_markup_segments_filters_empty(context) -> None:
 
     markov_module.apply_text_extract = fake_apply_text_extract  # type: ignore[assignment]
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -835,7 +835,7 @@ def step_span_markup_segmentation_returns_count(context, count: int) -> None:
 
 @when("I attempt to encode observations with unsupported observations encoder")
 def step_attempt_encode_observations_unsupported_encoder(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         segmentation=MarkovAnalysisSegmentationConfig(),
         observations=MarkovAnalysisObservationsConfig.model_construct(  # type: ignore[arg-type]
@@ -859,7 +859,7 @@ def step_attempt_encode_observations_unsupported_encoder(context) -> None:
 
 @when("I attempt to encode hybrid observations with missing embeddings")
 def step_attempt_encode_hybrid_observations_missing_embeddings(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "observations": {"encoder": "hybrid"},
@@ -885,7 +885,7 @@ def step_attempt_encode_hybrid_observations_missing_embeddings(context) -> None:
 def step_encode_hybrid_observations_with_sources(
     context, categorical_source: str, numeric_source: str
 ) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "observations": {
@@ -979,7 +979,7 @@ def step_tfidf_vectors_have_width(context, width: int) -> None:
 
 @when("I fit and decode a categorical Markov model without numpy")
 def step_fit_and_decode_categorical_without_numpy(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {"schema_version": 1, "model": {"family": "categorical", "n_states": 2}}
     )
 
@@ -1007,7 +1007,7 @@ def step_fit_and_decode_categorical_without_numpy(context) -> None:
 
 @when("I fit and decode a gaussian Markov model without numpy")
 def step_fit_and_decode_gaussian_without_numpy(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {"schema_version": 1, "model": {"family": "gaussian", "n_states": 2}}
     )
 
@@ -1064,7 +1064,7 @@ def step_build_observations_with_llm_summary_embeddings(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {"method": "sentence"},
@@ -1112,7 +1112,7 @@ def step_observations_include_embeddings(context) -> None:
 
 @when("I encode categorical observations")
 def step_encode_categorical_observations(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "observations": {"encoder": "tfidf", "categorical_source": "llm_label"},
@@ -1159,7 +1159,7 @@ def step_fit_and_decode_categorical_with_numpy(context) -> None:
         sys.modules["numpy"] = numpy_module
         context.numpy_available = True
 
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {"schema_version": 1, "model": {"family": "categorical", "n_states": 2}}
     )
     predicted, transitions, n_states = _fit_and_decode(
@@ -1196,7 +1196,7 @@ def step_fit_and_decode_gaussian_with_numpy(context) -> None:
         sys.modules["numpy"] = numpy_module
         context.numpy_available = True
 
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {"schema_version": 1, "model": {"family": "gaussian", "n_states": 2}}
     )
     predicted, transitions, n_states = _fit_and_decode(
@@ -1215,7 +1215,7 @@ def step_fit_and_decode_gaussian_with_numpy(context) -> None:
 
 @when("I build a Markov state naming context pack with a token budget of {budget:d}")
 def step_build_state_naming_context_pack(context, budget: int) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "report": {
@@ -1262,7 +1262,7 @@ def step_assign_state_names_with_provider_response(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "report": {
@@ -1306,7 +1306,7 @@ def step_assign_state_names_with_verb_phrase_response(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "report": {
@@ -1450,7 +1450,7 @@ def step_assign_state_names_with_retries_and_prefixes(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "report": {
@@ -1482,7 +1482,7 @@ def step_assign_state_names_with_retries_and_prefixes(context) -> None:
 
 @when("I attempt to assign Markov state names without a client")
 def step_attempt_assign_state_names_without_client(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_construct(
+    config = MarkovAnalysisConfiguration.model_construct(
         schema_version=1,
         report=MarkovAnalysisReportConfig.model_construct(
             state_naming=MarkovAnalysisStateNamingConfig.model_construct(
@@ -1504,7 +1504,7 @@ def step_attempt_assign_state_names_without_client(context) -> None:
 
 @when("I assign Markov state names with no states")
 def step_assign_state_names_with_no_states(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "report": {
@@ -1532,7 +1532,7 @@ def step_attempt_assign_state_names_retries_exhausted(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "report": {
@@ -1577,7 +1577,7 @@ def step_assign_state_names_with_missing_label_in_validation_output(context) -> 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     setattr(markov_module, "_validate_state_names", fake_validate_state_names)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "report": {
@@ -1635,7 +1635,7 @@ def step_attempt_span_markup_prepend_without_label_attribute(context) -> None:
                 label_attribute=None,
             ),
         )
-        config = MarkovAnalysisRecipeConfig.model_construct(
+        config = MarkovAnalysisConfiguration.model_construct(
             schema_version=1, segmentation=segmentation
         )
 
@@ -1678,7 +1678,7 @@ def step_attempt_span_markup_missing_label_value(context) -> None:
                 label_attribute="label",
             ),
         )
-        config = MarkovAnalysisRecipeConfig.model_construct(
+        config = MarkovAnalysisConfiguration.model_construct(
             schema_version=1, segmentation=segmentation
         )
 
@@ -1702,7 +1702,7 @@ def step_apply_start_end_labels_with_verifier(context) -> None:
 
     setattr(markov_module, "generate_completion", fake_generate_completion)
     try:
-        config = MarkovAnalysisRecipeConfig.model_validate(
+        config = MarkovAnalysisConfiguration.model_validate(
             {
                 "schema_version": 1,
                 "segmentation": {
@@ -1751,7 +1751,7 @@ def step_end_label_applied_to_final_segment(context) -> None:
 
 @when("I verify end label without a verifier configured")
 def step_verify_end_label_without_verifier(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "segmentation": {
@@ -1777,7 +1777,7 @@ def step_end_label_verification_returns_none(context) -> None:
 
 @when("I apply start/end labels with no payloads")
 def step_apply_start_end_labels_no_payloads(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "segmentation": {
@@ -1808,7 +1808,7 @@ def step_start_end_labeling_returns_count(context, count: int) -> None:
 
 @when("I attempt to apply start/end labels without span markup config")
 def step_attempt_apply_start_end_labels_without_config(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "segmentation": {"method": "sentence"},
@@ -1827,7 +1827,7 @@ def step_attempt_apply_start_end_labels_without_config(context) -> None:
 
 @when("I build a Markov state naming context pack with state naming disabled")
 def step_state_naming_context_pack_disabled(context) -> None:
-    config = MarkovAnalysisRecipeConfig.model_validate(
+    config = MarkovAnalysisConfiguration.model_validate(
         {
             "schema_version": 1,
             "report": {"state_naming": {"enabled": False}},

@@ -9,7 +9,7 @@ weighted transition graph that shows which “states” tend to follow which oth
 This tutorial runs a complete loop on a bundled set of conversation-style texts:
 
 1. Ingest text files into a managed folder on disk.
-2. Build an extraction run (pass-through for already-text items).
+2. Build an extraction snapshot (pass-through for already-text items).
 3. Run Markov analysis with topic-driven observations.
 4. Export a GraphViz transition graph and supporting artifacts.
 
@@ -51,21 +51,21 @@ python scripts/use_cases/sequence_markov_demo.py \
 
 The script prints a JSON object to standard output with:
 
-- the extraction run id it created
-- the Markov analysis run id
+- the extraction snapshot id it created
+- the Markov analysis snapshot id
 - paths to the generated artifacts
 
 The most useful artifact to open first is the GraphViz file:
 
 ```json
 {
-  "transitions_dot_path": ".../corpora/tutorial_sequence_markov/.biblicus/runs/analysis/markov/<run_id>/transitions.dot"
+  "transitions_dot_path": ".../corpora/tutorial_sequence_markov/.biblicus/runs/analysis/markov/<snapshot_id>/transitions.dot"
 }
 ```
 
 ## How to interpret the output
 
-Markov analysis writes a run directory under the managed folder:
+Markov analysis writes a snapshot directory under the managed folder:
 
 - `segments.jsonl`: the ordered segments for each item
 - `observations.jsonl`: the observation record per segment
@@ -78,5 +78,5 @@ The visualization is meant to be evidence-first:
 - nodes are states inferred by the model
 - edges are directed transitions, with weights derived from observed transitions in decoded paths
 
-For deeper detail (including recipes, segmentation choices, and artifacts), see
+For deeper detail (including configurations, segmentation choices, and artifacts), see
 `docs/MARKOV_ANALYSIS.md`.

@@ -1,14 +1,14 @@
 Feature: Markov analysis variants
-  Markov analysis supports multiple segmentation methods, observation encodings, and recipe error handling.
+  Markov analysis supports multiple segmentation methods, observation encodings, and configuration error handling.
 
   Scenario: Markov analysis supports fixed window segmentation
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBetaGammaDeltaEpsilon" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -28,8 +28,8 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
-    Then the markov analysis run includes more than 1 segment
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
+    Then the markov analysis snapshot includes more than 1 segment
 
   Scenario: Markov analysis supports span markup segmentation
     Given I initialized a corpus at "corpus"
@@ -39,10 +39,10 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha Beta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -66,8 +66,8 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
-    Then the markov analysis run includes more than 1 segment
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
+    Then the markov analysis snapshot includes more than 1 segment
 
   Scenario: Markov analysis supports span markup segmentation with labels
     Given I initialized a corpus at "corpus"
@@ -77,10 +77,10 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Greeting Wrapup" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -106,8 +106,8 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
-    Then the markov analysis run includes a segment with text:
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
+    Then the markov analysis snapshot includes a segment with text:
       """
       greeting
       Greeting
@@ -121,10 +121,10 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBeta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -148,18 +148,18 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
-    Then the markov analysis run includes more than 1 segment
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
+    Then the markov analysis snapshot includes more than 1 segment
 
   Scenario: Markov analysis computes transitions from decoded sequence when the model does not provide transmat_
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available without transmat_ output
     And a fake hmmlearn library is available with predicted states "0,1,1"
     When I ingest the text "Alpha. Beta. Gamma." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -176,17 +176,17 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes a transition from state 0 to state 1
 
   Scenario: Markov analysis fails fast when hmmlearn is not installed
     Given I initialized a corpus at "corpus"
     And the hmmlearn dependency is unavailable
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -203,56 +203,56 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "biblicus[markov-analysis]"
 
-  Scenario: Markov analysis requires an extraction run when none is available
+  Scenario: Markov analysis requires an extraction snapshot when none is available
     Given I initialized a corpus at "corpus"
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       model:
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml"
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml"
     Then the command fails with exit code 2
-    And standard error includes "Markov analysis requires an extraction run"
+    And standard error includes "Markov analysis requires an extraction snapshot"
 
-  Scenario: Markov analysis emits a reproducibility warning when using the latest extraction run
+  Scenario: Markov analysis emits a reproducibility warning when using the latest extraction snapshot
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       model:
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml"
-    Then standard error includes "Warning: using latest extraction run"
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml"
+    Then standard error includes "Warning: using latest extraction snapshot"
 
-  Scenario: Markov analysis rejects invalid recipes
+  Scenario: Markov analysis rejects invalid configurations
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
         method: llm
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
-    And standard error includes "Invalid Markov analysis recipe"
+    And standard error includes "Invalid Markov analysis configuration"
 
   Scenario: Markov analysis text collection filters non-extracted, empty, and short documents and truncates by sample size
     Given I initialized a corpus at "corpus"
@@ -261,12 +261,12 @@ Feature: Markov analysis variants
     And I ingest the text "Beta." with title "Doc2" and tags "t" into corpus "corpus"
     And I ingest the text "Hi" with title "Doc3" and tags "t" into corpus "corpus"
     And I ingest the text "Delta." with title "Doc4" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And I append a non-extracted item to the latest extraction run manifest
-    And I blank the extracted text for the 4th ingested item in the latest extraction run
-    And a recipe file "markov.yml" exists with content:
+    And I append a non-extracted item to the latest extraction snapshot manifest
+    And I blank the extracted text for the 4th ingested item in the latest extraction snapshot
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -283,7 +283,7 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis text collection report includes:
       | field        | value |
       | source_items | 5     |
@@ -296,10 +296,10 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Hi" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -308,7 +308,7 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "at least one extracted text document"
 
@@ -317,10 +317,10 @@ Feature: Markov analysis variants
     And a fake hmmlearn library is available with predicted states "0,1,0,1"
     When I ingest the text "Alpha. Beta." with title "Doc1" and tags "t" into corpus "corpus"
     And I ingest the text "Gamma. Delta." with title "Doc2" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -331,7 +331,7 @@ Feature: Markov analysis variants
       report:
         max_state_exemplars: 0
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes 2 decoded item path
     And every Markov state report has no non-boundary exemplars
 
@@ -340,10 +340,10 @@ Feature: Markov analysis variants
     And a fake OpenAI library is available
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -361,17 +361,17 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
-    Then the markov analysis run includes an observations file
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
+    Then the markov analysis snapshot includes an observations file
 
   Scenario: Markov analysis fails when embedding observations are requested without enabling embeddings
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -382,7 +382,7 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "Embedding observations require embeddings.enabled true"
 
@@ -391,10 +391,10 @@ Feature: Markov analysis variants
     And a fake OpenAI library is available
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -410,7 +410,7 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "llm_summary is missing"
 
@@ -418,10 +418,10 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -430,7 +430,7 @@ Feature: Markov analysis variants
         family: categorical
         n_states: 2
       """
-    When I attempt to run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I attempt to snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "Categorical Markov models require categorical labels"
 
@@ -455,10 +455,10 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -480,7 +480,7 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes 1 decoded item path
 
   Scenario: Markov analysis supports hybrid observations combining embeddings and provider labels
@@ -504,10 +504,10 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -532,17 +532,17 @@ Feature: Markov analysis variants
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes 1 decoded item path
 
   Scenario: Markov analysis exports GraphViz transitions respecting a minimum edge weight
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0,1,1"
     When I ingest the text "Alpha. Beta. Gamma." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       segmentation:
@@ -555,5 +555,5 @@ Feature: Markov analysis variants
           enabled: true
           min_edge_weight: 2.0
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the graphviz transitions file contains no edges

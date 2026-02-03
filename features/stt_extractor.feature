@@ -10,7 +10,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "stt-openai" extraction run in corpus "corpus"
+    And I attempt to build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "biblicus[openai]"
 
@@ -19,8 +19,8 @@ Feature: Speech to text extraction
     And a fake OpenAI library is available
     And an OpenAI API key is configured for this scenario
     When I ingest the text "alpha" with no metadata into corpus "corpus"
-    And I build a "stt-openai" extraction run in corpus "corpus"
-    Then the extraction run does not include extracted text for the last ingested item
+    And I build a "stt-openai" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: Speech to text extractor requires an OpenAI API key
     Given I initialized a corpus at "corpus"
@@ -30,7 +30,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "stt-openai" extraction run in corpus "corpus"
+    And I attempt to build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "OPENAI_API_KEY"
     And standard error includes "config.yml"
@@ -44,9 +44,9 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-openai" extraction run in corpus "corpus"
+    And I build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "Hello from speech to text"
-    And the extraction run item provenance uses extractor "stt-openai"
+    And the extraction snapshot item provenance uses extractor "stt-openai"
 
   Scenario: Speech to text suppresses no-speech audio when probability is high
     Given I initialized a corpus at "corpus"
@@ -60,12 +60,12 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id | config_json                                                        |
       | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
     Then the extracted text for the last ingested item is empty
     And the OpenAI transcription request used response format "verbose_json"
-    And the extraction run item provenance uses extractor "stt-openai"
+    And the extraction snapshot item provenance uses extractor "stt-openai"
 
   Scenario: No-speech suppression requires verbose response format
     Given I initialized a corpus at "corpus"
@@ -76,7 +76,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id | config_json                                  |
       | stt-openai   | {"no_speech_probability_threshold":0.9}      |
     Then the command fails with exit code 2
@@ -94,7 +94,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id | config_json                                                        |
       | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
     Then the extracted text for the last ingested item equals "Real words"
@@ -108,9 +108,9 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "stt-openai" extraction run in corpus "corpus"
+    And I build a "stt-openai" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "Hello from dict result"
-    And the extraction run item provenance uses extractor "stt-openai"
+    And the extraction snapshot item provenance uses extractor "stt-openai"
 
   Scenario: Speech to text extractor rejects extraction without an API key at runtime
     When I call the speech to text extractor without an API key
@@ -131,9 +131,9 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" with tags "audio,example" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id   | config_json |
       | metadata-text  | {}          |
       | stt-openai     | {}          |
     Then the extracted text for the last ingested item equals "Transcript wins"
-    And the extraction run item provenance uses extractor "stt-openai"
+    And the extraction snapshot item provenance uses extractor "stt-openai"

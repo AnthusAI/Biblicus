@@ -5,13 +5,13 @@ Feature: Portable Document Format extraction and retrieval integration
   Scenario: Query finds text extracted from a downloaded Portable Document Format
     Given I initialized a corpus at "corpus"
     When I ingest the uniform resource locator "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" into corpus "corpus"
-    And I build a "pdf-text" extraction run in corpus "corpus"
-    And I build a "sqlite-full-text-search" retrieval run in corpus "corpus" using the latest extraction run and config:
+    And I build a "pdf-text" extraction snapshot in corpus "corpus"
+    And I build a "sqlite-full-text-search" retrieval snapshot in corpus "corpus" using the latest extraction snapshot and config:
       | key                | value |
       | chunk_size         | 200   |
       | chunk_overlap      | 50    |
       | snippet_characters | 120   |
-    And I query with the latest run for "Dummy PDF file" and budget:
+    And I query with the latest snapshot for "Dummy PDF file" and budget:
       | key                 | value |
       | max_total_items     | 5     |
       | maximum_total_characters| 10000 |

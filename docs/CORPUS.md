@@ -18,7 +18,7 @@ corpus/
     config.json
     catalog.json
     runs/
-      <run manifests and artifacts>
+      <snapshot manifests and artifacts>
 ```
 
 ## Core concepts
@@ -137,7 +137,7 @@ python -m biblicus reindex --corpus corpora/example
 ## Reproducibility checklist
 
 - Keep raw files and sidecars in source control or backed up as immutable inputs.
-- Record the catalog timestamp when comparing run outputs.
+- Record the catalog timestamp when comparing snapshot outputs.
 - Prefer `import-tree` for reproducible ingest of existing folder structures.
 
 ## Common pitfalls

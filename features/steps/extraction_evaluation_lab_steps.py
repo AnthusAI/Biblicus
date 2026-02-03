@@ -16,7 +16,7 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
 
 
 @when(
-    'I run the extraction evaluation lab with corpus "{corpus_name}" and dataset "{dataset_name}"'
+    'I snapshot the extraction evaluation lab with corpus "{corpus_name}" and dataset "{dataset_name}"'
 )
 def step_run_extraction_evaluation_lab(context, corpus_name: str, dataset_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)

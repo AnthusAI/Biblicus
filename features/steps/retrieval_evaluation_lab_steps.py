@@ -21,7 +21,9 @@ def _expect_metric(metrics: dict[str, object], key: str, expected: float) -> Non
     assert math.isclose(actual, expected, rel_tol=1e-12, abs_tol=1e-12)
 
 
-@when('I run the retrieval evaluation lab with corpus "{corpus_name}" and dataset "{dataset_name}"')
+@when(
+    'I snapshot the retrieval evaluation lab with corpus "{corpus_name}" and dataset "{dataset_name}"'
+)
 def step_run_retrieval_evaluation_lab(context, corpus_name: str, dataset_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     dataset_path = (context.workdir / dataset_name).resolve()

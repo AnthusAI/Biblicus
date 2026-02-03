@@ -8,7 +8,7 @@ Feature: Corpus edge cases and robustness
     And standard error includes "Corpus already exists"
 
   Scenario: Running commands outside a corpus fails
-    When I run "list" without specifying a corpus
+    When I snapshot "list" without specifying a corpus
     Then the command fails with exit code 2
     And standard error includes "Not a Biblicus corpus"
 
@@ -25,14 +25,14 @@ Feature: Corpus edge cases and robustness
     And a binary file "blob.bin" exists
     When I ingest the file "blob.bin" with tags "t" into corpus "corpus"
     And I overwrite the last ingested item's sidecar with a Yet Another Markup Language list
-    When I run "reindex" in corpus "corpus"
+    When I snapshot "reindex" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Sidecar metadata must be a mapping"
 
   Scenario: Reindex rejects markdown files that are not Unicode Transformation Format 8
     Given I initialized a corpus at "corpus"
     And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000003" exists in corpus "corpus" named "bad.md" with invalid Unicode Transformation Format 8 bytes
-    When I run "reindex" in corpus "corpus"
+    When I snapshot "reindex" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Markdown file must be Unicode Transformation Format 8"
 

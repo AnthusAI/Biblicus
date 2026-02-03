@@ -1,8 +1,8 @@
 """
-Generate a human-readable report for a Markov analysis run.
+Generate a human-readable report for a Markov analysis snapshot.
 
 This script is intentionally pragmatic: it turns Biblicus' structured Markov artifacts into a small Markdown report
-that a human can read and click through while iterating on recipes.
+that a human can read and click through while iterating on configurations.
 """
 
 from __future__ import annotations
@@ -68,14 +68,14 @@ def _segments_by_state(
 
 def build_report(run_dir: Path) -> Path:
     """
-    Build a Markdown report for a Markov analysis run directory.
+    Build a Markdown report for a Markov analysis snapshot directory.
 
-    :param run_dir: Path to the Markov analysis run directory containing ``output.json`` and
+    :param run_dir: Path to the Markov analysis snapshot directory containing ``output.json`` and
         related artifacts (for example ``segments.jsonl``).
     :type run_dir: pathlib.Path
     :return: Path to the generated report file.
     :rtype: pathlib.Path
-    :raises ValueError: If required run artifacts are missing or have unexpected structure.
+    :raises ValueError: If required snapshot artifacts are missing or have unexpected structure.
     """
     output = _load_json(run_dir / "output.json")
     report = output["report"]
@@ -105,7 +105,7 @@ def build_report(run_dir: Path) -> Path:
     lines.append("")
     lines.append(f"- Run dir: `{run_dir}`")
     lines.append(f"- Corpus: `{corpus_path}`")
-    lines.append(f"- Run id: `{output['run']['run_id']}`")
+    lines.append(f"- Run id: `{output['run']['snapshot_id']}`")
     lines.append("")
     lines.append("## What this run learned (high level)")
     lines.append("")
@@ -227,10 +227,10 @@ def main() -> int:
     :rtype: int
     """
     parser = argparse.ArgumentParser(
-        description="Generate a Markdown report for a Markov analysis run."
+        description="Generate a Markdown report for a Markov analysis snapshot."
     )
     parser.add_argument(
-        "--run-dir", required=True, help="Path to the Markov analysis run directory."
+        "--run-dir", required=True, help="Path to the Markov analysis snapshot directory."
     )
     args = parser.parse_args()
     run_dir = Path(args.run_dir).resolve()

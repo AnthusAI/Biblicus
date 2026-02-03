@@ -13,7 +13,7 @@ Feature: Extraction pipeline
       body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | metadata-text      | {}          |
@@ -22,7 +22,7 @@ Feature: Extraction pipeline
       Note
       tags: a
       """
-    And the extraction run item provenance uses extractor "metadata-text"
+    And the extraction snapshot item provenance uses extractor "metadata-text"
 
   Scenario: Selection step can choose an earlier output
     Given I initialized a corpus at "corpus"
@@ -35,62 +35,62 @@ Feature: Extraction pipeline
       body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | metadata-text      | {}          |
       | select-text        | {}          |
     Then the extracted text for the last ingested item equals "body"
-    And the extraction run item provenance uses extractor "pass-through-text"
+    And the extraction snapshot item provenance uses extractor "pass-through-text"
 
   Scenario: Pipeline rejects steps that include the pipeline extractor
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "pipeline"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "pipeline"
     Then the command fails with exit code 2
     And standard error includes "Pipeline steps cannot include the pipeline extractor itself"
 
   Scenario: Pipeline requires at least one step
     Given I initialized a corpus at "corpus"
-    When I run "extract build" in corpus "corpus"
+    When I snapshot "extract build" in corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "Pipeline extraction requires at least one --step"
 
   Scenario: Step spec without extractor identifier is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec ":x=y"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec ":x=y"
     Then the command fails with exit code 2
     And standard error includes "Step spec must start with an extractor identifier"
 
   Scenario: Step spec with trailing colon is accepted
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I run "extract build --step pass-through-text:" in corpus "corpus"
+    And I snapshot "extract build --step pass-through-text:" in corpus "corpus"
     Then the command succeeds
 
   Scenario: Step spec ignores empty tokens
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I run "extract build --step metadata-text:,, " in corpus "corpus"
+    And I snapshot "extract build --step metadata-text:,, " in corpus "corpus"
     Then the command succeeds
 
   Scenario: Step spec can pass config values to an extractor
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id   | config_json               |
       | metadata-text  | {"include_title": false}  |
     Then the extracted text for the last ingested item equals "tags: a"
-    And the extraction run item provenance uses extractor "metadata-text"
+    And the extraction snapshot item provenance uses extractor "metadata-text"
 
   Scenario: Step spec without key value pairs is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:badtoken"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:badtoken"
     Then the command fails with exit code 2
     And standard error includes "Step config values must be key=value"
 
   Scenario: Step spec with empty key is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction run in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:=x"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:=x"
     Then the command fails with exit code 2
     And standard error includes "Step config keys must be non-empty"
 
@@ -100,6 +100,6 @@ Feature: Extraction pipeline
 
   Scenario: Extraction runs require the pipeline extractor
     Given I initialized a corpus at "corpus"
-    When I attempt to build a non-pipeline extraction run in corpus "corpus"
+    When I attempt to build a non-pipeline extraction snapshot in corpus "corpus"
     Then a fatal extraction error is raised
-    And the fatal extraction error message includes "Extraction runs must use the pipeline extractor"
+    And the fatal extraction error message includes "Extraction snapshots must use the pipeline extractor"

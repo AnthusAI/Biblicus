@@ -117,8 +117,8 @@ class CorpusCatalog(BaseModel):
     :vartype corpus_uri: str
     :ivar raw_dir: Relative path to the raw items folder.
     :vartype raw_dir: str
-    :ivar latest_run_id: Latest retrieval run identifier, if any.
-    :vartype latest_run_id: str or None
+    :ivar latest_snapshot_id: Latest retrieval snapshot identifier, if any.
+    :vartype latest_snapshot_id: str or None
     :ivar items: Mapping of item IDs to catalog entries.
     :vartype items: dict[str, CatalogItem]
     :ivar order: Display order of item IDs (most recent first).
@@ -131,7 +131,7 @@ class CorpusCatalog(BaseModel):
     generated_at: str
     corpus_uri: str
     raw_dir: str = "raw"
-    latest_run_id: Optional[str] = None
+    latest_snapshot_id: Optional[str] = None
     items: Dict[str, CatalogItem] = Field(default_factory=dict)
     order: List[str] = Field(default_factory=list)
 
@@ -142,79 +142,79 @@ class CorpusCatalog(BaseModel):
         return self
 
 
-class ExtractionRunReference(BaseModel):
+class ExtractionSnapshotReference(BaseModel):
     """
-    Reference to an extraction run.
+    Reference to an extraction snapshot.
 
     :ivar extractor_id: Extractor plugin identifier.
     :vartype extractor_id: str
-    :ivar run_id: Extraction run identifier.
-    :vartype run_id: str
+    :ivar snapshot_id: Extraction snapshot identifier.
+    :vartype snapshot_id: str
     """
 
     model_config = ConfigDict(extra="forbid")
 
     extractor_id: str = Field(min_length=1)
-    run_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
 
     def as_string(self) -> str:
         """
         Serialize the reference as a single string.
 
-        :return: Reference in the form extractor_id:run_id.
+        :return: Reference in the form extractor_id:snapshot_id.
         :rtype: str
         """
-        return f"{self.extractor_id}:{self.run_id}"
+        return f"{self.extractor_id}:{self.snapshot_id}"
 
 
-def parse_extraction_run_reference(value: str) -> ExtractionRunReference:
+def parse_extraction_snapshot_reference(value: str) -> ExtractionSnapshotReference:
     """
-    Parse an extraction run reference in the form extractor_id:run_id.
+    Parse an extraction snapshot reference in the form extractor_id:snapshot_id.
 
     :param value: Raw reference string.
     :type value: str
-    :return: Parsed extraction run reference.
-    :rtype: ExtractionRunReference
+    :return: Parsed extraction snapshot reference.
+    :rtype: ExtractionSnapshotReference
     :raises ValueError: If the reference is not well formed.
     """
     if ":" not in value:
-        raise ValueError("Extraction run reference must be extractor_id:run_id")
-    extractor_id, run_id = value.split(":", 1)
+        raise ValueError("Extraction snapshot reference must be extractor_id:snapshot_id")
+    extractor_id, snapshot_id = value.split(":", 1)
     extractor_id = extractor_id.strip()
-    run_id = run_id.strip()
-    if not extractor_id or not run_id:
+    snapshot_id = snapshot_id.strip()
+    if not extractor_id or not snapshot_id:
         raise ValueError(
-            "Extraction run reference must be extractor_id:run_id with non-empty parts"
+            "Extraction snapshot reference must be extractor_id:snapshot_id with non-empty parts"
         )
-    return ExtractionRunReference(extractor_id=extractor_id, run_id=run_id)
+    return ExtractionSnapshotReference(extractor_id=extractor_id, snapshot_id=snapshot_id)
 
 
-class ExtractionRunListEntry(BaseModel):
+class ExtractionSnapshotListEntry(BaseModel):
     """
-    Summary entry for an extraction run stored in a corpus.
+    Summary entry for an extraction snapshot stored in a corpus.
 
     :ivar extractor_id: Extractor plugin identifier.
     :vartype extractor_id: str
-    :ivar run_id: Extraction run identifier.
-    :vartype run_id: str
-    :ivar recipe_id: Deterministic recipe identifier.
-    :vartype recipe_id: str
-    :ivar recipe_name: Human-readable recipe name.
-    :vartype recipe_name: str
-    :ivar catalog_generated_at: Catalog timestamp used for the run.
+    :ivar snapshot_id: Extraction snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration_id: Deterministic configuration identifier.
+    :vartype configuration_id: str
+    :ivar configuration_name: Human-readable configuration name.
+    :vartype configuration_name: str
+    :ivar catalog_generated_at: Catalog timestamp used for the snapshot.
     :vartype catalog_generated_at: str
-    :ivar created_at: International Organization for Standardization 8601 timestamp for run creation.
+    :ivar created_at: International Organization for Standardization 8601 timestamp for snapshot creation.
     :vartype created_at: str
-    :ivar stats: Run statistics.
+    :ivar stats: Snapshot statistics.
     :vartype stats: dict[str, object]
     """
 
     model_config = ConfigDict(extra="forbid")
 
     extractor_id: str = Field(min_length=1)
-    run_id: str = Field(min_length=1)
-    recipe_id: str = Field(min_length=1)
-    recipe_name: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    configuration_id: str = Field(min_length=1)
+    configuration_name: str = Field(min_length=1)
     catalog_generated_at: str = Field(min_length=1)
     created_at: str = Field(min_length=1)
     stats: Dict[str, object] = Field(default_factory=dict)
@@ -250,7 +250,7 @@ class QueryBudget(BaseModel):
 
 class Evidence(BaseModel):
     """
-    Structured retrieval evidence returned from a backend.
+    Structured retrieval evidence returned from a retriever.
 
     :ivar item_id: Item identifier that produced the evidence.
     :vartype item_id: str
@@ -274,10 +274,10 @@ class Evidence(BaseModel):
     :vartype stage: str
     :ivar stage_scores: Optional per-stage scores for multi-stage retrieval.
     :vartype stage_scores: dict[str, float] or None
-    :ivar recipe_id: Recipe identifier used to create the run.
-    :vartype recipe_id: str
-    :ivar run_id: Retrieval run identifier.
-    :vartype run_id: str
+    :ivar configuration_id: Configuration identifier used to create the snapshot.
+    :vartype configuration_id: str
+    :ivar snapshot_id: Retrieval snapshot identifier.
+    :vartype snapshot_id: str
     :ivar metadata: Optional metadata payload from the catalog item.
     :vartype metadata: dict[str, Any]
     :ivar hash: Optional content hash for provenance.
@@ -297,8 +297,8 @@ class Evidence(BaseModel):
     span_end: Optional[int] = None
     stage: str
     stage_scores: Optional[Dict[str, float]] = None
-    recipe_id: str
-    run_id: str
+    configuration_id: str
+    snapshot_id: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
@@ -311,79 +311,79 @@ class Evidence(BaseModel):
         return self
 
 
-class RecipeManifest(BaseModel):
+class ConfigurationManifest(BaseModel):
     """
-    Reproducible configuration for a retrieval backend.
+    Reproducible configuration for a retriever.
 
-    :ivar recipe_id: Deterministic recipe identifier.
-    :vartype recipe_id: str
-    :ivar backend_id: Backend identifier for the recipe.
-    :vartype backend_id: str
-    :ivar name: Human-readable name for the recipe.
+    :ivar configuration_id: Deterministic configuration identifier.
+    :vartype configuration_id: str
+    :ivar retriever_id: Retriever identifier for the configuration.
+    :vartype retriever_id: str
+    :ivar name: Human-readable name for the configuration.
     :vartype name: str
-    :ivar created_at: International Organization for Standardization 8601 timestamp for recipe creation.
+    :ivar created_at: International Organization for Standardization 8601 timestamp for configuration creation.
     :vartype created_at: str
-    :ivar config: Backend-specific configuration values.
-    :vartype config: dict[str, Any]
+    :ivar configuration: Retriever-specific configuration values.
+    :vartype configuration: dict[str, Any]
     :ivar description: Optional human description.
     :vartype description: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    recipe_id: str
-    backend_id: str
+    configuration_id: str
+    retriever_id: str
     name: str
     created_at: str
-    config: Dict[str, Any] = Field(default_factory=dict)
+    configuration: Dict[str, Any] = Field(default_factory=dict)
     description: Optional[str] = None
 
 
-class RetrievalRun(BaseModel):
+class RetrievalSnapshot(BaseModel):
     """
-    Immutable record of a retrieval materialization or on-demand run.
+    Immutable record of a retrieval snapshot.
 
-    :ivar run_id: Unique run identifier.
-    :vartype run_id: str
-    :ivar recipe: Recipe manifest for this run.
-    :vartype recipe: RecipeManifest
+    :ivar snapshot_id: Unique snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration: Configuration manifest for this snapshot.
+    :vartype configuration: ConfigurationManifest
     :ivar corpus_uri: Canonical uniform resource identifier for the corpus root.
     :vartype corpus_uri: str
-    :ivar catalog_generated_at: Catalog timestamp used for the run.
+    :ivar catalog_generated_at: Catalog timestamp used for the snapshot.
     :vartype catalog_generated_at: str
-    :ivar created_at: International Organization for Standardization 8601 timestamp for run creation.
+    :ivar created_at: International Organization for Standardization 8601 timestamp for snapshot creation.
     :vartype created_at: str
-    :ivar artifact_paths: Relative paths to materialized artifacts.
-    :vartype artifact_paths: list[str]
-    :ivar stats: Backend-specific run statistics.
+    :ivar snapshot_artifacts: Relative paths to materialized artifacts.
+    :vartype snapshot_artifacts: list[str]
+    :ivar stats: Retriever-specific snapshot statistics.
     :vartype stats: dict[str, Any]
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
-    recipe: RecipeManifest
+    snapshot_id: str
+    configuration: ConfigurationManifest
     corpus_uri: str
     catalog_generated_at: str
     created_at: str
-    artifact_paths: List[str] = Field(default_factory=list)
+    snapshot_artifacts: List[str] = Field(default_factory=list)
     stats: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RetrievalResult(BaseModel):
     """
-    Retrieval result bundle returned from a backend query.
+    Retrieval result bundle returned from a retriever query.
 
     :ivar query_text: Query text issued against the backend.
     :vartype query_text: str
     :ivar budget: Evidence selection budget applied to results.
     :vartype budget: QueryBudget
-    :ivar run_id: Retrieval run identifier.
-    :vartype run_id: str
-    :ivar recipe_id: Recipe identifier used for this query.
-    :vartype recipe_id: str
-    :ivar backend_id: Backend identifier used for this query.
-    :vartype backend_id: str
+    :ivar snapshot_id: Retrieval snapshot identifier.
+    :vartype snapshot_id: str
+    :ivar configuration_id: Configuration identifier used for this query.
+    :vartype configuration_id: str
+    :ivar retriever_id: Retriever identifier used for this query.
+    :vartype retriever_id: str
     :ivar generated_at: International Organization for Standardization 8601 timestamp for the query result.
     :vartype generated_at: str
     :ivar evidence: Evidence objects selected under the budget.
@@ -396,9 +396,9 @@ class RetrievalResult(BaseModel):
 
     query_text: str
     budget: QueryBudget
-    run_id: str
-    recipe_id: str
-    backend_id: str
+    snapshot_id: str
+    configuration_id: str
+    retriever_id: str
     generated_at: str
     evidence: List[Evidence] = Field(default_factory=list)
     stats: Dict[str, Any] = Field(default_factory=dict)

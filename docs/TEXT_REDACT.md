@@ -1,7 +1,10 @@
 # Text redact
 
-Text redact is a reusable utility for marking sensitive spans in text with XML tags. It uses the virtual file editor
-pattern and returns structured spans, without forcing the model to re-emit the entire document.
+Text redact is a reusable utility for identifying sensitive spans in text without re-emitting the document.
+
+If you ask a model to "rewrite this document with PII removed," you risk the model leaking information it was supposed to remove, or hallucinating new text during the rewrite. The cost of regenerating the full document is also high.
+
+Text redact uses the **virtual file pattern** to ensure safety and efficiency. Biblicus gives the model a virtual file and asks it to wrap sensitive spans in XML tags (e.g., `<span redact="pii">...</span>`). The model returns a small edit script (`str_replace` only), and Biblicus applies it. This allows you to identify exactly what to remove without ever asking the model to generate the "clean" text itself.
 
 ## How text redact works
 
@@ -14,8 +17,9 @@ pattern and returns structured spans, without forcing the model to re-emit the e
 
 Biblicus supplies an internal protocol that defines the edit protocol and embeds the current text:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -28,29 +32,33 @@ Contact us at demo@example.com for help.
 
 Then provide a short user prompt describing what to return:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return all email addresses.
 ```
 
 The input text is the same content embedded in the internal protocol:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Contact us at demo@example.com for help.
 ```
 
 The model edits the virtual file by inserting tags in-place:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 Contact us at <span>demo@example.com</span> for help.
 ```
 
 Biblicus returns structured data parsed from the markup:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "Contact us at <span>demo@example.com</span> for help.",
   "spans": [
@@ -70,8 +78,9 @@ STRUCTURED DATA (result):
 
 You can enable redaction types by allowing a `redact` attribute in the internal protocol:
 
+**Internal protocol (excerpt):**
+
 ```
-INTERNAL PROTOCOL (excerpt):
 You are a virtual file editor. Use the available tools to edit the text.
 Interpret the word "return" in the user's request as: wrap the returned text with
 <span>...</span> in-place in the current text.
@@ -84,29 +93,33 @@ Account 1234 should be removed.
 
 User prompt:
 
+**User prompt:**
+
 ```
-USER PROMPT:
 Return the account identifiers.
 ```
 
 Input text:
 
+**Input text:**
+
 ```
-INPUT TEXT:
 Account 1234 should be removed.
 ```
 
 Marked-up text:
 
+**Marked-up text:**
+
 ```
-MARKED-UP TEXT:
 <span redact="pii">Account 1234</span> should be removed.
 ```
 
 Structured data:
 
+**Structured data (result):**
+
 ```
-STRUCTURED DATA (result):
 {
   "marked_up_text": "<span redact=\"pii\">Account 1234</span> should be removed.",
   "spans": [
@@ -154,9 +167,11 @@ Rules:
 - When redaction types are enabled, use `redact="TYPE"`.
 - When redaction types are disabled, do not include span attributes.
 
+Long-span handling: the system prompt instructs the model to insert `<span>` and `</span>` in separate `str_replace` calls for long passages (single-call insertion is allowed for short spans). This is covered by unit tests in `tests/test_text_utility_tool_calls.py`.
+
 ## Example: Python API
 
-```
+```python
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import TextRedactRequest, apply_text_redact
 

@@ -23,23 +23,23 @@ from ..context import (
     fit_context_pack_to_token_budget,
 )
 from ..corpus import Corpus
-from ..models import Evidence, ExtractionRunReference, QueryBudget, RetrievalResult
+from ..models import Evidence, ExtractionSnapshotReference, QueryBudget, RetrievalResult
 from ..retrieval import hash_text
 from ..text.annotate import TextAnnotateRequest, apply_text_annotate
 from ..text.extract import TextExtractRequest, apply_text_extract
 from ..time import utc_now_iso
 from .base import CorpusAnalysisBackend
 from .models import (
-    AnalysisRecipeManifest,
+    AnalysisConfigurationManifest,
     AnalysisRunInput,
     AnalysisRunManifest,
     MarkovAnalysisArtifactsGraphVizConfig,
+    MarkovAnalysisConfiguration,
     MarkovAnalysisDecodedPath,
     MarkovAnalysisModelFamily,
     MarkovAnalysisObservation,
     MarkovAnalysisObservationsEncoder,
     MarkovAnalysisOutput,
-    MarkovAnalysisRecipeConfig,
     MarkovAnalysisReport,
     MarkovAnalysisSegment,
     MarkovAnalysisSegmentationMethod,
@@ -107,67 +107,72 @@ class MarkovBackend(CorpusAnalysisBackend):
         self,
         corpus: Corpus,
         *,
-        recipe_name: str,
-        config: Dict[str, object],
-        extraction_run: ExtractionRunReference,
+        configuration_name: str,
+        configuration: Dict[str, object],
+        extraction_snapshot: ExtractionSnapshotReference,
     ) -> BaseModel:
         """
         Run Markov analysis for a corpus.
 
         :param corpus: Corpus to analyze.
         :type corpus: Corpus
-        :param recipe_name: Human-readable recipe name.
-        :type recipe_name: str
-        :param config: Analysis configuration values.
-        :type config: dict[str, object]
-        :param extraction_run: Extraction run reference for text inputs.
-        :type extraction_run: biblicus.models.ExtractionRunReference
+        :param configuration_name: Human-readable configuration name.
+        :type configuration_name: str
+        :param configuration: Analysis configuration values.
+        :type configuration: dict[str, object]
+        :param extraction_snapshot: Extraction snapshot reference for text inputs.
+        :type extraction_snapshot: biblicus.models.ExtractionSnapshotReference
         :return: Markov analysis output model.
         :rtype: pydantic.BaseModel
         """
         parsed_config = (
-            config
-            if isinstance(config, MarkovAnalysisRecipeConfig)
-            else MarkovAnalysisRecipeConfig.model_validate(config)
+            configuration
+            if isinstance(configuration, MarkovAnalysisConfiguration)
+            else MarkovAnalysisConfiguration.model_validate(configuration)
         )
         return _run_markov(
             corpus=corpus,
-            recipe_name=recipe_name,
+            configuration_name=configuration_name,
             config=parsed_config,
-            extraction_run=extraction_run,
+            extraction_snapshot=extraction_snapshot,
         )
 
 
 def _run_markov(
     *,
     corpus: Corpus,
-    recipe_name: str,
-    config: MarkovAnalysisRecipeConfig,
-    extraction_run: ExtractionRunReference,
+    configuration_name: str,
+    config: MarkovAnalysisConfiguration,
+    extraction_snapshot: ExtractionSnapshotReference,
 ) -> MarkovAnalysisOutput:
-    recipe = _create_recipe_manifest(name=recipe_name, config=config)
+    configuration_manifest = _create_configuration_manifest(
+        name=configuration_name,
+        config=config,
+    )
     catalog = corpus.load_catalog()
-    run_id = _analysis_run_id(
-        recipe_id=recipe.recipe_id,
-        extraction_run=extraction_run,
+    snapshot_id = _analysis_snapshot_id(
+        configuration_id=configuration_manifest.configuration_id,
+        extraction_snapshot=extraction_snapshot,
         catalog_generated_at=catalog.generated_at,
     )
     run_manifest = AnalysisRunManifest(
-        run_id=run_id,
-        recipe=recipe,
+        snapshot_id=snapshot_id,
+        configuration=configuration_manifest,
         corpus_uri=catalog.corpus_uri,
         catalog_generated_at=catalog.generated_at,
         created_at=utc_now_iso(),
-        input=AnalysisRunInput(extraction_run=extraction_run),
+        input=AnalysisRunInput(extraction_snapshot=extraction_snapshot),
         artifact_paths=[],
         stats={},
     )
-    run_dir = corpus.analysis_run_dir(analysis_id=MarkovBackend.analysis_id, run_id=run_id)
+    run_dir = corpus.analysis_run_dir(
+        analysis_id=MarkovBackend.analysis_id, snapshot_id=snapshot_id
+    )
     run_dir.mkdir(parents=True, exist_ok=True)
 
     documents, text_report = _collect_documents(
         corpus=corpus,
-        extraction_run=extraction_run,
+        extraction_snapshot=extraction_snapshot,
         config=config.text_source,
     )
     segments = _segment_documents(documents=documents, config=config)
@@ -251,17 +256,17 @@ def _run_markov(
     output = MarkovAnalysisOutput(
         analysis_id=MarkovBackend.analysis_id,
         generated_at=utc_now_iso(),
-        run=run_manifest,
+        snapshot=run_manifest,
         report=report,
     )
     (run_dir / "output.json").write_text(output.model_dump_json(indent=2) + "\n", encoding="utf-8")
     return output
 
 
-def _create_recipe_manifest(
-    *, name: str, config: MarkovAnalysisRecipeConfig
-) -> AnalysisRecipeManifest:
-    recipe_payload = json.dumps(
+def _create_configuration_manifest(
+    *, name: str, config: MarkovAnalysisConfiguration
+) -> AnalysisConfigurationManifest:
+    configuration_payload = json.dumps(
         {
             "analysis_id": MarkovBackend.analysis_id,
             "name": name,
@@ -269,9 +274,9 @@ def _create_recipe_manifest(
         },
         sort_keys=True,
     )
-    recipe_id = hash_text(recipe_payload)
-    return AnalysisRecipeManifest(
-        recipe_id=recipe_id,
+    configuration_id = hash_text(configuration_payload)
+    return AnalysisConfigurationManifest(
+        configuration_id=configuration_id,
         analysis_id=MarkovBackend.analysis_id,
         name=name,
         created_at=utc_now_iso(),
@@ -279,22 +284,25 @@ def _create_recipe_manifest(
     )
 
 
-def _analysis_run_id(
-    *, recipe_id: str, extraction_run: ExtractionRunReference, catalog_generated_at: str
+def _analysis_snapshot_id(
+    *,
+    configuration_id: str,
+    extraction_snapshot: ExtractionSnapshotReference,
+    catalog_generated_at: str,
 ) -> str:
-    run_seed = f"{recipe_id}:{extraction_run.as_string()}:{catalog_generated_at}"
+    run_seed = f"{configuration_id}:{extraction_snapshot.as_string()}:{catalog_generated_at}"
     return hash_text(run_seed)
 
 
 def _collect_documents(
     *,
     corpus: Corpus,
-    extraction_run: ExtractionRunReference,
+    extraction_snapshot: ExtractionSnapshotReference,
     config: MarkovAnalysisTextSourceConfig,
 ) -> Tuple[List[_Document], MarkovAnalysisTextCollectionReport]:
-    manifest = corpus.load_extraction_run_manifest(
-        extractor_id=extraction_run.extractor_id,
-        run_id=extraction_run.run_id,
+    manifest = corpus.load_extraction_snapshot_manifest(
+        extractor_id=extraction_snapshot.extractor_id,
+        snapshot_id=extraction_snapshot.snapshot_id,
     )
     warnings: List[str] = []
     errors: List[str] = []
@@ -302,9 +310,9 @@ def _collect_documents(
     skipped_items = 0
     empty_texts = 0
 
-    run_root = corpus.extraction_run_dir(
-        extractor_id=extraction_run.extractor_id,
-        run_id=extraction_run.run_id,
+    run_root = corpus.extraction_snapshot_dir(
+        extractor_id=extraction_snapshot.extractor_id,
+        snapshot_id=extraction_snapshot.snapshot_id,
     )
     for item_result in manifest.items:
         if item_result.status != "extracted" or item_result.final_text_relpath is None:
@@ -342,7 +350,7 @@ def _collect_documents(
 
 
 def _segment_documents(
-    *, documents: Sequence[_Document], config: MarkovAnalysisRecipeConfig
+    *, documents: Sequence[_Document], config: MarkovAnalysisConfiguration
 ) -> List[MarkovAnalysisSegment]:
     segments: List[MarkovAnalysisSegment] = []
     method = config.segmentation.method
@@ -469,7 +477,7 @@ def _fixed_window_segments(
 
 
 def _llm_segments(
-    *, item_id: str, text: str, config: MarkovAnalysisRecipeConfig
+    *, item_id: str, text: str, config: MarkovAnalysisConfiguration
 ) -> List[MarkovAnalysisSegment]:
     llm_config = config.segmentation.llm
     if llm_config is None:
@@ -499,7 +507,7 @@ def _llm_segments(
 
 
 def _span_markup_segments(
-    *, item_id: str, text: str, config: MarkovAnalysisRecipeConfig
+    *, item_id: str, text: str, config: MarkovAnalysisConfiguration
 ) -> List[MarkovAnalysisSegment]:
     markup_config = config.segmentation.span_markup
     if markup_config is None:
@@ -561,7 +569,7 @@ def _span_markup_segments(
 
 
 def _verify_end_label(
-    *, text: str, config: MarkovAnalysisRecipeConfig
+    *, text: str, config: MarkovAnalysisConfiguration
 ) -> Optional[Dict[str, object]]:
     markup_config = config.segmentation.span_markup
     if markup_config is None or markup_config.end_label_verifier is None:
@@ -585,7 +593,7 @@ def _apply_start_end_labels(
     *,
     item_id: str,
     payloads: Sequence[Dict[str, object]],
-    config: MarkovAnalysisRecipeConfig,
+    config: MarkovAnalysisConfiguration,
 ) -> List[MarkovAnalysisSegment]:
     markup_config = config.segmentation.span_markup
     if markup_config is None:
@@ -670,7 +678,7 @@ def _sequence_lengths(segments: Sequence[MarkovAnalysisSegment]) -> List[int]:
 
 
 def _build_observations(
-    *, segments: Sequence[MarkovAnalysisSegment], config: MarkovAnalysisRecipeConfig
+    *, segments: Sequence[MarkovAnalysisSegment], config: MarkovAnalysisConfiguration
 ) -> List[MarkovAnalysisObservation]:
     observations: List[MarkovAnalysisObservation] = []
     for segment in segments:
@@ -765,13 +773,15 @@ def _topic_document_id(*, item_id: str, segment_index: int) -> str:
 def _apply_topic_modeling(
     *,
     observations: Sequence[MarkovAnalysisObservation],
-    config: MarkovAnalysisRecipeConfig,
+    config: MarkovAnalysisConfiguration,
 ) -> Tuple[List[MarkovAnalysisObservation], Optional[TopicModelingReport]]:
     topic_config = config.topic_modeling
     if not topic_config.enabled:
         return list(observations), None
-    if topic_config.recipe is None:
-        raise ValueError("topic_modeling.recipe is required when topic_modeling.enabled is true")
+    if topic_config.configuration is None:
+        raise ValueError(
+            "topic_modeling.configuration is required when topic_modeling.enabled is true"
+        )
 
     documents: List[TopicModelingDocument] = []
     for observation in observations:
@@ -793,7 +803,7 @@ def _apply_topic_modeling(
 
     report = run_topic_modeling_for_documents(
         documents=documents,
-        config=topic_config.recipe,
+        config=topic_config.configuration,
     )
 
     topic_lookup: Dict[str, Tuple[int, str]] = {}
@@ -830,7 +840,7 @@ def _apply_topic_modeling(
 
 
 def _encode_observations(
-    *, observations: Sequence[MarkovAnalysisObservation], config: MarkovAnalysisRecipeConfig
+    *, observations: Sequence[MarkovAnalysisObservation], config: MarkovAnalysisConfiguration
 ) -> Tuple[object, List[int]]:
     lengths = _sequence_lengths(
         [
@@ -960,7 +970,7 @@ def _tfidf_encode(
 
 
 def _fit_and_decode(
-    *, observations: object, lengths: List[int], config: MarkovAnalysisRecipeConfig
+    *, observations: object, lengths: List[int], config: MarkovAnalysisConfiguration
 ) -> Tuple[List[int], List[MarkovAnalysisTransition], int]:
     def normalize_startprob(values: Sequence[float]) -> List[float]:
         cleaned = [float(value) if math.isfinite(float(value)) else 0.0 for value in values]
@@ -1135,7 +1145,7 @@ def _build_states(
 def _state_naming_context_pack(
     *,
     states: Sequence[MarkovAnalysisState],
-    config: MarkovAnalysisRecipeConfig,
+    config: MarkovAnalysisConfiguration,
     position_stats: Optional[Dict[int, Dict[str, float]]] = None,
 ) -> Tuple[ContextPack, ContextPackPolicy]:
     naming = config.report.state_naming
@@ -1165,8 +1175,8 @@ def _state_naming_context_pack(
                     text=f"State {state.state_id}:\n{hint_text}",
                     stage="state-naming",
                     stage_scores=None,
-                    recipe_id="state-naming",
-                    run_id="state-naming",
+                    configuration_id="state-naming",
+                    snapshot_id="state-naming",
                     hash=None,
                 )
             )
@@ -1184,8 +1194,8 @@ def _state_naming_context_pack(
                     text=text,
                     stage="state-naming",
                     stage_scores=None,
-                    recipe_id="state-naming",
-                    run_id="state-naming",
+                    configuration_id="state-naming",
+                    snapshot_id="state-naming",
                     hash=None,
                 )
             )
@@ -1193,9 +1203,9 @@ def _state_naming_context_pack(
     retrieval_result = RetrievalResult(
         query_text="state-naming",
         budget=QueryBudget(max_total_items=max(len(evidence), 1)),
-        run_id="state-naming",
-        recipe_id="state-naming",
-        backend_id="state-naming",
+        snapshot_id="state-naming",
+        configuration_id="state-naming",
+        retriever_id="state-naming",
         generated_at=utc_now_iso(),
         evidence=evidence,
         stats={},
@@ -1279,7 +1289,7 @@ def _assign_state_names(
     *,
     states: Sequence[MarkovAnalysisState],
     decoded_paths: Sequence[MarkovAnalysisDecodedPath],
-    config: MarkovAnalysisRecipeConfig,
+    config: MarkovAnalysisConfiguration,
 ) -> List[MarkovAnalysisState]:
     naming = config.report.state_naming
     if naming is None or not naming.enabled:

@@ -21,10 +21,10 @@ Feature: Markov analysis with provider-backed stages
     And a fake OpenAI library is available that returns embedding vector "0.0,1.0" for input text "Beta summary"
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBeta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction run in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
-    And a recipe file "markov.yml" exists with content:
+    And a configuration file "markov.yml" exists with content:
       """
       schema_version: 1
       text_source:
@@ -60,6 +60,6 @@ Feature: Markov analysis with provider-backed stages
         family: gaussian
         n_states: 2
       """
-    When I run a markov analysis in corpus "corpus" using recipe "markov.yml" and the latest extraction run
+    When I snapshot a markov analysis in corpus "corpus" using configuration "markov.yml" and the latest extraction snapshot
     Then the markov analysis output includes 1 decoded item path
-    And the markov analysis run includes an observations file
+    And the markov analysis snapshot includes an observations file

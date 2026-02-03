@@ -7,21 +7,21 @@ rewriting ingestion.
 ## Retrieval concepts
 
 - **Backend**: a pluggable retrieval implementation that can build and query runs.
-- **Run**: a recorded retrieval build for a corpus and extraction run.
+- **Run**: a recorded retrieval build for a corpus and extraction snapshot.
 - **Evidence**: structured output containing identifiers, provenance, and scores.
 - **Stage**: explicit steps such as retrieve, rerank, and filter.
 
-## How retrieval runs work
+## How retrieval snapshots work
 
 1) Ingest raw items into a corpus.
-2) Build an extraction run to produce text artifacts.
-3) Build a retrieval run with a backend, referencing the extraction run.
+2) Build an extraction snapshot to produce text artifacts.
+3) Build a retrieval snapshot with a backend, referencing the extraction snapshot.
 4) Query the run to return evidence.
 
 Retrieval runs are stored under:
 
 ```
-.biblicus/runs/retrieval/<backend_id>/<run_id>/
+.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/
 ```
 
 ## A minimal run you can execute
@@ -89,7 +89,7 @@ Evidence output is stable JSON. Save it alongside your experiments so you can co
 python -m biblicus query --corpus corpora/demo --query "beta" > artifacts/retrieval/beta.json
 ```
 
-Record the run identifier and budget values in the same folder so you can reproduce the query.
+Record the snapshot identifier and budget values in the same folder so you can reproduce the query.
 
 ## Labs and demos
 
@@ -99,16 +99,16 @@ When you want a repeatable example with bundled data, use the retrieval evaluati
 python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab --force
 ```
 
-The lab builds a tiny corpus, runs extraction, builds a retrieval run, and evaluates it. It prints the dataset path and
+The lab builds a tiny corpus, runs extraction, builds a retrieval snapshot, and evaluates it. It prints the dataset path and
 evaluation output so you can open the JavaScript Object Notation directly.
 
 ## Reproducibility checklist
 
 Use these habits when you want repeatable retrieval experiments:
 
-- Record the extraction run identifier and pass it explicitly when you build a retrieval run.
+- Record the extraction snapshot identifier and pass it explicitly when you build a retrieval snapshot.
 - Keep evaluation datasets in source control and treat them as immutable inputs.
-- Capture the full retrieval run identifier when you compare outputs across backends.
+- Capture the full retrieval snapshot identifier when you compare outputs across backends.
 
 ## Why the separation matters
 

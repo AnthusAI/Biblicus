@@ -26,7 +26,7 @@ See [retrieval augmented generation overview] for a short introduction to the id
 ## Analysis highlights
 
 - `biblicus analyze markov` learns a directed, weighted state transition graph over segmented text.
-- YAML recipes support cascading composition plus dotted `--config key=value` overrides.
+- YAML configurations support cascading composition plus dotted `--config key=value` overrides.
 - Text extract splits long texts with an LLM by inserting XML tags in-place for structured spans.
 - See `docs/MARKOV_ANALYSIS.md` for Markov analysis details and runnable demos.
 - See `docs/TEXT_EXTRACT.md` for the text extract utility and examples.
@@ -113,7 +113,7 @@ sequenceDiagram
 
 - You can ingest raw material once, then try many retrieval approaches over time.
 - You can keep raw files readable and portable, without locking your data inside a database.
-- You can evaluate retrieval runs against shared datasets and compare backends using the same corpus.
+- You can evaluate retrieval snapshots against shared datasets and compare backends using the same corpus.
 
 ## Typical flow
 
@@ -122,7 +122,7 @@ sequenceDiagram
 - Crawl a website section into corpus items when you want a repeatable “import from the web” workflow.
 - Run extraction when you want derived text artifacts from non-text sources.
 - Reindex to refresh the catalog after edits.
-- Build a retrieval run with a backend.
+- Build a retrieval snapshot with a backend.
 - Query the run to collect evidence and evaluate it with datasets.
 
 ## Install
@@ -238,7 +238,7 @@ for note_title, note_text in notes:
     corpus.ingest_note(note_text, title=note_title, tags=["memory"])
 
 backend = get_backend("scan")
-run = backend.build_run(corpus, recipe_name="Story demo", config={})
+run = backend.build_run(corpus, configuration_name="Story demo", config={})
 budget = QueryBudget(max_total_items=5, maximum_total_characters=2000, max_items_per_source=None)
 result = backend.query(
     corpus,
@@ -282,8 +282,8 @@ Example output:
     "maximum_total_characters": 2000,
     "max_items_per_source": null
   },
-  "run_id": "RUN_ID",
-  "recipe_id": "RECIPE_ID",
+  "snapshot_id": "RUN_ID",
+  "configuration_id": "RECIPE_ID",
   "backend_id": "scan",
   "generated_at": "2026-01-29T00:00:00.000000Z",
   "evidence": [
@@ -298,8 +298,8 @@ Example output:
       "span_start": null,
       "span_end": null,
       "stage": "scan",
-      "recipe_id": "RECIPE_ID",
-      "run_id": "RUN_ID",
+      "configuration_id": "RECIPE_ID",
+      "snapshot_id": "RUN_ID",
       "hash": null
     }
   ],
@@ -368,7 +368,7 @@ flowchart TB
 
       subgraph RowExtraction[Pluggable: extraction pipeline]
         direction TB
-        Catalog --> Extract[Extract pipeline] --> ExtractedText[Extracted text artifacts] --> ExtractionRun[Extraction run manifest]
+        Catalog --> Extract[Extract pipeline] --> ExtractedText[Extracted text artifacts] --> ExtractionRun[Extraction snapshot manifest]
       end
 
       subgraph RowRetrieval[Pluggable: retrieval backend]
@@ -430,7 +430,7 @@ From Python, the same flow is available through the Corpus class and backend int
 - Ingest notes with `Corpus.ingest_note`.
 - Ingest files or web addresses with `Corpus.ingest_source`.
 - List items with `Corpus.list_items`.
-- Build a retrieval run with `get_backend` and `backend.build_run`.
+- Build a retrieval snapshot with `get_backend` and `backend.build_run`.
 - Query a run with `backend.query`.
 - Evaluate with `evaluate_run`.
 
@@ -476,13 +476,13 @@ corpus/
     runs/
       extraction/
         pipeline/
-          <run id>/
+          <snapshot id>/
             manifest.json
             text/
               <item id>.txt
       retrieval/
         <backend id>/
-          <run id>/
+          <snapshot id>/
             manifest.json
 ```
 
@@ -498,7 +498,7 @@ For detailed documentation including configuration options, performance characte
 
 ## Retrieval documentation
 
-For the retrieval pipeline overview and run artifacts, see `docs/RETRIEVAL.md`. For retrieval quality upgrades
+For the retrieval pipeline overview and snapshot artifacts, see `docs/RETRIEVAL.md`. For retrieval quality upgrades
 (tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`. For evaluation workflows
 and dataset formats, see `docs/RETRIEVAL_EVALUATION.md`. For a runnable walkthrough, use the retrieval evaluation lab
 script (`scripts/retrieval_evaluation_lab.py`).
@@ -561,26 +561,26 @@ See `docs/TEXT_SLICE.md` for the utility API and examples.
 
 Biblicus can run analysis pipelines on extracted text without changing the raw corpus. Profiling and topic modeling
 are the first analysis backends. Profiling summarizes corpus composition and extraction coverage. Topic modeling reads
-an extraction run, optionally applies an LLM-driven extraction pass, applies lexical processing, runs BERTopic, and
+an extraction snapshot, optionally applies an LLM-driven extraction pass, applies lexical processing, runs BERTopic, and
 optionally applies an LLM fine-tuning pass to label topics. The output is structured JavaScript Object Notation.
 
 See `docs/ANALYSIS.md` for the analysis pipeline overview, `docs/PROFILING.md` for profiling, and
 `docs/TOPIC_MODELING.md` for topic modeling details.
 
-Run a topic analysis using a recipe file:
+Run a topic analysis using a configuration file:
 
 ```
-biblicus analyze topics --corpus corpora/example --recipe recipes/topic-modeling.yml --extraction-run pipeline:<run_id>
+biblicus analyze topics --corpus corpora/example --configuration configurations/topic-modeling.yml --extraction-run pipeline:<snapshot_id>
 ```
 
-If `--extraction-run` is omitted, Biblicus uses the most recent extraction run and emits a warning about
+If `--extraction-run` is omitted, Biblicus uses the most recent extraction snapshot and emits a warning about
 reproducibility. The analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/topic-modeling/<run_id>/output.json
+.biblicus/runs/analysis/topic-modeling/<snapshot_id>/output.json
 ```
 
-Minimal recipe example:
+Minimal configuration example:
 
 ```yaml
 schema_version: 1
@@ -605,7 +605,7 @@ llm_fine_tuning:
 ```
 
 LLM extraction and fine-tuning require `biblicus[openai]` and a configured OpenAI API key.
-Recipe files are validated strictly against the topic modeling schema, so type mismatches or unknown fields are errors.
+Configuration files are validated strictly against the topic modeling schema, so type mismatches or unknown fields are errors.
 AG News integration runs require `biblicus[datasets]` in addition to `biblicus[topic-modeling]`.
 
 For a repeatable, real-world integration run that downloads AG News and executes topic modeling, use:
@@ -657,6 +657,15 @@ Build the documentation:
 ```
 python -m sphinx -b html docs docs/_build/html
 ```
+
+Preview the documentation locally:
+
+```
+cd docs/_build/html
+python -m http.server
+```
+
+Open `http://localhost:8000` in your browser.
 
 ## License
 

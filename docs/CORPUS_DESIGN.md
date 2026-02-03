@@ -221,19 +221,19 @@ This decision applies to extraction plugins and retrieval backends, and to any p
 Option A: store artifacts under the corpus, partitioned by plugin type
 
 - Store derived artifacts under the corpus, not in a global cache.
-- Partition by plugin type, then by plugin identifier, then by run identifier.
+- Partition by plugin type, then by plugin identifier, then by snapshot identifier.
 - Keep raw items separate and immutable under the raw directory.
 
 Suggested layout
 
-- `.biblicus/runs/extraction/<extractor_id>/<run_id>/...`
-- `.biblicus/runs/retrieval/<backend_id>/<run_id>/...`
-- `.biblicus/runs/evaluation/<evaluator_id>/<run_id>/...`
+- `.biblicus/runs/extraction/<extractor_id>/<snapshot_id>/...`
+- `.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/...`
+- `.biblicus/runs/evaluation/<evaluator_id>/<snapshot_id>/...`
 
-Option B: store artifacts under the corpus but only partition by run identifier
+Option B: store artifacts under the corpus but only partition by snapshot identifier
 
-- Store derived artifacts under `.biblicus/runs/<run_id>/...`.
-- The run manifest records plugin identifiers and configuration.
+- Store derived artifacts under `.biblicus/runs/<snapshot_id>/...`.
+- The snapshot manifest records plugin identifiers and configuration.
 - Simple, but it is harder to browse and compare by implementation on disk.
 
 Option C: store artifacts outside the corpus in a workspace cache
@@ -271,9 +271,9 @@ Option B: extraction is embedded in corpus ingestion
 
 Option C: extraction is a distinct plugin type and a distinct pipeline stage
 
-- Extraction runs are built separately from retrieval runs.
-- Extraction output is stored as derived artifacts under the corpus, partitioned by extraction plugin identifier and run identifier.
-- Retrieval backends can build and query using a selected extraction run, without knowing which extraction implementation produced it.
+- Extraction runs are built separately from retrieval snapshots.
+- Extraction output is stored as derived artifacts under the corpus, partitioned by extraction plugin identifier and snapshot identifier.
+- Retrieval backends can build and query using a selected extraction snapshot, without knowing which extraction implementation produced it.
 
 Recommendation
 
@@ -282,7 +282,7 @@ Pick option C. It keeps the corpus raw and stable while allowing clean evaluatio
 Outcome
 
 This is implemented. Extraction is a distinct plugin stage with a command line interface entry point, and retrieval
-backends can reference a selected extraction run.
+backends can reference a selected extraction snapshot.
 
 ## Lifecycle hooks and where plugins can attach
 
@@ -407,8 +407,8 @@ These were small, concrete slices that were specified and built without committi
 ## Reproducibility checklist
 
 - Keep raw items and sidecar metadata together as the source of truth.
-- Record catalog timestamps before comparing run outputs.
-- Use extraction run references explicitly when building retrieval or analysis runs.
+- Record catalog timestamps before comparing snapshot outputs.
+- Use extraction snapshot references explicitly when building retrieval or analysis snapshots.
 
 ## Common pitfalls
 

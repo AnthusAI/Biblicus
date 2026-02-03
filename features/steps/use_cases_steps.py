@@ -26,7 +26,7 @@ def _run_use_case_script(
         if os.environ.get("BIBLICUS_RUN_MARKOV_DEMO") != "1":
             if scenario is not None:
                 scenario.skip(
-                    "Set BIBLICUS_RUN_MARKOV_DEMO=1 to run the Markov demo integration test."
+                    "Set BIBLICUS_RUN_MARKOV_DEMO=1 to snapshot the Markov demo integration test."
                 )
             return {}
     script_path = _repo_script_path(context, script_name)
@@ -69,12 +69,12 @@ def _run_use_case_script(
     return payload
 
 
-@when('I run the use case demo script "{script_name}"')
+@when('I snapshot the use case demo script "{script_name}"')
 def step_run_use_case(context, script_name: str) -> None:
     _run_use_case_script(context, script_name=script_name)
 
 
-@when('I run the use case demo script "{script_name}" with arguments:')
+@when('I snapshot the use case demo script "{script_name}" with arguments:')
 def step_run_use_case_with_args_table(context, script_name: str) -> None:
     args: List[str] = []
     for row in context.table:

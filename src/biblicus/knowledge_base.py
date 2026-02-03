@@ -11,7 +11,6 @@ from typing import List, Optional, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .backends import get_backend
 from .context import (
     ContextPack,
     ContextPackPolicy,
@@ -20,17 +19,18 @@ from .context import (
     fit_context_pack_to_token_budget,
 )
 from .corpus import Corpus
-from .models import QueryBudget, RetrievalResult, RetrievalRun
+from .models import QueryBudget, RetrievalResult, RetrievalSnapshot
+from .retrievers import get_retriever
 
 
 class KnowledgeBaseDefaults(BaseModel):
     """
     Default configuration for a knowledge base workflow.
 
-    :ivar backend_id: Backend identifier to use for retrieval.
-    :vartype backend_id: str
-    :ivar recipe_name: Human-readable retrieval recipe name.
-    :vartype recipe_name: str
+    :ivar retriever_id: Retriever identifier to use for retrieval.
+    :vartype retriever_id: str
+    :ivar configuration_name: Human-readable retrieval configuration name.
+    :vartype configuration_name: str
     :ivar query_budget: Default query budget to apply to retrieval.
     :vartype query_budget: QueryBudget
     :ivar tags: Tags to apply when importing the folder.
@@ -39,8 +39,8 @@ class KnowledgeBaseDefaults(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    backend_id: str = Field(default="scan", min_length=1)
-    recipe_name: str = Field(default="Knowledge base", min_length=1)
+    retriever_id: str = Field(default="scan", min_length=1)
+    configuration_name: str = Field(default="Knowledge base", min_length=1)
     query_budget: QueryBudget = Field(
         default_factory=lambda: QueryBudget(
             max_total_items=5,
@@ -58,17 +58,17 @@ class KnowledgeBase:
 
     :ivar corpus: Corpus instance that stores the ingested items.
     :vartype corpus: Corpus
-    :ivar backend_id: Backend identifier used for retrieval.
-    :vartype backend_id: str
-    :ivar run: Retrieval run manifest associated with the knowledge base.
-    :vartype run: RetrievalRun
+    :ivar retriever_id: Retriever identifier used for retrieval.
+    :vartype retriever_id: str
+    :ivar snapshot: Retrieval snapshot manifest associated with the knowledge base.
+    :vartype snapshot: RetrievalSnapshot
     :ivar defaults: Default configuration used for this knowledge base.
     :vartype defaults: KnowledgeBaseDefaults
     """
 
     corpus: Corpus
-    backend_id: str
-    run: RetrievalRun
+    retriever_id: str
+    snapshot: RetrievalSnapshot
     defaults: KnowledgeBaseDefaults
     _temp_dir: Optional[TemporaryDirectory]
 
@@ -77,8 +77,8 @@ class KnowledgeBase:
         cls,
         folder: str | Path,
         *,
-        backend_id: Optional[str] = None,
-        recipe_name: Optional[str] = None,
+        retriever_id: Optional[str] = None,
+        configuration_name: Optional[str] = None,
         query_budget: Optional[QueryBudget] = None,
         tags: Optional[Sequence[str]] = None,
         corpus_root: Optional[str | Path] = None,
@@ -88,10 +88,10 @@ class KnowledgeBase:
 
         :param folder: Folder containing source files.
         :type folder: str or Path
-        :param backend_id: Optional backend identifier override.
-        :type backend_id: str or None
-        :param recipe_name: Optional recipe name override.
-        :type recipe_name: str or None
+        :param retriever_id: Optional retriever identifier override.
+        :type retriever_id: str or None
+        :param configuration_name: Optional configuration name override.
+        :type configuration_name: str or None
         :param query_budget: Optional query budget override.
         :type query_budget: QueryBudget or None
         :param tags: Optional tags to apply during import.
@@ -110,8 +110,8 @@ class KnowledgeBase:
             raise NotADirectoryError(f"Knowledge base folder is not a directory: {source_root}")
 
         defaults = KnowledgeBaseDefaults()
-        resolved_backend_id = backend_id or defaults.backend_id
-        resolved_recipe_name = recipe_name or defaults.recipe_name
+        resolved_retriever_id = retriever_id or defaults.retriever_id
+        resolved_configuration_name = configuration_name or defaults.configuration_name
         resolved_query_budget = query_budget or defaults.query_budget
         resolved_tags = list(tags) if tags is not None else defaults.tags
 
@@ -125,16 +125,18 @@ class KnowledgeBase:
         corpus = Corpus.init(corpus_root_path)
         corpus.import_tree(source_root, tags=resolved_tags)
 
-        backend = get_backend(resolved_backend_id)
-        run = backend.build_run(corpus, recipe_name=resolved_recipe_name, config={})
+        retriever = get_retriever(resolved_retriever_id)
+        snapshot = retriever.build_snapshot(
+            corpus, configuration_name=resolved_configuration_name, configuration={}
+        )
 
         return cls(
             corpus=corpus,
-            backend_id=resolved_backend_id,
-            run=run,
+            retriever_id=resolved_retriever_id,
+            snapshot=snapshot,
             defaults=KnowledgeBaseDefaults(
-                backend_id=resolved_backend_id,
-                recipe_name=resolved_recipe_name,
+                retriever_id=resolved_retriever_id,
+                configuration_name=resolved_configuration_name,
                 query_budget=resolved_query_budget,
                 tags=resolved_tags,
             ),
@@ -152,11 +154,11 @@ class KnowledgeBase:
         :return: Retrieval result containing evidence.
         :rtype: RetrievalResult
         """
-        backend = get_backend(self.backend_id)
+        retriever = get_retriever(self.retriever_id)
         resolved_budget = budget or self.defaults.query_budget
-        return backend.query(
+        return retriever.query(
             self.corpus,
-            run=self.run,
+            snapshot=self.snapshot,
             query_text=query_text,
             budget=resolved_budget,
         )
