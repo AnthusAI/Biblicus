@@ -49,3 +49,29 @@ Feature: Text utilities
     When I build a tool loop retry message with default builder
     Then the tool loop retry message includes "Your last edit did not validate."
     And the tool loop retry message includes "- Missing span"
+
+  Scenario: Tool loop rejects no-op replacements
+    When I run a tool loop with a no-op str_replace
+    Then the tool loop error mentions "requires str_replace to make a change"
+    And the tool loop error message includes "Your last tool call failed"
+
+  Scenario: Tool loop error message guides for multiple matches
+    When I build a tool loop error message for "found 2 matches" with old_str "hi"
+    Then the built tool loop error message includes "Use a longer unique old_str"
+    And the built tool loop error message includes "call view"
+
+  Scenario: Unique tool loop replacement rejects multiple matches
+    When I apply a unique str_replace to "hi hi" replacing "hi" with "<span>hi</span>"
+    Then the unique str_replace error mentions "found 2 matches"
+
+  Scenario: Unique tool loop replacement rejects removal
+    When I apply a unique str_replace to "Hello world" replacing "Hello world" with "Hello"
+    Then the unique str_replace error mentions "may only insert markup tags"
+
+  Scenario: Unique tool loop replacement succeeds
+    When I apply a unique str_replace to "Hello world" replacing "Hello" with "<span>Hello</span>"
+    Then the unique str_replace result equals "<span>Hello</span> world"
+
+  Scenario: Tool loop strips markup from text
+    When I strip markup from "<span>Alpha</span><slice/>Beta"
+    Then the stripped text equals "AlphaBeta"

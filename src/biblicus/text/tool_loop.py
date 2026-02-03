@@ -5,6 +5,7 @@ Shared tool loop for virtual file edit workflows.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
@@ -182,6 +183,18 @@ def run_tool_loop(
                         last_error = "Tool loop requires non-empty old_str and new_str"
                         tool_result = f"Error: {last_error}"
                     else:
+                        if old_str == new_str:
+                            last_error = "Tool loop requires str_replace to make a change"
+                            tool_result = f"Error: {last_error}"
+                            had_tool_error = True
+                            messages.append(
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": tool_call.get("id", ""),
+                                    "content": tool_result,
+                                }
+                            )
+                            continue
                         try:
                             current_text = apply_str_replace(current_text, old_str, new_str)
                             tool_result = (
@@ -214,6 +227,7 @@ def run_tool_loop(
                     "content": _build_tool_error_message(
                         error_message=last_error,
                         current_text=current_text,
+                        old_str=old_str if "old_str" in locals() else "",
                     ),
                 }
             )
@@ -260,19 +274,26 @@ def _build_retry_message(
     )
 
 
-def _build_tool_error_message(*, error_message: str, current_text: str) -> str:
-    if "not unique" in error_message:
-        guidance = (
-            "Use a longer unique old_str by including surrounding words or punctuation "
-            "so it matches exactly once."
-        )
-    elif "not found" in error_message:
+def _build_tool_error_message(*, error_message: str, current_text: str, old_str: str) -> str:
+    if "found 0 matches" in error_message or "not found" in error_message:
         guidance = (
             "Copy the exact old_str from the current text (including punctuation/case) "
             "or call view to inspect the latest text."
         )
+    elif "found " in error_message and "matches" in error_message:
+        guidance = (
+            "Use a longer unique old_str by including surrounding words or punctuation "
+            "so it matches exactly once."
+        )
+    elif "not unique" in error_message:
+        guidance = (
+            "Use a longer unique old_str by including surrounding words or punctuation "
+            "so it matches exactly once."
+        )
     else:
         guidance = "Fix the tool call and try again."
+    if old_str and len(old_str) <= 3:
+        guidance = f"{guidance} If unsure, call view to pick a longer unique substring."
     return (
         "Your last tool call failed.\n"
         f"Error: {error_message}\n"
@@ -280,6 +301,43 @@ def _build_tool_error_message(*, error_message: str, current_text: str) -> str:
         "Current text:\n"
         f"---\n{current_text}\n---"
     )
+
+
+_SPAN_OPEN_PATTERN = re.compile(r"<span\b[^>]*>")
+_SPAN_CLOSE_PATTERN = re.compile(r"</span>")
+_SLICE_PATTERN = re.compile(r"<slice\s*/>")
+
+
+def _strip_markup(text: str) -> str:
+    without_spans = _SPAN_CLOSE_PATTERN.sub("", _SPAN_OPEN_PATTERN.sub("", text))
+    return _SLICE_PATTERN.sub("", without_spans)
+
+
+def apply_unique_str_replace(text: str, old_str: str, new_str: str) -> str:
+    """
+    Apply a single replacement only when old_str matches exactly once.
+
+    :param text: Current text content.
+    :type text: str
+    :param old_str: Substring to replace.
+    :type old_str: str
+    :param new_str: Replacement string.
+    :type new_str: str
+    :return: Updated text.
+    :rtype: str
+    :raises ValueError: If old_str matches zero or multiple times.
+    """
+    matches = text.count(old_str)
+    if matches != 1:
+        raise ValueError(
+            "Tool loop requires old_str to match exactly once " f"(found {matches} matches)"
+        )
+    if _strip_markup(old_str) != _strip_markup(new_str):
+        raise ValueError(
+            "Tool loop replacements may only insert markup tags; "
+            "the underlying text must stay the same"
+        )
+    return text.replace(old_str, new_str, 1)
 
 
 def _build_no_tool_calls_message(*, assistant_message: str, current_text: str) -> str:
