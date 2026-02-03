@@ -59,6 +59,6 @@ The manifest is the reproducible contract. Artifacts are backend-specific and li
 
 See:
 
-- `biblicus.backends.scan.ScanBackend` (minimal baseline)
-- `biblicus.backends.sqlite_full_text_search.SqliteFullTextSearchBackend` (practical local backend)
-- `biblicus.backends.vector.VectorBackend` (term-frequency vector baseline; `tf-vector`)
+- `biblicus.retrievers.scan.ScanRetriever` (minimal baseline)
+- `biblicus.retrievers.sqlite_full_text_search.SqliteFullTextSearchRetriever` (practical local backend)
+- `biblicus.retrievers.tf_vector.TfVectorRetriever` (term-frequency vector baseline; `tf-vector`)
