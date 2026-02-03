@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.1 (2026-02-03)
+
+### Bug Fixes
+
+- Rename docs to kebab-case and clean up content
+  ([`3d71c10`](https://github.com/AnthusAI/Biblicus/commit/3d71c107b52d6aea62606bb7d50946a4f4ca3db9))
+
+
 ## v1.1.0 (2026-02-03)
 
 
