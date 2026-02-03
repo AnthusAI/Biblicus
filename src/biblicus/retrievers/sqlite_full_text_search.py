@@ -4,6 +4,7 @@ SQLite full-text search version five retriever for Biblicus.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
@@ -293,7 +294,9 @@ def _tokenize_query(query_text: str) -> List[str]:
     :return: Token list.
     :rtype: list[str]
     """
-    return [token for token in query_text.lower().split() if token]
+    tokens = [token for token in query_text.lower().split() if token]
+    stripped = [re.sub(r"^[\W_]+|[\W_]+$", "", t) for t in tokens]
+    return [t for t in stripped if t]
 
 
 def _resolve_stop_words(value: Optional[Union[str, List[str]]]) -> Set[str]:
