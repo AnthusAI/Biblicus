@@ -28,8 +28,8 @@ See [retrieval augmented generation overview] for a short introduction to the id
 - `biblicus analyze markov` learns a directed, weighted state transition graph over segmented text.
 - YAML configurations support cascading composition plus dotted `--config key=value` overrides.
 - Text extract splits long texts with an LLM by inserting XML tags in-place for structured spans.
-- See `docs/MARKOV_ANALYSIS.md` for Markov analysis details and runnable demos.
-- See `docs/TEXT_EXTRACT.md` for the text extract utility and examples.
+- See `docs/markov-analysis.md` for Markov analysis details and runnable demos.
+- See `docs/text-extract.md` for the text extract utility and examples.
 
 ## Start with a knowledge base
 
@@ -498,9 +498,9 @@ For detailed documentation including configuration options, performance characte
 
 ## Retrieval documentation
 
-For the retrieval pipeline overview and snapshot artifacts, see `docs/RETRIEVAL.md`. For retrieval quality upgrades
-(tuned lexical baseline, reranking, hybrid retrieval), see `docs/RETRIEVAL_QUALITY.md`. For evaluation workflows
-and dataset formats, see `docs/RETRIEVAL_EVALUATION.md`. For a runnable walkthrough, use the retrieval evaluation lab
+For the retrieval pipeline overview and snapshot artifacts, see `docs/retrieval.md`. For retrieval quality upgrades
+(tuned lexical baseline, reranking, hybrid retrieval), see `docs/retrieval-quality.md`. For evaluation workflows
+and dataset formats, see `docs/retrieval-evaluation.md`. For a runnable walkthrough, use the retrieval evaluation lab
 script (`scripts/retrieval_evaluation_lab.py`).
 
 ## Extraction backends
@@ -540,7 +540,7 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 For detailed documentation on all extractors, see the [Extractor Reference][extractor-reference].
 
 For extraction evaluation workflows, dataset formats, and report interpretation, see
-`docs/EXTRACTION_EVALUATION.md`.
+`docs/extraction-evaluation.md`.
 
 ## Text extract utility
 
@@ -548,14 +548,14 @@ Text extract is a reusable analysis utility that lets a model insert XML tags in
 entire document. It returns structured spans and the marked-up text, and it is used as a segmentation option in Markov
 analysis.
 
-See `docs/TEXT_EXTRACT.md` for the utility API and examples, and `docs/MARKOV_ANALYSIS.md` for the Markov integration.
+See `docs/text-extract.md` for the utility API and examples, and `docs/markov-analysis.md` for the Markov integration.
 
 ## Text slice utility
 
 Text slice is a reusable analysis utility that lets a model insert `<slice/>` markers into a long text without
 re-emitting the entire document. It returns ordered slices and the marked-up text for auditing and reuse.
 
-See `docs/TEXT_SLICE.md` for the utility API and examples.
+See `docs/text-slice.md` for the utility API and examples.
 
 ## Topic modeling analysis
 
@@ -564,8 +564,8 @@ are the first analysis backends. Profiling summarizes corpus composition and ext
 an extraction snapshot, optionally applies an LLM-driven extraction pass, applies lexical processing, runs BERTopic, and
 optionally applies an LLM fine-tuning pass to label topics. The output is structured JavaScript Object Notation.
 
-See `docs/ANALYSIS.md` for the analysis pipeline overview, `docs/PROFILING.md` for profiling, and
-`docs/TOPIC_MODELING.md` for topic modeling details.
+See `docs/analysis.md` for the analysis pipeline overview, `docs/profiling.md` for profiling, and
+`docs/topic-modeling.md` for topic modeling details.
 
 Run a topic analysis using a configuration file:
 
@@ -614,7 +614,7 @@ For a repeatable, real-world integration run that downloads AG News and executes
 python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
-See `docs/TOPIC_MODELING.md` for parameter examples and per-topic output behavior.
+See `docs/topic-modeling.md` for parameter examples and per-topic output behavior.
 
 ## Integration corpus and evaluation dataset
 
@@ -672,20 +672,20 @@ Open `http://localhost:8000` in your browser.
 License terms are in `LICENSE`.
 
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
-[architecture]: docs/ARCHITECTURE.md
-[roadmap]: docs/ROADMAP.md
-[feature-index]: docs/FEATURE_INDEX.md
-[corpus]: docs/CORPUS.md
-[knowledge-base]: docs/KNOWLEDGE_BASE.md
-[text-extraction]: docs/EXTRACTION.md
+[architecture]: docs/architecture.md
+[roadmap]: docs/roadmap.md
+[feature-index]: docs/feature-index.md
+[corpus]: docs/corpus.md
+[knowledge-base]: docs/knowledge-base.md
+[text-extraction]: docs/extraction.md
 [extractor-reference]: docs/extractors/index.md
 [backend-reference]: docs/backends/index.md
-[speech-to-text]: docs/STT.md
-[user-configuration]: docs/USER_CONFIGURATION.md
-[backends]: docs/BACKENDS.md
-[context-packs]: docs/CONTEXT_PACK.md
-[demos]: docs/DEMOS.md
-[testing]: docs/TESTING.md
+[speech-to-text]: docs/stt.md
+[user-configuration]: docs/user-configuration.md
+[backends]: docs/backends.md
+[context-packs]: docs/context-pack.md
+[demos]: docs/demos.md
+[testing]: docs/testing.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json

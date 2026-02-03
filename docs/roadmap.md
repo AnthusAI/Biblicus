@@ -2,11 +2,11 @@
 
 This document describes what we plan to build next.
 
-If you are looking for runnable examples, see `docs/DEMOS.md`.
+If you are looking for runnable examples, see `docs/demos.md`.
 
 If you are looking for what already exists, start with:
 
-- `docs/FEATURE_INDEX.md` for a map of features to behavior specifications and modules.
+- `docs/feature-index.md` for a map of features to behavior specifications and modules.
 - `CHANGELOG.md` for released changes.
 
 ## Principles

@@ -23,7 +23,7 @@ Chunking is treated as part of the indexing contract (not an afterthought): embe
 
 ## Concepts
 
-- **Chunking**: the unit of embedding and retrieval. See `docs/CHUNKING.md`.
+- **Chunking**: the unit of embedding and retrieval. See `docs/chunking.md`.
 - **Embedding provider**: a pluggable implementation that turns text into vectors.
 - **Embedding index backend**: a retrieval backend that materializes vectors and supports similarity search.
 

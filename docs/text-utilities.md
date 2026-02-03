@@ -89,34 +89,34 @@ Now that the file is marked up, Biblicus uses a simple, deterministic XML parser
 
 This pattern enables the model to coordinate with your harness procedure about specific details in the text without regenerating the content tokens. It is faster, cheaper, and more reliable because the text itself is never re-emitted.
 
-## Internal patterns
+## A set of useful patterns
 
 This virtual file pattern is a generalized mechanism used to implement multiple extraction patterns. Different utilities use different markup strategies to achieve specific goals. You don't need to implement these, but understanding them helps you choose the right tool.
 
 -   **Extract**: Return exact spans (quotes, entities) by wrapping them in tags.
     -   Markup: `<span>...</span>`
     -   Example: `We <span>run</span> fast.`
-    -   See: `docs/TEXT_EXTRACT.md`
+    -   See: `docs/text-extract.md`
 
 -   **Slice**: Split text into ordered segments by inserting boundary markers.
     -   Markup: `<slice/>`
     -   Example: `First.<slice/> Second.`
-    -   See: `docs/TEXT_SLICE.md`
+    -   See: `docs/text-slice.md`
 
 -   **Annotate**: Label spans with attributes (semantic markup) by adding attributes to tags.
     -   Markup: `<span label="verb">...</span>`
     -   Example: `We <span label="verb">run</span> fast.`
-    -   See: `docs/TEXT_ANNOTATE.md`
+    -   See: `docs/text-annotate.md`
 
 -   **Redact**: Identify spans for removal.
     -   Markup: `<span redact="pii">...</span>`
     -   Example: `Contact <span redact="pii">name@example.com</span>.`
-    -   See: `docs/TEXT_REDACT.md`
+    -   See: `docs/text-redact.md`
 
 -   **Link**: Connect spans with ID/REF attributes.
     -   Markup: `<span id="1">...</span>...<span ref="1">...</span>`
     -   Example: `<span id="1">Acme</span>... <span ref="1">Acme</span>`
-    -   See: `docs/TEXT_LINK.md`
+    -   See: `docs/text-link.md`
 
 ## The virtual file editor pattern
 
@@ -136,7 +136,7 @@ This gives you:
 - Deterministic validation (no hidden edits).
 - Clear failure modes when the model misbehaves.
 
-## Long-span handling
+## Efficiently Handling Long Spans
 
 For long spans, Biblicus instructs the model to insert the opening and closing tags in **separate** `str_replace` calls. This avoids asking the model to emit long quoted passages just to wrap them. For short spans (a few words), the model is allowed to insert both tags in a single call.
 
@@ -206,7 +206,7 @@ Biblicus returns structured data parsed from the markup:
 }
 ```
 
-## Prompt contract
+## Prompting Paradigm
 
 The prompt contract is intentionally simple:
 
@@ -241,9 +241,21 @@ one job at a time.
 
 These utilities are intentionally simple at the prompt layer, even though they share the same internal tool loop.
 
-## Safeguards and feedback
+## Reliable coordination: system prompts and feedback
 
-The tool loop adds automatic safeguards before applying edits. When a safeguard trips, Biblicus sends a feedback message and asks the model to try again.
+Models are stochastic. They can miss quote boundaries, make up attributes, or hallucinate text despite your instructions.
+
+Biblicus utilities mitigate this with a **closed-loop retry mechanism** that adds automatic safeguards before applying edits. When a safeguard trips, Biblicus sends a feedback message and asks the model to try again.
+
+1.  **System prompt**: Defines the "rules of the game" (e.g., "Use `<slice/>` markers to split text," "Do not change the original text").
+2.  **User message**: Provides the specific instruction (e.g., "Slice by sentence," "Extract all verbs").
+3.  **Parser validation**: When the model returns a tool call, the harness applies it to the virtual file and attempts to parse the result.
+4.  **Feedback loop**: If the edit fails or violates a safeguard, the harness **catches the error** and sends it back to the model as a new user message.
+5.  **Retry**: The model sees the error ("Error: string not found") and tries again with corrected parameters.
+
+### Built-in safeguards
+
+The tool loop enforces these rules automatically:
 
 - **Unique match required**: `old_str` must match exactly once in the current text.
 - **No-op edits rejected**: `old_str` and `new_str` must differ.
@@ -251,18 +263,6 @@ The tool loop adds automatic safeguards before applying edits. When a safeguard 
 - **Short substring guidance**: if `old_str` is very short, the feedback advises calling `view()` to choose a longer unique substring.
 
 Test coverage for these safeguards lives in `tests/test_tool_loop_safeguards.py`.
-
-### Reliable coordination: system prompts and feedback
-
-Models are stochastic. They can miss quote boundaries, make up attributes, or hallucinate text despite your instructions.
-
-Biblicus utilities mitigate this with a **closed-loop retry mechanism**.
-
-1.  **System prompt**: Defines the "rules of the game" (e.g., "Use `<slice/>` markers to split text," "Do not change the original text").
-2.  **User message**: Provides the specific instruction (e.g., "Slice by sentence," "Extract all verbs").
-3.  **Parser validation**: When the model returns a tool call, the harness applies it to the virtual file and attempts to parse the result.
-4.  **Feedback loop**: If the edit fails (e.g., `str_replace` cannot find the `old_str`) or the markup is invalid (e.g., nested tags where forbidden), the harness **catches the error** and sends it back to the model as a new user message.
-5.  **Retry**: The model sees the error ("Error: string not found") and tries again with corrected parameters.
 
 ### Feedback examples (retry stories)
 
@@ -403,11 +403,11 @@ This alignment—between the system prompt's rules, the user's intent, and the p
 
 ## Where to go next
 
-- `docs/TEXT_EXTRACT.md` for span-based extraction.
-- `docs/TEXT_SLICE.md` for slice-based segmentation.
-- `docs/TEXT_ANNOTATE.md` for attribute-based spans.
-- `docs/TEXT_REDACT.md` for redaction spans.
-- `docs/TEXT_LINK.md` for id/ref linking.
+- `docs/text-extract.md` for span-based extraction.
+- `docs/text-slice.md` for slice-based segmentation.
+- `docs/text-annotate.md` for attribute-based spans.
+- `docs/text-redact.md` for redaction spans.
+- `docs/text-link.md` for id/ref linking.
 - `features/text_extract.feature`, `features/text_slice.feature`, and `features/text_utilities.feature` for behavior specs.
 - `features/integration_text_extract.feature`, `features/integration_text_slice.feature`,
   `features/integration_text_annotate.feature`, `features/integration_text_redact.feature`, and

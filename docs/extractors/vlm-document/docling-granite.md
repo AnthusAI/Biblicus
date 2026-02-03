@@ -308,4 +308,4 @@ Processes legal content with:
 
 - [VLM Document Understanding Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts

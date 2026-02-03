@@ -266,4 +266,4 @@ Processing errors for individual items are recorded in the extraction snapshot b
 
 - [VLM Document Understanding Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts

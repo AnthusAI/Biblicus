@@ -249,5 +249,5 @@ config:
 
 - [Text/Document Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Front Matter Documentation](../../EXTRACTION.md#front-matter-handling)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [Front Matter Documentation](../../extraction.md#front-matter-handling)

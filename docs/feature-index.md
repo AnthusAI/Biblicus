@@ -18,8 +18,8 @@ What it does:
 
 Documentation:
 
-- `docs/CORPUS.md`
-- `docs/CORPUS_DESIGN.md`
+- `docs/corpus.md`
+- `docs/corpus-design.md`
 
 Behavior specifications:
 
@@ -47,7 +47,7 @@ What it does:
 
 Documentation:
 
-- `docs/CORPUS.md`
+- `docs/corpus.md`
 
 Behavior specifications:
 
@@ -81,7 +81,7 @@ What it does:
 
 Documentation:
 
-- `docs/CORPUS_DESIGN.md`
+- `docs/corpus-design.md`
 
 Behavior specifications:
 
@@ -106,7 +106,7 @@ What it does:
 
 Documentation:
 
-- `docs/USER_CONFIGURATION.md`
+- `docs/user-configuration.md`
 
 Behavior specifications:
 
@@ -130,7 +130,7 @@ What it does:
 
 Documentation:
 
-- `docs/EXTRACTION.md`
+- `docs/extraction.md`
 
 Behavior specifications:
 
@@ -160,7 +160,7 @@ What it does:
 
 Documentation:
 
-- `docs/EXTRACTION_EVALUATION.md`
+- `docs/extraction-evaluation.md`
 
 Behavior specifications:
 
@@ -181,7 +181,7 @@ What it does:
 
 Documentation:
 
-- `docs/BACKENDS.md`
+- `docs/backends.md`
 
 Behavior specifications:
 
@@ -208,7 +208,7 @@ What it does:
 
 Documentation:
 
-- `docs/RETRIEVAL_EVALUATION.md`
+- `docs/retrieval-evaluation.md`
 
 Behavior specifications:
 
@@ -230,7 +230,7 @@ What it does:
 
 Documentation:
 
-- `docs/CONTEXT_PACK.md`
+- `docs/context-pack.md`
 
 Behavior specifications:
 
@@ -252,7 +252,7 @@ What it does:
 
 Documentation:
 
-- `docs/CONTEXT_ENGINE.md`
+- `docs/context-engine.md`
 
 Behavior specifications:
 
@@ -310,12 +310,12 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_UTILITIES.md`
-- `docs/TEXT_EXTRACT.md`
-- `docs/TEXT_SLICE.md`
-- `docs/TEXT_ANNOTATE.md`
-- `docs/TEXT_REDACT.md`
-- `docs/TEXT_LINK.md`
+- `docs/text-utilities.md`
+- `docs/text-extract.md`
+- `docs/text-slice.md`
+- `docs/text-annotate.md`
+- `docs/text-redact.md`
+- `docs/text-link.md`
 
 Behavior specifications:
 
@@ -345,7 +345,7 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_EXTRACT.md`
+- `docs/text-extract.md`
 
 Behavior specifications:
 
@@ -367,7 +367,7 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_SLICE.md`
+- `docs/text-slice.md`
 
 Behavior specifications:
 
@@ -389,7 +389,7 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_ANNOTATE.md`
+- `docs/text-annotate.md`
 
 Behavior specifications:
 
@@ -411,7 +411,7 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_REDACT.md`
+- `docs/text-redact.md`
 
 Behavior specifications:
 
@@ -433,7 +433,7 @@ What it does:
 
 Documentation:
 
-- `docs/TEXT_LINK.md`
+- `docs/text-link.md`
 
 Behavior specifications:
 
@@ -454,7 +454,7 @@ What it does:
 
 Documentation:
 
-- `docs/TESTING.md`
+- `docs/testing.md`
 
 Primary implementation:
 

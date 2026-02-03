@@ -477,6 +477,6 @@ config:
 
 - [Speech-to-Text Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [User Configuration](../../USER_CONFIGURATION.md)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [User Configuration](../../user-configuration.md)
 - [Deepgram API Documentation](https://developers.deepgram.com/)

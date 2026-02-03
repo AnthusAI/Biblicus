@@ -322,6 +322,6 @@ Query result statistics:
 ## See Also
 
 - [Backends Overview](index.md) - All available backends
-- [BACKENDS.md](../BACKENDS.md) - Backend implementation guide
-- [EXTRACTION.md](../EXTRACTION.md) - Text extraction pipeline
+- [backends.md](../backends.md) - Backend implementation guide
+- [extraction.md](../extraction.md) - Text extraction pipeline
 - [Extractor Reference](../extractors/index.md) - Text extraction plugins

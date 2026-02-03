@@ -79,4 +79,4 @@ The visualization is meant to be evidence-first:
 - edges are directed transitions, with weights derived from observed transitions in decoded paths
 
 For deeper detail (including configurations, segmentation choices, and artifacts), see
-`docs/MARKOV_ANALYSIS.md`.
+`docs/markov-analysis.md`.

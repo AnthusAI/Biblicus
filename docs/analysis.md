@@ -103,7 +103,7 @@ observations:
 ## Topic modeling
 
 Topic modeling is the first analysis backend. It uses BERTopic to cluster extracted text, produces per-topic evidence,
-and optionally labels topics using an LLM. See `docs/TOPIC_MODELING.md` for detailed configuration and examples.
+and optionally labels topics using an LLM. See `docs/topic-modeling.md` for detailed configuration and examples.
 
 The integration demo script is a working reference you can use as a starting point:
 
@@ -117,7 +117,7 @@ labels, keywords, and document examples.
 ## Markov analysis
 
 Markov analysis learns a directed, weighted state transition graph over sequences of text segments. The output includes
-per-state exemplars, per-item decoded paths, and optional GraphViz exports. See `docs/MARKOV_ANALYSIS.md` for detailed
+per-state exemplars, per-item decoded paths, and optional GraphViz exports. See `docs/markov-analysis.md` for detailed
 configuration and examples.
 
 Text extract is available as a segmentation strategy for long texts. It inserts XML tags in-place using a virtual file
@@ -126,7 +126,7 @@ editing loop, then extracts spans without requiring the model to re-emit the ful
 ## Profiling analysis
 
 Profiling is the baseline analysis backend. It summarizes corpus composition and extraction coverage using
-deterministic counts and distribution metrics. See `docs/PROFILING.md` for the full reference and working demo.
+deterministic counts and distribution metrics. See `docs/profiling.md` for the full reference and working demo.
 
 ### Minimal profiling run
 

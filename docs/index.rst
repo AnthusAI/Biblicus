@@ -85,7 +85,7 @@ adds a sequence model on top of segmented text. See :doc:`Sequence Graph With Ma
    :maxdepth: 1
    :caption: Tutorials
 
-   USE_CASES
+   use-cases
 
 Learn the Concepts
 ------------------
@@ -101,10 +101,10 @@ Biblicus uses a small set of domain terms in its docs. The most important one is
    :maxdepth: 1
    :caption: Concepts
 
-   CORPUS
-   EXTRACTION
-   RETRIEVAL
-   ANALYSIS
+   corpus
+   extraction
+   retrieval
+   analysis
 
 Core Building Blocks
 --------------------
@@ -117,13 +117,13 @@ configurations. Read them when you want to understand *what is a corpus*, *what 
    :maxdepth: 2
    :caption: Core Building Blocks
 
-   CORPUS_DESIGN
-   CORPUS
-   KNOWLEDGE_BASE
-   BACKENDS
+   corpus-design
+   corpus
+   knowledge-base
+   backends
    backends/index
-   CONTEXT_PACK
-   CONTEXT_ENGINE
+   context-pack
+   context-engine
 
 Extraction and Ingestion
 ------------------------
@@ -135,10 +135,10 @@ mix plain text handling with OCR, document parsers, and speech-to-text pipelines
    :maxdepth: 2
    :caption: Extraction and Ingestion
 
-   EXTRACTION
-   EXTRACTION_EVALUATION
+   extraction
+   extraction-evaluation
    extractors/index
-   STT
+   stt
 
 Retrieval and Evaluation
 ------------------------
@@ -150,11 +150,11 @@ cover baseline retrieval, hybrid strategies, and how to evaluate retrieval quali
    :maxdepth: 2
    :caption: Retrieval and Evaluation
 
-   RETRIEVAL
-   RETRIEVAL_QUALITY
-   RETRIEVAL_EVALUATION
-   EMBEDDING_RETRIEVAL
-   CHUNKING
+   retrieval
+   retrieval-quality
+   retrieval-evaluation
+   embedding-retrieval
+   chunking
 
 Analysis and Modeling
 ---------------------
@@ -167,9 +167,9 @@ to detect recurring phases in longer documents or conversations.
    :maxdepth: 2
    :caption: Analysis and Modeling
 
-   PROFILING
-   TOPIC_MODELING
-   MARKOV_ANALYSIS
+   profiling
+   topic-modeling
+   markov-analysis
 
 Toolbox
 -------
@@ -182,13 +182,13 @@ slot them into ETL-like workflows without building a custom agent every time.
    :maxdepth: 2
    :caption: Tools
 
-   UTILITIES
-   TEXT_UTILITIES
-   TEXT_EXTRACT
-   TEXT_SLICE
-   TEXT_ANNOTATE
-   TEXT_REDACT
-   TEXT_LINK
+   utilities
+   text-utilities
+   text-extract
+   text-slice
+   text-annotate
+   text-redact
+   text-link
 
 Operations and Demos
 --------------------
@@ -200,9 +200,9 @@ are designed to be runnable end-to-end and serve as acceptance tests.
    :maxdepth: 2
    :caption: Operations and Demos
 
-   DEMOS
-   USER_CONFIGURATION
-   TESTING
+   demos
+   user-configuration
+   testing
 
 Reference
 ---------
@@ -214,8 +214,7 @@ implementation details or when you want a catalog of features.
    :maxdepth: 1
    :caption: Reference
 
-   FEATURE_INDEX
-   ROADMAP
-   ARCHITECTURE
-   ARCHITECTURE_DETAIL
+   feature-index
+   roadmap
+   architecture
    api

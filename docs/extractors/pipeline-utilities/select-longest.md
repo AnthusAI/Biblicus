@@ -400,5 +400,5 @@ If quality is critical, select-longest-text is ideal:
 
 - [Pipeline Utilities Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Pipeline Configuration](../../EXTRACTION.md#pipelines)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [Pipeline Configuration](../../extraction.md#pipelines)

@@ -401,5 +401,5 @@ print(f"Errored items: {results.stats.errored_items}")
 
 - [Text/Document Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
 - [Unstructured.io Documentation](https://unstructured-io.github.io/unstructured/)

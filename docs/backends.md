@@ -41,7 +41,7 @@ The manifest is the reproducible contract. Artifacts are backend-specific and li
 - Treat **runs** as immutable manifests with reproducible parameters.
 - If your backend needs artifacts, store them under `.biblicus/runs/` and record paths in `artifact_paths`.
 - Keep **text extraction** in explicit pipeline stages, not in backend ingestion.
-  See `docs/EXTRACTION.md` for how extraction snapshots are built and referenced from backend configs.
+  See `docs/extraction.md` for how extraction snapshots are built and referenced from backend configs.
 
 ## Reproducibility checklist
 

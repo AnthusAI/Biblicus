@@ -61,8 +61,8 @@ You can compare them with the same dataset and budget using the retrieval evalua
 
 ## Evaluation
 
-Retrieval runs are evaluated against datasets with explicit budgets. See `docs/RETRIEVAL_EVALUATION.md` for the
-dataset format and workflow, `docs/FEATURE_INDEX.md` for the behavior specifications, and `docs/CONTEXT_PACK.md` for
+Retrieval runs are evaluated against datasets with explicit budgets. See `docs/retrieval-evaluation.md` for the
+dataset format and workflow, `docs/feature-index.md` for the behavior specifications, and `docs/context-pack.md` for
 how evidence feeds into context packs.
 
 ## Evidence inspection workflow
@@ -120,4 +120,4 @@ Keeping extraction and retrieval distinct makes it possible to:
 
 ## Retrieval quality
 
-For retrieval quality upgrades, see `docs/RETRIEVAL_QUALITY.md`.
+For retrieval quality upgrades, see `docs/retrieval-quality.md`.

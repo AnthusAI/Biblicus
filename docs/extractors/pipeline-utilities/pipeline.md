@@ -538,5 +538,5 @@ Steps cannot directly communicate. They only share via the extraction results li
 
 - [Pipeline Utilities Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Configuration File Format](../../EXTRACTION.md#configuration-files)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [Configuration File Format](../../extraction.md#configuration-files)

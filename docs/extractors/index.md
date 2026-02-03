@@ -141,6 +141,6 @@ results = corpus.extract_text(extractor_id="pdf-text")
 
 ## See Also
 
-- [EXTRACTION.md](../EXTRACTION.md) - Extraction pipeline concepts and architecture
+- [extraction.md](../extraction.md) - Extraction pipeline concepts and architecture
 - [API Reference](../api.rst) - Python API documentation
 - Repository README - Getting started guide

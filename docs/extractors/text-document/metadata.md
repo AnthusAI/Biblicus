@@ -331,5 +331,5 @@ tags: []
 
 - [Text/Document Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Catalog Specification](../../EXTRACTION.md#catalog-format)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [Catalog Specification](../../extraction.md#catalog-format)

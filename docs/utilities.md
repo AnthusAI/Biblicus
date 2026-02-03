@@ -7,9 +7,9 @@ and predictable output.
 ## Current utility families
 
 - **Text utilities**: agentic, tool-loop workflows that edit a virtual copy of a text and return structured results.
-  - See `docs/TEXT_UTILITIES.md` for the shared mechanism and contracts.
-  - See `docs/TEXT_EXTRACT.md`, `docs/TEXT_SLICE.md`, `docs/TEXT_ANNOTATE.md`,
-    `docs/TEXT_REDACT.md`, and `docs/TEXT_LINK.md` for per-utility details.
+  - See `docs/text-utilities.md` for the shared mechanism and contracts.
+  - See `docs/text-extract.md`, `docs/text-slice.md`, `docs/text-annotate.md`,
+    `docs/text-redact.md`, and `docs/text-link.md` for per-utility details.
 
 ## Design stance
 

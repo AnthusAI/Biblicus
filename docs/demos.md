@@ -3,94 +3,7 @@
 This document is a set of runnable examples you can use to see the current system working end to end.
 Each section links to a textbook chapter so you can read the concept and then run the code.
 
-For the ordered plan of what to build next, see `docs/ROADMAP.md`.
-
-## Diagram of the current system and the next layers
-
-Blue boxes are implemented now. Purple boxes are layers not implemented yet that we can build and compare.
-
-```mermaid
-%%{init: {"flowchart": {"useMaxWidth": true, "nodeSpacing": 18, "rankSpacing": 22}}}%%
-flowchart TB
-  subgraph Legend[Legend]
-    direction LR
-    LegendNow[Implemented now]
-    LegendPlanned[Planned]
-    LegendNow --- LegendPlanned
-  end
-
-  subgraph ExistsNow[Implemented now]
-    direction TB
-
-    Ingest[Ingest] --> RawFiles[Raw item files]
-    RawFiles --> CatalogFile[Catalog file]
-    CatalogFile --> ExtractionRun[Extraction run]
-    ExtractionRun --> ExtractedText[Extracted text artifacts]
-
-    subgraph PluggableBackend[Pluggable backend]
-      direction LR
-
-      subgraph BackendIngestionIndexing[Ingestion and indexing]
-        direction TB
-        CatalogFile --> BuildRun[Build run]
-        ExtractedText -.-> BuildRun
-        BuildRun --> BackendIndex[Backend index]
-        BackendIndex --> RunManifest[Run manifest]
-      end
-
-      subgraph BackendRetrievalGeneration[Retrieval and generation]
-        direction TB
-        RunManifest --> Query[Query]
-        Query --> Evidence[Evidence]
-        Evidence --> EvaluationMetrics[Evaluation metrics]
-      end
-    end
-  end
-
-  subgraph PlannedLayers[Planned]
-    direction TB
-    RerankStage[Rerank<br/>pipeline stage]
-    FilterStage[Filter<br/>pipeline stage]
-    ToolServer[Tool server<br/>for external backends]
-    OpticalCharacterRecognition[Optical character recognition<br/>extraction plugin]
-    SpeechToText[Speech to text<br/>extraction plugin]
-  end
-
-  OpticalCharacterRecognition -.-> ExtractionRun
-  SpeechToText -.-> ExtractionRun
-  RerankStage -.-> Evidence
-  FilterStage -.-> Evidence
-  ToolServer -.-> PluggableBackend
-
-  style Legend fill:#ffffff,stroke:#ffffff,color:#111111
-  style ExistsNow fill:#ffffff,stroke:#ffffff,color:#111111
-  style PlannedLayers fill:#ffffff,stroke:#ffffff,color:#111111
-
-  style LegendNow fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style LegendPlanned fill:#f3e5f5,stroke:#8e24aa,color:#111111
-
-  style Ingest fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style RawFiles fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style CatalogFile fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style ExtractionRun fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style ExtractedText fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style BuildRun fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style BackendIndex fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style RunManifest fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style Query fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style Evidence fill:#e3f2fd,stroke:#1e88e5,color:#111111
-  style EvaluationMetrics fill:#e3f2fd,stroke:#1e88e5,color:#111111
-
-  style PluggableBackend fill:#ffffff,stroke:#1e88e5,stroke-dasharray:6 3,stroke-width:2px,color:#111111
-  style BackendIngestionIndexing fill:#ffffff,stroke:#cfd8dc,color:#111111
-  style BackendRetrievalGeneration fill:#ffffff,stroke:#cfd8dc,color:#111111
-
-  style RerankStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style FilterStage fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style ToolServer fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style OpticalCharacterRecognition fill:#f3e5f5,stroke:#8e24aa,color:#111111
-  style SpeechToText fill:#f3e5f5,stroke:#8e24aa,color:#111111
-```
+For the ordered plan of what to build next, see `docs/roadmap.md`.
 
 ## Working examples you can run now
 
@@ -169,10 +82,10 @@ In another terminal:
 ```
 rm -rf corpora/crawl-demo
 python -m biblicus init corpora/crawl-demo
-python -m biblicus crawl --corpus corpora/crawl-demo \\
-  --root-url http://127.0.0.1:8000/site/index.html \\
-  --allowed-prefix http://127.0.0.1:8000/site/ \\
-  --max-items 50 \\
+python -m biblicus crawl --corpus corpora/crawl-demo \
+  --root-url http://127.0.0.1:8000/site/index.html \
+  --allowed-prefix http://127.0.0.1:8000/site/ \
+  --max-items 50 \
   --tag crawled
 python -m biblicus list --corpus corpora/crawl-demo
 ```
@@ -189,7 +102,7 @@ python -m biblicus extract build --corpus corpora/demo --step pass-through-text
 
 The output includes a `snapshot_id` you can reuse when building a retrieval backend.
 
-Text extraction details: `docs/EXTRACTION.md`
+Text extraction details: `docs/extraction.md`
 
 ### Topic modeling integration run
 
@@ -204,7 +117,7 @@ python -m pip install "biblicus[datasets,topic-modeling]"
 python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --force
 ```
 
-Topic modeling details: `docs/TOPIC_MODELING.md`
+Topic modeling details: `docs/topic-modeling.md`
 
 ### Extraction evaluation demo run
 
@@ -223,7 +136,7 @@ python scripts/extraction_evaluation_demo.py --corpus corpora/ag_news_extraction
 
 The script prints the dataset path, extraction snapshot reference, and evaluation output path so you can inspect the results.
 
-Extraction evaluation details: `docs/EXTRACTION_EVALUATION.md`
+Extraction evaluation details: `docs/extraction-evaluation.md`
 
 ### Extraction evaluation lab run
 
@@ -235,7 +148,7 @@ python scripts/extraction_evaluation_lab.py --corpus corpora/extraction_eval_lab
 
 The lab writes a generated dataset file and evaluation output path and prints both in the command output.
 
-Extraction evaluation lab details: `docs/EXTRACTION_EVALUATION.md`
+Extraction evaluation lab details: `docs/extraction-evaluation.md`
 
 ### Retrieval evaluation lab run
 
@@ -248,7 +161,7 @@ python scripts/retrieval_evaluation_lab.py --corpus corpora/retrieval_eval_lab -
 
 The script prints the dataset path, retrieval snapshot identifier, and evaluation output location.
 
-Retrieval evaluation details: `docs/RETRIEVAL_EVALUATION.md`
+Retrieval evaluation details: `docs/retrieval-evaluation.md`
 
 Run with a larger corpus and a higher topic count:
 
@@ -274,27 +187,27 @@ The profiling demo downloads AG News, runs extraction, and produces a profiling 
 python scripts/profiling_demo.py --corpus corpora/profiling_demo --force
 ```
 
-Profiling details: `docs/PROFILING.md`
+Profiling details: `docs/profiling.md`
 
 ### Select extracted text within a pipeline
 
 When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
 
 ```
-python -m biblicus extract build --corpus corpora/demo \\
-  --step pass-through-text \\
-  --step metadata-text \\
+python -m biblicus extract build --corpus corpora/demo \
+  --step pass-through-text \
+  --step metadata-text \
   --step select-text
 ```
 
 Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_SNAPSHOT_ID` in the next command.
 
 ```
-python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \\
+python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search \
   --config extraction_snapshot=pipeline:EXTRACTION_SNAPSHOT_ID
 ```
 
-Extraction pipeline details: `docs/EXTRACTION.md`
+Extraction pipeline details: `docs/extraction.md`
 
 ### Portable Document Format extraction and retrieval
 
@@ -314,7 +227,7 @@ python -m biblicus build --corpus corpora/pdf_samples --backend sqlite-full-text
 python -m biblicus query --corpus corpora/pdf_samples --query "Dummy PDF file"
 ```
 
-Retrieval details: `docs/RETRIEVAL.md`
+Retrieval details: `docs/retrieval.md`
 
 ### MarkItDown extraction demo (Python 3.10+)
 
@@ -386,9 +299,9 @@ python -m biblicus extract build --corpus corpora/mixed_samples --step unstructu
 When you want to prefer one extractor over another for the same item types, order the steps and end with `select-text`:
 
 ```
-python -m biblicus extract build --corpus corpora/pdf_samples \\
-  --step unstructured \\
-  --step pdf-text \\
+python -m biblicus extract build --corpus corpora/pdf_samples \
+  --step unstructured \
+  --step pdf-text \
   --step select-text
 ```
 
@@ -429,7 +342,7 @@ python -m biblicus build --corpus corpora/demo --backend scan
 python -m biblicus query --corpus corpora/demo --query "Hello"
 ```
 
-Backend details: `docs/BACKENDS.md`
+Backend details: `docs/backends.md`
 
 ### Build and query the practical backend
 
@@ -440,7 +353,7 @@ python -m biblicus build --corpus corpora/demo --backend sqlite-full-text-search
 python -m biblicus query --corpus corpora/demo --query "tiny"
 ```
 
-Backend details: `docs/BACKENDS.md`
+Backend details: `docs/backends.md`
 
 ### Run the test suite and view coverage
 
@@ -455,14 +368,14 @@ To include integration scenarios that download public test data at runtime:
 python scripts/test.py --integration
 ```
 
-Testing details: `docs/TESTING.md`
+Testing details: `docs/testing.md`
 
 ## Documentation map
 
-- Corpus: `docs/CORPUS.md`
-- Text extraction: `docs/EXTRACTION.md`
-- Backends: `docs/BACKENDS.md`
-- Testing: `docs/TESTING.md`
-- Roadmap: `docs/ROADMAP.md`
+- Corpus: `docs/corpus.md`
+- Text extraction: `docs/extraction.md`
+- Backends: `docs/backends.md`
+- Testing: `docs/testing.md`
+- Roadmap: `docs/roadmap.md`
 
-For what to build next, see `docs/ROADMAP.md`.
+For what to build next, see `docs/roadmap.md`.

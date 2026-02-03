@@ -225,7 +225,7 @@ python -m biblicus query --corpus corpora/extraction-demo --query extracted
 
 ## Evaluate extraction quality
 
-Extraction evaluation measures coverage and accuracy for a given extractor configuration. See `docs/EXTRACTION_EVALUATION.md`
+Extraction evaluation measures coverage and accuracy for a given extractor configuration. See `docs/extraction-evaluation.md`
 for the dataset format, command-line interface usage, and report interpretation.
 
 ## What extraction is not

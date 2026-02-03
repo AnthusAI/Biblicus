@@ -96,7 +96,7 @@ biblicus build my-corpus --backend sqlite-full-text-search
 biblicus query my-corpus --query "search terms"
 ```
 
-See `docs/RETRIEVAL.md` for a step-by-step retrieval walkthrough.
+See `docs/retrieval.md` for a step-by-step retrieval walkthrough.
 
 #### Python API
 
@@ -126,7 +126,7 @@ result = backend.query(
 )
 ```
 
-See `docs/RETRIEVAL_EVALUATION.md` for evaluation workflows and dataset formats.
+See `docs/retrieval-evaluation.md` for evaluation workflows and dataset formats.
 
 ## Choosing a Backend
 
@@ -291,12 +291,12 @@ To implement a custom backend:
 3. Register in `biblicus.backends.available_backends`
 4. Add BDD specifications with 100% coverage
 
-See [BACKENDS.md](../BACKENDS.md) for implementation details.
+See [backends.md](../backends.md) for implementation details.
 
 ## See Also
 
 - [scan backend](scan.md) - Naive full-scan backend
 - [sqlite-full-text-search backend](sqlite-full-text-search.md) - SQLite FTS5 backend
-- [BACKENDS.md](../BACKENDS.md) - Backend implementation guide
-- [EXTRACTION.md](../EXTRACTION.md) - Text extraction pipeline
+- [backends.md](../backends.md) - Backend implementation guide
+- [extraction.md](../extraction.md) - Text extraction pipeline
 - [Extractor Reference](../extractors/index.md) - Text extraction plugins

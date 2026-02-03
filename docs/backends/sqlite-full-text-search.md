@@ -481,7 +481,7 @@ CREATE VIRTUAL TABLE chunks_full_text_search USING fts5(
 ## See Also
 
 - [Backends Overview](index.md) - All available backends
-- [BACKENDS.md](../BACKENDS.md) - Backend implementation guide
-- [EXTRACTION.md](../EXTRACTION.md) - Text extraction pipeline
+- [backends.md](../backends.md) - Backend implementation guide
+- [extraction.md](../extraction.md) - Text extraction pipeline
 - [Extractor Reference](../extractors/index.md) - Text extraction plugins
 - [SQLite FTS5 Documentation](https://www.sqlite.org/fts5.html) - Official SQLite FTS5 docs

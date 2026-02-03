@@ -451,6 +451,6 @@ config:
 
 - [OCR Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
-- [Inference Backend Configuration](../../USER_CONFIGURATION.md)
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
+- [Inference Backend Configuration](../../user-configuration.md)
 - [PaddleOCR GitHub](https://github.com/PaddlePaddle/PaddleOCR)

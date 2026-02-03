@@ -355,5 +355,5 @@ For best OCR results:
 
 - [OCR Extractors Overview](index.md)
 - [Extractors Index](../index.md)
-- [EXTRACTION.md](../../EXTRACTION.md) - Extraction pipeline concepts
+- [extraction.md](../../extraction.md) - Extraction pipeline concepts
 - [RapidOCR GitHub](https://github.com/RapidAI/RapidOCR)
