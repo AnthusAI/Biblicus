@@ -1,6 +1,36 @@
 # CHANGELOG
 
 
+## v1.0.0 (2026-02-02)
+
+### Bug Fixes
+
+- **context-engine**: Cover empty pack branch
+  ([`e925b2a`](https://github.com/AnthusAI/Biblicus/commit/e925b2a6a58406f85a7fbe43a9797d32e08cf4de))
+
+- **context-engine**: Cover pack insertion branches
+  ([`b4d81b5`](https://github.com/AnthusAI/Biblicus/commit/b4d81b54adeb299bb8394b1c9637b14b4af5e9af))
+
+### Features
+
+- **context-engine**: Add composable context engine
+  ([`437fa2e`](https://github.com/AnthusAI/Biblicus/commit/437fa2e0a8daa583a87d503acba7b1f19a08e188))
+
+Add Context engine models, compaction, retrieval expansion, and extensive BDD coverage plus docs and
+  demos.
+
+BREAKING CHANGE: Context and retriever APIs and configs are reworked; update integrations to new
+  Context engine primitives.
+
+- **theme**: Add custom Biblicus theme
+  ([`834ea43`](https://github.com/AnthusAI/Biblicus/commit/834ea430214c479d203f4834aa1ced1123fa2ae4))
+
+### Breaking Changes
+
+- **context-engine**: Context and retriever APIs and configs are reworked; update integrations to
+  new Context engine primitives.
+
+
 ## v0.16.0 (2026-02-01)
 
 ### Bug Fixes
