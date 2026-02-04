@@ -123,6 +123,54 @@ def _install_fake_neo4j_module(context) -> None:
     context.fake_neo4j_calls = calls
 
 
+def _install_fake_spacy_module(context) -> None:
+    if getattr(context, "_fake_spacy_installed", False):
+        return
+    context._fake_spacy_original_module = sys.modules.get("spacy")
+
+    class _FakeSpan:
+        def __init__(self, text: str, label: str):
+            self.text = text
+            self.label_ = label
+
+    class _FakeToken:
+        def __init__(self, text: str):
+            self.text = text
+            self.lemma_ = text.lower()
+            self.dep_ = "ROOT"
+            self.head = self
+
+    class _FakeDoc:
+        def __init__(self, text: str):
+            self.text = text
+            self.ents = _extract_fake_ents(text)
+            self._tokens = [_FakeToken(token) for token in text.split()]
+
+        def __iter__(self):
+            return iter(self._tokens)
+
+    class _FakeNlp:
+        def __init__(self, name: str):
+            self.name = name
+
+        def __call__(self, text: str):
+            return _FakeDoc(text)
+
+    def _extract_fake_ents(text: str):
+        import re
+
+        matches = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", text)
+        return [_FakeSpan(match, "PERSON") for match in matches]
+
+    def load(name: str):
+        return _FakeNlp(name)
+
+    fake_module = types.ModuleType("spacy")
+    fake_module.load = load
+    sys.modules["spacy"] = fake_module
+    context._fake_spacy_installed = True
+
+
 def _install_fake_docker(context) -> None:
     if getattr(context, "_fake_docker_installed", False):
         return
@@ -285,6 +333,12 @@ def step_install_fake_neo4j(context) -> None:
 @when("a fake Docker daemon is installed for Neo4j")
 def step_install_fake_docker(context) -> None:
     _install_fake_docker(context)
+
+
+@given("a fake NLP model is installed")
+@when("a fake NLP model is installed")
+def step_install_fake_spacy(context) -> None:
+    _install_fake_spacy_module(context)
 
 
 @when(

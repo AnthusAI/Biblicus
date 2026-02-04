@@ -214,6 +214,14 @@ def after_scenario(context, scenario) -> None:
             sys.modules["neo4j"] = original_module
         context._fake_neo4j_installed = False
         context._fake_neo4j_original_module = None
+    if getattr(context, "_fake_spacy_installed", False):
+        original_module = getattr(context, "_fake_spacy_original_module", None)
+        if original_module is None:
+            sys.modules.pop("spacy", None)
+        else:
+            sys.modules["spacy"] = original_module
+        context._fake_spacy_installed = False
+        context._fake_spacy_original_module = None
     if getattr(context, "_fake_tesseract_installed", False):
         original_modules = getattr(context, "_fake_tesseract_original_modules", {})
         for name in ["pytesseract", "PIL", "PIL.Image"]:

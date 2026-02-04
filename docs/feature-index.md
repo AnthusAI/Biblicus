@@ -188,6 +188,7 @@ Behavior specifications:
 
 - `features/graph_extraction.feature`
 - `features/integration_graph_extraction.feature`
+- `features/graph_extraction_baselines.feature`
 
 Primary implementation:
 
