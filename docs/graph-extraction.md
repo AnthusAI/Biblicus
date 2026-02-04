@@ -174,6 +174,13 @@ The `ner-entities` extractor uses a named entity recognition model to emit entit
 This extractor is deterministic for a fixed model and configuration and provides a stronger baseline than the
 simple-entities heuristic.
 
+Install spaCy and the model referenced in your configuration before running:
+
+```
+python -m pip install spacy
+python -m spacy download en_core_web_sm
+```
+
 Example command:
 
 ```
@@ -199,9 +206,16 @@ The `dependency-relations` extractor builds edges from dependency parses (subjec
 It emits:
 
 - `mentions` edges from item nodes to entities
-- relation edges such as `subject_of`, `object_of`, and `related_to`
+- `related_to` edges between entities with a `predicate` property for the verb lemma
 
 This extractor provides relation-centric baselines that are still deterministic and non-LLM.
+
+Install spaCy and the model referenced in your configuration before running:
+
+```
+python -m pip install spacy
+python -m spacy download en_core_web_sm
+```
 
 Example command:
 
