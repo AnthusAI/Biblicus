@@ -24,7 +24,7 @@ from .context import (
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError
-from .evaluation import evaluate_snapshot, load_dataset
+from .evaluation.retrieval import evaluate_snapshot, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_snapshot
 from .extraction_evaluation import (
@@ -609,6 +609,109 @@ def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph_extract(arguments: argparse.Namespace) -> int:
+    """
+    Build a graph extraction snapshot for the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
+    from .graph.extraction import build_graph_snapshot
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+
+    base_config: Dict[str, object] = {}
+    if arguments.configuration is not None:
+        base_config = load_configuration_view(
+            arguments.configuration,
+            configuration_label="Graph extraction configuration",
+            mapping_error_message="Graph extraction configuration must be a mapping/object",
+        )
+
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration = apply_dotted_overrides(base_config, overrides)
+
+    if arguments.extraction_snapshot:
+        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
+    else:
+        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
+        if extraction_snapshot is None:
+            raise ValueError("Graph extraction requires an extraction snapshot")
+        print(
+            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
+            file=sys.stderr,
+        )
+
+    manifest = build_graph_snapshot(
+        corpus,
+        extractor_id=arguments.extractor,
+        configuration_name=arguments.configuration_name,
+        configuration=configuration,
+        extraction_snapshot=extraction_snapshot,
+    )
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_graph_list(arguments: argparse.Namespace) -> int:
+    """
+    List graph extraction snapshots stored under the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import list_graph_snapshots
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    snapshots = list_graph_snapshots(corpus, extractor_id=arguments.extractor_id)
+    print(json.dumps([entry.model_dump() for entry in snapshots], indent=2))
+    return 0
+
+
+def cmd_graph_show(arguments: argparse.Namespace) -> int:
+    """
+    Show a graph snapshot manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import load_graph_snapshot_manifest
+    from .graph.models import parse_graph_snapshot_reference
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    reference = parse_graph_snapshot_reference(arguments.snapshot)
+    manifest = load_graph_snapshot_manifest(
+        corpus,
+        extractor_id=reference.extractor_id,
+        snapshot_id=reference.snapshot_id,
+    )
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
 def cmd_query(arguments: argparse.Namespace) -> int:
     """
     Execute a retrieval query.
@@ -1108,6 +1211,60 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the extraction evaluation dataset JSON file.",
     )
     p_extract_evaluate.set_defaults(func=cmd_extract_evaluate)
+
+    p_graph = sub.add_parser("graph", help="Run graph extraction pipelines for the corpus.")
+    graph_sub = p_graph.add_subparsers(dest="graph_command", required=True)
+
+    p_graph_extract = graph_sub.add_parser(
+        "extract", help="Build a graph extraction snapshot."
+    )
+    _add_common_corpus_arg(p_graph_extract)
+    p_graph_extract.add_argument(
+        "--extractor",
+        required=True,
+        help="Graph extractor identifier (for example: cooccurrence).",
+    )
+    p_graph_extract.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id (defaults to latest snapshot).",
+    )
+    p_graph_extract.add_argument(
+        "--configuration-name", default="default", help="Human-readable configuration name."
+    )
+    p_graph_extract.add_argument(
+        "--configuration",
+        default=None,
+        action="append",
+        help="Path to graph extraction configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_graph_extract.add_argument(
+        "--override",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
+    )
+    p_graph_extract.set_defaults(func=cmd_graph_extract)
+
+    p_graph_list = graph_sub.add_parser("list", help="List graph extraction snapshots.")
+    _add_common_corpus_arg(p_graph_list)
+    p_graph_list.add_argument(
+        "--extractor-id",
+        default=None,
+        help="Optional graph extractor identifier filter (for example: cooccurrence).",
+    )
+    p_graph_list.set_defaults(func=cmd_graph_list)
+
+    p_graph_show = graph_sub.add_parser(
+        "show", help="Show a graph extraction snapshot manifest."
+    )
+    _add_common_corpus_arg(p_graph_show)
+    p_graph_show.add_argument(
+        "--snapshot",
+        required=True,
+        help="Graph snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_graph_show.set_defaults(func=cmd_graph_show)
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)

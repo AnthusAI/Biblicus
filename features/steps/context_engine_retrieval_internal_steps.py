@@ -76,6 +76,15 @@ class FakeCorpus:
         """
         self._snapshots[snapshot.snapshot_id] = snapshot
 
+    def latest_extraction_snapshot_reference(self, *, extractor_id=None):  # noqa: D102
+        """
+        Return no extraction snapshot by default.
+
+        Context engine tests do not need extracted artifacts; retrievers should handle
+        the absence of extraction snapshots gracefully.
+        """
+        return None
+
 
 def _build_snapshot(retriever_id: str) -> RetrievalSnapshot:
     configuration = ConfigurationManifest(

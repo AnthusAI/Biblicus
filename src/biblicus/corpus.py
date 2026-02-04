@@ -21,6 +21,7 @@ from .constants import (
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
     EXTRACTION_SNAPSHOTS_DIR_NAME,
+    GRAPH_SNAPSHOTS_DIR_NAME,
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
     SNAPSHOTS_DIR_NAME,
@@ -631,6 +632,16 @@ class Corpus:
         """
         return self.snapshots_dir / ANALYSIS_RUNS_DIR_NAME
 
+    @property
+    def graph_snapshots_dir(self) -> Path:
+        """
+        Location of graph snapshot artifacts.
+
+        :return: Path to the graph snapshots directory.
+        :rtype: Path
+        """
+        return self.snapshots_dir / GRAPH_SNAPSHOTS_DIR_NAME
+
     def extraction_snapshot_dir(self, *, extractor_id: str, snapshot_id: str) -> Path:
         """
         Resolve an extraction snapshot directory.
@@ -656,6 +667,19 @@ class Corpus:
         :rtype: Path
         """
         return self.analysis_runs_dir / analysis_id / snapshot_id
+
+    def graph_snapshot_dir(self, *, extractor_id: str, snapshot_id: str) -> Path:
+        """
+        Resolve a graph snapshot directory.
+
+        :param extractor_id: Graph extractor identifier.
+        :type extractor_id: str
+        :param snapshot_id: Graph snapshot identifier.
+        :type snapshot_id: str
+        :return: Graph snapshot directory.
+        :rtype: Path
+        """
+        return self.graph_snapshots_dir / extractor_id / snapshot_id
 
     def read_extracted_text(
         self, *, extractor_id: str, snapshot_id: str, item_id: str

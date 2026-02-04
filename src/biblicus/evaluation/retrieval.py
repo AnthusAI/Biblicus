@@ -11,11 +11,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .constants import DATASET_SCHEMA_VERSION
-from .corpus import Corpus
-from .models import QueryBudget, RetrievalResult, RetrievalSnapshot
-from .retrievers import get_retriever
-from .time import utc_now_iso
+from ..constants import DATASET_SCHEMA_VERSION
+from ..corpus import Corpus
+from ..models import QueryBudget, RetrievalResult, RetrievalSnapshot
+from ..retrievers import get_retriever
+from ..time import utc_now_iso
 
 
 class EvaluationQuery(BaseModel):

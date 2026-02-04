@@ -10,6 +10,16 @@ rapidocr
 paddleocr-vl
 ```
 
+```{toctree}
+:maxdepth: 1
+:caption: Benchmarking
+
+/guides/ocr-benchmarking
+/guides/benchmark-results
+/guides/heron-implementation
+/guides/layout-aware-ocr-results
+```
+
 ## Overview
 
 OCR extractors use computer vision to recognize text in images, scanned documents, and visual content. They are ideal for:

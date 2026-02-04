@@ -55,6 +55,43 @@ class DeepgramUserConfig(BaseModel):
     api_key: str = Field(min_length=1)
 
 
+class Neo4jUserConfig(BaseModel):
+    """
+    Configuration for Neo4j integrations.
+
+    :ivar uri: Neo4j connection URI.
+    :vartype uri: str
+    :ivar username: Neo4j username.
+    :vartype username: str
+    :ivar password: Neo4j password.
+    :vartype password: str
+    :ivar database: Optional Neo4j database name.
+    :vartype database: str
+    :ivar auto_start: Whether to auto-start Neo4j via Docker.
+    :vartype auto_start: bool
+    :ivar container_name: Docker container name for Neo4j.
+    :vartype container_name: str
+    :ivar docker_image: Docker image reference for Neo4j.
+    :vartype docker_image: str
+    :ivar http_port: HTTP port for the Neo4j container.
+    :vartype http_port: int
+    :ivar bolt_port: Bolt port for the Neo4j container.
+    :vartype bolt_port: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    uri: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    database: Optional[str] = None
+    auto_start: bool = True
+    container_name: str = Field(default="biblicus-neo4j", min_length=1)
+    docker_image: str = Field(default="neo4j:5", min_length=1)
+    http_port: int = Field(default=7474, ge=1)
+    bolt_port: int = Field(default=7687, ge=1)
+
+
 class BiblicusUserConfig(BaseModel):
     """
     Parsed user configuration for Biblicus.
@@ -65,6 +102,8 @@ class BiblicusUserConfig(BaseModel):
     :vartype huggingface: HuggingFaceUserConfig or None
     :ivar deepgram: Optional Deepgram configuration.
     :vartype deepgram: DeepgramUserConfig or None
+    :ivar neo4j: Optional Neo4j configuration.
+    :vartype neo4j: Neo4jUserConfig or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -72,6 +111,7 @@ class BiblicusUserConfig(BaseModel):
     openai: Optional[OpenAiUserConfig] = None
     huggingface: Optional[HuggingFaceUserConfig] = None
     deepgram: Optional[DeepgramUserConfig] = None
+    neo4j: Optional[Neo4jUserConfig] = None
 
 
 def default_user_config_paths(

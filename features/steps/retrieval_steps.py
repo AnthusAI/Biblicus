@@ -662,6 +662,27 @@ def step_download_image_corpus(context, corpus_name: str) -> None:
     assert result.returncode == 0, result.stderr
 
 
+@when('I download a layout OCR corpus into "{corpus_name}"')
+def step_download_layout_ocr_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        [
+            "python3",
+            "scripts/download_funsd_samples.py",
+            "--corpus",
+            str(corpus),
+            "--count",
+            "3",
+            "--force",
+        ],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 @then("the corpus contains at least {count:d} items")
 def step_corpus_contains_items(context, count: int) -> None:
     catalog = Corpus.open(_corpus_path(context, "corpus")).load_catalog()

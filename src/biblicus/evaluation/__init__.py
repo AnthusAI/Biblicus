@@ -14,6 +14,11 @@ from biblicus.evaluation.ocr_benchmark import (
     calculate_word_order_metrics,
     calculate_ngram_overlap,
 )
+from biblicus.evaluation.retrieval import (
+    _snapshot_artifact_bytes,
+    evaluate_snapshot,
+    load_dataset,
+)
 
 __all__ = [
     "OCREvaluationResult",
@@ -23,4 +28,7 @@ __all__ = [
     "calculate_character_accuracy",
     "calculate_word_order_metrics",
     "calculate_ngram_overlap",
+    "evaluate_snapshot",
+    "load_dataset",
+    "_snapshot_artifact_bytes",
 ]

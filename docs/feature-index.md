@@ -171,6 +171,28 @@ Primary implementation:
 
 - `src/biblicus/extraction_evaluation.py`
 
+## Graph extraction stage
+
+What it does:
+
+- Builds graph snapshots from extracted text.
+- Writes graph nodes and edges to a Neo4j backend.
+- Supports deterministic graph identifiers for reproducible experiments.
+
+Documentation:
+
+- `docs/graph-extraction.md`
+
+Behavior specifications:
+
+- `features/graph_extraction.feature`
+- `features/integration_graph_extraction.feature`
+
+Primary implementation:
+
+- `src/biblicus/graph/`
+- `src/biblicus/graph/neo4j.py`
+
 ## Retrieval backends
 
 What it does:

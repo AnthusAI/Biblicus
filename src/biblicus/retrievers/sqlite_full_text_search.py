@@ -639,7 +639,7 @@ def _resolve_extraction_reference(
     :raises FileNotFoundError: If an extraction snapshot is referenced but not present.
     """
     if not configuration.extraction_snapshot:
-        return None
+        return corpus.latest_extraction_snapshot_reference()
     extraction_reference = parse_extraction_snapshot_reference(configuration.extraction_snapshot)
     snapshot_dir = corpus.extraction_snapshot_dir(
         extractor_id=extraction_reference.extractor_id,

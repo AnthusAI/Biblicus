@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import runpy
+import shutil
 import shlex
 import threading
 from functools import partial
@@ -37,6 +38,18 @@ def _parse_ingest_standard_output(standard_output: str) -> Dict[str, str]:
     if len(parts) != 3:
         raise AssertionError(f"Unexpected ingest output: {standard_output!r}")
     return {"id": parts[0], "relpath": parts[1], "sha256": parts[2]}
+
+
+def _ensure_workdir_file(context, filename: str) -> Path:
+    work_path = (context.workdir / filename).resolve()
+    if work_path.exists():
+        return work_path
+    repo_path = (context.repo_root / filename).resolve()
+    if repo_path.exists():
+        work_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(repo_path, work_path)
+        return work_path
+    raise AssertionError(f"Missing file for ingest: {filename}")
 
 
 def _record_ingest(context, result) -> None:
@@ -313,6 +326,30 @@ def step_ingest_file(context, filename: str, tags: str, corpus_name: str) -> Non
         args.extend(["--tag", tag])
     result = run_biblicus(context, args)
     _record_ingest(context, result)
+
+
+@given('I ingested the file "{filename}" with tags ["{tag}"] into corpus "{corpus_name}"')
+@when('I ingest the file "{filename}" with tags ["{tag}"] into corpus "{corpus_name}"')
+def step_ingest_file_with_single_tag(
+    context, filename: str, tag: str, corpus_name: str
+) -> None:
+    _ensure_workdir_file(context, filename)
+    step_ingest_file(context, filename, tag, corpus_name)
+
+
+@given(
+    'I ingested the plaintext file "{filename}" with content "{content}" and tags ["{tag}"] into corpus "{corpus_name}"'
+)
+@when(
+    'I ingest the plaintext file "{filename}" with content "{content}" and tags ["{tag}"] into corpus "{corpus_name}"'
+)
+def step_ingest_plaintext_file_with_single_tag(
+    context, filename: str, content: str, tag: str, corpus_name: str
+) -> None:
+    path = (context.workdir / filename).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    step_ingest_file(context, filename, tag, corpus_name)
 
 
 @when('I ingest the file "{filename}" into corpus "{corpus_name}"')

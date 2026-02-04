@@ -187,7 +187,7 @@ def step_build_extraction_snapshot_with_config(
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = "pipeline"
+    context.last_extractor_id = extractor_id
 
 
 @when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with steps:')
@@ -250,7 +250,7 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = "pipeline"
+    context.last_extractor_id = extractor_id
 
 
 @when(
@@ -271,7 +271,7 @@ def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str)
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = "pipeline"
+    context.last_extractor_id = extractor_id
 
 
 @when('I build an "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')

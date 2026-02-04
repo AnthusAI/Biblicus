@@ -1,0 +1,4 @@
+schema_version: 1
+min_entity_length: 3
+max_entity_words: 4
+include_item_node: true

@@ -53,6 +53,36 @@ deepgram:
 
 The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` environment variable. Environment takes precedence over configuration.
 
+## Example: Neo4j graph extraction
+
+Graph extraction uses a Neo4j backend. Biblicus can auto-start a local Neo4j Docker container if it is not already running.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: testpassword
+  auto_start: true
+  container_name: biblicus-neo4j
+  docker_image: neo4j:5
+  http_port: 7474
+  bolt_port: 7687
+```
+
+Environment variables override configuration when present:
+
+- `NEO4J_URI`
+- `NEO4J_USERNAME`
+- `NEO4J_PASSWORD`
+- `NEO4J_DATABASE`
+- `BIBLICUS_NEO4J_AUTO_START`
+- `BIBLICUS_NEO4J_CONTAINER_NAME`
+- `BIBLICUS_NEO4J_IMAGE`
+- `BIBLICUS_NEO4J_HTTP_PORT`
+- `BIBLICUS_NEO4J_BOLT_PORT`
+
 ## Common pitfalls
 
 - Saving secrets in the corpus directory instead of a user config file.

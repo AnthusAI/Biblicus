@@ -71,6 +71,9 @@ topic-modeling = [
 markov-analysis = [
   "hmmlearn>=0.3.0",
 ]
+neo4j = [
+  "neo4j>=5.0.0",
+]
 datasets = [
   "datasets>=2.18.0",
 ]

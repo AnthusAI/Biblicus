@@ -104,6 +104,38 @@ The output includes a `snapshot_id` you can reuse when building a retrieval back
 
 Text extraction details: `docs/extraction.md`
 
+### Graph extraction demo
+
+Graph extraction runs after text extraction and writes to a Neo4j backend. The demo script will reuse the latest extraction
+snapshot or build a minimal one if needed.
+
+```
+python scripts/graph_extraction_demo.py --corpus corpora/demo --build-extraction --prepare-demo --verify
+```
+
+Graph extraction details: `docs/graph-extraction.md`
+
+### Graph extraction integration run
+
+Use the integration script to download a small Wikipedia corpus, run extraction, and build a Neo4j graph snapshot
+with the `simple-entities` extractor.
+
+```
+python -m pip install neo4j
+```
+
+```
+python scripts/graph_extraction_integration.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --verify \
+  --report-path reports/graph_extraction_story.md
+```
+
+The report written to `reports/graph_extraction_story.md` summarizes the run in a shareable format.
+
+Graph extraction details: `docs/graph-extraction.md`
+
 ### Topic modeling integration run
 
 Use the integration script to download AG News, run extraction, and run topic modeling with a single command.
