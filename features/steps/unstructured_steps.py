@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 import types
 from dataclasses import dataclass
@@ -148,3 +149,26 @@ def step_fake_unstructured_returns_whitespace(context, filename: str) -> None:
 @given("the Unstructured dependency is unavailable")
 def step_unstructured_dependency_unavailable(context) -> None:
     _install_unstructured_unavailable_module(context)
+
+
+@given("Poppler is available for Portable Document Format parsing")
+def step_poppler_available(context) -> None:
+    """
+    Assert that poppler tools are available for Portable Document Format parsing.
+
+    :param context: Behave context.
+    :type context: behave.runner.Context
+    """
+    try:
+        subprocess.run(
+            ["pdfinfo", "-v"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise AssertionError(
+            "Poppler is required for Unstructured Portable Document Format parsing. "
+            "Install it (for example: brew install poppler) and ensure pdfinfo is on PATH."
+        ) from exc

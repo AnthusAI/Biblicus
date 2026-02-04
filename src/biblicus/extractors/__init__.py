@@ -13,6 +13,7 @@ from .docling_smol_text import DoclingSmolExtractor
 from .heron_layout import HeronLayoutExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
+from .mock_layout_detector import MockLayoutDetectorExtractor
 from .openai_stt import OpenAiSpeechToTextExtractor
 from .paddleocr_layout import PaddleOCRLayoutExtractor
 from .paddleocr_vl_text import PaddleOcrVlExtractor
@@ -40,6 +41,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
     """
     extractors: Dict[str, TextExtractor] = {
         MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
+        MockLayoutDetectorExtractor.extractor_id: MockLayoutDetectorExtractor(),
         MarkItDownExtractor.extractor_id: MarkItDownExtractor(),
         DoclingSmolExtractor.extractor_id: DoclingSmolExtractor(),
         DoclingGraniteExtractor.extractor_id: DoclingGraniteExtractor(),

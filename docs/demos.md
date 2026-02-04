@@ -155,6 +155,53 @@ python -m biblicus graph extract \
   --configuration configurations/graph/dependency-relations.yml
 ```
 
+### Graph extractor narrative demos
+
+Use the narrative demo script to run the full pipeline for a single extractor and print inputs + outputs.
+Each command downloads a small Wikipedia corpus, builds extraction and graph snapshots, and prints sample
+entities/terms and edges.
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor simple-entities
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor cooccurrence
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor ner-entities
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor dependency-relations
+```
+
+### Graph extractor narrative demos (all extractors)
+
+Use the multi-extractor demo script to run the narrative demo for every extractor in sequence. The first
+extractor run initializes the corpus; the remaining runs reuse it.
+
+```
+python scripts/graph_extraction_demo_all.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --limit 5 \
+  --report-dir reports
+```
+
 Graph extraction details: `docs/graph-extraction.md`
 
 ### Topic modeling integration run

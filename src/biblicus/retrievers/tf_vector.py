@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
@@ -37,12 +37,28 @@ class TfVectorConfiguration(BaseModel):
     :vartype extraction_snapshot: str or None
     :ivar snippet_characters: Optional maximum character count for returned evidence text.
     :vartype snippet_characters: int or None
+    :ivar pipeline: Optional pipeline configuration (index/query) passed through by orchestrators.
+    :vartype pipeline: dict[str, Any] or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     extraction_snapshot: Optional[str] = None
     snippet_characters: Optional[int] = None
+    pipeline: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="after")
+    def _merge_index_pipeline(self) -> "TfVectorConfiguration":
+        if not self.pipeline or not isinstance(self.pipeline, dict):
+            return self
+        index_config = self.pipeline.get("index")
+        if not isinstance(index_config, dict):
+            return self
+        if self.extraction_snapshot is None:
+            self.extraction_snapshot = index_config.get("extraction_snapshot")
+        if self.snippet_characters is None:
+            self.snippet_characters = index_config.get("snippet_characters")
+        return self
 
 
 class TfVectorRetriever:

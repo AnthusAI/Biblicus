@@ -289,6 +289,30 @@ python scripts/graph_extraction_integration.py \
   --report-path reports/graph_extraction_story.md
 ```
 
+## Narrative demo script
+
+Use the narrative demo script when you want to show inputs and outputs for a specific extractor.
+It prints input text previews, sampled entities or terms, and example edges.
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor simple-entities
+```
+
+## Narrative demo script (all extractors)
+
+Run all extractors in sequence and write per-extractor reports:
+
+```
+python scripts/graph_extraction_demo_all.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --limit 5 \
+  --report-dir reports
+```
+
 ## Reproducibility checklist
 
 - Record the extraction snapshot reference used to build the graph.

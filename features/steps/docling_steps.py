@@ -67,6 +67,8 @@ def _install_fake_docling_module(context, *, with_mlx: bool = True) -> None:
         "docling",
         "docling.document_converter",
         "docling.pipeline_options",
+        "docling.datamodel",
+        "docling.datamodel.pipeline_options",
     ]
     for name in module_names:
         if name in sys.modules:
@@ -208,17 +210,31 @@ def _install_docling_unavailable_module(context) -> None:
     if already_installed:
         return
 
+    def _make_unavailable_module(name: str) -> types.ModuleType:
+        module = types.ModuleType(name)
+
+        def __getattr__(attr_name: str) -> object:
+            raise ImportError("Docling optional dependency is unavailable.")
+
+        module.__getattr__ = __getattr__  # type: ignore[attr-defined]
+        return module
+
     original_modules: Dict[str, object] = {}
     module_names = [
         "docling",
         "docling.document_converter",
         "docling.format_options",
         "docling.pipeline_options",
+        "docling.datamodel",
+        "docling.datamodel.pipeline_options",
     ]
     for name in module_names:
         if name in sys.modules:
             original_modules[name] = sys.modules[name]
             del sys.modules[name]
+
+    for name in module_names:
+        sys.modules[name] = _make_unavailable_module(name)
 
     context._fake_docling_unavailable_installed = True
     context._fake_docling_unavailable_original_modules = original_modules

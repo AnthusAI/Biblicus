@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from biblicus.corpus import Corpus
-from biblicus.evaluation import EvaluationDataset, EvaluationQuery, evaluate_snapshot
+from biblicus.evaluation.retrieval import EvaluationDataset, EvaluationQuery, evaluate_snapshot
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
 from biblicus.retrievers import get_retriever

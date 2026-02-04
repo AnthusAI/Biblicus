@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, List
 
@@ -16,15 +17,6 @@ DEFAULT_IMAGE_URLS = [
     "https://commons.wikimedia.org/wiki/Special:FilePath/Hello_world.png",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Example.jpg",
 ]
-
-_BLANK_PNG_BYTES = (
-    b"\x89PNG\r\n\x1a\n"
-    b"\x00\x00\x00\rIHDR"
-    b"\x00\x00\x00\x01\x00\x00\x00\x01"
-    b"\x08\x02\x00\x00\x00\x90wS\xde"
-    b"\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4"
-    b"\x00\x00\x00\x00IEND\xaeB`\x82"
-)
 
 
 def _blank_portable_network_graphics_bytes() -> bytes:
@@ -36,7 +28,32 @@ def _blank_portable_network_graphics_bytes() -> bytes:
     :return: Portable Network Graphics bytes.
     :rtype: bytes
     """
-    return _BLANK_PNG_BYTES
+    from PIL import Image
+
+    image = Image.new("RGB", (64, 64), color="white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _text_portable_network_graphics_bytes(text: str) -> bytes:
+    """
+    Return a deterministic Portable Network Graphics payload with text.
+
+    :param text: Text to render in the image.
+    :type text: str
+    :return: Portable Network Graphics bytes.
+    :rtype: bytes
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    image = Image.new("RGB", (320, 120), color="white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    draw.text((10, 40), text, fill="black", font=font)
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
@@ -100,13 +117,20 @@ def download_image_samples(
     )
     ingested += 1
 
+    corpus.ingest_item(
+        _text_portable_network_graphics_bytes("Hello World"),
+        filename="hello.png",
+        media_type="image/png",
+        source_uri="generated:hello.png",
+        tags=[*tags, "image-with-text"],
+    )
+    ingested += 1
+
     for url in urls:
         try:
             extra_tags: list[str] = []
             lower = url.lower()
-            if "hello_world" in lower:
-                extra_tags = ["image-with-text"]
-            elif "example.jpg" in lower:
+            if "example.jpg" in lower:
                 extra_tags = ["image-jpeg-sample"]
             corpus.ingest_source(url, tags=[*tags, *extra_tags], source_uri=url)
             ingested += 1

@@ -123,7 +123,10 @@ def run_demo(
     )
 
     snapshot_id = str(markov_output.snapshot.snapshot_id)
-    run_dir = corpus_path / ".biblicus" / "runs" / "analysis" / "markov" / snapshot_id
+    run_dir = corpus.analysis_run_dir(
+        analysis_id=MarkovBackend.analysis_id,
+        snapshot_id=snapshot_id,
+    )
     artifact_paths = [str(run_dir / relpath) for relpath in markov_output.snapshot.artifact_paths]
 
     return {
@@ -157,7 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--configuration",
         action="append",
-        default=["configurations/markov/topic-driven-named.yml"],
+        default=None,
         help="Markov configuration path (repeatable; later files override earlier ones).",
     )
     parser.add_argument(
@@ -184,7 +187,11 @@ def main() -> int:
         corpus_path=Path(args.corpus).resolve(),
         force=bool(args.force),
         ingest_limit=int(args.ingest_limit),
-        configuration_paths=list(args.configuration),
+        configuration_paths=(
+            list(args.configuration)
+            if args.configuration
+            else ["configurations/markov/topic-driven-named.yml"]
+        ),
         overrides=overrides,
     )
     print(json.dumps(payload, indent=2))

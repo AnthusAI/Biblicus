@@ -29,7 +29,7 @@ class _BlockPaddleImportHook:
 @dataclass
 class _FakePaddleOcrVlLine:
     text: str
-    confidence: float
+    confidence: object
 
 
 @dataclass
@@ -89,6 +89,16 @@ def _install_fake_paddleocr_module(context) -> None:
                         ]
                     )
                 return [page_result]
+            if behavior.mode == "dict":
+                rec_texts = [line.text for line in behavior.lines or []]
+                rec_scores = [line.confidence for line in behavior.lines or []]
+                return [{"rec_texts": rec_texts, "rec_scores": rec_scores}]
+            if behavior.mode == "dict-mixed":
+                rec_texts = [line.text for line in behavior.lines or []]
+                rec_scores = [line.confidence for line in behavior.lines or []]
+                return [{"rec_texts": rec_texts, "rec_scores": rec_scores}]
+            if behavior.mode == "weird":
+                return ["oops"]
             if behavior.mode == "malformed":
                 # Return malformed data to test defensive code (with one valid line)
                 # Return format: list of page_results, each page_result is a list of line_results
@@ -204,3 +214,37 @@ def step_fake_paddleocr_returns_malformed_empty(context, filename: str) -> None:
     _install_fake_paddleocr_module(context)
     behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
     behaviors[filename] = _FakePaddleOcrVlBehavior(mode="malformed-empty", lines=None)
+
+
+@given('a fake PaddleOCR library is available that returns dict output for filename "{filename}"')
+def step_fake_paddleocr_returns_dict(context, filename: str) -> None:
+    _install_fake_paddleocr_module(context)
+    behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
+    behaviors[filename] = _FakePaddleOcrVlBehavior(
+        mode="dict",
+        lines=[
+            _FakePaddleOcrVlLine(text="Line A", confidence=0.95),
+            _FakePaddleOcrVlLine(text="Line B", confidence=0.9),
+        ],
+    )
+
+
+@given('a fake PaddleOCR library returns mixed dict output for filename "{filename}"')
+def step_fake_paddleocr_returns_dict_mixed(context, filename: str) -> None:
+    _install_fake_paddleocr_module(context)
+    behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
+    behaviors[filename] = _FakePaddleOcrVlBehavior(
+        mode="dict-mixed",
+        lines=[
+            _FakePaddleOcrVlLine(text="Low", confidence=0.2),
+            _FakePaddleOcrVlLine(text=" ", confidence=0.95),
+            _FakePaddleOcrVlLine(text="Bad", confidence="not-a-number"),
+        ],
+    )
+
+
+@given('a fake PaddleOCR library returns an unknown page result for filename "{filename}"')
+def step_fake_paddleocr_returns_weird(context, filename: str) -> None:
+    _install_fake_paddleocr_module(context)
+    behaviors = _ensure_fake_paddleocr_vl_behaviors(context)
+    behaviors[filename] = _FakePaddleOcrVlBehavior(mode="weird", lines=None)

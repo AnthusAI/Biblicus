@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import os
 import sys
 import tempfile
@@ -53,6 +54,15 @@ def before_scenario(context, scenario) -> None:
         del context.fake_bertopic_behavior
     if hasattr(context, "fake_hmmlearn_behavior"):
         del context.fake_hmmlearn_behavior
+    for attr in [
+        "_fake_paddleocr_layout_empty",
+        "_fake_paddleocr_layout_missing_coordinates",
+        "_fake_paddleocr_layout_non_dict",
+        "_fake_paddleocr_layout_no_image",
+        "_fake_heron_empty_results",
+        "_fake_heron_image_none",
+    ]:
+        setattr(context, attr, False)
     context._fake_tesseract_installed = False
     context._fake_tesseract_original_modules = {}
 
@@ -365,6 +375,8 @@ def after_scenario(context, scenario) -> None:
         for name in [
             "docling.pipeline_options",
             "docling.document_converter",
+            "docling.datamodel.pipeline_options",
+            "docling.datamodel",
             "docling",
         ]:
             if name in original_modules:
@@ -378,6 +390,8 @@ def after_scenario(context, scenario) -> None:
         for name in [
             "docling.pipeline_options",
             "docling.document_converter",
+            "docling.datamodel.pipeline_options",
+            "docling.datamodel",
             "docling",
         ]:
             if name in original_modules:
@@ -386,6 +400,121 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_docling_unavailable_installed = False
         context._fake_docling_unavailable_original_modules = {}
+    if getattr(context, "_fake_heron_installed", False):
+        original_modules = getattr(context, "_fake_heron_original_modules", {})
+        for name in ["transformers", "torch", "PIL", "PIL.Image"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_heron_installed = False
+        context._fake_heron_original_modules = {}
+    if getattr(context, "_fake_heron_import_blocked", False):
+        original_import = getattr(context, "_fake_heron_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        original_transformers = getattr(context, "_fake_heron_original_transformers", None)
+        if original_transformers is not None:
+            sys.modules["transformers"] = original_transformers
+        original_torch = getattr(context, "_fake_heron_original_torch", None)
+        if original_torch is not None:
+            sys.modules["torch"] = original_torch
+        context._fake_heron_import_blocked = False
+        context._fake_heron_original_import = None
+        context._fake_heron_original_transformers = None
+        context._fake_heron_original_torch = None
+    if getattr(context, "_fake_paddleocr_layout_installed", False):
+        original_modules = getattr(context, "_fake_paddleocr_layout_original_modules", {})
+        for name in ["paddleocr", "cv2"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_paddleocr_layout_installed = False
+        context._fake_paddleocr_layout_original_modules = {}
+    if getattr(context, "_fake_paddleocr_layout_import_blocked", False):
+        original_import = getattr(context, "_fake_paddleocr_layout_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        original_module = getattr(context, "_fake_paddleocr_layout_original_module", None)
+        if original_module is not None:
+            sys.modules["paddleocr"] = original_module
+        context._fake_paddleocr_layout_import_blocked = False
+        context._fake_paddleocr_layout_original_import = None
+        context._fake_paddleocr_layout_original_module = None
+    if getattr(context, "_fake_spacy_relations_installed", False):
+        original_module = getattr(context, "_fake_spacy_relations_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_relations_installed = False
+        context._fake_spacy_relations_original_module = None
+    if getattr(context, "_fake_spacy_short_installed", False):
+        original_module = getattr(context, "_fake_spacy_short_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_short_installed = False
+        context._fake_spacy_short_original_module = None
+    if getattr(context, "_fake_spacy_short_relations_installed", False):
+        original_module = getattr(context, "_fake_spacy_short_relations_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_short_relations_installed = False
+        context._fake_spacy_short_relations_original_module = None
+    if getattr(context, "_spacy_import_blocked", False):
+        original_import = getattr(context, "_spacy_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        context._spacy_import_blocked = False
+        context._spacy_original_import = None
+    original_spacy_module = getattr(context, "_spacy_original_module", None)
+    if original_spacy_module is not None:
+        sys.modules["spacy"] = original_spacy_module
+        context._spacy_original_module = None
+    if getattr(context, "_fake_neo4j_internal_installed", False):
+        original_module = getattr(context, "_fake_neo4j_internal_original", None)
+        if original_module is not None:
+            sys.modules["neo4j"] = original_module
+        else:
+            sys.modules.pop("neo4j", None)
+        context._fake_neo4j_internal_installed = False
+        context._fake_neo4j_internal_original = None
+    if getattr(context, "_tesseract_import_blocked", False):
+        original_import = getattr(context, "_tesseract_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        context._tesseract_import_blocked = False
+        context._tesseract_original_import = None
+    original_tesseract_module = getattr(context, "_tesseract_original_module", None)
+    if original_tesseract_module is not None:
+        sys.modules["pytesseract"] = original_tesseract_module
+        context._tesseract_original_module = None
+    if getattr(context, "_tesseract_fake_installed", False):
+        original_modules = getattr(context, "_tesseract_original_modules", {})
+        if "pytesseract" in original_modules:
+            sys.modules["pytesseract"] = original_modules["pytesseract"]
+        else:
+            sys.modules.pop("pytesseract", None)
+        context._tesseract_fake_installed = False
+        context._tesseract_original_modules = {}
+    editdistance_import_patcher = getattr(context, "_editdistance_import_patcher", None)
+    if editdistance_import_patcher is not None:
+        original_import = getattr(context, "_editdistance_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+            context._editdistance_original_import = None
+        context._editdistance_import_patcher = None
+    original_editdistance = getattr(context, "_editdistance_original_module", None)
+    if original_editdistance is not None:
+        sys.modules["editdistance"] = original_editdistance
+        context._editdistance_original_module = None
+    elif "editdistance" in sys.modules and getattr(context, "_editdistance_original_module", None) is None:
+        sys.modules.pop("editdistance", None)
     # Clear fake docling behaviors
     if hasattr(context, "fake_docling_behaviors"):
         context.fake_docling_behaviors.clear()

@@ -100,7 +100,7 @@ def chat_completion(
         request_kwargs["tools"] = list(tools)
     if tool_choice:
         request_kwargs["tool_choice"] = tool_choice
-    if client.response_format:
+    if client.response_format and not tools:
         request_kwargs["response_format"] = {"type": client.response_format}
 
     response = lm(messages=list(messages), **request_kwargs)

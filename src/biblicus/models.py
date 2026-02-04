@@ -117,6 +117,8 @@ class CorpusCatalog(BaseModel):
     :vartype corpus_uri: str
     :ivar raw_dir: Relative path to the raw items folder.
     :vartype raw_dir: str
+    :ivar latest_run_id: Latest extraction run identifier, if any.
+    :vartype latest_run_id: str or None
     :ivar latest_snapshot_id: Latest retrieval snapshot identifier, if any.
     :vartype latest_snapshot_id: str or None
     :ivar items: Mapping of item IDs to catalog entries.
@@ -131,6 +133,7 @@ class CorpusCatalog(BaseModel):
     generated_at: str
     corpus_uri: str
     raw_dir: str = "raw"
+    latest_run_id: Optional[str] = None
     latest_snapshot_id: Optional[str] = None
     items: Dict[str, CatalogItem] = Field(default_factory=dict)
     order: List[str] = Field(default_factory=list)

@@ -31,6 +31,7 @@ See [retrieval augmented generation overview] for a short introduction to the id
 - See `docs/markov-analysis.md` for Markov analysis details and runnable demos.
 - See `docs/text-extract.md` for the text extract utility and examples.
 - Graph extraction supports deterministic NLP baselines (NER entities, dependency relations) for graph-aware retrieval experiments.
+- Graph extractor demos are runnable from the repository (single extractor or all extractors).
 
 ## Start with a knowledge base
 

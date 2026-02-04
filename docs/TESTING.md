@@ -6,6 +6,15 @@ Coverage is measured across the `src/biblicus/` package, excluding vendored thir
 
 ## Run tests
 
+Run everything (unit tests, baseline behavior specs, and integration scenarios):
+
+```
+python scripts/run_all_tests.py
+```
+
+The integration phase requires an OpenAI API key. The runner reads it from `.biblicus/config.yml`
+under `openai.api_key` or from the `OPENAI_API_KEY` environment variable.
+
 Run the test suite without integration downloads:
 
 ```
@@ -30,6 +39,12 @@ Run the test suite including Unstructured integration scenarios:
 python scripts/test.py --integration --unstructured
 ```
 
+Run only integration scenarios with a configured OpenAI API key:
+
+```
+OPENAI_API_KEY="..." BIBLICUS_RUN_MARKOV_DEMO=1 python -m behave features/integration_*.feature
+```
+
 ## Coverage expectations
 
 Biblicus targets 100% coverage for `src/biblicus/`. Any uncovered behavior should be removed or turned into an explicit
@@ -52,6 +67,11 @@ The repository does not include downloaded content. Integration scripts download
 Some integrations require credentials, such as speech to text.
 
 Those are covered by unit-style behavior specifications using fake libraries, not by integration scenarios.
+
+Docling integration scenarios require the Docling optional dependency (and its model downloads).
+
+Unstructured integration scenarios require the Unstructured optional dependency and Poppler
+(`pdfinfo` must be available on PATH).
 
 Optical character recognition integration scenarios are tagged `@ocr` and are excluded unless you pass `--ocr`.
 

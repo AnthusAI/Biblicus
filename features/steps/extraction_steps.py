@@ -126,7 +126,14 @@ def _table_key_value(row) -> tuple[str, str]:
 
 
 def _parse_json_output(standard_output: str) -> dict[str, object]:
-    return json.loads(standard_output)
+    cleaned = standard_output.strip()
+    if cleaned.startswith("{") or cleaned.startswith("["):
+        return json.loads(cleaned)
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(f"Expected JSON output but received: {standard_output}")
+    return json.loads(cleaned[start : end + 1])
 
 
 def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
@@ -187,7 +194,7 @@ def step_build_extraction_snapshot_with_config(
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
 @when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with steps:')
@@ -229,7 +236,7 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
 @when(
@@ -250,7 +257,7 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
 @when(
@@ -271,7 +278,7 @@ def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str)
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
     context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
-    context.last_extractor_id = extractor_id
+    context.last_extractor_id = "pipeline"
 
 
 @when('I build an "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')

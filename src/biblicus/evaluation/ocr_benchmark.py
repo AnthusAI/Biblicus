@@ -215,9 +215,6 @@ def calculate_ngram_overlap(ground_truth: str, extracted: str, n: int = 2) -> fl
     gt_ngrams = [tuple(gt_words[i:i+n]) for i in range(len(gt_words) - n + 1)]
     ex_ngrams = [tuple(ex_words[i:i+n]) for i in range(len(ex_words) - n + 1)]
 
-    if not gt_ngrams:
-        return 0.0
-
     # Calculate overlap
     gt_set = set(gt_ngrams)
     ex_set = set(ex_ngrams)
