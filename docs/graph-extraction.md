@@ -164,6 +164,64 @@ python -m biblicus graph extract \
   --configuration configurations/graph/simple-entities.yml
 ```
 
+## NER entities extractor
+
+The `ner-entities` extractor uses a named entity recognition model to emit entity nodes. It emits:
+
+- `mentions` edges from item nodes to entities
+- typed entity nodes via the `entity_type` property
+
+This extractor is deterministic for a fixed model and configuration and provides a stronger baseline than the
+simple-entities heuristic.
+
+Example command:
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor ner-entities \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/ner-entities.yml
+```
+
+Minimal configuration:
+
+```
+schema_version: 1
+model: en_core_web_sm
+min_entity_length: 3
+include_item_node: true
+```
+
+## Dependency relations extractor
+
+The `dependency-relations` extractor builds edges from dependency parses (subject–verb–object and similar patterns).
+It emits:
+
+- `mentions` edges from item nodes to entities
+- relation edges such as `subject_of`, `object_of`, and `related_to`
+
+This extractor provides relation-centric baselines that are still deterministic and non-LLM.
+
+Example command:
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor dependency-relations \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/dependency-relations.yml
+```
+
+Minimal configuration:
+
+```
+schema_version: 1
+model: en_core_web_sm
+min_entity_length: 3
+include_item_node: true
+```
+
 ## Querying a logical graph
 
 Neo4j queries are scoped by `corpus_id` and `graph_id` so you can store multiple graphs side by side:

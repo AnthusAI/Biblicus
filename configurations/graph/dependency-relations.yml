@@ -1,0 +1,4 @@
+schema_version: 1
+model: en_core_web_sm
+min_entity_length: 3
+include_item_node: true

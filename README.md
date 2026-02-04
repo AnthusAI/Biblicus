@@ -30,6 +30,7 @@ See [retrieval augmented generation overview] for a short introduction to the id
 - Text extract splits long texts with an LLM by inserting XML tags in-place for structured spans.
 - See `docs/markov-analysis.md` for Markov analysis details and runnable demos.
 - See `docs/text-extract.md` for the text extract utility and examples.
+- Graph extraction supports deterministic NLP baselines (NER entities, dependency relations) for graph-aware retrieval experiments.
 
 ## Start with a knowledge base
 

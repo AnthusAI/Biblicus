@@ -134,6 +134,27 @@ python scripts/graph_extraction_integration.py \
 
 The report written to `reports/graph_extraction_story.md` summarizes the run in a shareable format.
 
+### Graph extraction baselines
+
+Once the baseline extractors are enabled, you can compare different graph extractors by switching the extractor id
+and configuration:
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor ner-entities \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/ner-entities.yml
+```
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor dependency-relations \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/dependency-relations.yml
+```
+
 Graph extraction details: `docs/graph-extraction.md`
 
 ### Topic modeling integration run

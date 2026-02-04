@@ -178,6 +178,7 @@ What it does:
 - Builds graph snapshots from extracted text.
 - Writes graph nodes and edges to a Neo4j backend.
 - Supports deterministic graph identifiers for reproducible experiments.
+- Includes deterministic NLP baselines (NER entities, dependency relations).
 
 Documentation:
 
