@@ -10,9 +10,11 @@ from .base import TextExtractor
 from .deepgram_stt import DeepgramSpeechToTextExtractor
 from .docling_granite_text import DoclingGraniteExtractor
 from .docling_smol_text import DoclingSmolExtractor
+from .heron_layout import HeronLayoutExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
 from .openai_stt import OpenAiSpeechToTextExtractor
+from .paddleocr_layout import PaddleOCRLayoutExtractor
 from .paddleocr_vl_text import PaddleOcrVlExtractor
 from .pass_through_text import PassThroughTextExtractor
 from .pdf_text import PortableDocumentFormatTextExtractor
@@ -22,6 +24,7 @@ from .select_longest_text import SelectLongestTextExtractor
 from .select_override import SelectOverrideExtractor
 from .select_smart_override import SelectSmartOverrideExtractor
 from .select_text import SelectTextExtractor
+from .tesseract_text import TesseractExtractor
 from .unstructured_text import UnstructuredExtractor
 
 
@@ -46,7 +49,10 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
         DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor(),
         RapidOcrExtractor.extractor_id: RapidOcrExtractor(),
+        HeronLayoutExtractor.extractor_id: HeronLayoutExtractor(),
+        PaddleOCRLayoutExtractor.extractor_id: PaddleOCRLayoutExtractor(),
         PaddleOcrVlExtractor.extractor_id: PaddleOcrVlExtractor(),
+        TesseractExtractor.extractor_id: TesseractExtractor(),
         SelectTextExtractor.extractor_id: SelectTextExtractor(),
         SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor(),
         SelectSmartOverrideExtractor.extractor_id: SelectSmartOverrideExtractor(),

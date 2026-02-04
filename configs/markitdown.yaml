@@ -1,0 +1,10 @@
+# MarkItDown Configuration
+#
+# Uses Microsoft's MarkItDown for document conversion to markdown.
+# Good for preserving document structure.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: markitdown
+      config: {}

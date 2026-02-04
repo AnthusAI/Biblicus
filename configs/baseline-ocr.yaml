@@ -1,0 +1,14 @@
+# Baseline OCR Configuration
+#
+# Uses standard Tesseract OCR without layout awareness.
+# This serves as the baseline for comparing against layout-aware approaches.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: ocr-tesseract
+      config:
+        min_confidence: 0.0
+        lang: eng
+        psm: 3  # Fully automatic page segmentation
+        oem: 3  # Default OCR engine mode

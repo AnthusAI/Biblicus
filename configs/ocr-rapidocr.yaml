@@ -1,0 +1,10 @@
+# RapidOCR Configuration
+#
+# Uses RapidOCR for text extraction - a lightweight OCR engine.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: ocr-rapidocr
+      config:
+        min_confidence: 0.0

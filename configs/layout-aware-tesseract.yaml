@@ -1,0 +1,22 @@
+# Layout-Aware OCR with PaddleOCR PP-Structure + Tesseract
+#
+# Two-stage workflow for non-selectable files:
+# 1. Detect document layout and reading order
+# 2. Extract text from each region in sequence
+#
+# Step 1: PaddleOCR PP-Structure detects layout regions and reading order
+# Step 2: Tesseract OCRs each region separately following detected order
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: paddleocr-layout
+      config:
+        lang: en
+    - extractor_id: ocr-tesseract
+      config:
+        use_layout_metadata: true
+        min_confidence: 0.0
+        lang: eng
+        psm: 3
+        oem: 3

@@ -1,0 +1,27 @@
+# Heron + Tesseract Layout-Aware OCR Pipeline
+#
+# Two-stage workflow for non-selectable files:
+# 1. Detect document layout and reading order
+# 2. Extract text from each region in sequence
+#
+# This uses IBM Research's Heron-101 model (September 2025, arXiv:2509.11720)
+# for state-of-the-art document layout analysis, followed by Tesseract OCR
+# with layout metadata awareness.
+#
+# Step 1: Heron-101 detects layout regions and reading order
+# Step 2: Tesseract OCRs each region separately following detected order
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: heron-layout
+      config:
+        model_variant: "101"  # Options: "base" (42.9M params) or "101" (76.7M params, 78% mAP)
+        confidence_threshold: 0.6  # Minimum confidence for detected regions
+    - extractor_id: ocr-tesseract
+      config:
+        use_layout_metadata: true
+        min_confidence: 0.0
+        lang: eng
+        psm: 3
+        oem: 3

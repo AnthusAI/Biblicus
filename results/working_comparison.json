@@ -1,0 +1,151 @@
+{
+  "benchmark_timestamp": "2026-02-03T17:36:07.311228",
+  "corpus_path": "corpora/funsd_benchmark",
+  "total_pipelines": 3,
+  "successful_pipelines": 3,
+  "failed_pipelines": 0,
+  "pipelines": [
+    {
+      "name": "baseline-ocr",
+      "snapshot_id": "b5ee5f5d3441fe89cbcc266579578923212b467c035cae2c652bb0bd66a8b954",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.6072843202661438,
+          "avg_precision": 0.6255081563853031,
+          "avg_recall": 0.5992724615693936,
+          "median_f1": 0.6551724137931034
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.627676995981824,
+          "avg_sequence_accuracy": 0.01264967367994974,
+          "avg_lcs_ratio": 0.46531647331379516,
+          "median_word_error_rate": 0.7117117117117117,
+          "median_sequence_accuracy": 0.009009009009009009
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.34975804965879437,
+          "avg_trigram_overlap": 0.25338933579797057
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "ocr-tesseract",
+              "config": {
+                "min_confidence": 0.0,
+                "lang": "eng",
+                "psm": 3,
+                "oem": 3
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.08669018745422363
+    },
+    {
+      "name": "layout-aware-ocr",
+      "snapshot_id": "62cb365943943e8da0523d8944bf85f1535117351854fc18780021939bc90595",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.5653363795739467,
+          "avg_precision": 0.5984695591109972,
+          "avg_recall": 0.5443472690948843,
+          "median_f1": 0.5728643216080401
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.8050865097371342,
+          "avg_sequence_accuracy": 0.009442267413676993,
+          "avg_lcs_ratio": 0.34066591780716327,
+          "median_word_error_rate": 0.8028169014084507,
+          "median_sequence_accuracy": 0.009009009009009009
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.2729359536131234,
+          "avg_trigram_overlap": 0.16337833130050625
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "mock-layout-detector",
+              "config": {
+                "layout_type": "two-column"
+              }
+            },
+            {
+              "extractor_id": "ocr-tesseract",
+              "config": {
+                "use_layout_metadata": true,
+                "min_confidence": 0.0,
+                "lang": "eng",
+                "psm": 3,
+                "oem": 3
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.07098102569580078
+    },
+    {
+      "name": "layout-aware-rapidocr",
+      "snapshot_id": "c54a4624b8f43290bfc72aa238b85baac0337c14ebc108f3888ea3b5a6771c19",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.5075164654755208,
+          "avg_precision": 0.5678278163397579,
+          "avg_recall": 0.46765802009952606,
+          "median_f1": 0.5132743362831858
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.7484695207726699,
+          "avg_sequence_accuracy": 0.013590403245607136,
+          "avg_lcs_ratio": 0.33356368139734216,
+          "median_word_error_rate": 0.7619047619047619,
+          "median_sequence_accuracy": 0.0045045045045045045
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.20618346365657697,
+          "avg_trigram_overlap": 0.12269005962940223
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "mock-layout-detector",
+              "config": {
+                "layout_type": "two-column"
+              }
+            },
+            {
+              "extractor_id": "ocr-rapidocr",
+              "config": {
+                "min_confidence": 0.0
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.055371999740600586
+    }
+  ],
+  "best_performers": {
+    "best_f1": "baseline-ocr",
+    "best_sequence_accuracy": "layout-aware-rapidocr",
+    "lowest_wer": "baseline-ocr",
+    "best_bigram": "baseline-ocr"
+  }
+}

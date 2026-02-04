@@ -1,0 +1,10 @@
+# Unstructured.io Configuration
+#
+# Uses Unstructured.io for document parsing and text extraction.
+# Handles complex layouts and various document types.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: unstructured
+      config: {}

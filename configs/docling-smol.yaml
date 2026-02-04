@@ -1,0 +1,10 @@
+# Docling SmolLM Configuration
+#
+# Uses IBM's Docling with SmolLM model for document understanding.
+# Provides layout-aware extraction with semantic understanding.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: docling-smol
+      config: {}

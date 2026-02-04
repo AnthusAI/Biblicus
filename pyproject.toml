@@ -61,6 +61,10 @@ docling = [
 docling-mlx = [
   "docling[mlx-vlm]>=2.0.0",
 ]
+tesseract = [
+  "pytesseract>=0.3.10",
+  "pillow>=10.0.0",
+]
 topic-modeling = [
   "bertopic>=0.15.0",
 ]

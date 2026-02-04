@@ -53,6 +53,8 @@ def before_scenario(context, scenario) -> None:
         del context.fake_bertopic_behavior
     if hasattr(context, "fake_hmmlearn_behavior"):
         del context.fake_hmmlearn_behavior
+    context._fake_tesseract_installed = False
+    context._fake_tesseract_original_modules = {}
 
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
@@ -204,6 +206,19 @@ def after_scenario(context, scenario) -> None:
             sys.modules.pop("bertopic", None)
         context._fake_bertopic_unavailable_installed = False
         context._fake_bertopic_unavailable_original_modules = {}
+    if getattr(context, "_fake_tesseract_installed", False):
+        original_modules = getattr(context, "_fake_tesseract_original_modules", {})
+        for name in ["pytesseract", "PIL", "PIL.Image"]:
+            if name in original_modules:
+                module = original_modules[name]
+                if module is None:
+                    sys.modules.pop(name, None)
+                else:
+                    sys.modules[name] = module
+            else:
+                sys.modules.pop(name, None)
+        context._fake_tesseract_installed = False
+        context._fake_tesseract_original_modules = {}
     if getattr(context, "_fake_sklearn_installed", False):
         original_modules = getattr(context, "_fake_sklearn_original_modules", {})
         for name in [

@@ -1,0 +1,52 @@
+{
+  "benchmark_timestamp": "2026-02-03T20:51:04.389512",
+  "corpus_path": "corpora/funsd_benchmark",
+  "total_pipelines": 1,
+  "successful_pipelines": 1,
+  "failed_pipelines": 0,
+  "pipelines": [
+    {
+      "name": "docling-smol",
+      "snapshot_id": "298d4b5b8dec6f4a829c0e8c0cc640c54b01f81bd10f329cc1fd97cf291a4367",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.727858478565952,
+          "avg_precision": 0.8212242069943816,
+          "avg_recall": 0.6746073701642105,
+          "median_f1": 0.8023255813953488
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.6447251465477195,
+          "avg_sequence_accuracy": 0.020934301250577218,
+          "avg_lcs_ratio": 0.5140081696779368,
+          "median_word_error_rate": 0.7105263157894737,
+          "median_sequence_accuracy": 0.013157894736842105
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.4297822031812827,
+          "avg_trigram_overlap": 0.3331556378629154
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "docling-smol",
+              "config": {}
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.07379460334777832
+    }
+  ],
+  "best_performers": {
+    "best_f1": "docling-smol",
+    "best_sequence_accuracy": "docling-smol",
+    "lowest_wer": "docling-smol",
+    "best_bigram": "docling-smol"
+  }
+}

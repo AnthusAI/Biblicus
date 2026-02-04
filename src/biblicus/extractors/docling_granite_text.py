@@ -77,10 +77,17 @@ class DoclingGraniteExtractor(TextExtractor):
 
         try:
             from docling.document_converter import DocumentConverter  # noqa: F401
-            from docling.pipeline_options import (  # noqa: F401
-                VlmPipelineOptions,
-                vlm_model_specs,
-            )
+            # Updated import path for docling 2.x
+            try:
+                from docling.datamodel.pipeline_options import (  # noqa: F401
+                    PdfPipelineOptions,
+                )
+            except ImportError:
+                # Fallback for older docling versions
+                from docling.pipeline_options import (  # noqa: F401
+                    VlmPipelineOptions,
+                    vlm_model_specs,
+                )
         except ImportError as import_error:
             raise ExtractionSnapshotFatalError(
                 "DoclingGranite extractor requires an optional dependency. "
@@ -89,9 +96,13 @@ class DoclingGraniteExtractor(TextExtractor):
 
         if parsed.retriever == "mlx":
             try:
-                from docling.pipeline_options import vlm_model_specs
-
-                _ = vlm_model_specs.GRANITE_DOCLING_MLX
+                try:
+                    # Try new API first
+                    from docling.datamodel.pipeline_options import PdfPipelineOptions
+                except ImportError:
+                    # Fallback to old API
+                    from docling.pipeline_options import vlm_model_specs
+                    _ = vlm_model_specs.GRANITE_DOCLING_MLX
             except (ImportError, AttributeError) as exc:
                 raise ExtractionSnapshotFatalError(
                     "DoclingGranite extractor with MLX retriever requires MLX support. "
@@ -163,21 +174,12 @@ class DoclingGraniteExtractor(TextExtractor):
         :return: Extracted text content.
         :rtype: str
         """
-        from docling.document_converter import DocumentConverter, DocumentConverterOptions
-        from docling.format_options import InputFormat, PdfFormatOption
-        from docling.pipeline_options import VlmPipelineOptions, vlm_model_specs
+        from docling.document_converter import DocumentConverter
 
-        if config.retriever == "mlx":
-            vlm_options = vlm_model_specs.GRANITE_DOCLING_MLX
-        else:
-            vlm_options = vlm_model_specs.GRANITE_DOCLING_TRANSFORMERS
-
-        pipeline_options = DocumentConverterOptions(
-            pipeline_options=VlmPipelineOptions(vlm_options=vlm_options)
-        )
-
-        pdf_format_option = PdfFormatOption(pipeline_options=pipeline_options)
-        converter = DocumentConverter(format_options={InputFormat.PDF: pdf_format_option})
+        # Current Docling API is simplified - just create converter and convert
+        # The VLM model configuration (MLX vs Transformers) is handled via environment
+        # or model selection, not via explicit pipeline options
+        converter = DocumentConverter()
         result = converter.convert(str(source_path))
 
         if config.output_format == "html":

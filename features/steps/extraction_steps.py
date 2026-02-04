@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import types
 from pathlib import Path
 from unittest import mock
 
@@ -51,6 +53,70 @@ class _FatalExtractor(TextExtractor):
 
 def _corpus_path(context, name: str) -> Path:
     return (context.workdir / name).resolve()
+
+
+def _install_fake_tesseract_dependencies(context) -> None:
+    if getattr(context, "_fake_tesseract_installed", False):
+        return
+    try:
+        import pytesseract
+
+        pytesseract.get_tesseract_version()
+        return
+    except Exception:
+        pass
+
+    original_modules = {
+        "pytesseract": sys.modules.get("pytesseract"),
+        "PIL": sys.modules.get("PIL"),
+        "PIL.Image": sys.modules.get("PIL.Image"),
+    }
+    context._fake_tesseract_original_modules = original_modules
+
+    fake_pytesseract = types.ModuleType("pytesseract")
+
+    class _Output:
+        DICT = "DICT"
+
+    def _image_to_data(*_args, **_kwargs) -> dict[str, list[str]]:
+        return {"text": ["Hello", "World"], "conf": ["90", "95"]}
+
+    def _get_tesseract_version() -> str:
+        return "0.0"
+
+    fake_pytesseract.Output = _Output
+    fake_pytesseract.image_to_data = _image_to_data
+    fake_pytesseract.get_tesseract_version = _get_tesseract_version
+    sys.modules["pytesseract"] = fake_pytesseract
+
+    fake_pil = types.ModuleType("PIL")
+    fake_image_module = types.ModuleType("PIL.Image")
+
+    class _FakeImage:
+        def crop(self, _box) -> "_FakeImage":
+            return self
+
+    def _open(_path) -> _FakeImage:
+        return _FakeImage()
+
+    fake_image_module.open = _open
+    fake_pil.Image = fake_image_module
+    sys.modules["PIL"] = fake_pil
+    sys.modules["PIL.Image"] = fake_image_module
+    context._fake_tesseract_installed = True
+
+
+def _ensure_fake_tesseract_for_extractor(context, extractor_id: str) -> None:
+    if extractor_id == "ocr-tesseract":
+        _install_fake_tesseract_dependencies(context)
+
+
+def _ensure_fake_tesseract_for_steps(context, steps: list[dict[str, object]]) -> None:
+    for step in steps:
+        extractor_id = str(step.get("extractor_id", ""))
+        if extractor_id == "ocr-tesseract":
+            _install_fake_tesseract_dependencies(context)
+            return
 
 
 def _table_key_value(row) -> tuple[str, str]:
@@ -109,6 +175,7 @@ def _snapshot_reference_from_context(context) -> str:
 def step_build_extraction_snapshot_with_config(
     context, extractor_id: str, corpus_name: str
 ) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
     step_config: dict[str, object] = {}
     for row in context.table:
@@ -127,6 +194,7 @@ def step_build_extraction_snapshot_with_config(
 def step_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
+    _ensure_fake_tesseract_for_steps(context, steps)
     args = ["--corpus", str(corpus), "extract", "build"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
@@ -150,6 +218,7 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
     extractor_id = configuration_data["extractor_id"]
     config = configuration_data.get("config", {})
     steps = config.get("steps", [])
+    _ensure_fake_tesseract_for_steps(context, steps)
     args = ["--corpus", str(corpus), "extract", "build"]
     for step in steps:
         step_extractor_id = str(step["extractor_id"])
@@ -169,6 +238,7 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
 def step_build_non_pipeline_extraction_snapshot_with_configuration(
     context, extractor_id: str, corpus_name: str
 ) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     import yaml
 
     corpus = _corpus_path(context, corpus_name)
@@ -183,8 +253,18 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
     context.last_extractor_id = "pipeline"
 
 
+@when(
+    'I build an "{extractor_id}" extraction snapshot in corpus "{corpus_name}" using the configuration:'
+)
+def step_build_non_pipeline_extraction_snapshot_with_configuration_an(
+    context, extractor_id: str, corpus_name: str
+) -> None:
+    step_build_non_pipeline_extraction_snapshot_with_configuration(context, extractor_id, corpus_name)
+
+
 @when('I build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')
 def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
     args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
@@ -194,8 +274,14 @@ def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str)
     context.last_extractor_id = "pipeline"
 
 
+@when('I build an "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')
+def step_build_extraction_snapshot_an(context, extractor_id: str, corpus_name: str) -> None:
+    step_build_extraction_snapshot(context, extractor_id, corpus_name)
+
+
 @when('I attempt to build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')
 def step_attempt_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
     args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
@@ -209,6 +295,7 @@ def step_attempt_build_extraction_snapshot_with_step_spec(
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
@@ -221,6 +308,7 @@ def step_build_extraction_snapshot_with_step_spec(
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     step_spec_unescaped = step_spec.replace('\\"', '"')
     args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec_unescaped]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
@@ -236,6 +324,7 @@ def step_build_extraction_snapshot_with_step_spec(
 def step_attempt_build_extraction_snapshot_with_configuration(
     context, extractor_id: str, corpus_name: str
 ) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
     import yaml
 
     corpus = _corpus_path(context, corpus_name)
@@ -436,6 +525,24 @@ def step_extraction_snapshot_does_not_include_tagged_item(context, tag: str) -> 
     assert not text_path.exists(), text_path
 
 
+@then('the extraction snapshot does not include any text for the item tagged "{tag}"')
+def step_extraction_snapshot_does_not_include_any_text_for_tagged_item(
+    context, tag: str
+) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    if not text_path.exists():
+        return
+    text = text_path.read_text(encoding="utf-8")
+    assert text.strip() == ""
+
+
 @then('the extraction snapshot includes extracted text for the item tagged "{tag}"')
 def step_extraction_snapshot_includes_extracted_text_for_tagged_item(context, tag: str) -> None:
     snapshot_id = context.last_extraction_snapshot_id
@@ -585,6 +692,36 @@ def step_corpus_has_extraction_snapshots(context, count: int, extractor_id: str)
     assert extractor_dir.is_dir(), extractor_dir
     run_dirs = [path for path in extractor_dir.iterdir() if path.is_dir()]
     assert len(run_dirs) >= count
+
+
+@then('the extraction snapshot includes metadata for the item tagged "{tag}"')
+def step_extraction_snapshot_includes_metadata_for_tagged_item(context, tag: str) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    metadata_path = snapshot_dir / "metadata" / f"{item_id}.json"
+    assert metadata_path.is_file(), f"Missing metadata file for item {item_id}: {metadata_path}"
+    metadata = json.loads(metadata_path.read_text())
+    assert isinstance(metadata, dict) and len(metadata) > 0, "Metadata is empty"
+
+
+@then('the extraction snapshot does not include metadata for the item tagged "{tag}"')
+def step_extraction_snapshot_does_not_include_metadata_for_tagged_item(context, tag: str) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    metadata_path = snapshot_dir / "metadata" / f"{item_id}.json"
+    assert not metadata_path.exists() or (
+        metadata_path.is_file() and json.loads(metadata_path.read_text()) == {}
+    ), f"Metadata file exists and is not empty: {metadata_path}"
 
 
 @when(

@@ -1,0 +1,10 @@
+# Docling Granite Configuration
+#
+# Uses IBM's Docling with Granite model for document understanding.
+# Provides advanced layout-aware extraction with semantic understanding.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: docling-granite
+      config: {}

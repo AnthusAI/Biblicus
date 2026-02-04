@@ -1,0 +1,97 @@
+{
+  "benchmark_timestamp": "2026-02-03T22:51:32.043564",
+  "corpus_path": "corpora/funsd_benchmark",
+  "total_pipelines": 2,
+  "successful_pipelines": 2,
+  "failed_pipelines": 0,
+  "pipelines": [
+    {
+      "name": "ocr-paddleocr",
+      "snapshot_id": "81a579d14d87cf78e4ec0942ba99517961a072d92074770b5eb09208b653b286",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.7871177688651299,
+          "avg_precision": 0.799119079118136,
+          "avg_recall": 0.7820890302073592,
+          "median_f1": 0.8050847457627118
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.5327441288659603,
+          "avg_sequence_accuracy": 0.031226865900204282,
+          "avg_lcs_ratio": 0.6069223336452031,
+          "median_word_error_rate": 0.5533333333333333,
+          "median_sequence_accuracy": 0.019230769230769232
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.46569813969184864,
+          "avg_trigram_overlap": 0.3525906731900442
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "ocr-paddleocr-vl",
+              "config": {
+                "min_confidence": 0.0,
+                "lang": "en"
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.09120011329650879
+    },
+    {
+      "name": "baseline-ocr",
+      "snapshot_id": "b5ee5f5d3441fe89cbcc266579578923212b467c035cae2c652bb0bd66a8b954",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.6072843202661438,
+          "avg_precision": 0.6255081563853031,
+          "avg_recall": 0.5992724615693936,
+          "median_f1": 0.6551724137931034
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.627676995981824,
+          "avg_sequence_accuracy": 0.01264967367994974,
+          "avg_lcs_ratio": 0.46531647331379516,
+          "median_word_error_rate": 0.7117117117117117,
+          "median_sequence_accuracy": 0.009009009009009009
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.34975804965879437,
+          "avg_trigram_overlap": 0.25338933579797057
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "ocr-tesseract",
+              "config": {
+                "min_confidence": 0.0,
+                "lang": "eng",
+                "psm": 3,
+                "oem": 3
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.09283709526062012
+    }
+  ],
+  "best_performers": {
+    "best_f1": "ocr-paddleocr",
+    "best_sequence_accuracy": "ocr-paddleocr",
+    "lowest_wer": "ocr-paddleocr",
+    "best_bigram": "ocr-paddleocr"
+  }
+}

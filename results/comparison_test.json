@@ -1,0 +1,166 @@
+{
+  "comparison_timestamp": "2026-02-03T16:45:52.653437",
+  "corpus_path": "/Users/ryan.porter/Projects/Biblicus/corpora/test_funsd2",
+  "configurations": [
+    {
+      "name": "baseline-ocr",
+      "avg_f1": 0.6445652173913043,
+      "avg_precision": 0.6948174931129476,
+      "avg_recall": 0.6094945440862912,
+      "total_documents": 2
+    },
+    {
+      "name": "layout-aware-ocr",
+      "avg_f1": 0.5991172761664565,
+      "avg_precision": 0.598031746031746,
+      "avg_recall": 0.6010911827417534,
+      "total_documents": 2
+    }
+  ],
+  "improvements": {
+    "f1_improvement": -0.045447941224847854,
+    "f1_improvement_pct": -7.050945350229347,
+    "documents_improved": 0,
+    "documents_degraded": 2,
+    "documents_unchanged": 0
+  },
+  "per_configuration_results": [
+    {
+      "name": "baseline-ocr",
+      "report": {
+        "evaluation_timestamp": "2026-02-03T16:45:52.653437",
+        "corpus_path": "/Users/ryan.porter/Projects/Biblicus/corpora/test_funsd2",
+        "pipeline_configuration": {
+          "extractor_id": "pipeline",
+          "config": {
+            "steps": [
+              {
+                "extractor_id": "ocr-tesseract",
+                "config": {
+                  "min_confidence": 0.0,
+                  "lang": "eng",
+                  "psm": 3,
+                  "oem": 3
+                }
+              }
+            ]
+          }
+        },
+        "total_documents": 2,
+        "avg_precision": 0.6948174931129476,
+        "avg_recall": 0.6094945440862912,
+        "avg_f1": 0.6445652173913043,
+        "median_precision": 0.743801652892562,
+        "median_recall": 0.7563025210084033,
+        "median_f1": 0.75,
+        "min_f1": 0.5391304347826088,
+        "max_f1": 0.75,
+        "processing_time_seconds": 0.002006053924560547,
+        "per_document_results": [
+          {
+            "document_id": "a6c91153-4402-4449-9738-debe80131709",
+            "image_path": "raw/a6c91153-4402-4449-9738-debe80131709--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpmq2nvf5f%2Fdataset%2Ftesting_data%2Fimages%2F82092117.png",
+            "ground_truth_text": "TO: DATE: 3 Fax: NOTE: 82092117 614 -466 -5087 Dec 10 '98 17 :46 P. 01 ATT. GEN. ADMIN. OFFICE Attorney General Betty D. Montgomery CONFIDENTIAL FACSIMILE TRANSMISSION COVER SHEET (614) 466- 5087 FAX NO. George Baroody (336) 335- 7392 FAX NUMBER: PHONE NUMBER: (336) 335- 7363 NUMBER OF PAGES INCLUDING COVER SHEET: June Flynn for Eric Brown/ (614) 466- 8980 SENDER /PHONE NUMBER: SPECIAL INSTRUCTIONS: IF YOU DO NOT RECEIVE ANY OF THE PAGES PROPERLY, PLEASE CONTACT SENDER AS SOON AS POSSIBLE THIS MESSAGE IS INTENDED ONLY FOR THE USE OF THE INDIVIDUAL OR ENTITY TO WHOM IT IS ADDRESSED AND MAY CONTAIN INFORMATION THAT IS PRIVILEGED. CONFIDENTIAL, AND EXEMPT FROM DISCLOSURE UNDER APPLICABLE LAW. If the reader of this message is not the intended recipient of the employee or agent responsible for delivering the message to the intended recipient, you are hereby notified that any dissemination, distribution, copying, or conveying of this communication in any manner is strictly prohibited. If you have received this comunication in error, please notify us immediately by telephone and return the original message to us at the address below via the U. S. Postal Service. Thank you for your cooperation. State Office Tower / 30 East Broad Street/ Columbus, Ohio 43215 -3428 www ag state oh us An Equal Opportunity Employer Primed an 12 /10 /98",
+            "extracted_text": "4\nAIT.\nGEN,\nADMIN,\nOFFICE\nFax:614-~466-S087\nDec\n10\n'98\n17:06\nP.Ot\nEAA,\nAttomey\nGeneral\nCONFIDENTIAL\nFACSIMILE\n\u2018TRANSMISSION\nCOVER\nSHEET\nFAX\nNO.\n(614)\n466-5087\n\u2018TO:\n_George\nBaroody\nFAX\nNUMBER:\n(336)\n335-7392.\nPHONE\nNUMBER:\n(336)\n335-7363\nDATE:\n12/10/98\n:\nNUMBER\nOF\nPAGES\nINCLUDING\nCOVER\nSHEET:\n3\nSENDER/PHONE\nNUMBER:\n__June\nFlynn\nfor\nErie\nBrows/(614)\n466.9980\n\u2018SPECIAL\nINSTRUCTIONS:\nyou.\nOF\nOP}\nELEASE\nCONTACT\nSENDER\nAS:\nLE\nNOTE:\nTHIS\nMESSAGE\nIS\nINTENDED\nONLY\nFOR\nTHE\nUSE\nOF\nTHE\nINDIVIDUAL\nOR\nENTITY\n7O|\nWHOM\nIT\nIS\nADDRESSED\nAND\nMAY\nCONTAIN\nINFORMATION\nTHAT\nIS\nPRIVILEGED,\n|\nCONFIDENTIAL,\nAND\nEXEMPT\nFROM\nDISCLOSURE\nUNDER\nAPPLICABLE\nLAW.\nIf\nthe|\nreader\nof\nthis\nmessage\nisnot\nthe\nintended\nrecipient\nof\nthe\nemployee\nor\nagent\nresponsible\nfor\ndelivering|\nthe\nmessage\nto\nthe\nintended\nrecplent,\nyou\nare\nhereby\nnotified\nthat\nany\ndissemination,\ndisribuson\n|\ncopying.\nor\nconveying\nof\nthis\ncommunication\nin\naxy\nmanner\nis\nstrictly\nprohibited.\n\"If\nyou.\nhave)\nreceived\nthis\ncommunication\nia\neror,\nplease\nnotify\nus\nimmediatly\nby\ntelephone\nend\nfeuur\nthe|\noriginal\nmessage\nto\nus\nat\nthe\naddress\nbelow\nvia\nthe\nU.S.\nPostal\nService,\nThank\nyou\nfor\nyour\n\u201ccoop\u00e9fatoa.\n\u2018State\nOffice\nTower\n/\n$0\nEast\nBroad\nStret\n/\nColumbus,\nOhio\n43215-9428\nwwwag.state.oh.us\n\u2018An\nEqual\nOpportunity\nEmployer\n41426028\nServint\non\nenretod\nreper",
+            "precision": 0.743801652892562,
+            "recall": 0.7563025210084033,
+            "f1_score": 0.75,
+            "character_accuracy": 0.9772727272727273,
+            "true_positives": 90,
+            "false_positives": 31,
+            "false_negatives": 29,
+            "word_count_gt": 171,
+            "word_count_ocr": 156
+          },
+          {
+            "document_id": "8cceef7f-2e7b-4e57-a66b-2364194afa24",
+            "image_path": "raw/8cceef7f-2e7b-4e57-a66b-2364194afa24--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpmq2nvf5f%2Fdataset%2Ftesting_data%2Fimages%2F82200067_0069.png",
+            "ground_truth_text": "TO: FROM: x SUBJECT: DIVISION: DIVISION: DIVISION: DIVISION: REGION: DIVISION: DIVISION: DIVISION: 225 27 15 31 18 19 20 82200067 09/ 17/ 97 10: 55 603 841 1898 LORILLARD PTLD \u2611 001 K. A. Sparrow T. D. Blachly OLD GOLD MENTHOL LIGHTS & ULTRA LIGHTS 100'S PROGRESS REPORT AUG 4 SEP 15 MAY 12 JUN 23 (ONLY IF PARTIAL REGION CONTINUE WITH DIVISION (S) SCOPE) Portland # REPS: 6 Boise # REPS: 2. 5 Eugene # REPS: 5 Seattle South # REPS: 7 Seattle North # REPS: 4 Helena # REPS: 4 DIRECT ACCOUNTS AND CHAINS HEADQUARTERED WITHIN THE REGION (15 + STORES) STOCKING NO OLD GOLD MENTHOL LIGHTS OR ULTRA LIGHTS 100'S NAME OF ACCOUNT VOLUME NO. OF STORES NAME OF ACCOUNT VOLUME NO. OF STORES Texaco Seattle Texaco Portland Maid -O Clover Dari Mart Zip Trip Maverick Astro Gas 105 / 5 61 / 3 20 / 2 125 / 5 106 / 4 77 / 1 600 / 7 Page 1 of 3 Pages",
+            "extracted_text": "09/17/97\n10:85\nTRSOS\n641\n1898\nLORTLLARD\nPTLD\nGoo\nTo:\nA.\nSparraw\nFROM:\n7.0,\netacnty\n(ONLY\nIF\nPARTIAL\nREGION\nCONTINUE\nWITH\nDIVISIONIS!\nSCOPE)\nDMvision:\nDIVISION:\nPortland\n\u2014-#\nREPS:\n&\nDIVISION:\nSeatde\nSouth\n#\nREPS:\n7\nDIVISION:\nBoise\n#\nREPS:\n2.5\nDIVISION:\nSwale\nNonh\nREPS:\n4\nDIVISION:\nEugene\nPREPS:\nS\nDIVISION:\nHelena\na\nREPS:\n6\nDIRECT\nACCOUNTS\nAND\nCHAINS\nHEADQUARTERED\nWITHIN\nTHE\nREGION\n(15\n+\nSTORES)\nSTOCKING\nNO\nOLD\nGOLD\nMENTHOL\nLIGHTS\nOR\nULTRA\nLIGHTS\n10'S\nPaget\nof\n3\nPages\n29000278",
+            "precision": 0.6458333333333334,
+            "recall": 0.4626865671641791,
+            "f1_score": 0.5391304347826088,
+            "character_accuracy": 0.8958333333333334,
+            "true_positives": 31,
+            "false_positives": 17,
+            "false_negatives": 36,
+            "word_count_gt": 98,
+            "word_count_ocr": 59
+          }
+        ]
+      }
+    },
+    {
+      "name": "layout-aware-ocr",
+      "report": {
+        "evaluation_timestamp": "2026-02-03T16:45:52.654554",
+        "corpus_path": "/Users/ryan.porter/Projects/Biblicus/corpora/test_funsd2",
+        "pipeline_configuration": {
+          "extractor_id": "pipeline",
+          "config": {
+            "steps": [
+              {
+                "extractor_id": "mock-layout-detector",
+                "config": {
+                  "layout_type": "two-column"
+                }
+              },
+              {
+                "extractor_id": "ocr-tesseract",
+                "config": {
+                  "use_layout_metadata": true,
+                  "min_confidence": 0.0,
+                  "lang": "eng",
+                  "psm": 3,
+                  "oem": 3
+                }
+              }
+            ]
+          }
+        },
+        "total_documents": 2,
+        "avg_precision": 0.598031746031746,
+        "avg_recall": 0.6010911827417534,
+        "avg_f1": 0.5991172761664565,
+        "median_precision": 0.704,
+        "median_recall": 0.7394957983193278,
+        "median_f1": 0.721311475409836,
+        "min_f1": 0.4769230769230769,
+        "max_f1": 0.721311475409836,
+        "processing_time_seconds": 0.0010533332824707031,
+        "per_document_results": [
+          {
+            "document_id": "a6c91153-4402-4449-9738-debe80131709",
+            "image_path": "raw/a6c91153-4402-4449-9738-debe80131709--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpmq2nvf5f%2Fdataset%2Ftesting_data%2Fimages%2F82092117.png",
+            "ground_truth_text": "TO: DATE: 3 Fax: NOTE: 82092117 614 -466 -5087 Dec 10 '98 17 :46 P. 01 ATT. GEN. ADMIN. OFFICE Attorney General Betty D. Montgomery CONFIDENTIAL FACSIMILE TRANSMISSION COVER SHEET (614) 466- 5087 FAX NO. George Baroody (336) 335- 7392 FAX NUMBER: PHONE NUMBER: (336) 335- 7363 NUMBER OF PAGES INCLUDING COVER SHEET: June Flynn for Eric Brown/ (614) 466- 8980 SENDER /PHONE NUMBER: SPECIAL INSTRUCTIONS: IF YOU DO NOT RECEIVE ANY OF THE PAGES PROPERLY, PLEASE CONTACT SENDER AS SOON AS POSSIBLE THIS MESSAGE IS INTENDED ONLY FOR THE USE OF THE INDIVIDUAL OR ENTITY TO WHOM IT IS ADDRESSED AND MAY CONTAIN INFORMATION THAT IS PRIVILEGED. CONFIDENTIAL, AND EXEMPT FROM DISCLOSURE UNDER APPLICABLE LAW. If the reader of this message is not the intended recipient of the employee or agent responsible for delivering the message to the intended recipient, you are hereby notified that any dissemination, distribution, copying, or conveying of this communication in any manner is strictly prohibited. If you have received this comunication in error, please notify us immediately by telephone and return the original message to us at the address below via the U. S. Postal Service. Thank you for your cooperation. State Office Tower / 30 East Broad Street/ Columbus, Ohio 43215 -3428 www ag state oh us An Equal Opportunity Employer Primed an 12 /10 /98",
+            "extracted_text": "2\nAIT.\nGEN,\nADMIN,\nOFFICE\nFax:614-~466-S087\nDec\n10\n'98\n17:06\nP.Ot\nLE\n\nAttorney\nGeneral\nBetty\nD.\nMontgomery\nCONFIDENTIAL\nFA\n\u2018TRANSMISSION\nCOV\nFAX\nNO,\n(614)\n46\n\u2018TO:\n_George\nBaroody\nFAX\nNUMBER:\n__(336)\n335.7392\nPE\nDATE:\n__12/10/98\n.\nNUMBER\nOF\nPAGES\nINCLUDING\nCOVER\nSHEI\nSENDER/PHONE\nNUMBER:\n___June\nFlynn\nfor\nEr\n\u2018SPECIAL\nINSTRUCTIONS:\nIrYOU.\nOF.\nNOTE:\nTHIS\nMESSAGE\n1S\nINTENDED\nONLY\nFOR\nTH\nWHOM\nIT\nI$\nADDRESSED\nAND\nMAY\nCONT.\nCONFIDENTIAL,\nAND\nEXEMPT\nFROM\nDISCL\nreader\nof\nthis\nmessage\nisnot\nthe\nintended\nrecipient\no\nthe\nmessage\nto\nthe\nintended\nreciplent,\nyou\nare\nher\ncopying.\nor\nconveying\nof\nthis\ncommuniertion\nia\nreceived\nthis\ncommunication\nia\nerror,\nplease\nnot\noriginal\nmessage\nto\nus\nat\nthe\naddress\nbelow\nvia\n\u201ccoop\u00e9fatoa.\n\u2018State\nOffice\nTower\n/\n30\nEast\nBroad\nStreet\n/\n\nFACSIMILE\nOVER\nSHEET\n466-5087\nPHONE\nNUMBER:\n(336)335-7363___\nMEET:\n3\nBrig\nBrow/(614)\n466.9980\nOF\nOP}\nCL\nSENDER\nTHE\nUSE\nOF\nTHE\nINDIVIDUAL\nOR\nENTITY\n7O|\nINTAIN\nINFORMATION\nTHAT\nIS\nPRIVILEGED,\nSCLOSURE\nUNDER\nAPPLICABLE\nLAW.\nIf-the\nat\not\nthe\nemployee\noF\nagett\nresponsible\nfor\ndevering\nhereby\nnotified\nthat\nany\ndissemination,\ndistribution,\n|\nfn\naay\nmanper\nIs\nstrictly\nprobibied.\nIf\nyoul\nhave\nnotify\nus\nimmediately\nby\ntelephone\nend\nfemur\nthe\nvia\nthe\nUS.\nPostal\nService,\nThank\nyou\nfor\nyour\nt/\nColumbus,\nOhio\n43215-3428\n41426028",
+            "precision": 0.704,
+            "recall": 0.7394957983193278,
+            "f1_score": 0.721311475409836,
+            "character_accuracy": 0.9545454545454546,
+            "true_positives": 88,
+            "false_positives": 37,
+            "false_negatives": 31,
+            "word_count_gt": 171,
+            "word_count_ocr": 154
+          },
+          {
+            "document_id": "8cceef7f-2e7b-4e57-a66b-2364194afa24",
+            "image_path": "raw/8cceef7f-2e7b-4e57-a66b-2364194afa24--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpmq2nvf5f%2Fdataset%2Ftesting_data%2Fimages%2F82200067_0069.png",
+            "ground_truth_text": "TO: FROM: x SUBJECT: DIVISION: DIVISION: DIVISION: DIVISION: REGION: DIVISION: DIVISION: DIVISION: 225 27 15 31 18 19 20 82200067 09/ 17/ 97 10: 55 603 841 1898 LORILLARD PTLD \u2611 001 K. A. Sparrow T. D. Blachly OLD GOLD MENTHOL LIGHTS & ULTRA LIGHTS 100'S PROGRESS REPORT AUG 4 SEP 15 MAY 12 JUN 23 (ONLY IF PARTIAL REGION CONTINUE WITH DIVISION (S) SCOPE) Portland # REPS: 6 Boise # REPS: 2. 5 Eugene # REPS: 5 Seattle South # REPS: 7 Seattle North # REPS: 4 Helena # REPS: 4 DIRECT ACCOUNTS AND CHAINS HEADQUARTERED WITHIN THE REGION (15 + STORES) STOCKING NO OLD GOLD MENTHOL LIGHTS OR ULTRA LIGHTS 100'S NAME OF ACCOUNT VOLUME NO. OF STORES NAME OF ACCOUNT VOLUME NO. OF STORES Texaco Seattle Texaco Portland Maid -O Clover Dari Mart Zip Trip Maverick Astro Gas 105 / 5 61 / 3 20 / 2 125 / 5 106 / 4 77 / 1 600 / 7 Page 1 of 3 Pages",
+            "extracted_text": "o9it/97\nto\n20:\n\u2018B50\ne41\n1898\nen\nemery\nLORTLLARD\nPTLD\nGoo\n\nTo:\nA.\nSparraw\n(ONLY\nIF\nPARTIAL\nREGION\nCONTINUE\nWITH\nDIVISIONIS!\nSCOPE)\nvision:\nDIVISION:\nPortnd\n\u2014\n#\nREPS:\n6\nor\nDIVISION:\nBoise\n\u2018REPS:\n25\nor\nDIVISION:\nEugene\nREPS:\n8\non\nDIRECT\nACCOUNTS\nAND\nCHAINS\nHEADQUARTERE\n(15\n+\nSTORES)\nSTOCKING\nNO\nOLD\nGOLD\nMENTHOL\nLi\n[Texaco\n-\nSats\n1085/5\n225\nFrexaso\n Porlond\nS13\n2\n[Maid-0-Ciover\n2072\n15\nDareMia\nen\nET\nze\nrie\nT0874\n18\n[Maverick\n14\n19\nAste\nGas\n300\n77\n25\nim\n\nDIVISION:\nSeatde\nSouth\n#\nREPS:\n7\nDIVISION:\nSwale\nNonh\nREPS:\n4\nDIVISION:\nHelena\na\nREPS:\n6\nRED\nWITHIN\nTHE\nREGION\nUGHTS\nOR\nULTRA\nLIGHTS\n10'S.\nPenal\nof\n2\nPanna\n29000278",
+            "precision": 0.49206349206349204,
+            "recall": 0.4626865671641791,
+            "f1_score": 0.4769230769230769,
+            "character_accuracy": 0.9375,
+            "true_positives": 31,
+            "false_positives": 32,
+            "false_negatives": 36,
+            "word_count_gt": 98,
+            "word_count_ocr": 74
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# PaddleOCR Configuration
+#
+# Uses PaddleOCR VL (Vision-Language) model for text extraction.
+
+extractor_id: pipeline
+config:
+  steps:
+    - extractor_id: ocr-paddleocr-vl
+      config:
+        min_confidence: 0.0
+        lang: en
