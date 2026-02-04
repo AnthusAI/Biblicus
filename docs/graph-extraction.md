@@ -83,6 +83,9 @@ Example edge properties:
 }
 ```
 
+Graph properties are stored as JSON strings in the `properties_json` field so they remain stable across Neo4j versions.
+If you need to query nested properties, parse the JSON in your client or load it into a structured view before querying.
+
 ## Graph extractor interface
 
 Graph extractors follow a per-item API. They validate configuration with Pydantic and return a list of nodes and edges

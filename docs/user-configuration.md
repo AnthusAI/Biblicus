@@ -57,6 +57,12 @@ The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` envir
 
 Graph extraction uses a Neo4j backend. Biblicus can auto-start a local Neo4j Docker container if it is not already running.
 
+Install the Neo4j Python driver before running graph extraction:
+
+```
+python -m pip install neo4j
+```
+
 `~/.biblicus/config.yml`:
 
 ```yaml
