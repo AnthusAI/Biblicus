@@ -63,4 +63,4 @@ __all__ = [
     "build_plan_for_query",
 ]
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
