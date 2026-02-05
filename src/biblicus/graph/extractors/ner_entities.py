@@ -10,10 +10,10 @@ from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..base import GraphExtractor
-from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 from ...corpus import Corpus
 from ...models import CatalogItem
+from ..base import GraphExtractor
+from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 
 
 class NerEntitiesGraphConfig(GraphSchemaModel):
@@ -43,6 +43,14 @@ class NerEntitiesGraphExtractor(GraphExtractor):
     extractor_id = "ner-entities"
 
     def validate_config(self, config: Dict[str, object]) -> BaseModel:
+        """
+        Validate configuration for NER entity extraction.
+
+        :param config: Raw configuration mapping.
+        :type config: dict[str, object]
+        :return: Parsed configuration.
+        :rtype: NerEntitiesGraphConfig
+        """
         return NerEntitiesGraphConfig.model_validate(config)
 
     def extract_graph(
@@ -53,6 +61,20 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         extracted_text: str,
         config: BaseModel,
     ) -> GraphExtractionResult:
+        """
+        Extract graph nodes and edges for a single item.
+
+        :param corpus: Corpus containing the item.
+        :type corpus: Corpus
+        :param item: Catalog item to extract from.
+        :type item: CatalogItem
+        :param extracted_text: Text to analyze.
+        :type extracted_text: str
+        :param config: Parsed configuration model.
+        :type config: BaseModel
+        :return: Graph extraction results.
+        :rtype: GraphExtractionResult
+        """
         _ = corpus
         parsed = config if isinstance(config, NerEntitiesGraphConfig) else None
         if parsed is None:

@@ -11,10 +11,10 @@ from typing import Dict, Iterable, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..base import GraphExtractor
-from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 from ...corpus import Corpus
 from ...models import CatalogItem
+from ..base import GraphExtractor
+from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 
 
 class SimpleEntityGraphConfig(GraphSchemaModel):
@@ -44,6 +44,14 @@ class SimpleEntityGraphExtractor(GraphExtractor):
     extractor_id = "simple-entities"
 
     def validate_config(self, config: Dict[str, object]) -> BaseModel:
+        """
+        Validate configuration for simple entity extraction.
+
+        :param config: Raw configuration mapping.
+        :type config: dict[str, object]
+        :return: Parsed configuration.
+        :rtype: SimpleEntityGraphConfig
+        """
         return SimpleEntityGraphConfig.model_validate(config)
 
     def extract_graph(
@@ -54,6 +62,20 @@ class SimpleEntityGraphExtractor(GraphExtractor):
         extracted_text: str,
         config: BaseModel,
     ) -> GraphExtractionResult:
+        """
+        Extract graph nodes and edges for a single item.
+
+        :param corpus: Corpus containing the item.
+        :type corpus: Corpus
+        :param item: Catalog item to extract from.
+        :type item: CatalogItem
+        :param extracted_text: Text to analyze.
+        :type extracted_text: str
+        :param config: Parsed configuration model.
+        :type config: BaseModel
+        :return: Graph extraction results.
+        :rtype: GraphExtractionResult
+        """
         _ = corpus
         parsed = config if isinstance(config, SimpleEntityGraphConfig) else None
         if parsed is None:

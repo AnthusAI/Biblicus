@@ -17,6 +17,20 @@ from ..user_config import BiblicusUserConfig, load_user_config
 
 @dataclass(frozen=True)
 class Neo4jSettings:
+    """
+    Configuration values for Neo4j connectivity and lifecycle.
+
+    :ivar uri: Neo4j connection URI.
+    :ivar username: Neo4j username.
+    :ivar password: Neo4j password.
+    :ivar database: Optional Neo4j database name.
+    :ivar auto_start: Whether to auto-start Neo4j via Docker.
+    :ivar container_name: Docker container name for auto-start.
+    :ivar docker_image: Docker image for auto-start.
+    :ivar http_port: HTTP port for Neo4j UI.
+    :ivar bolt_port: Bolt port for Neo4j driver connections.
+    """
+
     uri: str
     username: str
     password: str

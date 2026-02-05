@@ -389,6 +389,90 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
     )
 
 
+def _add_dependency_flags(parser: argparse.ArgumentParser) -> None:
+    """
+    Add dependency execution flags to a subcommand parser.
+
+    :param parser: Argument parser to extend.
+    :type parser: argparse.ArgumentParser
+    :return: None.
+    :rtype: None
+    """
+    parser.add_argument(
+        "--auto-deps",
+        action="store_true",
+        help="Automatically run dependency stages (load/extract/index) when needed.",
+    )
+    parser.add_argument(
+        "--no-deps",
+        action="store_true",
+        help="Fail fast if dependency stages are required.",
+    )
+
+
+def _dependency_mode(arguments: argparse.Namespace) -> str:
+    """
+    Resolve dependency execution mode from CLI arguments.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Dependency mode (auto, none, or prompt).
+    :rtype: str
+    :raises ValueError: If conflicting flags are set.
+    """
+    auto_deps = bool(getattr(arguments, "auto_deps", False))
+    no_deps = bool(getattr(arguments, "no_deps", False))
+    if auto_deps and no_deps:
+        raise ValueError("--auto-deps and --no-deps cannot be combined")
+    if auto_deps:
+        return "auto"
+    if no_deps:
+        return "none"
+    return "prompt"
+
+
+def _prompt_dependency_plan(plan, label: str) -> bool:
+    pending = [task.kind for task in plan.tasks if task.status != "complete"]
+    pending_summary = ", ".join(pending) if pending else "none"
+    print(f"Dependencies required for {label}: {pending_summary}")
+    response = input("Run dependencies now? [y/N]: ").strip().lower()
+    return response in {"y", "yes"}
+
+
+def _execute_dependency_plan(
+    plan,
+    *,
+    corpus: Corpus,
+    label: str,
+    mode: str,
+):
+    from .workflow import Plan, build_default_handler_registry
+
+    if plan.status == "complete":
+        return []
+    if plan.status == "blocked":
+        raise ValueError(plan.root.reason or f"Dependencies blocked for {label}")
+    if mode == "none":
+        raise ValueError(f"Dependencies missing for {label}")
+    if mode not in {"prompt", "auto"}:
+        raise ValueError(f"Unsupported dependency mode: {mode}")
+    if mode == "prompt" and not _prompt_dependency_plan(plan, label):
+        raise ValueError(f"Dependencies declined for {label}")
+
+    handler_registry = build_default_handler_registry(corpus)
+    plan_to_execute = plan
+    if getattr(plan.root, "kind", None) == "query":
+        dependency_tasks = [task for task in plan.tasks if task.kind != "query"]
+        if not dependency_tasks:
+            return []
+        plan_to_execute = Plan(
+            tasks=dependency_tasks,
+            root=dependency_tasks[-1],
+            status="ready",
+        )
+    return plan_to_execute.execute(mode="auto", handler_registry=handler_registry)
+
+
 def cmd_build(arguments: argparse.Namespace) -> int:
     """
     Build a retrieval snapshot for a retriever.
@@ -421,6 +505,23 @@ def cmd_build(arguments: argparse.Namespace) -> int:
 
     overrides = parse_dotted_overrides(arguments.override)
     configuration = apply_dotted_overrides(base_config, overrides)
+
+    from .workflow import build_plan_for_index
+
+    dependency_mode = _dependency_mode(arguments)
+    index_plan = build_plan_for_index(
+        corpus,
+        retriever_id=arguments.retriever,
+        pipeline_config=None,
+        index_config=configuration,
+        load_handler_available=False,
+    )
+    _execute_dependency_plan(
+        index_plan,
+        corpus=corpus,
+        label="index",
+        mode=dependency_mode,
+    )
 
     snapshot = retriever.build_snapshot(
         corpus,
@@ -484,7 +585,21 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         config = {"steps": steps}
         extractor_id = "pipeline"
 
-    manifest = build_extraction_snapshot(
+    from .workflow import build_plan_for_extract
+
+    dependency_mode = _dependency_mode(arguments)
+    extract_plan = build_plan_for_extract(
+        corpus,
+        pipeline_config=config,
+        load_handler_available=False,
+    )
+    results = _execute_dependency_plan(
+        extract_plan,
+        corpus=corpus,
+        label="extract",
+        mode=dependency_mode,
+    )
+    manifest = results[-1] if results else build_extraction_snapshot(
         corpus,
         extractor_id=extractor_id,
         configuration_name=arguments.configuration_name,
@@ -727,6 +842,25 @@ def cmd_query(arguments: argparse.Namespace) -> int:
         else Corpus.find(Path.cwd())
     )
     snapshot_id = arguments.snapshot or corpus.latest_snapshot_id
+    if not snapshot_id:
+        from .workflow import build_plan_for_query
+
+        dependency_mode = _dependency_mode(arguments)
+        retriever_id = arguments.retriever or "tf-vector"
+        query_plan = build_plan_for_query(
+            corpus,
+            retriever_id=retriever_id,
+            pipeline_config=None,
+            index_config=None,
+            load_handler_available=False,
+        )
+        _execute_dependency_plan(
+            query_plan,
+            corpus=corpus,
+            label="query",
+            mode=dependency_mode,
+        )
+        snapshot_id = corpus.latest_snapshot_id
     if not snapshot_id:
         raise ValueError(
             "No snapshot identifier provided and no latest snapshot is recorded for this corpus"
@@ -1115,6 +1249,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_build = sub.add_parser("build", help="Build a retrieval snapshot for the corpus.")
     _add_common_corpus_arg(p_build)
+    _add_dependency_flags(p_build)
     p_build.add_argument(
         "--retriever",
         required=True,
@@ -1145,6 +1280,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_extract_build = extract_sub.add_parser("build", help="Build a text extraction snapshot.")
     _add_common_corpus_arg(p_extract_build)
+    _add_dependency_flags(p_extract_build)
     p_extract_build.add_argument(
         "--configuration-name", default="default", help="Human-readable configuration name."
     )
@@ -1268,6 +1404,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
+    _add_dependency_flags(p_query)
     p_query.add_argument(
         "--snapshot", default=None, help="Snapshot identifier (defaults to latest snapshot)."
     )

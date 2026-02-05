@@ -99,6 +99,7 @@ class DoclingSmolExtractor(TextExtractor):
                 try:
                     # Try new API first
                     from docling.datamodel.pipeline_options import PdfPipelineOptions
+                    _ = PdfPipelineOptions
                 except ImportError:
                     # Fallback to old API
                     from docling.pipeline_options import vlm_model_specs

@@ -134,8 +134,8 @@ class PaddleOCRLayoutExtractor(TextExtractor):
         import os
         os.environ['PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 
-        from paddleocr import PPStructureV3
         import cv2
+        from paddleocr import PPStructureV3
 
         # Initialize PP-Structure with layout detection
         # Note: First run will download models (~100MB)

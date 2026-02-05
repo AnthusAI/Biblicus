@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from ..corpus import Corpus
 from ..models import ExtractionSnapshotReference

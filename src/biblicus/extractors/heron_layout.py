@@ -71,8 +71,11 @@ class HeronLayoutExtractor(TextExtractor):
         parsed = HeronLayoutConfig.model_validate(config)
 
         try:
-            from transformers import RTDetrV2ForObjectDetection, RTDetrImageProcessor  # noqa: F401
             import torch  # noqa: F401
+            from transformers import (  # noqa: F401
+                RTDetrImageProcessor,
+                RTDetrV2ForObjectDetection,
+            )
         except ImportError as import_error:
             raise ExtractionSnapshotFatalError(
                 "Heron layout extractor requires transformers and torch. "
@@ -140,9 +143,9 @@ class HeronLayoutExtractor(TextExtractor):
         :return: Layout metadata with regions and reading order.
         :rtype: dict
         """
-        from transformers import RTDetrV2ForObjectDetection, RTDetrImageProcessor
         import torch
         from PIL import Image
+        from transformers import RTDetrImageProcessor, RTDetrV2ForObjectDetection
 
         # Select model based on variant
         if config.model_variant == "101":

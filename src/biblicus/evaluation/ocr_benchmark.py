@@ -5,17 +5,16 @@ Provides comprehensive tools for evaluating OCR pipeline performance against
 ground truth data with detailed per-document and aggregate metrics.
 """
 
-from pathlib import Path
-from typing import List, Dict, Optional, Any
-from dataclasses import dataclass, asdict
-from datetime import datetime
-import json
 import csv
+import json
 import re
 import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from biblicus import Corpus
-from biblicus.extraction import build_extraction_snapshot
 
 
 def normalize_words(text: str) -> List[str]:
@@ -225,7 +224,7 @@ def calculate_ngram_overlap(ground_truth: str, extracted: str, n: int = 2) -> fl
 
 
 def _simple_edit_distance(seq1: List[str], seq2: List[str]) -> int:
-    """Simple implementation of edit distance for word sequences."""
+    """Compute edit distance for word sequences."""
     m, n = len(seq1), len(seq2)
     dp = [[0] * (n + 1) for _ in range(m + 1)]
 
@@ -299,17 +298,17 @@ class OCREvaluationResult:
         print(f"  Path: {self.image_path}")
         print(f"  Words: GT={self.word_count_gt}, OCR={self.word_count_ocr}")
         print()
-        print(f"  Set-based Metrics (position-agnostic):")
+        print("  Set-based Metrics (position-agnostic):")
         print(f"    Precision: {self.precision:.3f}")
         print(f"    Recall: {self.recall:.3f}")
         print(f"    F1 Score: {self.f1_score:.3f}")
         print()
-        print(f"  Order-aware Metrics (sequence quality):")
+        print("  Order-aware Metrics (sequence quality):")
         print(f"    Word Error Rate: {self.word_error_rate:.3f}")
         print(f"    Sequence Accuracy: {self.sequence_accuracy:.3f}")
         print(f"    LCS Ratio: {self.lcs_ratio:.3f}")
         print()
-        print(f"  N-gram Overlap (local ordering):")
+        print("  N-gram Overlap (local ordering):")
         print(f"    Bigram Overlap: {self.bigram_overlap:.3f}")
         print(f"    Trigram Overlap: {self.trigram_overlap:.3f}")
 
