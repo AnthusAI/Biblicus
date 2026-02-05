@@ -71,6 +71,8 @@ Feature: Graph extraction internal branches
     Given a fake NLP model is installed with short relations
     When I extract dependency graph edges with minimum length 3 from "Al writes Bo"
     Then graph extractor results are available
+    When I extract dependency relations predicate without lemma from "Al writes Bo"
+    Then graph extractor results are available
     Given a fake NLP model is installed for relations
     When I extract simple entity graph edges with minimum length 3 from "AI and BOB."
     Then graph extractor results are available

@@ -189,6 +189,35 @@ def step_extract_tesseract_without_layout_regions(context) -> None:
     context._tesseract_result = result
 
 
+@when("I extract tesseract text from a full image with blank words")
+def step_extract_tesseract_full_image_blank_words(context) -> None:
+    data = {"text": ["", "Word", " "], "conf": ["0", "90", "0"]}
+    _install_fake_tesseract_ocr(context, data)
+    corpus = Corpus.init(context.workdir / "corpus", force=True)
+    image_path = corpus.root / "image.png"
+    image_path.write_bytes(b"\x89PNG\r\n\x1a\n")
+    item = CatalogItem(
+        id="item-1",
+        relpath="image.png",
+        sha256="",
+        bytes=0,
+        media_type="image/png",
+        tags=[],
+        metadata={},
+        created_at="2024-01-01T00:00:00Z",
+        source_uri="file://image.png",
+    )
+    extractor = TesseractExtractor()
+    config = TesseractExtractorConfig(use_layout_metadata=False, min_confidence=0.5)
+    result = extractor.extract_text(
+        corpus=corpus,
+        item=item,
+        config=config,
+        previous_extractions=[],
+    )
+    context._tesseract_result = result
+
+
 @then("the tesseract extractor validation fails")
 def step_tesseract_validation_fails(context) -> None:
     assert context._tesseract_error is not None
@@ -207,3 +236,10 @@ def step_tesseract_extraction_empty(context) -> None:
     result = context._tesseract_result
     assert result is not None
     assert result.text == ""
+
+
+@then("the tesseract extraction excludes blank words")
+def step_tesseract_extraction_excludes_blanks(context) -> None:
+    result = context._tesseract_result
+    assert result is not None
+    assert result.text == "Word"

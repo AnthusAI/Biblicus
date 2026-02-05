@@ -18,3 +18,11 @@ Feature: Tesseract extractor internal branches
   Scenario: Tesseract layout extraction falls back without regions
     When I extract tesseract text without layout regions
     Then the tesseract extraction is empty
+
+  Scenario: Tesseract full-image extraction skips blank words
+    When I extract tesseract text from a full image with blank words
+    Then the tesseract extraction excludes blank words
+
+  Scenario: Tesseract full-image extraction skips blank words
+    When I extract tesseract text from a full image with blank words
+    Then the tesseract extraction excludes blank words

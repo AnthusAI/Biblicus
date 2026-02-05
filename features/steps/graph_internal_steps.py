@@ -63,10 +63,11 @@ def _install_fake_spacy_relations(context) -> None:
             self.label_ = label
 
     class _FakeToken:
-        def __init__(self, text: str, dep: str):
+        def __init__(self, text: str, dep: str, *, with_lemma: bool = True):
             self.text = text
             self.dep_ = dep
-            self.lemma_ = text.lower()
+            if with_lemma:
+                self.lemma_ = text.lower()
             self.head = self
             self.children: List[_FakeToken] = []
 
@@ -140,10 +141,11 @@ def _install_fake_spacy_short_relations(context) -> None:
     context._fake_spacy_short_relations_original_module = sys.modules.get("spacy")
 
     class _FakeToken:
-        def __init__(self, text: str, dep: str):
+        def __init__(self, text: str, dep: str, *, with_lemma: bool = True):
             self.text = text
             self.dep_ = dep
-            self.lemma_ = text.lower()
+            if with_lemma:
+                self.lemma_ = text.lower()
             self.head = self
             self.children: List[_FakeToken] = []
 
@@ -151,9 +153,10 @@ def _install_fake_spacy_short_relations(context) -> None:
         def __init__(self, text: str):
             self.text = text
             self.ents = [types.SimpleNamespace(text="Al", label_="PERSON")]
-            subj = _FakeToken("Al", "nsubj")
-            verb = _FakeToken("writes", "ROOT")
-            obj = _FakeToken("Bo", "dobj")
+            with_lemma = not getattr(context, "_fake_spacy_short_relations_no_lemma", False)
+            subj = _FakeToken("Al", "nsubj", with_lemma=with_lemma)
+            verb = _FakeToken("writes", "ROOT", with_lemma=with_lemma)
+            obj = _FakeToken("Bo", "dobj", with_lemma=with_lemma)
             subj.head = verb
             verb.children = [obj]
             self._tokens = [subj, verb, obj]
@@ -175,6 +178,15 @@ def _install_fake_spacy_short_relations(context) -> None:
     fake_module.load = load
     sys.modules["spacy"] = fake_module
     context._fake_spacy_short_relations_installed = True
+    context._fake_spacy_short_relations_no_lemma = False
+
+
+def _install_fake_spacy_relations_without_lemma(context) -> None:
+    if getattr(context, "_fake_spacy_short_relations_installed", False):
+        context._fake_spacy_short_relations_no_lemma = True
+        return
+    _install_fake_spacy_short_relations(context)
+    context._fake_spacy_short_relations_no_lemma = True
 
 
 def _block_spacy_import(context) -> None:
@@ -616,6 +628,19 @@ def step_extract_dependency_min_length(context, min_length: int, text: str) -> N
         item=_sample_item(),
         extracted_text=text,
         config={"model": "fake", "min_entity_length": min_length, "include_item_node": True},
+    )
+    context._graph_results.append(result)
+
+
+@when('I extract dependency relations predicate without lemma from "{text}"')
+def step_extract_dependency_without_lemma(context, text: str) -> None:
+    _install_fake_spacy_relations_without_lemma(context)
+    extractor = DependencyRelationsGraphExtractor()
+    result = extractor.extract_graph(
+        corpus=Corpus.init(context.workdir / "corpus", force=True),
+        item=_sample_item(),
+        extracted_text=text,
+        config={"model": "fake", "min_entity_length": 1, "include_item_node": True},
     )
     context._graph_results.append(result)
 
