@@ -49,6 +49,17 @@ Graph extraction favors deterministic identifiers so runs are reproducible:
 
 These IDs make it possible to deduplicate and compare graphs across extraction methods.
 
+## Baseline graph extractors
+
+Biblicus includes deterministic baseline extractors for graph experiments:
+
+- `simple-entities`: tokenized entity extraction without external NLP dependencies.
+- `ner-entities`: named entity recognition using an NLP model.
+- `dependency-relations`: subject–verb–object relation extraction using an NLP model.
+
+Use these baselines to compare graph-aware retrieval approaches with a shared corpus and
+extraction snapshot.
+
 ## Graph storage model
 
 Graph data is stored in a single Neo4j instance. Every node and edge is namespaced with properties that identify which
