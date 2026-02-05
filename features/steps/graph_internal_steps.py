@@ -647,6 +647,9 @@ def step_extract_dependency_without_lemma(context, text: str) -> None:
 
 @when("I extract dependency relations with short labels")
 def step_extract_dependency_short_labels(context) -> None:
+    context._fake_spacy_short_relations_installed = False
+    context._fake_spacy_short_relations_no_lemma = False
+    sys.modules.pop("spacy", None)
     _install_fake_spacy_short_relations(context)
     from biblicus.graph.extractors.dependency_relations import _extract_relations
 
