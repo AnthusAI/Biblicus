@@ -82,6 +82,10 @@ Feature: Graph extraction internal branches
     When I extract dependency relations with short labels
     Then dependency relations are empty
 
+  Scenario: Dependency relations skip short object labels
+    When I extract dependency relations with short object labels
+    Then dependency relations are empty
+
   Scenario: Graph extractors report missing NLP dependency
     Given the NLP dependency is unavailable
     When I attempt to extract NER entities from "Alice"

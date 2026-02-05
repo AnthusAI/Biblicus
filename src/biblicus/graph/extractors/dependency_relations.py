@@ -146,10 +146,12 @@ def _extract_relations(
         objects = [
             child for child in getattr(verb, "children", []) if child.dep_ in object_deps
         ]
+        subj_text = token.text.strip()
+        if len(subj_text) < min_length:
+            continue
         for obj in objects:
-            subj_text = token.text.strip()
             obj_text = obj.text.strip()
-            if len(subj_text) < min_length or len(obj_text) < min_length:
+            if len(obj_text) < min_length:
                 continue
             predicate = getattr(verb, "lemma_", verb.text)
             relations.append((subj_text, predicate, obj_text))

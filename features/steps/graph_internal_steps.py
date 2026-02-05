@@ -661,6 +661,44 @@ def step_extract_dependency_short_labels(context) -> None:
     context._graph_relations = relations
 
 
+@when("I extract dependency relations with short object labels")
+def step_extract_dependency_short_object_labels(context) -> None:
+    from biblicus.graph.extractors import dependency_relations as relations_module
+
+    class _FakeToken:
+        def __init__(self, text: str, dep: str) -> None:
+            self.text = text
+            self.dep_ = dep
+            self.lemma_ = text.lower()
+            self.head = self
+            self.children: List[_FakeToken] = []
+
+    class _FakeDoc:
+        def __init__(self) -> None:
+            subj = _FakeToken("Alice", "nsubj")
+            verb = _FakeToken("writes", "ROOT")
+            obj = _FakeToken("Bo", "dobj")
+            subj.head = verb
+            verb.children = [obj]
+            self._tokens = [subj, verb, obj]
+
+        def __iter__(self):
+            return iter(self._tokens)
+
+    original_loader = relations_module._load_doc
+    relations_module._load_doc = lambda _text, _model: _FakeDoc()
+    try:
+        relations = relations_module._extract_relations(
+            extracted_text="Alice writes Bo",
+            model_name="fake",
+            min_length=3,
+        )
+    finally:
+        relations_module._load_doc = original_loader
+
+    context._graph_relations = relations
+
+
 @when("I extract dependency graph edges without item node")
 def step_extract_dependency_no_item(context) -> None:
     extractor = DependencyRelationsGraphExtractor()
