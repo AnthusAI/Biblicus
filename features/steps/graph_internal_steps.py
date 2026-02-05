@@ -645,6 +645,19 @@ def step_extract_dependency_without_lemma(context, text: str) -> None:
     context._graph_results.append(result)
 
 
+@when("I extract dependency relations with short labels")
+def step_extract_dependency_short_labels(context) -> None:
+    _install_fake_spacy_short_relations(context)
+    from biblicus.graph.extractors.dependency_relations import _extract_relations
+
+    relations = _extract_relations(
+        extracted_text="Al writes Bo",
+        model_name="fake",
+        min_length=3,
+    )
+    context._graph_relations = relations
+
+
 @when("I extract dependency graph edges without item node")
 def step_extract_dependency_no_item(context) -> None:
     extractor = DependencyRelationsGraphExtractor()
@@ -655,6 +668,12 @@ def step_extract_dependency_no_item(context) -> None:
 @then("graph extractor results are available")
 def step_graph_results_available(context) -> None:
     assert context._graph_results
+
+
+@then("dependency relations are empty")
+def step_dependency_relations_empty(context) -> None:
+    relations = getattr(context, "_graph_relations", None)
+    assert relations == []
 
 
 @given("the NLP dependency is unavailable")

@@ -77,6 +77,11 @@ Feature: Graph extraction internal branches
     When I extract simple entity graph edges with minimum length 3 from "AI and BOB."
     Then graph extractor results are available
 
+  Scenario: Dependency relations skip short labels
+    Given a fake NLP model is installed with short relations
+    When I extract dependency relations with short labels
+    Then dependency relations are empty
+
   Scenario: Graph extractors report missing NLP dependency
     Given the NLP dependency is unavailable
     When I attempt to extract NER entities from "Alice"
