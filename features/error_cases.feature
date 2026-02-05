@@ -100,9 +100,9 @@ Feature: Command-line interface error behavior (human-friendly failures)
 
   Scenario: Reject query without a snapshot
     Given I initialized a corpus at "corpus"
-    When I snapshot "query --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
+    When I snapshot "query --no-deps --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "No snapshot identifier provided"
+    And standard error includes "Dependencies missing for query"
 
   Scenario: Reject querying a missing snapshot manifest
     Given I initialized a corpus at "corpus"

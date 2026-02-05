@@ -428,6 +428,8 @@ def _dependency_mode(arguments: argparse.Namespace) -> str:
         return "auto"
     if no_deps:
         return "none"
+    if not sys.stdin.isatty():
+        return "auto"
     return "prompt"
 
 
