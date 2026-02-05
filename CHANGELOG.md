@@ -1,6 +1,155 @@
 # CHANGELOG
 
 
+## v1.2.0 (2026-02-05)
+
+### Bug Fixes
+
+- Avoid prompting during extraction steps
+  ([`99354fb`](https://github.com/AnthusAI/Biblicus/commit/99354fb9ae7ec869b3aa175784a86a9cd717e01a))
+
+Add --auto-deps to extraction CLI calls in behavesteps.
+
+- Tighten dependency relation filtering
+  ([`b83de5a`](https://github.com/AnthusAI/Biblicus/commit/b83de5a63859adbea0f69c43ac1fab481b290155))
+
+### Documentation
+
+- Add baseline graph extractor guidance
+  ([`816d59c`](https://github.com/AnthusAI/Biblicus/commit/816d59ce55adefb908e62870ff6512d902d1e504))
+
+- Add graph extraction story report
+  ([`a307b89`](https://github.com/AnthusAI/Biblicus/commit/a307b891114673a9793a15dfb5cc1829695fd168))
+
+- Clarify graph properties and neo4j install
+  ([`f7ddf35`](https://github.com/AnthusAI/Biblicus/commit/f7ddf35e32ca9dfa05f0088364f54fa98b12ea94))
+
+### Features
+
+- Add graph extraction stage and demos
+  ([`56fa41f`](https://github.com/AnthusAI/Biblicus/commit/56fa41f9697cd8f321787a349c13d09c4068d0d2))
+
+- Add IBM Heron layout detection and comprehensive OCR benchmarking
+  ([`70d6fe1`](https://github.com/AnthusAI/Biblicus/commit/70d6fe1d65c6d7934109f2d31f01bd600764ef80))
+
+- Implement HeronLayoutExtractor using IBM Research's Heron-101 models - Add two-stage layout-aware
+  OCR pipeline (Heron → Tesseract) - Create comprehensive OCR benchmarking system with FUNSD dataset
+  - Add PaddleOCR PP-Structure layout detection - Add Tesseract OCR extractor with layout metadata
+  support - Benchmark 9 OCR pipelines with detailed metrics (F1, recall, WER, etc.) - Document Heron
+  achieving highest recall (0.810) vs other methods - Clean up documentation structure (move to
+  docs/guides/) - Remove proprietary references
+
+Heron Results: - F1: 0.519, Recall: 0.810 (highest), Bigram: 0.561 (best ordering) - Detects 24
+  regions vs PaddleOCR's 8 - Trade-off: higher recall but lower precision
+
+See docs/guides/ocr-benchmarking.md for complete guide.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+- Add metadata field to extraction pipeline for layout-aware OCR
+  ([`65c1969`](https://github.com/AnthusAI/Biblicus/commit/65c196938630317fbfb1b67b864183c27a9bc5bc))
+
+Add `metadata: Dict[str, Any]` field to ExtractedText and ExtractionStepOutput models with JSON file
+  persistence. This enables pipeline stages to pass structured data (layout regions, bounding boxes,
+  document analysis) to downstream stages.
+
+## Background
+
+Based on feedback from @uokesita about layout-aware OCR workflows: > For non-selectable files we use
+  Heron to extract first the layout. Then > Tesseract to extract the text. Because some of the files
+  that do not have > a linear layout are difficult to parse with the correct order.
+
+This workflow requires passing structured analysis data between pipeline stages: - Layout detector
+  outputs: regions, types, coordinates, reading order - OCR stage reads layout metadata to process
+  regions in correct order - Text reconstruction merges results based on layout analysis
+
+## Changes
+
+### Models (src/biblicus/models.py) - Add `metadata: Dict[str, Any]` to ExtractedText - Add
+  `metadata: Dict[str, Any]` to ExtractionStepOutput - Both default to empty dict for backward
+  compatibility
+
+### Extraction Pipeline (src/biblicus/extraction.py) - Add `metadata_relpath: Optional[str]` to
+  ExtractionStepResult - Add `final_metadata_relpath: Optional[str]` to ExtractionItemResult - Add
+  `write_extracted_metadata_artifact()` function - Add `write_pipeline_step_metadata_artifact()`
+  function - Update pipeline loop to persist metadata as JSON files
+
+### File Structure
+
+Metadata is persisted alongside text artifacts:
+
+``` .biblicus/snapshots/extraction/pipeline/{snapshot_id}/ ├── manifest.json ├── text/{item_id}.txt
+  ├── metadata/{item_id}.json # NEW: Final metadata └── steps/ ├── 01-layout-detector/ │ ├──
+  text/{item_id}.txt │ └── metadata/{item_id}.json # NEW: Step metadata └── 02-ocr-tesseract/ ├──
+  text/{item_id}.txt └── metadata/{item_id}.json # NEW: Step metadata ```
+
+## Usage Example
+
+A layout detector can return structured metadata:
+
+```python return ExtractedText( text="", # Analysis stage may not produce text
+  producer_extractor_id="layout-detector", metadata={ "layout_type": "multi-column", "regions": [
+  {"id": 1, "type": "header", "bbox": [0,0,100,50], "order": 1}, {"id": 2, "type": "table", "bbox":
+  [0,50,100,200], "order": 2} ] } ) ```
+
+Subsequent OCR extractor reads region data:
+
+```python def extract_text(self, *, previous_extractions, ...): layout_data =
+  previous_extractions[-1].metadata if "regions" in layout_data: # Process regions in order
+  specified by layout detector for region in sorted(layout_data["regions"], key=lambda r:
+  r["order"]): # OCR this region... ```
+
+## Testing
+
+All 933 existing BDD scenarios pass, confirming backward compatibility.
+
+## Benefits
+
+- **Transparent**: Metadata visible in filesystem as JSON files - **Repeatable**: Can re-run
+  pipeline stages using persisted metadata - **Debuggable**: Inspect intermediate analysis results -
+  **Backward compatible**: Existing extractors continue working unchanged
+
+## Related
+
+- Issue #4: Tesseract OCR extractor - Issue #5: Heron layout detection research
+
+Thanks to @uokesita for the feature suggestion and OCR workflow insights.
+
+- Add ner and dependency graph extractors
+  ([`6fc2bf2`](https://github.com/AnthusAI/Biblicus/commit/6fc2bf23c12e444de8a99641273382bedde59393))
+
+- Add workflow dependency planning
+  ([`fa3cc62`](https://github.com/AnthusAI/Biblicus/commit/fa3cc62612a710398abe5ba2590a03f79466631c))
+
+- Expand real integration coverage
+  ([`b3b9914`](https://github.com/AnthusAI/Biblicus/commit/b3b99149a23f5f22de6d33b951dc6db3bac30386))
+
+- Harden dependency plans and coverage
+  ([`fc6d0e0`](https://github.com/AnthusAI/Biblicus/commit/fc6d0e0166328d780479f528b6b40067fc210feb))
+
+- Wire dependency plans into biblicus cli
+  ([`f3c071c`](https://github.com/AnthusAI/Biblicus/commit/f3c071c61acd3e248522231d9bc3ecd068a21430))
+
+Add CLI dependency execution for build/query and specs. Fix ruff issues in workflow-related modules.
+
+### Testing
+
+- Add baseline graph extractor specs
+  ([`2a35abf`](https://github.com/AnthusAI/Biblicus/commit/2a35abfa008a3f166cb72a04fc543519c9a0d4e8))
+
+- Cover dependency length filters
+  ([`4e741e3`](https://github.com/AnthusAI/Biblicus/commit/4e741e3dcb03cd65379d6bf64f68c579bc618292))
+
+- Cover OCR and dependency branches
+  ([`536986e`](https://github.com/AnthusAI/Biblicus/commit/536986ed0a70c4b7a4b4c3cb0de04e5b5811e5a0))
+
+- Reset fake spacy state per scenario
+  ([`efb8a8e`](https://github.com/AnthusAI/Biblicus/commit/efb8a8e763cbae763e847bde9860e869304150f3))
+
+- Stabilize short relation coverage
+  ([`e51f50f`](https://github.com/AnthusAI/Biblicus/commit/e51f50f79873ed6bde93104a7048810ca79a2000))
+
+
 ## v1.1.2 (2026-02-03)
 
 ### Bug Fixes
