@@ -189,7 +189,7 @@ def step_build_extraction_snapshot_with_config(
         key, value = _table_key_value(row)
         step_config[key] = value
     step_spec = _build_step_spec(extractor_id, step_config)
-    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -202,7 +202,7 @@ def step_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
     _ensure_fake_tesseract_for_steps(context, steps)
-    args = ["--corpus", str(corpus), "extract", "build"]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
         step_config = step["config"]
@@ -226,7 +226,7 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
     config = configuration_data.get("config", {})
     steps = config.get("steps", [])
     _ensure_fake_tesseract_for_steps(context, steps)
-    args = ["--corpus", str(corpus), "extract", "build"]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
     for step in steps:
         step_extractor_id = str(step["extractor_id"])
         step_config = step.get("config", {})
@@ -252,7 +252,7 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
     configuration_data = yaml.safe_load(context.text)
     config = configuration_data.get("config", {})
     step_spec = _build_step_spec(extractor_id, config)
-    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -273,7 +273,7 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration_an(
 def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", extractor_id]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -290,7 +290,7 @@ def step_build_extraction_snapshot_an(context, extractor_id: str, corpus_name: s
 def step_attempt_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "build", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", extractor_id]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -303,7 +303,7 @@ def step_attempt_build_extraction_snapshot_with_step_spec(
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
-    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -317,7 +317,7 @@ def step_build_extraction_snapshot_with_step_spec(
     _ = extractor_id
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     step_spec_unescaped = step_spec.replace('\\"', '"')
-    args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec_unescaped]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec_unescaped]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -339,7 +339,7 @@ def step_attempt_build_extraction_snapshot_with_configuration(
     config = configuration_data.get("config", {})
     steps = config.get("steps", []) if "steps" in config else []
     if steps:
-        args = ["--corpus", str(corpus), "extract", "build"]
+        args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
         for step in steps:
             step_extractor_id = str(step["extractor_id"])
             step_config = step.get("config", {})
@@ -347,7 +347,7 @@ def step_attempt_build_extraction_snapshot_with_configuration(
             args.extend(["--step", step_spec])
     else:
         step_spec = _build_step_spec(extractor_id, config)
-        args = ["--corpus", str(corpus), "extract", "build", "--step", step_spec]
+        args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -355,7 +355,7 @@ def step_attempt_build_extraction_snapshot_with_configuration(
 def step_attempt_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     steps = _build_extractor_steps_from_table(context.table)
-    args = ["--corpus", str(corpus), "extract", "build"]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
     for step in steps:
         extractor_id = str(step["extractor_id"])
         step_config = step["config"]
