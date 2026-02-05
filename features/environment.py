@@ -63,6 +63,25 @@ def before_scenario(context, scenario) -> None:
         "_fake_heron_image_none",
     ]:
         setattr(context, attr, False)
+    for attr in [
+        "_fake_spacy_relations_installed",
+        "_fake_spacy_short_installed",
+        "_fake_spacy_short_relations_installed",
+        "_fake_spacy_short_relations_no_lemma",
+    ]:
+        setattr(context, attr, False)
+    spacy_original = getattr(context, "_fake_spacy_relations_original_module", None)
+    if spacy_original is None:
+        spacy_original = getattr(context, "_fake_spacy_short_original_module", None)
+    if spacy_original is None:
+        spacy_original = getattr(context, "_fake_spacy_short_relations_original_module", None)
+    if spacy_original is not None:
+        sys.modules["spacy"] = spacy_original
+    else:
+        sys.modules.pop("spacy", None)
+    context._fake_spacy_relations_original_module = None
+    context._fake_spacy_short_original_module = None
+    context._fake_spacy_short_relations_original_module = None
     context._fake_tesseract_installed = False
     context._fake_tesseract_original_modules = {}
 
