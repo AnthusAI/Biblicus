@@ -415,10 +415,14 @@ def build_extraction_snapshot(
         extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
     )
     if snapshot_dir.exists():
-        return corpus.load_extraction_snapshot_manifest(
-            extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
-        )
-    snapshot_dir.mkdir(parents=True, exist_ok=False)
+        try:
+            manifest = corpus.load_extraction_snapshot_manifest(
+                extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
+            )
+        except FileNotFoundError:
+            pass
+    else:
+        snapshot_dir.mkdir(parents=True, exist_ok=False)
 
     catalog = corpus.load_catalog()
     if extractor_id != "pipeline":
@@ -436,7 +440,7 @@ def build_extraction_snapshot(
         parsed_step_config = step_extractor.validate_config(step.configuration)
         validated_steps.append((step, step_extractor, parsed_step_config))
 
-    extracted_items: List[ExtractionItemResult] = []
+    extracted_items: List[ExtractionItemResult] = list(manifest.items or [])
     extracted_count = 0
     skipped_count = 0
     errored_count = 0
@@ -445,8 +449,65 @@ def build_extraction_snapshot(
     already_text_item_count = 0
     needs_extraction_item_count = 0
     converted_item_count = 0
+    total_item_count = len(catalog.items)
+    catalog_items_by_id = {item.id: item for item in catalog.items.values()}
+    processed_item_ids = {item.item_id for item in extracted_items}
+
+    if extracted_items:
+        for item_result in extracted_items:
+            catalog_item = catalog_items_by_id.get(item_result.item_id)
+            if catalog_item is None:
+                continue
+            media_type = catalog_item.media_type
+            item_is_text = media_type == "text/markdown" or media_type.startswith("text/")
+            if item_is_text:
+                already_text_item_count += 1
+            else:
+                needs_extraction_item_count += 1
+
+            if item_result.status == "errored":
+                errored_count += 1
+                continue
+            if item_result.status == "skipped":
+                skipped_count += 1
+                continue
+            if item_result.status != "extracted":
+                continue
+
+            extracted_count += 1
+            if item_result.final_text_relpath:
+                text_path = snapshot_dir / item_result.final_text_relpath
+                if text_path.is_file():
+                    text_value = text_path.read_text(encoding="utf-8")
+                    if text_value.strip():
+                        extracted_nonempty_count += 1
+                        if not item_is_text:
+                            converted_item_count += 1
+                    else:
+                        extracted_empty_count += 1
+                else:
+                    extracted_empty_count += 1
+            else:
+                extracted_empty_count += 1
+
+    def _write_partial_manifest() -> None:
+        stats = {
+            "total_items": total_item_count,
+            "already_text_items": already_text_item_count,
+            "needs_extraction_items": needs_extraction_item_count,
+            "extracted_items": extracted_count,
+            "extracted_nonempty_items": extracted_nonempty_count,
+            "extracted_empty_items": extracted_empty_count,
+            "skipped_items": skipped_count,
+            "errored_items": errored_count,
+            "converted_items": converted_item_count,
+        }
+        partial_manifest = manifest.model_copy(update={"items": extracted_items, "stats": stats})
+        write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=partial_manifest)
 
     for item in catalog.items.values():
+        if item.id in processed_item_ids:
+            continue
         media_type = item.media_type
         item_is_text = media_type == "text/markdown" or media_type.startswith("text/")
         if item_is_text:
@@ -573,6 +634,7 @@ def build_extraction_snapshot(
                     step_results=step_results,
                 )
             )
+            _write_partial_manifest()
             continue
 
         final_text = final_output.text or ""
@@ -605,9 +667,10 @@ def build_extraction_snapshot(
                 step_results=step_results,
             )
         )
+        _write_partial_manifest()
 
     stats = {
-        "total_items": len(catalog.items),
+        "total_items": total_item_count,
         "already_text_items": already_text_item_count,
         "needs_extraction_items": needs_extraction_item_count,
         "extracted_items": extracted_count,

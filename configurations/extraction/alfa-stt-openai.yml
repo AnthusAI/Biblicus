@@ -1,0 +1,5 @@
+extractor_id: pipeline
+configuration:
+  steps:
+    - extractor_id: stt-openai
+      config: {}

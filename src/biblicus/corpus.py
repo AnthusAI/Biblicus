@@ -571,6 +571,25 @@ class Corpus:
         """
         return self._load_catalog()
 
+    def has_items(self) -> bool:
+        """
+        Return whether the corpus catalog contains any items.
+
+        :return: True when the catalog has at least one item.
+        :rtype: bool
+        """
+        catalog = self._load_catalog()
+        return bool(catalog.items)
+
+    def catalog_generated_at(self) -> str:
+        """
+        Return the catalog generation timestamp.
+
+        :return: International Organization for Standardization 8601 timestamp.
+        :rtype: str
+        """
+        return self._load_catalog().generated_at
+
     def _write_catalog(self, catalog: CorpusCatalog) -> None:
         """
         Atomically write a corpus catalog to disk.
@@ -846,7 +865,6 @@ class Corpus:
         path.write_text(snapshot.model_dump_json(indent=2) + "\n", encoding="utf-8")
         catalog = self._load_catalog()
         catalog.latest_snapshot_id = snapshot.snapshot_id
-        catalog.generated_at = utc_now_iso()
         self._write_catalog(catalog)
 
     def load_snapshot(self, snapshot_id: str) -> RetrievalSnapshot:

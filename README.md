@@ -75,6 +75,17 @@ Think in three stages.
 - Extract turns items into usable text. This is where you would do text extraction from Portable Document Format files, optical character recognition for images, or speech to text for audio. If an item is already text, extraction can simply read it. Extraction outputs are derived artifacts, not edits to the raw files.
 - Retrieve searches extracted text and returns evidence. Evidence is structured so you can turn it into context for your model call in whatever way your project prefers.
 
+## Workflow planning (load → extract → index)
+
+Biblicus exposes dependency planning in `biblicus.workflow`. It builds deterministic task plans that describe which steps must run before a query or index operation. You can use it to check whether a corpus needs loading, extraction, or indexing and execute those steps in order.
+
+```python
+from biblicus.workflow import build_default_handler_registry, build_plan_for_index
+
+plan = build_plan_for_index(corpus, retriever_id="tf-vector")
+results = plan.execute(mode="auto", handler_registry=build_default_handler_registry(corpus))
+```
+
 If you learn a few project words, the rest of the system becomes predictable.
 
 - Corpus is the managed folder that holds raw items and their metadata.
