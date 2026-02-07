@@ -5,11 +5,9 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd apps/dashboard
             - npm ci
         build:
           commands:
-            - cd apps/dashboard
             - echo "Building for AWS Amplify deployment"
             - npm run build
       artifacts:
