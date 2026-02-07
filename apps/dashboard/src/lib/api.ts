@@ -7,7 +7,9 @@ import { localAPI } from './local-api';
 import type { Corpus as LocalCorpus, CatalogItem as LocalCatalogItem, Snapshot as LocalSnapshot } from './local-api';
 
 // Check if running in local mode (localhost or with local API available)
-const isLocalMode = import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_LOCAL_API === 'true';
+// Set VITE_USE_AMPLIFY=true to use production backend from local dev
+const forceAmplify = import.meta.env.VITE_USE_AMPLIFY === 'true';
+const isLocalMode = !forceAmplify && (import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_LOCAL_API === 'true');
 
 export interface Corpus {
   name: string;
@@ -48,17 +50,23 @@ export interface Snapshot {
 
 class APIAdapter {
   async listCorpora(): Promise<{ corpora: Corpus[] }> {
+    console.log('[API] listCorpora called, isLocalMode:', isLocalMode, 'forceAmplify:', forceAmplify);
+
     if (isLocalMode) {
       try {
+        console.log('[API] Trying local API...');
         return await localAPI.listCorpora();
       } catch (err) {
-        console.warn('Local API failed, falling back to Amplify:', err);
+        console.warn('[API] Local API failed, falling back to Amplify:', err);
         // Fall through to Amplify client
       }
     }
 
     // Use Amplify client
+    console.log('[API] Using Amplify client...');
     const { data: corpuses } = await client.models.Corpus.list();
+    console.log('[API] Amplify returned', corpuses.length, 'corpuses:', corpuses);
+
     return {
       corpora: corpuses.map(c => ({
         name: c.name,
