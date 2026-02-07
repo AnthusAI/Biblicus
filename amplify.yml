@@ -5,14 +5,9 @@ applications:
       phases:
         preBuild:
           commands:
-            - echo "CODEBUILD_SRC_DIR=$CODEBUILD_SRC_DIR"
-            - ls -la $CODEBUILD_SRC_DIR
-            - pwd
-            - cd apps/dashboard
             - npm ci
         build:
           commands:
-            - cd apps/dashboard
             - echo "Building for AWS Amplify deployment"
             - npm run build
       artifacts:
