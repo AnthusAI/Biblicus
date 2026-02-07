@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v1.3.0 (2026-02-05)
+
+
 ## v1.2.0 (2026-02-05)
 
 ### Bug Fixes
@@ -120,6 +123,9 @@ Thanks to @uokesita for the feature suggestion and OCR workflow insights.
 
 - Add workflow dependency planning
   ([`fa3cc62`](https://github.com/AnthusAI/Biblicus/commit/fa3cc62612a710398abe5ba2590a03f79466631c))
+
+- Document graph extraction baselines
+  ([`8d3026e`](https://github.com/AnthusAI/Biblicus/commit/8d3026e82e11026f376ca914cf26123aae57cb3c))
 
 - Expand real integration coverage
   ([`b3b9914`](https://github.com/AnthusAI/Biblicus/commit/b3b99149a23f5f22de6d33b951dc6db3bac30386))
