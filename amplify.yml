@@ -1,24 +1,25 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - cd apps/dashboard
-        - npm ci
-    build:
-      commands:
-        - cd apps/dashboard
-        - echo "Building for AWS Amplify deployment"
-        - npm run build
-  artifacts:
-    baseDirectory: apps/dashboard/dist
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - apps/dashboard/node_modules/**/*
-customHeaders:
-  - pattern: '**/*'
-    headers:
-      - key: 'Cache-Control'
-        value: 'no-cache'
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd apps/dashboard
+            - npm ci
+        build:
+          commands:
+            - cd apps/dashboard
+            - echo "Building for AWS Amplify deployment"
+            - npm run build
+      artifacts:
+        baseDirectory: apps/dashboard/dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - apps/dashboard/node_modules/**/*
+    customHeaders:
+      - pattern: '**/*'
+        headers:
+          - key: 'Cache-Control'
+            value: 'no-cache'
