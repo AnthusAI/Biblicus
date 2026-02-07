@@ -1,6 +1,12 @@
 version: 1
 applications:
   - appRoot: apps/dashboard
+    backend:
+      phases:
+        build:
+          commands:
+            - npm ci
+            - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID
     frontend:
       phases:
         preBuild:
