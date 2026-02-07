@@ -28,6 +28,20 @@ const CORPORA_ROOT = process.env.BIBLICUS_CORPORA_ROOT || path.join(__dirname, '
 app.use(cors());
 app.use(express.json());
 
+// Security helper: validate path is within CORPORA_ROOT
+function validateCorpusPath(corpusName) {
+  const corpusPath = path.join(CORPORA_ROOT, corpusName);
+  const resolvedPath = path.resolve(corpusPath);
+  const resolvedRoot = path.resolve(CORPORA_ROOT);
+
+  // Ensure path starts with root AND has proper separator (prevents prefix attacks)
+  if (!resolvedPath.startsWith(resolvedRoot + path.sep) && resolvedPath !== resolvedRoot) {
+    throw new Error('Access denied: path traversal attempt detected');
+  }
+
+  return corpusPath;
+}
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', corporaRoot: CORPORA_ROOT });
@@ -103,14 +117,7 @@ app.get('/api/corpora', async (req, res) => {
 // Get details for a specific corpus
 app.get('/api/corpora/:name', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
-
-    // Security check: ensure path is within CORPORA_ROOT
-    const resolvedPath = path.resolve(corpusPath);
-    const resolvedRoot = path.resolve(CORPORA_ROOT);
-    if (!resolvedPath.startsWith(resolvedRoot)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
+    const corpusPath = validateCorpusPath(req.params.name);
 
     // Check corpus exists
     await fs.access(corpusPath);
@@ -149,7 +156,7 @@ app.get('/api/corpora/:name', async (req, res) => {
 // Get catalog items for a corpus with optional filters
 app.get('/api/corpora/:name/catalog', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
+    const corpusPath = validateCorpusPath(req.params.name);
     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');
 
     const catalogData = await fs.readFile(catalogPath, 'utf8');
@@ -173,7 +180,7 @@ app.get('/api/corpora/:name/catalog', async (req, res) => {
       const searchLower = search.toLowerCase();
       items = items.filter(item =>
         (item.title && item.title.toLowerCase().includes(searchLower)) ||
-        item.relpath.toLowerCase().includes(searchLower)
+        (item.relpath && item.relpath.toLowerCase().includes(searchLower))
       );
     }
 
@@ -187,7 +194,7 @@ app.get('/api/corpora/:name/catalog', async (req, res) => {
 // Get a specific catalog item
 app.get('/api/corpora/:name/catalog/:itemId', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
+    const corpusPath = validateCorpusPath(req.params.name);
     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');
 
     const catalogData = await fs.readFile(catalogPath, 'utf8');
@@ -209,7 +216,7 @@ app.get('/api/corpora/:name/catalog/:itemId', async (req, res) => {
 // List extraction snapshots for a corpus
 app.get('/api/corpora/:name/snapshots', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
+    const corpusPath = validateCorpusPath(req.params.name);
     const extractedDir = path.join(corpusPath, 'extracted');
 
     const snapshots = await fs.readdir(extractedDir);
@@ -249,7 +256,7 @@ app.get('/api/corpora/:name/snapshots', async (req, res) => {
 // List analysis runs for a corpus
 app.get('/api/corpora/:name/analysis', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
+    const corpusPath = validateCorpusPath(req.params.name);
     const analysisDir = path.join(corpusPath, 'analysis');
 
     const analysisRuns = [];
@@ -297,7 +304,7 @@ app.get('/api/corpora/:name/analysis', async (req, res) => {
 // List recipes for a corpus
 app.get('/api/corpora/:name/recipes', async (req, res) => {
   try {
-    const corpusPath = path.join(CORPORA_ROOT, req.params.name);
+    const corpusPath = validateCorpusPath(req.params.name);
     const recipesDir = path.join(corpusPath, 'recipes');
 
     const recipes = [];

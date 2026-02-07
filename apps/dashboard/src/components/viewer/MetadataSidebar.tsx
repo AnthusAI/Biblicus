@@ -70,7 +70,8 @@ export function MetadataSidebar({ corpusName, selectedFile }: MetadataSidebarPro
         const recipesRes = await fetch(`${API_BASE}/api/corpora/${corpusName}/recipes`);
         if (recipesRes.ok) {
           const recipesData = await recipesRes.json();
-          setRecipes(recipesData.recipes.map((r: any) => r.path) || []);
+          const recipesArray = Array.isArray(recipesData.recipes) ? recipesData.recipes : [];
+          setRecipes(recipesArray.map((r: any) => r.path));
         }
       } catch (err) {
         console.error('Error loading recipes:', err);
