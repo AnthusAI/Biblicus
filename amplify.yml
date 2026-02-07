@@ -5,11 +5,14 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd $CODEBUILD_SRC_DIR/Biblicus/apps/dashboard
+            - echo "CODEBUILD_SRC_DIR=$CODEBUILD_SRC_DIR"
+            - ls -la $CODEBUILD_SRC_DIR
+            - pwd
+            - cd apps/dashboard
             - npm ci
         build:
           commands:
-            - cd $CODEBUILD_SRC_DIR/Biblicus/apps/dashboard
+            - cd apps/dashboard
             - echo "Building for AWS Amplify deployment"
             - npm run build
       artifacts:
