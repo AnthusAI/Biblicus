@@ -213,7 +213,7 @@ class AmplifyPublisher:
         from biblicus.models import CorpusCatalog
 
         # 1. Load and hash catalog
-        catalog = CorpusCatalog.load(catalog_path)
+        catalog = CorpusCatalog.model_validate_json(catalog_path.read_text())
         catalog_hash = self._compute_catalog_hash(catalog)
 
         # 2. Check if changed (idempotency)
@@ -239,7 +239,7 @@ class AmplifyPublisher:
         """Hash catalog excluding timestamps for idempotency."""
         items_data = sorted([
             (item.id, item.sha256, item.relpath)
-            for item in catalog.items
+            for item in catalog.items.values()
         ])
         return hashlib.sha256(json.dumps(items_data).encode()).hexdigest()
 
@@ -297,7 +297,7 @@ class AmplifyPublisher:
         created = 0
 
         # Create all items
-        for item in catalog.items:
+        for item_id, item in catalog.items.items():
             try:
                 self._create_catalog_item(item)
                 created += 1
@@ -340,7 +340,7 @@ class AmplifyPublisher:
                 'mediaType': item.media_type,
                 'title': item.title if hasattr(item, 'title') else None,
                 'tags': item.tags if hasattr(item, 'tags') else [],
-                'metadataJson': item.metadata if hasattr(item, 'metadata') else {},
+                'metadataJson': json.dumps(item.metadata) if hasattr(item, 'metadata') and item.metadata else None,
                 'createdAt': datetime.now(timezone.utc).isoformat(),
                 'sourceUri': item.source_uri if hasattr(item, 'source_uri') else None,
                 'hasExtraction': False,

@@ -26,10 +26,11 @@ def main():
     args = parser.parse_args()
 
     # Load corpus
-    corpus = Corpus.load(args.corpus_path)
-    publisher = AmplifyPublisher(corpus.name)
+    corpus = Corpus(args.corpus_path)
+    corpus_name = args.corpus_path.name
+    publisher = AmplifyPublisher(corpus_name)
 
-    print(f'Syncing catalog for {corpus.name}...')
+    print(f'Syncing catalog for {corpus_name}...')
 
     try:
         result = publisher.sync_catalog(corpus.catalog_path, force=args.force)
