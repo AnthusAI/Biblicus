@@ -5,20 +5,18 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd apps/dashboard
             - npm ci
         build:
           commands:
-            - cd apps/dashboard
             - echo "Building for AWS Amplify deployment"
             - npm run build
       artifacts:
-        baseDirectory: apps/dashboard/dist
+        baseDirectory: dist
         files:
           - '**/*'
       cache:
         paths:
-          - apps/dashboard/node_modules/**/*
+          - node_modules/**/*
       customHeaders:
         - pattern: '**/*'
           headers:
