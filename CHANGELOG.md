@@ -1,9 +1,37 @@
 # CHANGELOG
 
 
+## v1.4.1 (2026-02-07)
+
+### Bug Fixes
+
+- **dashboard**: Configure amplify.yml for monorepo structure
+  ([`50adfd7`](https://github.com/AnthusAI/Biblicus/commit/50adfd76fdac30896ee3012d7c32ef1f75c0cae4))
+
+- **dashboard**: Correct CODEBUILD_SRC_DIR path to include Biblicus
+  ([`65a3e1a`](https://github.com/AnthusAI/Biblicus/commit/65a3e1a03d0f19359c0963fd1dcd447f95ab7f5c))
+
+- **dashboard**: Explicitly cd to appRoot in build commands
+  ([`fbc713f`](https://github.com/AnthusAI/Biblicus/commit/fbc713f6cdaecdaa91638aa8320e0609cfd3c618))
+
+- **dashboard**: Move amplify.yml to repo root with explicit paths
+  ([`a3f05a1`](https://github.com/AnthusAI/Biblicus/commit/a3f05a17627f6bb5baaad2e16a91cb09bdef4975))
+
+- **dashboard**: Remove cd commands - appRoot already sets working directory
+  ([`a45c009`](https://github.com/AnthusAI/Biblicus/commit/a45c009228e85de465e0e91fe18ef338e5c8870c))
+
+### Chores
+
+- **dashboard**: Add package-lock.json for Amplify builds
+  ([`43ff920`](https://github.com/AnthusAI/Biblicus/commit/43ff9202ef633d0303b148d331377c1d6c51f492))
+
+
 ## v1.4.0 (2026-02-07)
 
 ### Bug Fixes
+
+- **dashboard**: Add SPA redirect rules for Amplify deployment
+  ([`9bf62b4`](https://github.com/AnthusAI/Biblicus/commit/9bf62b468a1f63bc0da41b8f5115c6e6d496149a))
 
 - **dashboard**: Address path traversal and null safety vulnerabilities
   ([`0fb0675`](https://github.com/AnthusAI/Biblicus/commit/0fb0675c5477f423c8838888330f55e2616dd5b0))
