@@ -1,0 +1,26 @@
+version: 1
+applications:
+  - appRoot: apps/dashboard
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd $CODEBUILD_SRC_DIR/apps/dashboard
+            - npm ci
+        build:
+          commands:
+            - cd $CODEBUILD_SRC_DIR/apps/dashboard
+            - echo "Building for AWS Amplify deployment"
+            - npm run build
+      artifacts:
+        baseDirectory: apps/dashboard/dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - apps/dashboard/node_modules/**/*
+      customHeaders:
+        - pattern: '**/*'
+          headers:
+            - key: 'Cache-Control'
+              value: 'no-cache'
