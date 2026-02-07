@@ -30,15 +30,42 @@ class AmplifyPublisher:
 
     def __init__(self, corpus_name: str):
         self.corpus_name = corpus_name
-        self.appsync_endpoint = os.getenv('AMPLIFY_APPSYNC_ENDPOINT')
-        self.api_key = os.getenv('AMPLIFY_API_KEY')
-        self.region = os.getenv('AWS_REGION', 'us-east-1')
-        self.s3_bucket = os.getenv('AMPLIFY_S3_BUCKET')
+
+        # Load config from environment or config file
+        self._load_config()
 
         if not all([self.appsync_endpoint, self.api_key, self.s3_bucket]):
-            raise ValueError("Missing required Amplify configuration. Run 'biblicus configure amplify'")
+            raise ValueError(
+                "Missing required Amplify configuration. "
+                "Run 'biblicus dashboard configure' to set up credentials."
+            )
 
         self.s3_client = boto3.client('s3', region_name=self.region)
+
+    def _load_config(self):
+        """Load configuration from environment or ~/.biblicus/amplify.env"""
+        # Try environment variables first
+        self.appsync_endpoint = os.getenv('AMPLIFY_APPSYNC_ENDPOINT')
+        self.api_key = os.getenv('AMPLIFY_API_KEY')
+        self.region = os.getenv('AWS_REGION', 'us-west-2')
+        self.s3_bucket = os.getenv('AMPLIFY_S3_BUCKET')
+
+        # If not in environment, try config file
+        if not all([self.appsync_endpoint, self.api_key, self.s3_bucket]):
+            config_path = Path.home() / '.biblicus' / 'amplify.env'
+            if config_path.exists():
+                for line in config_path.read_text().splitlines():
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        if key == 'AMPLIFY_APPSYNC_ENDPOINT' and not self.appsync_endpoint:
+                            self.appsync_endpoint = value
+                        elif key == 'AMPLIFY_API_KEY' and not self.api_key:
+                            self.api_key = value
+                        elif key == 'AWS_REGION':
+                            self.region = value
+                        elif key == 'AMPLIFY_S3_BUCKET' and not self.s3_bucket:
+                            self.s3_bucket = value
 
     def create_corpus(self) -> Dict[str, Any]:
         """Create or update corpus record."""
