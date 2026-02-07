@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGSAP } from '@gsap/react';
-import { localAPI, type Corpus } from '../lib/local-api';
+import { api, type Corpus } from '../lib/api';
 import { CorpusViewer } from '../components/viewer/CorpusViewer';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,8 @@ export default function HomePage() {
     const loadCorpora = async () => {
       try {
         const [corporaData, config] = await Promise.all([
-          localAPI.listCorpora(),
-          localAPI.getConfig(),
+          api.listCorpora(),
+          api.getConfig(),
         ]);
         setCorpora(corporaData.corpora);
         setCorporaRoot(config.corporaRoot);
