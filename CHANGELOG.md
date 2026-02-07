@@ -1,7 +1,56 @@
 # CHANGELOG
 
 
+## v1.4.0 (2026-02-07)
+
+### Bug Fixes
+
+- **dashboard**: Address path traversal and null safety vulnerabilities
+  ([`0fb0675`](https://github.com/AnthusAI/Biblicus/commit/0fb0675c5477f423c8838888330f55e2616dd5b0))
+
+Security fixes: - Fixed path traversal validation to check for path separator, preventing access to
+  directories with identical prefixes (e.g., /corpora vs /corpora-other) - Added path traversal
+  protection to all corpus endpoints using centralized validateCorpusPath() helper function -
+  Protected /api/corpora/:name/catalog, catalog/:itemId, snapshots, analysis, and recipes endpoints
+  from directory traversal attacks
+
+Null safety fixes: - Added null check for item.relpath before calling .toLowerCase() in catalog
+  search to prevent TypeError when relpath is undefined - Added Array.isArray() validation for
+  recipes data before calling .map() to prevent runtime errors on malformed API responses
+
+All endpoints now use consistent security validation preventing ../ sequences and other path
+  manipulation attacks.
+
+### Features
+
+- **dashboard**: Add error boundary and improve deployment config
+  ([`c2fc36e`](https://github.com/AnthusAI/Biblicus/commit/c2fc36e1056e6274761e3789c7708f42b5d3703f))
+
+Add error boundary component to catch and display runtime errors gracefully. Update Amplify build
+  config and Vite config for better production deployment.
+
+
 ## v1.3.0 (2026-02-05)
+
+### Features
+
+- **dashboard**: Fix metadata display and add Photoshop-style accordion
+  ([`12ae1e3`](https://github.com/AnthusAI/Biblicus/commit/12ae1e3bc77916f25e571f75553706d1b3f68cc2))
+
+Fixed critical bug where metadata sidebar showed "no extractions" and "no analysis" for corpora
+  despite data existing.
+
+Backend changes: - Added /api/corpora/:name/analysis endpoint to list analysis runs - Added
+  /api/corpora/:name/recipes endpoint to list recipe files - Both endpoints scan filesystem
+  directories and return structured data
+
+Frontend changes: - Updated MetadataSidebar to fetch real data from new API endpoints - Restructured
+  as Photoshop-style accordion with fixed headers - Each section has independent ScrollArea with
+  max-height - All collapsed sections remain visible when others expand - No layout shifting or
+  items being pushed out of view
+
+Results: - Extraction snapshots now displayed correctly - Analysis runs now visible with type and
+  timestamp - Recipe files listed with full paths
 
 
 ## v1.2.0 (2026-02-05)
