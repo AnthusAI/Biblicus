@@ -61,20 +61,20 @@ python scripts/download_funsd_samples.py
 This will:
 1. Download the FUNSD dataset from the official source
 2. Extract 20 test forms into `corpora/funsd_benchmark/`
-3. Create ground truth files in `.biblicus/funsd_ground_truth/`
+3. Create ground truth files in `metadata/funsd_ground_truth/`
 4. Tag documents with `["funsd", "scanned", "ground-truth"]`
 
 **Dataset structure:**
 ```
 corpora/funsd_benchmark/
-├── raw/
-│   ├── <document-id>--82092117.png          # Scanned form image
-│   └── ...
-└── .biblicus/
-    ├── catalog.db                            # Document catalog
-    └── funsd_ground_truth/
-        ├── <document-id>.txt                 # Ground truth OCR text
-        └── ...
+├── metadata/
+│   ├── config.json
+│   ├── catalog.json
+│   └── funsd_ground_truth/
+│       ├── <document-id>.txt                 # Ground truth OCR text
+│       └── ...
+├── <document-id>--82092117.png               # Scanned form image
+└── ...
 ```
 
 ### Using Your Own Dataset
@@ -83,7 +83,7 @@ To benchmark on custom documents:
 
 1. **Prepare ground truth files:**
    ```
-   corpus_dir/.biblicus/ground_truth/
+   corpus_dir/metadata/ground_truth/
    ├── <document-id>.txt
    └── ...
    ```
@@ -104,7 +104,7 @@ To benchmark on custom documents:
    benchmark = OCRBenchmark(corpus)
    report = benchmark.evaluate_extraction(
        snapshot_reference="<snapshot-id>",
-       ground_truth_dir=corpus.root / ".biblicus" / "ground_truth"
+       ground_truth_dir=corpus.root / "metadata" / "ground_truth"
    )
    ```
 
@@ -189,7 +189,7 @@ PaddleOCR PP-Structure layout detection → Tesseract OCR.
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: paddleocr-layout
       config:
         lang: en
@@ -210,7 +210,7 @@ Two-stage workflow: Use Heron to detect document layout and reading order, then 
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: heron-layout
       config:
         model_variant: "101"
@@ -239,7 +239,7 @@ Mock layout detection → RapidOCR.
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: mock-layout-detector
     - extractor_id: ocr-rapidocr
 ```
@@ -302,7 +302,7 @@ corpus = Corpus(Path('corpora/funsd_benchmark').resolve())
 config = {
     'extractor_id': 'pipeline',
     'config': {
-        'steps': [
+        'stages': [
             {'extractor_id': 'heron-layout', 'config': {'model_variant': '101'}},
             {'extractor_id': 'ocr-tesseract', 'config': {'use_layout_metadata': True}}
         ]
@@ -418,7 +418,7 @@ Measures local word ordering quality:
 # configs/my-custom-pipeline.yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     # Step 1: Layout detection (optional)
     - extractor_id: heron-layout
       config:
@@ -516,7 +516,7 @@ python scripts/evaluate_ocr_pipeline.py \
   "per_document_results": [
     {
       "document_id": "abc123...",
-      "image_path": "raw/abc123...png",
+      "image_path": "abc123...png",
       "ground_truth_word_count": 134,
       "extracted_word_count": 135,
       "metrics": {
@@ -537,7 +537,7 @@ Per-document results exported to CSV for spreadsheet analysis:
 
 ```csv
 document_id,image_path,gt_word_count,ocr_word_count,precision,recall,f1_score,wer
-abc123...,raw/abc123.png,134,135,0.615,0.619,0.617,3.056
+abc123...,abc123.png,134,135,0.615,0.619,0.617,3.056
 ```
 
 ### Analyzing Results

@@ -234,7 +234,7 @@ Omitted fields use the default values from the Markov analysis schema. Missing r
 Markov analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/markov/<run_id>/
+analysis/markov/<run_id>/
 ```
 
 The run directory contains a manifest and structured artifacts. The canonical output is `output.json`. Additional files

@@ -34,14 +34,14 @@ Out of scope:
 - Graph extraction configuration
 
 ### Outputs
-- Snapshot directory under `.biblicus/runs/graph-extract/<snapshot_id>/`
+- Snapshot directory under `graph/<extractor_id>/<snapshot_id>/`
 - Sharded node and edge artifacts
 - `manifest.json` capturing configuration, provenance, and shard integrity
 
 ## Artifact Layout
 
 ```
-.biblicus/runs/graph-extract/<snapshot_id>/
+graph/<extractor_id>/<snapshot_id>/
   manifest.json
   nodes/
     nodes-00001.jsonl

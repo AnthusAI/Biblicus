@@ -10,7 +10,7 @@ Feature: Tesseract OCR text extractor
 
   Scenario: Tesseract reads layout metadata from previous pipeline stage
     Given I ingested the file "examples/test_two_column_document.png" with tags ["layout-test"] into corpus "corpus"
-    When I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    When I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id            | config_json                       |
       | mock-layout-detector    | {"layout_type": "two-column"}     |
       | ocr-tesseract           | {"use_layout_metadata": true}     |
@@ -35,7 +35,7 @@ Feature: Tesseract OCR text extractor
 
   Scenario: Tesseract processes layout regions in correct reading order
     Given I ingested the file "examples/test_two_column_document.png" with tags ["order-test"] into corpus "corpus"
-    When I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    When I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id            | config_json                       |
       | mock-layout-detector    | {"layout_type": "two-column"}     |
       | ocr-tesseract           | {"use_layout_metadata": true}     |

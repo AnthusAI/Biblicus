@@ -105,7 +105,7 @@ def run_demo(
         corpus,
         extractor_id="pipeline",
         configuration_name="Use case: pass-through text",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
     extraction_snapshot = ExtractionSnapshotReference(
         extractor_id="pipeline",

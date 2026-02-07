@@ -23,7 +23,7 @@ The decisions below describe how version zero refined and extended these workflo
 - Catalog: the rebuildable index of the corpus.
 - Backend: a pluggable retrieval implementation.
 - Backend index: backend specific derived artifacts created during a run build.
-- Pipeline stage: a distinct step that transforms items, catalogs, or evidence.
+- Pipeline stage: a distinct stage that transforms items, catalogs, or evidence.
 - Hook: an explicit point in the lifecycle where a plugin can run.
 
 ## Day to day corpus workflows
@@ -137,27 +137,28 @@ Version zero implemented option B for a small set of common file types when a we
 
 Goal: import an existing library of files while preserving provenance.
 
-Option A: preserve relative paths in a dedicated imported namespace
+Option A: preserve relative paths in-place under the corpus root
 
-- Store raw files under a subfolder such as `raw/imports/<import_id>/...`.
-- Record the original relative path in metadata.
-- Avoid name collisions.
+- Keep raw files where they are under the corpus root.
+- Record provenance in metadata or sidecars.
+- Avoid duplication and keep the corpus the single source of truth.
 
-Option B: flatten everything into the raw folder
+Option B: copy into a dedicated imported namespace
 
-- Fast, but loses provenance and increases collision risk.
+- Store raw files under a subfolder such as `imports/<import_id>/...`.
+- Preserves provenance but duplicates bytes.
 
-Option C: store a reference to the original file and do not copy bytes
+Option C: store references outside the corpus root
 
-- Lower storage cost, but not durable if the original location changes.
+- Lowest storage cost, but breaks the rule that the corpus is the source of truth.
 
 Recommendation
 
-Pick option A. The corpus should be a stable source of truth. Copying bytes into a dedicated imported namespace preserves provenance while remaining durable.
+Pick option A. The corpus should be a stable source of truth without duplicating bytes. Files must live under the corpus root.
 
 Outcome
 
-Version zero implemented option A with an `import-tree` command that preserves relative paths under an imports namespace.
+Version zero implements option A. `import-tree` registers existing files in place under the corpus root.
 
 ### Decision 5: website crawl scope and safety
 
@@ -222,17 +223,17 @@ Option A: store artifacts under the corpus, partitioned by plugin type
 
 - Store derived artifacts under the corpus, not in a global cache.
 - Partition by plugin type, then by plugin identifier, then by snapshot identifier.
-- Keep raw items separate and immutable under the raw directory.
+- Keep raw items separate and immutable under the corpus root.
 
 Suggested layout
 
-- `.biblicus/runs/extraction/<extractor_id>/<snapshot_id>/...`
-- `.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/...`
-- `.biblicus/runs/evaluation/<evaluator_id>/<snapshot_id>/...`
+- `extracted/<extractor_id>/<snapshot_id>/...`
+- `retrieval/<backend_id>/<snapshot_id>/...`
+- `analysis/<analysis_id>/<snapshot_id>/...`
 
 Option B: store artifacts under the corpus but only partition by snapshot identifier
 
-- Store derived artifacts under `.biblicus/runs/<snapshot_id>/...`.
+- Store derived artifacts under `extracted/`, `retrieval/`, and `analysis/`.
 - The snapshot manifest records plugin identifiers and configuration.
 - Simple, but it is harder to browse and compare by implementation on disk.
 
@@ -244,7 +245,7 @@ Option C: store artifacts outside the corpus in a workspace cache
 
 Recommendation
 
-Pick option A. It supports the comparison workflow directly and it makes the corpus folder a complete, portable unit for experimentation. The raw directory remains the source of truth, and derived artifacts remain clearly separated and rebuildable.
+Pick option A. It supports the comparison workflow directly and it makes the corpus folder a complete, portable unit for experimentation. The corpus root remains the source of truth, and derived artifacts remain clearly separated and rebuildable.
 
 Outcome
 
@@ -383,7 +384,7 @@ The hook protocol and hook logging policy above were implemented in version zero
 
 ### Hook log schema implemented in version zero
 
-- Hook logs were written under `.biblicus/hook_logs/` as structured JavaScript Object Notation Lines files.
+- Hook logs were written under `metadata/hook_logs/` as structured JavaScript Object Notation Lines files.
 - Log entries included operation identifiers, timestamps, hook identifiers, hook points, and references to inputs and outputs.
 - Sensitive information in source uniform resource identifiers was redacted.
 

@@ -339,7 +339,7 @@ def step_order_catalog_items_with_missing_entries(context) -> None:
     items = {
         "a": CatalogItem(
             id="a",
-            relpath="raw/a.txt",
+            relpath="a.txt",
             sha256="a",
             bytes=1,
             media_type="text/plain",
@@ -351,7 +351,7 @@ def step_order_catalog_items_with_missing_entries(context) -> None:
         ),
         "b": CatalogItem(
             id="b",
-            relpath="raw/b.txt",
+            relpath="b.txt",
             sha256="b",
             bytes=2,
             media_type="text/plain",
@@ -363,7 +363,7 @@ def step_order_catalog_items_with_missing_entries(context) -> None:
         ),
         "c": CatalogItem(
             id="c",
-            relpath="raw/c.txt",
+            relpath="c.txt",
             sha256="c",
             bytes=3,
             media_type="text/plain",

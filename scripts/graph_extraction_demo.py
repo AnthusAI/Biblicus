@@ -46,7 +46,7 @@ def _resolve_extraction_snapshot(
         extractor_id="pipeline",
         configuration_name="graph-demo",
         configuration={
-            "steps": [
+            "stages": [
                 {"extractor_id": "pass-through-text", "config": {}},
                 {"extractor_id": "select-text", "config": {}},
             ]

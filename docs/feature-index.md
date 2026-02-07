@@ -125,7 +125,7 @@ What it does:
 - Supports an explicit extractor pipeline through the `pipeline` extractor.
 - Includes a Portable Document Format text extractor plugin.
 - Includes a speech to text extractor plugin for audio items.
-- Includes a selection extractor step for choosing extracted text within a pipeline.
+- Includes a selection extractor stage for choosing extracted text within a pipeline.
 - Includes a MarkItDown extractor plugin for document conversion.
 
 Documentation:

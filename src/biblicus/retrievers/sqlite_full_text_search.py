@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from ..constants import CORPUS_DIR_NAME, SNAPSHOTS_DIR_NAME
+from ..constants import RETRIEVAL_DIR_NAME
 from ..corpus import Corpus
 from ..frontmatter import parse_front_matter
 from ..models import (
@@ -187,10 +187,13 @@ class SqliteFullTextSearchRetriever:
             snapshot_artifacts=[],
         )
         db_relpath = str(
-            Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{snapshot.snapshot_id}.sqlite"
+            Path(RETRIEVAL_DIR_NAME)
+            / self.retriever_id
+            / snapshot.snapshot_id
+            / f"{snapshot.snapshot_id}.sqlite"
         )
         db_path = corpus.root / db_relpath
-        corpus.snapshots_dir.mkdir(parents=True, exist_ok=True)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
         extraction_reference = _resolve_extraction_reference(corpus, parsed_config)
         stats = _build_full_text_search_index(
             db_path=db_path,

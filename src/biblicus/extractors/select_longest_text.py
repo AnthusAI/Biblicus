@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -27,14 +27,14 @@ class SelectLongestTextExtractor(TextExtractor):
     Extractor plugin that selects the longest text from previous pipeline outputs.
 
     This extractor does not attempt to score semantic quality. It is a deterministic
-    selection policy for cases where multiple steps can produce usable text for the
+    selection policy for cases where multiple stages can produce usable text for the
     same item.
 
     The selection rules are:
 
     - If any prior extracted texts are non-empty after stripping whitespace, choose the one
       with the greatest stripped character count.
-    - Ties are broken by earliest pipeline step index.
+    - Ties are broken by earliest pipeline stage index.
     - If no prior extracted texts are usable but prior extracted texts exist, select the
       earliest extracted text even if it is empty.
 
@@ -61,7 +61,7 @@ class SelectLongestTextExtractor(TextExtractor):
         corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Select the longest extracted text from previous pipeline outputs.
@@ -72,8 +72,8 @@ class SelectLongestTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: SelectLongestTextExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Selected extracted text payload or None when no prior outputs exist.
         :rtype: ExtractedText or None
         """
@@ -93,13 +93,13 @@ class SelectLongestTextExtractor(TextExtractor):
                 for entry in usable_candidates
                 if len(entry.text.strip()) == len(candidate.text.strip())
             ]
-            candidate = min(ties, key=lambda entry: int(entry.step_index))
+            candidate = min(ties, key=lambda entry: int(entry.stage_index))
         else:
-            candidate = min(extracted_candidates, key=lambda entry: int(entry.step_index))
+            candidate = min(extracted_candidates, key=lambda entry: int(entry.stage_index))
 
         producer = candidate.producer_extractor_id or candidate.extractor_id
         return ExtractedText(
             text=candidate.text or "",
             producer_extractor_id=producer,
-            source_step_index=candidate.step_index,
+            source_stage_index=candidate.stage_index,
         )

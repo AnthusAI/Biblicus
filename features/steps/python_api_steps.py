@@ -216,7 +216,7 @@ def step_ingest_item_python_with_source_uri(
 @then('the corpus "{name}" hook logs do not include "{text}"')
 def step_hook_logs_do_not_include(context, name: str, text: str) -> None:
     corpus_path = _corpus_path(context, name)
-    log_dir = corpus_path / ".biblicus" / "hook_logs"
+    log_dir = corpus_path / "metadata" / "hook_logs"
     combined = ""
     if log_dir.is_dir():
         for p in sorted(log_dir.glob("*.jsonl")):
@@ -227,7 +227,7 @@ def step_hook_logs_do_not_include(context, name: str, text: str) -> None:
 @then('the corpus "{name}" hook logs include "{text}"')
 def step_hook_logs_include(context, name: str, text: str) -> None:
     corpus_path = _corpus_path(context, name)
-    log_dir = corpus_path / ".biblicus" / "hook_logs"
+    log_dir = corpus_path / "metadata" / "hook_logs"
     combined = ""
     if log_dir.is_dir():
         for p in sorted(log_dir.glob("*.jsonl")):

@@ -9,7 +9,7 @@ Feature: Markov analysis topic modeling
       | 1        | refund,credit    |
     And a fake hmmlearn library is available with predicted states "0,1,0,1"
     When I ingest the text "Billing question. Refund request." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:

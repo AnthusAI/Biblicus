@@ -13,7 +13,7 @@
 
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: heron-layout
       config:
         model_variant: "101"  # Options: "base" (42.9M params) or "101" (76.7M params, 78% mAP)

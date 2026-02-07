@@ -20,7 +20,7 @@ snapshot_id = "49d1d1defc0d35af1314d4757c3ccf73657fa7a7af909e13d69cdfffc7473a33"
 config = {
     "extractor_id": "pipeline",
     "config": {
-        "steps": [
+        "stages": [
             {"extractor_id": "paddleocr-layout", "config": {"lang": "en"}},
             {"extractor_id": "ocr-tesseract", "config": {"use_layout_metadata": True}},
         ]

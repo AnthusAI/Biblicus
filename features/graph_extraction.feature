@@ -19,7 +19,7 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction snapshot is idempotent for the same configuration and catalog
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -37,7 +37,7 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction snapshot changes when the catalog changes
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -47,7 +47,7 @@ Feature: Graph extraction snapshots
       | min_cooccurrence| 1     |
     And I remember the last graph extraction snapshot reference as "first"
     And I ingest the text "beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -60,7 +60,7 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction snapshot can be listed and inspected
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -82,7 +82,7 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction snapshot records graph identifier
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -97,7 +97,7 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction supports simple entities
     Given I initialized a corpus at "corpus"
     When I ingest the text "Ada Lovelace and Alan Turing." with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -113,7 +113,7 @@ Feature: Graph extraction snapshots
     And a fake Neo4j driver is installed
     And a fake Docker daemon is installed for Neo4j
     When I ingest the text "alpha beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |

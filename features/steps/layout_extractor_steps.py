@@ -251,7 +251,7 @@ def step_mock_layout_validation_fails(context) -> None:
 @when("I run mock layout detector on a non-image item")
 def step_mock_layout_non_image(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
-    item = _sample_item(context, "raw/file.txt", "text/plain")
+    item = _sample_item(context, "file.txt", "text/plain")
     extractor = MockLayoutDetectorExtractor()
     parsed = extractor.validate_config({"layout_type": "single-column"})
     result = extractor.extract_text(
@@ -282,7 +282,7 @@ def step_heron_dependencies_unavailable(context) -> None:
 def step_run_heron_layout(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = HeronLayoutExtractor()
@@ -299,7 +299,7 @@ def step_run_heron_layout(context) -> None:
 @when("I run the Heron layout extractor on a non-image item")
 def step_run_heron_layout_non_image(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
-    item = _sample_item(context, "raw/file.txt", "text/plain")
+    item = _sample_item(context, "file.txt", "text/plain")
     extractor = HeronLayoutExtractor()
     parsed = extractor.validate_config({})
     result = extractor.extract_text(
@@ -315,7 +315,7 @@ def step_run_heron_layout_non_image(context) -> None:
 def step_run_heron_layout_base(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = HeronLayoutExtractor()
@@ -335,7 +335,7 @@ def step_run_heron_layout_empty(context) -> None:
     _install_fake_heron_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = HeronLayoutExtractor()
@@ -355,7 +355,7 @@ def step_run_heron_layout_missing_image(context) -> None:
     _install_fake_heron_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = HeronLayoutExtractor()
@@ -414,7 +414,7 @@ def step_paddleocr_layout_dependencies_unavailable(context) -> None:
 def step_run_paddleocr_layout(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = PaddleOCRLayoutExtractor()
@@ -431,7 +431,7 @@ def step_run_paddleocr_layout(context) -> None:
 @when("I run the PaddleOCR layout extractor on a non-image item")
 def step_run_paddleocr_layout_non_image(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
-    item = _sample_item(context, "raw/file.txt", "text/plain")
+    item = _sample_item(context, "file.txt", "text/plain")
     extractor = PaddleOCRLayoutExtractor()
     parsed = extractor.validate_config({})
     result = extractor.extract_text(
@@ -449,7 +449,7 @@ def step_run_paddleocr_layout_empty(context) -> None:
     _install_fake_paddleocr_layout_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = PaddleOCRLayoutExtractor()
@@ -469,7 +469,7 @@ def step_run_paddleocr_layout_missing_coordinates(context) -> None:
     _install_fake_paddleocr_layout_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = PaddleOCRLayoutExtractor()
@@ -489,7 +489,7 @@ def step_run_paddleocr_layout_non_dict(context) -> None:
     _install_fake_paddleocr_layout_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = PaddleOCRLayoutExtractor()
@@ -509,7 +509,7 @@ def step_run_paddleocr_layout_missing_image(context) -> None:
     _install_fake_paddleocr_layout_dependencies(context)
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     image_path = _sample_image_path(context)
-    relpath = "raw/image.png"
+    relpath = "image.png"
     _write_bytes(corpus.root / relpath, image_path.read_bytes())
     item = _sample_item(context, relpath, "image/png")
     extractor = PaddleOCRLayoutExtractor()

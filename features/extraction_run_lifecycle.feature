@@ -5,12 +5,12 @@ Feature: Extraction snapshot lifecycle
   Scenario: Extraction snapshot build is idempotent for the same configuration and catalog
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
     And I remember the last extraction snapshot reference as "first"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -19,13 +19,13 @@ Feature: Extraction snapshot lifecycle
   Scenario: Extraction snapshot build changes when the catalog changes
     Given I initialized a corpus at "corpus"
     When I ingest the text "alpha" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
     And I remember the last extraction snapshot reference as "first"
     And I ingest the text "beta" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -34,7 +34,7 @@ Feature: Extraction snapshot lifecycle
   Scenario: Extraction snapshots can be listed and inspected
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -47,7 +47,7 @@ Feature: Extraction snapshot lifecycle
   Scenario: An extraction snapshot can be deleted explicitly
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -62,7 +62,7 @@ Feature: Extraction snapshot lifecycle
 
   Scenario: Extraction snapshot list ignores invalid manifest entries
     Given I initialized a corpus at "corpus"
-    And a file "corpus/.biblicus/snapshots/extraction/pipeline/bad/manifest.json" exists with contents:
+    And a file "corpus/extracted/pipeline/bad/manifest.json" exists with contents:
       """
       not json
       """
@@ -71,7 +71,7 @@ Feature: Extraction snapshot lifecycle
 
   Scenario: Extraction snapshot list supports filtering by extractor identifier
     Given I initialized a corpus at "corpus"
-    And a file "corpus/.biblicus/snapshots/extraction/.keep" exists with contents:
+    And a file "corpus/extracted/.keep" exists with contents:
       """
       keep
       """
@@ -80,11 +80,11 @@ Feature: Extraction snapshot lifecycle
 
   Scenario: Extraction snapshot list ignores non-directories and missing manifests
     Given I initialized a corpus at "corpus"
-    And a file "corpus/.biblicus/snapshots/extraction/pipeline/not-a-directory" exists with contents:
+    And a file "corpus/extracted/pipeline/not-a-directory" exists with contents:
       """
       ignore
       """
-    And a file "corpus/.biblicus/snapshots/extraction/pipeline/no-manifest/.keep" exists with contents:
+    And a file "corpus/extracted/pipeline/no-manifest/.keep" exists with contents:
       """
       ignore
       """
@@ -107,7 +107,7 @@ Feature: Extraction snapshot lifecycle
   Scenario: Deleting requires exact confirmation
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |

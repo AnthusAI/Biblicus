@@ -6,13 +6,15 @@ This extractor is implemented as an optional dependency so the core installation
 
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from ..user_config import resolve_deepgram_api_key
 from .base import TextExtractor
 
@@ -92,7 +94,7 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Transcribe an audio item.
@@ -103,8 +105,8 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: DeepgramSpeechToTextExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Extracted text payload, or None when the item is not audio.
         :rtype: ExtractedText or None
         :raises ExtractionSnapshotFatalError: If the optional dependency or required configuration is missing.
@@ -150,11 +152,12 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
 
         with source_path.open("rb") as audio_handle:
             audio_data = audio_handle.read()
-            response = client.listen.rest.v("1").transcribe_file(
-                {"buffer": audio_data},
-                options,
+            response = client.listen.v1.media.transcribe_file(
+                request=audio_data,
+                **options,
             )
 
+        response_payload = _deepgram_response_to_dict(response)
         transcript_text = ""
         if hasattr(response, "results") and response.results:
             channels = response.results.channels
@@ -163,4 +166,71 @@ class DeepgramSpeechToTextExtractor(TextExtractor):
                 if alternatives and len(alternatives) > 0:
                     transcript_text = alternatives[0].transcript or ""
 
-        return ExtractedText(text=transcript_text.strip(), producer_extractor_id=self.extractor_id)
+        return ExtractedText(
+            text=transcript_text.strip(),
+            producer_extractor_id=self.extractor_id,
+            metadata={"deepgram": response_payload},
+        )
+
+
+def _deepgram_response_to_dict(response: object) -> Dict[str, Any]:
+    if hasattr(response, "to_dict"):
+        try:
+            raw = dict(getattr(response, "to_dict")())
+            return _normalize_deepgram_value(raw)
+        except Exception:
+            pass
+    if hasattr(response, "to_json"):
+        try:
+            return _normalize_deepgram_value(json.loads(getattr(response, "to_json")()))
+        except Exception:
+            pass
+    if hasattr(response, "model_dump"):
+        try:
+            raw = dict(getattr(response, "model_dump")())
+            return _normalize_deepgram_value(raw)
+        except Exception:
+            pass
+    if hasattr(response, "dict"):
+        try:
+            raw = dict(getattr(response, "dict")())
+            return _normalize_deepgram_value(raw)
+        except Exception:
+            pass
+    try:
+        return _normalize_deepgram_payload(response)
+    except Exception:
+        return {"value": str(response)}
+
+
+def _normalize_deepgram_payload(value: object) -> Dict[str, Any]:
+    return _normalize_deepgram_value(value)
+
+
+def _normalize_deepgram_value(value: object) -> Any:
+    if isinstance(value, dict):
+        return {key: _normalize_deepgram_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_deepgram_value(item) for item in value]
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if hasattr(value, "model_dump"):
+        try:
+            return _normalize_deepgram_value(getattr(value, "model_dump")())
+        except Exception:
+            pass
+    if hasattr(value, "dict"):
+        try:
+            return _normalize_deepgram_value(getattr(value, "dict")())
+        except Exception:
+            pass
+    if hasattr(value, "__dict__"):
+        try:
+            return _normalize_deepgram_value(dict(value.__dict__))
+        except Exception:
+            pass
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        return str(value)

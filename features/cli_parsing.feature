@@ -46,7 +46,7 @@ Feature: Command-line interface parsing
     Then a config parsing error is raised
     And the config parsing error mentions "valid JSON"
 
-  Scenario: Step specs reject empty strings
-    When I attempt to parse an empty step spec
-    Then a step spec parsing error is raised
-    And the step spec parsing error mentions "Step spec must be non-empty"
+  Scenario: Stage specs reject empty strings
+    When I attempt to parse an empty stage spec
+    Then a stage spec parsing error is raised
+    And the stage spec parsing error mentions "Stage spec must be non-empty"

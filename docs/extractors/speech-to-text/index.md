@@ -8,6 +8,7 @@ Audio transcription extractors for converting spoken content into text.
 
 openai
 deepgram
+deepgram-transform
 ```
 
 ## Overview
@@ -51,6 +52,16 @@ Deepgram Nova-3 for fast, accurate transcription:
 **Installation**: `pip install biblicus[deepgram]`
 
 **Best for**: High-accuracy transcription, speaker diarization, professional content
+
+### [deepgram-transform](deepgram-transform.md)
+
+Render Deepgram structured metadata into text:
+
+- **Source**: transcript, utterances, or words
+- **Filters**: channel and speaker selection
+- **Labels**: optional channel/speaker prefixes
+
+**Best for**: Diarized filtering, channel selection, and structured transcript rendering
 
 ## Choosing an Extractor
 

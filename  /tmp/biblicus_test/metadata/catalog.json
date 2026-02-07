@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-02-05T21:56:28.490682+00:00",
+  "corpus_uri": "file:///Users/ryan.porter/Projects/Biblicus/%20/tmp/biblicus_test",
+  "raw_dir": ".",
+  "latest_run_id": null,
+  "latest_snapshot_id": null,
+  "items": {
+    "b75ff30e-e887-4332-871f-cf1c79262e5d": {
+      "id": "b75ff30e-e887-4332-871f-cf1c79262e5d",
+      "relpath": "note.md",
+      "sha256": "e99206283becdd2c9f2555281b7a25307f4c40b9bd45af6c0d911d01103b7bff",
+      "bytes": 186,
+      "media_type": "text/markdown",
+      "title": "From file",
+      "tags": [
+        "x",
+        "y"
+      ],
+      "metadata": {
+        "title": "From file",
+        "tags": [
+          "x",
+          "y"
+        ],
+        "biblicus": {
+          "id": "b75ff30e-e887-4332-871f-cf1c79262e5d",
+          "source": "file:///Users/ryan.porter/Projects/Biblicus/%20/tmp/biblicus_test/note.md"
+        }
+      },
+      "created_at": "2026-02-05T21:56:28.490561+00:00",
+      "source_uri": "file:///Users/ryan.porter/Projects/Biblicus/%20/tmp/biblicus_test/note.md"
+    }
+  },
+  "order": [
+    "b75ff30e-e887-4332-871f-cf1c79262e5d"
+  ]
+}

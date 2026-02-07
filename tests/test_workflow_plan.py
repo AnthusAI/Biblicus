@@ -83,7 +83,7 @@ def test_plan_with_current_extraction_snapshot_marks_extract_complete(tmp_path):
     Existing extraction snapshots for the current catalog mark extract complete.
     """
     corpus = _create_corpus(tmp_path, with_item=True)
-    pipeline_config = {"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]}
+    pipeline_config = {"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]}
     _write_pipeline_extraction_snapshot(corpus, pipeline_config=pipeline_config)
     plan = build_plan_for_index(corpus, "tf-vector", pipeline_config=pipeline_config)
     kinds = [task.kind for task in plan.tasks]
@@ -97,7 +97,7 @@ def test_plan_query_only_when_index_is_current(tmp_path):
     When a compatible retrieval snapshot exists, query has no dependencies.
     """
     corpus = _create_corpus(tmp_path, with_item=True)
-    pipeline_config = {"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]}
+    pipeline_config = {"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]}
     _write_pipeline_extraction_snapshot(corpus, pipeline_config=pipeline_config)
     _write_retrieval_snapshot(corpus, retriever_id="tf-vector")
     plan = build_plan_for_query(corpus, "tf-vector", pipeline_config=pipeline_config)
@@ -110,7 +110,7 @@ def test_extract_stale_when_catalog_generated_at_changes(tmp_path):
     Extraction becomes stale after catalog changes.
     """
     corpus = _create_corpus(tmp_path, with_item=True)
-    pipeline_config = {"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]}
+    pipeline_config = {"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]}
     _write_pipeline_extraction_snapshot(corpus, pipeline_config=pipeline_config)
     corpus.ingest_note("More text", title="More")
     plan = build_plan_for_extract(corpus, pipeline_config=pipeline_config)

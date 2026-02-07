@@ -22,7 +22,7 @@ corpus = Corpus(Path("corpora/funsd_demo").resolve())
 config = {
     "extractor_id": "pipeline",
     "config": {
-        "steps": [
+        "stages": [
             {
                 "extractor_id": "heron-layout",
                 "config": {
@@ -74,7 +74,7 @@ try:
     snapshot_dir = snapshots_base / snapshot.snapshot_id
 
     # Check layout detection step
-    layout_step_dir = snapshot_dir / "steps" / "01-heron-layout"
+    layout_step_dir = snapshot_dir / "stages" / "01-heron-layout"
     if layout_step_dir.exists():
         print("✓ Heron layout detection step exists")
 
@@ -104,7 +104,7 @@ try:
     print()
 
     # Check OCR step
-    ocr_step_dir = snapshot_dir / "steps" / "02-ocr-tesseract"
+    ocr_step_dir = snapshot_dir / "stages" / "02-ocr-tesseract"
     if ocr_step_dir.exists():
         print("✓ Tesseract OCR step exists")
 

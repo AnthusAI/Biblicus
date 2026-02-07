@@ -1,0 +1,55 @@
+# Biblicus Document Understanding Benchmark - Full Configuration
+#
+# Full benchmark for comprehensive evaluation.
+# Runs all available documents per category.
+# Expected runtime: ~2-4 hours
+
+benchmark_name: full
+
+categories:
+  forms:
+    dataset: funsd
+    corpus_path: corpora/funsd_benchmark
+    ground_truth_subdir: funsd_ground_truth
+    primary_metric: f1_score
+    # No subset_size means use all available documents (199 for FUNSD)
+    tags:
+      - funsd
+      - scanned
+      - form
+
+  # academic: (pending - need dataset with actual scanned images)
+  #   dataset: scanned-arxiv
+  #   corpus_path: corpora/scanned_arxiv_benchmark
+  #   ground_truth_subdir: scanned_arxiv_ground_truth
+  #   primary_metric: lcs_ratio
+
+  receipts:
+    dataset: sroie
+    corpus_path: corpora/sroie_benchmark
+    ground_truth_subdir: sroie_ground_truth
+    primary_metric: f1_score
+    # No subset_size means use all available documents (626 for SROIE)
+    tags:
+      - sroie
+      - receipt
+      - scanned
+
+# All available pipelines
+pipelines:
+  - configs/baseline-ocr.yaml
+  - configs/ocr-paddleocr.yaml
+  - configs/heron-tesseract.yaml
+  - configs/docling-smol.yaml
+  - configs/docling-granite.yaml
+  - configs/ocr-rapidocr.yaml
+  - configs/unstructured.yaml
+  - configs/markitdown.yaml
+  - configs/layout-aware-tesseract.yaml
+
+# Weights for aggregate score calculation
+aggregate_weights:
+  forms: 0.60
+  receipts: 0.40
+
+output_dir: results/benchmark

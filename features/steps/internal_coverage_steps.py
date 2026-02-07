@@ -90,7 +90,7 @@ from biblicus.extraction import (
     write_extraction_snapshot_manifest,
 )
 from biblicus.extractors import get_extractor as resolve_extractor
-from biblicus.extractors.pipeline import PipelineExtractorConfig, PipelineStepSpec
+from biblicus.extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
 from biblicus.extractors.docling_granite_text import DoclingGraniteExtractor
 from biblicus.extractors.docling_smol_text import DoclingSmolExtractor
 from biblicus.workflow import (
@@ -149,7 +149,7 @@ def step_workflow_dependency_edge_cases(context) -> None:
         target_type="corpus",
         target_id=corpus.uri,
         status="ready",
-        metadata={"pipeline": {"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]}},
+        metadata={"pipeline": {"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]}},
     )
     extract_plan = Plan(tasks=[extract_task], root=extract_task, status="ready")
     assert extract_plan.execute(
@@ -221,7 +221,7 @@ def step_workflow_dependency_edge_cases(context) -> None:
     extraction_config = create_extraction_configuration_manifest(
         extractor_id="pipeline",
         name="default",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]},
     )
     extraction_manifest = create_extraction_snapshot_manifest(
         corpus, configuration=extraction_config
@@ -427,7 +427,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         target_type="corpus",
         target_id=corpus.uri,
         status="ready",
-        metadata={"pipeline": {"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]}},
+        metadata={"pipeline": {"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]}},
     )
     query_root = Task(
         name="query",
@@ -641,7 +641,7 @@ def step_text_extraction_edge_cases_done(context) -> None:
 @when("I exercise pipeline configuration edge cases")
 def step_pipeline_configuration_edge_cases(context) -> None:
     try:
-        PipelineExtractorConfig(steps=[PipelineStepSpec(extractor_id="pipeline")])
+        PipelineExtractorConfig(stages=[PipelineStageSpec(extractor_id="pipeline")])
         raise AssertionError("Expected pipeline step validation to raise")
     except ValueError:
         pass
@@ -754,7 +754,7 @@ def step_extraction_snapshot_edge_cases(context) -> None:
     config_manifest = create_extraction_configuration_manifest(
         extractor_id="pipeline",
         name="default",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]},
     )
     manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
     snapshot_dir = corpus.extraction_snapshot_dir(
@@ -818,13 +818,13 @@ def step_extraction_snapshot_edge_cases(context) -> None:
         corpus,
         extractor_id="pipeline",
         configuration_name="default",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]},
     )
 
     missing_config_manifest = create_extraction_configuration_manifest(
         extractor_id="pipeline",
         name="missing",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]},
     )
     missing_manifest = create_extraction_snapshot_manifest(
         corpus, configuration=missing_config_manifest
@@ -840,7 +840,7 @@ def step_extraction_snapshot_edge_cases(context) -> None:
         corpus,
         extractor_id="pipeline",
         configuration_name="missing",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "configuration": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "configuration": {}}]},
     )
 
 

@@ -72,23 +72,19 @@ def _normalize_text_token(value: str) -> str:
 def _prepare_ocr_benchmark_corpus(context, snapshot_id: str) -> Path:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     item_id = "item-1"
-    raw_dir = corpus.root / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_path = raw_dir / f"{item_id}--file%3A%2F%2Fexample.png"
+    raw_path = corpus.root / f"{item_id}--file%3A%2F%2Fexample.png"
     raw_path.write_text("raw", encoding="utf-8")
 
     snapshot_dir = (
         corpus.root
-        / ".biblicus"
-        / "snapshots"
-        / "extraction"
+        / "extracted"
         / "pipeline"
         / snapshot_id
         / "text"
     )
     _write_text(snapshot_dir / f"{item_id}.txt", "Hello world")
 
-    ground_truth_dir = corpus.root / ".biblicus" / "funsd_ground_truth"
+    ground_truth_dir = corpus.root / "metadata" / "funsd_ground_truth"
     _write_text(ground_truth_dir / f"{item_id}.txt", "Hello world")
 
     context._ocr_benchmark_corpus = corpus
@@ -108,19 +104,12 @@ def _prepare_ocr_snapshot(
 ) -> Corpus:
     corpus = Corpus.init(context.workdir / "corpus", force=True)
     item_id = "item-1"
-    raw_dir = corpus.root / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_path = raw_dir / f"{item_id}--file%3A%2F%2Fexample.png"
+    raw_path = corpus.root / f"{item_id}--file%3A%2F%2Fexample.png"
     raw_path.write_text("raw", encoding="utf-8")
 
     if include_snapshot_dir:
         snapshot_dir = (
-            corpus.root
-            / ".biblicus"
-            / "snapshots"
-            / "extraction"
-            / "pipeline"
-            / snapshot_id
+            corpus.root / "extracted" / "pipeline" / snapshot_id
         )
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         if include_text_dir:
@@ -130,7 +119,7 @@ def _prepare_ocr_snapshot(
                 _write_text(text_dir / f"{item_id}.txt", "Hello world")
 
     if include_ground_truth_dir:
-        ground_truth_dir = corpus.root / ".biblicus" / "funsd_ground_truth"
+        ground_truth_dir = corpus.root / "metadata" / "funsd_ground_truth"
         ground_truth_dir.mkdir(parents=True, exist_ok=True)
         if include_ground_truth_file:
             _write_text(ground_truth_dir / f"{item_id}.txt", "Hello world")
@@ -201,7 +190,7 @@ def step_evaluate_ocr_with_explicit_ground_truth(context) -> None:
     snapshot_id = "snap-explicit-gt"
     corpus = _prepare_ocr_snapshot(context, snapshot_id)
     benchmark = OCRBenchmark(corpus)
-    ground_truth_dir = corpus.root / ".biblicus" / "funsd_ground_truth"
+    ground_truth_dir = corpus.root / "metadata" / "funsd_ground_truth"
     report = benchmark.evaluate_extraction(snapshot_id, ground_truth_dir=ground_truth_dir)
     context._ocr_benchmark_report = report
 

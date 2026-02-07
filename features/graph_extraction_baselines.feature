@@ -5,7 +5,7 @@ Feature: Graph extraction baseline extractors
     Given I initialized a corpus at "corpus"
     And a fake NLP model is installed
     When I ingest the text "Alan Turing built machines." with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |
@@ -22,7 +22,7 @@ Feature: Graph extraction baseline extractors
     Given I initialized a corpus at "corpus"
     And a fake NLP model is installed
     When I ingest the text "Ada Lovelace wrote notes." with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |

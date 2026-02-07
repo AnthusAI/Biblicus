@@ -30,6 +30,7 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Deterministic lexical baseline, hybrid target**: deterministic lexical backend first; hybrid retrieval is the strategic direction.
 - **Evaluation datasets are mixed**: human-labeled for truth, synthetic for scale.
 - **Corpus snapshots are versioned**: reindex and snapshot builds get identifiers for reproducibility.
+- **Extraction cache identity is name-based**: changing the extraction configuration name produces a new snapshot identity and invalidates cached artifacts.
 
 ## Agent orientation
 
@@ -47,6 +48,52 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **No "just tests"**: behavior specifications are part of the architecture; they define what the system *is*.
 - **Specification completeness**: every behavior that exists must be specified. If a behavior cannot be specified clearly, it should not exist (remove it or make it a hard error).
 - **100% test coverage is required**: all code must be covered by BDD tests. This is non-negotiable.
+
+## CRITICAL: No Backward Compatibility or Fallback Logic (project-wide)
+
+**This is a strict, non-negotiable policy across the entire Biblicus project:**
+
+- **NO backward compatibility code**: Never preserve old code paths when updating to a new approach
+- **NO fallback logic**: Never check multiple locations or try alternative approaches
+- **NO "support both ways"**: There is ONE correct way, implement that way only
+- **NO legacy support**: Old structures are upgraded through migration, not supported forever
+- **ONE way to do things**: If there's a new metadata location, use ONLY that location
+
+**Why this matters:**
+- Fallback logic creates exponential complexity
+- Multiple code paths mean multiple failure modes
+- Backward compatibility prevents evolution
+- "Just in case" code becomes permanent debt
+
+**What to do instead:**
+- Implement the current, correct approach cleanly
+- If old data exists, fail gracefully and show what you can
+- Progressive enhancement: display available data, skip missing data
+- Clear error messages when data is missing
+- Document migration paths separately (don't mix with runtime code)
+
+**Examples of what NOT to do:**
+```python
+# WRONG - trying both locations with fallback
+try:
+    data = read_from_new_location()
+except:
+    try:
+        data = read_from_old_location()  # NO! Don't do this!
+    except:
+        data = None
+```
+
+**Examples of what TO do:**
+```python
+# RIGHT - one location, fail gracefully
+try:
+    data = read_from_metadata_folder()
+    display_full_info(data)
+except FileNotFoundError:
+    # Gracefully show what we can without that data
+    display_basic_info()
+```
 
 ## Working backwards (product-first workflow)
 

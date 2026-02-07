@@ -19,13 +19,13 @@ Feature: Purging a corpus (dangerous operation)
     When I ingest the text "hello" with title "A" and tags "t" into corpus "corpus"
     And I snapshot "purge --confirm corpus" in corpus "corpus"
     Then the command succeeds
-    And the corpus "corpus" raw folder is empty
+    And the corpus "corpus" has no raw files
     And the corpus "corpus" catalog has 0 items
 
-  Scenario: Purge removes extra derived files and recreates raw folder
+  Scenario: Purge removes extra derived files and clears raw files
     Given I initialized a corpus at "corpus"
     And I create an extra derived folder in corpus "corpus"
-    And I delete the corpus "corpus" raw folder
+    And I delete the corpus "corpus" raw files
     When I snapshot "purge --confirm corpus" in corpus "corpus"
     Then the command succeeds
-    And the corpus "corpus" raw folder is empty
+    And the corpus "corpus" has no raw files

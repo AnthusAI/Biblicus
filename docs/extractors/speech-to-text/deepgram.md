@@ -144,7 +144,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: stt-deepgram
     - extractor_id: select-text
@@ -280,6 +280,27 @@ Speaker 0: Great to hear!
 ```
 
 Note: Deepgram's transcription API returns speaker labels in the detailed response. The Biblicus extractor combines all speaker segments into a single transcript.
+
+## Structured Metadata
+
+Biblicus stores the full Deepgram response payload as structured metadata on the extraction stage.
+This lets downstream stages transform the transcript using Deepgram's `words` or `utterances`
+representations (for example, to filter by speaker or channel).
+
+To render a specific representation, add the `deepgram-transform` stage after `stt-deepgram`:
+
+```yaml
+extractor_id: pipeline
+config:
+  stages:
+    - extractor_id: stt-deepgram
+      config:
+        diarize: true
+    - extractor_id: deepgram-transform
+      config:
+        source: utterances
+        speakers: [0]
+```
 
 ## Performance
 

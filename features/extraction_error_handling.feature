@@ -27,6 +27,6 @@ Feature: Extraction error handling
     Given I initialized a corpus at "corpus"
     And a text file "alpha.txt" exists with contents "alpha"
     When I ingest the file "alpha.txt" into corpus "corpus"
-    And I attempt to build a pipeline extraction snapshot in corpus "corpus" with a fatal extractor step
+    And I attempt to build a pipeline extraction snapshot in corpus "corpus" with a fatal extractor stage
     Then a fatal extraction error is raised
     And the fatal extraction error message includes "Fatal extractor failure"

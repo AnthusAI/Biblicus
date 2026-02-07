@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
 from ..inference import ApiProvider, InferenceBackendConfig, InferenceBackendMode, resolve_api_key
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -118,7 +118,7 @@ class PaddleOcrVlExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Extract text from an image using PaddleOCR-VL.
@@ -129,8 +129,8 @@ class PaddleOcrVlExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: PaddleOcrVlExtractorConfig
-        :param previous_extractions: Prior step outputs for this item.
-        :type previous_extractions: list[ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item.
+        :type previous_extractions: list[ExtractionStageOutput]
         :return: Extracted text with confidence, or None for non-image items.
         :rtype: ExtractedText or None
         """

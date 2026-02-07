@@ -8,6 +8,7 @@ from typing import Dict
 
 from .base import TextExtractor
 from .deepgram_stt import DeepgramSpeechToTextExtractor
+from .deepgram_transform import DeepgramTranscriptTransformExtractor
 from .docling_granite_text import DoclingGraniteExtractor
 from .docling_smol_text import DoclingSmolExtractor
 from .heron_layout import HeronLayoutExtractor
@@ -50,6 +51,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
         DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor(),
+        DeepgramTranscriptTransformExtractor.extractor_id: DeepgramTranscriptTransformExtractor(),
         RapidOcrExtractor.extractor_id: RapidOcrExtractor(),
         HeronLayoutExtractor.extractor_id: HeronLayoutExtractor(),
         PaddleOCRLayoutExtractor.extractor_id: PaddleOCRLayoutExtractor(),

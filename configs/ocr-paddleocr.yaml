@@ -4,7 +4,7 @@
 
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-paddleocr-vl
       config:
         min_confidence: 0.0

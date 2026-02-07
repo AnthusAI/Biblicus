@@ -35,6 +35,12 @@ def before_scenario(context, scenario) -> None:
     import biblicus.__main__ as _biblicus_main
 
     _ = _biblicus_main
+    try:
+        from biblicus.extractors.paddleocr_vl_text import PaddleOcrVlExtractor
+
+        PaddleOcrVlExtractor._model_cache = {}
+    except Exception:
+        pass
 
     # Clear fake module behaviors at the START of each scenario
     # Delete and recreate to ensure fresh state
@@ -70,6 +76,9 @@ def before_scenario(context, scenario) -> None:
         "_fake_spacy_short_relations_no_lemma",
     ]:
         setattr(context, attr, False)
+    context._fake_docker_installed = False
+    context.fake_docker_state = None
+    context.fake_docker_log = None
     spacy_original = getattr(context, "_fake_spacy_relations_original_module", None)
     if spacy_original is None:
         spacy_original = getattr(context, "_fake_spacy_short_original_module", None)

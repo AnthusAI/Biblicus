@@ -20,6 +20,10 @@ from biblicus.models import RetrievalResult
 from features.environment import RunResult, run_biblicus
 
 
+def _meta_dir(corpus: Path) -> Path:
+    return corpus / "metadata"
+
+
 def _corpus_path(context, name: str) -> Path:
     return (context.workdir / name).resolve()
 
@@ -41,7 +45,7 @@ def _parse_ingest_standard_output(standard_output: str) -> Dict[str, str]:
 
 
 def _ensure_workdir_file(context, filename: str) -> Path:
-    work_path = (context.workdir / filename).resolve()
+    work_path = _resolve_fixture_path(context, filename)
     if work_path.exists():
         return work_path
     repo_path = (context.repo_root / filename).resolve()
@@ -76,6 +80,27 @@ def _parse_markdown_front_matter(text: str) -> Dict[str, Any]:
     if not isinstance(data, dict):
         raise AssertionError("Front matter must be a mapping/object")
     return dict(data)
+
+
+def _is_reserved_relpath(relpath: Path) -> bool:
+    if not relpath.parts:
+        return False
+    return relpath.parts[0] in {"metadata", "extracted", "graph", "retrieval", "analysis"}
+
+
+def _resolve_fixture_path(context, filename: str) -> Path:
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
 
 
 @when('I snapshot "context-pack build" joining with "{join_with}"')
@@ -182,6 +207,7 @@ def step_then_context_pack_build_output_text_equals(context) -> None:
 def step_init_corpus(context, name: str) -> None:
     result = run_biblicus(context, ["init", str(_corpus_path(context, name))])
     assert result.returncode == 0, result.stderr
+    context.last_corpus_root = _corpus_path(context, name)
 
 
 @when('I attempt to initialize a corpus at "{name}"')
@@ -210,13 +236,13 @@ def step_corpus_dir_exists(context, name: str) -> None:
 
 @then("the corpus has a config file")
 def step_corpus_has_config(context) -> None:
-    candidates = list(context.workdir.rglob(".biblicus/config.json"))
+    candidates = list(context.workdir.rglob("metadata/config.json"))
     assert len(candidates) == 1
 
 
 @then("the corpus has a catalog file")
 def step_corpus_has_catalog(context) -> None:
-    candidates = list(context.workdir.rglob(".biblicus/catalog.json"))
+    candidates = list(context.workdir.rglob("metadata/catalog.json"))
     assert len(candidates) == 1
 
 
@@ -319,7 +345,7 @@ def step_ingest_text_with_tags_csv(
 def step_ingest_file(context, filename: str, tags: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
-    path = (context.workdir / filename).resolve()
+    path = _resolve_fixture_path(context, filename)
     context.last_source = path.as_uri()
     args = ["--corpus", str(corpus), "ingest", str(path)]
     for tag in [t.strip() for t in tags.split(",") if t.strip()]:
@@ -346,7 +372,7 @@ def step_ingest_file_with_single_tag(
 def step_ingest_plaintext_file_with_single_tag(
     context, filename: str, content: str, tag: str, corpus_name: str
 ) -> None:
-    path = (context.workdir / filename).resolve()
+    path = _resolve_fixture_path(context, filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     step_ingest_file(context, filename, tag, corpus_name)
@@ -373,11 +399,12 @@ def step_last_ingest_succeeds(context) -> None:
     assert context.last_ingest is not None
 
 
-@then("the last ingested item is stored in the corpus raw folder")
-def step_last_item_stored_in_raw(context) -> None:
+@then("the last ingested item is stored in the corpus root")
+def step_last_item_stored_in_root(context) -> None:
     assert context.last_ingest is not None
     relpath = Path(context.last_ingest["relpath"])
-    assert relpath.parts[0] == "raw"
+    assert relpath.parts
+    assert relpath.parts[0] not in {"metadata", "extracted", "graph", "retrieval", "analysis"}
 
 
 @then('the last ingested item is a markdown note with title "{title}" and tags:')
@@ -420,7 +447,7 @@ def step_last_item_has_provenance_source_prefix(context, prefix: str) -> None:
 
 @given('a file "{filename}" exists with markdown front matter:')
 def step_file_with_front_matter(context, filename: str) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
     meta: Dict[str, Any] = {}
     for row in context.table:
         key, value = row[0], row[1]
@@ -434,22 +461,36 @@ def step_file_with_front_matter(context, filename: str) -> None:
 
 @given('the file "{filename}" has body:')
 def step_file_body(context, filename: str) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
     path.write_text(path.read_text(encoding="utf-8") + context.text, encoding="utf-8")
 
 
 @given('a file "{filename}" exists with contents:')
 def step_file_exists_with_contents(context, filename: str) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(context.text, encoding="utf-8")
+
+
+@then('a file "{filename}" exists')
+def step_file_exists(context, filename: str) -> None:
+    path = _resolve_fixture_path(context, filename)
+    assert path.is_file()
+
+
+@then('a file "{filename}" does not exist')
+def step_file_does_not_exist(context, filename: str) -> None:
+    path = _resolve_fixture_path(context, filename)
+    assert not path.exists()
 
 
 @given('a file "{filename}" exists with bytes:')
 def step_file_exists_with_bytes(context, filename: str) -> None:
     raw = context.text.strip()
     data = raw.encode("utf-8").decode("unicode_escape").encode("latin1")
-    (context.workdir / filename).write_bytes(data)
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
 
 
 @then('the last ingested item is markdown with title "{title}" and tags:')
@@ -469,35 +510,44 @@ def step_last_item_markdown_with_title_tags(context, title: str) -> None:
 @given('a binary file "{filename}" exists')
 @when('a binary file "{filename}" exists')
 def step_binary_file_exists(context, filename: str) -> None:
-    (context.workdir / filename).write_bytes(b"%PDF-1.4\n%...\n")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"%PDF-1.4\n%...\n")
 
 
 @given('a binary file "{filename}" exists with Portable Document Format bytes')
 def step_binary_file_exists_pdf_bytes(context, filename: str) -> None:
-    (context.workdir / filename).write_bytes(b"%PDF-1.7\n%...\n")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"%PDF-1.7\n%...\n")
 
 
 @given('a binary file "{filename}" exists with invalid Unicode Transformation Format 8 bytes')
 def step_binary_file_exists_invalid_utf8(context, filename: str) -> None:
-    (context.workdir / filename).write_bytes(b"\xff\xfe\xfa")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"\xff\xfe\xfa")
 
 
 @given('a binary file "{filename}" exists with size {size:d} bytes')
 def step_binary_file_exists_with_size(context, filename: str, size: int) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"a" * size)
 
 
 @given('a text file "{filename}" exists with contents "{contents}"')
 def step_text_file_exists(context, filename: str, contents: str) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(contents, encoding="utf-8")
 
 
 @given('a file "{filename}" exists with invalid Yet Another Markup Language front matter list')
 def step_invalid_front_matter_list(context, filename: str) -> None:
-    (context.workdir / filename).write_text("---\n- a\n---\nbody\n", encoding="utf-8")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("---\n- a\n---\nbody\n", encoding="utf-8")
 
 
 @given(
@@ -508,8 +558,7 @@ def step_raw_file_with_uuid_exists(
     context, item_id: str, corpus_name: str, name: str, contents: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
-    (corpus / "raw").mkdir(parents=True, exist_ok=True)
-    (corpus / "raw" / f"{item_id}--{name}").write_text(contents, encoding="utf-8")
+    (corpus / f"{item_id}--{name}").write_text(contents, encoding="utf-8")
 
 
 @given(
@@ -518,8 +567,7 @@ def step_raw_file_with_uuid_exists(
 )
 def step_raw_file_with_uuid_exists_doc(context, item_id: str, corpus_name: str, name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    (corpus / "raw").mkdir(parents=True, exist_ok=True)
-    (corpus / "raw" / f"{item_id}--{name}").write_text(context.text, encoding="utf-8")
+    (corpus / f"{item_id}--{name}").write_text(context.text, encoding="utf-8")
 
 
 @given(
@@ -530,15 +578,13 @@ def step_raw_file_with_uuid_exists_invalid_utf8(
     context, item_id: str, corpus_name: str, name: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
-    (corpus / "raw").mkdir(parents=True, exist_ok=True)
-    (corpus / "raw" / f"{item_id}--{name}").write_bytes(b"\xff\xfe\xfa")
+    (corpus / f"{item_id}--{name}").write_bytes(b"\xff\xfe\xfa")
 
 
 @given('a raw file named "{filename}" exists in corpus "{corpus_name}" with contents "{contents}"')
 def step_raw_file_named_exists(context, filename: str, corpus_name: str, contents: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    (corpus / "raw").mkdir(parents=True, exist_ok=True)
-    (corpus / "raw" / filename).write_text(contents, encoding="utf-8")
+    (corpus / filename).write_text(contents, encoding="utf-8")
 
 
 @given(
@@ -546,7 +592,7 @@ def step_raw_file_named_exists(context, filename: str, corpus_name: str, content
 )
 def step_sidecar_for_raw_file(context, raw_filename: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    content_path = corpus / "raw" / raw_filename
+    content_path = corpus / raw_filename
     sidecar_path = content_path.with_name(content_path.name + ".biblicus.yml")
     sidecar_path.write_text(context.text.strip() + "\n", encoding="utf-8")
 
@@ -603,7 +649,8 @@ def step_http_server_serving(context) -> None:
         def log_message(self, message_format, *args):
             return
 
-    handler = partial(QuietHandler, directory=str(context.workdir))
+    serve_root = getattr(context, "last_corpus_root", None) or context.workdir
+    handler = partial(QuietHandler, directory=str(serve_root))
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
@@ -625,7 +672,8 @@ def step_http_server_serving_without_content_type(context) -> None:
         def guess_type(self, path: str) -> str:
             return "application/octet-stream"
 
-    handler = partial(NoContentTypeHandler, directory=str(context.workdir))
+    serve_root = getattr(context, "last_corpus_root", None) or context.workdir
+    handler = partial(NoContentTypeHandler, directory=str(serve_root))
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
@@ -646,7 +694,8 @@ def step_http_server_serving_with_content_type(context, media_type: str) -> None
             _ = path
             return media_type
 
-    handler = partial(ForcedContentTypeHandler, directory=str(context.workdir))
+    serve_root = getattr(context, "last_corpus_root", None) or context.workdir
+    handler = partial(ForcedContentTypeHandler, directory=str(serve_root))
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
@@ -659,7 +708,7 @@ def step_http_server_serving_with_content_type(context, media_type: str) -> None
 def step_ingest_file_url(context, filename: str, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
-    url = (context.workdir / filename).resolve().as_uri()
+    url = _resolve_fixture_path(context, filename).as_uri()
     context.last_source = url
     result = run_biblicus(context, ["--corpus", str(corpus), "ingest", url])
     _record_ingest(context, result)
@@ -724,7 +773,7 @@ def step_show_item(context, item_id: str, corpus_name: str) -> None:
 @when('I clear the corpus catalog order list in corpus "{corpus_name}"')
 def step_clear_catalog_order(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     data["order"] = []
     catalog_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -733,7 +782,7 @@ def step_clear_catalog_order(context, corpus_name: str) -> None:
 @when('I prepend an unknown identifier to the corpus catalog order list in corpus "{corpus_name}"')
 def step_prepend_unknown_id_catalog_order(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     order = data.get("order") or []
     assert isinstance(order, list)
@@ -833,24 +882,22 @@ def step_write_sidecar_for_last_item(context) -> None:
 @given('I create an extra derived folder in corpus "{corpus_name}"')
 def step_create_extra_derived_folder(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    meta_dir = corpus / ".biblicus"
-    extra_dir = meta_dir / "tmpdir"
+    extra_dir = corpus / "extracted" / "tmpdir"
     extra_dir.mkdir(parents=True, exist_ok=True)
     (extra_dir / "tmp.txt").write_text("x", encoding="utf-8")
-    (meta_dir / "tmpfile").write_text("y", encoding="utf-8")
 
 
-@given('I delete the corpus "{corpus_name}" raw folder')
-def step_delete_corpus_raw_folder(context, corpus_name: str) -> None:
+@given('I delete the corpus "{corpus_name}" raw files')
+def step_delete_corpus_raw_files(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    raw_dir = corpus / "raw"
-    if raw_dir.exists():
-        for p in sorted(raw_dir.rglob("*"), reverse=True):
-            if p.is_file() or p.is_symlink():
-                p.unlink()
-            elif p.is_dir():
-                p.rmdir()
-        raw_dir.rmdir()
+    for path in sorted(corpus.rglob("*"), reverse=True):
+        relpath = path.relative_to(corpus)
+        if _is_reserved_relpath(relpath):
+            continue
+        if path.is_file() or path.is_symlink():
+            path.unlink()
+        elif path.is_dir():
+            path.rmdir()
 
 
 @when("I overwrite the last ingested item's sidecar with a Yet Another Markup Language list")
@@ -886,8 +933,9 @@ def step_list_items_corpus_uri(context, corpus_name: str) -> None:
 
 
 @given('I create the directory "{path}"')
+@when('I create the directory "{path}"')
 def step_create_dir(context, path: str) -> None:
-    (context.workdir / path).mkdir(parents=True, exist_ok=True)
+    _resolve_fixture_path(context, path).mkdir(parents=True, exist_ok=True)
 
 
 @when('I list items from within "{path}"')
@@ -967,19 +1015,24 @@ def step_standard_error_includes_first_ingested_item_id(context) -> None:
     assert first_ingested in stderr, f"Expected '{first_ingested}' in stderr but got: {stderr}"
 
 
-@then('the corpus "{corpus_name}" raw folder is empty')
-def step_corpus_raw_folder_empty(context, corpus_name: str) -> None:
+@then('the corpus "{corpus_name}" has no raw files')
+def step_corpus_has_no_raw_files(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    raw_dir = corpus / "raw"
-    assert raw_dir.is_dir()
-    files = [p for p in raw_dir.rglob("*") if p.is_file()]
+    files = []
+    for path in corpus.rglob("*"):
+        if not path.is_file():
+            continue
+        relpath = path.relative_to(corpus)
+        if _is_reserved_relpath(relpath):
+            continue
+        files.append(path)
     assert files == [], [str(p.relative_to(corpus)) for p in files]
 
 
 @then('the corpus "{corpus_name}" catalog has {count:d} items')
 def step_corpus_catalog_has_n_items(context, corpus_name: str, count: int) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     items = data.get("items")
     assert isinstance(items, dict)
@@ -989,7 +1042,7 @@ def step_corpus_catalog_has_n_items(context, corpus_name: str, count: int) -> No
 @given('I delete the corpus catalog file in corpus "{corpus_name}"')
 def step_delete_corpus_catalog_file(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     if catalog_path.exists():
         catalog_path.unlink()
 
@@ -997,7 +1050,7 @@ def step_delete_corpus_catalog_file(context, corpus_name: str) -> None:
 @given('I corrupt the corpus config schema version in corpus "{corpus_name}"')
 def step_corrupt_config_schema_version(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    config_path = corpus / ".biblicus" / "config.json"
+    config_path = _meta_dir(corpus) / "config.json"
     data = json.loads(config_path.read_text(encoding="utf-8"))
     data["schema_version"] = 999
     config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -1006,7 +1059,7 @@ def step_corrupt_config_schema_version(context, corpus_name: str) -> None:
 @given('I corrupt the corpus catalog schema version in corpus "{corpus_name}"')
 def step_corrupt_catalog_schema_version(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     data["schema_version"] = 999
     catalog_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -1041,7 +1094,7 @@ def step_last_ingested_item_filename_excludes(context, part: str) -> None:
 @then('the last ingest sha256 matches the file "{filename}"')
 def step_last_ingest_sha256_matches_file(context, filename: str) -> None:
     assert context.last_ingest is not None
-    expected = hashlib.sha256((context.workdir / filename).read_bytes()).hexdigest()
+    expected = hashlib.sha256(_resolve_fixture_path(context, filename).read_bytes()).hexdigest()
     assert context.last_ingest["sha256"] == expected
 
 
@@ -1058,7 +1111,7 @@ def step_corpus_configured_hook_with_tags(
     context, corpus_name: str, hook_id: str, hook_point: str, tags: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
-    config_path = corpus / ".biblicus" / "config.json"
+    config_path = _meta_dir(corpus) / "config.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     hooks = list(config.get("hooks") or [])
     hook_config: Dict[str, Any] = {"hook_id": hook_id, "hook_points": [hook_point], "config": {}}
@@ -1076,7 +1129,7 @@ def step_corpus_configured_hook_no_tags(
     context, corpus_name: str, hook_id: str, hook_point: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
-    config_path = corpus / ".biblicus" / "config.json"
+    config_path = _meta_dir(corpus) / "config.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     hooks = list(config.get("hooks") or [])
     hooks.append({"hook_id": hook_id, "hook_points": [hook_point], "config": {}})
@@ -1087,7 +1140,7 @@ def step_corpus_configured_hook_no_tags(
 @given('the corpus "{corpus_name}" config includes hooks JavaScript Object Notation:')
 def step_corpus_config_includes_hooks_json(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    config_path = corpus / ".biblicus" / "config.json"
+    config_path = _meta_dir(corpus) / "config.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     hooks = json.loads(context.text)
     config["hooks"] = hooks
@@ -1099,7 +1152,7 @@ def step_corpus_config_includes_hooks_json(context, corpus_name: str) -> None:
 )
 def step_hook_logs_include_record(context, corpus_name: str, hook_point: str, hook_id: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    log_dir = corpus / ".biblicus" / "hook_logs"
+    log_dir = _meta_dir(corpus) / "hook_logs"
     assert log_dir.is_dir()
     entries: List[Dict[str, Any]] = []
     for path in sorted(log_dir.glob("*.jsonl")):
@@ -1116,7 +1169,7 @@ def step_hook_logs_include_record(context, corpus_name: str, hook_point: str, ho
 
 @given('the directory "{dir_name}" contains files:')
 def step_directory_contains_files(context, dir_name: str) -> None:
-    root = (context.workdir / dir_name).resolve()
+    root = _resolve_fixture_path(context, dir_name)
     for row in context.table:
         relpath = row["relpath"]
         raw_contents = row["contents"]
@@ -1130,7 +1183,7 @@ def step_directory_contains_files(context, dir_name: str) -> None:
     'the directory "{dir_name}" contains a markdown file "{relpath}" with invalid Unicode Transformation Format 8 bytes'
 )
 def step_directory_contains_invalid_markdown_bytes(context, dir_name: str, relpath: str) -> None:
-    root = (context.workdir / dir_name).resolve()
+    root = _resolve_fixture_path(context, dir_name)
     file_path = root / relpath
     file_path.parent.mkdir(parents=True, exist_ok=True)
     file_path.write_bytes(b"\xff\xfe\xfa")
@@ -1139,7 +1192,7 @@ def step_directory_contains_invalid_markdown_bytes(context, dir_name: str, relpa
 @when('I import the folder tree "{dir_name}" into corpus "{corpus_name}" with tags "{tags}"')
 def step_import_tree(context, dir_name: str, corpus_name: str, tags: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    source_root = (context.workdir / dir_name).resolve()
+    source_root = _resolve_fixture_path(context, dir_name)
     args = ["--corpus", str(corpus), "import-tree", str(source_root), "--tags", tags]
     run_biblicus(context, args)
 
@@ -1147,7 +1200,7 @@ def step_import_tree(context, dir_name: str, corpus_name: str, tags: str) -> Non
 @then('the corpus "{corpus_name}" has at least {count:d} items')
 def step_corpus_has_at_least_n_items(context, corpus_name: str, count: int) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     items = data.get("items")
     assert isinstance(items, dict)
@@ -1157,7 +1210,7 @@ def step_corpus_has_at_least_n_items(context, corpus_name: str, count: int) -> N
 @then('the corpus "{corpus_name}" has an item with source suffix "{suffix}"')
 def step_corpus_has_item_with_source_suffix(context, corpus_name: str, suffix: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     items = data.get("items")
     assert isinstance(items, dict)
@@ -1173,7 +1226,7 @@ def step_corpus_has_item_with_source_suffix(context, corpus_name: str, suffix: s
 @then('the corpus "{corpus_name}" has no item with source suffix "{suffix}"')
 def step_corpus_has_no_item_with_source_suffix(context, corpus_name: str, suffix: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    catalog_path = corpus / ".biblicus" / "catalog.json"
+    catalog_path = _meta_dir(corpus) / "catalog.json"
     data = json.loads(catalog_path.read_text(encoding="utf-8"))
     items = data.get("items")
     assert isinstance(items, dict)

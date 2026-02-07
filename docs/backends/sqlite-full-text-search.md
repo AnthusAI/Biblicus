@@ -257,7 +257,7 @@ BM25 provides better ranking than simple term frequency by considering term rari
 ### Disk Usage
 
 - **~1-5 MB per 1,000 items**: Depends on text density and chunking
-- Stored in `.biblicus/runs/<snapshot_id>.sqlite`
+- Stored in `retrieval/sqlite-full-text-search/<snapshot_id>/<snapshot_id>.sqlite`
 
 ## Examples
 
@@ -454,9 +454,10 @@ The backend creates a SQLite database stored at:
 
 ```
 corpus/
-  .biblicus/
-    runs/
-      <snapshot_id>.sqlite  # FTS5 index database
+  retrieval/
+    sqlite-full-text-search/
+      <snapshot_id>/
+        <snapshot_id>.sqlite  # FTS5 index database
 ```
 
 Database schema:

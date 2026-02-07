@@ -1,8 +1,9 @@
 # Topic modeling
 
 Biblicus provides a topic modeling analysis backend that reads extracted text artifacts, optionally applies an LLM
-extraction pass, applies lexical processing, runs BERTopic, and optionally applies an LLM fine-tuning pass for
-labels. The output is structured JavaScript Object Notation with explicit per-topic evidence.
+extraction pass, optionally removes named entities, applies lexical processing, runs BERTopic, and optionally applies
+an LLM fine-tuning pass for labels. The output is structured JavaScript Object Notation with explicit per-topic
+evidence.
 
 ## What topic modeling does
 
@@ -22,6 +23,7 @@ schema.
 
 - Text collection reads extracted text artifacts from an extraction snapshot.
 - LLM extraction optionally transforms each document into one or more analysis documents.
+- Entity removal optionally deletes named entities before modeling.
 - Lexical processing optionally normalizes text before BERTopic.
 - BERTopic produces topic assignments and keyword weights.
 - LLM fine-tuning optionally replaces topic labels based on sampled documents.
@@ -62,8 +64,11 @@ Topic modeling writes a single `output.json` file under the analysis snapshot di
 
 - `run.snapshot_id` and `run.stats` for reproducible tracking.
 - `report.topics` with the modeled topics.
-- `report.text_collection`, `report.llm_extraction`, `report.lexical_processing`, `report.bertopic_analysis`,
-  and `report.llm_fine_tuning` describing each pipeline stage.
+- `report.text_collection`, `report.llm_extraction`, `report.entity_removal`, `report.lexical_processing`,
+  `report.bertopic_analysis`, and `report.llm_fine_tuning` describing each pipeline stage.
+
+When entity removal is enabled, Biblicus also writes `entity_removal.jsonl` alongside `output.json`. This artifact
+contains the redacted documents that feed BERTopic and is reused on subsequent runs for the same snapshot.
 
 Each topic record includes:
 
@@ -118,6 +123,17 @@ Topic modeling configurations use a strict schema. Unknown fields or type mismat
 - `llm_extraction.client`: LLM client configuration (requires `biblicus[openai]`).
 - `llm_extraction.prompt_template`: Prompt template for the extraction stage.
 - `llm_extraction.system_prompt`: Optional system prompt.
+
+### Entity removal
+
+- `entity_removal.enabled`: Enable local named-entity removal.
+- `entity_removal.provider`: `spacy` (required).
+- `entity_removal.model`: spaCy model name (for example `en_core_web_sm`).
+- `entity_removal.entity_types`: Entity labels to remove. Empty uses defaults.
+- `entity_removal.replace_with`: Replacement text inserted for removed entities.
+- `entity_removal.collapse_whitespace`: Normalize whitespace after removals.
+- `entity_removal.regex_patterns`: Optional regex patterns applied after NER.
+- `entity_removal.regex_replace_with`: Replacement text for regex removals.
 
 ### Lexical processing
 

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -182,6 +184,7 @@ def _install_fake_docker(context) -> None:
     log_path.write_text("")
 
     script_path = bin_dir / "docker"
+    python_path = "/opt/anaconda3/bin/python"
     script = f"""#!/bin/sh
 set -e
 STATE={state_path}
@@ -190,14 +193,14 @@ echo "$@" >> "$LOG"
 cmd="$1"
 shift
 if [ "$cmd" = "ps" ]; then
-  exists=$(python - <<'PY'
+  exists=$({python_path} - <<'PY'
 import json
 import os
 state=json.load(open(os.environ['STATE']))
 print('1' if state.get('exists') else '0')
 PY
 )
-  running=$(python - <<'PY'
+  running=$({python_path} - <<'PY'
 import json
 import os
 state=json.load(open(os.environ['STATE']))
@@ -216,7 +219,7 @@ PY
   exit 0
 fi
 if [ "$cmd" = "start" ]; then
-  python - <<'PY'
+  {python_path} - <<'PY'
 import json
 import os
 path=os.environ['STATE']
@@ -228,7 +231,7 @@ PY
   exit 0
 fi
 if [ "$cmd" = "run" ]; then
-  python - <<'PY'
+  {python_path} - <<'PY'
 import json
 import os
 path=os.environ['STATE']
@@ -285,7 +288,7 @@ def step_invoke_graph_extractor_base(context) -> None:
             corpus=Corpus.init(context.workdir / "corpus", force=True),
             item=CatalogItem(
                 id="item",
-                relpath="raw/item.txt",
+                relpath="item.txt",
                 sha256="",
                 bytes=0,
                 media_type="text/plain",
@@ -369,6 +372,22 @@ def step_build_graph_snapshot_latest_extraction_real(
     context, extractor_id: str, corpus_name: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
+    if shutil.which("docker") is None:
+        scenario = getattr(context, "scenario", None)
+        if scenario is not None:
+            scenario.skip("Docker is required for Neo4j integration scenarios.")
+        return
+    docker_info = subprocess.run(
+        ["docker", "info"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if docker_info.returncode != 0:
+        scenario = getattr(context, "scenario", None)
+        if scenario is not None:
+            scenario.skip("Docker daemon is required for Neo4j integration scenarios.")
+        return
     extra_env = getattr(context, "extra_env", {})
     extra_env["BIBLICUS_NEO4J_AUTO_START"] = "true"
     context.extra_env = extra_env

@@ -78,7 +78,7 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     )
     corpus = Corpus.open(corpus_path)
     extraction_config = {
-        "steps": [
+        "stages": [
             {
                 "extractor_id": arguments.extraction_step,
                 "config": {},

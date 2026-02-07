@@ -5,6 +5,6 @@
 
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: docling-smol
       config: {}

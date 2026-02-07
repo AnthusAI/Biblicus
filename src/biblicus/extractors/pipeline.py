@@ -10,13 +10,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
-class PipelineStepSpec(BaseModel):
+class PipelineStageSpec(BaseModel):
     """
-    Single extractor step within a pipeline.
+    Single extractor stage within a pipeline.
 
     :ivar extractor_id: Extractor plugin identifier.
     :vartype extractor_id: str
@@ -34,18 +34,18 @@ class PipelineExtractorConfig(BaseModel):
     """
     Configuration for the pipeline extractor.
 
-    :ivar steps: Ordered list of extractor steps to run.
-    :vartype steps: list[PipelineStepSpec]
+    :ivar stages: Ordered list of extractor stages to run.
+    :vartype stages: list[PipelineStageSpec]
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    steps: List[PipelineStepSpec] = Field(min_length=1)
+    stages: List[PipelineStageSpec] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def _forbid_pipeline_step(self) -> "PipelineExtractorConfig":
-        if any(step.extractor_id == "pipeline" for step in self.steps):
-            raise ValueError("Pipeline steps cannot include the pipeline extractor itself")
+    def _forbid_pipeline_stage(self) -> "PipelineExtractorConfig":
+        if any(stage.extractor_id == "pipeline" for stage in self.stages):
+            raise ValueError("Pipeline stages cannot include the pipeline extractor itself")
         return self
 
 
@@ -54,7 +54,7 @@ class PipelineExtractor(TextExtractor):
     Pipeline extractor configuration shim.
 
     The pipeline extractor is executed by the extraction engine so it can persist
-    per-step artifacts. This class only validates configuration.
+    per-stage artifacts. This class only validates configuration.
 
     :ivar extractor_id: Extractor identifier.
     :vartype extractor_id: str
@@ -79,7 +79,7 @@ class PipelineExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Reject direct execution of the pipeline extractor.
@@ -90,8 +90,8 @@ class PipelineExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: PipelineExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :raises ExtractionSnapshotFatalError: Always, because the pipeline is executed by the runner.
         :return: None.
         :rtype: None

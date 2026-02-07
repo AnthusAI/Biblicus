@@ -61,7 +61,7 @@ printf "beta banana\n" > /tmp/eval-beta.txt
 python -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-alpha.txt
 python -m biblicus ingest --corpus corpora/retrieval_eval_demo /tmp/eval-beta.txt
 
-python -m biblicus extract build --corpus corpora/retrieval_eval_demo --step pass-through-text
+python -m biblicus extract build --corpus corpora/retrieval_eval_demo --stage pass-through-text
 python -m biblicus build --corpus corpora/retrieval_eval_demo --backend sqlite-full-text-search
 
 cat > /tmp/retrieval_eval_dataset.json <<'JSON'

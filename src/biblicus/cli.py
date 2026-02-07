@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
@@ -26,12 +27,13 @@ from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError
 from .evaluation.retrieval import evaluate_snapshot, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
-from .extraction import build_extraction_snapshot
+from .extraction import build_extraction_snapshot, load_or_build_extraction_snapshot
 from .extraction_evaluation import (
     evaluate_extraction_snapshot,
     load_extraction_dataset,
     write_extraction_evaluation_result,
 )
+from .migration import migrate_layout
 from .models import QueryBudget, RetrievalResult, parse_extraction_snapshot_reference
 from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
@@ -70,6 +72,21 @@ def cmd_init(arguments: argparse.Namespace) -> int:
     corpus_path = corpus_ref_to_path(arguments.path)
     corpus = Corpus.init(corpus_path, force=arguments.force)
     print(f"Initialized corpus at {corpus.root}")
+    return 0
+
+
+def cmd_migrate_layout(arguments: argparse.Namespace) -> int:
+    """
+    Migrate a legacy corpus layout to the current layout.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus_path = corpus_ref_to_path(arguments.path)
+    stats = migrate_layout(corpus_root=corpus_path, force=arguments.force)
+    print(json.dumps(stats, indent=2))
     return 0
 
 
@@ -293,25 +310,25 @@ def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
     return config
 
 
-def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
+def _parse_stage_spec(raw_stage: str) -> tuple[str, Dict[str, object]]:
     """
-    Parse a pipeline step specification.
+    Parse a pipeline stage specification.
 
-    :param raw_step: Step spec in the form extractor_id or extractor_id:key=value,key=value.
-    :type raw_step: str
+    :param raw_stage: Stage spec in the form extractor_id or extractor_id:key=value,key=value.
+    :type raw_stage: str
     :return: Tuple of extractor_id and config mapping.
     :rtype: tuple[str, dict[str, object]]
-    :raises ValueError: If the step spec is invalid.
+    :raises ValueError: If the stage spec is invalid.
     """
-    raw_step = raw_step.strip()
-    if not raw_step:
-        raise ValueError("Step spec must be non-empty")
-    if ":" not in raw_step:
-        return raw_step, {}
-    extractor_id, raw_pairs = raw_step.split(":", 1)
+    raw_stage = raw_stage.strip()
+    if not raw_stage:
+        raise ValueError("Stage spec must be non-empty")
+    if ":" not in raw_stage:
+        return raw_stage, {}
+    extractor_id, raw_pairs = raw_stage.split(":", 1)
     extractor_id = extractor_id.strip()
     if not extractor_id:
-        raise ValueError("Step spec must start with an extractor identifier")
+        raise ValueError("Stage spec must start with an extractor identifier")
     config: Dict[str, object] = {}
     raw_pairs = raw_pairs.strip()
     if not raw_pairs:
@@ -431,6 +448,111 @@ def _dependency_mode(arguments: argparse.Namespace) -> str:
     if not sys.stdin.isatty():
         return "auto"
     return "prompt"
+
+
+def _default_extraction_recipe_path(corpus: Corpus, *, recipe_name: str = "default") -> Path:
+    return corpus.root / "recipes" / "extraction" / f"{recipe_name}.yml"
+
+def _default_extraction_max_workers() -> int:
+    env_value = os.getenv("BIBLICUS_EXTRACT_MAX_WORKERS")
+    if env_value:
+        try:
+            parsed = int(env_value)
+        except ValueError as exc:
+            raise ValueError(
+                "BIBLICUS_EXTRACT_MAX_WORKERS must be an integer >= 1"
+            ) from exc
+        if parsed < 1:
+            raise ValueError("BIBLICUS_EXTRACT_MAX_WORKERS must be >= 1")
+        return parsed
+    cpu_count = os.cpu_count() or 1
+    return max(4, cpu_count)
+
+
+def _normalize_extraction_configuration(
+    configuration_data: Dict[str, object],
+) -> tuple[str, Dict[str, object], Optional[int]]:
+    extractor_id = configuration_data.get("extractor_id", "pipeline")
+    configuration = configuration_data.get("configuration", {})
+    max_workers = configuration_data.get("max_workers")
+    if configuration is None:
+        configuration = {}
+    if not isinstance(configuration, dict):
+        raise ValueError("Extraction configuration must be a mapping/object")
+    if not isinstance(extractor_id, str) or not extractor_id.strip():
+        raise ValueError("Extraction configuration must include a non-empty extractor_id")
+    extractor_id = extractor_id.strip()
+    if max_workers is not None:
+        if isinstance(max_workers, bool):
+            raise ValueError("Extraction configuration max_workers must be an integer")
+        try:
+            max_workers = int(max_workers)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Extraction configuration max_workers must be an integer") from exc
+        if max_workers < 1:
+            raise ValueError("Extraction configuration max_workers must be >= 1")
+    if extractor_id != "pipeline":
+        return (
+            "pipeline",
+            {"stages": [{"extractor_id": extractor_id, "config": configuration}]},
+            max_workers,
+        )
+    return "pipeline", configuration, max_workers
+
+
+def _resolve_extraction_snapshot_for_analysis(
+    *,
+    corpus: Corpus,
+    extraction_snapshot: Optional[str],
+    analysis_label: str,
+) -> "ExtractionSnapshotReference":
+    from .configuration import load_configuration_view
+    from .models import ExtractionSnapshotReference
+
+    if extraction_snapshot:
+        return parse_extraction_snapshot_reference(extraction_snapshot)
+
+    recipe_path = _default_extraction_recipe_path(corpus)
+    if recipe_path.is_file():
+        print(
+            f"{analysis_label}: using extraction recipe {recipe_path}",
+            file=sys.stderr,
+            flush=True,
+        )
+        configuration_data = load_configuration_view(
+            [str(recipe_path)],
+            configuration_label="Extraction recipe",
+            mapping_error_message="Extraction recipe must be a mapping/object",
+        )
+        extractor_id, configuration, max_workers = _normalize_extraction_configuration(
+            configuration_data
+        )
+        if max_workers is None:
+            max_workers = _default_extraction_max_workers()
+        configuration_name = recipe_path.stem
+        manifest = load_or_build_extraction_snapshot(
+            corpus,
+            extractor_id=extractor_id,
+            configuration_name=configuration_name,
+            configuration=configuration,
+            max_workers=max_workers,
+        )
+        return ExtractionSnapshotReference(
+            extractor_id=extractor_id,
+            snapshot_id=manifest.snapshot_id,
+        )
+
+    latest_snapshot = corpus.latest_extraction_snapshot_reference()
+    if latest_snapshot is None:
+        raise ValueError(
+            f"{analysis_label} requires an extraction snapshot to supply text inputs. "
+            f"Create an extraction recipe at {recipe_path} or pass --extraction-snapshot."
+        )
+    print(
+        "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
+        file=sys.stderr,
+    )
+    return latest_snapshot
 
 
 def _prompt_dependency_plan(plan, label: str) -> bool:
@@ -565,7 +687,7 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         if loaded_extractor_id != "pipeline":
             extractor_id = "pipeline"
             config = {
-                "steps": [
+                "stages": [
                     {
                         "extractor_id": loaded_extractor_id,
                         "config": loaded_config,
@@ -576,24 +698,31 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
             extractor_id = loaded_extractor_id
             config = loaded_config
     else:
-        # Build from --step arguments
-        raw_steps = list(arguments.step or [])
-        if not raw_steps:
-            raise ValueError("Pipeline extraction requires at least one --step")
-        steps: List[Dict[str, object]] = []
-        for raw_step in raw_steps:
-            step_extractor_id, step_config = _parse_step_spec(raw_step)
-            steps.append({"extractor_id": step_extractor_id, "config": step_config})
-        config = {"steps": steps}
+        # Build from --stage arguments
+        raw_stages = list(arguments.stage or [])
+        if not raw_stages:
+            raise ValueError("Pipeline extraction requires at least one --stage")
+        stages: List[Dict[str, object]] = []
+        for raw_stage in raw_stages:
+            stage_extractor_id, stage_config = _parse_stage_spec(raw_stage)
+            stages.append({"extractor_id": stage_extractor_id, "config": stage_config})
+        config = {"stages": stages}
         extractor_id = "pipeline"
 
     from .workflow import build_plan_for_extract
 
     dependency_mode = _dependency_mode(arguments)
+    resolved_max_workers = (
+        int(arguments.max_workers)
+        if arguments.max_workers is not None
+        else _default_extraction_max_workers()
+    )
     extract_plan = build_plan_for_extract(
         corpus,
         pipeline_config=config,
         load_handler_available=False,
+        force=bool(arguments.force),
+        max_workers=resolved_max_workers,
     )
     results = _execute_dependency_plan(
         extract_plan,
@@ -606,6 +735,8 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         extractor_id=extractor_id,
         configuration_name=arguments.configuration_name,
         configuration=config,
+        force=bool(arguments.force),
+        max_workers=resolved_max_workers,
     )
     print(manifest.model_dump_json(indent=2))
     return 0
@@ -1026,16 +1157,11 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     overrides = parse_dotted_overrides(arguments.override)
     configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError("Topic analysis requires an extraction snapshot to supply text inputs")
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Topic analysis",
+    )
 
     backend = get_analysis_backend("topic-modeling")
     try:
@@ -1086,18 +1212,11 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
         if overrides:
             configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError(
-                "Profiling analysis requires an extraction snapshot to supply text inputs"
-            )
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Profiling analysis",
+    )
 
     backend = get_analysis_backend("profiling")
     try:
@@ -1141,18 +1260,11 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     overrides = parse_dotted_overrides(arguments.override)
     configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError(
-                "Markov analysis requires an extraction snapshot to supply text inputs"
-            )
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Markov analysis",
+    )
 
     backend = get_analysis_backend("markov")
     try:
@@ -1165,6 +1277,237 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     except ValidationError as exc:
         raise ValueError(f"Invalid Markov analysis configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
+    return 0
+
+
+# -----------------------------------------------------------------
+# Benchmark commands
+# -----------------------------------------------------------------
+
+
+def cmd_benchmark_download(arguments: argparse.Namespace) -> int:
+    """
+    Download benchmark datasets.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import subprocess
+
+    datasets = [d.strip() for d in arguments.datasets.split(",")]
+    corpus_dir = Path(arguments.corpus_dir)
+    count = arguments.count
+    force = arguments.force
+
+    print("=" * 70)
+    print("BIBLICUS BENCHMARK DATASET DOWNLOAD")
+    print("=" * 70)
+
+    for dataset in datasets:
+        print(f"\nDownloading {dataset}...")
+
+        if dataset == "funsd":
+            corpus_path = corpus_dir / "funsd_benchmark"
+            cmd = ["python", "scripts/download_funsd_samples.py", "--corpus", str(corpus_path)]
+            if count:
+                cmd.extend(["--count", str(count)])
+            if force:
+                cmd.append("--force")
+
+        elif dataset == "sroie":
+            corpus_path = corpus_dir / "sroie_benchmark"
+            cmd = ["python", "scripts/download_sroie_samples.py", "--corpus", str(corpus_path)]
+            if count:
+                cmd.extend(["--count", str(count)])
+            if force:
+                cmd.append("--force")
+
+        elif dataset == "scanned-arxiv":
+            print("  NOTICE: scanned-arxiv dataset is not yet available.")
+            print("          The HuggingFace dataset lacks actual scanned images.")
+            print("          This category is pending a suitable dataset source.")
+            continue
+
+        else:
+            print(f"  Unknown dataset: {dataset}")
+            continue
+
+        result = subprocess.run(cmd, capture_output=False)
+        if result.returncode != 0:
+            print(f"  ERROR: Failed to download {dataset}")
+        else:
+            print(f"  Downloaded {dataset} to {corpus_path}")
+
+    return 0
+
+
+def cmd_benchmark_run(arguments: argparse.Namespace) -> int:
+    """
+    Run benchmark evaluation.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .evaluation.benchmark_runner import BenchmarkConfig, BenchmarkRunner
+
+    config_path = Path(arguments.config)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Benchmark configuration not found: {config_path}")
+
+    config = BenchmarkConfig.load(config_path)
+
+    # Override pipelines if specified
+    if arguments.pipelines:
+        config.pipelines = [Path(p.strip()) for p in arguments.pipelines.split(",")]
+
+    runner = BenchmarkRunner(config)
+
+    # Run specific category or all
+    if arguments.category:
+        if arguments.category not in config.categories:
+            raise ValueError(f"Unknown category: {arguments.category}. "
+                           f"Available: {', '.join(config.categories.keys())}")
+        cat_config = config.categories[arguments.category]
+        result = runner.run_category(cat_config)
+        print(f"\n{arguments.category.upper()} Results:")
+        print(f"  Best pipeline: {result.best_pipeline} ({result.best_score:.3f} {result.primary_metric})")
+    else:
+        result = runner.run_all()
+        result.print_summary()
+
+        # Save results
+        output_path = Path(arguments.output) if arguments.output else Path(f"results/benchmark_{config.benchmark_name}.json")
+        result.to_json(output_path)
+        print(f"\nResults saved to: {output_path}")
+
+        # Also generate markdown report
+        md_path = output_path.with_suffix(".md")
+        result.to_markdown(md_path)
+        print(f"Markdown report: {md_path}")
+
+    return 0
+
+
+def cmd_benchmark_report(arguments: argparse.Namespace) -> int:
+    """
+    Generate benchmark report from results.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import glob
+    import json
+
+    input_pattern = arguments.input
+    output_path = Path(arguments.output)
+
+    # Find all matching result files
+    result_files = glob.glob(input_pattern)
+    if not result_files:
+        raise FileNotFoundError(f"No result files found matching: {input_pattern}")
+
+    print(f"Generating report from {len(result_files)} result file(s)...")
+
+    # For now, just use the first/latest result file
+    # TODO: Merge multiple results for comparison
+    result_path = Path(sorted(result_files)[-1])
+
+    with open(result_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Generate markdown report
+    lines = [
+        "# Biblicus Document Understanding Benchmark Results",
+        "",
+        f"**Source:** {result_path.name}",
+        f"**Benchmark:** {data.get('benchmark_name', 'unknown')}",
+        f"**Date:** {data.get('timestamp', 'unknown')}",
+        "",
+        "## Summary",
+        "",
+    ]
+
+    categories = data.get("categories", {})
+    if categories:
+        lines.extend([
+            "| Category | Dataset | Docs | Best Pipeline | Score |",
+            "|----------|---------|------|---------------|-------|",
+        ])
+        for cat_name, cat_data in categories.items():
+            lines.append(
+                f"| {cat_name.title()} | {cat_data.get('dataset', '')} | "
+                f"{cat_data.get('documents_evaluated', 0)} | "
+                f"{cat_data.get('best_pipeline', '')} | "
+                f"{cat_data.get('best_score', 0):.3f} |"
+            )
+
+    recommendations = data.get("recommendations", {})
+    if recommendations:
+        lines.extend(["", "## Recommendations", ""])
+        for rec_type, pipeline in recommendations.items():
+            lines.append(f"- **{rec_type.replace('_', ' ').title()}:** {pipeline}")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print(f"Report generated: {output_path}")
+    return 0
+
+
+def cmd_benchmark_status(arguments: argparse.Namespace) -> int:
+    """
+    Show status of benchmark datasets.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus_dir = Path(arguments.corpus_dir)
+
+    print("=" * 70)
+    print("BIBLICUS BENCHMARK DATASET STATUS")
+    print("=" * 70)
+
+    datasets = [
+        ("funsd", "funsd_benchmark", "funsd_ground_truth"),
+        ("sroie", "sroie_benchmark", "sroie_ground_truth"),
+        # ("scanned-arxiv", "scanned_arxiv_benchmark", "scanned_arxiv_ground_truth"),  # Pending - need dataset with images
+    ]
+
+    for name, corpus_name, gt_subdir in datasets:
+        corpus_path = corpus_dir / corpus_name
+        status = "NOT DOWNLOADED"
+        doc_count = 0
+
+        if corpus_path.exists():
+            # Check both .biblicus (standard) and metadata (legacy) locations
+            meta_dir = corpus_path / ".biblicus"
+            if not meta_dir.exists():
+                meta_dir = corpus_path / "metadata"
+
+            config_file = meta_dir / "config.json"
+            gt_dir = meta_dir / gt_subdir
+
+            if config_file.exists():
+                status = "DOWNLOADED"
+                if gt_dir.exists():
+                    doc_count = len(list(gt_dir.glob("*.txt")))
+                    status = f"READY ({doc_count} docs)"
+
+        print(f"  {name:15} {status}")
+
+    print()
+    print("To download datasets:")
+    print("  biblicus benchmark download --datasets funsd,sroie")
+
     return 0
 
 
@@ -1198,6 +1541,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="Overwrite existing config if present."
     )
     p_init.set_defaults(func=cmd_init)
+
+    p_migrate = sub.add_parser(
+        "migrate-layout", help="Migrate a legacy corpus layout to the current layout."
+    )
+    p_migrate.add_argument("path", help="Corpus path or file:// uniform resource identifier.")
+    p_migrate.add_argument(
+        "--force", action="store_true", help="Overwrite existing paths if present."
+    )
+    p_migrate.set_defaults(func=cmd_migrate_layout)
 
     p_ingest = sub.add_parser("ingest", help="Ingest file(s) and/or text into the corpus.")
     _add_common_corpus_arg(p_ingest)
@@ -1290,13 +1642,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--configuration",
         default=None,
         action="append",
-        help="Path to YAML configuration file. If provided, --step arguments are ignored.",
+        help="Path to YAML configuration file. If provided, --stage arguments are ignored.",
     )
     p_extract_build.add_argument(
-        "--step",
+        "--stage",
         action="append",
         default=None,
-        help="Pipeline step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
+        help="Pipeline stage spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
+    )
+    p_extract_build.add_argument(
+        "--force",
+        action="store_true",
+        help="Reprocess items even if extraction artifacts already exist.",
+    )
+    p_extract_build.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help=(
+            "Maximum number of concurrent extraction workers "
+            "(defaults to BIBLICUS_EXTRACT_MAX_WORKERS or CPU count)."
+        ),
     )
     p_extract_build.set_defaults(func=cmd_extract_build)
 
@@ -1587,6 +1953,88 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_analyze_markov.set_defaults(func=cmd_analyze_markov)
+
+    # -----------------------------------------------------------------
+    # benchmark subcommand group
+    # -----------------------------------------------------------------
+    p_benchmark = sub.add_parser(
+        "benchmark", help="Run document understanding benchmarks."
+    )
+    benchmark_sub = p_benchmark.add_subparsers(dest="benchmark_command", required=True)
+
+    p_benchmark_download = benchmark_sub.add_parser(
+        "download", help="Download benchmark datasets."
+    )
+    p_benchmark_download.add_argument(
+        "--datasets",
+        required=True,
+        help="Comma-separated list of datasets to download (funsd, sroie, scanned-arxiv).",
+    )
+    p_benchmark_download.add_argument(
+        "--corpus-dir",
+        default="corpora",
+        help="Base directory for benchmark corpora (default: corpora).",
+    )
+    p_benchmark_download.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Number of samples to download per dataset (default: dataset-specific).",
+    )
+    p_benchmark_download.add_argument(
+        "--force", action="store_true", help="Overwrite existing corpus if present."
+    )
+    p_benchmark_download.set_defaults(func=cmd_benchmark_download)
+
+    p_benchmark_run = benchmark_sub.add_parser(
+        "run", help="Run benchmark evaluation."
+    )
+    p_benchmark_run.add_argument(
+        "--config",
+        default="configs/benchmark/standard.yaml",
+        help="Path to benchmark configuration file (default: configs/benchmark/standard.yaml).",
+    )
+    p_benchmark_run.add_argument(
+        "--category",
+        default=None,
+        help="Run only a specific category (forms, academic, receipts).",
+    )
+    p_benchmark_run.add_argument(
+        "--pipelines",
+        default=None,
+        help="Comma-separated list of pipeline config paths to benchmark.",
+    )
+    p_benchmark_run.add_argument(
+        "--output",
+        default=None,
+        help="Output path for results JSON (default: results/benchmark_<name>.json).",
+    )
+    p_benchmark_run.set_defaults(func=cmd_benchmark_run)
+
+    p_benchmark_report = benchmark_sub.add_parser(
+        "report", help="Generate benchmark report from results."
+    )
+    p_benchmark_report.add_argument(
+        "--input",
+        required=True,
+        help="Path to benchmark results JSON file(s). Supports glob patterns.",
+    )
+    p_benchmark_report.add_argument(
+        "--output",
+        default="docs/guides/benchmark-results.md",
+        help="Output path for markdown report.",
+    )
+    p_benchmark_report.set_defaults(func=cmd_benchmark_report)
+
+    p_benchmark_status = benchmark_sub.add_parser(
+        "status", help="Show status of benchmark datasets."
+    )
+    p_benchmark_status.add_argument(
+        "--corpus-dir",
+        default="corpora",
+        help="Base directory for benchmark corpora (default: corpora).",
+    )
+    p_benchmark_status.set_defaults(func=cmd_benchmark_status)
 
     return parser
 

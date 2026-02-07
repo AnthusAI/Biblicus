@@ -55,5 +55,5 @@ Feature: Retrieval with SQLite full-text search retriever
     Given I initialized a corpus at "corpus"
     And a text file "alpha.txt" exists with contents "alpha"
     When I ingest the file "alpha.txt" into corpus "corpus"
-    And I rebuild a SQLite full-text search index for corpus "corpus" at ".biblicus/snapshots/forced.sqlite"
+    And I rebuild a SQLite full-text search index for corpus "corpus" at "retrieval/sqlite-full-text-search/forced/forced.sqlite"
     Then the SQLite full-text search index file exists

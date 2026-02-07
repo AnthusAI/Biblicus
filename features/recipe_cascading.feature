@@ -7,7 +7,7 @@ Feature: Cascading YAML configurations
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "base.yml" exists with content:
@@ -41,7 +41,7 @@ Feature: Cascading YAML configurations
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering." with title "Beta" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "base.yml" exists with content:

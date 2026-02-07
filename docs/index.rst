@@ -185,6 +185,7 @@ slot them into ETL-like workflows without building a custom agent every time.
 
    utilities
    text-utilities
+   entity-removal
    text-extract
    text-slice
    text-annotate

@@ -390,6 +390,46 @@ class TopicModelingLexicalProcessingConfig(AnalysisSchemaModel):
     collapse_whitespace: bool = Field(default=True)
 
 
+class TopicModelingEntityRemovalConfig(AnalysisSchemaModel):
+    """
+    Configuration for entity removal preprocessing.
+
+    :ivar enabled: Whether entity removal is enabled.
+    :vartype enabled: bool
+    :ivar provider: Entity removal provider identifier (currently ``spacy``).
+    :vartype provider: str
+    :ivar model: Provider model name (for example: ``en_core_web_sm``).
+    :vartype model: str
+    :ivar entity_types: Optional list of entity labels to remove. When empty, defaults are used.
+    :vartype entity_types: list[str]
+    :ivar replace_with: Replacement text inserted for removed entities (empty string removes).
+    :vartype replace_with: str
+    :ivar collapse_whitespace: Whether to collapse whitespace after removals.
+    :vartype collapse_whitespace: bool
+    :ivar regex_patterns: Optional list of regular expressions to remove after NER.
+    :vartype regex_patterns: list[str]
+    :ivar regex_replace_with: Replacement text for regex removals.
+    :vartype regex_replace_with: str
+    """
+
+    enabled: bool = Field(default=False)
+    provider: str = Field(default="spacy", min_length=1)
+    model: str = Field(default="en_core_web_sm", min_length=1)
+    entity_types: List[str] = Field(default_factory=list)
+    replace_with: str = Field(default="")
+    collapse_whitespace: bool = Field(default=True)
+    regex_patterns: List[str] = Field(default_factory=list)
+    regex_replace_with: str = Field(default="")
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> "TopicModelingEntityRemovalConfig":
+        if not self.enabled:
+            return self
+        if self.provider.strip().lower() != "spacy":
+            raise ValueError("entity_removal.provider must be 'spacy'")
+        return self
+
+
 class TopicModelingVectorizerConfig(AnalysisSchemaModel):
     """
     Vectorizer configuration for BERTopic tokenization.
@@ -492,6 +532,8 @@ class TopicModelingConfiguration(AnalysisSchemaModel):
     :vartype text_source: TopicModelingTextSourceConfig
     :ivar llm_extraction: LLM extraction configuration.
     :vartype llm_extraction: TopicModelingLlmExtractionConfig
+    :ivar entity_removal: Entity removal preprocessing configuration.
+    :vartype entity_removal: TopicModelingEntityRemovalConfig
     :ivar lexical_processing: Lexical processing configuration.
     :vartype lexical_processing: TopicModelingLexicalProcessingConfig
     :ivar bertopic_analysis: BERTopic configuration.
@@ -506,6 +548,9 @@ class TopicModelingConfiguration(AnalysisSchemaModel):
     )
     llm_extraction: TopicModelingLlmExtractionConfig = Field(
         default_factory=TopicModelingLlmExtractionConfig
+    )
+    entity_removal: TopicModelingEntityRemovalConfig = Field(
+        default_factory=TopicModelingEntityRemovalConfig
     )
     lexical_processing: TopicModelingLexicalProcessingConfig = Field(
         default_factory=TopicModelingLexicalProcessingConfig
@@ -591,6 +636,41 @@ class TopicModelingLlmExtractionReport(AnalysisSchemaModel):
     method: TopicModelingLlmExtractionMethod
     input_documents: int = Field(ge=0)
     output_documents: int = Field(ge=0)
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
+class TopicModelingEntityRemovalReport(AnalysisSchemaModel):
+    """
+    Report for the entity removal stage.
+
+    :ivar status: Stage status.
+    :vartype status: TopicModelingStageStatus
+    :ivar provider: Entity removal provider identifier.
+    :vartype provider: str
+    :ivar model: Provider model name.
+    :vartype model: str
+    :ivar entity_types: Entity labels targeted for removal.
+    :vartype entity_types: list[str]
+    :ivar input_documents: Count of input documents.
+    :vartype input_documents: int
+    :ivar output_documents: Count of output documents.
+    :vartype output_documents: int
+    :ivar regex_patterns: Regular expressions applied after NER.
+    :vartype regex_patterns: list[str]
+    :ivar warnings: Warning messages.
+    :vartype warnings: list[str]
+    :ivar errors: Error messages.
+    :vartype errors: list[str]
+    """
+
+    status: TopicModelingStageStatus
+    provider: str
+    model: str
+    entity_types: List[str] = Field(default_factory=list)
+    input_documents: int = Field(ge=0)
+    output_documents: int = Field(ge=0)
+    regex_patterns: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
 
@@ -730,6 +810,8 @@ class TopicModelingReport(AnalysisSchemaModel):
     :vartype text_collection: TopicModelingTextCollectionReport
     :ivar llm_extraction: LLM extraction report.
     :vartype llm_extraction: TopicModelingLlmExtractionReport
+    :ivar entity_removal: Entity removal report.
+    :vartype entity_removal: TopicModelingEntityRemovalReport
     :ivar lexical_processing: Lexical processing report.
     :vartype lexical_processing: TopicModelingLexicalProcessingReport
     :ivar bertopic_analysis: BERTopic analysis report.
@@ -746,6 +828,7 @@ class TopicModelingReport(AnalysisSchemaModel):
 
     text_collection: TopicModelingTextCollectionReport
     llm_extraction: TopicModelingLlmExtractionReport
+    entity_removal: TopicModelingEntityRemovalReport
     lexical_processing: TopicModelingLexicalProcessingReport
     bertopic_analysis: TopicModelingBerTopicReport
     llm_fine_tuning: TopicModelingLlmFineTuningReport
@@ -823,12 +906,18 @@ class MarkovAnalysisSpanMarkupSegmentationConfig(AnalysisSchemaModel):
     :vartype client: biblicus.ai.models.LlmClientConfig
     :ivar prompt_template: Prompt template describing what to return (must not include ``{text}``).
     :vartype prompt_template: str
-    :ivar system_prompt: System prompt containing ``{text}``.
-    :vartype system_prompt: str
+    :ivar system_prompt: Optional system prompt containing ``{text}``.
+    :vartype system_prompt: str or None
     :ivar max_rounds: Maximum number of edit rounds.
     :vartype max_rounds: int
     :ivar max_edits_per_round: Maximum edits per round.
     :vartype max_edits_per_round: int
+    :ivar normalize_nested_spans: Whether to normalize nested spans from text extract output.
+    :vartype normalize_nested_spans: bool
+    :ivar chunk_characters: Optional chunk size for span markup processing.
+    :vartype chunk_characters: int or None
+    :ivar chunk_overlap_characters: Optional overlap between chunks.
+    :vartype chunk_overlap_characters: int or None
     :ivar label_attribute: Optional attribute name used to extract segment labels.
     :vartype label_attribute: str or None
     :ivar prepend_label: Whether to prepend the label and a newline to segment text.
@@ -847,9 +936,12 @@ class MarkovAnalysisSpanMarkupSegmentationConfig(AnalysisSchemaModel):
 
     client: LlmClientConfig
     prompt_template: str = Field(min_length=1)
-    system_prompt: str = Field(min_length=1)
+    system_prompt: Optional[str] = None
     max_rounds: int = Field(default=6, ge=1)
     max_edits_per_round: int = Field(default=500, ge=1)
+    normalize_nested_spans: bool = Field(default=False)
+    chunk_characters: Optional[int] = Field(default=None, ge=1)
+    chunk_overlap_characters: Optional[int] = Field(default=None, ge=0)
     label_attribute: Optional[str] = Field(default=None, min_length=1)
     prepend_label: bool = False
     start_label_value: Optional[str] = Field(default=None, min_length=1)
@@ -860,10 +952,22 @@ class MarkovAnalysisSpanMarkupSegmentationConfig(AnalysisSchemaModel):
 
     @model_validator(mode="after")
     def _validate_prompt_template(self) -> "MarkovAnalysisSpanMarkupSegmentationConfig":
-        if "{text}" not in self.system_prompt:
+        if self.system_prompt is not None and "{text}" not in self.system_prompt:
             raise ValueError("segmentation.span_markup.system_prompt must include {text}")
         if "{text}" in self.prompt_template:
             raise ValueError("segmentation.span_markup.prompt_template must not include {text}")
+        if self.chunk_overlap_characters is not None and self.chunk_characters is None:
+            raise ValueError(
+                "segmentation.span_markup.chunk_overlap_characters requires chunk_characters"
+            )
+        if (
+            self.chunk_characters is not None
+            and self.chunk_overlap_characters is not None
+            and self.chunk_overlap_characters >= self.chunk_characters
+        ):
+            raise ValueError(
+                "segmentation.span_markup.chunk_overlap_characters must be smaller than chunk_characters"
+            )
         if self.prepend_label and not self.label_attribute:
             raise ValueError(
                 "segmentation.span_markup.label_attribute is required when "
@@ -956,6 +1060,7 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
     method: MarkovAnalysisSegmentationMethod = Field(
         default=MarkovAnalysisSegmentationMethod.SENTENCE
     )
+    max_workers: int = Field(default=1, ge=1)
     fixed_window: MarkovAnalysisFixedWindowSegmentationConfig = Field(
         default_factory=MarkovAnalysisFixedWindowSegmentationConfig
     )
@@ -982,12 +1087,28 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
         return self
 
 
+class MarkovAnalysisLlmObservationsCacheConfig(AnalysisSchemaModel):
+    """
+    Cache configuration for LLM observations.
+
+    :ivar enabled: Whether to reuse cached LLM observations.
+    :vartype enabled: bool
+    :ivar cache_name: Optional cache name used in cache identity.
+    :vartype cache_name: str or None
+    """
+
+    enabled: bool = Field(default=True)
+    cache_name: Optional[str] = Field(default=None, min_length=1)
+
+
 class MarkovAnalysisLlmObservationsConfig(AnalysisSchemaModel):
     """
     Provider-backed observation extraction configuration.
 
     :ivar enabled: Whether to enable provider-backed observation extraction.
     :vartype enabled: bool
+    :ivar cache: Cache configuration for LLM observation results.
+    :vartype cache: MarkovAnalysisLlmObservationsCacheConfig
     :ivar client: LLM client configuration.
     :vartype client: biblicus.ai.models.LlmClientConfig
     :ivar prompt_template: Prompt template containing ``{segment}``.
@@ -997,9 +1118,13 @@ class MarkovAnalysisLlmObservationsConfig(AnalysisSchemaModel):
     """
 
     enabled: bool = Field(default=False)
+    cache: MarkovAnalysisLlmObservationsCacheConfig = Field(
+        default_factory=MarkovAnalysisLlmObservationsCacheConfig
+    )
     client: Optional[LlmClientConfig] = None
     prompt_template: Optional[str] = None
     system_prompt: Optional[str] = None
+    max_workers: int = Field(default=1, ge=1)
 
     @model_validator(mode="after")
     def _validate_requirements(self) -> "MarkovAnalysisLlmObservationsConfig":

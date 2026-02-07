@@ -27,3 +27,11 @@ docs/_build/
 __MACOSX/
 ._*
 datasets/
+
+# Dashboard app
+apps/dashboard/node_modules/
+apps/dashboard/.amplify/
+apps/dashboard/amplify_outputs*
+apps/dashboard/amplifyconfiguration*
+apps/dashboard/dist/
+apps/dashboard/dist-ssr/

@@ -68,7 +68,7 @@ def _download_wikipedia(*, corpus_path: Path, limit: int, force: bool) -> Dict[s
 
 def _build_extraction_snapshot(corpus: Corpus, configuration_name: str) -> ExtractionSnapshotReference:
     extraction_config = {
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text", "config": {}},
             {"extractor_id": "select-text", "config": {}},
         ]

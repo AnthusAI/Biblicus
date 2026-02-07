@@ -12,25 +12,23 @@ An extraction snapshot produces:
 
 - A snapshot manifest
 - Per item extracted text files for the final output
-- Per step extracted text artifacts for all pipeline steps
+- Per stage extracted text artifacts for all pipeline stages
 - Per item result status, including extracted, skipped, and errored outcomes
 
 Extraction artifacts are stored under the corpus:
 
 ```
 corpus/
-  .biblicus/
-    runs/
-      extraction/
-        pipeline/
-          <snapshot id>/
-            manifest.json
+  extracted/
+    pipeline/
+      <snapshot id>/
+        manifest.json
+        text/
+          <item id>.txt
+        stages/
+          01-pass-through-text/
             text/
               <item id>.txt
-            steps/
-              01-pass-through-text/
-                text/
-                  <item id>.txt
 ```
 
 ### Output structure
@@ -43,7 +41,7 @@ Extraction output is structured and inspectable. The manifest captures the confi
   "extractor_id": "pipeline",
   "configuration": {
     "name": "default",
-    "steps": ["pass-through-text", "metadata-text"]
+    "stages": ["pass-through-text", "metadata-text"]
   },
   "stats": {
     "total_items": 3,
@@ -54,12 +52,12 @@ Extraction output is structured and inspectable. The manifest captures the confi
 }
 ```
 
-The `text/` folder contains the final extracted text for each item, while `steps/` preserves all intermediate outputs.
+The `text/` folder contains the final extracted text for each item, while `stages/` preserves all intermediate outputs.
 
 ## Reproducibility checklist
 
 - Record the extraction snapshot identifier (`extractor_id:snapshot_id`).
-- Keep the pipeline steps and step order in source control (configuration files are preferred).
+- Keep the pipeline stages and stage order in source control (configuration files are preferred).
 - Capture the catalog timestamp when comparing extraction snapshots.
 
 ## Available Extractors
@@ -88,6 +86,7 @@ Biblicus provides 16 built-in extractors organized by category:
 
 - [`stt-openai`](extractors/speech-to-text/openai.md) - OpenAI Whisper API
 - [`stt-deepgram`](extractors/speech-to-text/deepgram.md) - Deepgram Nova-3 API
+- [`deepgram-transform`](extractors/speech-to-text/deepgram-transform.md) - Render structured Deepgram metadata
 
 ### Pipeline Utilities
 
@@ -95,7 +94,7 @@ Biblicus provides 16 built-in extractors organized by category:
 - [`select-longest-text`](extractors/pipeline-utilities/select-longest.md) - Longest output selection
 - [`select-override`](extractors/pipeline-utilities/select-override.md) - Per-item override by ID
 - [`select-smart-override`](extractors/pipeline-utilities/select-smart-override.md) - Media type-based routing
-- [`pipeline`](extractors/pipeline-utilities/pipeline.md) - Multi-step extraction workflow
+- [`pipeline`](extractors/pipeline-utilities/pipeline.md) - Multi-stage extraction workflow
 
 For detailed documentation including configuration options, usage examples, and best practices, see the [Extractor Reference](extractors/index.md).
 
@@ -116,17 +115,17 @@ Other selection strategies include:
 
 The `pipeline` extractor composes multiple extractors into an explicit pipeline.
 
-The pipeline runs every step in order and records all step outputs. Each step receives the raw item and the outputs of all prior steps. The final extracted text is the last extracted output in pipeline order.
+The pipeline runs every stage in order and records all stage outputs. Each stage receives the raw item and the outputs of all prior stages. The final extracted text is the last extracted output in pipeline order.
 
-This lets you build explicit extraction policies while keeping every step outcome available for comparison and metrics.
+This lets you build explicit extraction policies while keeping every stage outcome available for comparison and metrics.
 
 For details, see the [`pipeline` extractor documentation](extractors/pipeline-utilities/pipeline.md).
 
 ## Complementary versus competing extractors
 
-The pipeline is designed for complementary steps that do not overlap much in what they handle.
+The pipeline is designed for complementary stages that do not overlap much in what they handle.
 
-Examples of complementary steps:
+Examples of complementary stages:
 
 - A text extractor that only applies to text items
 - A Portable Document Format text extractor that only applies to `application/pdf`
@@ -134,7 +133,7 @@ Examples of complementary steps:
 - A speech to text extractor that applies to audio items
 - A metadata extractor that always applies but produces low fidelity fallback text
 
-Competing extractors are different. Competing extractors both claim they can handle the same item type, but they might produce different output quality. When you want to compare or switch between competing extractors, make that decision explicit with a selection extractor step such as `select-text` or a custom selection extractor.
+Competing extractors are different. Competing extractors both claim they can handle the same item type, but they might produce different output quality. When you want to compare or switch between competing extractors, make that decision explicit with a selection extractor stage such as `select-text` or a custom selection extractor.
 
 ## Example: extract from a corpus
 
@@ -146,22 +145,22 @@ printf 'x' > /tmp/image.png
 python -m biblicus ingest --corpus corpora/extraction-demo /tmp/image.png --tag extracted
 
 python -m biblicus extract build --corpus corpora/extraction-demo \
-  --step pass-through-text \
-  --step pdf-text \
-  --step metadata-text
+  --stage pass-through-text \
+  --stage pdf-text \
+  --stage metadata-text
 ```
 
-The extracted text for the image comes from the `metadata-text` step because the image is not a text item.
+The extracted text for the image comes from the `metadata-text` stage because the image is not a text item.
 
 ## Example: selection within a pipeline
 
-Selection is a pipeline step that chooses extracted text from previous pipeline steps. Selection is just another extractor in the pipeline, and it decides which prior output to carry forward.
+Selection is a pipeline stage that chooses extracted text from previous pipeline stages. Selection is just another extractor in the pipeline, and it decides which prior output to carry forward.
 
 ```
 python -m biblicus extract build --corpus corpora/extraction-demo \
-  --step pass-through-text \
-  --step metadata-text \
-  --step select-text
+  --stage pass-through-text \
+  --stage metadata-text \
+  --stage select-text
 ```
 
 The pipeline run produces one extraction snapshot under `pipeline`. You can point retrieval backends at that run.
@@ -172,9 +171,9 @@ Try text extraction first, fall back to OCR for scanned documents:
 
 ```
 python -m biblicus extract build --corpus corpora/extraction-demo \
-  --step pdf-text \
-  --step ocr-rapidocr \
-  --step select-text
+  --stage pdf-text \
+  --stage ocr-rapidocr \
+  --stage select-text
 ```
 
 This pipeline tries `pdf-text` first for PDFs with text layers, falls back to `ocr-rapidocr` for scanned PDFs, and uses `select-text` to pick the first successful result.
@@ -185,7 +184,7 @@ Use vision-language models for documents with complex layouts:
 
 ```
 python -m biblicus extract build --corpus corpora/extraction-demo \
-  --step docling-granite
+  --stage docling-granite
 ```
 
 The `docling-granite` extractor uses IBM Research's Granite Docling-258M VLM for high-accuracy extraction of tables, code blocks, and equations.
@@ -201,9 +200,9 @@ python -m biblicus extract show --corpus corpora/extraction-demo --run pipeline:
 
 ## Common pitfalls
 
-- Comparing extraction snapshots built from different pipeline step orders.
+- Comparing extraction snapshots built from different pipeline stage orders.
 - Forgetting to capture the extraction snapshot reference before building retrieval snapshots.
-- Assuming selection steps choose the “best” output rather than the first usable output.
+- Assuming selection stages choose the “best” output rather than the first usable output.
 
 Deletion is explicit and requires typing the exact run reference as confirmation:
 

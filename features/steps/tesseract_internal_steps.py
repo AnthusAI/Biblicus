@@ -11,7 +11,7 @@ from behave import given, when, then
 from biblicus import Corpus
 from biblicus.errors import ExtractionSnapshotFatalError
 from biblicus.extractors.tesseract_text import TesseractExtractor, TesseractExtractorConfig
-from biblicus.models import CatalogItem, ExtractionStepOutput
+from biblicus.models import CatalogItem, ExtractionStageOutput
 
 
 def _block_pytesseract_import(context) -> None:
@@ -134,8 +134,8 @@ def step_extract_tesseract_layout_invalid(context) -> None:
         ]
     }
     previous = [
-        ExtractionStepOutput(
-            step_index=1,
+        ExtractionStageOutput(
+            stage_index=1,
             extractor_id="layout",
             status="extracted",
             metadata=layout_metadata,
@@ -171,8 +171,8 @@ def step_extract_tesseract_without_layout_regions(context) -> None:
         source_uri="file://image.png",
     )
     previous = [
-        ExtractionStepOutput(
-            step_index=1,
+        ExtractionStageOutput(
+            stage_index=1,
             extractor_id="layout",
             status="extracted",
             metadata={},

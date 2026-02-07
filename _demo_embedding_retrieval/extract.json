@@ -6,7 +6,7 @@
     "name": "default",
     "created_at": "2026-02-01T19:37:53.463371+00:00",
     "config": {
-      "steps": [
+      "stages": [
         {
           "extractor_id": "pass-through-text",
           "config": {}
@@ -22,21 +22,21 @@
       "item_id": "8da6a45e-9b2a-4655-9e50-5e43caef515e",
       "status": "extracted",
       "final_text_relpath": "text/8da6a45e-9b2a-4655-9e50-5e43caef515e.txt",
-      "final_step_index": 1,
-      "final_step_extractor_id": "pass-through-text",
+      "final_stage_index": 1,
+      "final_stage_extractor_id": "pass-through-text",
       "final_producer_extractor_id": "pass-through-text",
-      "final_source_step_index": null,
+      "final_source_stage_index": null,
       "error_type": null,
       "error_message": null,
-      "step_results": [
+      "stage_results": [
         {
-          "step_index": 1,
+          "stage_index": 1,
           "extractor_id": "pass-through-text",
           "status": "extracted",
-          "text_relpath": "steps/01-pass-through-text/text/8da6a45e-9b2a-4655-9e50-5e43caef515e.txt",
+          "text_relpath": "stages/01-pass-through-text/text/8da6a45e-9b2a-4655-9e50-5e43caef515e.txt",
           "text_characters": 37407,
           "producer_extractor_id": "pass-through-text",
-          "source_step_index": null,
+          "source_stage_index": null,
           "confidence": null,
           "error_type": null,
           "error_message": null

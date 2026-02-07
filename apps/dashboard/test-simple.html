@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { height: 100vh; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import React from 'https://esm.sh/react@18';
+    import ReactDOM from 'https://esm.sh/react-dom@18/client';
+    import { Panel, Group, Separator } from 'https://esm.sh/react-resizable-panels@4.6.2';
+
+    function App() {
+      return React.createElement('div', { style: { height: '100vh' } },
+        React.createElement(Group, { direction: 'horizontal' },
+          React.createElement(Panel, { defaultSize: 50, minSize: 20 },
+            React.createElement('div', { style: { background: 'lightblue', height: '100%', padding: '20px' } },
+              React.createElement('h2', null, 'Left Panel'),
+              React.createElement('p', null, 'Drag the separator to resize')
+            )
+          ),
+          React.createElement(Separator, { style: { width: '4px', background: '#999', cursor: 'ew-resize' } }),
+          React.createElement(Panel, { defaultSize: 50, minSize: 20 },
+            React.createElement('div', { style: { background: 'lightgreen', height: '100%', padding: '20px' } },
+              React.createElement('h2', null, 'Right Panel'),
+              React.createElement('p', null, 'This should work!')
+            )
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>

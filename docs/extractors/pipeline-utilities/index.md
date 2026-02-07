@@ -233,7 +233,7 @@ config:
 
 - Runs extractors in order
 - Concatenates all results
-- **Predictable**: Always runs all steps
+- **Predictable**: Always runs all stages
 - **Comprehensive**: Captures all outputs
 
 ## See Also

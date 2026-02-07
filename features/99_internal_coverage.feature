@@ -29,7 +29,7 @@ Feature: Internal coverage edge cases
     When I exercise text extraction edge cases
     Then the text extraction edge cases succeed
 
-  Scenario: Pipeline extractor config rejects nested pipeline steps
+  Scenario: Pipeline extractor config rejects nested pipeline stages
     When I exercise pipeline configuration edge cases
     Then the pipeline configuration edge cases succeed
 

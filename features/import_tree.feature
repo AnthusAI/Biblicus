@@ -19,7 +19,7 @@ Feature: Importing a folder tree
     And the directory "source_tree" contains files:
       | relpath | contents |
       | a.txt   | alpha    |
-    When I snapshot "import-tree source_tree" in corpus "corpus"
+    When I snapshot "import-tree corpus/source_tree" in corpus "corpus"
     Then the command succeeds
     And the corpus "corpus" has at least 1 items
 

@@ -12,7 +12,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..chunking import ChunkerConfig, TextChunk, TokenizerConfig
-from ..constants import CORPUS_DIR_NAME, SNAPSHOTS_DIR_NAME
+from ..constants import RETRIEVAL_DIR_NAME
 from ..corpus import Corpus
 from ..embedding_providers import EmbeddingProviderConfig, _l2_normalize_rows
 from ..frontmatter import parse_front_matter
@@ -330,8 +330,7 @@ def artifact_paths_for_snapshot(*, snapshot_id: str, retriever_id: str) -> Dict[
     :rtype: dict[str, str]
     """
     prefix = f"{snapshot_id}.{retriever_id}"
-    embeddings_relpath = str(
-        Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{prefix}.embeddings.npy"
-    )
-    chunks_relpath = str(Path(CORPUS_DIR_NAME) / SNAPSHOTS_DIR_NAME / f"{prefix}.chunks.jsonl")
+    base_dir = Path(RETRIEVAL_DIR_NAME) / retriever_id / snapshot_id
+    embeddings_relpath = str(base_dir / f"{prefix}.embeddings.npy")
+    chunks_relpath = str(base_dir / f"{prefix}.chunks.jsonl")
     return {"embeddings": embeddings_relpath, "chunks": chunks_relpath}

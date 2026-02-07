@@ -97,7 +97,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text       # Try fast text extraction
     - extractor_id: docling-smol   # Fallback to VLM for scanned PDFs
     - extractor_id: select-text
@@ -156,7 +156,7 @@ Combine fast text extraction with OCR fallback:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
       config:
         max_pages: null
@@ -245,7 +245,7 @@ Handle both digital and scanned PDFs with fallback:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: docling-smol   # Handles scanned PDFs
     - extractor_id: select-longest-text
@@ -292,7 +292,7 @@ Combine with OCR/VLM for heterogeneous PDF collections:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-text

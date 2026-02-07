@@ -9,7 +9,7 @@ rewriting ingestion.
 - **Backend**: a pluggable retrieval implementation that can build and query runs.
 - **Run**: a recorded retrieval build for a corpus and extraction snapshot.
 - **Evidence**: structured output containing identifiers, provenance, and scores.
-- **Stage**: explicit steps such as retrieve, rerank, and filter.
+- **Stage**: explicit stages such as retrieve, rerank, and filter.
 
 ## How retrieval snapshots work
 
@@ -21,7 +21,7 @@ rewriting ingestion.
 Retrieval runs are stored under:
 
 ```
-.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/
+retrieval/<backend_id>/<snapshot_id>/
 ```
 
 ## A minimal run you can execute
@@ -36,7 +36,7 @@ printf "beta gamma\n" > /tmp/retrieval-beta.txt
 python -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-alpha.txt
 python -m biblicus ingest --corpus corpora/retrieval_demo /tmp/retrieval-beta.txt
 
-python -m biblicus extract build --corpus corpora/retrieval_demo --step pass-through-text
+python -m biblicus extract build --corpus corpora/retrieval_demo --stage pass-through-text
 python -m biblicus build --corpus corpora/retrieval_demo --backend sqlite-full-text-search
 python -m biblicus query --corpus corpora/retrieval_demo --query "beta"
 ```

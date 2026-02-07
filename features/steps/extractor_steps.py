@@ -10,9 +10,9 @@ from biblicus.extractors.base import TextExtractor
 from biblicus.extractors.pipeline import (
     PipelineExtractor,
     PipelineExtractorConfig,
-    PipelineStepSpec,
+    PipelineStageSpec,
 )
-from biblicus.models import CatalogItem, ExtractionStepOutput
+from biblicus.models import CatalogItem, ExtractionStageOutput
 from biblicus.time import utc_now_iso
 
 
@@ -28,7 +28,7 @@ class _AbstractExtractorProbe(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config,
-        previous_extractions: list[ExtractionStepOutput],
+        previous_extractions: list[ExtractionStageOutput],
     ):
         return super().extract_text(
             corpus=corpus,
@@ -41,7 +41,7 @@ class _AbstractExtractorProbe(TextExtractor):
 def _sample_catalog_item() -> CatalogItem:
     return CatalogItem(
         id="item",
-        relpath="raw/item.txt",
+        relpath="item.txt",
         sha256="0" * 64,
         bytes=0,
         media_type="text/plain",
@@ -81,7 +81,7 @@ def step_call_pipeline_extractor_directly(context) -> None:
     corpus = Corpus.init(context.workdir / "corpus")
     pipeline = PipelineExtractor()
     config = PipelineExtractorConfig(
-        steps=[PipelineStepSpec(extractor_id="pass-through-text", config={})]
+        stages=[PipelineStageSpec(extractor_id="pass-through-text", config={})]
     )
     context.pipeline_error = None
     try:

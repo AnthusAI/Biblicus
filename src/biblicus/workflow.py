@@ -147,7 +147,7 @@ def normalize_task_kind(name: str) -> str:
 
 def _default_pipeline_config() -> Dict[str, Any]:
     return {
-        "steps": [
+        "stages": [
             {
                 "extractor_id": "pass-through-text",
                 "configuration": {},
@@ -171,13 +171,19 @@ def _catalog_generated_at(corpus: Corpus) -> str:
 
 def _list_retrieval_snapshots(corpus: Corpus) -> List[RetrievalSnapshot]:
     snapshots: List[RetrievalSnapshot] = []
-    if not corpus.snapshots_dir.is_dir():
+    if not corpus.retrieval_dir.is_dir():
         return snapshots
-    for path in sorted(corpus.snapshots_dir.glob("*.json")):
-        try:
-            snapshots.append(corpus.load_snapshot(path.stem))
-        except Exception:
+    for retriever_dir in sorted(corpus.retrieval_dir.iterdir()):
+        if not retriever_dir.is_dir():
             continue
+        for snapshot_dir in sorted(retriever_dir.iterdir()):
+            manifest_path = snapshot_dir / "manifest.json"
+            if not manifest_path.is_file():
+                continue
+            try:
+                snapshots.append(corpus.load_snapshot(snapshot_dir.name))
+            except Exception:
+                continue
     return snapshots
 
 
@@ -271,11 +277,15 @@ def build_default_handler_registry(
 
     def _handle_extract(task: Task) -> Any:
         pipeline_config = task.metadata.get("pipeline") or _default_pipeline_config()
+        force = bool(task.metadata.get("force", False))
+        max_workers = int(task.metadata.get("max_workers", 1))
         return build_extraction_snapshot(
             corpus,
             extractor_id="pipeline",
             configuration_name="default",
             configuration=pipeline_config,
+            force=force,
+            max_workers=max_workers,
         )
 
     def _handle_index(task: Task) -> Any:
@@ -296,6 +306,8 @@ def build_plan_for_extract(
     *,
     pipeline_config: Optional[Dict[str, Any]] = None,
     load_handler_available: bool = False,
+    force: bool = False,
+    max_workers: int = 1,
 ) -> Plan:
     """
     Build a dependency plan for corpus extraction.
@@ -306,6 +318,10 @@ def build_plan_for_extract(
     :type pipeline_config: dict[str, Any] or None
     :param load_handler_available: Whether a load handler is available.
     :type load_handler_available: bool
+    :param force: Whether to force extraction even when snapshots exist.
+    :type force: bool
+    :param max_workers: Maximum number of concurrent extraction workers.
+    :type max_workers: int
     :return: Planned task graph for extraction.
     :rtype: Plan
     """
@@ -319,14 +335,18 @@ def build_plan_for_extract(
     )
     has_items = corpus.has_items()
 
-    extract_status = "complete" if snapshot else "ready"
+    extract_status = "complete" if snapshot and not force else "ready"
     extract_task = _build_task(
         name="extract",
         kind="extract",
         target_type="corpus",
         target_id=corpus.uri,
         status=extract_status,
-        metadata={"pipeline": pipeline_config},
+        metadata={
+            "pipeline": pipeline_config,
+            "force": force,
+            "max_workers": max_workers,
+        },
     )
 
     if not has_items:
@@ -339,6 +359,9 @@ def build_plan_for_extract(
                 status="ready",
             )
             extract_task.depends_on.append(load_task)
+        else:
+            extract_task.status = "blocked"
+            extract_task.reason = "Corpus is empty and no load handler is available"
 
     tasks = _flatten_tasks(extract_task)
     return Plan(tasks=tasks, root=extract_task, status=_plan_status(tasks))

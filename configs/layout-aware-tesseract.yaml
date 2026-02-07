@@ -9,7 +9,7 @@
 
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: paddleocr-layout
       config:
         lang: en

@@ -30,7 +30,7 @@ configs = {
     "heron": {
         "extractor_id": "pipeline",
         "config": {
-            "steps": [
+            "stages": [
                 {"extractor_id": "heron-layout", "config": {"model_variant": "101"}},
                 {"extractor_id": "ocr-tesseract", "config": {"use_layout_metadata": True}}
             ]
@@ -39,7 +39,7 @@ configs = {
     "paddleocr": {
         "extractor_id": "pipeline",
         "config": {
-            "steps": [
+            "stages": [
                 {"extractor_id": "paddleocr-layout", "config": {"lang": "en"}},
                 {"extractor_id": "ocr-tesseract", "config": {"use_layout_metadata": True}}
             ]

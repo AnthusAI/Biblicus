@@ -59,7 +59,7 @@ config:
 Extract text from all images in a corpus:
 
 ```bash
-biblicus --corpus /path/to/corpus extract build --step ocr-tesseract
+biblicus --corpus /path/to/corpus extract build --stage ocr-tesseract
 ```
 
 ### With Confidence Filtering
@@ -67,7 +67,7 @@ biblicus --corpus /path/to/corpus extract build --step ocr-tesseract
 Only include words with high confidence:
 
 ```bash
-biblicus --corpus /path/to/corpus extract build --step "ocr-tesseract:min_confidence=0.8"
+biblicus --corpus /path/to/corpus extract build --stage "ocr-tesseract:min_confidence=0.8"
 ```
 
 ### Layout-Aware OCR Pipeline
@@ -76,8 +76,8 @@ Use layout detection followed by region-based OCR:
 
 ```bash
 biblicus --corpus /path/to/corpus extract build \
-  --step "mock-layout-detector:layout_type=two-column" \
-  --step "ocr-tesseract:use_layout_metadata=true"
+  --stage "mock-layout-detector:layout_type=two-column" \
+  --stage "ocr-tesseract:use_layout_metadata=true"
 ```
 
 ### Python API
@@ -105,7 +105,7 @@ snapshot = build_extraction_snapshot(
     extractor_id="pipeline",
     configuration_name="layout-aware-ocr",
     configuration={
-        "steps": [
+        "stages": [
             {
                 "extractor_id": "mock-layout-detector",
                 "config": {"layout_type": "two-column"}

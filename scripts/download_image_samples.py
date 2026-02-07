@@ -119,9 +119,9 @@ def download_image_samples(
 
     corpus.ingest_item(
         _text_portable_network_graphics_bytes("Hello World"),
-        filename="hello.png",
+        filename="Hello_world.png",
         media_type="image/png",
-        source_uri="generated:hello.png",
+        source_uri="generated:Hello_world.png",
         tags=[*tags, "image-with-text"],
     )
     ingested += 1

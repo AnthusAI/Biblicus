@@ -79,8 +79,8 @@ Build an extraction snapshot using the layout-aware OCR pipeline:
 
 ```bash
 biblicus --corpus /path/to/corpus extract build \
-  --step "mock-layout-detector:layout_type=two-column" \
-  --step "ocr-tesseract:use_layout_metadata=true,lang=eng"
+  --stage "mock-layout-detector:layout_type=two-column" \
+  --stage "ocr-tesseract:use_layout_metadata=true,lang=eng"
 ```
 
 This command:
@@ -114,7 +114,7 @@ snapshot = build_extraction_snapshot(
     extractor_id="pipeline",
     configuration_name="layout-aware-ocr",
     configuration={
-        "steps": [
+        "stages": [
             {
                 "extractor_id": "mock-layout-detector",
                 "config": {"layout_type": "two-column"}
@@ -274,7 +274,7 @@ The `mock-layout-detector` identifies document regions:
 }
 ```
 
-This metadata is saved to: `{snapshot_dir}/steps/01-mock-layout-detector/metadata/{item_id}.json`
+This metadata is saved to: `{snapshot_dir}/stages/01-mock-layout-detector/metadata/{item_id}.json`
 
 ### Stage 2: Region-Based OCR
 
@@ -312,13 +312,13 @@ The mock layout detector supports multiple layout types:
 
 ```bash
 # Single column
---step "mock-layout-detector:layout_type=single-column"
+--stage "mock-layout-detector:layout_type=single-column"
 
 # Two columns
---step "mock-layout-detector:layout_type=two-column"
+--stage "mock-layout-detector:layout_type=two-column"
 
 # Complex (multiple columns + tables)
---step "mock-layout-detector:layout_type=complex"
+--stage "mock-layout-detector:layout_type=complex"
 ```
 
 ### OCR Configuration
@@ -326,7 +326,7 @@ The mock layout detector supports multiple layout types:
 Adjust Tesseract OCR parameters:
 
 ```bash
---step "ocr-tesseract:use_layout_metadata=true,lang=fra,min_confidence=0.8,psm=6"
+--stage "ocr-tesseract:use_layout_metadata=true,lang=fra,min_confidence=0.8,psm=6"
 ```
 
 Parameters:
@@ -346,8 +346,8 @@ The `mock-layout-detector` uses hardcoded region data. For production:
 1. **Use PaddleOCR** (already in Biblicus):
    ```bash
    biblicus --corpus /path/to/corpus extract build \
-     --step "paddleocr-vl" \
-     --step "ocr-tesseract:use_layout_metadata=true"
+     --stage "paddleocr-vl" \
+     --stage "ocr-tesseract:use_layout_metadata=true"
    ```
 
 2. **Integrate Layout Parser**:
@@ -358,7 +358,7 @@ The `mock-layout-detector` uses hardcoded region data. For production:
 3. **Use Docling** (includes layout analysis):
    ```bash
    biblicus --corpus /path/to/corpus extract build \
-     --step "docling-smol"
+     --stage "docling-smol"
    ```
 
 ### Real-World Layouts
@@ -385,12 +385,12 @@ If OCR results are poor:
 
 1. **Lower confidence threshold**:
    ```bash
-   --step "ocr-tesseract:min_confidence=0.0"
+   --stage "ocr-tesseract:min_confidence=0.0"
    ```
 
 2. **Try different PSM**:
    ```bash
-   --step "ocr-tesseract:psm=6"  # Single uniform block
+   --stage "ocr-tesseract:psm=6"  # Single uniform block
    ```
 
 3. **Check image quality**: Tesseract works best on 300+ DPI images
@@ -401,13 +401,13 @@ If text contains non-English characters:
 
 ```bash
 # French
---step "ocr-tesseract:lang=fra"
+--stage "ocr-tesseract:lang=fra"
 
 # Chinese Simplified
---step "ocr-tesseract:lang=chi_sim"
+--stage "ocr-tesseract:lang=chi_sim"
 
 # Multiple languages
---step "ocr-tesseract:lang=eng+fra"
+--stage "ocr-tesseract:lang=eng+fra"
 ```
 
 ## Related GitHub Issues

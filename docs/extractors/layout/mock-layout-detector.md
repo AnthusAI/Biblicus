@@ -12,8 +12,8 @@ predefined regions based on the `layout_type` configuration.
 ```bash
 biblicus extract build \
   --corpus my-corpus \
-  --step "mock-layout-detector:layout_type=two-column" \
-  --step "ocr-tesseract:use_layout_metadata=true"
+  --stage "mock-layout-detector:layout_type=two-column" \
+  --stage "ocr-tesseract:use_layout_metadata=true"
 ```
 
 ## Configuration

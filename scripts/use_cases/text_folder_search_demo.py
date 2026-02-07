@@ -60,7 +60,7 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
         corpus,
         extractor_id="pipeline",
         configuration_name="Use case: pass-through text",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
 
     backend = get_retriever("sqlite-full-text-search")

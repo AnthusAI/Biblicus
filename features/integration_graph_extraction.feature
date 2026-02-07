@@ -4,7 +4,7 @@ Feature: Graph extraction integration
 
   Scenario: Build a simple entities graph from a Wikipedia corpus
     When I download a Wikipedia corpus into "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
       | select-text       | {}          |

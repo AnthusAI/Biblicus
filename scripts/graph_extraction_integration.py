@@ -85,7 +85,7 @@ def _build_extraction_snapshot(corpus: Corpus, configuration_name: str) -> Extra
     :rtype: ExtractionSnapshotReference
     """
     extraction_config = {
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text", "config": {}},
             {"extractor_id": "select-text", "config": {}},
         ]

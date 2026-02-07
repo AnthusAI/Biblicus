@@ -20,6 +20,11 @@ from .constants import (
     ANALYSIS_RUNS_DIR_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
+    EXTRACTED_DIR_NAME,
+    GRAPH_DIR_NAME,
+    LEGACY_CORPUS_DIR_NAME,
+    RETRIEVAL_DIR_NAME,
+    ANALYSIS_DIR_NAME,
     EXTRACTION_SNAPSHOTS_DIR_NAME,
     GRAPH_SNAPSHOTS_DIR_NAME,
     SCHEMA_VERSION,
@@ -396,9 +401,63 @@ class Corpus:
         """
         self.root = root
         self.meta_dir = self.root / CORPUS_DIR_NAME
-        self.raw_dir = self.root / DEFAULT_RAW_DIR
         self.config = self._load_config()
+        self.raw_dir = self._resolve_raw_dir()
         self._hooks = self._load_hooks()
+
+    def _resolve_raw_dir(self) -> Path:
+        """
+        Resolve the raw directory path for the corpus.
+
+        :return: Raw directory path.
+        :rtype: Path
+        """
+        raw_dir = DEFAULT_RAW_DIR
+        if self.config is not None and isinstance(self.config.raw_dir, str):
+            raw_dir = self.config.raw_dir.strip() or DEFAULT_RAW_DIR
+        if raw_dir == ".":
+            return self.root
+        return self.root / raw_dir
+
+    @property
+    def extracted_dir(self) -> Path:
+        """
+        Location of extraction artifacts for the corpus.
+
+        :return: Extracted artifacts directory.
+        :rtype: Path
+        """
+        return self.root / EXTRACTED_DIR_NAME
+
+    @property
+    def graph_dir(self) -> Path:
+        """
+        Location of graph artifacts for the corpus.
+
+        :return: Graph artifacts directory.
+        :rtype: Path
+        """
+        return self.root / GRAPH_DIR_NAME
+
+    @property
+    def retrieval_dir(self) -> Path:
+        """
+        Location of retrieval artifacts for the corpus.
+
+        :return: Retrieval artifacts directory.
+        :rtype: Path
+        """
+        return self.root / RETRIEVAL_DIR_NAME
+
+    @property
+    def analysis_dir(self) -> Path:
+        """
+        Location of analysis artifacts for the corpus.
+
+        :return: Analysis artifacts directory.
+        :rtype: Path
+        """
+        return self.root / ANALYSIS_DIR_NAME
 
     @property
     def uri(self) -> str:
@@ -420,7 +479,10 @@ class Corpus:
         """
         path = self.meta_dir / "config.json"
         if not path.is_file():
-            return None
+            legacy_path = self.root / LEGACY_CORPUS_DIR_NAME / "config.json"
+            if not legacy_path.is_file():
+                return None
+            path = legacy_path
         data = json.loads(path.read_text(encoding="utf-8"))
         try:
             return CorpusConfig.model_validate(data)
@@ -451,6 +513,38 @@ class Corpus:
             hook_specs=self.config.hooks,
         )
 
+    def _reserved_dir_names(self) -> List[str]:
+        return [
+            CORPUS_DIR_NAME,
+            LEGACY_CORPUS_DIR_NAME,
+            EXTRACTED_DIR_NAME,
+            GRAPH_DIR_NAME,
+            RETRIEVAL_DIR_NAME,
+            ANALYSIS_DIR_NAME,
+        ]
+
+    def _is_reserved_path(self, path: Path) -> bool:
+        try:
+            relative = path.relative_to(self.root)
+        except ValueError:
+            return False
+        if not relative.parts:
+            return False
+        if relative.parts[0] in self._reserved_dir_names():
+            return True
+        return relative.name == ".biblicusignore"
+
+    def _raw_relpath(self, *, output_name: str, storage_subdir: Optional[str]) -> str:
+        relpath = Path(output_name)
+        if storage_subdir:
+            relpath = Path(storage_subdir) / relpath
+        raw_dir_name = DEFAULT_RAW_DIR
+        if self.config is not None and isinstance(self.config.raw_dir, str):
+            raw_dir_name = self.config.raw_dir.strip() or DEFAULT_RAW_DIR
+        if raw_dir_name and raw_dir_name != ".":
+            relpath = Path(raw_dir_name) / relpath
+        return str(relpath)
+
     @classmethod
     def find(cls, start: Path) -> "Corpus":
         """
@@ -466,8 +560,10 @@ class Corpus:
         for candidate in [start, *start.parents]:
             if (candidate / CORPUS_DIR_NAME / "config.json").is_file():
                 return cls(candidate)
+            if (candidate / LEGACY_CORPUS_DIR_NAME / "config.json").is_file():
+                return cls(candidate)
         raise FileNotFoundError(
-            f"Not a Biblicus corpus (no {CORPUS_DIR_NAME}/config.json found from {start})"
+            f"Not a Biblicus corpus (no metadata or legacy config found from {start})"
         )
 
     @classmethod
@@ -496,10 +592,12 @@ class Corpus:
         :raises FileExistsError: If the corpus already exists and force is False.
         """
         root = root.resolve()
+        root.mkdir(parents=True, exist_ok=True)
         corpus = cls(root)
 
         corpus.meta_dir.mkdir(parents=True, exist_ok=True)
-        corpus.raw_dir.mkdir(parents=True, exist_ok=True)
+        if corpus.raw_dir != corpus.root:
+            corpus.raw_dir.mkdir(parents=True, exist_ok=True)
 
         config_path = corpus.meta_dir / "config.json"
         if config_path.exists() and not force:
@@ -629,7 +727,7 @@ class Corpus:
         :return: Path to the snapshots directory.
         :rtype: Path
         """
-        return self.meta_dir / SNAPSHOTS_DIR_NAME
+        return self.retrieval_dir
 
     @property
     def extraction_snapshots_dir(self) -> Path:
@@ -639,7 +737,7 @@ class Corpus:
         :return: Path to the extraction snapshots directory.
         :rtype: Path
         """
-        return self.snapshots_dir / EXTRACTION_SNAPSHOTS_DIR_NAME
+        return self.extracted_dir
 
     @property
     def analysis_runs_dir(self) -> Path:
@@ -649,7 +747,7 @@ class Corpus:
         :return: Path to the analysis snapshots directory.
         :rtype: Path
         """
-        return self.snapshots_dir / ANALYSIS_RUNS_DIR_NAME
+        return self.analysis_dir
 
     @property
     def graph_snapshots_dir(self) -> Path:
@@ -659,7 +757,7 @@ class Corpus:
         :return: Path to the graph snapshots directory.
         :rtype: Path
         """
-        return self.snapshots_dir / GRAPH_SNAPSHOTS_DIR_NAME
+        return self.graph_dir
 
     def extraction_snapshot_dir(self, *, extractor_id: str, snapshot_id: str) -> Path:
         """
@@ -849,7 +947,7 @@ class Corpus:
         :return: None.
         :rtype: None
         """
-        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
+        self.retrieval_dir.mkdir(parents=True, exist_ok=True)
 
     def write_snapshot(self, snapshot: RetrievalSnapshot) -> None:
         """
@@ -861,8 +959,20 @@ class Corpus:
         :rtype: None
         """
         self._ensure_snapshots_dir()
-        path = self.snapshots_dir / f"{snapshot.snapshot_id}.json"
+        retriever_id = snapshot.configuration.retriever_id
+        snapshot_dir = self.retrieval_dir / retriever_id / snapshot.snapshot_id
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        path = snapshot_dir / "manifest.json"
         path.write_text(snapshot.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        latest_path = self.retrieval_dir / retriever_id / "latest.json"
+        latest_path.write_text(
+            json.dumps(
+                {"snapshot_id": snapshot.snapshot_id, "created_at": snapshot.created_at},
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         catalog = self._load_catalog()
         catalog.latest_snapshot_id = snapshot.snapshot_id
         self._write_catalog(catalog)
@@ -877,11 +987,20 @@ class Corpus:
         :rtype: RetrievalSnapshot
         :raises FileNotFoundError: If the snapshot manifest does not exist.
         """
-        path = self.snapshots_dir / f"{snapshot_id}.json"
-        if not path.is_file():
-            raise FileNotFoundError(f"Missing snapshot manifest: {path}")
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return RetrievalSnapshot.model_validate(data)
+        legacy_path = self.snapshots_dir / f"{snapshot_id}.json"
+        if legacy_path.is_file():
+            data = json.loads(legacy_path.read_text(encoding="utf-8"))
+            return RetrievalSnapshot.model_validate(data)
+        if not self.retrieval_dir.is_dir():
+            raise FileNotFoundError(f"Missing snapshot manifest for: {snapshot_id}")
+        for retriever_dir in sorted(self.retrieval_dir.iterdir()):
+            if not retriever_dir.is_dir():
+                continue
+            manifest_path = retriever_dir / snapshot_id / "manifest.json"
+            if manifest_path.is_file():
+                data = json.loads(manifest_path.read_text(encoding="utf-8"))
+                return RetrievalSnapshot.model_validate(data)
+        raise FileNotFoundError(f"Missing snapshot manifest for: {snapshot_id}")
 
     @property
     def latest_snapshot_id(self) -> Optional[str]:
@@ -924,6 +1043,7 @@ class Corpus:
         tags: Sequence[str] = (),
         metadata: Optional[Dict[str, Any]] = None,
         source_uri: str = "unknown",
+        storage_subdir: Optional[str] = "imports",
     ) -> IngestResult:
         """
         Ingest a single raw item into the corpus.
@@ -945,6 +1065,8 @@ class Corpus:
         :type metadata: dict[str, Any] or None
         :param source_uri: Source uniform resource identifier for provenance.
         :type source_uri: str
+        :param storage_subdir: Optional subdirectory under the raw root.
+        :type storage_subdir: str or None
         :return: Ingestion result summary.
         :rtype: IngestResult
         :raises ValueError: If markdown is not Unicode Transformation Format 8.
@@ -972,8 +1094,9 @@ class Corpus:
                 extension = _preferred_extension_for_media_type(media_type) or ""
                 output_name = f"{item_id}{extension}" if extension else f"{item_id}"
 
-        relpath = str(Path(DEFAULT_RAW_DIR) / output_name)
+        relpath = self._raw_relpath(output_name=output_name, storage_subdir=storage_subdir)
         output_path = self.root / relpath
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         resolved_title = title.strip() if isinstance(title, str) and title.strip() else None
         resolved_tags = list(tags)
@@ -1104,6 +1227,7 @@ class Corpus:
         tags: Sequence[str] = (),
         metadata: Optional[Dict[str, Any]] = None,
         source_uri: str = "unknown",
+        storage_subdir: Optional[str] = "imports",
     ) -> IngestResult:
         """
         Ingest a binary item from a readable stream.
@@ -1123,6 +1247,8 @@ class Corpus:
         :type metadata: dict[str, Any] or None
         :param source_uri: Source uniform resource identifier for provenance.
         :type source_uri: str
+        :param storage_subdir: Optional subdirectory under the raw root.
+        :type storage_subdir: str or None
         :return: Ingestion result summary.
         :rtype: IngestResult
         :raises ValueError: If the media_type is text/markdown.
@@ -1149,8 +1275,9 @@ class Corpus:
             extension = _preferred_extension_for_media_type(media_type) or ""
             output_name = f"{item_id}{extension}" if extension else f"{item_id}"
 
-        relpath = str(Path(DEFAULT_RAW_DIR) / output_name)
+        relpath = self._raw_relpath(output_name=output_name, storage_subdir=storage_subdir)
         output_path = self.root / relpath
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         resolved_tags = list(tags)
         metadata_input: Dict[str, Any] = dict(metadata or {})
@@ -1261,7 +1388,108 @@ class Corpus:
             tags=tags,
             metadata=None,
             source_uri=source_uri,
+            storage_subdir="notes",
         )
+
+    def _register_existing_file(
+        self,
+        *,
+        path: Path,
+        tags: Sequence[str],
+        metadata: Optional[Dict[str, Any]],
+        source_uri: str,
+    ) -> IngestResult:
+        if self._is_reserved_path(path):
+            raise ValueError("Cannot ingest files inside reserved corpus folders")
+        existing_item = self._find_item_by_source_uri(source_uri)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+            )
+
+        data = path.read_bytes()
+        relpath = str(path.relative_to(self.root))
+
+        media_type, _ = mimetypes.guess_type(path.name)
+        media_type = media_type or "application/octet-stream"
+        if path.suffix.lower() in {".md", ".markdown"}:
+            media_type = "text/markdown"
+
+        frontmatter: Dict[str, Any] = {}
+        markdown_body: Optional[str] = None
+        if media_type == "text/markdown":
+            try:
+                decoded = data.decode("utf-8")
+                parsed_document = parse_front_matter(decoded)
+            except UnicodeDecodeError as decode_error:
+                raise ValueError("Markdown must be Unicode Transformation Format 8") from decode_error
+            frontmatter = dict(parsed_document.metadata)
+            markdown_body = parsed_document.body
+
+        sidecar = _load_sidecar(path)
+        merged_metadata = _merge_metadata(frontmatter, sidecar)
+        resolved_tags = _merge_tags(_merge_tags([], merged_metadata.get("tags")), tags)
+        if metadata:
+            for metadata_key, metadata_value in metadata.items():
+                if metadata_key in {"tags", "biblicus"}:
+                    continue
+                merged_metadata[metadata_key] = metadata_value
+
+        biblicus_block = merged_metadata.get("biblicus")
+        item_id: Optional[str] = None
+        if isinstance(biblicus_block, dict):
+            biblicus_id = biblicus_block.get("id")
+            if isinstance(biblicus_id, str):
+                try:
+                    item_id = str(uuid.UUID(biblicus_id))
+                except ValueError:
+                    item_id = None
+
+        if item_id is None:
+            item_id = str(uuid.uuid4())
+
+        if media_type == "text/markdown":
+            updated_metadata: Dict[str, Any] = dict(merged_metadata)
+            if resolved_tags:
+                updated_metadata["tags"] = resolved_tags
+            updated_metadata = _ensure_biblicus_block(
+                updated_metadata, item_id=item_id, source_uri=source_uri
+            )
+            if markdown_body is None:
+                markdown_body = ""
+            rendered_document = render_front_matter(updated_metadata, markdown_body)
+            path.write_text(rendered_document, encoding="utf-8")
+            data = rendered_document.encode("utf-8")
+            merged_metadata = updated_metadata
+        else:
+            sidecar_metadata: Dict[str, Any] = dict(merged_metadata)
+            sidecar_metadata["biblicus"] = {"id": item_id, "source": source_uri}
+            if resolved_tags:
+                sidecar_metadata["tags"] = resolved_tags
+            sidecar_metadata["media_type"] = media_type
+            _write_sidecar(path, sidecar_metadata)
+            merged_metadata = sidecar_metadata
+
+        sha256_digest = _sha256_bytes(data)
+        created_at = utc_now_iso()
+        item_record = CatalogItem(
+            id=item_id,
+            relpath=relpath,
+            sha256=sha256_digest,
+            bytes=len(data),
+            media_type=media_type,
+            title=merged_metadata.get("title")
+            if isinstance(merged_metadata.get("title"), str)
+            else None,
+            tags=list(resolved_tags),
+            metadata=dict(merged_metadata),
+            created_at=created_at,
+            source_uri=source_uri,
+        )
+        self._upsert_catalog_item(item_record)
+        return IngestResult(item_id=item_id, relpath=relpath, sha256=sha256_digest)
 
     def ingest_source(
         self,
@@ -1287,30 +1515,18 @@ class Corpus:
             path = source if isinstance(source, Path) else candidate_path
             assert isinstance(path, Path)
             path = path.resolve()
-            filename = path.name
-            media_type, _ = mimetypes.guess_type(filename)
-            media_type = media_type or "application/octet-stream"
-            if path.suffix.lower() in {".md", ".markdown"}:
-                media_type = "text/markdown"
-            if media_type == "text/markdown":
-                return self.ingest_item(
-                    path.read_bytes(),
-                    filename=filename,
-                    media_type=media_type,
-                    title=None,
-                    tags=tags,
-                    metadata=None,
-                    source_uri=source_uri or path.as_uri(),
+            if not path.is_relative_to(self.root):
+                raise ValueError(
+                    "Local ingest requires the file to be inside the corpus root. "
+                    "Move the file into the corpus and run reindex."
                 )
-            with path.open("rb") as handle:
-                return self.ingest_item_stream(
-                    handle,
-                    filename=filename,
-                    media_type=media_type,
-                    tags=tags,
-                    metadata=None,
-                    source_uri=source_uri or path.as_uri(),
-                )
+            resolved_source_uri = source_uri or path.as_uri()
+            return self._register_existing_file(
+                path=path,
+                tags=tags,
+                metadata=None,
+                source_uri=resolved_source_uri,
+            )
 
         payload = load_source(source, source_uri=source_uri)
         return self.ingest_item(
@@ -1321,14 +1537,15 @@ class Corpus:
             tags=tags,
             metadata=None,
             source_uri=payload.source_uri,
+            storage_subdir="imports",
         )
 
     def import_tree(self, source_root: Path, *, tags: Sequence[str] = ()) -> Dict[str, int]:
         """
         Import a folder tree into the corpus, preserving relative paths and provenance.
 
-        Imported content is stored under the raw directory in a dedicated import namespace so that
-        operators can inspect and back up imported content as a structured tree.
+        Imported content must already live under the corpus root. The import registers files
+        in-place and writes sidecars when needed.
 
         :param source_root: Root directory of the folder tree to import.
         :type source_root: Path
@@ -1337,29 +1554,37 @@ class Corpus:
         :return: Import statistics.
         :rtype: dict[str, int]
         :raises FileNotFoundError: If the source_root does not exist.
-        :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
+        :raises ValueError: If the source root is outside the corpus root.
         """
         source_root = source_root.resolve()
         if not source_root.is_dir():
             raise FileNotFoundError(f"Import source root does not exist: {source_root}")
+        if not source_root.is_relative_to(self.root):
+            raise ValueError(
+                "Import requires the source folder to live inside the corpus root. "
+                "Move it under the corpus and reindex."
+            )
 
         ignore_spec = load_corpus_ignore_spec(self.root)
-        import_id = str(uuid.uuid4())
         stats = {"scanned": 0, "ignored": 0, "imported": 0}
 
         for source_path in sorted(source_root.rglob("*")):
             if not source_path.is_file():
                 continue
-            relative_source_path = source_path.relative_to(source_root).as_posix()
+            relative_root_path = source_path.relative_to(self.root)
+            relative_source_path = relative_root_path.as_posix()
             stats["scanned"] += 1
             if ignore_spec.matches(relative_source_path):
                 stats["ignored"] += 1
                 continue
-            self._import_file(
-                source_path=source_path,
-                import_id=import_id,
-                relative_source_path=relative_source_path,
+            if self._is_reserved_path(relative_root_path):
+                stats["ignored"] += 1
+                continue
+            self._register_existing_file(
+                path=source_path,
                 tags=tags,
+                metadata=None,
+                source_uri=source_path.as_uri(),
             )
             stats["imported"] += 1
 
@@ -1389,8 +1614,9 @@ class Corpus:
         :raises ValueError: If a markdown file cannot be decoded as Unicode Transformation Format 8.
         """
         item_id = str(uuid.uuid4())
-        destination_relpath = str(
-            Path(DEFAULT_RAW_DIR) / "imports" / import_id / relative_source_path
+        destination_relpath = self._raw_relpath(
+            output_name=relative_source_path,
+            storage_subdir=str(Path("imports") / import_id),
         )
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1521,8 +1747,9 @@ class Corpus:
         """
         _ = filename
         item_id = str(uuid.uuid4())
-        destination_relpath = str(
-            Path(DEFAULT_RAW_DIR) / "imports" / "crawl" / crawl_id / relative_path
+        destination_relpath = self._raw_relpath(
+            output_name=relative_path,
+            storage_subdir=str(Path("imports") / "crawl" / crawl_id),
         )
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1568,11 +1795,20 @@ class Corpus:
         existing_catalog = self._load_catalog()
         stats = {"scanned": 0, "skipped": 0, "inserted": 0, "updated": 0}
 
-        content_files = [
-            content_path
-            for content_path in self.raw_dir.rglob("*")
-            if content_path.is_file() and not content_path.name.endswith(SIDECAR_SUFFIX)
-        ]
+        if self.raw_dir == self.root:
+            content_files = [
+                content_path
+                for content_path in self.root.rglob("*")
+                if content_path.is_file()
+                and not content_path.name.endswith(SIDECAR_SUFFIX)
+                and not self._is_reserved_path(content_path)
+            ]
+        else:
+            content_files = [
+                content_path
+                for content_path in self.raw_dir.rglob("*")
+                if content_path.is_file() and not content_path.name.endswith(SIDECAR_SUFFIX)
+            ]
 
         new_items: Dict[str, CatalogItem] = {}
 
@@ -1620,8 +1856,18 @@ class Corpus:
                 item_id = _parse_uuid_prefix(content_path.name)
 
             if item_id is None:
-                stats["skipped"] += 1
-                continue
+                item_id = str(uuid.uuid4())
+                updated_sidecar = dict(merged_metadata)
+                updated_sidecar["biblicus"] = {
+                    "id": item_id,
+                    "source": content_path.as_uri(),
+                }
+                if media_type != "text/markdown":
+                    updated_sidecar["media_type"] = media_type
+                if merged_metadata.get("tags"):
+                    updated_sidecar["tags"] = merged_metadata.get("tags")
+                _write_sidecar(content_path, updated_sidecar)
+                merged_metadata = _merge_metadata(frontmatter, updated_sidecar)
 
             title: Optional[str] = None
             title_value = merged_metadata.get("title")
@@ -1705,9 +1951,17 @@ class Corpus:
                 f"Confirmation mismatch: pass --confirm {expected!r} to purge this corpus"
             )
 
-        if self.raw_dir.exists():
+        if self.raw_dir == self.root:
+            for path in self.root.iterdir():
+                if path.name in self._reserved_dir_names():
+                    continue
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+        elif self.raw_dir.exists():
             shutil.rmtree(self.raw_dir)
-        self.raw_dir.mkdir(parents=True, exist_ok=True)
+            self.raw_dir.mkdir(parents=True, exist_ok=True)
 
         for path in self.meta_dir.iterdir():
             if path.name == "config.json":
@@ -1716,6 +1970,15 @@ class Corpus:
                 shutil.rmtree(path)
             else:
                 path.unlink()
+
+        for derived_dir in [
+            self.extracted_dir,
+            self.graph_dir,
+            self.retrieval_dir,
+            self.analysis_dir,
+        ]:
+            if derived_dir.exists():
+                shutil.rmtree(derived_dir)
         self._init_catalog()
         self._write_catalog(
             CorpusCatalog(

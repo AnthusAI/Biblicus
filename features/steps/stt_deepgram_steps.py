@@ -37,7 +37,7 @@ def _call_deepgram_stt_extractor(
     corpus_root = workdir / "corpus"
     corpus = Corpus.init(corpus_root)
     (corpus_root / "raw").mkdir(parents=True, exist_ok=True)
-    audio_relpath = "raw/clip.wav"
+    audio_relpath = "clip.wav"
     (corpus_root / audio_relpath).write_bytes(b"RIFF\x00\x00\x00\x00WAVE")
 
     extractor = DeepgramSpeechToTextExtractor()

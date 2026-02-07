@@ -192,9 +192,9 @@ python scripts/test_heron_pipeline.py
 
 **Expected output:**
 ```
-✓ Heron layout detection step exists
+✓ Heron layout detection stage exists
 ✓ Found 5 layout metadata files
-✓ Tesseract OCR step exists
+✓ Tesseract OCR stage exists
 ✓ Found 5 text output files
 SUCCESS: Heron + Tesseract pipeline is working!
 ```
@@ -211,7 +211,7 @@ python scripts/benchmark_heron_vs_paddleocr.py
 # configs/my-heron-pipeline.yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: heron-layout
       config:
         model_variant: "101"  # or "base" for faster/lighter

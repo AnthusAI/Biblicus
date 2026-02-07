@@ -23,6 +23,17 @@ It can be used alongside LangGraph, Tactus, Pydantic AI, any agent framework, or
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
 
+## Web Dashboard
+
+The [Dashboard app](apps/dashboard/) provides a real-time web interface for viewing and managing your corpus data, powered by AWS Amplify Gen 2. Features include:
+
+- Browse corpus catalog items with filtering by tags and media type
+- View extraction snapshots and track progress in real-time
+- Automatic catalog sync after extraction runs
+- GSAP-animated, responsive React interface
+
+See [apps/dashboard/README.md](apps/dashboard/README.md) for setup and deployment instructions.
+
 ## Analysis highlights
 
 - `biblicus analyze markov` learns a directed, weighted state transition graph over segmented text.
@@ -176,7 +187,7 @@ biblicus init corpora/example
 biblicus ingest --corpus corpora/example notes/example.txt
 echo "A short note" | biblicus ingest --corpus corpora/example --stdin --title "First note"
 biblicus list --corpus corpora/example
-biblicus extract build --corpus corpora/example --step pass-through-text --step metadata-text
+biblicus extract build --corpus corpora/example --stage pass-through-text --stage metadata-text
 biblicus extract list --corpus corpora/example
 biblicus build --corpus corpora/example --backend scan
 biblicus query --corpus corpora/example --query "note"
@@ -223,7 +234,7 @@ biblicus crawl \
   --tags "tutorials,blog"
 ```
 
-The `--allowed-prefix` parameter restricts the crawler to only follow links that start with the specified URL prefix, preventing it from crawling outside the intended scope. The crawler respects `.biblicusignore` rules and stores items under `raw/imports/crawl/` in your corpus.
+The `--allowed-prefix` parameter restricts the crawler to only follow links that start with the specified URL prefix, preventing it from crawling outside the intended scope. The crawler respects `.biblicusignore` rules and stores items under `imports/crawl/` in your corpus.
 
 ## End-to-end example: lower-level control
 
@@ -474,29 +485,27 @@ Design and implementation map:
 
 ## Metadata and catalog
 
-Raw items are stored as files in the corpus raw directory. Metadata can live in a Markdown front matter block or a sidecar file with the suffix `.biblicus.yml`. The catalog lives in `.biblicus/catalog.json` and can be rebuilt at any time with `biblicus reindex`.
+Raw items are stored as files directly under the corpus root. Metadata can live in a Markdown front matter block or a sidecar file with the suffix `.biblicus.yml`. The catalog lives in `metadata/catalog.json` and can be rebuilt at any time with `biblicus reindex`.
 
 ## Corpus layout
 
 ```
 corpus/
-  raw/
-    item.bin
-    item.bin.biblicus.yml
-  .biblicus/
+  metadata/
     config.json
     catalog.json
-    runs/
-      extraction/
-        pipeline/
-          <snapshot id>/
-            manifest.json
-            text/
-              <item id>.txt
-      retrieval/
-        <backend id>/
-          <snapshot id>/
-            manifest.json
+  extracted/
+    pipeline/
+      <snapshot id>/
+        manifest.json
+        text/
+          <item id>.txt
+  retrieval/
+    <backend id>/
+      <snapshot id>/
+        manifest.json
+  item.bin
+  item.bin.biblicus.yml
 ```
 
 ## Retrieval backends
@@ -590,7 +599,7 @@ If `--extraction-run` is omitted, Biblicus uses the most recent extraction snaps
 reproducibility. The analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/topic-modeling/<snapshot_id>/output.json
+analysis/topic-modeling/<snapshot_id>/output.json
 ```
 
 Minimal configuration example:

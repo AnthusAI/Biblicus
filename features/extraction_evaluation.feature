@@ -5,7 +5,7 @@ Feature: Extraction evaluation
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "Beta note" with title "Beta" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset "extraction_dataset.json" with expected texts:
@@ -22,7 +22,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation uses the latest extraction snapshot when omitted
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset "extraction_dataset.json" with expected texts:
@@ -35,7 +35,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation rejects missing dataset file
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I evaluate extraction snapshot in corpus "corpus" using dataset "missing.json" and the latest extraction snapshot
@@ -45,7 +45,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation rejects invalid dataset
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset file "invalid.json" with:
@@ -63,7 +63,7 @@ Feature: Extraction evaluation
     When I ingest the text "   " with title "Blank" and tags "t" into corpus "corpus"
     And a binary file "blob.bin" exists
     And I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset "extraction_dataset.json" with expected texts:
@@ -79,7 +79,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation accepts source uniform resource identifier dataset entries
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset "source_dataset.json" for the last ingested item in corpus "corpus" using source uri and expected text "Alpha note"
@@ -109,7 +109,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation rejects missing item locator
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset file "missing_locator.json" with:
@@ -131,7 +131,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation rejects unsupported dataset schema version
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset file "invalid_schema.json" with:
@@ -154,7 +154,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation rejects unknown item identifiers
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create an extraction evaluation dataset file "unknown_item.json" with:
@@ -187,7 +187,7 @@ Feature: Extraction evaluation
   Scenario: Extraction evaluation counts items added after the snapshot as missing
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I ingest the text "Beta note" with title "Beta" and tags "t" into corpus "corpus"

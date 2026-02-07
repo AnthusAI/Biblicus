@@ -18,7 +18,7 @@ Feature: Simple override selection extractor
       """
       extractor_id: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: ocr-rapidocr
             config: {}
           - extractor_id: ocr-paddleocr-vl
@@ -39,7 +39,7 @@ Feature: Simple override selection extractor
       """
       extractor_id: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: metadata-text
             config: {}
           - extractor_id: pass-through-text
@@ -59,7 +59,7 @@ Feature: Simple override selection extractor
       """
       extractor_id: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: metadata-text
             config: {}
           - extractor_id: pass-through-text
@@ -84,7 +84,7 @@ Feature: Simple override selection extractor
       """
       extractor_id: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: ocr-rapidocr
             config: {}
           - extractor_id: select-override
@@ -101,7 +101,7 @@ Feature: Simple override selection extractor
       """
       extractor_id: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: select-override
             config:
               media_type_patterns:
@@ -119,7 +119,7 @@ Feature: Simple override selection extractor
       \x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82
       """
     When I ingest the file "image.png" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json                              |
       | ocr-rapidocr      | {}                                       |
       | select-override   | {"media_type_patterns":"[bad json"}     |

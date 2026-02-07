@@ -97,7 +97,7 @@ Text extraction is a separate pipeline stage from retrieval. An extraction snaps
 This extractor reads text items and skips non-text items.
 
 ```
-python -m biblicus extract build --corpus corpora/demo --step pass-through-text
+python -m biblicus extract build --corpus corpora/demo --stage pass-through-text
 ```
 
 The output includes a `snapshot_id` you can reuse when building a retrieval backend.
@@ -291,13 +291,13 @@ Profiling details: `docs/profiling.md`
 
 ### Select extracted text within a pipeline
 
-When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
+When you want an explicit choice among multiple extraction outputs, add a selection extractor stage at the end of the pipeline.
 
 ```
 python -m biblicus extract build --corpus corpora/demo \
-  --step pass-through-text \
-  --step metadata-text \
-  --step select-text
+  --stage pass-through-text \
+  --stage metadata-text \
+  --stage select-text
 ```
 
 Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_SNAPSHOT_ID` in the next command.
@@ -317,7 +317,7 @@ This example downloads a small set of public Portable Document Format files, ext
 rm -rf corpora/pdf_samples
 python scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
 
-python -m biblicus extract build --corpus corpora/pdf_samples --step pdf-text
+python -m biblicus extract build --corpus corpora/pdf_samples --stage pdf-text
 ```
 
 Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `PDF_EXTRACTION_SNAPSHOT_ID` in the next command.
@@ -336,7 +336,7 @@ MarkItDown requires Python 3.10 or higher. This example uses the `py311` conda e
 ```
 conda run -n py311 python -m pip install -e . "markitdown[all]"
 conda run -n py311 python scripts/download_mixed_samples.py --corpus corpora/markitdown_demo_py311 --force
-conda run -n py311 python -m biblicus extract build --corpus corpora/markitdown_demo_py311 --step markitdown
+conda run -n py311 python -m biblicus extract build --corpus corpora/markitdown_demo_py311 --stage markitdown
 ```
 
 ### Mixed modality integration corpus
@@ -369,7 +369,7 @@ python -m pip install "biblicus[ocr]"
 Then build an extraction snapshot:
 
 ```
-python -m biblicus extract build --corpus corpora/image_samples --step ocr-rapidocr
+python -m biblicus extract build --corpus corpora/image_samples --stage ocr-rapidocr
 ```
 
 ### Optional: Unstructured as a last-resort extractor
@@ -385,7 +385,7 @@ python -m pip install "biblicus[unstructured]"
 Then build an extraction snapshot:
 
 ```
-python -m biblicus extract build --corpus corpora/pdf_samples --step unstructured
+python -m biblicus extract build --corpus corpora/pdf_samples --stage unstructured
 ```
 
 To see Unstructured handle a non-Portable-Document-Format format, use the mixed corpus demo, which includes a `.docx` sample:
@@ -393,16 +393,16 @@ To see Unstructured handle a non-Portable-Document-Format format, use the mixed 
 ```
 rm -rf corpora/mixed_samples
 python scripts/download_mixed_samples.py --corpus corpora/mixed_samples --force
-python -m biblicus extract build --corpus corpora/mixed_samples --step unstructured
+python -m biblicus extract build --corpus corpora/mixed_samples --stage unstructured
 ```
 
-When you want to prefer one extractor over another for the same item types, order the steps and end with `select-text`:
+When you want to prefer one extractor over another for the same item types, order the stages and end with `select-text`:
 
 ```
 python -m biblicus extract build --corpus corpora/pdf_samples \
-  --step unstructured \
-  --step pdf-text \
-  --step select-text
+  --stage unstructured \
+  --stage pdf-text \
+  --stage select-text
 ```
 
 ### Optional: Speech to text for audio items
@@ -421,7 +421,7 @@ python -m biblicus list --corpus corpora/audio_samples
 If you only want a metadata-only baseline, extract `metadata-text`:
 
 ```
-python -m biblicus extract build --corpus corpora/audio_samples --step metadata-text
+python -m biblicus extract build --corpus corpora/audio_samples --stage metadata-text
 ```
 
 For real speech to text transcription with the OpenAI backend, install the optional dependency and set an API key:
@@ -430,7 +430,7 @@ For real speech to text transcription with the OpenAI backend, install the optio
 python -m pip install "biblicus[openai]"
 mkdir -p .biblicus
 printf "openai:\n  api_key: ...\n" > .biblicus/config.yml
-python -m biblicus extract build --corpus corpora/audio_samples --step stt-openai
+python -m biblicus extract build --corpus corpora/audio_samples --stage stt-openai
 ```
 
 ### Build and query the minimal backend

@@ -35,7 +35,7 @@ class CorpusConfig(BaseModel):
     schema_version: int = Field(ge=1)
     created_at: str
     corpus_uri: str
-    raw_dir: str = "raw"
+    raw_dir: str = "."
     notes: Optional[Dict[str, Any]] = None
     hooks: Optional[List[HookSpec]] = None
 
@@ -132,7 +132,7 @@ class CorpusCatalog(BaseModel):
     schema_version: int = Field(ge=1)
     generated_at: str
     corpus_uri: str
-    raw_dir: str = "raw"
+    raw_dir: str = "."
     latest_run_id: Optional[str] = None
     latest_snapshot_id: Optional[str] = None
     items: Dict[str, CatalogItem] = Field(default_factory=dict)
@@ -415,8 +415,8 @@ class ExtractedText(BaseModel):
     :vartype text: str
     :ivar producer_extractor_id: Extractor identifier that produced this text.
     :vartype producer_extractor_id: str
-    :ivar source_step_index: Optional pipeline step index where this text originated.
-    :vartype source_step_index: int or None
+    :ivar source_stage_index: Optional pipeline stage index where this text originated.
+    :vartype source_stage_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
     :ivar metadata: Optional structured metadata for passing data between pipeline stages.
@@ -427,20 +427,20 @@ class ExtractedText(BaseModel):
 
     text: str
     producer_extractor_id: str = Field(min_length=1)
-    source_step_index: Optional[int] = Field(default=None, ge=1)
+    source_stage_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ExtractionStepOutput(BaseModel):
+class ExtractionStageOutput(BaseModel):
     """
-    In-memory representation of a pipeline step output for a single item.
+    In-memory representation of a pipeline stage output for a single item.
 
-    :ivar step_index: One-based pipeline step index.
-    :vartype step_index: int
-    :ivar extractor_id: Extractor identifier for the step.
+    :ivar stage_index: One-based pipeline stage index.
+    :vartype stage_index: int
+    :ivar extractor_id: Extractor identifier for the stage.
     :vartype extractor_id: str
-    :ivar status: Step status, extracted, skipped, or errored.
+    :ivar status: Stage status, extracted, skipped, or errored.
     :vartype status: str
     :ivar text: Extracted text content, when produced.
     :vartype text: str or None
@@ -448,27 +448,27 @@ class ExtractionStepOutput(BaseModel):
     :vartype text_characters: int
     :ivar producer_extractor_id: Extractor identifier that produced the text content.
     :vartype producer_extractor_id: str or None
-    :ivar source_step_index: Optional step index that supplied the text for selection-style extractors.
-    :vartype source_step_index: int or None
+    :ivar source_stage_index: Optional stage index that supplied the text for selection-style extractors.
+    :vartype source_stage_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
     :ivar metadata: Optional structured metadata for passing data between pipeline stages.
     :vartype metadata: dict[str, Any]
-    :ivar error_type: Optional error type name for errored steps.
+    :ivar error_type: Optional error type name for errored stages.
     :vartype error_type: str or None
-    :ivar error_message: Optional error message for errored steps.
+    :ivar error_message: Optional error message for errored stages.
     :vartype error_message: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    step_index: int = Field(ge=1)
+    stage_index: int = Field(ge=1)
     extractor_id: str
     status: str
     text: Optional[str] = None
     text_characters: int = Field(default=0, ge=0)
     producer_extractor_id: Optional[str] = None
-    source_step_index: Optional[int] = Field(default=None, ge=1)
+    source_stage_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     error_type: Optional[str] = None

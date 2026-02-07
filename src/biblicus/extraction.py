@@ -5,6 +5,11 @@ Text extraction snapshots for Biblicus.
 from __future__ import annotations
 
 import json
+import os
+import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,8 +19,8 @@ from .corpus import Corpus
 from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
 from .extractors.base import TextExtractor
-from .extractors.pipeline import PipelineExtractorConfig, PipelineStepSpec
-from .models import CatalogItem, ExtractionStepOutput
+from .extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
+from .models import CatalogItem, ExtractionStageOutput
 from .retrieval import hash_text
 from .time import utc_now_iso
 
@@ -45,43 +50,43 @@ class ExtractionConfigurationManifest(BaseModel):
     configuration: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ExtractionStepResult(BaseModel):
+class ExtractionStageResult(BaseModel):
     """
-    Per-item result record for a single pipeline step.
+    Per-item result record for a single pipeline stage.
 
-    :ivar step_index: One-based pipeline step index.
-    :vartype step_index: int
-    :ivar extractor_id: Extractor identifier for the step.
+    :ivar stage_index: One-based pipeline stage index.
+    :vartype stage_index: int
+    :ivar extractor_id: Extractor identifier for the stage.
     :vartype extractor_id: str
-    :ivar status: Step status, extracted, skipped, or errored.
+    :ivar status: Stage status, extracted, skipped, or errored.
     :vartype status: str
-    :ivar text_relpath: Relative path to the step text artifact, when extracted.
+    :ivar text_relpath: Relative path to the stage text artifact, when extracted.
     :vartype text_relpath: str or None
     :ivar text_characters: Character count of the extracted text.
     :vartype text_characters: int
     :ivar producer_extractor_id: Extractor identifier that produced the text content.
     :vartype producer_extractor_id: str or None
-    :ivar source_step_index: Optional step index that supplied the text for selection-style extractors.
-    :vartype source_step_index: int or None
+    :ivar source_stage_index: Optional stage index that supplied the text for selection-style extractors.
+    :vartype source_stage_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
-    :ivar metadata_relpath: Relative path to the step metadata artifact, when present.
+    :ivar metadata_relpath: Relative path to the stage metadata artifact, when present.
     :vartype metadata_relpath: str or None
-    :ivar error_type: Optional error type name for errored steps.
+    :ivar error_type: Optional error type name for errored stages.
     :vartype error_type: str or None
-    :ivar error_message: Optional error message for errored steps.
+    :ivar error_message: Optional error message for errored stages.
     :vartype error_message: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    step_index: int = Field(ge=1)
+    stage_index: int = Field(ge=1)
     extractor_id: str
     status: str
     text_relpath: Optional[str] = None
     text_characters: int = Field(default=0, ge=0)
     producer_extractor_id: Optional[str] = None
-    source_step_index: Optional[int] = Field(default=None, ge=1)
+    source_stage_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     metadata_relpath: Optional[str] = None
     error_type: Optional[str] = None
@@ -100,20 +105,20 @@ class ExtractionItemResult(BaseModel):
     :vartype final_text_relpath: str or None
     :ivar final_metadata_relpath: Relative path to the final metadata artifact, when present.
     :vartype final_metadata_relpath: str or None
-    :ivar final_step_index: Pipeline step index that produced the final text.
-    :vartype final_step_index: int or None
-    :ivar final_step_extractor_id: Extractor identifier of the step that produced the final text.
-    :vartype final_step_extractor_id: str or None
+    :ivar final_stage_index: Pipeline stage index that produced the final text.
+    :vartype final_stage_index: int or None
+    :ivar final_stage_extractor_id: Extractor identifier of the stage that produced the final text.
+    :vartype final_stage_extractor_id: str or None
     :ivar final_producer_extractor_id: Extractor identifier that produced the final text content.
     :vartype final_producer_extractor_id: str or None
-    :ivar final_source_step_index: Optional step index that supplied the final text for selection-style extractors.
-    :vartype final_source_step_index: int or None
+    :ivar final_source_stage_index: Optional stage index that supplied the final text for selection-style extractors.
+    :vartype final_source_stage_index: int or None
     :ivar error_type: Optional error type name when no extracted text was produced.
     :vartype error_type: str or None
     :ivar error_message: Optional error message when no extracted text was produced.
     :vartype error_message: str or None
-    :ivar step_results: Per-step results recorded for this item.
-    :vartype step_results: list[ExtractionStepResult]
+    :ivar stage_results: Per-stage results recorded for this item.
+    :vartype stage_results: list[ExtractionStageResult]
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -122,13 +127,13 @@ class ExtractionItemResult(BaseModel):
     status: str
     final_text_relpath: Optional[str] = None
     final_metadata_relpath: Optional[str] = None
-    final_step_index: Optional[int] = Field(default=None, ge=1)
-    final_step_extractor_id: Optional[str] = None
+    final_stage_index: Optional[int] = Field(default=None, ge=1)
+    final_stage_extractor_id: Optional[str] = None
     final_producer_extractor_id: Optional[str] = None
-    final_source_step_index: Optional[int] = Field(default=None, ge=1)
+    final_source_stage_index: Optional[int] = Field(default=None, ge=1)
     error_type: Optional[str] = None
     error_message: Optional[str] = None
-    step_results: List[ExtractionStepResult] = Field(default_factory=list)
+    stage_results: List[ExtractionStageResult] = Field(default_factory=list)
 
 
 class ExtractionSnapshotManifest(BaseModel):
@@ -234,6 +239,81 @@ def write_extraction_snapshot_manifest(
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
+def write_extraction_latest_pointer(
+    *, extractor_dir: Path, manifest: ExtractionSnapshotManifest
+) -> None:
+    """
+    Persist the latest pointer for an extractor.
+
+    :param extractor_dir: Extractor directory containing snapshots.
+    :type extractor_dir: Path
+    :param manifest: Snapshot manifest used for the pointer.
+    :type manifest: ExtractionSnapshotManifest
+    :return: None.
+    :rtype: None
+    """
+    latest_path = extractor_dir / "latest.json"
+    latest_path.write_text(
+        json.dumps(
+            {"snapshot_id": manifest.snapshot_id, "created_at": manifest.created_at},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _ensure_extraction_alias_snapshot_dir(
+    *,
+    corpus: Corpus,
+    stage_extractor_id: str,
+    manifest: ExtractionSnapshotManifest,
+) -> Path:
+    snapshot_dir = corpus.extraction_snapshot_dir(
+        extractor_id=stage_extractor_id, snapshot_id=manifest.snapshot_id
+    )
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
+    write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
+    alias_path = snapshot_dir / "alias.json"
+    alias_path.write_text(
+        json.dumps(
+            {
+                "source_extractor_id": manifest.configuration.extractor_id,
+                "source_snapshot_id": manifest.snapshot_id,
+                "stage_extractor_id": stage_extractor_id,
+                "created_at": manifest.created_at,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return snapshot_dir
+
+
+def _write_alias_text_artifact(
+    *, alias_snapshot_dir: Path, item: CatalogItem, text: str
+) -> str:
+    text_dir = alias_snapshot_dir / "text"
+    text_dir.mkdir(parents=True, exist_ok=True)
+    relpath = str(Path("text") / f"{item.id}.txt")
+    (alias_snapshot_dir / relpath).write_text(text, encoding="utf-8")
+    return relpath
+
+
+def _write_alias_metadata_artifact(
+    *, alias_snapshot_dir: Path, item: CatalogItem, metadata: Dict[str, Any]
+) -> Optional[str]:
+    if not metadata:
+        return None
+    metadata_dir = alias_snapshot_dir / "metadata"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    relpath = str(Path("metadata") / f"{item.id}.json")
+    (alias_snapshot_dir / relpath).write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    return relpath
+
+
 def write_extracted_text_artifact(*, snapshot_dir: Path, item: CatalogItem, text: str) -> str:
     """
     Write an extracted text artifact for an item into the snapshot directory.
@@ -255,48 +335,48 @@ def write_extracted_text_artifact(*, snapshot_dir: Path, item: CatalogItem, text
     return relpath
 
 
-def _pipeline_step_dir_name(*, step_index: int, extractor_id: str) -> str:
+def _pipeline_stage_dir_name(*, stage_index: int, extractor_id: str) -> str:
     """
-    Build a stable directory name for a pipeline step.
+    Build a stable directory name for a pipeline stage.
 
-    :param step_index: One-based pipeline step index.
-    :type step_index: int
-    :param extractor_id: Extractor identifier for the step.
+    :param stage_index: One-based pipeline stage index.
+    :type stage_index: int
+    :param extractor_id: Extractor identifier for the stage.
     :type extractor_id: str
-    :return: Directory name for the step.
+    :return: Directory name for the stage.
     :rtype: str
     """
-    return f"{step_index:02d}-{extractor_id}"
+    return f"{stage_index:02d}-{extractor_id}"
 
 
-def write_pipeline_step_text_artifact(
+def write_pipeline_stage_text_artifact(
     *,
     snapshot_dir: Path,
-    step_index: int,
+    stage_index: int,
     extractor_id: str,
     item: CatalogItem,
     text: str,
 ) -> str:
     """
-    Write a pipeline step text artifact for an item.
+    Write a pipeline stage text artifact for an item.
 
     :param snapshot_dir: Extraction snapshot directory.
     :type snapshot_dir: Path
-    :param step_index: One-based pipeline step index.
-    :type step_index: int
-    :param extractor_id: Extractor identifier for the step.
+    :param stage_index: One-based pipeline stage index.
+    :type stage_index: int
+    :param extractor_id: Extractor identifier for the stage.
     :type extractor_id: str
     :param item: Catalog item being extracted.
     :type item: CatalogItem
     :param text: Extracted text content.
     :type text: str
-    :return: Relative path to the stored step text artifact.
+    :return: Relative path to the stored stage text artifact.
     :rtype: str
     """
-    step_dir_name = _pipeline_step_dir_name(step_index=step_index, extractor_id=extractor_id)
-    text_dir = snapshot_dir / "steps" / step_dir_name / "text"
+    stage_dir_name = _pipeline_stage_dir_name(stage_index=stage_index, extractor_id=extractor_id)
+    text_dir = snapshot_dir / "stages" / stage_dir_name / "text"
     text_dir.mkdir(parents=True, exist_ok=True)
-    relpath = str(Path("steps") / step_dir_name / "text" / f"{item.id}.txt")
+    relpath = str(Path("stages") / stage_dir_name / "text" / f"{item.id}.txt")
     (snapshot_dir / relpath).write_text(text, encoding="utf-8")
     return relpath
 
@@ -326,56 +406,56 @@ def write_extracted_metadata_artifact(
     return relpath
 
 
-def write_pipeline_step_metadata_artifact(
+def write_pipeline_stage_metadata_artifact(
     *,
     snapshot_dir: Path,
-    step_index: int,
+    stage_index: int,
     extractor_id: str,
     item: CatalogItem,
     metadata: Dict[str, Any],
 ) -> Optional[str]:
     """
-    Write a pipeline step metadata artifact for an item.
+    Write a pipeline stage metadata artifact for an item.
 
     :param snapshot_dir: Extraction snapshot directory.
     :type snapshot_dir: Path
-    :param step_index: One-based pipeline step index.
-    :type step_index: int
-    :param extractor_id: Extractor identifier for the step.
+    :param stage_index: One-based pipeline stage index.
+    :type stage_index: int
+    :param extractor_id: Extractor identifier for the stage.
     :type extractor_id: str
     :param item: Catalog item being extracted.
     :type item: CatalogItem
     :param metadata: Metadata dictionary to persist.
     :type metadata: dict[str, Any]
-    :return: Relative path to the stored step metadata artifact, or None if empty.
+    :return: Relative path to the stored stage metadata artifact, or None if empty.
     :rtype: str or None
     """
     if not metadata:
         return None
-    step_dir_name = _pipeline_step_dir_name(step_index=step_index, extractor_id=extractor_id)
-    metadata_dir = snapshot_dir / "steps" / step_dir_name / "metadata"
+    stage_dir_name = _pipeline_stage_dir_name(stage_index=stage_index, extractor_id=extractor_id)
+    metadata_dir = snapshot_dir / "stages" / stage_dir_name / "metadata"
     metadata_dir.mkdir(parents=True, exist_ok=True)
-    relpath = str(Path("steps") / step_dir_name / "metadata" / f"{item.id}.json")
+    relpath = str(Path("stages") / stage_dir_name / "metadata" / f"{item.id}.json")
     (snapshot_dir / relpath).write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return relpath
 
 
-def _final_output_from_steps(
-    step_outputs: List[ExtractionStepOutput],
-) -> Optional[ExtractionStepOutput]:
+def _final_output_from_stages(
+    stage_outputs: List[ExtractionStageOutput],
+) -> Optional[ExtractionStageOutput]:
     """
     Select the final pipeline output for an item.
 
-    The final output is the last extracted step output in pipeline order.
+    The final output is the last extracted stage output in pipeline order.
 
-    :param step_outputs: Extracted outputs produced by pipeline steps.
-    :type step_outputs: list[biblicus.models.ExtractionStepOutput]
-    :return: Final step output or None when no steps produced extracted text.
-    :rtype: biblicus.models.ExtractionStepOutput or None
+    :param stage_outputs: Extracted outputs produced by pipeline stages.
+    :type stage_outputs: list[biblicus.models.ExtractionStageOutput]
+    :return: Final stage output or None when no stages produced extracted text.
+    :rtype: biblicus.models.ExtractionStageOutput or None
     """
-    if not step_outputs:
+    if not stage_outputs:
         return None
-    return step_outputs[-1]
+    return stage_outputs[-1]
 
 
 def build_extraction_snapshot(
@@ -384,6 +464,8 @@ def build_extraction_snapshot(
     extractor_id: str,
     configuration_name: str,
     configuration: Dict[str, Any],
+    force: bool = False,
+    max_workers: int = 1,
 ) -> ExtractionSnapshotManifest:
     """
     Build an extraction snapshot for a corpus using the pipeline extractor.
@@ -396,6 +478,10 @@ def build_extraction_snapshot(
     :type configuration_name: str
     :param configuration: Extractor configuration mapping.
     :type configuration: dict[str, Any]
+    :param force: Whether to reprocess items even if artifacts already exist.
+    :type force: bool
+    :param max_workers: Maximum number of concurrent workers.
+    :type max_workers: int
     :return: Extraction snapshot manifest describing the build.
     :rtype: ExtractionSnapshotManifest
     :raises KeyError: If the extractor identifier is unknown.
@@ -403,6 +489,9 @@ def build_extraction_snapshot(
     :raises OSError: If the snapshot directory or artifacts cannot be written.
     :raises ExtractionSnapshotFatalError: If the extractor is not the pipeline.
     """
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+
     extractor = get_extractor(extractor_id)
     parsed_config = extractor.validate_config(configuration)
     config_manifest = create_extraction_configuration_manifest(
@@ -434,13 +523,14 @@ def build_extraction_snapshot(
         else PipelineExtractorConfig.model_validate(parsed_config)
     )
 
-    validated_steps: List[Tuple[PipelineStepSpec, TextExtractor, BaseModel]] = []
-    for step in pipeline_config.steps:
-        step_extractor = get_extractor(step.extractor_id)
-        parsed_step_config = step_extractor.validate_config(step.configuration)
-        validated_steps.append((step, step_extractor, parsed_step_config))
+    validated_stages: List[Tuple[PipelineStageSpec, BaseModel]] = []
+    for stage in pipeline_config.stages:
+        stage_extractor = get_extractor(stage.extractor_id)
+        parsed_stage_config = stage_extractor.validate_config(stage.configuration)
+        validated_stages.append((stage, parsed_stage_config))
 
-    extracted_items: List[ExtractionItemResult] = list(manifest.items or [])
+    previous_items = {item.item_id: item for item in (manifest.items or [])}
+    extracted_items: List[ExtractionItemResult] = []
     extracted_count = 0
     skipped_count = 0
     errored_count = 0
@@ -451,45 +541,20 @@ def build_extraction_snapshot(
     converted_item_count = 0
     total_item_count = len(catalog.items)
     catalog_items_by_id = {item.id: item for item in catalog.items.values()}
-    processed_item_ids = {item.item_id for item in extracted_items}
-
-    if extracted_items:
-        for item_result in extracted_items:
-            catalog_item = catalog_items_by_id.get(item_result.item_id)
-            if catalog_item is None:
-                continue
-            media_type = catalog_item.media_type
-            item_is_text = media_type == "text/markdown" or media_type.startswith("text/")
-            if item_is_text:
-                already_text_item_count += 1
-            else:
-                needs_extraction_item_count += 1
-
-            if item_result.status == "errored":
-                errored_count += 1
-                continue
-            if item_result.status == "skipped":
-                skipped_count += 1
-                continue
-            if item_result.status != "extracted":
-                continue
-
-            extracted_count += 1
-            if item_result.final_text_relpath:
-                text_path = snapshot_dir / item_result.final_text_relpath
-                if text_path.is_file():
-                    text_value = text_path.read_text(encoding="utf-8")
-                    if text_value.strip():
-                        extracted_nonempty_count += 1
-                        if not item_is_text:
-                            converted_item_count += 1
-                    else:
-                        extracted_empty_count += 1
-                else:
-                    extracted_empty_count += 1
-            else:
-                extracted_empty_count += 1
-
+    if total_item_count <= 25:
+        log_interval = 1
+    elif total_item_count <= 100:
+        log_interval = 10
+    else:
+        log_interval = 25
+    start_time = time.perf_counter()
+    processed_count = 0
+    print(
+        f"[extract] building snapshot {manifest.snapshot_id} items={total_item_count} "
+        f"workers={max_workers}",
+        flush=True,
+        file=sys.stderr,
+    )
     def _write_partial_manifest() -> None:
         stats = {
             "total_items": total_item_count,
@@ -505,45 +570,192 @@ def build_extraction_snapshot(
         partial_manifest = manifest.model_copy(update={"items": extracted_items, "stats": stats})
         write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=partial_manifest)
 
-    for item in catalog.items.values():
-        if item.id in processed_item_ids:
-            continue
+    lock = threading.Lock()
+    progress_lock = threading.Lock()
+    current_item_id: Optional[str] = None
+    current_stage_label: Optional[str] = None
+    stop_event = threading.Event()
+
+    def _heartbeat() -> None:
+        while not stop_event.wait(30):
+            with progress_lock:
+                active_item = current_item_id
+                active_stage = current_stage_label
+                processed = processed_count
+            elapsed = time.perf_counter() - start_time
+            print(
+                f"[extract] heartbeat processed={processed}/{total_item_count} "
+                f"active_item={active_item or 'none'} stage={active_stage or 'none'} "
+                f"elapsed={elapsed:.1f}s",
+                flush=True,
+                file=sys.stderr,
+            )
+
+    heartbeat_thread = threading.Thread(target=_heartbeat, daemon=True)
+    heartbeat_thread.start()
+
+    def _load_stage_cache(
+        *, stage_index: int, extractor_id: str, item: CatalogItem
+    ) -> Optional[Tuple[ExtractionStageResult, ExtractionStageOutput]]:
+        stage_dir_name = _pipeline_stage_dir_name(stage_index=stage_index, extractor_id=extractor_id)
+        text_relpath = str(Path("stages") / stage_dir_name / "text" / f"{item.id}.txt")
+        text_path = snapshot_dir / text_relpath
+        if not text_path.is_file():
+            return None
+        text_value = text_path.read_text(encoding="utf-8")
+        metadata_relpath = str(Path("stages") / stage_dir_name / "metadata" / f"{item.id}.json")
+        metadata_path = snapshot_dir / metadata_relpath
+        metadata_value: Dict[str, Any] = {}
+        if metadata_path.is_file():
+            metadata_value = json.loads(metadata_path.read_text(encoding="utf-8"))
+        stage_result = ExtractionStageResult(
+            stage_index=stage_index,
+            extractor_id=extractor_id,
+            status="extracted",
+            text_relpath=text_relpath,
+            text_characters=len(text_value),
+            producer_extractor_id=extractor_id,
+            source_stage_index=None,
+            confidence=None,
+            metadata_relpath=metadata_relpath if metadata_path.is_file() else None,
+            error_type=None,
+            error_message=None,
+        )
+        stage_output = ExtractionStageOutput(
+            stage_index=stage_index,
+            extractor_id=extractor_id,
+            status="extracted",
+            text=text_value,
+            text_characters=len(text_value),
+            producer_extractor_id=extractor_id,
+            source_stage_index=None,
+            confidence=None,
+            metadata=metadata_value,
+            error_type=None,
+            error_message=None,
+        )
+        return stage_result, stage_output
+
+    def _build_item_result(item: CatalogItem) -> Tuple[ExtractionItemResult, Dict[str, int]]:
+        nonlocal current_item_id
+        nonlocal current_stage_label
         media_type = item.media_type
         item_is_text = media_type == "text/markdown" or media_type.startswith("text/")
-        if item_is_text:
-            already_text_item_count += 1
-        else:
-            needs_extraction_item_count += 1
+        stats_delta = {
+            "already_text_items": 1 if item_is_text else 0,
+            "needs_extraction_items": 0 if item_is_text else 1,
+            "extracted_items": 0,
+            "extracted_nonempty_items": 0,
+            "extracted_empty_items": 0,
+            "skipped_items": 0,
+            "errored_items": 0,
+            "converted_items": 0,
+        }
 
-        step_results: List[ExtractionStepResult] = []
-        step_outputs: List[ExtractionStepOutput] = []
+        with progress_lock:
+            current_item_id = item.id
+            current_stage_label = "prepare"
+
+        final_text_relpath = str(Path("text") / f"{item.id}.txt")
+        final_metadata_relpath = str(Path("metadata") / f"{item.id}.json")
+        final_text_path = snapshot_dir / final_text_relpath
+
+        if not force and final_text_path.is_file():
+            final_text_value = final_text_path.read_text(encoding="utf-8")
+            cached_item = previous_items.get(item.id)
+            if cached_item and cached_item.final_stage_extractor_id:
+                alias_snapshot_dir = _ensure_extraction_alias_snapshot_dir(
+                    corpus=corpus,
+                    stage_extractor_id=cached_item.final_stage_extractor_id,
+                    manifest=manifest,
+                )
+                _write_alias_text_artifact(
+                    alias_snapshot_dir=alias_snapshot_dir,
+                    item=item,
+                    text=final_text_value,
+                )
+                metadata_value: Dict[str, Any] = {}
+                metadata_path = snapshot_dir / final_metadata_relpath
+                if metadata_path.is_file():
+                    metadata_value = json.loads(metadata_path.read_text(encoding="utf-8"))
+                _write_alias_metadata_artifact(
+                    alias_snapshot_dir=alias_snapshot_dir,
+                    item=item,
+                    metadata=metadata_value,
+                )
+            stats_delta["extracted_items"] = 1
+            if final_text_value.strip():
+                stats_delta["extracted_nonempty_items"] = 1
+                if not item_is_text:
+                    stats_delta["converted_items"] = 1
+            else:
+                stats_delta["extracted_empty_items"] = 1
+            if cached_item is not None:
+                return cached_item, stats_delta
+            return (
+                ExtractionItemResult(
+                    item_id=item.id,
+                    status="extracted",
+                    final_text_relpath=final_text_relpath,
+                    final_metadata_relpath=(
+                        final_metadata_relpath
+                        if (snapshot_dir / final_metadata_relpath).is_file()
+                        else None
+                    ),
+                    final_stage_index=None,
+                    final_stage_extractor_id=None,
+                    final_producer_extractor_id=None,
+                    final_source_stage_index=None,
+                    error_type=None,
+                    error_message=None,
+                    stage_results=[],
+                ),
+                stats_delta,
+            )
+
+        stage_results: List[ExtractionStageResult] = []
+        stage_outputs: List[ExtractionStageOutput] = []
         last_error_type: Optional[str] = None
         last_error_message: Optional[str] = None
 
-        for step_index, (step, step_extractor, parsed_step_config) in enumerate(
-            validated_steps, start=1
-        ):
+        for stage_index, (stage, parsed_stage_config) in enumerate(validated_stages, start=1):
+            with progress_lock:
+                current_stage_label = f"{stage.extractor_id}:{stage_index}"
+            if not force:
+                cached = _load_stage_cache(
+                    stage_index=stage_index,
+                    extractor_id=stage.extractor_id,
+                    item=item,
+                )
+                if cached:
+                    with progress_lock:
+                        current_stage_label = f"{stage.extractor_id}:{stage_index}:cache"
+                    cached_result, cached_output = cached
+                    stage_results.append(cached_result)
+                    stage_outputs.append(cached_output)
+                    continue
             try:
-                extracted_text = step_extractor.extract_text(
+                stage_extractor = get_extractor(stage.extractor_id)
+                extracted_text = stage_extractor.extract_text(
                     corpus=corpus,
                     item=item,
-                    config=parsed_step_config,
-                    previous_extractions=step_outputs,
+                    config=parsed_stage_config,
+                    previous_extractions=stage_outputs,
                 )
             except Exception as extraction_error:
                 if isinstance(extraction_error, ExtractionSnapshotFatalError):
                     raise
                 last_error_type = extraction_error.__class__.__name__
                 last_error_message = str(extraction_error)
-                step_results.append(
-                    ExtractionStepResult(
-                        step_index=step_index,
-                        extractor_id=step.extractor_id,
+                stage_results.append(
+                    ExtractionStageResult(
+                        stage_index=stage_index,
+                        extractor_id=stage.extractor_id,
                         status="errored",
                         text_relpath=None,
                         text_characters=0,
                         producer_extractor_id=None,
-                        source_step_index=None,
+                        source_stage_index=None,
                         error_type=last_error_type,
                         error_message=last_error_message,
                     )
@@ -551,60 +763,60 @@ def build_extraction_snapshot(
                 continue
 
             if extracted_text is None:
-                step_results.append(
-                    ExtractionStepResult(
-                        step_index=step_index,
-                        extractor_id=step.extractor_id,
+                stage_results.append(
+                    ExtractionStageResult(
+                        stage_index=stage_index,
+                        extractor_id=stage.extractor_id,
                         status="skipped",
                         text_relpath=None,
                         text_characters=0,
                         producer_extractor_id=None,
-                        source_step_index=None,
+                        source_stage_index=None,
                         error_type=None,
                         error_message=None,
                     )
                 )
                 continue
 
-            relpath = write_pipeline_step_text_artifact(
+            relpath = write_pipeline_stage_text_artifact(
                 snapshot_dir=snapshot_dir,
-                step_index=step_index,
-                extractor_id=step.extractor_id,
+                stage_index=stage_index,
+                extractor_id=stage.extractor_id,
                 item=item,
                 text=extracted_text.text,
             )
-            metadata_relpath = write_pipeline_step_metadata_artifact(
+            metadata_relpath = write_pipeline_stage_metadata_artifact(
                 snapshot_dir=snapshot_dir,
-                step_index=step_index,
-                extractor_id=step.extractor_id,
+                stage_index=stage_index,
+                extractor_id=stage.extractor_id,
                 item=item,
                 metadata=extracted_text.metadata,
             )
             text_characters = len(extracted_text.text)
-            step_results.append(
-                ExtractionStepResult(
-                    step_index=step_index,
-                    extractor_id=step.extractor_id,
+            stage_results.append(
+                ExtractionStageResult(
+                    stage_index=stage_index,
+                    extractor_id=stage.extractor_id,
                     status="extracted",
                     text_relpath=relpath,
                     text_characters=text_characters,
                     producer_extractor_id=extracted_text.producer_extractor_id,
-                    source_step_index=extracted_text.source_step_index,
+                    source_stage_index=extracted_text.source_stage_index,
                     confidence=extracted_text.confidence,
                     metadata_relpath=metadata_relpath,
                     error_type=None,
                     error_message=None,
                 )
             )
-            step_outputs.append(
-                ExtractionStepOutput(
-                    step_index=step_index,
-                    extractor_id=step.extractor_id,
+            stage_outputs.append(
+                ExtractionStageOutput(
+                    stage_index=stage_index,
+                    extractor_id=stage.extractor_id,
                     status="extracted",
                     text=extracted_text.text,
                     text_characters=text_characters,
                     producer_extractor_id=extracted_text.producer_extractor_id,
-                    source_step_index=extracted_text.source_step_index,
+                    source_stage_index=extracted_text.source_stage_index,
                     confidence=extracted_text.confidence,
                     metadata=extracted_text.metadata,
                     error_type=None,
@@ -612,30 +824,29 @@ def build_extraction_snapshot(
                 )
             )
 
-        final_output = _final_output_from_steps(step_outputs)
+        final_output = _final_output_from_stages(stage_outputs)
         if final_output is None:
             status = "errored" if last_error_type else "skipped"
             if status == "errored":
-                errored_count += 1
+                stats_delta["errored_items"] = 1
             else:
-                skipped_count += 1
-            extracted_items.append(
+                stats_delta["skipped_items"] = 1
+            return (
                 ExtractionItemResult(
                     item_id=item.id,
                     status=status,
                     final_text_relpath=None,
                     final_metadata_relpath=None,
-                    final_step_index=None,
-                    final_step_extractor_id=None,
+                    final_stage_index=None,
+                    final_stage_extractor_id=None,
                     final_producer_extractor_id=None,
-                    final_source_step_index=None,
+                    final_source_stage_index=None,
                     error_type=last_error_type if status == "errored" else None,
                     error_message=last_error_message if status == "errored" else None,
-                    step_results=step_results,
-                )
+                    stage_results=stage_results,
+                ),
+                stats_delta,
             )
-            _write_partial_manifest()
-            continue
 
         final_text = final_output.text or ""
         final_text_relpath = write_extracted_text_artifact(
@@ -644,30 +855,104 @@ def build_extraction_snapshot(
         final_metadata_relpath = write_extracted_metadata_artifact(
             snapshot_dir=snapshot_dir, item=item, metadata=final_output.metadata
         )
-        extracted_count += 1
+        alias_snapshot_dir = _ensure_extraction_alias_snapshot_dir(
+            corpus=corpus,
+            stage_extractor_id=final_output.extractor_id,
+            manifest=manifest,
+        )
+        _write_alias_text_artifact(
+            alias_snapshot_dir=alias_snapshot_dir,
+            item=item,
+            text=final_text,
+        )
+        _write_alias_metadata_artifact(
+            alias_snapshot_dir=alias_snapshot_dir,
+            item=item,
+            metadata=final_output.metadata,
+        )
+        stats_delta["extracted_items"] = 1
         if final_text.strip():
-            extracted_nonempty_count += 1
+            stats_delta["extracted_nonempty_items"] = 1
             if not item_is_text:
-                converted_item_count += 1
+                stats_delta["converted_items"] = 1
         else:
-            extracted_empty_count += 1
+            stats_delta["extracted_empty_items"] = 1
 
-        extracted_items.append(
+        return (
             ExtractionItemResult(
                 item_id=item.id,
                 status="extracted",
                 final_text_relpath=final_text_relpath,
                 final_metadata_relpath=final_metadata_relpath,
-                final_step_index=final_output.step_index,
-                final_step_extractor_id=final_output.extractor_id,
+                final_stage_index=final_output.stage_index,
+                final_stage_extractor_id=final_output.extractor_id,
                 final_producer_extractor_id=final_output.producer_extractor_id,
-                final_source_step_index=final_output.source_step_index,
+                final_source_stage_index=final_output.source_stage_index,
                 error_type=None,
                 error_message=None,
-                step_results=step_results,
-            )
+                stage_results=stage_results,
+            ),
+            stats_delta,
         )
+
+    def _apply_result(item_result: ExtractionItemResult, stats_delta: Dict[str, int]) -> None:
+        nonlocal extracted_count
+        nonlocal skipped_count
+        nonlocal errored_count
+        nonlocal extracted_nonempty_count
+        nonlocal extracted_empty_count
+        nonlocal already_text_item_count
+        nonlocal needs_extraction_item_count
+        nonlocal converted_item_count
+        nonlocal processed_count
+
+        extracted_items.append(item_result)
+        extracted_count += stats_delta["extracted_items"]
+        skipped_count += stats_delta["skipped_items"]
+        errored_count += stats_delta["errored_items"]
+        extracted_nonempty_count += stats_delta["extracted_nonempty_items"]
+        extracted_empty_count += stats_delta["extracted_empty_items"]
+        already_text_item_count += stats_delta["already_text_items"]
+        needs_extraction_item_count += stats_delta["needs_extraction_items"]
+        converted_item_count += stats_delta["converted_items"]
+        processed_count += 1
+        if processed_count % log_interval == 0 or processed_count == total_item_count:
+            elapsed = time.perf_counter() - start_time
+            rate = processed_count / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[extract] processed {processed_count}/{total_item_count} "
+                f"extracted={extracted_count} skipped={skipped_count} errored={errored_count} "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
         _write_partial_manifest()
+
+    def _process_and_record(item: CatalogItem) -> None:
+        item_result, stats_delta = _build_item_result(item)
+        with lock:
+            _apply_result(item_result, stats_delta)
+
+    if max_workers == 1:
+        try:
+            for item in catalog.items.values():
+                _process_and_record(item)
+        finally:
+            stop_event.set()
+            heartbeat_thread.join(timeout=1)
+    else:
+        try:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [
+                    executor.submit(_build_item_result, item) for item in catalog.items.values()
+                ]
+                for future in as_completed(futures):
+                    item_result, stats_delta = future.result()
+                    with lock:
+                        _apply_result(item_result, stats_delta)
+        finally:
+            stop_event.set()
+            heartbeat_thread.join(timeout=1)
 
     stats = {
         "total_items": total_item_count,
@@ -682,4 +967,87 @@ def build_extraction_snapshot(
     }
     manifest = manifest.model_copy(update={"items": extracted_items, "stats": stats})
     write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
+    write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
+
+    # Auto-sync catalog to Amplify if configured
+    if os.getenv('AMPLIFY_AUTO_SYNC_CATALOG', 'false').lower() == 'true':
+        try:
+            from .sync.amplify_publisher import AmplifyPublisher
+
+            publisher = AmplifyPublisher(corpus.name)
+            catalog_path = corpus.root / 'catalog.json'
+
+            if catalog_path.exists():
+                result = publisher.sync_catalog(catalog_path, force=False)
+                if not result.skipped:
+                    print(f'✓ Synced catalog: {result.created} created, {result.updated} updated, {result.deleted} deleted', file=sys.stderr)
+        except ImportError:
+            # AmplifyPublisher not available, skip sync
+            pass
+        except Exception as e:
+            # Don't fail extraction if sync fails
+            print(f'Warning: Catalog sync failed: {e}', file=sys.stderr)
+
     return manifest
+
+
+def load_or_build_extraction_snapshot(
+    corpus: Corpus,
+    *,
+    extractor_id: str,
+    configuration_name: str,
+    configuration: Dict[str, Any],
+    max_workers: int = 1,
+) -> ExtractionSnapshotManifest:
+    """
+    Load an extraction snapshot if it exists or build it when missing.
+
+    :param corpus: Corpus to extract from.
+    :type corpus: Corpus
+    :param extractor_id: Extractor plugin identifier (must be ``pipeline``).
+    :type extractor_id: str
+    :param configuration_name: Human-readable configuration name.
+    :type configuration_name: str
+    :param configuration: Extractor configuration mapping.
+    :type configuration: dict[str, Any]
+    :param max_workers: Maximum number of concurrent workers.
+    :type max_workers: int
+    :return: Extraction snapshot manifest describing the build.
+    :rtype: ExtractionSnapshotManifest
+    """
+    configuration_manifest = create_extraction_configuration_manifest(
+        extractor_id=extractor_id,
+        name=configuration_name,
+        configuration=configuration,
+    )
+    snapshot_manifest = create_extraction_snapshot_manifest(
+        corpus,
+        configuration=configuration_manifest,
+    )
+    snapshot_dir = corpus.extraction_snapshot_dir(
+        extractor_id=extractor_id,
+        snapshot_id=snapshot_manifest.snapshot_id,
+    )
+    manifest_path = snapshot_dir / "manifest.json"
+    if manifest_path.is_file():
+        print(
+            f"[extract] reusing snapshot {snapshot_manifest.snapshot_id}",
+            flush=True,
+            file=sys.stderr,
+        )
+        return corpus.load_extraction_snapshot_manifest(
+            extractor_id=extractor_id,
+            snapshot_id=snapshot_manifest.snapshot_id,
+        )
+    print(
+        f"[extract] building snapshot {snapshot_manifest.snapshot_id}",
+        flush=True,
+        file=sys.stderr,
+    )
+    return build_extraction_snapshot(
+        corpus,
+        extractor_id=extractor_id,
+        configuration_name=configuration_name,
+        configuration=configuration,
+        max_workers=max_workers,
+    )

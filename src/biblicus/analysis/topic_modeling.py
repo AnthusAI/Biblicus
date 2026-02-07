@@ -5,11 +5,14 @@ Topic modeling analysis backend for Biblicus.
 from __future__ import annotations
 
 import json
+import sys
+import time
 import re
 import string
+import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -26,6 +29,8 @@ from .models import (
     TopicModelingBerTopicConfig,
     TopicModelingBerTopicReport,
     TopicModelingConfiguration,
+    TopicModelingEntityRemovalConfig,
+    TopicModelingEntityRemovalReport,
     TopicModelingKeyword,
     TopicModelingLabelSource,
     TopicModelingLexicalProcessingConfig,
@@ -42,6 +47,20 @@ from .models import (
     TopicModelingTextSourceConfig,
     TopicModelingTopic,
 )
+
+_DEFAULT_ENTITY_TYPES = [
+    "PERSON",
+    "GPE",
+    "LOC",
+    "ORG",
+    "FAC",
+    "DATE",
+    "TIME",
+    "MONEY",
+    "PERCENT",
+    "CARDINAL",
+    "ORDINAL",
+]
 
 
 @dataclass
@@ -152,8 +171,15 @@ def _run_topic_modeling(
         config=config.llm_extraction,
     )
 
-    lexical_report, lexical_documents = _apply_lexical_processing(
+    entity_removal_path = run_dir / "entity_removal.jsonl"
+    entity_removal_report, entity_documents = _apply_entity_removal(
         documents=extracted_documents,
+        config=config.entity_removal,
+        cache_path=entity_removal_path,
+    )
+
+    lexical_report, lexical_documents = _apply_lexical_processing(
+        documents=entity_documents,
         config=config.lexical_processing,
     )
 
@@ -171,6 +197,7 @@ def _run_topic_modeling(
     report = TopicModelingReport(
         text_collection=text_report,
         llm_extraction=llm_extraction_report,
+        entity_removal=entity_removal_report,
         lexical_processing=lexical_report,
         bertopic_analysis=bertopic_report,
         llm_fine_tuning=fine_tuning_report,
@@ -178,11 +205,13 @@ def _run_topic_modeling(
         warnings=(
             text_report.warnings
             + llm_extraction_report.warnings
+            + entity_removal_report.warnings
             + bertopic_report.warnings
             + fine_tuning_report.warnings
         ),
         errors=text_report.errors
         + llm_extraction_report.errors
+        + entity_removal_report.errors
         + bertopic_report.errors
         + fine_tuning_report.errors,
     )
@@ -191,10 +220,17 @@ def _run_topic_modeling(
         "documents": bertopic_report.document_count,
         "topics": bertopic_report.topic_count,
     }
-    run_manifest = run_manifest.model_copy(
-        update={"artifact_paths": ["output.json"], "stats": run_stats}
-    )
+    artifact_paths = ["output.json"]
+    if config.entity_removal.enabled:
+        artifact_paths.append("entity_removal.jsonl")
+
+    run_manifest = run_manifest.model_copy(update={"artifact_paths": artifact_paths, "stats": run_stats})
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
+    _write_latest_pointer(
+        corpus=corpus,
+        analysis_id=TopicModelingBackend.analysis_id,
+        manifest=run_manifest,
+    )
 
     output = TopicModelingOutput(
         analysis_id=TopicModelingBackend.analysis_id,
@@ -210,6 +246,7 @@ def run_topic_modeling_for_documents(
     *,
     documents: List[TopicModelingDocument],
     config: TopicModelingConfiguration,
+    artifacts_dir: Optional[Path] = None,
 ) -> TopicModelingReport:
     """
     Run topic modeling using caller-provided documents.
@@ -238,8 +275,17 @@ def run_topic_modeling_for_documents(
         config=config.llm_extraction,
     )
 
-    lexical_report, lexical_documents = _apply_lexical_processing(
+    entity_removal_path = (
+        artifacts_dir / "entity_removal.jsonl" if artifacts_dir is not None else None
+    )
+    entity_removal_report, entity_documents = _apply_entity_removal(
         documents=extracted_documents,
+        config=config.entity_removal,
+        cache_path=entity_removal_path,
+    )
+
+    lexical_report, lexical_documents = _apply_lexical_processing(
+        documents=entity_documents,
         config=config.lexical_processing,
     )
 
@@ -257,6 +303,7 @@ def run_topic_modeling_for_documents(
     return TopicModelingReport(
         text_collection=text_report,
         llm_extraction=llm_extraction_report,
+        entity_removal=entity_removal_report,
         lexical_processing=lexical_report,
         bertopic_analysis=bertopic_report,
         llm_fine_tuning=fine_tuning_report,
@@ -264,11 +311,13 @@ def run_topic_modeling_for_documents(
         warnings=(
             text_report.warnings
             + llm_extraction_report.warnings
+            + entity_removal_report.warnings
             + bertopic_report.warnings
             + fine_tuning_report.warnings
         ),
         errors=text_report.errors
         + llm_extraction_report.errors
+        + entity_removal_report.errors
         + bertopic_report.errors
         + fine_tuning_report.errors,
     )
@@ -386,6 +435,32 @@ def _apply_llm_extraction(
 
     extracted_documents: List[TopicModelingDocument] = []
     errors: List[str] = []
+    total = len(documents)
+    if total <= 50:
+        log_interval = 10
+    elif total <= 200:
+        log_interval = 25
+    elif total <= 1000:
+        log_interval = 50
+    else:
+        log_interval = 100
+    start_time = time.perf_counter()
+    last_log_time = start_time
+    completed = 0
+
+    def log_progress() -> None:
+        nonlocal last_log_time
+        now = time.perf_counter()
+        if completed % log_interval == 0 or completed == total or now - last_log_time >= 30.0:
+            elapsed = now - start_time
+            rate = completed / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[topic-modeling] llm extraction {completed}/{total} "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
+            last_log_time = now
 
     for document in documents:
         prompt = config.prompt_template.format(text=document.text)
@@ -405,10 +480,14 @@ def _apply_llm_extraction(
                     text=response_text,
                 )
             )
+            completed += 1
+            log_progress()
             continue
         items = _parse_itemized_response(response_text)
         if not items:
             errors.append(f"LLM itemization returned no items for {document.document_id}")
+            completed += 1
+            log_progress()
             continue
         for index, item_text in enumerate(items, start=1):
             extracted_documents.append(
@@ -418,6 +497,8 @@ def _apply_llm_extraction(
                     text=item_text,
                 )
             )
+        completed += 1
+        log_progress()
 
     report = TopicModelingLlmExtractionReport(
         status=TopicModelingStageStatus.COMPLETE,
@@ -431,6 +512,205 @@ def _apply_llm_extraction(
         report = report.model_copy(update={"status": TopicModelingStageStatus.FAILED})
         raise ValueError("LLM extraction produced no usable documents")
     return report, extracted_documents
+
+
+def _remove_entities_from_text(
+    *, text: str, entities: List[object], entity_types: set[str], replace_with: str
+) -> str:
+    spans: List[tuple[int, int]] = []
+    for entity in entities:
+        label = str(getattr(entity, "label_", "")).upper()
+        if label and label not in entity_types:
+            continue
+        start = int(getattr(entity, "start_char", 0))
+        end = int(getattr(entity, "end_char", 0))
+        if end <= start:
+            continue
+        spans.append((start, end))
+    if not spans:
+        return text
+    spans.sort()
+    cleaned_parts: List[str] = []
+    cursor = 0
+    for start, end in spans:
+        if start < cursor:
+            continue
+        cleaned_parts.append(text[cursor:start])
+        if replace_with:
+            cleaned_parts.append(replace_with)
+        cursor = end
+    cleaned_parts.append(text[cursor:])
+    return "".join(cleaned_parts)
+
+
+def _apply_entity_removal(
+    *,
+    documents: List[TopicModelingDocument],
+    config: TopicModelingEntityRemovalConfig,
+    cache_path: Optional[Path] = None,
+) -> Tuple[TopicModelingEntityRemovalReport, List[TopicModelingDocument]]:
+    if not config.enabled:
+        report = TopicModelingEntityRemovalReport(
+            status=TopicModelingStageStatus.SKIPPED,
+            provider=str(config.provider),
+            model=str(config.model),
+            entity_types=[],
+            input_documents=len(documents),
+            output_documents=len(documents),
+            regex_patterns=[],
+            warnings=[],
+            errors=[],
+        )
+        return report, list(documents)
+
+    if cache_path is not None and cache_path.exists():
+        cached_documents = _read_documents_jsonl(cache_path)
+        report = TopicModelingEntityRemovalReport(
+            status=TopicModelingStageStatus.COMPLETE,
+            provider=str(config.provider),
+            model=str(config.model),
+            entity_types=sorted(
+                {entry.strip().upper() for entry in config.entity_types if str(entry).strip()}
+                if config.entity_types
+                else set(_DEFAULT_ENTITY_TYPES)
+            ),
+            input_documents=len(documents),
+            output_documents=len(cached_documents),
+            regex_patterns=list(config.regex_patterns),
+            warnings=["Reused cached entity removal documents"],
+            errors=[],
+        )
+        return report, cached_documents
+
+    if config.provider.strip().lower() != "spacy":
+        raise ValueError("entity_removal.provider must be 'spacy'")
+
+    try:
+        import spacy
+    except ImportError as import_error:
+        raise ValueError(
+            "Entity removal requires spaCy. Install it with pip install \"biblicus[ner]\"."
+        ) from import_error
+
+    try:
+        nlp = spacy.load(config.model)
+    except Exception as load_error:
+        raise ValueError(
+            f"Entity removal requires spaCy model '{config.model}'. "
+            "Install it with: python -m spacy download "
+            f"{config.model}"
+        ) from load_error
+
+    entity_types = (
+        {entry.strip().upper() for entry in config.entity_types if str(entry).strip()}
+        if config.entity_types
+        else set(_DEFAULT_ENTITY_TYPES)
+    )
+    processed: List[TopicModelingDocument] = []
+    total = len(documents)
+    if total <= 50:
+        log_interval = 10
+    elif total <= 200:
+        log_interval = 25
+    elif total <= 1000:
+        log_interval = 50
+    else:
+        log_interval = 100
+    start_time = time.perf_counter()
+    last_log_time = start_time
+    completed = 0
+
+    def log_progress() -> None:
+        nonlocal last_log_time
+        now = time.perf_counter()
+        if completed % log_interval == 0 or completed == total or now - last_log_time >= 30.0:
+            elapsed = now - start_time
+            rate = completed / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[topic-modeling] entity removal {completed}/{total} "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
+            last_log_time = now
+
+    for document in documents:
+        text_value = document.text
+        doc_obj = nlp(text_value)
+        text_value = _remove_entities_from_text(
+            text=text_value,
+            entities=list(getattr(doc_obj, "ents", []) or []),
+            entity_types=entity_types,
+            replace_with=config.replace_with,
+        )
+        if config.regex_patterns:
+            for pattern in config.regex_patterns:
+                if not pattern:
+                    continue
+                text_value = re.sub(
+                    pattern,
+                    config.regex_replace_with,
+                    text_value,
+                )
+        if config.collapse_whitespace:
+            text_value = re.sub(r"\s+", " ", text_value).strip()
+        processed.append(
+            TopicModelingDocument(
+                document_id=document.document_id,
+                source_item_id=document.source_item_id,
+                text=text_value,
+            )
+        )
+        completed += 1
+        log_progress()
+
+    report = TopicModelingEntityRemovalReport(
+        status=TopicModelingStageStatus.COMPLETE,
+        provider=str(config.provider),
+        model=str(config.model),
+        entity_types=sorted(entity_types),
+        input_documents=len(documents),
+        output_documents=len(processed),
+        regex_patterns=list(config.regex_patterns),
+        warnings=[],
+        errors=[],
+    )
+    if cache_path is not None:
+        _write_documents_jsonl(cache_path, processed)
+    return report, processed
+
+
+def _write_documents_jsonl(path: Path, documents: List[TopicModelingDocument]) -> None:
+    lines = [
+        json.dumps(
+            {
+                "document_id": document.document_id,
+                "source_item_id": document.source_item_id,
+                "text": document.text,
+            },
+            ensure_ascii=True,
+        )
+        for document in documents
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _read_documents_jsonl(path: Path) -> List[TopicModelingDocument]:
+    documents: List[TopicModelingDocument] = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            documents.append(
+                TopicModelingDocument(
+                    document_id=str(payload.get("document_id", "")),
+                    source_item_id=str(payload.get("source_item_id", "")),
+                    text=str(payload.get("text", "")),
+                )
+            )
+    return documents
 
 
 def _parse_itemized_response(response_text: str) -> List[str]:
@@ -480,6 +760,32 @@ def _apply_lexical_processing(
         return report, list(documents)
 
     processed: List[TopicModelingDocument] = []
+    total = len(documents)
+    if total <= 50:
+        log_interval = 10
+    elif total <= 200:
+        log_interval = 25
+    elif total <= 1000:
+        log_interval = 50
+    else:
+        log_interval = 100
+    start_time = time.perf_counter()
+    last_log_time = start_time
+    completed = 0
+
+    def log_progress() -> None:
+        nonlocal last_log_time
+        now = time.perf_counter()
+        if completed % log_interval == 0 or completed == total or now - last_log_time >= 30.0:
+            elapsed = now - start_time
+            rate = completed / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[topic-modeling] lexical processing {completed}/{total} "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
+            last_log_time = now
     for document in documents:
         text_value = document.text
         if config.lowercase:
@@ -495,6 +801,8 @@ def _apply_lexical_processing(
                 text=text_value,
             )
         )
+        completed += 1
+        log_progress()
 
     report = TopicModelingLexicalProcessingReport(
         status=TopicModelingStageStatus.COMPLETE,
@@ -545,7 +853,36 @@ def _run_bertopic(
 
     topic_model = BERTopic(**bertopic_kwargs)
     texts = [document.text for document in documents]
-    assignments, _ = topic_model.fit_transform(texts)
+    start_time = time.perf_counter()
+    stop_event = threading.Event()
+
+    def heartbeat() -> None:
+        while not stop_event.wait(30):
+            elapsed = time.perf_counter() - start_time
+            print(
+                f"[topic-modeling] bertopic fit_transform elapsed={elapsed:.1f}s",
+                flush=True,
+                file=sys.stderr,
+            )
+
+    thread = threading.Thread(target=heartbeat, daemon=True)
+    thread.start()
+    print(
+        f"[topic-modeling] bertopic fit_transform documents={len(texts)}",
+        flush=True,
+        file=sys.stderr,
+    )
+    try:
+        assignments, _ = topic_model.fit_transform(texts)
+    finally:
+        stop_event.set()
+        thread.join(timeout=1)
+    elapsed = time.perf_counter() - start_time
+    print(
+        f"[topic-modeling] bertopic fit_transform complete elapsed={elapsed:.1f}s",
+        flush=True,
+        file=sys.stderr,
+    )
     assignment_list = list(assignments)
     topic_ids = sorted({int(topic_id) for topic_id in assignment_list})
     topics: List[TopicModelingTopic] = []
@@ -613,6 +950,15 @@ def _apply_llm_fine_tuning(
     labeled_topics: List[TopicModelingTopic] = []
     errors: List[str] = []
     labeled_count = 0
+    total = len(topics)
+    if total <= 20:
+        log_interval = 1
+    elif total <= 50:
+        log_interval = 5
+    else:
+        log_interval = 10
+    start_time = time.perf_counter()
+    last_log_time = start_time
     topic_documents = {doc.document_id: doc for doc in documents}
 
     for topic in topics:
@@ -647,6 +993,22 @@ def _apply_llm_fine_tuning(
         else:
             errors.append(f"LLM fine-tuning returned empty label for topic {topic.topic_id}")
             labeled_topics.append(topic)
+        labeled_count = len(labeled_topics)
+        now = time.perf_counter()
+        if (
+            labeled_count % log_interval == 0
+            or labeled_count == total
+            or now - last_log_time >= 30.0
+        ):
+            elapsed = now - start_time
+            rate = labeled_count / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[topic-modeling] fine tuning {labeled_count}/{total} "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
+            last_log_time = now
 
     report = TopicModelingLlmFineTuningReport(
         status=TopicModelingStageStatus.COMPLETE,
@@ -660,6 +1022,20 @@ def _apply_llm_fine_tuning(
 def _write_analysis_run_manifest(*, run_dir: Path, manifest: AnalysisRunManifest) -> None:
     manifest_path = run_dir / "manifest.json"
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+
+def _write_latest_pointer(
+    *, corpus: Corpus, analysis_id: str, manifest: AnalysisRunManifest
+) -> None:
+    latest_path = corpus.analysis_dir / analysis_id / "latest.json"
+    latest_path.write_text(
+        json.dumps(
+            {"snapshot_id": manifest.snapshot_id, "created_at": manifest.created_at},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _write_topic_modeling_output(*, path: Path, output: TopicModelingOutput) -> None:

@@ -134,6 +134,11 @@ def _run_profiling(
         update={"artifact_paths": ["output.json"], "stats": run_stats}
     )
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
+    _write_latest_pointer(
+        corpus=corpus,
+        analysis_id=ProfilingBackend.analysis_id,
+        manifest=run_manifest,
+    )
 
     output = ProfilingOutput(
         analysis_id=ProfilingBackend.analysis_id,
@@ -341,6 +346,20 @@ def _percentile_value(sorted_values: Sequence[int], percentile: int) -> int:
 def _write_analysis_run_manifest(*, run_dir: Path, manifest: AnalysisRunManifest) -> None:
     manifest_path = run_dir / "manifest.json"
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+
+def _write_latest_pointer(
+    *, corpus: Corpus, analysis_id: str, manifest: AnalysisRunManifest
+) -> None:
+    latest_path = corpus.analysis_dir / analysis_id / "latest.json"
+    latest_path.write_text(
+        json.dumps(
+            {"snapshot_id": manifest.snapshot_id, "created_at": manifest.created_at},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _write_profiling_output(*, path: Path, output: ProfilingOutput) -> None:

@@ -124,6 +124,28 @@ def write_graph_snapshot_manifest(*, snapshot_dir: Path, manifest: GraphSnapshot
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
+def write_graph_latest_pointer(*, extractor_dir: Path, manifest: GraphSnapshotManifest) -> None:
+    """
+    Persist the latest pointer for a graph extractor.
+
+    :param extractor_dir: Extractor directory containing snapshots.
+    :type extractor_dir: Path
+    :param manifest: Snapshot manifest used for the pointer.
+    :type manifest: GraphSnapshotManifest
+    :return: None.
+    :rtype: None
+    """
+    latest_path = extractor_dir / "latest.json"
+    latest_path.write_text(
+        json.dumps(
+            {"snapshot_id": manifest.snapshot_id, "created_at": manifest.created_at},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def build_graph_snapshot(
     corpus: Corpus,
     *,
@@ -241,6 +263,7 @@ def build_graph_snapshot(
         "edges": edge_total,
     }
     write_graph_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
+    write_graph_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
     return manifest
 
 

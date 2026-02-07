@@ -41,7 +41,7 @@ from biblicus.models import CatalogItem, ExtractionSnapshotReference
 def _sample_item() -> CatalogItem:
     return CatalogItem(
         id="item-1",
-        relpath="raw/item.txt",
+        relpath="item.txt",
         sha256="",
         bytes=0,
         media_type="text/plain",
@@ -259,7 +259,7 @@ def _prepare_extraction_snapshot(context) -> ExtractionSnapshotReference:
         extractor_id="pipeline",
         configuration_name="default",
         configuration={
-            "steps": [
+            "stages": [
                 {"extractor_id": "pass-through-text", "config": {}},
                 {"extractor_id": "select-text", "config": {}},
             ]
@@ -441,9 +441,17 @@ def step_run_graph_extract_command_with_config(context) -> None:
         extraction_snapshot=ref.as_string(),
         override=[],
     )
-    result = cmd_graph_extract(arguments)
-    context._graph_cli_result = result
-    context._graph_error = None
+    prior_auto_start = os.environ.get("BIBLICUS_NEO4J_AUTO_START")
+    os.environ["BIBLICUS_NEO4J_AUTO_START"] = "false"
+    try:
+        result = cmd_graph_extract(arguments)
+        context._graph_cli_result = result
+        context._graph_error = None
+    finally:
+        if prior_auto_start is None:
+            os.environ.pop("BIBLICUS_NEO4J_AUTO_START", None)
+        else:
+            os.environ["BIBLICUS_NEO4J_AUTO_START"] = prior_auto_start
 
 
 @when("I run the graph extract command without snapshots")
@@ -495,13 +503,21 @@ def step_build_graph_missing_text(context) -> None:
     for path in text_dir.glob("*.txt"):
         path.unlink()
     _install_fake_neo4j_driver(context)
-    manifest = graph_extraction.build_graph_snapshot(
-        corpus,
-        extractor_id="cooccurrence",
-        configuration_name="default",
-        configuration={"window_size": 2, "min_cooccurrence": 1},
-        extraction_snapshot=ref,
-    )
+    prior_auto_start = os.environ.get("BIBLICUS_NEO4J_AUTO_START")
+    os.environ["BIBLICUS_NEO4J_AUTO_START"] = "false"
+    try:
+        manifest = graph_extraction.build_graph_snapshot(
+            corpus,
+            extractor_id="cooccurrence",
+            configuration_name="default",
+            configuration={"window_size": 2, "min_cooccurrence": 1},
+            extraction_snapshot=ref,
+        )
+    finally:
+        if prior_auto_start is None:
+            os.environ.pop("BIBLICUS_NEO4J_AUTO_START", None)
+        else:
+            os.environ["BIBLICUS_NEO4J_AUTO_START"] = prior_auto_start
     context._graph_snapshot_manifest = manifest
 
 

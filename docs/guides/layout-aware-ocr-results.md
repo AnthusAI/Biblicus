@@ -19,7 +19,7 @@ Successfully implemented workflow-based () workflow for non-selectable files:
 
 **Pipeline Steps:**
 ```yaml
-steps:
+stages:
   - extractor_id: paddleocr-layout
     config:
       lang: en

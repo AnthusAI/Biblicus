@@ -45,6 +45,7 @@ Audio transcription for spoken content in video and audio files.
 
 - [**stt-openai**](speech-to-text/openai.md) - OpenAI Whisper API for audio transcription
 - [**stt-deepgram**](speech-to-text/deepgram.md) - Deepgram Nova-2 for fast, accurate transcription
+- [**deepgram-transform**](speech-to-text/deepgram-transform.md) - Render structured Deepgram metadata into text
 
 ### [Pipeline Utilities](pipeline-utilities/index.md)
 

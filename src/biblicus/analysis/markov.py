@@ -7,11 +7,14 @@ from __future__ import annotations
 import json
 import math
 import re
+import sys
+import time
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from ..ai.embeddings import generate_embeddings_batch
 from ..ai.llm import generate_completion
@@ -27,6 +30,7 @@ from ..models import Evidence, ExtractionSnapshotReference, QueryBudget, Retriev
 from ..retrieval import hash_text
 from ..text.annotate import TextAnnotateRequest, apply_text_annotate
 from ..text.extract import TextExtractRequest, apply_text_extract
+from ..text.prompts import DEFAULT_ANNOTATE_SYSTEM_PROMPT, DEFAULT_EXTRACT_SYSTEM_PROMPT
 from ..time import utc_now_iso
 from .base import CorpusAnalysisBackend
 from .models import (
@@ -91,6 +95,15 @@ class MarkovStateNamingResponse(BaseModel):
 class _Document:
     item_id: str
     text: str
+
+
+@dataclass
+class _LlmObservationCacheContext:
+    enabled: bool
+    cache_id: str
+    cache_dir: Path
+    cached_segments: int = 0
+    generated_segments: int = 0
 
 
 class MarkovBackend(CorpusAnalysisBackend):
@@ -169,29 +182,130 @@ def _run_markov(
         analysis_id=MarkovBackend.analysis_id, snapshot_id=snapshot_id
     )
     run_dir.mkdir(parents=True, exist_ok=True)
+    print(
+        f"[markov] starting snapshot {snapshot_id} extraction={extraction_snapshot.as_string()}",
+        flush=True,
+        file=sys.stderr,
+    )
 
+    cache_context: Optional[_LlmObservationCacheContext] = None
+    cache_id = _llm_observation_cache_id(config)
+    if cache_id is not None:
+        cache_context = _LlmObservationCacheContext(
+            enabled=True,
+            cache_id=cache_id,
+            cache_dir=_llm_observation_cache_dir(
+                corpus=corpus,
+                extraction_snapshot=extraction_snapshot,
+                cache_id=cache_id,
+            ),
+        )
+
+    segments_cache_path = run_dir / "segments.jsonl"
+    observations_cache_path = run_dir / "observations.jsonl"
     documents, text_report = _collect_documents(
         corpus=corpus,
         extraction_snapshot=extraction_snapshot,
         config=config.text_source,
     )
-    segments = _segment_documents(documents=documents, config=config)
-    observations = _build_observations(segments=segments, config=config)
-    observations, topic_report = _apply_topic_modeling(observations=observations, config=config)
+    print(
+        f"[markov] collected {len(documents)} documents",
+        flush=True,
+        file=sys.stderr,
+    )
+    segments_from_cache = False
+    if segments_cache_path.exists() and segments_cache_path.stat().st_size > 0:
+        segments = _load_segments(segments_cache_path)
+        segments_from_cache = True
+        print(
+            f"[markov] using cached segments from {segments_cache_path}",
+            flush=True,
+            file=sys.stderr,
+        )
+    else:
+        segments = _segment_documents(documents=documents, config=config)
+    print(
+        f"[markov] segments={len(segments)}",
+        flush=True,
+        file=sys.stderr,
+    )
+    observations_from_cache = False
+    if observations_cache_path.exists() and observations_cache_path.stat().st_size > 0:
+        observations = _load_observations(observations_cache_path)
+        observations_from_cache = True
+        topic_report = (
+            _load_topic_modeling_report(run_dir=run_dir)
+            if config.topic_modeling.enabled
+            else None
+        )
+        if config.topic_modeling.enabled and topic_report is None:
+            observations, topic_report = _apply_topic_modeling(
+                observations=observations,
+                config=config,
+                artifacts_dir=run_dir,
+            )
+            observations_from_cache = False
+        print(
+            f"[markov] using cached observations from {observations_cache_path}",
+            flush=True,
+            file=sys.stderr,
+        )
+    else:
+        observations = _build_observations(
+            segments=segments,
+            config=config,
+            cache_context=cache_context,
+        )
+        observations, topic_report = _apply_topic_modeling(
+            observations=observations,
+            config=config,
+            artifacts_dir=run_dir,
+        )
+    print(
+        f"[markov] observations={len(observations)}",
+        flush=True,
+        file=sys.stderr,
+    )
+    if (
+        observations_from_cache
+        and cache_context is not None
+        and cache_context.enabled
+        and config.llm_observations.enabled
+        and cache_context.cached_segments == 0
+        and cache_context.generated_segments == 0
+    ):
+        cache_context.cached_segments = sum(
+            1
+            for observation in observations
+            if observation.segment_text not in {"START", "END"}
+        )
+
     observation_matrix, lengths = _encode_observations(observations=observations, config=config)
+    print(
+        f"[markov] encoded observations sequences={len(lengths)}",
+        flush=True,
+        file=sys.stderr,
+    )
 
     predicted_states, transitions, state_count = _fit_and_decode(
         observations=observation_matrix,
         lengths=lengths,
         config=config,
     )
+    print(
+        f"[markov] decoded states={state_count} transitions={len(transitions)}",
+        flush=True,
+        file=sys.stderr,
+    )
 
     decoded_paths = _group_decoded_paths(segments=segments, predicted_states=predicted_states)
     states = _build_states(
         segments=segments,
+        observations=observations,
         predicted_states=predicted_states,
         n_states=state_count,
         max_exemplars=config.report.max_state_exemplars,
+        config=config,
     )
     states = _assign_state_names(
         states=states,
@@ -205,13 +319,20 @@ def _run_markov(
         "observations.jsonl",
         "transitions.json",
     ]
-    _write_segments(run_dir=run_dir, segments=segments)
-    _write_observations(run_dir=run_dir, observations=observations)
+    if not segments_from_cache:
+        _write_segments(run_dir=run_dir, segments=segments)
+    if not observations_from_cache:
+        _write_observations(run_dir=run_dir, observations=observations)
     _write_transitions_json(run_dir=run_dir, transitions=transitions)
     if topic_report is not None:
         _write_topic_modeling_report(run_dir=run_dir, report=topic_report)
         _write_topic_assignments(run_dir=run_dir, observations=observations)
         artifact_paths.extend(["topic_modeling.json", "topic_assignments.jsonl"])
+        if (
+            config.topic_modeling.configuration
+            and config.topic_modeling.configuration.entity_removal.enabled
+        ):
+            artifact_paths.append("entity_removal.jsonl")
 
     if config.artifacts.graphviz.enabled:
         _write_graphviz(
@@ -248,10 +369,39 @@ def _run_markov(
     }
     if topic_report is not None:
         run_stats["topics"] = len(topic_report.topics)
+    if config.llm_observations.enabled:
+        cached_segments = 0
+        generated_segments = 0
+        cache_id = cache_context.cache_id if cache_context is not None else None
+        if cache_context is not None:
+            cached_segments = cache_context.cached_segments
+            generated_segments = cache_context.generated_segments
+        elif observations_from_cache:
+            cached_segments = sum(
+                1
+                for observation in observations
+                if observation.segment_text not in {"START", "END"}
+            )
+        else:
+            generated_segments = sum(
+                1
+                for observation in observations
+                if observation.segment_text not in {"START", "END"}
+            )
+        run_stats["llm_observations"] = {
+            "cached_segments": cached_segments,
+            "generated_segments": generated_segments,
+            "cache_id": cache_id,
+        }
     run_manifest = run_manifest.model_copy(
         update={"artifact_paths": artifact_paths, "stats": run_stats}
     )
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
+    _write_latest_pointer(
+        corpus=corpus,
+        analysis_id=MarkovBackend.analysis_id,
+        manifest=run_manifest,
+    )
 
     output = MarkovAnalysisOutput(
         analysis_id=MarkovBackend.analysis_id,
@@ -294,6 +444,40 @@ def _analysis_snapshot_id(
     return hash_text(run_seed)
 
 
+def _llm_observation_cache_id(config: MarkovAnalysisConfiguration) -> Optional[str]:
+    llm = config.llm_observations
+    if not llm.enabled or llm.client is None or llm.prompt_template is None:
+        return None
+    if not llm.cache.enabled:
+        return None
+    client_payload = llm.client.model_dump()
+    client_payload.pop("api_key", None)
+    payload = {
+        "cache_name": llm.cache.cache_name,
+        "client": client_payload,
+        "prompt_template": llm.prompt_template,
+        "system_prompt": llm.system_prompt,
+    }
+    return hash_text(json.dumps(payload, sort_keys=True))
+
+
+def _llm_observation_cache_dir(
+    *,
+    corpus: Corpus,
+    extraction_snapshot: ExtractionSnapshotReference,
+    cache_id: str,
+) -> Path:
+    return (
+        corpus.meta_dir
+        / "cache"
+        / "markov"
+        / "llm-observations"
+        / cache_id
+        / extraction_snapshot.extractor_id
+        / extraction_snapshot.snapshot_id
+    )
+
+
 def _collect_documents(
     *,
     corpus: Corpus,
@@ -314,7 +498,9 @@ def _collect_documents(
         extractor_id=extraction_snapshot.extractor_id,
         snapshot_id=extraction_snapshot.snapshot_id,
     )
-    for item_result in manifest.items:
+    total_items = len(manifest.items)
+    start_time = time.perf_counter()
+    for index, item_result in enumerate(manifest.items, start=1):
         if item_result.status != "extracted" or item_result.final_text_relpath is None:
             skipped_items += 1
             continue
@@ -327,10 +513,23 @@ def _collect_documents(
             skipped_items += 1
             continue
         documents.append(_Document(item_id=item_result.item_id, text=text_value))
+        if config.sample_size is not None and len(documents) >= config.sample_size:
+            warnings.append("Text collection truncated to sample_size")
+            break
+        if index % 50 == 0 or index == total_items:
+            elapsed = time.perf_counter() - start_time
+            rate = len(documents) / elapsed if elapsed > 0 else 0.0
+            print(
+                f"[markov] collected {len(documents)} documents ({index}/{total_items}) "
+                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                flush=True,
+                file=sys.stderr,
+            )
 
     if config.sample_size is not None and len(documents) > config.sample_size:
         documents = documents[: config.sample_size]
-        warnings.append("Text collection truncated to sample_size")
+        if "Text collection truncated to sample_size" not in warnings:
+            warnings.append("Text collection truncated to sample_size")
 
     report = MarkovAnalysisTextCollectionReport(
         status=MarkovAnalysisStageStatus.COMPLETE,
@@ -354,31 +553,71 @@ def _segment_documents(
 ) -> List[MarkovAnalysisSegment]:
     segments: List[MarkovAnalysisSegment] = []
     method = config.segmentation.method
-    for document in documents:
+    total = len(documents)
+    if total <= 25:
+        log_interval = 1
+    elif total <= 100:
+        log_interval = 10
+    else:
+        log_interval = 25
+    start_time = time.perf_counter()
+
+    def run_single(document: _Document) -> List[MarkovAnalysisSegment]:
+        filtered_text = _speaker_filtered_text(document.text)
         if method == MarkovAnalysisSegmentationMethod.SENTENCE:
-            segments.extend(_sentence_segments(item_id=document.item_id, text=document.text))
-            continue
+            return _sentence_segments(item_id=document.item_id, text=filtered_text)
         if method == MarkovAnalysisSegmentationMethod.FIXED_WINDOW:
-            segments.extend(
-                _fixed_window_segments(
-                    item_id=document.item_id,
-                    text=document.text,
-                    max_characters=config.segmentation.fixed_window.max_characters,
-                    overlap_characters=config.segmentation.fixed_window.overlap_characters,
-                )
+            return _fixed_window_segments(
+                item_id=document.item_id,
+                text=filtered_text,
+                max_characters=config.segmentation.fixed_window.max_characters,
+                overlap_characters=config.segmentation.fixed_window.overlap_characters,
             )
-            continue
         if method == MarkovAnalysisSegmentationMethod.LLM:
-            segments.extend(
-                _llm_segments(item_id=document.item_id, text=document.text, config=config)
-            )
-            continue
+            return _llm_segments(item_id=document.item_id, text=filtered_text, config=config)
         if method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP:
-            segments.extend(
-                _span_markup_segments(item_id=document.item_id, text=document.text, config=config)
-            )
-            continue
+            return _span_markup_segments(item_id=document.item_id, text=filtered_text, config=config)
         raise ValueError(f"Unsupported segmentation method: {method}")
+
+    if method in {
+        MarkovAnalysisSegmentationMethod.LLM,
+        MarkovAnalysisSegmentationMethod.SPAN_MARKUP,
+    } and config.segmentation.max_workers > 1:
+        results: List[Optional[List[MarkovAnalysisSegment]]] = [None] * total
+        completed = 0
+        with ThreadPoolExecutor(max_workers=config.segmentation.max_workers) as executor:
+            futures = {
+                executor.submit(run_single, document): index
+                for index, document in enumerate(documents)
+            }
+            for future in as_completed(futures):
+                index = futures[future]
+                results[index] = future.result()
+                completed += 1
+                if completed % log_interval == 0 or completed == total:
+                    elapsed = time.perf_counter() - start_time
+                    rate = completed / elapsed if elapsed > 0 else 0.0
+                    print(
+                        f"[markov] segmented {completed}/{total} documents "
+                        f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                        flush=True,
+                        file=sys.stderr,
+                    )
+        for result in results:
+            if result:
+                segments.extend(result)
+    else:
+        for index, document in enumerate(documents, start=1):
+            segments.extend(run_single(document))
+            if index % log_interval == 0 or index == total:
+                elapsed = time.perf_counter() - start_time
+                rate = index / elapsed if elapsed > 0 else 0.0
+                print(
+                    f"[markov] segmented {index}/{total} documents "
+                    f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                    flush=True,
+                    file=sys.stderr,
+                )
     if not segments:
         raise ValueError("Markov analysis produced no segments")
     return _add_boundary_segments(segments=segments)
@@ -482,6 +721,7 @@ def _llm_segments(
     llm_config = config.segmentation.llm
     if llm_config is None:
         raise ValueError("segmentation.llm is required when segmentation.method is 'llm'")
+    text = _speaker_filtered_text(text)
     prompt = llm_config.prompt_template.format(text=text)
     response_text = generate_completion(
         client=llm_config.client,
@@ -514,58 +754,139 @@ def _span_markup_segments(
         raise ValueError(
             "segmentation.span_markup is required when segmentation.method is 'span_markup'"
         )
+    text = _speaker_filtered_text(text)
     label_attribute = markup_config.label_attribute
     prepend_label = markup_config.prepend_label
-    if label_attribute is not None or prepend_label:
-        request = TextAnnotateRequest(
-            text=text,
-            client=markup_config.client,
-            prompt_template=markup_config.prompt_template,
-            system_prompt=markup_config.system_prompt,
-            allowed_attributes=[label_attribute] if label_attribute else None,
-            max_rounds=markup_config.max_rounds,
-            max_edits_per_round=markup_config.max_edits_per_round,
-        )
-        result = apply_text_annotate(request)
+    chunk_characters = markup_config.chunk_characters
+    chunk_overlap_characters = markup_config.chunk_overlap_characters or 0
+    chunk_payloads: List[Tuple[int, str]] = []
+    if chunk_characters is None:
+        chunk_payloads = [(1, text)]
     else:
-        request = TextExtractRequest(
-            text=text,
-            client=markup_config.client,
-            prompt_template=markup_config.prompt_template,
-            system_prompt=markup_config.system_prompt,
-            max_rounds=markup_config.max_rounds,
-            max_edits_per_round=markup_config.max_edits_per_round,
-        )
-        result = apply_text_extract(request)
+        start = 0
+        chunk_index = 1
+        while start < len(text):
+            end = min(len(text), start + chunk_characters)
+            chunk_payloads.append((chunk_index, text[start:end]))
+            if end >= len(text):
+                break
+            start = max(0, end - chunk_overlap_characters)
+            chunk_index += 1
+
     segment_payloads: List[Dict[str, object]] = []
-    for index, span in enumerate(result.spans, start=1):
-        segment_body = str(span.text).strip()
-        if not segment_body:
-            continue
-        segment_text = segment_body
-        if prepend_label:
-            if label_attribute is None:
-                raise ValueError(
-                    "segmentation.span_markup.label_attribute is required when "
-                    "segmentation.span_markup.prepend_label is true"
-                )
-            label_value = str(span.attributes.get(label_attribute, "")).strip()
-            if not label_value:
-                raise ValueError(f"Span {index} missing label attribute '{label_attribute}'")
-            segment_text = f"{label_value}\n{segment_body}"
-        segment_payloads.append(
-            {"segment_index": index, "body": segment_body, "text": segment_text}
-        )
+    for chunk_index, chunk_text in chunk_payloads:
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                if label_attribute is not None or prepend_label:
+                    system_prompt = markup_config.system_prompt or DEFAULT_ANNOTATE_SYSTEM_PROMPT
+                    request = TextAnnotateRequest(
+                        text=chunk_text,
+                        client=markup_config.client,
+                        prompt_template=markup_config.prompt_template,
+                        system_prompt=system_prompt,
+                        allowed_attributes=[label_attribute] if label_attribute else None,
+                        max_rounds=markup_config.max_rounds,
+                        max_edits_per_round=markup_config.max_edits_per_round,
+                    )
+                    result = apply_text_annotate(request)
+                else:
+                    system_prompt = markup_config.system_prompt or DEFAULT_EXTRACT_SYSTEM_PROMPT
+                    request = TextExtractRequest(
+                        text=chunk_text,
+                        client=markup_config.client,
+                        prompt_template=markup_config.prompt_template,
+                        system_prompt=system_prompt,
+                        max_rounds=markup_config.max_rounds,
+                        max_edits_per_round=markup_config.max_edits_per_round,
+                        normalize_nested_spans=markup_config.normalize_nested_spans,
+                    )
+                    result = apply_text_extract(request)
+                break
+            except ValueError as exc:
+                if _is_transient_llm_error(str(exc)) and attempt < max_attempts:
+                    time.sleep(2 * attempt)
+                    continue
+                if config.segmentation.llm is None:
+                    raise
+                return _llm_segments(item_id=item_id, text=text, config=config)
+        for index, span in enumerate(result.spans, start=1):
+            segment_body = str(span.text).strip()
+            if not segment_body:
+                continue
+            segment_text = segment_body
+            if prepend_label:
+                if label_attribute is None:
+                    raise ValueError(
+                        "segmentation.span_markup.label_attribute is required when "
+                        "segmentation.span_markup.prepend_label is true"
+                    )
+                label_value = str(span.attributes.get(label_attribute, "")).strip()
+                if not label_value:
+                    raise ValueError(f"Span {index} missing label attribute '{label_attribute}'")
+                segment_text = f"{label_value}\n{segment_body}"
+            segment_payloads.append(
+                {
+                    "segment_index": (chunk_index, index),
+                    "body": segment_body,
+                    "text": segment_text,
+                }
+            )
     segments: List[MarkovAnalysisSegment] = []
     for payload in segment_payloads:
         segments.append(
             MarkovAnalysisSegment(
                 item_id=item_id,
-                segment_index=int(payload["segment_index"]),
+                segment_index=len(segments) + 1,
                 text=str(payload["text"]),
             )
         )
-    return segments
+    if not segments:
+        return segments
+    normalized: List[MarkovAnalysisSegment] = []
+    for segment in segments:
+        candidate_text = segment.text.strip()
+        if not candidate_text:
+            continue
+        if normalized and normalized[-1].item_id == segment.item_id:
+            prior_text = normalized[-1].text.strip()
+            if candidate_text == prior_text:
+                continue
+            if candidate_text in prior_text:
+                continue
+            if prior_text in candidate_text:
+                normalized[-1] = segment.model_copy(update={"text": candidate_text})
+                continue
+        normalized.append(segment.model_copy(update={"text": candidate_text}))
+    return normalized
+
+
+def _speaker_filtered_text(text: str) -> str:
+    lines = text.splitlines()
+    speaker_prefix = "Speaker 0:"
+    if any(line.startswith(speaker_prefix) for line in lines):
+        cleaned: List[str] = []
+        for line in lines:
+            if line.startswith(speaker_prefix):
+                cleaned.append(line[len(speaker_prefix) :].strip())
+        return "\n".join(cleaned)
+    return text
+
+
+def _is_transient_llm_error(message: str) -> bool:
+    lowered = message.lower()
+    return any(
+        token in lowered
+        for token in (
+            "internalservererror",
+            "error code 520",
+            "cloudflare",
+            "connection issue",
+            "service unavailable",
+            "rate limit",
+            "timeout",
+        )
+    )
 
 
 def _verify_end_label(
@@ -678,7 +999,10 @@ def _sequence_lengths(segments: Sequence[MarkovAnalysisSegment]) -> List[int]:
 
 
 def _build_observations(
-    *, segments: Sequence[MarkovAnalysisSegment], config: MarkovAnalysisConfiguration
+    *,
+    segments: Sequence[MarkovAnalysisSegment],
+    config: MarkovAnalysisConfiguration,
+    cache_context: Optional[_LlmObservationCacheContext] = None,
 ) -> List[MarkovAnalysisObservation]:
     observations: List[MarkovAnalysisObservation] = []
     for segment in segments:
@@ -693,6 +1017,75 @@ def _build_observations(
     if config.llm_observations.enabled:
         llm = config.llm_observations
         assert llm.client is not None and llm.prompt_template is not None
+        start_time = time.perf_counter()
+
+        def label_single(observation: MarkovAnalysisObservation) -> MarkovAnalysisObservation:
+            if observation.segment_text in {"START", "END"}:
+                return observation.model_copy(
+                    update={
+                        "llm_label": observation.segment_text,
+                        "llm_label_confidence": 1.0,
+                        "llm_summary": observation.segment_text,
+                    }
+                )
+            prompt = llm.prompt_template.format(segment=observation.segment_text)
+            max_attempts = 4
+            last_error: Optional[str] = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    response_text = generate_completion(
+                        client=llm.client,
+                        system_prompt=llm.system_prompt,
+                        user_prompt=prompt,
+                    ).strip()
+                    payload = _parse_json_object(response_text, error_label="LLM observations")
+                    if not isinstance(payload, dict):
+                        raise ValueError("LLM observations must return an object")
+                    label = payload.get("label")
+                    confidence = payload.get("label_confidence")
+                    summary = payload.get("summary")
+                    confidence_value = float(confidence) if confidence is not None else 0.0
+                    label_value = str(label).strip() if label is not None else "unknown"
+                    summary_value = str(summary).strip() if summary is not None else "unknown"
+                    break
+                except Exception as exc:
+                    last_error = str(exc)
+                    if _is_transient_llm_error(last_error) and attempt < max_attempts:
+                        time.sleep(2 * attempt)
+                        continue
+                    label_value = "unknown"
+                    confidence_value = 0.0
+                    summary_value = "unknown"
+                    break
+            return observation.model_copy(
+                update={
+                    "llm_label": label_value,
+                    "llm_label_confidence": confidence_value,
+                    "llm_summary": summary_value,
+                }
+            )
+
+        cache_enabled = cache_context is not None and cache_context.enabled
+        item_cache_dir = None
+        cached_entries: Dict[str, Dict[int, Dict[str, object]]] = {}
+        dirty_items: Dict[str, Dict[int, Dict[str, object]]] = {}
+        if cache_enabled:
+            item_cache_dir = cache_context.cache_dir / "items"
+            item_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        def load_item_cache(item_id: str) -> Dict[int, Dict[str, object]]:
+            if not cache_enabled or item_cache_dir is None:
+                return {}
+            cached = cached_entries.get(item_id)
+            if cached is not None:
+                return cached
+            cache_path = item_cache_dir / f"{item_id}.json"
+            cached = _load_llm_observation_cache(cache_path)
+            cached_entries[item_id] = cached
+            return cached
+
+        to_label: List[int] = []
+        labelable_count = 0
         for index, observation in enumerate(observations):
             if observation.segment_text in {"START", "END"}:
                 observations[index] = observation.model_copy(
@@ -703,23 +1096,133 @@ def _build_observations(
                     }
                 )
                 continue
-            prompt = llm.prompt_template.format(segment=observation.segment_text)
-            response_text = generate_completion(
-                client=llm.client,
-                system_prompt=llm.system_prompt,
-                user_prompt=prompt,
-            ).strip()
-            payload = _parse_json_object(response_text, error_label="LLM observations")
-            label = payload.get("label")
-            confidence = payload.get("label_confidence")
-            summary = payload.get("summary")
-            observations[index] = observation.model_copy(
-                update={
-                    "llm_label": str(label).strip() if label is not None else None,
-                    "llm_label_confidence": float(confidence) if confidence is not None else None,
-                    "llm_summary": str(summary).strip() if summary is not None else None,
-                }
+            labelable_count += 1
+            if cache_enabled:
+                cached = load_item_cache(observation.item_id)
+                entry = cached.get(observation.segment_index)
+                text_hash = hash_text(observation.segment_text)
+                if entry and str(entry.get("segment_text_hash", "")) == text_hash:
+                    observations[index] = observation.model_copy(
+                        update={
+                            "llm_label": str(entry.get("llm_label", "unknown")).strip()
+                            or "unknown",
+                            "llm_label_confidence": float(
+                                entry.get("llm_label_confidence", 0.0) or 0.0
+                            ),
+                            "llm_summary": str(entry.get("llm_summary", "unknown")).strip()
+                            or "unknown",
+                        }
+                    )
+                    cache_context.cached_segments += 1
+                    continue
+            to_label.append(index)
+
+        if cache_enabled:
+            print(
+                f"[markov] reused {cache_context.cached_segments} cached labels "
+                f"out of {labelable_count}",
+                flush=True,
+                file=sys.stderr,
             )
+
+        if to_label:
+            print(
+                f"[markov] labeling {len(to_label)} segments with {llm.max_workers} workers",
+                flush=True,
+                file=sys.stderr,
+            )
+            total = len(to_label)
+            if total <= 50:
+                log_interval = 5
+            elif total <= 200:
+                log_interval = 10
+            elif total <= 1000:
+                log_interval = 50
+            else:
+                log_interval = 100
+            last_log_time = start_time
+            if llm.max_workers > 1:
+                results: Dict[int, MarkovAnalysisObservation] = {}
+                completed = 0
+                with ThreadPoolExecutor(max_workers=llm.max_workers) as executor:
+                    futures = {
+                        executor.submit(label_single, observations[index]): index
+                        for index in to_label
+                    }
+                    for future in as_completed(futures):
+                        index = futures[future]
+                        results[index] = future.result()
+                        completed += 1
+                        now = time.perf_counter()
+                        if (
+                            completed % log_interval == 0
+                            or completed == total
+                            or now - last_log_time >= 30.0
+                        ):
+                            elapsed = time.perf_counter() - start_time
+                            rate = completed / elapsed if elapsed > 0 else 0.0
+                            print(
+                                f"[markov] labeled {completed}/{total} segments "
+                                f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                                flush=True,
+                                file=sys.stderr,
+                            )
+                            last_log_time = now
+                for index, result in results.items():
+                    observations[index] = result
+            else:
+                for completed, index in enumerate(to_label, start=1):
+                    observations[index] = label_single(observations[index])
+                    now = time.perf_counter()
+                    if (
+                        completed % log_interval == 0
+                        or completed == total
+                        or now - last_log_time >= 30.0
+                    ):
+                        elapsed = time.perf_counter() - start_time
+                        rate = completed / elapsed if elapsed > 0 else 0.0
+                        print(
+                            f"[markov] labeled {completed}/{total} segments "
+                            f"elapsed={elapsed:.1f}s rate={rate:.2f}/s",
+                            flush=True,
+                            file=sys.stderr,
+                        )
+                        last_log_time = now
+
+            cache_generated: Dict[str, Dict[int, Dict[str, object]]] = {}
+            for index in to_label:
+                observation = observations[index]
+                cache_payload = {
+                    "segment_index": observation.segment_index,
+                    "segment_text_hash": hash_text(observation.segment_text),
+                    "llm_label": observation.llm_label,
+                    "llm_label_confidence": observation.llm_label_confidence,
+                    "llm_summary": observation.llm_summary,
+                }
+                cache_generated.setdefault(observation.item_id, {})[
+                    observation.segment_index
+                ] = cache_payload
+            if cache_context is not None:
+                cache_context.generated_segments += len(to_label)
+
+            if cache_enabled and item_cache_dir is not None:
+                for item_id, updates in cache_generated.items():
+                    cached = load_item_cache(item_id)
+                    cached.update(updates)
+                    dirty_items[item_id] = cached
+
+        if cache_enabled and item_cache_dir is not None and dirty_items:
+            for item_id, entries in dirty_items.items():
+                cache_path = item_cache_dir / f"{item_id}.json"
+                payload = {
+                    "item_id": item_id,
+                    "cache_id": cache_context.cache_id if cache_context else None,
+                    "updated_at": utc_now_iso(),
+                    "segments": [
+                        entry for _, entry in sorted(entries.items(), key=lambda item: item[0])
+                    ],
+                }
+                _write_json_atomic(path=cache_path, payload=payload)
 
     if config.embeddings.enabled:
         embedding_config = config.embeddings
@@ -774,6 +1277,7 @@ def _apply_topic_modeling(
     *,
     observations: Sequence[MarkovAnalysisObservation],
     config: MarkovAnalysisConfiguration,
+    artifacts_dir: Optional[Path] = None,
 ) -> Tuple[List[MarkovAnalysisObservation], Optional[TopicModelingReport]]:
     topic_config = config.topic_modeling
     if not topic_config.enabled:
@@ -801,9 +1305,20 @@ def _apply_topic_modeling(
     if not documents:
         raise ValueError("Topic modeling requires at least one non-boundary segment")
 
+    print(
+        f"[markov] topic modeling documents={len(documents)}",
+        flush=True,
+        file=sys.stderr,
+    )
     report = run_topic_modeling_for_documents(
         documents=documents,
         config=topic_config.configuration,
+        artifacts_dir=artifacts_dir,
+    )
+    print(
+        f"[markov] topic modeling complete topics={len(report.topics)}",
+        flush=True,
+        file=sys.stderr,
     )
 
     topic_lookup: Dict[str, Tuple[int, str]] = {}
@@ -1111,11 +1626,19 @@ def _group_decoded_paths(
 def _build_states(
     *,
     segments: Sequence[MarkovAnalysisSegment],
+    observations: Sequence[MarkovAnalysisObservation],
     predicted_states: Sequence[int],
     n_states: int,
     max_exemplars: int,
+    config: MarkovAnalysisConfiguration,
 ) -> List[MarkovAnalysisState]:
     exemplars: Dict[int, List[str]] = {idx: [] for idx in range(n_states)}
+    label_counts: Dict[int, Dict[str, int]] = {idx: {} for idx in range(n_states)}
+    label_source = None
+    if config.model.family == MarkovAnalysisModelFamily.CATEGORICAL:
+        label_source = config.observations.categorical_source
+    if label_source is None:
+        label_source = "llm_label"
     for segment, state in zip(segments, predicted_states):
         exemplar_list = exemplars.get(int(state))
         if exemplar_list is None:
@@ -1130,12 +1653,30 @@ def _build_states(
         if len(exemplar_list) >= max_exemplars:
             continue
         exemplar_list.append(segment.text)
+    for observation, state in zip(observations, predicted_states):
+        state_id = int(state)
+        candidate = getattr(observation, label_source, None)
+        if candidate is None and label_source != "llm_label":
+            candidate = getattr(observation, "llm_label", None)
+        if candidate is None:
+            candidate = observation.segment_text
+        label = str(candidate or "").strip()
+        if not label:
+            continue
+        state_counts = label_counts.get(state_id)
+        if state_counts is None:
+            continue
+        state_counts[label] = state_counts.get(label, 0) + 1
     states: List[MarkovAnalysisState] = []
     for state_id in range(n_states):
+        label = None
+        counts = label_counts.get(state_id, {})
+        if counts:
+            label = max(counts.items(), key=lambda item: item[1])[0]
         states.append(
             MarkovAnalysisState(
                 state_id=state_id,
-                label=None,
+                label=label,
                 exemplars=exemplars.get(state_id, []),
             )
         )
@@ -1486,9 +2027,33 @@ def _write_analysis_run_manifest(*, run_dir: Path, manifest: AnalysisRunManifest
     )
 
 
+def _write_latest_pointer(
+    *, corpus: Corpus, analysis_id: str, manifest: AnalysisRunManifest
+) -> None:
+    latest_path = corpus.analysis_dir / analysis_id / "latest.json"
+    latest_path.write_text(
+        json.dumps(
+            {"snapshot_id": manifest.snapshot_id, "created_at": manifest.created_at},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def _write_segments(*, run_dir: Path, segments: Sequence[MarkovAnalysisSegment]) -> None:
     lines = [segment.model_dump_json() for segment in segments]
     (run_dir / "segments.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _load_segments(path: Path) -> List[MarkovAnalysisSegment]:
+    segments: List[MarkovAnalysisSegment] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        payload = json.loads(line)
+        segments.append(MarkovAnalysisSegment.model_validate(payload))
+    return segments
 
 
 def _write_observations(
@@ -1498,6 +2063,55 @@ def _write_observations(
     (run_dir / "observations.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def _load_observations(path: Path) -> List[MarkovAnalysisObservation]:
+    observations: List[MarkovAnalysisObservation] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        payload = json.loads(line)
+        observations.append(MarkovAnalysisObservation.model_validate(payload))
+    return observations
+
+
+def _load_llm_observation_cache(path: Path) -> Dict[int, Dict[str, object]]:
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    segments = payload.get("segments", [])
+    if not isinstance(segments, list):
+        return {}
+    cached: Dict[int, Dict[str, object]] = {}
+    for entry in segments:
+        if not isinstance(entry, dict):
+            continue
+        raw_index = entry.get("segment_index")
+        try:
+            index = int(raw_index)
+        except (TypeError, ValueError):
+            continue
+        cached[index] = dict(entry)
+    return cached
+
+
+def _load_topic_modeling_report(*, run_dir: Path) -> Optional[TopicModelingReport]:
+    report_path = run_dir / "topic_modeling.json"
+    if not report_path.is_file():
+        return None
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    try:
+        return TopicModelingReport.model_validate(payload, strict=False)
+    except ValidationError:
+        print(
+            "[markov] cached topic_modeling.json is incompatible; recomputing",
+            flush=True,
+            file=sys.stderr,
+        )
+        return None
+
+
 def _write_transitions_json(
     *, run_dir: Path, transitions: Sequence[MarkovAnalysisTransition]
 ) -> None:
@@ -1505,6 +2119,13 @@ def _write_transitions_json(
     (run_dir / "transitions.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def _write_json_atomic(*, path: Path, payload: Dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    tmp_path.replace(path)
 
 
 def _write_topic_modeling_report(*, run_dir: Path, report: TopicModelingReport) -> None:

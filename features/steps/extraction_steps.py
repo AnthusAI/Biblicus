@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 import types
 from pathlib import Path
 from unittest import mock
@@ -14,7 +15,7 @@ from biblicus.errors import ExtractionSnapshotFatalError
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.extractors import get_extractor as resolve_extractor
 from biblicus.extractors.base import TextExtractor
-from biblicus.models import CatalogItem, ExtractionStepOutput
+from biblicus.models import CatalogItem, ExtractionStageOutput
 from features.environment import run_biblicus
 
 
@@ -42,7 +43,7 @@ class _FatalExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: list[ExtractionStepOutput],
+        previous_extractions: list[ExtractionStageOutput],
     ) -> None:
         _ = corpus
         _ = item
@@ -111,9 +112,9 @@ def _ensure_fake_tesseract_for_extractor(context, extractor_id: str) -> None:
         _install_fake_tesseract_dependencies(context)
 
 
-def _ensure_fake_tesseract_for_steps(context, steps: list[dict[str, object]]) -> None:
-    for step in steps:
-        extractor_id = str(step.get("extractor_id", ""))
+def _ensure_fake_tesseract_for_stages(context, stages: list[dict[str, object]]) -> None:
+    for stage in stages:
+        extractor_id = str(stage.get("extractor_id", ""))
         if extractor_id == "ocr-tesseract":
             _install_fake_tesseract_dependencies(context)
             return
@@ -136,8 +137,8 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(cleaned[start : end + 1])
 
 
-def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
-    steps: list[dict[str, object]] = []
+def _build_extractor_stages_from_table(table) -> list[dict[str, object]]:
+    stages: list[dict[str, object]] = []
     for row in table:
         extractor_id = (row["extractor_id"] if "extractor_id" in row.headings else row[0]).strip()
         raw_config = (
@@ -149,12 +150,12 @@ def _build_extractor_steps_from_table(table) -> list[dict[str, object]]:
         if config is None:
             config = {}
         if not isinstance(config, dict):
-            raise ValueError("Extractor step config_json must parse to an object")
-        steps.append({"extractor_id": extractor_id, "config": config})
-    return steps
+            raise ValueError("Extractor stage config_json must parse to an object")
+        stages.append({"extractor_id": extractor_id, "config": config})
+    return stages
 
 
-def _build_step_spec(extractor_id: str, config: dict[str, object]) -> str:
+def _build_stage_spec(extractor_id: str, config: dict[str, object]) -> str:
     import json
 
     if not config:
@@ -178,18 +179,27 @@ def _snapshot_reference_from_context(context) -> str:
     return f"{extractor_id}:{snapshot_id}"
 
 
+def _snapshot_dir_from_context(context, corpus_name: str) -> Path:
+    snapshot_id = context.last_extraction_snapshot_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert isinstance(extractor_id, str) and extractor_id
+    corpus = _corpus_path(context, corpus_name)
+    return corpus / "extracted" / extractor_id / snapshot_id
+
+
 @when('I build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}" with config:')
 def step_build_extraction_snapshot_with_config(
     context, extractor_id: str, corpus_name: str
 ) -> None:
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
-    step_config: dict[str, object] = {}
+    stage_config: dict[str, object] = {}
     for row in context.table:
         key, value = _table_key_value(row)
-        step_config[key] = value
-    step_spec = _build_step_spec(extractor_id, step_config)
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
+        stage_config[key] = value
+    stage_spec = _build_stage_spec(extractor_id, stage_config)
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -197,18 +207,68 @@ def step_build_extraction_snapshot_with_config(
     context.last_extractor_id = "pipeline"
 
 
-@when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with steps:')
+@when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with stages:')
 def step_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    steps = _build_extractor_steps_from_table(context.table)
-    _ensure_fake_tesseract_for_steps(context, steps)
+    stages = _build_extractor_stages_from_table(context.table)
+    _ensure_fake_tesseract_for_stages(context, stages)
     args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
-    for step in steps:
-        extractor_id = str(step["extractor_id"])
-        step_config = step["config"]
-        assert isinstance(step_config, dict)
-        step_spec = _build_step_spec(extractor_id, step_config)
-        args.extend(["--step", step_spec])
+    for stage in stages:
+        extractor_id = str(stage["extractor_id"])
+        stage_config = stage["config"]
+        assert isinstance(stage_config, dict)
+        stage_spec = _build_stage_spec(extractor_id, stage_config)
+        args.extend(["--stage", stage_spec])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_snapshot = _parse_json_output(result.stdout)
+    context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
+    context.last_extractor_id = "pipeline"
+
+
+@when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with stages and force:')
+def step_build_pipeline_extraction_snapshot_with_force(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    stages = _build_extractor_stages_from_table(context.table)
+    _ensure_fake_tesseract_for_stages(context, stages)
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--force"]
+    for stage in stages:
+        extractor_id = str(stage["extractor_id"])
+        stage_config = stage["config"]
+        assert isinstance(stage_config, dict)
+        stage_spec = _build_stage_spec(extractor_id, stage_config)
+        args.extend(["--stage", stage_spec])
+    result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    assert result.returncode == 0, result.stderr
+    context.last_extraction_snapshot = _parse_json_output(result.stdout)
+    context.last_extraction_snapshot_id = context.last_extraction_snapshot.get("snapshot_id")
+    context.last_extractor_id = "pipeline"
+
+
+@when(
+    'I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with stages and max workers {count:d}:'
+)
+def step_build_pipeline_extraction_snapshot_with_max_workers(
+    context, corpus_name: str, count: int
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    stages = _build_extractor_stages_from_table(context.table)
+    _ensure_fake_tesseract_for_stages(context, stages)
+    args = [
+        "--corpus",
+        str(corpus),
+        "extract",
+        "build",
+        "--auto-deps",
+        "--max-workers",
+        str(count),
+    ]
+    for stage in stages:
+        extractor_id = str(stage["extractor_id"])
+        stage_config = stage["config"]
+        assert isinstance(stage_config, dict)
+        stage_spec = _build_stage_spec(extractor_id, stage_config)
+        args.extend(["--stage", stage_spec])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -224,14 +284,14 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
     configuration_data = yaml.safe_load(context.text)
     extractor_id = configuration_data["extractor_id"]
     config = configuration_data.get("config", {})
-    steps = config.get("steps", [])
-    _ensure_fake_tesseract_for_steps(context, steps)
+    stages = config.get("stages", [])
+    _ensure_fake_tesseract_for_stages(context, stages)
     args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
-    for step in steps:
-        step_extractor_id = str(step["extractor_id"])
-        step_config = step.get("config", {})
-        step_spec = _build_step_spec(step_extractor_id, step_config)
-        args.extend(["--step", step_spec])
+    for step in stages:
+        stage_extractor_id = str(step["extractor_id"])
+        stage_config = step.get("config", {})
+        stage_spec = _build_stage_spec(stage_extractor_id, stage_config)
+        args.extend(["--stage", stage_spec])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -251,8 +311,8 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
     corpus = _corpus_path(context, corpus_name)
     configuration_data = yaml.safe_load(context.text)
     config = configuration_data.get("config", {})
-    step_spec = _build_step_spec(extractor_id, config)
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
+    stage_spec = _build_stage_spec(extractor_id, config)
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -273,7 +333,7 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration_an(
 def step_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", extractor_id]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -290,34 +350,34 @@ def step_build_extraction_snapshot_an(context, extractor_id: str, corpus_name: s
 def step_attempt_build_extraction_snapshot(context, extractor_id: str, corpus_name: str) -> None:
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     corpus = _corpus_path(context, corpus_name)
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", extractor_id]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", extractor_id]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
 @when(
-    'I attempt to build an extraction snapshot in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"'
+    'I attempt to build an extraction snapshot in corpus "{corpus_name}" using extractor "{extractor_id}" with stage spec "{stage_spec}"'
 )
-def step_attempt_build_extraction_snapshot_with_step_spec(
-    context, corpus_name: str, extractor_id: str, step_spec: str
+def step_attempt_build_extraction_snapshot_with_stage_spec(
+    context, corpus_name: str, extractor_id: str, stage_spec: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
 @when(
-    'I build an extraction snapshot in corpus "{corpus_name}" using extractor "{extractor_id}" with step spec "{step_spec}"'
+    'I build an extraction snapshot in corpus "{corpus_name}" using extractor "{extractor_id}" with stage spec "{stage_spec}"'
 )
-def step_build_extraction_snapshot_with_step_spec(
-    context, corpus_name: str, extractor_id: str, step_spec: str
+def step_build_extraction_snapshot_with_stage_spec(
+    context, corpus_name: str, extractor_id: str, stage_spec: str
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     _ = extractor_id
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
-    step_spec_unescaped = step_spec.replace('\\"', '"')
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec_unescaped]
+    stage_spec_unescaped = stage_spec.replace('\\"', '"')
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec_unescaped]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -337,31 +397,31 @@ def step_attempt_build_extraction_snapshot_with_configuration(
     corpus = _corpus_path(context, corpus_name)
     configuration_data = yaml.safe_load(context.text)
     config = configuration_data.get("config", {})
-    steps = config.get("steps", []) if "steps" in config else []
-    if steps:
+    stages = config.get("stages", []) if "stages" in config else []
+    if stages:
         args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
-        for step in steps:
-            step_extractor_id = str(step["extractor_id"])
-            step_config = step.get("config", {})
-            step_spec = _build_step_spec(step_extractor_id, step_config)
-            args.extend(["--step", step_spec])
+        for step in stages:
+            stage_extractor_id = str(step["extractor_id"])
+            stage_config = step.get("config", {})
+            stage_spec = _build_stage_spec(stage_extractor_id, stage_config)
+            args.extend(["--stage", stage_spec])
     else:
-        step_spec = _build_step_spec(extractor_id, config)
-        args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--step", step_spec]
+        stage_spec = _build_stage_spec(extractor_id, config)
+        args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec]
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
-@when('I attempt to build a "pipeline" extraction snapshot in corpus "{corpus_name}" with steps:')
+@when('I attempt to build a "pipeline" extraction snapshot in corpus "{corpus_name}" with stages:')
 def step_attempt_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    steps = _build_extractor_steps_from_table(context.table)
+    stages = _build_extractor_stages_from_table(context.table)
     args = ["--corpus", str(corpus), "extract", "build", "--auto-deps"]
-    for step in steps:
+    for step in stages:
         extractor_id = str(step["extractor_id"])
-        step_config = step["config"]
-        assert isinstance(step_config, dict)
-        step_spec = _build_step_spec(extractor_id, step_config)
-        args.extend(["--step", step_spec])
+        stage_config = step["config"]
+        assert isinstance(stage_config, dict)
+        stage_spec = _build_stage_spec(extractor_id, stage_config)
+        args.extend(["--stage", stage_spec])
     context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
 
 
@@ -395,7 +455,7 @@ def step_extraction_snapshot_artifacts_exist(context, extractor_id: str) -> None
     snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(snapshot_id, str) and snapshot_id
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     assert snapshot_dir.is_dir(), snapshot_dir
     manifest_path = snapshot_dir / "manifest.json"
     assert manifest_path.is_file(), manifest_path
@@ -408,7 +468,7 @@ def step_extraction_snapshot_includes_all_items(context) -> None:
     assert context.ingested_ids is not None and len(context.ingested_ids) > 0
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     for item_id in context.ingested_ids:
         text_path = snapshot_dir / "text" / f"{item_id}.txt"
         assert text_path.is_file(), f"Missing text file for item {item_id}: {text_path}"
@@ -423,7 +483,7 @@ def step_extraction_snapshot_includes_last_item(context) -> None:
     assert isinstance(item_id, str) and item_id
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
 
@@ -436,7 +496,7 @@ def step_extraction_snapshot_does_not_include_last_item(context) -> None:
     item_id = context.last_ingest["id"]
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert not text_path.exists()
 
@@ -449,7 +509,7 @@ def step_extracted_text_equals(context, expected_text: str) -> None:
     item_id = context.last_ingest["id"]
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8").strip()
@@ -464,12 +524,41 @@ def step_extracted_text_equals_multiline(context) -> None:
     item_id = context.last_ingest["id"]
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8").strip()
     expected_text = (context.text or "").strip()
     assert text == expected_text
+
+
+@then('the extraction stage metadata for stage {stage_index:d} includes key "{key}"')
+def step_extraction_stage_metadata_includes_key(
+    context, stage_index: int, key: str
+) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert context.last_ingest is not None
+    item_id = context.last_ingest["id"]
+    snapshot = context.last_extraction_snapshot
+    assert isinstance(snapshot, dict)
+    items = snapshot.get("items", [])
+    item_entry = next((entry for entry in items if entry.get("item_id") == item_id), None)
+    assert item_entry is not None, f"Missing item {item_id} in snapshot manifest"
+    stage_results = item_entry.get("stage_results", [])
+    stage_entry = next(
+        (entry for entry in stage_results if entry.get("stage_index") == stage_index),
+        None,
+    )
+    assert stage_entry is not None, f"Missing stage {stage_index} for item {item_id}"
+    metadata_relpath = stage_entry.get("metadata_relpath")
+    assert metadata_relpath, f"Missing metadata for stage {stage_index} in manifest"
+    corpus = _corpus_path(context, "corpus")
+    extractor_id = context.last_extractor_id
+    metadata_path = corpus / "extracted" / extractor_id / snapshot_id / metadata_relpath
+    assert metadata_path.is_file(), metadata_path
+    payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert key in payload, f"Missing key {key!r} in stage metadata"
 
 
 @then("the extracted text for the last ingested item is empty")
@@ -480,7 +569,7 @@ def step_extracted_text_is_empty(context) -> None:
     item_id = context.last_ingest["id"]
     corpus = _corpus_path(context, "corpus")
     extractor_id = context.last_extractor_id
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8")
@@ -495,7 +584,7 @@ def step_extracted_text_for_tagged_item_is_empty(context, tag: str) -> None:
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8")
@@ -512,7 +601,7 @@ def step_extracted_text_for_tagged_item_is_not_empty(context, tag: str) -> None:
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
     text = text_path.read_text(encoding="utf-8")
@@ -527,7 +616,7 @@ def step_extraction_snapshot_does_not_include_tagged_item(context, tag: str) -> 
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert not text_path.exists(), text_path
 
@@ -542,7 +631,7 @@ def step_extraction_snapshot_does_not_include_any_text_for_tagged_item(
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     if not text_path.exists():
         return
@@ -558,9 +647,62 @@ def step_extraction_snapshot_includes_extracted_text_for_tagged_item(context, ta
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     text_path = snapshot_dir / "text" / f"{item_id}.txt"
     assert text_path.is_file(), text_path
+
+
+@when('I record the extracted text timestamp for the item tagged "{tag}"')
+def step_record_extracted_text_timestamp_for_tagged_item(context, tag: str) -> None:
+    snapshot_dir = _snapshot_dir_from_context(context, "corpus")
+    item_id = _first_item_id_tagged(context, tag)
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    recorded = getattr(context, "extraction_artifact_timestamps", None)
+    if recorded is None:
+        recorded = {}
+        context.extraction_artifact_timestamps = recorded
+    recorded[tag] = text_path.stat().st_mtime_ns
+
+
+@then('the extracted text timestamp for the item tagged "{tag}" is unchanged')
+def step_extracted_text_timestamp_unchanged_for_tagged_item(context, tag: str) -> None:
+    snapshot_dir = _snapshot_dir_from_context(context, "corpus")
+    item_id = _first_item_id_tagged(context, tag)
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    recorded = getattr(context, "extraction_artifact_timestamps", {})
+    assert tag in recorded
+    assert text_path.stat().st_mtime_ns == recorded[tag]
+
+
+@then('the extracted text timestamp for the item tagged "{tag}" is updated')
+def step_extracted_text_timestamp_updated_for_tagged_item(context, tag: str) -> None:
+    snapshot_dir = _snapshot_dir_from_context(context, "corpus")
+    item_id = _first_item_id_tagged(context, tag)
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    recorded = getattr(context, "extraction_artifact_timestamps", {})
+    assert tag in recorded
+    assert text_path.stat().st_mtime_ns > recorded[tag]
+
+
+@when('I delete extracted artifacts for the item tagged "{tag}"')
+def step_delete_extracted_artifacts_for_tagged_item(context, tag: str) -> None:
+    snapshot_dir = _snapshot_dir_from_context(context, "corpus")
+    item_id = _first_item_id_tagged(context, tag)
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    metadata_path = snapshot_dir / "metadata" / f"{item_id}.json"
+    if text_path.exists():
+        text_path.unlink()
+    if metadata_path.exists():
+        metadata_path.unlink()
+
+
+@when("I wait for {seconds:f} seconds")
+def step_wait_seconds(context, seconds: float) -> None:
+    _ = context
+    time.sleep(seconds)
 
 
 @then("the extraction snapshot stats include {key} {value:d}")
@@ -652,7 +794,7 @@ def step_attempt_non_pipeline_extraction_snapshot(context, corpus_name: str) -> 
 
 
 @when(
-    'I attempt to build a pipeline extraction snapshot in corpus "{corpus_name}" with a fatal extractor step'
+    'I attempt to build a pipeline extraction snapshot in corpus "{corpus_name}" with a fatal extractor stage'
 )
 def step_attempt_pipeline_with_fatal_extractor(context, corpus_name: str) -> None:
     corpus = Corpus.open(_corpus_path(context, corpus_name))
@@ -670,7 +812,7 @@ def step_attempt_pipeline_with_fatal_extractor(context, corpus_name: str) -> Non
                 extractor_id="pipeline",
                 configuration_name="default",
                 configuration={
-                    "steps": [
+                    "stages": [
                         {"extractor_id": _FatalExtractor.extractor_id, "config": {}},
                     ]
                 },
@@ -695,7 +837,7 @@ def step_fatal_extraction_error_message(context, message: str) -> None:
 @then('the corpus has at least {count:d} extraction snapshots for extractor "{extractor_id}"')
 def step_corpus_has_extraction_snapshots(context, count: int, extractor_id: str) -> None:
     corpus = _corpus_path(context, "corpus")
-    extractor_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id
+    extractor_dir = corpus / "extracted" / extractor_id
     assert extractor_dir.is_dir(), extractor_dir
     run_dirs = [path for path in extractor_dir.iterdir() if path.is_dir()]
     assert len(run_dirs) >= count
@@ -709,7 +851,7 @@ def step_extraction_snapshot_includes_metadata_for_tagged_item(context, tag: str
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     metadata_path = snapshot_dir / "metadata" / f"{item_id}.json"
     assert metadata_path.is_file(), f"Missing metadata file for item {item_id}: {metadata_path}"
     metadata = json.loads(metadata_path.read_text())
@@ -724,7 +866,7 @@ def step_extraction_snapshot_does_not_include_metadata_for_tagged_item(context, 
     assert isinstance(extractor_id, str) and extractor_id
     item_id = _first_item_id_tagged(context, tag)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     metadata_path = snapshot_dir / "metadata" / f"{item_id}.json"
     assert not metadata_path.exists() or (
         metadata_path.is_file() and json.loads(metadata_path.read_text()) == {}
@@ -812,7 +954,7 @@ def step_attempt_build_retrieval_snapshot_with_extraction_snapshot(
 
 @given('a configuration file "{filename}" exists with content:')
 @when('a configuration file "{filename}" exists with content:')
-def step_configuration_file_exists(context, filename: str) -> None:
+def stage_configuration_file_exists(context, filename: str) -> None:
     """Create a configuration file with the given content."""
     workdir = getattr(context, "workdir", None)
     assert workdir is not None

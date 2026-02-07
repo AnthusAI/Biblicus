@@ -17,6 +17,12 @@ from features.environment import run_biblicus
 class _FakeBerTopicBehavior:
     topic_assignments: List[int]
     topic_keywords: Dict[int, List[tuple[str, float]]]
+    last_documents: List[str]
+
+
+@dataclass
+class _FakeSpacyBehavior:
+    entities: List[tuple[str, str]]
 
 
 def _corpus_path(context, name: str) -> Path:
@@ -30,8 +36,20 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
 def _ensure_fake_bertopic_behavior(context) -> _FakeBerTopicBehavior:
     behavior = getattr(context, "fake_bertopic_behavior", None)
     if behavior is None:
-        behavior = _FakeBerTopicBehavior(topic_assignments=[], topic_keywords={})
+        behavior = _FakeBerTopicBehavior(
+            topic_assignments=[],
+            topic_keywords={},
+            last_documents=[],
+        )
         context.fake_bertopic_behavior = behavior
+    return behavior
+
+
+def _ensure_fake_spacy_behavior(context) -> _FakeSpacyBehavior:
+    behavior = getattr(context, "fake_spacy_behavior", None)
+    if behavior is None:
+        behavior = _FakeSpacyBehavior(entities=[])
+        context.fake_spacy_behavior = behavior
     return behavior
 
 
@@ -54,6 +72,7 @@ def _install_fake_bertopic_module(context, *, use_fake_marker: bool) -> None:
 
         def fit_transform(self, documents):  # type: ignore[no-untyped-def]
             self._documents = [str(doc) for doc in documents]
+            behavior.last_documents = list(self._documents)
             assignments = list(behavior.topic_assignments)
             if not assignments:
                 assignments = [0 for _ in self._documents]
@@ -86,6 +105,71 @@ def _install_fake_bertopic_module(context, *, use_fake_marker: bool) -> None:
 
     context._fake_bertopic_installed = True
     context._fake_bertopic_original_modules = original_modules
+
+
+def _install_fake_spacy_module(context) -> None:
+    already_installed = getattr(context, "_fake_spacy_installed", False)
+    if already_installed:
+        return
+
+    original_modules: Dict[str, object] = {}
+    if "spacy" in sys.modules:
+        original_modules["spacy"] = sys.modules["spacy"]
+
+    behavior = _ensure_fake_spacy_behavior(context)
+
+    class _FakeEntity:
+        def __init__(self, start_char: int, end_char: int, label: str) -> None:
+            self.start_char = start_char
+            self.end_char = end_char
+            self.label_ = label
+
+    class _FakeDoc:
+        def __init__(self, text: str, ents: List[_FakeEntity]) -> None:
+            self.text = text
+            self.ents = ents
+
+    class _FakeNlp:
+        def __call__(self, text: str) -> _FakeDoc:  # type: ignore[no-untyped-def]
+            ents: List[_FakeEntity] = []
+            for phrase, label in behavior.entities:
+                if not phrase:
+                    continue
+                start = 0
+                while True:
+                    index = text.find(phrase, start)
+                    if index == -1:
+                        break
+                    ents.append(_FakeEntity(index, index + len(phrase), label))
+                    start = index + len(phrase)
+            ents.sort(key=lambda ent: ent.start_char)
+            return _FakeDoc(text, ents)
+
+    def load(model_name: str) -> _FakeNlp:  # type: ignore[no-untyped-def]
+        return _FakeNlp()
+
+    spacy_module = types.ModuleType("spacy")
+    spacy_module.load = load
+    sys.modules["spacy"] = spacy_module
+
+    context._fake_spacy_installed = True
+    context._fake_spacy_original_modules = original_modules
+
+
+def _install_spacy_unavailable_module(context) -> None:
+    original_modules: Dict[str, object] = {}
+    if "spacy" in sys.modules:
+        original_modules["spacy"] = sys.modules["spacy"]
+
+    def load(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        raise ImportError("spaCy unavailable")
+
+    spacy_module = types.ModuleType("spacy")
+    spacy_module.load = load
+    sys.modules["spacy"] = spacy_module
+
+    context._fake_spacy_unavailable_installed = True
+    context._fake_spacy_unavailable_original_modules = original_modules
 
 
 def _install_bertopic_unavailable_module(context) -> None:
@@ -140,6 +224,24 @@ def step_fake_bertopic_with_assignments(context, assignments: str) -> None:
 @given("the BERTopic dependency is unavailable")
 def step_bertopic_dependency_unavailable(context) -> None:
     _install_bertopic_unavailable_module(context)
+
+
+@given("a fake spaCy library is available with entities:")
+def step_fake_spacy_with_entities(context) -> None:
+    _install_fake_spacy_module(context)
+    behavior = _ensure_fake_spacy_behavior(context)
+    behavior.entities = []
+    for row in context.table or []:
+        phrase = str(row.get("text") or "").strip()
+        label = str(row.get("label") or "").strip()
+        if phrase and label:
+            behavior.entities.append((phrase, label))
+
+
+@given("the spaCy dependency is unavailable")
+@when("the spaCy dependency is unavailable")
+def step_spacy_dependency_unavailable(context) -> None:
+    _install_spacy_unavailable_module(context)
 
 
 def _install_fake_sklearn_module(context) -> None:
@@ -319,6 +421,20 @@ def step_topic_analysis_output_includes_labels(context) -> None:
     labels = {topic["label"] for topic in topics}
     expected = {row["label"].strip() for row in context.table}
     assert labels == expected
+
+
+@then('the BERTopic input documents do not include "{text}"')
+def step_bertopic_input_documents_do_not_include(context, text: str) -> None:
+    behavior = _ensure_fake_bertopic_behavior(context)
+    assert all(text not in doc for doc in behavior.last_documents), behavior.last_documents
+
+
+@then('the analysis manifest includes artifact path "{artifact_path}"')
+def step_analysis_manifest_includes_artifact_path(context, artifact_path: str) -> None:
+    output = context.last_analysis_output
+    manifest = output["snapshot"]
+    artifact_paths = manifest.get("artifact_paths", [])
+    assert artifact_path in artifact_paths
 
 
 @then('the topic analysis output includes topic label "{label}"')

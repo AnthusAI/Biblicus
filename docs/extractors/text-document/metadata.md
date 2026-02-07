@@ -99,7 +99,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: metadata-text  # Fallback for non-text items
     - extractor_id: select-text
@@ -170,7 +170,7 @@ Use metadata for items that can't be processed:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: ocr-rapidocr
     - extractor_id: metadata-text    # Catch-all for remaining items
@@ -262,7 +262,7 @@ Provide searchable text for items that can't be processed:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: docling-smol
     - extractor_id: metadata-text  # Fallback
     - extractor_id: select-text

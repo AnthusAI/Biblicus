@@ -22,7 +22,7 @@ def main() -> None:
     config = {
         "extractor_id": "pipeline",
         "config": {
-            "steps": [
+            "stages": [
                 {
                     "extractor_id": "paddleocr-layout",
                     "config": {
@@ -67,7 +67,7 @@ def main() -> None:
     print("=" * 70)
     print()
 
-    layout_step_dir = snapshot_dir / "steps" / "01-paddleocr-layout"
+    layout_step_dir = snapshot_dir / "stages" / "01-paddleocr-layout"
     if layout_step_dir.exists():
         print("✓ Layout detection step exists")
 
@@ -98,7 +98,7 @@ def main() -> None:
 
     print()
 
-    ocr_step_dir = snapshot_dir / "steps" / "02-ocr-tesseract"
+    ocr_step_dir = snapshot_dir / "stages" / "02-ocr-tesseract"
     if ocr_step_dir.exists():
         print("✓ OCR step exists")
 

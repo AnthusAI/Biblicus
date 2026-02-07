@@ -106,7 +106,7 @@ print(output.model_dump())
 Profiling output is stored under:
 
 ```
-.biblicus/runs/analysis/profiling/<snapshot_id>/output.json
+analysis/profiling/<snapshot_id>/output.json
 ```
 
 ## Reading the report

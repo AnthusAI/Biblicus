@@ -12,20 +12,30 @@ The main goals are:
 
 ```
 corpus/
-  raw/
-    <item files>
-  .biblicus/
+  metadata/
     config.json
     catalog.json
-    runs/
-      <snapshot manifests and artifacts>
+  extracted/
+    <extractor>/<snapshot_id>/...
+    <extractor>/latest.json
+  graph/
+    <extractor>/<snapshot_id>/...
+    <extractor>/latest.json
+  retrieval/
+    <backend_id>/<snapshot_id>/...
+    <backend_id>/latest.json
+  analysis/
+    <analysis_id>/<snapshot_id>/...
+    <analysis_id>/latest.json
+  <raw files and folders>
+  <sidecars next to raw files> *.biblicus.yml
 ```
 
 ## Core concepts
 
 - **Item**: raw bytes plus metadata and provenance.
 - **Catalog**: the inventory of items and their metadata.
-- **Run**: a reproducible snapshot of derived artifacts (extraction, retrieval, analysis).
+- **Snapshot**: a reproducible snapshot of derived artifacts (extraction, retrieval, analysis).
 
 The corpus is designed so the raw items remain the source of truth and everything else can be rebuilt.
 
@@ -44,6 +54,8 @@ Ingest a local file:
 ```
 python -m biblicus ingest --corpus corpora/example path/to/file.pdf --tag paper
 ```
+
+Local file ingestion requires the file to live under the corpus root. If it is outside, move it into the corpus and run `reindex`.
 
 Ingest a web address:
 
@@ -120,7 +132,7 @@ Create a `.biblicusignore` file in the corpus root and add ignore patterns.
 
 ## Import a folder tree
 
-To ingest an existing folder tree into a corpus while preserving relative paths, use the import command.
+To ingest an existing folder tree into a corpus while preserving relative paths, place the folder tree under the corpus root and use the import command.
 
 ```
 python -m biblicus import-tree --corpus corpora/example /path/to/folder/tree --tag imported

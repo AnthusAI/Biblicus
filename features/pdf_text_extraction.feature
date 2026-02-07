@@ -1,6 +1,6 @@
 Feature: Portable Document Format text extraction
   Portable Document Format items can produce derived text artifacts through an extraction plugin.
-  The raw Portable Document Format bytes remain unchanged in the corpus raw directory.
+  The raw Portable Document Format bytes remain unchanged in the corpus root.
 
   Scenario: Portable Document Format text extractor produces text artifacts
     Given I initialized a corpus at "corpus"

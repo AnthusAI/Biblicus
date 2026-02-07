@@ -14,7 +14,7 @@ from biblicus.extractors.select_smart_override import (
     SelectSmartOverrideConfig,
     SelectSmartOverrideExtractor,
 )
-from biblicus.models import CatalogItem, ExtractionStepOutput
+from biblicus.models import CatalogItem, ExtractionStageOutput
 
 
 @given("I have a PaddleOCR-VL extractor")
@@ -50,13 +50,13 @@ def step_have_smart_override_selector(context) -> None:
 
 @given("I have previous extractions:")
 def step_have_previous_extractions(context) -> None:
-    """Create a list of ExtractionStepOutput objects from the table."""
+    """Create a list of ExtractionStageOutput objects from the table."""
     context._extractions = []
     for idx, row in enumerate(context.table, start=1):
         text = row["text"]
         confidence = float(row["confidence"]) if row["confidence"] else None
-        extraction = ExtractionStepOutput(
-            step_index=idx,
+        extraction = ExtractionStageOutput(
+            stage_index=idx,
             extractor_id="test-extractor",
             status="extracted",
             text=text,

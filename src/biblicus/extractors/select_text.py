@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -26,7 +26,7 @@ class SelectTextExtractor(TextExtractor):
     """
     Extractor plugin that selects from previous pipeline outputs.
 
-    This extractor is used as a final step when you want to make an explicit choice among
+    This extractor is used as a final stage when you want to make an explicit choice among
     multiple extraction outputs in the same pipeline.
 
     It selects the first usable extracted text in pipeline order. Usable means the text is
@@ -56,7 +56,7 @@ class SelectTextExtractor(TextExtractor):
         corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Select extracted text from previous pipeline outputs.
@@ -67,8 +67,8 @@ class SelectTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: SelectTextExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Selected extracted text payload or None when no prior outputs exist.
         :rtype: ExtractedText or None
         """
@@ -85,7 +85,7 @@ class SelectTextExtractor(TextExtractor):
             return ExtractedText(
                 text=candidate.text or "",
                 producer_extractor_id=producer,
-                source_step_index=candidate.step_index,
+                source_stage_index=candidate.stage_index,
             )
 
         if extracted_candidates:
@@ -94,7 +94,7 @@ class SelectTextExtractor(TextExtractor):
             return ExtractedText(
                 text=candidate.text or "",
                 producer_extractor_id=producer,
-                source_step_index=candidate.step_index,
+                source_stage_index=candidate.stage_index,
             )
 
         return None

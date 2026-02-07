@@ -20,17 +20,17 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
 
   Scenario: Ingest a markdown file and merge tags
     Given I initialized a corpus at "corpus"
-    And a file "note.md" exists with markdown front matter:
+    And a file "corpus/note.md" exists with markdown front matter:
       | key   | value     |
       | title | From file |
       | tags  | x         |
-    And the file "note.md" has body:
+    And the file "corpus/note.md" has body:
       """
       body line
       """
-    When I ingest the file "note.md" with tags "y" into corpus "corpus"
+    When I ingest the file "corpus/note.md" with tags "y" into corpus "corpus"
     Then the last ingest succeeds
-    And the last ingested item is stored in the corpus raw folder
+    And the last ingested item is stored in the corpus root
     And the last ingested item is markdown with title "From file" and tags:
       | tag |
       | y   |
@@ -38,7 +38,7 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
 
   Scenario: Ingest markdown with scalar tags and existing biblicus block
     Given I initialized a corpus at "corpus"
-    And a file "preset.md" exists with contents:
+    And a file "corpus/preset.md" exists with contents:
       """
       ---
       title: Preset
@@ -48,7 +48,7 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
       ---
       body
       """
-    When I ingest the file "preset.md" with tags "x,y" into corpus "corpus"
+    When I ingest the file "corpus/preset.md" with tags "x,y" into corpus "corpus"
     Then the last ingest succeeds
     And the last ingested item is markdown with title "Preset" and tags:
       | tag |
@@ -57,8 +57,8 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
 
   Scenario: Ingest a non-markdown file and create a sidecar
     Given I initialized a corpus at "corpus"
-    And a binary file "report.pdf" exists
-    When I ingest the file "report.pdf" with tags "paper" into corpus "corpus"
+    And a binary file "corpus/report.pdf" exists
+    When I ingest the file "corpus/report.pdf" with tags "paper" into corpus "corpus"
     Then the last ingest succeeds
     And the last ingested item has a sidecar metadata file
     And the last ingested item's sidecar includes media type "application/pdf"
@@ -76,8 +76,8 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
 
   Scenario: Reindex reflects edits to sidecar metadata
     Given I initialized a corpus at "corpus"
-    And a binary file "data.bin" exists
-    When I ingest the file "data.bin" with tags "raw" into corpus "corpus"
+    And a binary file "corpus/data.bin" exists
+    When I ingest the file "corpus/data.bin" with tags "raw" into corpus "corpus"
     And I add tag "curated" to the last ingested item's sidecar metadata
     And I reindex corpus "corpus"
     And I show the last ingested item in corpus "corpus"
@@ -86,10 +86,17 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
 
   Scenario: Ingest a markdown file without front matter
     Given I initialized a corpus at "corpus"
-    And a text file "plain.md" exists with contents "hello"
-    When I ingest the file "plain.md" into corpus "corpus"
+    And a text file "corpus/plain.md" exists with contents "hello"
+    When I ingest the file "corpus/plain.md" into corpus "corpus"
     Then the last ingest succeeds
     And the last ingested item has biblicus provenance with a file source uniform resource identifier
+
+  Scenario: Ingesting a local file outside the corpus fails
+    Given a file "outside.md" exists with contents "hello"
+    And I initialized a corpus at "corpus"
+    When I ingest the file "outside.md" into corpus "corpus"
+    Then the command fails with exit code 2
+    And standard error includes "Move the file into the corpus"
 
   Scenario: Reindex inserts items based on universally unique identifier filename prefix
     Given I initialized a corpus at "corpus"

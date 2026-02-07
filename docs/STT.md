@@ -39,7 +39,7 @@ Example:
 
 ```
 python -m biblicus extract build --corpus corpora/demo \
-  --step 'stt-openai:model=whisper-1,language=en'
+  --stage 'stt-openai:model=whisper-1,language=en'
 ```
 
 ## stt-deepgram
@@ -78,7 +78,7 @@ Example:
 
 ```
 python -m biblicus extract build --corpus corpora/demo \
-  --step 'stt-deepgram:model=nova-3,language=en'
+  --stage 'stt-deepgram:model=nova-3,language=en'
 ```
 
 ## Choosing a provider

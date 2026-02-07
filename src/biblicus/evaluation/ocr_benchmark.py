@@ -442,7 +442,7 @@ class OCRBenchmark:
         Args:
             snapshot_reference: Snapshot ID or reference
             ground_truth_dir: Directory containing ground truth files
-                            (defaults to corpus/.biblicus/funsd_ground_truth)
+                            (defaults to corpus/metadata/funsd_ground_truth)
             pipeline_config: Configuration used to create snapshot
 
         Returns:
@@ -452,7 +452,7 @@ class OCRBenchmark:
 
         # Default ground truth directory
         if ground_truth_dir is None:
-            ground_truth_dir = self.corpus.root / ".biblicus" / "funsd_ground_truth"
+            ground_truth_dir = self.corpus.meta_dir / "funsd_ground_truth"
 
         if not ground_truth_dir.exists():
             raise FileNotFoundError(
@@ -460,10 +460,9 @@ class OCRBenchmark:
             )
 
         # Find snapshot directory
-        snapshots_base = (
-            self.corpus.root / ".biblicus" / "snapshots" / "extraction" / "pipeline"
+        snapshot_dir = self.corpus.extraction_snapshot_dir(
+            extractor_id="pipeline", snapshot_id=snapshot_reference
         )
-        snapshot_dir = snapshots_base / snapshot_reference
 
         if not snapshot_dir.exists():
             raise FileNotFoundError(f"Snapshot not found: {snapshot_dir}")
@@ -497,10 +496,11 @@ class OCRBenchmark:
 
             # Find image path
             # Look in corpus raw directory
-            image_pattern = f"{document_id}--*"
-            raw_dir = self.corpus.root / "raw"
-            image_files = list(raw_dir.glob(image_pattern))
-            image_path = str(image_files[0].relative_to(self.corpus.root)) if image_files else "unknown"
+            try:
+                item = self.corpus.get_item(document_id)
+                image_path = item.relpath
+            except KeyError:
+                image_path = "unknown"
 
             # Calculate metrics
             word_metrics = calculate_word_metrics(ground_truth_text, extracted_text)

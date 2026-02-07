@@ -68,6 +68,9 @@ tesseract = [
 topic-modeling = [
   "bertopic>=0.15.0",
 ]
+ner = [
+  "spacy>=3.7.0",
+]
 markov-analysis = [
   "hmmlearn>=0.3.0",
 ]

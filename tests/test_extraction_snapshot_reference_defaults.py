@@ -51,9 +51,7 @@ def _write_extraction_snapshot(
     :return: None.
     :rtype: None
     """
-    snapshot_dir = (
-        corpus_root / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
-    )
+    snapshot_dir = corpus_root / "extracted" / extractor_id / snapshot_id
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     manifest = {
         "snapshot_id": snapshot_id,

@@ -14,6 +14,7 @@ paddleocr-vl
 :maxdepth: 1
 :caption: Benchmarking
 
+/guides/document-understanding-benchmark
 /guides/ocr-benchmarking
 /guides/benchmark-results
 /guides/heron-implementation
