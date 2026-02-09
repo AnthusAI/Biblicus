@@ -383,10 +383,12 @@ export function StackManager() {
     }
   };
 
+  const initialStack = useMemo(() => [buildRootNode(dataMode)], [dataMode]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Springstack<ExplorerNodeData>
-        initialStack={[buildRootNode(getDataMode())]}
+        initialStack={initialStack}
         timingMode={timingMode}
         onStackChange={setStackSnapshot}
         renderers={renderers}
@@ -428,17 +430,19 @@ export function StackManager() {
           </div>
         )}
         renderPanels={renderPanels}
-        renderOverlay={() => (
-          <SpringstackSettings
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-            appearance={appearance}
-            motion={motion}
-            setAppearance={setAppearance}
-            setMotion={setMotion}
-            selectorMotion={selectorMotion}
-          />
-        )}
+        renderOverlay={() =>
+          settingsOpen ? (
+            <SpringstackSettings
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              appearance={appearance}
+              motion={motion}
+              setAppearance={setAppearance}
+              setMotion={setMotion}
+              selectorMotion={selectorMotion}
+            />
+          ) : null
+        }
       />
     </div>
   );
