@@ -81,9 +81,46 @@ python -m biblicus extract build --corpus corpora/demo \
   --stage 'stt-deepgram:model=nova-3,language=en'
 ```
 
+## stt-aldea
+
+Speech to text using the Aldea API.
+
+- Backed by the optional `aldea` dependency (httpx)
+- Requires an Aldea API key
+- Response shape is Deepgram-compatible (channels, alternatives, transcript)
+
+To install:
+
+```
+python -m pip install "biblicus[aldea]"
+```
+
+To configure, set `ALDEA_API_KEY` or add to `~/.biblicus/config.yml`:
+
+```yaml
+aldea:
+  api_key: org_YOUR_KEY_HERE
+```
+
+Configuration options:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `language` | None | Language code (BCP-47, e.g. en-US, es) |
+| `diarization` | `false` | Enable speaker diarization |
+| `timestamps` | `false` | Include per-word timestamps |
+
+Example:
+
+```
+python -m biblicus extract build --corpus corpora/demo \
+  --stage 'stt-aldea:language=en-US'
+```
+
 ## Choosing a provider
 
-Both providers transcribe audio items. Choose based on your needs:
+All three providers transcribe audio items. Choose based on your needs:
 
 - **OpenAI Whisper**: Well-known, widely used, good accuracy
 - **Deepgram**: Lower word error rate with nova-3, more configuration options, speaker diarization
+- **Aldea**: Aldea-hosted API with Deepgram-compatible response shape; use with `biblicus[aldea]`

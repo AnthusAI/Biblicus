@@ -55,6 +55,9 @@ markitdown = [
 deepgram = [
   "deepgram-sdk>=3.0",
 ]
+aldea = [
+  "httpx>=0.24",
+]
 docling = [
   "docling[vlm]>=2.0.0",
 ]

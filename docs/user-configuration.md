@@ -53,6 +53,19 @@ deepgram:
 
 The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` environment variable. Environment takes precedence over configuration.
 
+## Example: Aldea speech to text
+
+Create a config file with an Aldea API key.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+aldea:
+  api_key: YOUR_KEY_HERE
+```
+
+The Aldea speech to text extractor also supports the `ALDEA_API_KEY` environment variable. Environment takes precedence over configuration.
+
 ## Example: Neo4j graph extraction
 
 Graph extraction uses a Neo4j backend. Biblicus can auto-start a local Neo4j Docker container if it is not already running.

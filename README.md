@@ -173,6 +173,7 @@ Some extractors are optional so the base install stays small.
 - Document understanding with Docling VLM and MLX acceleration: `python -m pip install "biblicus[docling-mlx]"`
 - Speech to text transcription with OpenAI: `python -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Speech to text transcription with Deepgram: `python -m pip install "biblicus[deepgram]"` (requires a Deepgram API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Speech to text transcription with Aldea: `python -m pip install "biblicus[aldea]"` (requires `ALDEA_API_KEY` or `aldea.api_key` in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Broad document parsing fallback: `python -m pip install "biblicus[unstructured]"`
 - MarkItDown document conversion (requires Python 3.10 or higher): `python -m pip install "biblicus[markitdown]"`
 - Topic modeling analysis with BERTopic: `python -m pip install "biblicus[topic-modeling]"`
@@ -551,6 +552,7 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 
 - [`stt-openai`](docs/extractors/speech-to-text/openai.md) performs speech to text on audio using OpenAI (optional).
 - [`stt-deepgram`](docs/extractors/speech-to-text/deepgram.md) performs speech to text on audio using Deepgram (optional).
+- [`stt-aldea`](docs/extractors/speech-to-text/aldea.md) performs speech to text on audio using Aldea (optional).
 
 ### Pipeline utilities
 

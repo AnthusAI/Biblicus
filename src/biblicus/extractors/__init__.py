@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Dict
 
 from .base import TextExtractor
+from .aldea_stt import AldeaSpeechToTextExtractor
 from .deepgram_stt import DeepgramSpeechToTextExtractor
 from .deepgram_transform import DeepgramTranscriptTransformExtractor
 from .docling_granite_text import DoclingGraniteExtractor
@@ -50,6 +51,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         PipelineExtractor.extractor_id: PipelineExtractor(),
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
+        AldeaSpeechToTextExtractor.extractor_id: AldeaSpeechToTextExtractor(),
         DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor(),
         DeepgramTranscriptTransformExtractor.extractor_id: DeepgramTranscriptTransformExtractor(),
         RapidOcrExtractor.extractor_id: RapidOcrExtractor(),

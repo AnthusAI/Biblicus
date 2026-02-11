@@ -62,7 +62,7 @@ The `text/` folder contains the final extracted text for each item, while `stage
 
 ## Available Extractors
 
-Biblicus provides 16 built-in extractors organized by category:
+Biblicus provides built-in extractors organized by category:
 
 ### Text & Document Processing
 
@@ -86,6 +86,7 @@ Biblicus provides 16 built-in extractors organized by category:
 
 - [`stt-openai`](extractors/speech-to-text/openai.md) - OpenAI Whisper API
 - [`stt-deepgram`](extractors/speech-to-text/deepgram.md) - Deepgram Nova-3 API
+- [`stt-aldea`](extractors/speech-to-text/aldea.md) - Aldea Speech-to-Text API
 - [`deepgram-transform`](extractors/speech-to-text/deepgram-transform.md) - Render structured Deepgram metadata
 
 ### Pipeline Utilities

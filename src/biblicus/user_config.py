@@ -55,6 +55,19 @@ class DeepgramUserConfig(BaseModel):
     api_key: str = Field(min_length=1)
 
 
+class AldeaUserConfig(BaseModel):
+    """
+    Configuration for Aldea integrations.
+
+    :ivar api_key: Aldea API key used for authenticated requests.
+    :vartype api_key: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    api_key: str = Field(min_length=1)
+
+
 class Neo4jUserConfig(BaseModel):
     """
     Configuration for Neo4j integrations.
@@ -102,6 +115,8 @@ class BiblicusUserConfig(BaseModel):
     :vartype huggingface: HuggingFaceUserConfig or None
     :ivar deepgram: Optional Deepgram configuration.
     :vartype deepgram: DeepgramUserConfig or None
+    :ivar aldea: Optional Aldea configuration.
+    :vartype aldea: AldeaUserConfig or None
     :ivar neo4j: Optional Neo4j configuration.
     :vartype neo4j: Neo4jUserConfig or None
     """
@@ -111,6 +126,7 @@ class BiblicusUserConfig(BaseModel):
     openai: Optional[OpenAiUserConfig] = None
     huggingface: Optional[HuggingFaceUserConfig] = None
     deepgram: Optional[DeepgramUserConfig] = None
+    aldea: Optional[AldeaUserConfig] = None
     neo4j: Optional[Neo4jUserConfig] = None
 
 
@@ -248,3 +264,23 @@ def resolve_deepgram_api_key(*, config: Optional[BiblicusUserConfig] = None) -> 
     if loaded.deepgram is None:
         return None
     return loaded.deepgram.api_key
+
+
+def resolve_aldea_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Optional[str]:
+    """
+    Resolve an Aldea API key from environment or user configuration.
+
+    Environment takes precedence over configuration.
+
+    :param config: Optional pre-loaded user configuration.
+    :type config: BiblicusUserConfig or None
+    :return: API key string, or None when no key is available.
+    :rtype: str or None
+    """
+    env_key = os.environ.get("ALDEA_API_KEY")
+    if env_key:
+        return env_key
+    loaded = config or load_user_config()
+    if loaded.aldea is None:
+        return None
+    return loaded.aldea.api_key
