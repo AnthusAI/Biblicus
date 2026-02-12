@@ -18,7 +18,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from .corpus import Corpus
 from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
-from .extractors.base import TextExtractor
 from .extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
 from .models import CatalogItem, ExtractionStageOutput
 from .retrieval import hash_text
@@ -540,7 +539,6 @@ def build_extraction_snapshot(
     needs_extraction_item_count = 0
     converted_item_count = 0
     total_item_count = len(catalog.items)
-    catalog_items_by_id = {item.id: item for item in catalog.items.values()}
     if total_item_count <= 25:
         log_interval = 1
     elif total_item_count <= 100:
