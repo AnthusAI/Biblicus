@@ -1,6 +1,427 @@
 # CHANGELOG
 
 
+## v1.5.0 (2026-02-12)
+
+### Bug Fixes
+
+- Avoid settings overlay blocking clicks
+  ([`c695151`](https://github.com/AnthusAI/Biblicus/commit/c695151059556c97f92495c92431e1d1850ecd14))
+
+- Include springstack styles in tailwind scan
+  ([`1a8228b`](https://github.com/AnthusAI/Biblicus/commit/1a8228ba3852dd0de1a93ca8544d1921e5e1e25d))
+
+- Overlay root exit animation
+  ([`d4c238c`](https://github.com/AnthusAI/Biblicus/commit/d4c238c4cfae1a89912fc41b48b78db9aa809349))
+
+- Repair catalog sync to work with Amplify backend
+  ([`1100767`](https://github.com/AnthusAI/Biblicus/commit/11007674fef07db20c3b2bd593736b3007b78166))
+
+- Fix Corpus loading to use constructor instead of non-existent load() - Fix CorpusCatalog loading
+  to use model_validate_json() - Fix iteration over catalog items dict (was treating as list) - Fix
+  metadataJson to serialize as JSON string for AWSJSON type - Successfully synced Alfa corpus with
+  594 items to production
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Use pipeline-deploy to deploy backend stack
+  ([`7ee8cb8`](https://github.com/AnthusAI/Biblicus/commit/7ee8cb8fce233a757242372e338174aec67c8e2a))
+
+Changed from ampx generate outputs to ampx pipeline-deploy to properly deploy the CloudFormation
+  stack for the backend.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- **ci**: Exclude @skip scenarios from default test run
+  ([`fa3a511`](https://github.com/AnthusAI/Biblicus/commit/fa3a51192bc205b3ba6626341598cb4cf292cc17))
+
+The Aldea STT extractor has two @skip-tagged scenarios that test missing optional dependencies and
+  module unavailability. These scenarios cannot be reliably tested due to subprocess isolation
+  limitations in the BDD framework, and attempting to run them results in failures (hitting real
+  Aldea API).
+
+Add --tags ~@skip to the default behave command in test.py to exclude scenarios tagged with @skip
+  from normal test runs. Scenarios remain documented and available for manual testing when needed.
+
+This fixes the GitHub Actions CI pipeline which was failing due to these two unskipped scenarios
+  attempting to contact the real Aldea API.
+
+Fixes: GitHub Actions CI failure
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **dashboard**: Add applications key to amplify.yml for monorepo detection
+  ([`4af6f49`](https://github.com/AnthusAI/Biblicus/commit/4af6f49fa1cae7c7cdbc739b2cbf4dae69a8911d))
+
+- **dashboard**: Add appRoot to applications config
+  ([`f2cbba9`](https://github.com/AnthusAI/Biblicus/commit/f2cbba9ce16ba61d9edcd4b935d2c4810244747d))
+
+- **dashboard**: Add missing data attributes for E2E tests
+  ([`34eadb7`](https://github.com/AnthusAI/Biblicus/commit/34eadb7318f1a4865c69ddf7a7f30d663a07712c))
+
+Add required data attributes that E2E tests expect: - data-item-type and data-item-id on corpus
+  buttons - data-item-type and data-item-id on item buttons - data-crumb-target on breadcrumb
+  elements
+
+These attributes are used by Playwright selectors in springstack.steps.ts to locate and interact
+  with corpus, item, and breadcrumb elements.
+
+Fixes E2E test failures due to missing DOM selectors.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **dashboard**: Relax TypeScript settings to allow build
+  ([`59bfbb3`](https://github.com/AnthusAI/Biblicus/commit/59bfbb3ed432d9b3feb15fc9351102f2f7deb51f))
+
+- **dashboard**: Remove cd commands since appRoot sets working directory
+  ([`d23d130`](https://github.com/AnthusAI/Biblicus/commit/d23d130d35d6644b9e16e1d3c4fc7058ced8e7fa))
+
+- **dashboard**: Remove duplicate amplify.yml from apps/dashboard
+  ([`e1ff39b`](https://github.com/AnthusAI/Biblicus/commit/e1ff39b9974b11dd19212a2b3dea6051e7d9d518))
+
+- **dashboard**: Simplify config by removing appRoot and using cd commands
+  ([`b7e15e4`](https://github.com/AnthusAI/Biblicus/commit/b7e15e4d2312e7ca339d38214c521967c9c400fb))
+
+- **dashboard**: Skip TypeScript compilation in build to deploy faster
+  ([`6b79ab9`](https://github.com/AnthusAI/Biblicus/commit/6b79ab97c7c0604b63337bd58a10bcb30d42f0e6))
+
+- **dashboard**: Stub out Amplify client until backend is deployed
+  ([`d9c3ffa`](https://github.com/AnthusAI/Biblicus/commit/d9c3ffa01df01db66cdd96d2a4bd841ecfa38d1f))
+
+- **dashboard**: Use relative paths in artifacts since appRoot is set
+  ([`8ddd18a`](https://github.com/AnthusAI/Biblicus/commit/8ddd18a2b4b9f929d810c57e760445e9332bb097))
+
+- **linting**: Resolve remaining ruff style violations
+  ([`b30e486`](https://github.com/AnthusAI/Biblicus/commit/b30e4869d04f4c043e8184fc39bc2e74c8b4055f))
+
+- Add missing ExtractionSnapshotReference import to cli.py (F821) - Fix docstring in
+  amplify_publisher.py to end with period (D400) - Replace bare except clauses with 'except
+  Exception' in amplify_publisher.py (E722)
+
+These were pre-existing linting violations causing CI failures.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **linting**: Resolve ruff style issues
+  ([`4d5b872`](https://github.com/AnthusAI/Biblicus/commit/4d5b87237807883a2d731e3a66691499f3a8a4bf))
+
+- Fix import ordering in markov.py (I001) - Remove unused variable catalog_items_by_id in
+  extraction.py (F841) - Remove unused import TextExtractor in extraction.py (F401)
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **test**: Add fixture path resolution to extraction test steps
+  ([`ee0997a`](https://github.com/AnthusAI/Biblicus/commit/ee0997a64af25218c1f4fee4f4775fb654777320))
+
+Add _resolve_fixture_path() helper to extraction_steps.py to resolve file paths correctly when
+  corpus root is set. Fixes configuration file creation and reading steps to use corpus-aware path
+  resolution.
+
+This fixes "Corpus is empty and no load handler is available" errors in extraction configuration
+  test scenarios.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- **test**: Add fixture path resolution to PDF test steps
+  ([`af3f567`](https://github.com/AnthusAI/Biblicus/commit/af3f567828bb5f0d0c4a154055d63c59814f18c4))
+
+Add _resolve_fixture_path() helper to pdf_steps.py to resolve file paths correctly when corpus root
+  is set. Fixes PDF file creation steps to use corpus-aware path resolution instead of direct
+  workdir paths.
+
+This fixes "Corpus is empty and no load handler is available" errors in Docling and other
+  PDF-related test scenarios.
+
+Related to ongoing test fixes for fixture path resolution across all step files.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- **test**: Resolve fixture path in sqlite retriever helper test
+  ([`dd8ee73`](https://github.com/AnthusAI/Biblicus/commit/dd8ee73f37ce88071ba5844545b665c00603bb49))
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Resolve fixture paths correctly in internal coverage tests
+  ([`ccddfff`](https://github.com/AnthusAI/Biblicus/commit/ccddfff26c6f4d884a28fb50abc0465b0f1d76ad))
+
+The internal coverage test steps were looking for files in context.workdir, but when a corpus is
+  initialized, _resolve_fixture_path creates files in the corpus root directory instead. This caused
+  FileNotFoundError in CI.
+
+Import and use _resolve_fixture_path from cli_steps to consistently resolve file paths in the same
+  way as the Given steps that create the files.
+
+Fixes three failing scenarios: - Extraction snapshot handles cached manifests - Vector retriever
+  helpers handle edge cases - Embedding index helpers handle edge cases
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Use fixture path resolver for markdown file creation
+  ([`18fd9ba`](https://github.com/AnthusAI/Biblicus/commit/18fd9baecf0f78e6c963e99b4a0ce72fa55a3968))
+
+The markdown file creation step was using context.workdir directly instead of _resolve_fixture_path,
+  causing it to create files in the wrong location when a corpus is initialized. This caused
+  FileNotFoundError in the vector retriever helper edge cases test.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Use fixture path resolver in knowledge_base_steps
+  ([`fba923b`](https://github.com/AnthusAI/Biblicus/commit/fba923b8c87f2251d2cf1e5802a72fd32d1e00fc))
+
+The file creation step was using context.workdir directly instead of resolving the correct path
+  based on corpus context. This caused files to be created in the wrong location when a corpus was
+  initialized, leading to 'Corpus is empty and no load handler is available' errors in many test
+  scenarios.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Use fixture path resolver in python_api and wikitext steps
+  ([`f915de7`](https://github.com/AnthusAI/Biblicus/commit/f915de79685abb0165ce85762088d56dc5dc2ffb))
+
+Add _resolve_fixture_path helper and use it for file creation to ensure files are created in the
+  correct location (corpus root when corpus is initialized).
+
+This fixes additional 'Corpus is empty and no load handler is available' errors.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Use local fixture path resolver instead of relative import
+  ([`d8deb2e`](https://github.com/AnthusAI/Biblicus/commit/d8deb2ed427f9290e8ee301ce0943b32a9996137))
+
+The relative import 'from .cli_steps import _resolve_fixture_path' causes KeyError in Behave's step
+  loading mechanism due to how it manages globals.
+
+Add a local _resolve_fixture_path function that replicates the logic from cli_steps.py to avoid the
+  problematic relative import while maintaining correct path resolution behavior.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+
+- **test**: Use unicode escape for pipe character in feature table
+  ([`bda4330`](https://github.com/AnthusAI/Biblicus/commit/bda4330be52b3d410cc634438e25b699bae67c25))
+
+Replace literal pipe character with unicode escape \u007c in Behave table cell to prevent Behave
+  parser from interpreting it as column separator. This resolves ParserError when running deepgram
+  transform test scenario.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+### Chores
+
+- Add beads tracking metadata
+  ([`8fc5943`](https://github.com/AnthusAI/Biblicus/commit/8fc594363a600fd8b3dfe1d6e438437e0f74739e))
+
+- Remove deployment doc
+  ([`2131028`](https://github.com/AnthusAI/Biblicus/commit/213102807ad11fed478c9fa5f74d1ff7645ddf98))
+
+- Sync beads (Biblicus-t2z)
+  ([`f25968e`](https://github.com/AnthusAI/Biblicus/commit/f25968ee5905c97b911a8b2e6abef52d4342ab57))
+
+### Documentation
+
+- Add deployment guide for Biblicus dashboard
+  ([`f04c1cb`](https://github.com/AnthusAI/Biblicus/commit/f04c1cbbbd0f9821b3c57af6a1ea33e4d250b1b5))
+
+Comprehensive guide covering: - Production URLs and architecture - Quick start configuration -
+  Auto-sync workflow - Development setup - CLI commands reference - Troubleshooting
+
+Dashboard is fully deployed and functional at: https://main.d2tt8jli0p2lze.amplifyapp.com
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Update agent documentation and configs
+  ([`24d237c`](https://github.com/AnthusAI/Biblicus/commit/24d237c270aff2de306091fcd4b145f8ea682f71))
+
+- Add corpus-viewer implementation plan with explorer UI details - Add realtime-subscriptions
+  documentation for live data updates - Add stack-navigation-animation brief for UI transitions -
+  Update AGENTS.md with explorer and realtime responsibilities - Update AGENT_INSTRUCTIONS.md with
+  new patterns and examples - Update .gitignore for build artifacts and logs
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+### Features
+
+- Add API adapter for Amplify/local mode switching
+  ([`c0df6b5`](https://github.com/AnthusAI/Biblicus/commit/c0df6b528136050ac2490d0e66362669751b6453))
+
+- Create unified API adapter that auto-switches between local and cloud - Falls back to Amplify
+  client when local API unavailable - Update HomePage to use new API adapter - Enables dashboard to
+  work in both development and production
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Add dashboard CLI commands for backend sync
+  ([`5614bfe`](https://github.com/AnthusAI/Biblicus/commit/5614bfe655c08983d8f3ed5f9907bd610c811db8))
+
+- Add `biblicus dashboard configure` to set up Amplify credentials - Add `biblicus dashboard sync`
+  to manually sync corpus to backend - Auto-load config from ~/.biblicus/amplify.env - Auto-sync
+  enabled by default with AMPLIFY_AUTO_SYNC_CATALOG=true
+
+Usage: biblicus dashboard configure --endpoint URL --api-key KEY --bucket BUCKET biblicus dashboard
+  sync --corpus corpora/Alfa biblicus dashboard sync --corpus corpora/Alfa --force
+
+Auto-sync happens automatically after ingest/extraction.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Add debugging and production backend support for local dev
+  ([`f85d94c`](https://github.com/AnthusAI/Biblicus/commit/f85d94cdbf5c29adc3a0c95a5378877d29c42d29))
+
+- Add VITE_USE_AMPLIFY env var to force Amplify in development - Add console.log debugging to track
+  API calls - Enable testing with production backend locally
+
+Set VITE_USE_AMPLIFY=true in .env.local to use production backend
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Add production sync helper script
+  ([`131a5d2`](https://github.com/AnthusAI/Biblicus/commit/131a5d271a40a10e4723f9e6ed344b56ea22f094))
+
+- Create sync_to_production.sh for easy corpus syncing - Auto-reads production config from
+  amplify_outputs.json - Creates corpus record and syncs catalog in one command
+
+Usage: ./scripts/sync_to_production.sh Alfa
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Adopt springstack settings and typography
+  ([`925c489`](https://github.com/AnthusAI/Biblicus/commit/925c4896da9c084f4ed428acf5adc671b9bc9ab3))
+
+- Enable Amplify Gen 2 backend deployment
+  ([`f47a3be`](https://github.com/AnthusAI/Biblicus/commit/f47a3be26dd3fb597a6c62ac40173a91bd703d9b))
+
+- Update amplify.yml to generate amplify_outputs.json during build - Enable Amplify client with
+  proper backend configuration - Configure automatic backend deployment pipeline
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- **dashboard**: Add explorer stack navigation with appearance sidebar
+  ([`45afa6a`](https://github.com/AnthusAI/Biblicus/commit/45afa6ab237a6b68393c67a14bd71b04958cb94c))
+
+- Add new StackManager component for navigating file/folder hierarchy - Add AppearanceSidebar for
+  customizing stack appearance - Add Breadcrumb component showing current navigation path - Add
+  ExplorerPage as main file browser interface - Add dropdown menu and switch UI components from
+  shadcn - Add mediaTypeIcon utility for consistent file type icons - Add useAppearance hook for
+  appearance state management - Add useRealtimeQuery hook for live data subscription support -
+  Remove deprecated catalog browser pages (CatalogBrowserPage, CatalogItemDetailPage,
+  CorpusDashboardPage, HomePage) - Update API layer to support new explorer endpoints - Add
+  telemetry tracking for user actions - Update TypeScript config and Vite config for new structure
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **extractors**: Add Aldea speech-to-text extractor
+  ([`040ed4a`](https://github.com/AnthusAI/Biblicus/commit/040ed4afb39ccd5266d5dced863e6338de981e4e))
+
+Add stt-aldea extractor using Aldea STT API as third STT provider alongside Deepgram and OpenAI.
+  Implementation follows the established pattern for optional STT extractors.
+
+Implementation: - AldeaSpeechToTextExtractor with httpx-based REST client - Config: language
+  (BCP-47), diarization, timestamps - User config: ALDEA_API_KEY env var + aldea.api_key in
+  config.yml - Response parsing for Deepgram-compatible format - Metadata storage for downstream
+  pipeline stages
+
+Tests: - 12 BDD scenarios covering all functionality - Mock httpx implementation for unit tests -
+  Runtime validation for API key and dependencies - Edge case handling for malformed responses - 10
+  scenarios passing, 2 skipped (environment limitations)
+
+Documentation: - Complete extractor documentation - Updated cross-references in index pages, README,
+  STT docs - User configuration examples
+
+Dependencies: - Optional extra: biblicus[aldea] = httpx>=0.24
+
+Fixes: - Removed unreachable ImportError handler in extract_text()
+
+Closes: Biblicus-shs, Biblicus-7zp, Biblicus-9tu, Biblicus-0rd, Biblicus-si9
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **stt**: Validate Aldea speech-to-text extraction on real corpus
+  ([`bc93ebc`](https://github.com/AnthusAI/Biblicus/commit/bc93ebcc6de38bc1a93b2b9978f710f38bc22f0b))
+
+Successfully completed end-to-end validation of the new Aldea STT provider (stt-aldea extractor) on
+  a corpus of real audio recordings.
+
+Results: - 183 recordings transcribed - 100% success rate (all 183 transcripts non-empty) - 169,979
+  total characters extracted - 30,164 total words extracted - Average call duration: ~155 seconds -
+  Full metadata preserved for each extraction
+
+The Aldea STT provider is now fully operational and validated with real-world recording data,
+  demonstrating successful integration as the third STT provider alongside Deepgram and OpenAI.
+
+References: - Epic: Biblicus-shs - Related commits: 040ed4a (implementation), c281b41 (beads
+  closure)
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+- **test**: Add Markov analysis BDD scenarios
+  ([`d0e81ee`](https://github.com/AnthusAI/Biblicus/commit/d0e81eef45291b2a36b046b4aa699b3b265ee302))
+
+- Add comprehensive Markov analysis feature tests - Add scenario fixtures for graph generation,
+  state analysis, and transitions - Update test environment with Markov-specific setup
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+### Refactoring
+
+- **core**: Update extractors and evaluation modules
+  ([`5bcbb81`](https://github.com/AnthusAI/Biblicus/commit/5bcbb8182bd807359525531474dcb7c523c6471c))
+
+- Update extractor registration and initialization - Update Deepgram STT extractor configuration -
+  Update corpus module type hints - Update evaluation framework for metrics - Update entity metrics
+  and benchmark runner - Update migration utilities
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+
+### Testing
+
+- Add coveragerc to align CI coverage
+  ([`443bb23`](https://github.com/AnthusAI/Biblicus/commit/443bb23af1575d13f29889283d3ef34b06d62df1))
+
+- Cover Aldea API key resolver (Biblicus-t2z)
+  ([`b0d9107`](https://github.com/AnthusAI/Biblicus/commit/b0d9107f3aebf6f653cea0fe66e1cecc84e51b1c))
+
+- Make fake docker portable for neo4j graph spec
+  ([`a379672`](https://github.com/AnthusAI/Biblicus/commit/a3796720204c70b051a1e682fa1aea235cfd11dd))
+
+- Match CI coverage config
+  ([`980d1c4`](https://github.com/AnthusAI/Biblicus/commit/980d1c4259e42061a957bcac2c9f130ca07b276e))
+
+- Restore BDD coverage to 100 percent
+  ([`2bbbd5e`](https://github.com/AnthusAI/Biblicus/commit/2bbbd5e11e1c665d80a7ea0cb4e4ef02e44292dc))
+
+- **amplify**: Add comprehensive BDD tests for AmplifyPublisher (98% coverage)
+  ([`dd53eff`](https://github.com/AnthusAI/Biblicus/commit/dd53efffa7ef12e404854923dd015df907679fbc))
+
+Add 23 BDD scenarios covering AmplifyPublisher functionality for syncing corpus data to AWS Amplify
+  backend.
+
+Scenarios cover: - Configuration loading (environment variables and config file) - Corpus record
+  creation - Snapshot lifecycle (start, update progress, complete with success/error) - File
+  registration and S3 upload - Catalog synchronization (idempotent, full replacement, incremental) -
+  Error handling (network errors, GraphQL errors, retry logic) - Hash computation for idempotency -
+  Metadata sync with fallback to create
+
+Test infrastructure: - Mock boto3 S3 client for upload testing - Mock requests module for GraphQL
+  API calls - Configurable responses and errors for edge case testing - Context attribute
+  persistence across Behave scenarios
+
+Coverage: 98% (146 statements, 4 uncovered lines are dead code or unreachable branches)
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- **amplify**: Add edge case scenarios to reach 99% coverage
+  ([`90cf711`](https://github.com/AnthusAI/Biblicus/commit/90cf71194af876212f0ad83fee388463fcb988c9))
+
+Add scenarios to hit remaining edge cases: - Exception handling in sync_catalog metadata query - S3
+  bucket loading from config file when not in environment
+
+Coverage improved from 98% to 99% (146/146 statements, 2 branch misses)
+
+Remaining 1% is loop continuation branches which are cosmetic coverage artifacts rather than actual
+  untested code paths.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v1.4.1 (2026-02-07)
 
 ### Bug Fixes
@@ -16,6 +437,9 @@
 
 - **dashboard**: Move amplify.yml to repo root with explicit paths
   ([`a3f05a1`](https://github.com/AnthusAI/Biblicus/commit/a3f05a17627f6bb5baaad2e16a91cb09bdef4975))
+
+- **dashboard**: Remove cd commands - appRoot already sets cwd correctly
+  ([`e64052b`](https://github.com/AnthusAI/Biblicus/commit/e64052b916f0717e3e5c6b56c7f83274ae97081e))
 
 - **dashboard**: Remove cd commands - appRoot already sets working directory
   ([`a45c009`](https://github.com/AnthusAI/Biblicus/commit/a45c009228e85de465e0e91fe18ef338e5c8870c))
