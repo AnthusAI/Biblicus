@@ -60,6 +60,8 @@ def before_scenario(context, scenario) -> None:
         del context.fake_bertopic_behavior
     if hasattr(context, "fake_hmmlearn_behavior"):
         del context.fake_hmmlearn_behavior
+    if hasattr(context, "fake_aldea_transcriptions"):
+        del context.fake_aldea_transcriptions
     for attr in [
         "_fake_paddleocr_layout_empty",
         "_fake_paddleocr_layout_missing_coordinates",
@@ -324,6 +326,21 @@ def after_scenario(context, scenario) -> None:
     # Clear fake rapidocr behaviors
     if hasattr(context, "fake_rapidocr_behaviors"):
         context.fake_rapidocr_behaviors.clear()
+    if getattr(context, "_aldea_post_patcher", None) is not None:
+        try:
+            context._aldea_post_patcher.stop()
+        except Exception:
+            pass
+        context._aldea_post_patcher = None
+    if getattr(context, "_fake_aldea_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_aldea_unavailable_original_modules", {})
+        for name in ["httpx"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_aldea_unavailable_installed = False
+        context._fake_aldea_unavailable_original_modules = {}
     if getattr(context, "_fake_markitdown_installed", False):
         original_modules = getattr(context, "_fake_markitdown_original_modules", {})
         for name in [
