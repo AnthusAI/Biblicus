@@ -45,7 +45,7 @@ class AmplifyPublisher:
         self.s3_client = boto3.client('s3', region_name=self.region)
 
     def _load_config(self):
-        """Load configuration from environment or ~/.biblicus/amplify.env"""
+        """Load configuration from environment or ~/.biblicus/amplify.env."""
         # Try environment variables first
         self.appsync_endpoint = os.getenv('AMPLIFY_APPSYNC_ENDPOINT')
         self.api_key = os.getenv('AMPLIFY_API_KEY')
@@ -250,7 +250,7 @@ class AmplifyPublisher:
             metadata = self._get_catalog_metadata()
             if not force and metadata and metadata.get('catalogHash') == catalog_hash:
                 return SyncResult(skipped=True, reason="Catalog unchanged", hash=catalog_hash)
-        except:
+        except Exception:
             metadata = None
 
         # 3. Choose sync strategy
@@ -288,7 +288,7 @@ class AmplifyPublisher:
         try:
             result = self._execute_graphql(query, variables)
             return result.get('getCatalogMetadata')
-        except:
+        except Exception:
             return None
 
     def _sync_catalog_metadata(self, catalog, catalog_hash: str):
@@ -314,7 +314,7 @@ class AmplifyPublisher:
         }
         try:
             self._execute_graphql(mutation, variables)
-        except:
+        except Exception:
             # Try create if update failed
             mutation = mutation.replace('updateCatalogMetadata', 'createCatalogMetadata')
             mutation = mutation.replace('UpdateCatalogMetadataInput', 'CreateCatalogMetadataInput')

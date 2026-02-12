@@ -34,7 +34,12 @@ from .extraction_evaluation import (
     write_extraction_evaluation_result,
 )
 from .migration import migrate_layout
-from .models import QueryBudget, RetrievalResult, parse_extraction_snapshot_reference
+from .models import (
+    ExtractionSnapshotReference,
+    QueryBudget,
+    RetrievalResult,
+    parse_extraction_snapshot_reference,
+)
 from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
 
