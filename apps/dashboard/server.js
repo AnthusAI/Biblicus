@@ -12,6 +12,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -24,6 +25,9 @@ const PORT = process.env.PORT || 3001;
 
 // Configure corpora root path from environment or default to ../../corpora
 const CORPORA_ROOT = process.env.BIBLICUS_CORPORA_ROOT || path.join(__dirname, '..', '..', 'corpora');
+const REPO_ROOT = path.join(__dirname, '..', '..');
+const TELEMETRY_LOG_DIR = path.join(REPO_ROOT, 'logs');
+const TELEMETRY_LOG_FILE = path.join(TELEMETRY_LOG_DIR, 'telemetry.log');
 
 app.use(cors());
 app.use(express.json());
@@ -45,6 +49,18 @@ function validateCorpusPath(corpusName) {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', corporaRoot: CORPORA_ROOT });
+});
+
+app.post('/api/telemetry/log', async (req, res) => {
+  try {
+    const payload = req.body ?? {};
+    await fs.mkdir(TELEMETRY_LOG_DIR, { recursive: true });
+    await fs.appendFile(TELEMETRY_LOG_FILE, `${JSON.stringify(payload)}\n`, 'utf8');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error writing telemetry log:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // List all available corpora
@@ -210,6 +226,81 @@ app.get('/api/corpora/:name/catalog/:itemId', async (req, res) => {
   } catch (error) {
     console.error('Error reading catalog item:', error);
     res.status(404).json({ error: 'Item not found' });
+  }
+});
+
+// Stream raw file content for a catalog item (for local file viewing).
+// Supports Range requests so HTML5 audio/video can seek and play.
+app.get('/api/corpora/:name/items/:itemId/content', async (req, res) => {
+  try {
+    const corpusPath = validateCorpusPath(req.params.name);
+    const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');
+
+    const catalogData = await fs.readFile(catalogPath, 'utf8');
+    const catalog = JSON.parse(catalogData);
+
+    const item = catalog.items?.[req.params.itemId];
+
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const filePath = path.join(corpusPath, item.relpath);
+    const resolvedPath = path.resolve(filePath);
+    const resolvedCorpus = path.resolve(corpusPath);
+
+    if (!resolvedPath.startsWith(resolvedCorpus + path.sep) && resolvedPath !== resolvedCorpus) {
+      return res.status(403).json({ error: 'Access denied: path outside corpus' });
+    }
+
+    const stat = await fs.stat(resolvedPath);
+    const fileSize = stat.size;
+    const contentType = item.media_type || 'application/octet-stream';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.setHeader('Accept-Ranges', 'bytes');
+
+    const rangeHeader = req.headers.range;
+    let start = 0;
+    let end = fileSize - 1;
+    let statusCode = 200;
+
+    if (rangeHeader) {
+      const match = rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
+      if (match) {
+        start = match[1] ? parseInt(match[1], 10) : 0;
+        end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+        end = Math.min(end, fileSize - 1);
+        if (start <= end) {
+          statusCode = 206;
+          res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+          res.setHeader('Content-Length', end - start + 1);
+        }
+      }
+    }
+
+    if (statusCode === 206) {
+      const stream = createReadStream(resolvedPath, { start, end });
+      stream.on('error', (err) => {
+        console.error('Error streaming item content:', err);
+        if (!res.headersSent) res.status(500).json({ error: 'Failed to read file' });
+      });
+      res.status(206);
+      stream.pipe(res);
+    } else {
+      const stream = createReadStream(resolvedPath);
+      stream.on('error', (err) => {
+        console.error('Error streaming item content:', err);
+        if (!res.headersSent) res.status(500).json({ error: 'Failed to read file' });
+      });
+      stream.pipe(res);
+    }
+  } catch (error) {
+    console.error('Error serving item content:', error);
+    if (!res.headersSent) {
+      res.status(404).json({ error: 'Item not found' });
+    }
   }
 });
 
@@ -381,6 +472,7 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/corpora                    - List all corpora`);
   console.log(`   GET  /api/corpora/:name              - Get corpus details`);
   console.log(`   GET  /api/corpora/:name/catalog      - List catalog items`);
+  console.log(`   GET  /api/corpora/:name/items/:id/content - Stream item file`);
   console.log(`   GET  /api/corpora/:name/snapshots    - List extraction snapshots`);
   console.log(`   GET  /api/corpora/:name/analysis     - List analysis runs`);
   console.log(`   GET  /api/corpora/:name/recipes      - List recipes`);

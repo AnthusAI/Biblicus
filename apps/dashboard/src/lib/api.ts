@@ -4,12 +4,23 @@
 
 import { client } from './amplify-client';
 import { localAPI } from './local-api';
-import type { Corpus as LocalCorpus, CatalogItem as LocalCatalogItem, Snapshot as LocalSnapshot } from './local-api';
 
-// Check if running in local mode (localhost or with local API available)
-// Set VITE_USE_AMPLIFY=true to use production backend from local dev
-const forceAmplify = import.meta.env.VITE_USE_AMPLIFY === 'true';
-const isLocalMode = !forceAmplify && (import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_LOCAL_API === 'true');
+const DATA_MODE_KEY = 'biblicus-data-mode';
+const isAmplifyHosting = import.meta.env.VITE_AMPLIFY_HOSTING === 'true';
+
+export type DataMode = 'local' | 'cloud';
+
+export const getDataMode = (): DataMode => {
+  if (isAmplifyHosting) return 'cloud';
+  if (typeof window === 'undefined') return 'local';
+  const stored = localStorage.getItem(DATA_MODE_KEY);
+  return stored === 'cloud' ? 'cloud' : 'local';
+};
+
+export const setDataMode = (mode: DataMode) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(DATA_MODE_KEY, mode);
+};
 
 export interface Corpus {
   name: string;
@@ -50,25 +61,20 @@ export interface Snapshot {
 
 class APIAdapter {
   async listCorpora(): Promise<{ corpora: Corpus[] }> {
-    console.log('[API] listCorpora called, isLocalMode:', isLocalMode, 'forceAmplify:', forceAmplify);
-
-    if (isLocalMode) {
-      try {
-        console.log('[API] Trying local API...');
-        return await localAPI.listCorpora();
-      } catch (err) {
-        console.warn('[API] Local API failed, falling back to Amplify:', err);
-        // Fall through to Amplify client
-      }
+    if (getDataMode() === 'local') {
+      return await localAPI.listCorpora();
     }
 
     // Use Amplify client
-    console.log('[API] Using Amplify client...');
     const { data: corpuses } = await client.models.Corpus.list();
-    console.log('[API] Amplify returned', corpuses.length, 'corpuses:', corpuses);
+
+    // Deduplicate by name
+    const uniqueCorpora = Array.from(
+      new Map(corpuses.map(c => [c.name, c])).values()
+    );
 
     return {
-      corpora: corpuses.map(c => ({
+      corpora: uniqueCorpora.map(c => ({
         name: c.name,
         s3Prefix: c.s3Prefix,
         lastActivity: c.lastActivity || undefined,
@@ -79,12 +85,8 @@ class APIAdapter {
   }
 
   async getCorpus(name: string): Promise<Corpus> {
-    if (isLocalMode) {
-      try {
-        return await localAPI.getCorpus(name);
-      } catch (err) {
-        console.warn('Local API failed, falling back to Amplify:', err);
-      }
+    if (getDataMode() === 'local') {
+      return await localAPI.getCorpus(name);
     }
 
     // Use Amplify client - find by name
@@ -113,28 +115,24 @@ class APIAdapter {
       search?: string;
     }
   ): Promise<{ items: CatalogItem[]; total: number }> {
-    if (isLocalMode) {
-      try {
-        const result = await localAPI.listCatalogItems(corpusName, filters);
-        return {
-          items: result.items.map(item => ({
-            id: item.id,
-            corpusId: corpusName,
-            relpath: item.relpath,
-            sha256: item.sha256,
-            bytes: item.bytes,
-            mediaType: item.media_type,
-            title: item.title,
-            tags: item.tags,
-            metadata: item.metadata,
-            createdAt: item.created_at,
-            sourceUri: item.source_uri,
-          })),
-          total: result.total,
-        };
-      } catch (err) {
-        console.warn('Local API failed, falling back to Amplify:', err);
-      }
+    if (getDataMode() === 'local') {
+      const result = await localAPI.listCatalogItems(corpusName, filters);
+      return {
+        items: result.items.map(item => ({
+          id: item.id,
+          corpusId: corpusName,
+          relpath: item.relpath,
+          sha256: item.sha256,
+          bytes: item.bytes,
+          mediaType: item.media_type,
+          title: item.title,
+          tags: item.tags,
+          metadata: item.metadata,
+          createdAt: item.created_at,
+          sourceUri: item.source_uri,
+        })),
+        total: result.total,
+      };
     }
 
     // Use Amplify client
@@ -189,23 +187,65 @@ class APIAdapter {
     };
   }
 
+  async getCatalogItem(corpusName: string, itemId: string): Promise<CatalogItem> {
+    if (getDataMode() === 'local') {
+      const item = await localAPI.getCatalogItem(corpusName, itemId);
+      return {
+        id: item.id,
+        corpusId: corpusName,
+        relpath: item.relpath,
+        sha256: item.sha256,
+        bytes: item.bytes,
+        mediaType: item.media_type,
+        title: item.title,
+        tags: item.tags,
+        metadata: item.metadata,
+        createdAt: item.created_at,
+        sourceUri: item.source_uri,
+      };
+    }
+
+    const { data } = await client.models.CatalogItem.list({
+      filter: {
+        corpusId: { eq: corpusName },
+        itemId: { eq: itemId },
+      },
+    });
+
+    if (!data.length) {
+      throw new Error(`Catalog item not found: ${itemId}`);
+    }
+
+    const item = data[0];
+    return {
+      id: item.itemId,
+      corpusId: item.corpusId,
+      relpath: item.relpath,
+      sha256: item.sha256,
+      bytes: item.bytes,
+      mediaType: item.mediaType,
+      title: item.title || undefined,
+      tags: item.tags || undefined,
+      metadata: item.metadataJson ? JSON.parse(JSON.stringify(item.metadataJson)) : undefined,
+      createdAt: item.createdAt,
+      sourceUri: item.sourceUri || undefined,
+      hasExtraction: item.hasExtraction || undefined,
+    };
+  }
+
   async listSnapshots(corpusName: string): Promise<{ snapshots: Snapshot[] }> {
-    if (isLocalMode) {
-      try {
-        const result = await localAPI.listSnapshots(corpusName);
-        return {
-          snapshots: result.snapshots.map(s => ({
-            id: s.id,
-            corpusId: corpusName,
-            snapshotId: s.id,
-            type: s.type as any,
-            totalItems: s.total_items,
-            completedItems: s.completed_items,
-          })),
-        };
-      } catch (err) {
-        console.warn('Local API failed, falling back to Amplify:', err);
-      }
+    if (getDataMode() === 'local') {
+      const result = await localAPI.listSnapshots(corpusName);
+      return {
+        snapshots: result.snapshots.map(s => ({
+          id: s.id,
+          corpusId: corpusName,
+          snapshotId: s.id,
+          type: s.type as any,
+          totalItems: s.total_items,
+          completedItems: s.completed_items,
+        })),
+      };
     }
 
     // Use Amplify client
@@ -229,12 +269,8 @@ class APIAdapter {
   }
 
   async getConfig(): Promise<{ corporaRoot: string }> {
-    if (isLocalMode) {
-      try {
-        return await localAPI.getConfig();
-      } catch (err) {
-        console.warn('Local API failed:', err);
-      }
+    if (getDataMode() === 'local') {
+      return await localAPI.getConfig();
     }
 
     // In cloud mode, return a placeholder

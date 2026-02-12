@@ -8,7 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@biblicus/stack-navigation': path.resolve(__dirname, '../../packages/stack-navigation/src'),
       './runtimeConfig': './runtimeConfig.browser',
+    },
+  },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3001',
     },
   },
   build: {

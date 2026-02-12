@@ -51,6 +51,12 @@
     --radius: 0.25rem;
   }
 
+  .topbar-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
   .dark {
     --secondary-muted: 220 30% 25%;
     --primary-text: 300 50% 90%;

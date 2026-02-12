@@ -17,7 +17,8 @@
     /* Path alias */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@biblicus/stack-navigation": ["../../packages/stack-navigation/src"]
     },
 
     /* Linting */

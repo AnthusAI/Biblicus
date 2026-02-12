@@ -6,7 +6,7 @@ import type {
   SpringstackRenderers,
   SpringstackTimingMode
 } from 'springstack';
-import { Book, Cloud, Database, Folder, Settings } from 'lucide-react';
+import { Cloud, Database, Folder, ScrollText, Settings } from 'lucide-react';
 import { MediaTypeIcon } from '@/lib/mediaTypeIcon';
 import { formatDisplayName } from '@/lib/utils';
 import { Corpus, CatalogItem, api, getDataMode, setDataMode, type DataMode } from '../../lib/api';
@@ -287,7 +287,7 @@ export function StackManager() {
           <div className="flex h-full flex-col gap-2 p-2">
             <div className="font-eyebrow text-xs text-muted-foreground">Corpora</div>
             {corporaLoading && <div className="text-sm text-muted-foreground">Loading corpora...</div>}
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
               {corpora.map(corpus => {
                 const node = buildCorpusNode(corpus);
                 const cardProps = helpers.getCardProps(node, {
@@ -323,7 +323,7 @@ export function StackManager() {
             {activeCorpusName && itemsLoading[activeCorpusName] && (
               <div className="text-sm text-muted-foreground">Loading items...</div>
             )}
-            <div className="grid gap-2">
+            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
               {activeCorpusName && corpusItems.map(item => {
                 const node = buildItemNode(item, activeCorpusName);
                 const cardProps = helpers.getCardProps(node, {
@@ -386,7 +386,7 @@ export function StackManager() {
   const initialStack = useMemo(() => [buildRootNode(dataMode)], [dataMode]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground p-2">
       <Springstack<ExplorerNodeData>
         initialStack={initialStack}
         timingMode={timingMode}
@@ -394,14 +394,19 @@ export function StackManager() {
         renderers={renderers}
         enterAnimation={{ durationMs: reduceMotion ? 200 : 500, staggerMs: reduceMotion ? 0 : 40 }}
         renderHeader={() => (
-          <div className="flex items-center justify-between p-2" style={{ scrollbarGutter: 'stable' }}>
-            <div className="flex items-center gap-2 font-headline text-sm font-semibold text-foreground">
-              <Book className="h-4 w-4 text-muted-foreground" strokeWidth={2.25} />
+          <div className="flex items-center gap-2 p-2 sm:gap-4" style={{ scrollbarGutter: 'stable' }}>
+            <div className="flex items-center gap-1 pl-2 font-headline text-sm font-semibold text-foreground">
+              <ScrollText
+                className="topbar-icon text-muted-foreground"
+                strokeWidth={2.25}
+                size={16}
+                style={{ width: 16, height: 16 }}
+              />
               Biblicus
             </div>
-            <div className="flex items-center justify-end gap-2 min-w-[220px]">
-              {!isAmplifyHosting && (
-                <div className="w-40">
+            {!isAmplifyHosting && (
+              <div className="flex flex-1 items-center justify-end sm:justify-center [&_span.text-xs]:hidden [&_span.text-xs]:sm:inline">
+                <div className="min-w-[96px] shrink-0 sm:w-auto">
                   <AnimatedSelector
                     name="data-mode"
                     value={dataMode}
@@ -418,15 +423,20 @@ export function StackManager() {
                     ]}
                   />
                 </div>
-              )}
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Settings className="h-4 w-4" strokeWidth={2.25} />
-              </button>
-            </div>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Settings
+                className="topbar-icon text-muted-foreground"
+                strokeWidth={2.25}
+                size={16}
+                style={{ width: 16, height: 16 }}
+              />
+            </button>
           </div>
         )}
         renderPanels={renderPanels}
