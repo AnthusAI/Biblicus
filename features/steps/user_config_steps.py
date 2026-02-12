@@ -180,3 +180,50 @@ def step_call_resolve_deepgram_api_key(context):
             os.environ["HOME"] = old_env_home
         elif "HOME" in os.environ:
             del os.environ["HOME"]
+
+
+@given('a local Biblicus user config exists with Aldea API key "{api_key}"')
+def step_local_user_config_exists_aldea(context, api_key: str) -> None:
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    path = Path(workdir) / ".biblicus" / "config.yml"
+    _write_user_config(path, api_key, provider="aldea")
+
+
+@when("I call resolve_aldea_api_key helper function")
+def step_call_resolve_aldea_api_key(context):
+    from pathlib import Path
+
+    from biblicus.user_config import resolve_aldea_api_key
+
+    old_env_key = os.environ.get("ALDEA_API_KEY")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "ALDEA_API_KEY" in extra_env:
+        os.environ["ALDEA_API_KEY"] = extra_env["ALDEA_API_KEY"]
+    elif "ALDEA_API_KEY" in os.environ:
+        del os.environ["ALDEA_API_KEY"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        context.resolved_api_key = resolve_aldea_api_key()
+    finally:
+        os.chdir(old_cwd)
+
+        if old_env_key is not None:
+            os.environ["ALDEA_API_KEY"] = old_env_key
+        elif "ALDEA_API_KEY" in os.environ:
+            del os.environ["ALDEA_API_KEY"]
+
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]
