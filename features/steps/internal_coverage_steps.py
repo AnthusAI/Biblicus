@@ -92,7 +92,6 @@ from biblicus.extraction import (
 from biblicus.extractors import get_extractor as resolve_extractor
 from biblicus.extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
 from biblicus.extractors.docling_granite_text import DoclingGraniteExtractor
-from .cli_steps import _resolve_fixture_path
 from biblicus.extractors.docling_smol_text import DoclingSmolExtractor
 from biblicus.workflow import (
     Plan,
@@ -113,6 +112,22 @@ def _corpus_path(context, name: str) -> Path:
     if workdir is None:
         raise AssertionError("Missing workdir in test context")
     return (workdir / name).resolve()
+
+
+def _resolve_fixture_path(context, filename: str) -> Path:
+    """Resolve fixture path, accounting for corpus root if set."""
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
 
 
 @given('a markdown file "{filename}" exists with contents "{contents}"')
