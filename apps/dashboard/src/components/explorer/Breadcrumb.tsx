@@ -18,6 +18,7 @@ export function Breadcrumb({ item, onSettingsClick, onClick, isActive }: Breadcr
       className={`flex items-baseline gap-2 shadow-flat-muted p-2 rounded-xl hover:bg-hover transition-colors duration-300 group cursor-pointer text-sm ${isActive ? 'bg-selected' : 'bg-card'}`}
       data-card-shell="true"
       data-flip-id={`card-${item.id.trim()}`}
+      data-crumb-target={item.type === 'root' ? 'root:root' : `${item.type}:${item.id}`}
       onClick={onClick}
     >
       <div

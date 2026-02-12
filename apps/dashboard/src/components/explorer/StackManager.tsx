@@ -302,6 +302,8 @@ export function StackManager() {
                       cardProps.className ?? ''
                     }`}
                     data-enter-item
+                    data-item-type="corpus"
+                    data-item-id={corpus.name}
                   >
                     <div data-card-shell="true" className="flex w-full items-start gap-2">
                       <div data-card-content="true" className="flex w-full items-start gap-2">
@@ -338,6 +340,8 @@ export function StackManager() {
                       cardProps.className ?? ''
                     }`}
                     data-enter-item
+                    data-item-type="item"
+                    data-item-id={item.id}
                   >
                     <div data-card-shell="true" className="flex w-full items-start gap-2">
                       <div data-card-content="true" className="flex w-full items-start gap-2">
