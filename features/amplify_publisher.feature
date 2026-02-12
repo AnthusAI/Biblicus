@@ -168,3 +168,18 @@ Feature: AWS Amplify Publisher
     And GraphQL will fail three times
     When I sync a catalog with 1 item
     Then the sync fails with network errors
+
+  Scenario: Sync catalog handles exception from metadata query
+    Given Amplify environment variables are configured
+    Given an AmplifyPublisher for corpus "my-corpus"
+    And _get_catalog_metadata will raise an unexpected exception
+    And a local catalog with 5 items
+    When I call sync_catalog
+    Then a full replacement sync is performed
+
+  Scenario: Config file loads S3 bucket when not in environment
+    Given fake AWS and HTTP services are available
+    And AMPLIFY_APPSYNC_ENDPOINT is set but S3 bucket is not
+    And an Amplify config file with all settings exists
+    When I create an AmplifyPublisher for corpus "test-corpus"
+    Then the publisher is configured with S3 bucket from config file

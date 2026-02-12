@@ -611,3 +611,44 @@ def step_sync_fails(context):
     assert len(context.sync_result.errors) > 0, f"Expected errors but got: {context.sync_result}"
     error_msg = context.sync_result.errors[0]
     assert "Network error" in error_msg or "Failed to sync" in error_msg, f"Expected network error but got: {error_msg}"
+
+
+@given("_get_catalog_metadata will raise an unexpected exception")
+def step_metadata_raises_exception(context):
+    # Patch _get_catalog_metadata to raise an exception that bypasses its internal try/except
+    # We'll use mock.patch to make it raise before the try block
+    from unittest import mock
+
+    def raise_exception(*args, **kwargs):
+        raise RuntimeError("Unexpected metadata error")
+
+    context.metadata_patch = mock.patch.object(
+        type(context.publisher),
+        '_get_catalog_metadata',
+        side_effect=raise_exception
+    )
+    context.metadata_patch.__enter__()
+
+
+@given("AMPLIFY_APPSYNC_ENDPOINT is set but S3 bucket is not")
+def step_partial_env_no_bucket(context):
+    _ensure_fake_aws_installed(context)
+    os.environ["AMPLIFY_APPSYNC_ENDPOINT"] = "https://test.appsync-api.us-west-2.amazonaws.com/graphql"
+    os.environ["AMPLIFY_API_KEY"] = "test-key"
+    os.environ.pop("AMPLIFY_S3_BUCKET", None)
+    os.environ.pop("AWS_REGION", None)
+
+
+@given("an Amplify config file with all settings exists")
+def step_config_file_all_settings(context):
+    config_path = Path.home() / '.biblicus' / 'amplify.env'
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("""AMPLIFY_S3_BUCKET=bucket-from-config
+AWS_REGION=us-west-2
+""")
+    context.amplify_config_path = config_path
+
+
+@then("the publisher is configured with S3 bucket from config file")
+def step_publisher_bucket_from_config(context):
+    assert context.publisher.s3_bucket == "bucket-from-config"
