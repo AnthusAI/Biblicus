@@ -17,6 +17,22 @@ def _corpus_path(context, name: str) -> Path:
     return (context.workdir / name).resolve()
 
 
+def _resolve_fixture_path(context, filename: str) -> Path:
+    """Resolve fixture path, accounting for corpus root if set."""
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
+
+
 def _data_for_media_type(media_type: str) -> bytes:
     """
     Provide deterministic fixture data for a media type.
@@ -237,7 +253,9 @@ def step_hook_logs_include(context, name: str, text: str) -> None:
 
 @given('I have a file "{filename}" with contents "{contents}"')
 def step_have_file_with_contents(context, filename: str, contents: str) -> None:
-    (context.workdir / filename).write_text(contents, encoding="utf-8")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(contents, encoding="utf-8")
 
 
 @when('I load the source "{source}"')
