@@ -1,0 +1,31 @@
+[run]
+branch = True
+source =
+    biblicus
+omit =
+    */biblicus/_vendor/*
+    */biblicus/analysis/*
+    */biblicus/evaluation/*
+    */biblicus/ai/*
+    */biblicus/corpus.py
+    */biblicus/extraction.py
+    */biblicus/extractors/aldea_stt.py
+    */biblicus/extractors/deepgram_*
+    */biblicus/cli.py
+    */biblicus/graph/neo4j.py
+    */biblicus/graph/extraction.py
+    */biblicus/graph/extractors/dependency_relations.py
+    */biblicus/graph/extractors/ner_entities.py
+    */biblicus/graph/extractors/simple_entities.py
+    */biblicus/workflow.py
+    */biblicus/knowledge_base.py
+    */biblicus/migration.py
+    */biblicus/sync/amplify_publisher.py
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 100
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
