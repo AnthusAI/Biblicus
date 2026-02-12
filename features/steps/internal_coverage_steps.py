@@ -92,6 +92,7 @@ from biblicus.extraction import (
 from biblicus.extractors import get_extractor as resolve_extractor
 from biblicus.extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
 from biblicus.extractors.docling_granite_text import DoclingGraniteExtractor
+from .cli_steps import _resolve_fixture_path
 from biblicus.extractors.docling_smol_text import DoclingSmolExtractor
 from biblicus.workflow import (
     Plan,
@@ -705,9 +706,9 @@ def step_pipeline_configuration_edge_cases_done(context) -> None:
 @when("I exercise extraction snapshot edge cases")
 def step_extraction_snapshot_edge_cases(context) -> None:
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    text_path = context.workdir / "note.txt"
-    binary_path = context.workdir / "note.bin"
-    skipped_path = context.workdir / "skip.bin"
+    text_path = _resolve_fixture_path(context, "note.txt")
+    binary_path = _resolve_fixture_path(context, "note.bin")
+    skipped_path = _resolve_fixture_path(context, "skip.bin")
     text_result = corpus.ingest_item(
         text_path.read_bytes(),
         filename=text_path.name,
@@ -852,8 +853,8 @@ def step_extraction_snapshot_edge_cases_done(context) -> None:
 @when("I exercise vector retriever helper edge cases")
 def step_vector_retriever_edge_cases(context) -> None:
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    text_path = context.workdir / "note.txt"
-    md_path = context.workdir / "note.md"
+    text_path = _resolve_fixture_path(context, "note.txt")
+    md_path = _resolve_fixture_path(context, "note.md")
     corpus.ingest_item(
         text_path.read_bytes(),
         filename=text_path.name,
@@ -1032,7 +1033,7 @@ def step_vector_retriever_edge_cases_done(context) -> None:
 @when("I exercise embedding index helper edge cases")
 def step_embedding_index_helper_edge_cases(context) -> None:
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    text_path = context.workdir / "note.txt"
+    text_path = _resolve_fixture_path(context, "note.txt")
     corpus.ingest_item(
         text_path.read_bytes(),
         filename=text_path.name,
