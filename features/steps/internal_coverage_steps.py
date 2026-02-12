@@ -132,7 +132,7 @@ def _resolve_fixture_path(context, filename: str) -> Path:
 
 @given('a markdown file "{filename}" exists with contents "{contents}"')
 def step_markdown_file_exists(context, filename: str, contents: str) -> None:
-    path = context.workdir / filename
+    path = _resolve_fixture_path(context, filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(contents, encoding="utf-8")
 
