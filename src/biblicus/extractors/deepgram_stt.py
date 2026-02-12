@@ -7,10 +7,10 @@ This extractor is implemented as an optional dependency so the core installation
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-from datetime import datetime
 
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError

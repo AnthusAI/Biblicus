@@ -17,19 +17,15 @@ import yaml
 from pydantic import ValidationError
 
 from .constants import (
-    ANALYSIS_RUNS_DIR_NAME,
+    ANALYSIS_DIR_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
     EXTRACTED_DIR_NAME,
     GRAPH_DIR_NAME,
     LEGACY_CORPUS_DIR_NAME,
     RETRIEVAL_DIR_NAME,
-    ANALYSIS_DIR_NAME,
-    EXTRACTION_SNAPSHOTS_DIR_NAME,
-    GRAPH_SNAPSHOTS_DIR_NAME,
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
-    SNAPSHOTS_DIR_NAME,
 )
 from .errors import IngestCollisionError
 from .frontmatter import parse_front_matter, render_front_matter

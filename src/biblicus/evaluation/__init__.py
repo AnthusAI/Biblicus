@@ -5,6 +5,13 @@ This module provides tools for quantifying the performance of OCR and other
 extraction pipelines against ground truth data.
 """
 
+from biblicus.evaluation.benchmark_runner import (
+    BenchmarkConfig,
+    BenchmarkResult,
+    BenchmarkRunner,
+    CategoryConfig,
+    CategoryResult,
+)
 from biblicus.evaluation.ocr_benchmark import (
     BenchmarkReport,
     OCRBenchmark,
@@ -15,13 +22,6 @@ from biblicus.evaluation.ocr_benchmark import (
     calculate_word_order_metrics,
 )
 from biblicus.evaluation.retrieval import _snapshot_artifact_bytes, evaluate_snapshot, load_dataset
-from biblicus.evaluation.benchmark_runner import (
-    BenchmarkConfig,
-    BenchmarkResult,
-    BenchmarkRunner,
-    CategoryConfig,
-    CategoryResult,
-)
 
 __all__ = [
     "BenchmarkReport",

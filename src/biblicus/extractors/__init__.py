@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from typing import Dict
 
-from .base import TextExtractor
 from .aldea_stt import AldeaSpeechToTextExtractor
+from .base import TextExtractor
 from .deepgram_stt import DeepgramSpeechToTextExtractor
 from .deepgram_transform import DeepgramTranscriptTransformExtractor
 from .docling_granite_text import DoclingGraniteExtractor

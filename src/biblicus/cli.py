@@ -1513,8 +1513,6 @@ def cmd_benchmark_status(arguments: argparse.Namespace) -> int:
 
 def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
     """Sync corpus catalog to Amplify dashboard backend."""
-    import os
-    from pathlib import Path
     from .sync.amplify_publisher import AmplifyPublisher
 
     corpus = (
@@ -1531,7 +1529,7 @@ def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
     # Create corpus record if it doesn't exist
     try:
         publisher.create_corpus()
-        print(f"✓ Corpus record created/verified")
+        print("✓ Corpus record created/verified")
     except Exception as e:
         if 'already exists' not in str(e).lower() and 'duplicate' not in str(e).lower():
             print(f"✗ Failed to create corpus: {e}", file=sys.stderr)
@@ -1562,7 +1560,6 @@ def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
 
 def cmd_dashboard_configure(arguments: argparse.Namespace) -> int:
     """Configure Amplify backend credentials."""
-    import os
     from pathlib import Path
 
     # Save configuration to ~/.biblicus/amplify.env

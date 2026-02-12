@@ -15,9 +15,8 @@ Metrics:
 from __future__ import annotations
 
 import re
-import string
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 # Common entity types for SROIE receipts
 SROIE_ENTITY_TYPES = ["company", "date", "address", "total"]

@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from biblicus.corpus import Corpus
-from biblicus.evaluation.ocr_benchmark import BenchmarkReport, OCRBenchmark
+from biblicus.evaluation.ocr_benchmark import OCRBenchmark
 
 
 @dataclass

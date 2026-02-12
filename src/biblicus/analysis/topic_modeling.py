@@ -5,11 +5,11 @@ Topic modeling analysis backend for Biblicus.
 from __future__ import annotations
 
 import json
-import sys
-import time
 import re
 import string
+import sys
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple

@@ -1,21 +1,23 @@
 """
 AWS Amplify Publisher for syncing Biblicus corpus data to cloud.
 """
-import os
-import json
-import requests
-import time
 import hashlib
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List
+import json
+import os
+import time
 from dataclasses import dataclass, field
-import boto3
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import boto3
+import requests
 
 
 @dataclass
 class SyncResult:
     """Result of a catalog sync operation."""
+
     skipped: bool = False
     reason: str = ""
     created: int = 0
