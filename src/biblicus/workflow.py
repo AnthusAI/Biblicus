@@ -360,8 +360,8 @@ def build_plan_for_extract(
             )
             extract_task.depends_on.append(load_task)
         else:
-            extract_task.status = "blocked"
-            extract_task.reason = "Corpus is empty and no load handler is available"
+            extract_task.status = "complete"
+            extract_task.reason = None
 
     tasks = _flatten_tasks(extract_task)
     return Plan(tasks=tasks, root=extract_task, status=_plan_status(tasks))

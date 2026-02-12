@@ -520,8 +520,12 @@ class Corpus:
         ]
 
     def _is_reserved_path(self, path: Path) -> bool:
+        if not path.is_absolute():
+            candidate = (self.root / path).resolve()
+        else:
+            candidate = path.resolve()
         try:
-            relative = path.relative_to(self.root)
+            relative = candidate.relative_to(self.root)
         except ValueError:
             return False
         if not relative.parts:
@@ -1395,6 +1399,16 @@ class Corpus:
         metadata: Optional[Dict[str, Any]],
         source_uri: str,
     ) -> IngestResult:
+        sanitized_name = _sanitize_filename(path.name)
+        if sanitized_name != path.name:
+            destination = path.with_name(sanitized_name)
+            if destination.exists():
+                raise IngestCollisionError(
+                    source_uri=source_uri,
+                    existing_item_id="unknown",
+                    existing_relpath=str(destination.relative_to(self.root)),
+                )
+            path = path.rename(destination)
         if self._is_reserved_path(path):
             raise ValueError("Cannot ingest files inside reserved corpus folders")
         existing_item = self._find_item_by_source_uri(source_uri)
@@ -1420,13 +1434,15 @@ class Corpus:
                 decoded = data.decode("utf-8")
                 parsed_document = parse_front_matter(decoded)
             except UnicodeDecodeError as decode_error:
-                raise ValueError("Markdown must be Unicode Transformation Format 8") from decode_error
+                raise ValueError(
+                    "Markdown file must be Unicode Transformation Format 8"
+                ) from decode_error
             frontmatter = dict(parsed_document.metadata)
             markdown_body = parsed_document.body
 
         sidecar = _load_sidecar(path)
         merged_metadata = _merge_metadata(frontmatter, sidecar)
-        resolved_tags = _merge_tags(_merge_tags([], merged_metadata.get("tags")), tags)
+        resolved_tags = _merge_tags(_merge_tags([], tags), merged_metadata.get("tags"))
         if metadata:
             for metadata_key, metadata_value in metadata.items():
                 if metadata_key in {"tags", "biblicus"}:
@@ -1493,6 +1509,7 @@ class Corpus:
         *,
         tags: Sequence[str] = (),
         source_uri: Optional[str] = None,
+        allow_external: bool = False,
     ) -> IngestResult:
         """
         Ingest a file path or uniform resource locator source.
@@ -1503,6 +1520,8 @@ class Corpus:
         :type tags: Sequence[str]
         :param source_uri: Optional override for the source uniform resource identifier.
         :type source_uri: str or None
+        :param allow_external: Whether to ingest files outside the corpus root by copying them into imports.
+        :type allow_external: bool
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
@@ -1511,17 +1530,26 @@ class Corpus:
             path = source if isinstance(source, Path) else candidate_path
             assert isinstance(path, Path)
             path = path.resolve()
-            if not path.is_relative_to(self.root):
+            if not allow_external and not path.is_relative_to(self.root):
                 raise ValueError(
                     "Local ingest requires the file to be inside the corpus root. "
                     "Move the file into the corpus and run reindex."
                 )
             resolved_source_uri = source_uri or path.as_uri()
-            return self._register_existing_file(
-                path=path,
+            data = path.read_bytes()
+            media_type, _ = mimetypes.guess_type(path.name)
+            media_type = media_type or "application/octet-stream"
+            if path.suffix.lower() in {".md", ".markdown"}:
+                media_type = "text/markdown"
+            return self.ingest_item(
+                data,
+                filename=path.name,
+                media_type=media_type,
+                title=None,
                 tags=tags,
                 metadata=None,
                 source_uri=resolved_source_uri,
+                storage_subdir="imports",
             )
 
         payload = load_source(source, source_uri=source_uri)
@@ -1852,18 +1880,8 @@ class Corpus:
                 item_id = _parse_uuid_prefix(content_path.name)
 
             if item_id is None:
-                item_id = str(uuid.uuid4())
-                updated_sidecar = dict(merged_metadata)
-                updated_sidecar["biblicus"] = {
-                    "id": item_id,
-                    "source": content_path.as_uri(),
-                }
-                if media_type != "text/markdown":
-                    updated_sidecar["media_type"] = media_type
-                if merged_metadata.get("tags"):
-                    updated_sidecar["tags"] = merged_metadata.get("tags")
-                _write_sidecar(content_path, updated_sidecar)
-                merged_metadata = _merge_metadata(frontmatter, updated_sidecar)
+                stats["skipped"] += 1
+                continue
 
             title: Optional[str] = None
             title_value = merged_metadata.get("title")

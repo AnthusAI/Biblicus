@@ -212,6 +212,7 @@ def _install_docling_unavailable_module(context) -> None:
 
     def _make_unavailable_module(name: str) -> types.ModuleType:
         module = types.ModuleType(name)
+        module.__file__ = name
 
         def __getattr__(attr_name: str) -> object:
             raise ImportError("Docling optional dependency is unavailable.")

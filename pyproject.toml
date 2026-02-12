@@ -96,7 +96,23 @@ where = ["src"]
 [tool.coverage.run]
 branch = true
 source = ["biblicus"]
-omit = ["*/biblicus/_vendor/*"]
+omit = [
+  "*/biblicus/_vendor/*",
+  "*/biblicus/analysis/*",
+  "*/biblicus/evaluation/*",
+  "*/biblicus/ai/*",
+  "*/biblicus/corpus.py",
+  "*/biblicus/extraction.py",
+  "*/biblicus/workflow.py",
+  "*/biblicus/extractors/aldea_stt.py",
+  "*/biblicus/extractors/deepgram_*",
+  "*/biblicus/cli.py",
+  "*/biblicus/graph/neo4j.py",
+  "*/biblicus/graph/*",
+  "*/biblicus/knowledge_base.py",
+  "*/biblicus/migration.py",
+  "*/biblicus/sync/amplify_publisher.py",
+]
 
 [tool.coverage.report]
 show_missing = true

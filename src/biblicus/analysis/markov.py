@@ -40,8 +40,10 @@ from .models import (
     MarkovAnalysisArtifactsGraphVizConfig,
     MarkovAnalysisConfiguration,
     MarkovAnalysisDecodedPath,
+    MarkovAnalysisModelConfig,
     MarkovAnalysisModelFamily,
     MarkovAnalysisObservation,
+    MarkovAnalysisObservationsConfig,
     MarkovAnalysisObservationsEncoder,
     MarkovAnalysisOutput,
     MarkovAnalysisReport,
@@ -512,10 +514,11 @@ def _collect_documents(
         if config.min_text_characters is not None and len(text_value) < config.min_text_characters:
             skipped_items += 1
             continue
-        documents.append(_Document(item_id=item_result.item_id, text=text_value))
         if config.sample_size is not None and len(documents) >= config.sample_size:
-            warnings.append("Text collection truncated to sample_size")
-            break
+            if "Text collection truncated to sample_size" not in warnings:
+                warnings.append("Text collection truncated to sample_size")
+            continue
+        documents.append(_Document(item_id=item_result.item_id, text=text_value))
         if index % 50 == 0 or index == total_items:
             elapsed = time.perf_counter() - start_time
             rate = len(documents) / elapsed if elapsed > 0 else 0.0
@@ -525,11 +528,6 @@ def _collect_documents(
                 flush=True,
                 file=sys.stderr,
             )
-
-    if config.sample_size is not None and len(documents) > config.sample_size:
-        documents = documents[: config.sample_size]
-        if "Text collection truncated to sample_size" not in warnings:
-            warnings.append("Text collection truncated to sample_size")
 
     report = MarkovAnalysisTextCollectionReport(
         status=MarkovAnalysisStageStatus.COMPLETE,
@@ -1626,12 +1624,22 @@ def _group_decoded_paths(
 def _build_states(
     *,
     segments: Sequence[MarkovAnalysisSegment],
-    observations: Sequence[MarkovAnalysisObservation],
+    observations: Optional[Sequence[MarkovAnalysisObservation]] = None,
     predicted_states: Sequence[int],
     n_states: int,
     max_exemplars: int,
-    config: MarkovAnalysisConfiguration,
+    config: Optional[MarkovAnalysisConfiguration] = None,
 ) -> List[MarkovAnalysisState]:
+    observations = list(observations or [])
+    if config is None:
+        config = MarkovAnalysisConfiguration.model_construct(
+            schema_version=1,
+            model=MarkovAnalysisModelConfig.model_construct(
+                family=MarkovAnalysisModelFamily.GAUSSIAN,
+                n_states=n_states,
+            ),
+            observations=MarkovAnalysisObservationsConfig.model_construct(),
+        )
     exemplars: Dict[int, List[str]] = {idx: [] for idx in range(n_states)}
     label_counts: Dict[int, Dict[str, int]] = {idx: {} for idx in range(n_states)}
     label_source = None

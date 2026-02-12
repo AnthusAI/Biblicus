@@ -385,11 +385,11 @@ def _parse_stage_spec(raw_stage: str) -> tuple[str, Dict[str, object]]:
         if not token:
             continue
         if "=" not in token:
-            raise ValueError(f"Step config values must be key=value (got {token!r})")
+            raise ValueError(f"Config values must be key=value (got {token!r})")
         key, value = token.split("=", 1)
         key = key.strip()
         if not key:
-            raise ValueError("Step config keys must be non-empty")
+            raise ValueError("Config keys must be non-empty")
         config[key] = value
     return extractor_id, config
 
@@ -519,6 +519,18 @@ def _resolve_extraction_snapshot_for_analysis(
 
     recipe_path = _default_extraction_recipe_path(corpus)
     if recipe_path.is_file():
+        latest_snapshot = corpus.latest_extraction_snapshot_reference(extractor_id="pipeline")
+        if latest_snapshot is not None:
+            manifest_path = corpus.extraction_snapshot_dir(
+                extractor_id=latest_snapshot.extractor_id, snapshot_id=latest_snapshot.snapshot_id
+            ) / "manifest.json"
+            if manifest_path.is_file():
+                print(
+                    f"[extract] reusing snapshot {latest_snapshot.snapshot_id}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return latest_snapshot
         print(
             f"{analysis_label}: using extraction recipe {recipe_path}",
             file=sys.stderr,

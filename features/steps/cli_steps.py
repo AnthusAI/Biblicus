@@ -96,9 +96,11 @@ def _resolve_fixture_path(context, filename: str) -> Path:
     if candidate.parts and candidate.parts[0] == ".biblicus":
         return workdir_path
     corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None and candidate.parts and candidate.parts[0] == corpus_root.name:
+        return workdir_path
+    if workdir_path.exists():
+        return workdir_path
     if corpus_root is not None:
-        if candidate.parts and candidate.parts[0] == corpus_root.name:
-            return workdir_path
         return (corpus_root / candidate).resolve()
     return workdir_path
 

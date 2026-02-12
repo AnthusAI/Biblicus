@@ -975,6 +975,17 @@ def stage_configuration_file_exists(context, filename: str) -> None:
     path = _resolve_fixture_path(context, filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(context.text, encoding="utf-8")
+    corpus_root = getattr(context, "last_corpus_root", None)
+    workdir = getattr(context, "workdir", None)
+    if corpus_root is not None and workdir is not None:
+        try:
+            path.relative_to(corpus_root)
+        except ValueError:
+            return
+        mirror = (Path(workdir) / filename).resolve()
+        if mirror != path:
+            mirror.parent.mkdir(parents=True, exist_ok=True)
+            mirror.write_text(context.text, encoding="utf-8")
 
 
 @when(

@@ -52,6 +52,7 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
             str(source_path),
             tags=["use-case", "retrieval-lab"],
             source_uri=source_path.resolve().as_uri(),
+            allow_external=True,
         )
         ingested_item_ids.append(ingest_result.item_id)
     corpus.reindex()

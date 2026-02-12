@@ -123,7 +123,7 @@ def _ingest_lab_items(corpus: Corpus) -> Dict[str, str]:
     for item_path in sorted(LAB_ITEMS_DIR.iterdir()):
         if not item_path.is_file():
             continue
-        result = corpus.ingest_source(item_path, tags=["retrieval_lab"])
+        result = corpus.ingest_source(item_path, tags=["retrieval_lab"], allow_external=True)
         filename_map[item_path.name] = result.item_id
     return filename_map
 
