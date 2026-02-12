@@ -19,6 +19,22 @@ from biblicus.models import CatalogItem, ExtractionStageOutput
 from features.environment import run_biblicus
 
 
+def _resolve_fixture_path(context, filename: str) -> Path:
+    """Resolve fixture path, accounting for corpus root if set."""
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
+
+
 class _FatalExtractorConfig(BaseModel):
     """
     Configuration model for the fatal extractor test double.
@@ -956,9 +972,8 @@ def step_attempt_build_retrieval_snapshot_with_extraction_snapshot(
 @when('a configuration file "{filename}" exists with content:')
 def stage_configuration_file_exists(context, filename: str) -> None:
     """Create a configuration file with the given content."""
-    workdir = getattr(context, "workdir", None)
-    assert workdir is not None
-    path = Path(workdir) / filename
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(context.text, encoding="utf-8")
 
 
@@ -970,9 +985,7 @@ def step_build_extraction_snapshot_from_configuration_file(
 ) -> None:
     """Build an extraction snapshot from a configuration file."""
     corpus = _corpus_path(context, corpus_name)
-    workdir = getattr(context, "workdir", None)
-    assert workdir is not None
-    configuration_path = Path(workdir) / configuration_file
+    configuration_path = _resolve_fixture_path(context, configuration_file)
     args = [
         "--corpus",
         str(corpus),
