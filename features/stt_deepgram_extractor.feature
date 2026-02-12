@@ -72,9 +72,9 @@ Feature: Deepgram speech to text extraction
       """
     When I ingest the file "clip.wav" into corpus "corpus"
     And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                            |
-      | stt-deepgram       | {}                                     |
-      | deepgram-transform | {"source":"words","join_with":"|"}     |
+      | extractor_id       | config_json                               |
+      | stt-deepgram       | {}                                       |
+      | deepgram-transform | {"source":"words","join_with":"\u007c"}  |
     Then the extracted text for the last ingested item equals "Hello|from|Deepgram"
 
   Scenario: Deepgram speech to text extractor accepts model configuration
