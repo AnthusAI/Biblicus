@@ -1177,7 +1177,7 @@ def step_embedding_index_helper_edge_cases_done(context) -> None:
 @when("I exercise sqlite retriever helper edge cases")
 def step_sqlite_retriever_helper_edge_cases(context) -> None:
     corpus = Corpus.open(_corpus_path(context, "corpus"))
-    text_path = context.workdir / "note.txt"
+    text_path = _resolve_fixture_path(context, "note.txt")
     corpus.ingest_item(
         text_path.read_bytes(),
         filename=text_path.name,
