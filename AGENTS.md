@@ -32,6 +32,58 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Corpus snapshots are versioned**: reindex and snapshot builds get identifiers for reproducibility.
 - **Extraction cache identity is name-based**: changing the extraction configuration name produces a new snapshot identity and invalidates cached artifacts.
 
+## Design Policies (Dashboard)
+
+- **Flat-style designs only**:
+    - **No borders/outlines on anything** (unless strictly necessary for accessibility/focus rings).
+    - **No fuzzy shadows** (crisp flat shadows are acceptable).
+    - **No gradients**.
+    - **Selection State**: Use background color changes (`bg-muted`) rather than borders/rings to indicate selection. Avoid thin hairilines and focus rings unless interacting with keyboard.
+- **Geometry**: All design elements should use a standard rounded rectangle with a standard corner radius (0.25rem/4px).
+- **Alignment**: All elements must obsessively align perfectly, always. We encourage flexbox-oriented designs, including animations.
+- **Grouping**: Groupings and regions are indicated via changes in background color, not thin lines. Avoid thin lines except as a specific visual language convention for folded/collapsed regions.
+- **Color System (Radix-based)**:
+    - Use Radix colors defined in the global Tailwind setup.
+    - **Backgrounds**: Should not be fully dark in dark mode or fully white in light mode; use 2-3 Radix steps inward (e.g., Gray 2 or 3).
+    - **Foregrounds**: Should not be fully white in dark mode or fully black in light mode; soften the contrast ratio (e.g., Gray 11 or 12).
+    - **Semantic Colors**: `card`, `muted` (background), `half-muted` (closer to text), `very-muted` (closer to background).
+- **Themes**:
+    - Support: **Cool Light/Dark**, **Warm Light/Dark**, **Neutral Light/Dark**.
+    - Named colors should shift their Radix tracks based on the current theme.
+    - Support system light/dark setting by default.
+    - **Persistence**: Appearance settings (theme/mode) must be persisted to `localStorage` (key: `biblicus-appearance`).
+- **Icons**:
+    - All icons must be **Lucide**.
+    - **Stroke width**: 2.25px.
+    - **Color**: Normal text colors (or muted), never inverted. Dark icon on light background (light mode).
+    - **Background**: Icons should generally NOT have a background rectangle/circle unless strictly necessary for specific UI controls (like the animated selector). They should float freely or sit next to text.
+    - **Spacing**: The gap between an icon and its text label should always be `gap-2` (0.5rem/8px).
+- **Layout Standards**:
+    - **Standard Padding**: The standard internal padding for cards, list items, and interactive elements is `p-2` (0.5rem/8px).
+    - **Standard Gap**: `gap-2` is the default spacing for aligned elements.
+- **Animations**:
+    - **Standard Easing**: `power3.inOut` for transitions, `power3.out` for entrances.
+    - **Standard Duration**: 0.4s - 0.6s.
+    - **Sidebar Pattern**: Sidebars should be overlays (fixed, z-index 50) that slide in/out. Use a backdrop blur overlay (opacity fade) behind them.
+
+### Breadcrumb Stack Animation Spec
+
+- **Deep-link drill-down always starts at root**  
+  When loading a deep link (e.g., `/corpora/<name>/items/<id>`), the UI must render the **root list first**, even if cached. No skipping.
+- **Beat duration is a parameter**  
+  `beat_ms = 1000` in normal motion; reduced motion uses a shorter beat (`beat_ms_reduced`, e.g., 200ms).
+- **Every level is shown for one beat**  
+  After a level is rendered (root list, corpus list, etc.), the UI waits **one beat** before animating to the next level.
+- **Each morph lasts one beat, split into two phases**  
+  - **Phase A (Y motion)**: the selected item moves up from list to breadcrumb rail. During this phase, the **current level’s content can disappear**.  
+  - **Phase B (X motion)**: the item slides horizontally into its exact breadcrumb position. During this phase, the **next level is allowed to appear**.
+- **Shell and content stay synchronized**  
+  The background shell and its text/icon content appear and disappear together (no desync).
+- **No layout jiggle**  
+  Breadcrumb rail is overlayed; content area padding animates to rail height.
+
+**Rationale:** This is the canonical navigation animation language for the dashboard.
+
 ## Agent orientation
 
 - **Primary objective**: Biblicus manages raw corpora and evaluates retrieval and retrieval-augmented generation backends used by Tactus.
@@ -40,6 +92,37 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Behavior-driven development discipline**: specifications first; every behavior specified; one official way (no fallbacks).
 - **Modeling discipline**: Pydantic at boundaries; validation errors must be clear.
 - **Development flow**: update `features/*.feature`, implement, run tests; use the command-line interface to ingest; `reindex` refreshes catalog.
+- **Beads and agent instructions**: This project uses **Beads** for issue and task tracking; using it is **mandatory**. See [AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md) for detailed operational instructions for agents (workflows, landing the plane, session workflow, quality gates).
+
+## Local telemetry for AI-assisted iteration
+
+This repo includes a **dev-only telemetry bridge** that forwards browser console output to the local API server and writes JSONL logs to disk. It exists to help AI coding agents iterate without asking you to copy/paste console output.
+
+- **Purpose**: capture `console.*` output during UI development and save it locally.
+- **Scope**: local development only. It is **disabled in production**.
+
+### How to use it
+
+1) Start the local API server (required):
+```
+npm run server
+```
+
+2) Start Vite with telemetry enabled:
+```
+VITE_TELEMETRY=1 npm run dev
+```
+
+3) Logs are written to:
+```
+logs/telemetry.log
+```
+
+### Notes
+
+- Telemetry is enabled only when `import.meta.env.DEV` and `VITE_TELEMETRY=1`.
+- If the log file doesn’t appear, confirm the API server is running on `http://localhost:3001`.
+- This is a local-only workflow for the demo app; do not enable it in production builds.
 
 ## Strict behavior-driven development policy (project-wide)
 
@@ -114,9 +197,9 @@ except FileNotFoundError:
 
 ## One official way (no compatibility baggage)
 
-- No backwards compatibility layers, no legacy aliases, no “support both”.
-- No hidden fallbacks that hide mistakes; prefer explicit errors and clear guidance.
-- The domain-specific cognitive framework vocabulary is authoritative: we pick one set of nouns and use them everywhere (code, command-line interface, documentation, specifications).
+- **No backwards compatibility layers**, no legacy aliases, no “support both”.
+- **No hidden fallbacks** that hide mistakes; prefer explicit errors and clear guidance.
+- The **domain-specific cognitive framework vocabulary is authoritative**: we pick one set of nouns and use them everywhere (code, command-line interface, documentation, specifications).
 
 ## Pydantic-first domain modeling
 
@@ -207,3 +290,29 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
 - Provide **multiple viable options** with clear tradeoffs, then give a recommendation and say why.
 - Prefer **minimal-opinion minimum viable products**, but insist on the *smallest set of invariants* needed for reliable evaluation (identifiers, provenance, versioning).
 - Keep this file updated as the project evolves (names, scope boundaries, key abstractions, and architectural choices).
+
+## Landing the Plane (Session Completion)
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd sync
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds

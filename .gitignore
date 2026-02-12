@@ -29,6 +29,7 @@ __MACOSX/
 datasets/
 
 # Dashboard app
+node_modules/
 apps/dashboard/node_modules/
 apps/dashboard/.amplify/
 apps/dashboard/amplify_outputs*

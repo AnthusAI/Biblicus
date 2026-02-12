@@ -22,7 +22,39 @@ Python CLI → AppSync (Intent Events) → Frontend (Instant Update)
 S3 Events → Lambda → AppSync (Availability Events) → Frontend (Content Ready)
 ```
 
-## Implementation Phases
+## Current Status (2026-02-07)
+
+### Implemented
+- **Amplify Backend**: Schema, Auth, Storage, and S3 Event Handler implemented.
+- **Python CLI**: Integration mostly complete (needs final testing).
+- **Frontend Dashboard**:
+    - Project initialized with Vite + React + TypeScript + Tailwind.
+    - **GSAP Flip Navigation System**:
+        - `StackManager`: Orchestrates navigation stack and manages the "drill-down" animation flow using GSAP Flip.
+        - `Breadcrumb`: Components morph from full cards in the grid to collapsed breadcrumbs.
+        - `RootView`, `CorpusView`, `ItemView`: Views implemented with GSAP Flip targeting hooks.
+        - **Appearance Sidebar**: Floating sidebar with animated theme/mode/motion toggles.
+        - **Centralized Data Cache**: `StackManager` now holds `corpus` and `item` data to ensure synchronous rendering during navigation transitions (fixes "pop" effect).
+    - **Design System**:
+        - Strict flat design (no borders, fuzzy shadows).
+        - Radix-based color themes (Cool, Warm, Neutral) with Light/Dark/System modes.
+        - Consistent 1em icon sizing and baseline alignment.
+
+### Critical Issues & Blockers
+- **Animation Glitch (Corpus Disappearance)**:
+    - **Symptom**: When navigating BACK from a Corpus view to the Root grid (clicking "Biblicus"), the Corpus element disappears immediately at the start of the animation, then expands into place at the end. It does not morph smoothly.
+    - **Cause**: GSAP Flip fails to link the "leaving" breadcrumb element to the "entering" grid card element. This breaks the morph transition, causing it to fall back to separate fade-out/fade-in animations.
+    - **Suspected Root Cause**:
+        - **Identity/Targeting**: Despite strict ID matching (`data-flip-id`), Flip sees them as different elements. This is often due to DOM timing (one element removed before the other exists) or duplicate IDs during the transition frame.
+        - **Data deduplication**: Strict deduplication was added to `StackManager` to prevent duplicate keys, but the issue persists.
+        - **Scoped Selection**: Attempted to scope `Flip.getState` to `containerRef` to avoid global selector pollution, but debugging is ongoing.
+    - **Next Steps**:
+        - Validate that the target element exists *in the DOM* and has the correct `data-flip-id` at the exact moment `Flip.from` is called.
+        - Use `Flip.fit()` manually if automatic state tracking continues to fail.
+        - Verify `layout` property changes (display: flex vs block) aren't interfering with Flip's calculations.
+
+### Implementation Phases
+
 
 ### Phase 1: Amplify Backend Setup
 
@@ -903,6 +935,87 @@ def watch(corpus_path, interval):
         click.echo('\nStopped watching')
     observer.join()
 ```
+
+#### 2.3 Real-Time Snapshot Updates
+
+The dashboard uses Amplify Gen 2's built-in real-time subscriptions to display extraction progress without polling.
+
+**Key Pattern**: State changes via table records, not arbitrary signals. This pattern comes "for free" from Amplify Gen 2.
+
+**Backend Implementation** (`src/biblicus/sync/amplify_publisher.py`):
+
+Already implemented methods:
+- `start_snapshot(snapshot_id, snapshot_type, total_items)` - Creates Snapshot with `status='RUNNING'`
+- `update_snapshot_progress(snapshot_id, completed_items)` - Updates `completedItems` field
+- `complete_snapshot(snapshot_id, total_items, error_message=None)` - Marks `status='COMPLETED'` or `FAILED'`
+
+Pattern:
+1. Create Snapshot record with `status='RUNNING'`, `completedItems=0`
+2. Update `completedItems` incrementally as extraction progresses
+3. Update `status='COMPLETED'` or `FAILED'` when done
+
+No WebSocket code needed in Python—just HTTP GraphQL mutations. AppSync automatically publishes changes to subscribers.
+
+**Frontend Implementation** (`apps/dashboard/src/pages/CorpusDashboardPage.tsx`):
+
+Uses `observeQuery()` to subscribe to Snapshot table changes:
+
+```typescript
+useEffect(() => {
+  const subscription = client.models.Snapshot.observeQuery({
+    filter: { corpusId: { eq: corpusName } }
+  }).subscribe({
+    next: ({ items }) => {
+      setSnapshots(items); // Automatic re-render on create/update/delete
+    },
+    error: (err) => {
+      console.error('Subscription error:', err);
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}, [corpusName]);
+```
+
+Automatically receives:
+- `onCreate`: New snapshot appears when CLI calls `start_snapshot()`
+- `onUpdate`: Progress bar animates as CLI calls `update_snapshot_progress()`
+- `onUpdate`: Status changes when CLI calls `complete_snapshot()`
+
+**Test Script** (`scripts/test_snapshot_realtime.py`):
+
+Simulates extraction with 0-100% progress updates:
+
+```python
+publisher = AmplifyPublisher('Alfa')
+snapshot_id = f"test-extraction-{int(time.time())}"
+
+# Create snapshot (dashboard sees it appear within 1s)
+publisher.start_snapshot(snapshot_id, 'EXTRACTION', total_items=100)
+
+# Update progress every 2 seconds (dashboard progress bar animates)
+for i in range(0, 101, 20):
+    publisher.update_snapshot_progress(snapshot_id, completed_items=i)
+    time.sleep(2)
+
+# Complete (dashboard shows completion indicator)
+publisher.complete_snapshot(snapshot_id, total_items=100)
+```
+
+Run with:
+```bash
+# Terminal 1: Watch dashboard
+cd apps/dashboard && npm run dev
+
+# Terminal 2: Simulate extraction
+python scripts/test_snapshot_realtime.py
+```
+
+Expected: Snapshot appears, progress bar animates 0→100%, status changes to COMPLETED.
+
+**Key Design Decision**: No custom WebSocket infrastructure. Amplify Gen 2 provides real-time updates automatically via AppSync subscriptions on DynamoDB changes.
+
+See [Real-Time Subscriptions Guide](realtime-subscriptions.md) for detailed documentation.
 
 ### Phase 3: Vite + React Frontend
 
