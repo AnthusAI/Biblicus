@@ -98,6 +98,7 @@ def main() -> int:
         behave_args.extend(["--tags", "~@ocr"])
     if args.integration and not args.unstructured:
         behave_args.extend(["--tags", "~@unstructured"])
+    behave_args.extend(["--tags", "~@skip"])
     behave_exit_code = _run(
         [sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args],
         env=env,
