@@ -5,6 +5,22 @@ from pathlib import Path
 from behave import given
 
 
+def _resolve_fixture_path(context, filename: str) -> Path:
+    """Resolve fixture path, accounting for corpus root if set."""
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
+
+
 def _escape_pdf_text(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
@@ -105,11 +121,13 @@ def _minimal_single_page_pdf_bytes_with_no_text() -> bytes:
 
 @given('a Portable Document Format file "{filename}" exists with text "{text}"')
 def step_pdf_file_exists_with_text(context, filename: str, text: str) -> None:
-    path = Path(context.workdir) / filename
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(_minimal_single_page_pdf_bytes(text=text))
 
 
 @given('a Portable Document Format file "{filename}" exists with no extractable text')
 def step_pdf_file_exists_with_no_text(context, filename: str) -> None:
-    path = Path(context.workdir) / filename
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(_minimal_single_page_pdf_bytes_with_no_text())
