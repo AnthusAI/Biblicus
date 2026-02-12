@@ -184,7 +184,7 @@ def _install_fake_docker(context) -> None:
     log_path.write_text("")
 
     script_path = bin_dir / "docker"
-    python_path = "/opt/anaconda3/bin/python"
+    python_path = sys.executable
     script = f"""#!/bin/sh
 set -e
 STATE={state_path}
