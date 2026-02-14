@@ -84,11 +84,21 @@ def run_stt_provider(corpus: Corpus, provider: Dict, provider_name: str) -> str:
     print(f"{'='*70}")
 
     try:
+        # Wrap single STT extractor in pipeline
+        pipeline_config = {
+            'stages': [
+                {
+                    'extractor_id': provider['extractor_id'],
+                    'config': provider['config']
+                }
+            ]
+        }
+
         snapshot = build_extraction_snapshot(
             corpus=corpus,
-            extractor_id=provider['extractor_id'],
+            extractor_id='pipeline',
             configuration_name=provider_name,
-            configuration=provider['config']
+            configuration=pipeline_config
         )
 
         print(f"✓ Snapshot created: {snapshot.snapshot_id[:16]}...")
