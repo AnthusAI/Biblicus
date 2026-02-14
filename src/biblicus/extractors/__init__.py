@@ -7,15 +7,21 @@ from __future__ import annotations
 from typing import Dict
 
 from .aldea_stt import AldeaSpeechToTextExtractor
+from .audio_format_converter import AudioFormatConverterExtractor
+from .aws_transcribe_stt import AwsTranscribeSpeechToTextExtractor
+from .azure_speech_stt import AzureSpeechToTextExtractor
 from .base import TextExtractor
 from .deepgram_stt import DeepgramSpeechToTextExtractor
 from .deepgram_transform import DeepgramTranscriptTransformExtractor
 from .docling_granite_text import DoclingGraniteExtractor
 from .docling_smol_text import DoclingSmolExtractor
+from .faster_whisper_stt import FasterWhisperSpeechToTextExtractor
+from .google_speech_stt import GoogleSpeechToTextExtractor
 from .heron_layout import HeronLayoutExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
 from .mock_layout_detector import MockLayoutDetectorExtractor
+from .openai_audio_stt import OpenAiAudioSpeechToTextExtractor
 from .openai_stt import OpenAiSpeechToTextExtractor
 from .paddleocr_layout import PaddleOCRLayoutExtractor
 from .paddleocr_vl_text import PaddleOcrVlExtractor
@@ -51,6 +57,12 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         PipelineExtractor.extractor_id: PipelineExtractor(),
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
+        OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor(),
+        FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor(),
+        AudioFormatConverterExtractor.extractor_id: AudioFormatConverterExtractor(),
+        AwsTranscribeSpeechToTextExtractor.extractor_id: AwsTranscribeSpeechToTextExtractor(),
+        AzureSpeechToTextExtractor.extractor_id: AzureSpeechToTextExtractor(),
+        GoogleSpeechToTextExtractor.extractor_id: GoogleSpeechToTextExtractor(),
         AldeaSpeechToTextExtractor.extractor_id: AldeaSpeechToTextExtractor(),
         DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor(),
         DeepgramTranscriptTransformExtractor.extractor_id: DeepgramTranscriptTransformExtractor(),

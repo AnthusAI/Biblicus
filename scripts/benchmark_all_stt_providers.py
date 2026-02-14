@@ -51,6 +51,24 @@ DEFAULT_PROVIDERS = [
         }
     },
     {
+        'name': 'OpenAI GPT-4o Audio',
+        'extractor_id': 'stt-openai-audio',
+        'config': {
+            'model': 'gpt-4o-audio-preview',
+            'prompt': 'Transcribe this audio accurately, preserving all spoken words.'
+        }
+    },
+    {
+        'name': 'Faster-Whisper large-v3',
+        'extractor_id': 'stt-faster-whisper',
+        'config': {
+            'model_size': 'large-v3',
+            'device': 'auto',
+            'compute_type': 'int8',
+            'beam_size': 5
+        }
+    },
+    {
         'name': 'Deepgram Nova-3',
         'extractor_id': 'stt-deepgram',
         'config': {
@@ -63,6 +81,15 @@ DEFAULT_PROVIDERS = [
         'name': 'Aldea',
         'extractor_id': 'stt-aldea',
         'config': {}
+    },
+    {
+        'name': 'AWS Transcribe',
+        'extractor_id': 'stt-aws-transcribe',
+        'config': {
+            'language_code': 'en-US',
+            'region_name': 'us-east-1',
+            's3_bucket': 'biblicus-transcribe-temp'
+        }
     },
 ]
 

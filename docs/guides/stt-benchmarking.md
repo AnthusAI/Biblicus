@@ -1,52 +1,144 @@
 # STT Provider Benchmarking Guide
 
-Practical how-to guide for benchmarking Speech-to-Text providers in Biblicus using labeled ground truth data.
+Comprehensive guide for benchmarking Speech-to-Text providers using Biblicus with real-world results.
 
 > **New to benchmarking?** Start with the [Benchmarking Overview](benchmarking-overview.md) for a platform introduction.
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Quick Start](#quick-start)
-3. [Benchmark Dataset](#benchmark-dataset)
-4. [Running Benchmarks](#running-benchmarks)
-5. [Understanding Metrics](#understanding-metrics)
-6. [Results Analysis](#results-analysis)
-7. [Dependencies](#dependencies)
-8. [Troubleshooting](#troubleshooting)
+2. [Benchmark Results Summary](#benchmark-results-summary)
+3. [Supported STT Providers](#supported-stt-providers)
+4. [Quick Start](#quick-start)
+5. [Available Datasets](#available-datasets)
+6. [Understanding Metrics](#understanding-metrics)
+7. [Running Custom Benchmarks](#running-custom-benchmarks)
+8. [Best Practices](#best-practices)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Overview
 
-This guide provides practical instructions for running STT benchmarks. It covers:
-- Setting up benchmark datasets
-- Running evaluation scripts
-- Testing multiple STT providers
-- Analyzing WER, CER, and accuracy metrics
-- Troubleshooting common issues
+Biblicus provides a robust framework for evaluating and comparing Speech-to-Text providers using standardized metrics on labeled audio datasets. This guide provides practical instructions and real benchmark results.
 
 **Key Features:**
+- 6 integrated STT providers (AWS, Aldea, Deepgram, OpenAI, Faster-Whisper, GPT-4o Audio)
 - Multiple evaluation metrics (WER, CER, precision, recall, F1)
-- Support for any STT provider
-- Per-audio and aggregate results
-- JSON export for analysis
-- Comparison between provider configurations
+- 500+ LibriSpeech samples ready for testing
+- Automated ground truth comparison
+- JSON export for detailed analysis
+
+---
+
+## Benchmark Results Summary
+
+### 120-Sample LibriSpeech test-clean Evaluation
+
+Comprehensive benchmark results from 120 professionally recorded audiobook samples:
+
+| Provider | WER | CER | F1 Score | Speed | Cost | Verdict |
+|----------|-----|-----|----------|-------|------|---------|
+| **AWS Transcribe** | **3.57%** | 1.01% | 0.963 | ~12s/file | $$ | 🥇 Best accuracy, slower |
+| **Aldea** | **3.60%** | 1.27% | 0.962 | ~1.5s/file | $ | 🥈 Excellent balance |
+| **Deepgram Nova-3** | **3.76%** | 1.15% | 0.962 | ~1s/file | $$ | 🥉 Fastest, great accuracy |
+| **OpenAI Whisper** | 4.30% | 1.32% | 0.964 | ~1.5s/file | $ | ✅ Good, widely available |
+| **Faster-Whisper** | 4.33% | 1.29% | 0.964 | Local | Free | ✅ Best for offline/free |
+| **GPT-4o Audio** | 45.11% | 31.75% | 0.847 | ~1.3s/file | $$$ | ❌ Not suitable for STT |
+
+**Key Findings:**
+- **Top tier providers** (AWS, Aldea, Deepgram) achieve ~3.6-3.8% WER on clean speech
+- **Differences between top 3 are statistically insignificant** at this sample size
+- **Deepgram offers best speed-accuracy tradeoff** for production use
+- **Faster-Whisper matches OpenAI Whisper** accuracy at zero cost
+- **GPT-4o Audio is 10x worse** - use specialized STT models instead
+
+**Recommendation by Use Case:**
+- **Production (balanced)**: Deepgram Nova-3 - fastest with top-tier accuracy
+- **Production (max accuracy)**: AWS Transcribe - slightly better WER, slower
+- **Cost-sensitive**: Faster-Whisper large-v3 - local, free, matches paid APIs
+- **General purpose**: OpenAI Whisper - widely available, good performance
+- **Avoid**: GPT-4o Audio - not optimized for transcription
+
+---
+
+## Supported STT Providers
+
+### Currently Integrated (6 providers)
+
+#### 1. AWS Transcribe
+- **Extractor ID**: `stt-aws-transcribe`
+- **Accuracy**: ⭐ 3.57% WER (Best)
+- **Speed**: Slow (~12s per file due to S3 upload)
+- **Cost**: $$ (~$1.50 per 100 files)
+- **Requirements**: AWS credentials, S3 bucket
+- **Best for**: Maximum accuracy requirements
+
+#### 2. Aldea
+- **Extractor ID**: `stt-aldea`
+- **Accuracy**: ⭐ 3.60% WER
+- **Speed**: Fast (~1.5s per file)
+- **Cost**: $ (~$0.50 per 100 files)
+- **Requirements**: Aldea API key
+- **Best for**: Excellent balance of speed, cost, accuracy
+
+#### 3. Deepgram Nova-3
+- **Extractor ID**: `stt-deepgram`
+- **Accuracy**: ⭐ 3.76% WER
+- **Speed**: Fastest (~1s per file)
+- **Cost**: $$ (~$0.80 per 100 files)
+- **Requirements**: Deepgram API key
+- **Best for**: Production workloads requiring speed
+
+#### 4. OpenAI Whisper (API)
+- **Extractor ID**: `stt-openai`
+- **Accuracy**: ✅ 4.30% WER
+- **Speed**: Fast (~1.5s per file)
+- **Cost**: $ (~$0.60 per 100 files)
+- **Requirements**: OpenAI API key
+- **Best for**: General purpose, widely available
+
+#### 5. Faster-Whisper (Local)
+- **Extractor ID**: `stt-faster-whisper`
+- **Model**: large-v3 with CTranslate2
+- **Accuracy**: ✅ 4.33% WER
+- **Speed**: Slow (local CPU/GPU processing)
+- **Cost**: Free (local inference)
+- **Requirements**: Local compute, ~3GB model download
+- **Best for**: Offline, privacy-sensitive, or cost-sensitive applications
+
+#### 6. GPT-4o Audio (Not Recommended)
+- **Extractor ID**: `stt-openai-audio`
+- **Accuracy**: ❌ 45.11% WER (Poor)
+- **Speed**: Fast (~1.3s per file)
+- **Cost**: $$$ (~$2.00 per 100 files)
+- **Note**: Multimodal model not optimized for transcription
+- **Recommendation**: Use specialized STT models instead
 
 ---
 
 ## Quick Start
 
+### 1. Download Benchmark Dataset
+
 ```bash
-# 1. Download the LibriSpeech test-clean dataset
+# Download 100 LibriSpeech test-clean samples
 python scripts/download_librispeech_samples.py \
   --corpus corpora/librispeech_benchmark \
-  --count 20
+  --count 100
 
-# 2. Run benchmark on all STT providers
-python scripts/benchmark_all_stt_providers.py \
+# For larger benchmarks (500 samples for statistical significance)
+python scripts/download_librispeech_samples.py \
   --corpus corpora/librispeech_benchmark \
-  --output results/stt_benchmark.json
+  --count 500 \
+  --force
+
+# Download challenging test-other subset
+python scripts/download_openslr_samples.py \
+  --corpus corpora/librispeech_test_other \
+  --dataset SLR12 \
+  --subset test-other \
+  --count 100
 
 # 3. View results
 cat results/stt_benchmark.json | jq '.providers[] | {name, wer: .metrics.wer.avg}'

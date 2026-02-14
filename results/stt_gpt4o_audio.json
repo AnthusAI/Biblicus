@@ -1,0 +1,45 @@
+{
+  "benchmark_timestamp": "2026-02-13T23:19:52.909157",
+  "corpus_path": "corpora/librispeech_benchmark",
+  "total_providers": 1,
+  "successful_providers": 1,
+  "failed_providers": 0,
+  "providers": [
+    {
+      "name": "OpenAI GPT-4o Audio",
+      "snapshot_id": "b164978609122504fdc910df0243da1ed0bf361b3d7611b3fd684a77ecbe3f2d",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.17752039627039629,
+          "median": 0.0,
+          "avg_substitutions": 1.25,
+          "avg_deletions": 0.9,
+          "avg_insertions": 0.3
+        },
+        "cer": {
+          "avg": 0.11501532245959874,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.8729407858387521,
+          "avg_recall": 0.8636856060606061,
+          "avg_f1": 0.8681277056277057,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "OpenAI GPT-4o Audio",
+        "extractor_id": "stt-openai-audio",
+        "model": "gpt-4o-audio-preview",
+        "prompt": "Transcribe this audio accurately, preserving all spoken words."
+      },
+      "total_audio_files": 20
+    }
+  ],
+  "best_performers": {
+    "lowest_wer": "OpenAI GPT-4o Audio",
+    "lowest_cer": "OpenAI GPT-4o Audio",
+    "best_f1": "OpenAI GPT-4o Audio"
+  }
+}
