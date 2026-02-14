@@ -107,16 +107,17 @@ def calculate_wer(reference: str, hypothesis: str) -> Dict[str, Any]:
             i -= 1
             j -= 1
         else:
-            # Find which operation was used
-            sub_cost = d[i-1][j-1] if i > 0 and j > 0 else float('inf')
-            ins_cost = d[i][j-1] if j > 0 else float('inf')
-            del_cost = d[i-1][j] if i > 0 else float('inf')
+            # Check which operation produced current cell value
+            current_cost = d[i][j]
+            sub_cost = d[i-1][j-1] + 1 if i > 0 and j > 0 else float('inf')
+            ins_cost = d[i][j-1] + 1 if j > 0 else float('inf')
+            del_cost = d[i-1][j] + 1 if i > 0 else float('inf')
 
-            if sub_cost <= ins_cost and sub_cost <= del_cost:
+            if sub_cost == current_cost:
                 substitutions += 1
                 i -= 1
                 j -= 1
-            elif ins_cost <= del_cost:
+            elif ins_cost == current_cost:
                 insertions += 1
                 j -= 1
             else:
@@ -461,6 +462,15 @@ class STTBenchmark:
         cers = [r.cer for r in results]
         f1s = [r.f1_score for r in results]
 
+        def calculate_median(values):
+            """Calculate median correctly for both even and odd length lists."""
+            sorted_values = sorted(values)
+            n = len(sorted_values)
+            if n % 2 == 1:
+                return sorted_values[n // 2]
+            else:
+                return (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2.0
+
         report = STTBenchmarkReport(
             evaluation_timestamp=datetime.utcnow().isoformat() + 'Z',
             corpus_path=str(self.corpus.root),
@@ -468,16 +478,16 @@ class STTBenchmark:
             provider_configuration=provider_config or {},
             total_audio_files=len(results),
             avg_wer=sum(wers) / len(wers),
-            median_wer=sorted(wers)[len(wers) // 2],
+            median_wer=calculate_median(wers),
             avg_substitutions=sum(r.substitutions for r in results) / len(results),
             avg_deletions=sum(r.deletions for r in results) / len(results),
             avg_insertions=sum(r.insertions for r in results) / len(results),
             avg_cer=sum(cers) / len(cers),
-            median_cer=sorted(cers)[len(cers) // 2],
+            median_cer=calculate_median(cers),
             avg_precision=sum(r.precision for r in results) / len(results),
             avg_recall=sum(r.recall for r in results) / len(results),
             avg_f1=sum(f1s) / len(f1s),
-            median_f1=sorted(f1s)[len(f1s) // 2],
+            median_f1=calculate_median(f1s),
             per_audio_results=results,
         )
 

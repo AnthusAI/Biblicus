@@ -162,6 +162,8 @@ def ingest_librispeech_samples(
     :return: Ingestion statistics.
     :rtype: dict
     """
+    import shutil
+
     # Collect audio files and transcriptions
     samples = collect_audio_files(dataset_dir, sample_count)
 
@@ -174,9 +176,14 @@ def ingest_librispeech_samples(
 
     for audio_file, transcription in samples:
         try:
-            # Ingest audio into corpus
-            result = corpus.ingest_source(
-                audio_file,
+            # Read audio data
+            audio_data = audio_file.read_bytes()
+
+            # Ingest audio into corpus with source URI to avoid deduplication
+            result = corpus.ingest_item(
+                data=audio_data,
+                media_type="audio/flac",
+                source_uri=f"file://{audio_file}",
                 tags=["librispeech", "test-clean", "speech", "ground-truth"]
             )
 

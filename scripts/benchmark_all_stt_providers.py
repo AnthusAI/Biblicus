@@ -359,8 +359,17 @@ def main():
             # Evaluate
             result = evaluate_provider(benchmark, snapshot_id, provider, provider_name)
 
+            # Always append result (even if None or failed)
             if result:
                 results.append(result)
+            else:
+                # Add failed entry if evaluate returned None
+                results.append({
+                    'name': provider_name,
+                    'snapshot_id': snapshot_id,
+                    'success': False,
+                    'error': 'Evaluation failed'
+                })
 
         # Print comparison table
         print_comparison_table(results)
