@@ -194,8 +194,8 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
                     # Get transcript
                     transcript_uri = response['TranscriptionJob']['Transcript']['TranscriptFileUri']
 
-                    import urllib.request
                     import json as json_module
+                    import urllib.request
 
                     with urllib.request.urlopen(transcript_uri) as response_data:
                         transcript_data = json_module.loads(response_data.read().decode('utf-8'))

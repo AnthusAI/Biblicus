@@ -13,7 +13,6 @@ Supports standard ASR metrics:
 import csv
 import json
 import re
-import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -111,7 +110,6 @@ def calculate_wer(reference: str, hypothesis: str) -> Dict[str, Any]:
             current_cost = d[i][j]
             sub_cost = d[i-1][j-1] + 1 if i > 0 and j > 0 else float('inf')
             ins_cost = d[i][j-1] + 1 if j > 0 else float('inf')
-            del_cost = d[i-1][j] + 1 if i > 0 else float('inf')
 
             if sub_cost == current_cost:
                 substitutions += 1
@@ -399,8 +397,6 @@ class STTBenchmark:
         Returns:
             STTBenchmarkReport with aggregate and per-audio results
         """
-        start_time = time.time()
-
         # Load extraction snapshot
         snapshot_id = snapshot_reference
         text_dir = (

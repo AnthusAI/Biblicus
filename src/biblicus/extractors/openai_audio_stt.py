@@ -148,8 +148,9 @@ class OpenAiAudioSpeechToTextExtractor(TextExtractor):
         # Convert FLAC/OGG to WAV in-memory if needed
         if source_format in ('flac', 'ogg'):
             try:
-                from pydub import AudioSegment
                 import io
+
+                from pydub import AudioSegment
             except ImportError:
                 # If pydub not available, skip unsupported formats
                 return None
