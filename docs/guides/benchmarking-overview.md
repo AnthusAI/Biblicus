@@ -32,7 +32,7 @@ You can:
 
 ## Current Benchmarks
 
-### Document Extraction Benchmarks
+### Document Extraction (OCR) Benchmarks
 
 Biblicus includes multi-category benchmarks for document extraction:
 
@@ -50,6 +50,16 @@ Biblicus includes multi-category benchmarks for document extraction:
 - Multi-column academic papers
 - Primary metric: LCS Ratio (reading order preservation)
 - Tests complex layout understanding and reading order
+
+### Speech-to-Text (STT) Benchmarks
+
+Biblicus includes STT provider benchmarks:
+
+**1. LibriSpeech test-clean**
+- 5.4 hours of read English speech (~2600 utterances)
+- Primary metric: Word Error Rate (WER)
+- Tests transcription accuracy, punctuation, and formatting
+- Providers: OpenAI Whisper, Deepgram Nova-3, Aldea
 
 ### Evaluated Pipelines
 
@@ -107,6 +117,7 @@ This documentation follows a hub-and-spoke model:
 
 **Deep Dives:**
 - **[OCR Benchmarking Guide](ocr-benchmarking.md)**: Practical how-to for OCR evaluation
+- **[STT Benchmarking Guide](stt-benchmarking.md)**: Practical how-to for STT evaluation
 - **[Multi-Category Benchmark Framework](document-understanding-benchmark.md)**: Architecture and design
 - **[Heron Implementation](heron-implementation.md)**: Layout detection specifics
 - **[Layout-Aware OCR Results](layout-aware-ocr-results.md)**: Detailed layout-aware analysis
@@ -115,11 +126,21 @@ This documentation follows a hub-and-spoke model:
 
 Biblicus supports three benchmark modes to balance speed vs. thoroughness:
 
+### OCR Benchmarks
+
 | Mode | Duration | Use Case | Configuration |
 |------|----------|----------|---------------|
 | **Quick** | 5-10 min | Development iteration | `configs/benchmark/quick.yaml` |
 | **Standard** | 30-60 min | Release validation | `configs/benchmark/standard.yaml` |
 | **Full** | 2-4 hours | Comprehensive evaluation | `configs/benchmark/full.yaml` |
+
+### STT Benchmarks
+
+| Mode | Duration | Audio Files | Use Case | Configuration |
+|------|----------|-------------|----------|---------------|
+| **Quick** | 2-5 min | 20 | Development iteration | `configs/benchmark/stt-quick.yaml` |
+| **Standard** | 10-20 min | 100 | Release validation | `configs/benchmark/stt-standard.yaml` |
+| **Full** | 2-4 hours | ~2600 | Comprehensive evaluation | `configs/benchmark/stt-full.yaml` |
 
 ## Customization
 

@@ -1,0 +1,41 @@
+# Biblicus STT Benchmark - Full Configuration
+#
+# Comprehensive STT benchmark for publication-quality results.
+# Runs all available audio files (~2600 utterances, 5.4 hours).
+# Expected runtime: ~2-4 hours (depending on API latency)
+
+benchmark_name: stt-full
+
+categories:
+  librispeech:
+    dataset: librispeech-test-clean
+    corpus_path: corpora/librispeech_benchmark
+    ground_truth_subdir: ground_truth
+    primary_metric: wer
+    subset_size: null  # null = all available
+    tags:
+      - librispeech
+      - test-clean
+      - speech
+      - ground-truth
+
+# STT providers to benchmark
+providers:
+  - name: OpenAI Whisper
+    extractor_id: stt-openai
+    config:
+      model: whisper-1
+      response_format: json
+
+  - name: Deepgram Nova-3
+    extractor_id: stt-deepgram
+    config:
+      model: nova-3
+      punctuate: true
+      smart_format: true
+
+  - name: Aldea
+    extractor_id: stt-aldea
+    config: {}
+
+output_dir: results/stt_benchmark
