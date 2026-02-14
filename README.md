@@ -459,6 +459,45 @@ From Python, the same flow is available through the Corpus class and backend int
 - Query a run with `backend.query`.
 - Evaluate with `evaluate_run`.
 
+## Benchmarking
+
+Biblicus is designed as a **retrieval augmented generation platform** where you can experiment with different extraction pipelines and benchmark them against each other.
+
+### Quick Start
+
+```bash
+# Download benchmark dataset
+python scripts/download_funsd_samples.py
+
+# Run benchmark on all pipelines
+python scripts/benchmark_all_pipelines.py
+
+# View results
+cat results/final_benchmark.json | jq '.pipelines[] | {name, f1: .metrics.set_based.avg_f1}'
+```
+
+### Available Benchmarks
+
+- **Forms (FUNSD)**: 199 scanned form documents with ground truth
+- **Receipts (SROIE)**: 626 receipt images for entity extraction
+- **Academic Papers (Scanned ArXiv)**: Multi-column layout understanding *(dataset pending)*
+
+### Evaluation Metrics
+
+- **Set-based**: Precision, Recall, F1 Score (position-agnostic accuracy)
+- **Order-aware**: Word Error Rate, LCS Ratio (reading order quality)
+- **N-gram**: Bigram and trigram overlap (local ordering)
+
+### Pipeline Comparison
+
+| Pipeline | F1 Score | Recall | Use Case |
+|----------|----------|--------|----------|
+| PaddleOCR | 0.787 | 0.782 | Best overall accuracy |
+| Docling-Smol | 0.728 | 0.675 | Tables & formulas |
+| Heron + Tesseract | 0.519 | 0.810 | Maximum extraction |
+
+See the [Benchmarking Overview][benchmarking] for complete documentation.
+
 ## Learn more
 
 Full documentation is published on GitHub Pages: https://anthusai.github.io/Biblicus/
@@ -472,6 +511,7 @@ The documents below follow the pipeline from raw items to model context:
 - [Backends][backends]
 - [Context packs][context-packs]
 - [Testing and evaluation][testing]
+- [Benchmarking][benchmarking]
 
 Reference:
 
@@ -710,6 +750,7 @@ License terms are in `LICENSE`.
 [context-packs]: docs/context-pack.md
 [demos]: docs/demos.md
 [testing]: docs/testing.md
+[benchmarking]: docs/guides/benchmarking-overview.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json

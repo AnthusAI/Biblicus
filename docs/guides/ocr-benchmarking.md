@@ -1,23 +1,37 @@
 # OCR Pipeline Benchmarking Guide
 
-Complete guide to benchmarking OCR pipelines in Biblicus using labeled ground truth data.
+Practical how-to guide for benchmarking OCR pipelines in Biblicus using labeled ground truth data.
+
+> **New to benchmarking?** Start with the [Benchmarking Overview](benchmarking-overview.md) for a platform introduction, or jump to the [Quickstart Guide](quickstart-benchmarking.md) for step-by-step instructions.
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [Quick Start](#quick-start)
 3. [Benchmark Dataset](#benchmark-dataset)
-4. [Built-in Pipelines](#built-in-pipelines)
-5. [Running Benchmarks](#running-benchmarks)
-6. [Understanding Metrics](#understanding-metrics)
-7. [Custom Pipelines](#custom-pipelines)
-8. [Results Analysis](#results-analysis)
+4. [Running Benchmarks](#running-benchmarks)
+5. [Custom Pipelines](#custom-pipelines)
+6. [Results Analysis](#results-analysis)
+7. [Dependencies](#dependencies)
+8. [Troubleshooting](#troubleshooting)
+
+**Reference Documentation:**
+- [Pipeline Catalog](pipeline-catalog.md) - All available pipelines with performance data
+- [Metrics Reference](metrics-reference.md) - Detailed metric explanations
+- [Current Results](benchmark-results.md) - Latest benchmark findings
 
 ---
 
 ## Overview
 
-Biblicus includes a comprehensive OCR benchmarking system that evaluates extraction pipelines against labeled ground truth data. The system measures both accuracy (word finding) and quality (reading order preservation).
+This guide provides practical instructions for running OCR benchmarks. It covers:
+- Setting up benchmark datasets
+- Running evaluation scripts
+- Creating custom pipelines
+- Analyzing results
+- Troubleshooting common issues
+
+For architectural details and the multi-category framework, see [Document Understanding Benchmark Framework](document-understanding-benchmark.md).
 
 **Key Features:**
 - Multiple evaluation metrics (F1, recall, precision, WER, sequence accuracy)
@@ -40,6 +54,8 @@ python scripts/benchmark_all_pipelines.py
 # 3. View results
 cat results/final_benchmark.json | jq '.pipelines[] | {name, f1: .metrics.set_based.avg_f1}'
 ```
+
+For detailed step-by-step instructions, see the [Quickstart Guide](quickstart-benchmarking.md).
 
 ---
 
@@ -110,141 +126,32 @@ To benchmark on custom documents:
 
 ---
 
-## Built-in Pipelines
+## Available Pipelines
 
-The benchmark system includes 9 pre-configured OCR pipelines:
+Biblicus includes 8+ pre-configured extraction pipelines. For complete details on each pipeline including:
+- Performance metrics and trade-offs
+- Configuration examples
+- When to use each pipeline
+- Installation requirements
 
-### 1. Baseline Tesseract (`baseline-ocr`)
+See the **[Pipeline Catalog](pipeline-catalog.md)**.
 
-Simple Tesseract OCR without layout detection.
+**Quick summary:**
+- **PaddleOCR** (F1: 0.787) - Best overall accuracy
+- **Docling-Smol** (F1: 0.728) - Tables & formulas
+- **Heron + Tesseract** (Recall: 0.810) - Maximum extraction
+- **Baseline Tesseract**, **RapidOCR**, **Unstructured**, and more
 
-**Config:** `configs/baseline-ocr.yaml`
-```yaml
-extractor_id: ocr-tesseract
-config:
-  min_confidence: 0.0
-  lang: eng
-```
+---
 
-**Performance:** F1: 0.607, Recall: 0.599
+## Understanding Metrics
 
-### 2. PaddleOCR (`ocr-paddleocr`)
+Biblicus uses three categories of metrics:
+- **Set-based**: F1, Precision, Recall (word-finding accuracy)
+- **Order-aware**: WER, LCS Ratio (reading order quality)
+- **N-gram**: Bigram, Trigram overlap (local ordering)
 
-PaddleOCR with VL model - best overall performer.
-
-**Config:** `configs/ocr-paddleocr.yaml`
-```yaml
-extractor_id: ocr-paddleocr-vl
-config:
-  lang: en
-```
-
-**Performance:** F1: 0.787, Recall: 0.782 ⭐ **BEST**
-
-### 3. Docling-Smol (`docling-smol`)
-
-Docling with SmolDocling-256M VLM for tables/formulas.
-
-**Config:** `configs/docling-smol.yaml`
-```yaml
-extractor_id: docling-smol
-config:
-  output_format: markdown
-```
-
-**Performance:** F1: 0.728, Recall: 0.675
-
-### 4. RapidOCR (`ocr-rapidocr`)
-
-Fast lightweight OCR library.
-
-**Config:** `configs/ocr-rapidocr.yaml`
-```yaml
-extractor_id: ocr-rapidocr
-config:
-  use_det: true
-  use_cls: true
-  use_rec: true
-```
-
-**Performance:** F1: 0.507, Recall: 0.467
-
-### 5. Unstructured (`unstructured`)
-
-Unstructured.io document parser.
-
-**Config:** `configs/unstructured.yaml`
-```yaml
-extractor_id: unstructured
-config: {}
-```
-
-**Performance:** F1: 0.649, Recall: 0.626
-
-### 6. Layout-Aware Tesseract with PaddleOCR (`layout-aware-tesseract`)
-
-PaddleOCR PP-Structure layout detection → Tesseract OCR.
-
-**Config:** `configs/layout-aware-tesseract.yaml`
-```yaml
-extractor_id: pipeline
-config:
-  stages:
-    - extractor_id: paddleocr-layout
-      config:
-        lang: en
-    - extractor_id: ocr-tesseract
-      config:
-        use_layout_metadata: true
-```
-
-**Performance:** F1: 0.601, Recall: 0.732 (+22.2% recall vs baseline)
-
-### 7. Layout-Aware Tesseract with Heron (`heron-tesseract`)
-
-**IBM Heron-101 layout detection → Tesseract OCR**
-
-Two-stage workflow: Use Heron to detect document layout and reading order, then Tesseract to extract text from each region in sequence.
-
-**Config:** `configs/heron-tesseract.yaml`
-```yaml
-extractor_id: pipeline
-config:
-  stages:
-    - extractor_id: heron-layout
-      config:
-        model_variant: "101"
-        confidence_threshold: 0.6
-    - extractor_id: ocr-tesseract
-      config:
-        use_layout_metadata: true
-```
-
-**Performance:**
-- **F1: 0.519** (lower due to precision trade-off)
-- **Recall: 0.810** ⭐ **HIGHEST RECALL** (finds 81% of all words!)
-- **Bigram Overlap: 0.561** (best local word ordering)
-- **Trade-off:** Lower precision (0.384) but finds more text than any other pipeline
-
-**When to use:**
-- When missing content is worse than having some noise
-- Documents where completeness matters more than perfect accuracy
-- Applications requiring maximum text extraction
-
-### 8. Layout-Aware RapidOCR (`layout-aware-rapidocr`)
-
-Mock layout detection → RapidOCR.
-
-**Config:** `configs/layout-aware-rapidocr.yaml`
-```yaml
-extractor_id: pipeline
-config:
-  stages:
-    - extractor_id: mock-layout-detector
-    - extractor_id: ocr-rapidocr
-```
-
-**Performance:** F1: 0.507 (no improvement shown)
+For detailed explanations, interpretations, and use case recommendations, see the **[Metrics Reference](metrics-reference.md)**.
 
 ---
 
@@ -338,75 +245,6 @@ python scripts/compare_pipelines.py \
   --output results/comparison.json
 ```
 
----
-
-## Understanding Metrics
-
-### Set-Based Metrics (Position-Agnostic)
-
-These metrics measure word finding ability without considering order:
-
-**F1 Score** (harmonic mean)
-- Range: 0.0 to 1.0 (higher is better)
-- Balances precision and recall
-- Primary metric for overall accuracy
-
-**Precision**
-- % of extracted words that are correct
-- Measures false positive rate
-- High precision = few extra/wrong words
-
-**Recall**
-- % of ground truth words that were found
-- Measures completeness
-- High recall = finds most words
-
-**Formula:**
-```
-Precision = TP / (TP + FP)
-Recall = TP / (TP + FN)
-F1 = 2 * (Precision * Recall) / (Precision + Recall)
-
-Where:
-  TP = True Positives (correct words found)
-  FP = False Positives (incorrect words extracted)
-  FN = False Negatives (ground truth words missed)
-```
-
-### Order-Aware Metrics (Sequence Quality)
-
-These metrics measure reading order preservation:
-
-**Word Error Rate (WER)**
-- Edit distance normalized by ground truth length
-- Range: 0.0+ (lower is better, can exceed 1.0)
-- Counts insertions, deletions, substitutions
-- Critical for layout-aware OCR evaluation
-
-**Sequence Accuracy**
-- % of words in correct sequential position
-- Range: 0.0 to 1.0 (higher is better)
-- Strict metric: word must be at exact position
-
-**LCS Ratio** (Longest Common Subsequence)
-- Ratio of longest ordered subsequence to total
-- Range: 0.0 to 1.0 (higher is better)
-- More forgiving than sequence accuracy
-
-### N-gram Overlap (Local Ordering)
-
-Measures local word ordering quality:
-
-**Bigram Overlap**
-- % of word pairs in correct order
-- Example: "hello world" → bigram is ("hello", "world")
-- Good for detecting column mixing
-
-**Trigram Overlap**
-- % of word triples in correct order
-- More sensitive to ordering issues
-
----
 
 ## Custom Pipelines
 
@@ -688,11 +526,20 @@ Solution: Check:
 
 ---
 
-## References
+## See Also
 
+**Benchmarking Documentation:**
+- [Benchmarking Overview](benchmarking-overview.md) - Platform introduction
+- [Quickstart Guide](quickstart-benchmarking.md) - Step-by-step instructions
+- [Pipeline Catalog](pipeline-catalog.md) - All available pipelines
+- [Metrics Reference](metrics-reference.md) - Metric explanations
+- [Current Results](benchmark-results.md) - Latest findings
+- [Document Understanding Framework](document-understanding-benchmark.md) - Architecture details
+- [Heron Implementation](heron-implementation.md) - Heron-specific details
+- [Layout-Aware OCR Results](layout-aware-ocr-results.md) - Layout analysis
+
+**External References:**
 - [FUNSD Dataset](https://guillaumejaume.github.io/FUNSD/)
 - [Heron Models (IBM Research)](https://huggingface.co/ds4sd/docling-layout-heron-101)
 - [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
-- [Benchmark Results](../../benchmark-results.md)
-- [Layout-Aware OCR Results](../../layout-aware-ocr-results.md)

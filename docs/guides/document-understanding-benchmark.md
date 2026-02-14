@@ -1,6 +1,17 @@
 # Biblicus Document Understanding Benchmark
 
+Multi-category benchmark framework architecture and design documentation.
+
+> **Looking for practical instructions?** See the [Quickstart Guide](quickstart-benchmarking.md) or [OCR Benchmarking Guide](ocr-benchmarking.md). This document covers the architectural design of the multi-category framework.
+
 The Biblicus Document Understanding Benchmark evaluates OCR and document extraction pipelines across diverse document types. Rather than testing on a single dataset, the benchmark measures performance across three distinct categories—forms, academic papers, and receipts—each presenting unique challenges for document processing systems.
+
+**Related Documentation:**
+- [Benchmarking Overview](benchmarking-overview.md) - Platform introduction
+- [Quickstart Guide](quickstart-benchmarking.md) - Step-by-step instructions
+- [Pipeline Catalog](pipeline-catalog.md) - Available pipelines
+- [Metrics Reference](metrics-reference.md) - Detailed metric explanations
+- [Current Results](benchmark-results.md) - Latest findings
 
 ## Why a Multi-Category Benchmark?
 
@@ -76,35 +87,22 @@ Academic papers rendered as images (not born-digital PDFs) test layout-aware ext
 
 ## Metrics
 
-### Set-Based Metrics (Word Finding)
+The benchmark uses three categories of metrics to evaluate extraction quality. For complete details on each metric including formulas, interpretations, and use case recommendations, see the **[Metrics Reference](metrics-reference.md)**.
 
-These metrics measure how well a pipeline finds words, ignoring their order:
+**Quick summary:**
 
-| Metric | Formula | What It Measures |
-|--------|---------|------------------|
-| **Precision** | TP / (TP + FP) | % of extracted words that are correct |
-| **Recall** | TP / (TP + FN) | % of ground truth words that were found |
-| **F1 Score** | 2 × P × R / (P + R) | Balanced accuracy (primary metric for forms/receipts) |
+**Set-Based Metrics (Word Finding):**
+- Precision, Recall, F1 Score
+- Primary metrics for forms and receipts
 
-### Order-Aware Metrics (Sequence Quality)
+**Order-Aware Metrics (Sequence Quality):**
+- LCS Ratio (primary for academic papers)
+- Word Error Rate (WER)
+- Sequence Accuracy, Bigram Overlap
 
-Critical for evaluating layout-aware pipelines on multi-column documents:
-
-| Metric | What It Measures | When It Matters |
-|--------|------------------|-----------------|
-| **LCS Ratio** | Longest common subsequence / ground truth length | Reading order preservation |
-| **Word Error Rate (WER)** | Edit distance / ground truth length | Overall sequence quality |
-| **Sequence Accuracy** | % of words in exact correct position | Strict ordering evaluation |
-| **Bigram Overlap** | % of word pairs in correct order | Local ordering quality |
-
-### Entity Metrics (Semantic Extraction)
-
-For SROIE receipts, entity-level metrics measure structured data extraction:
-
-| Metric | What It Measures |
-|--------|------------------|
-| **Entity F1** | Accuracy of extracted entity values |
-| **Per-Type F1** | Accuracy per entity type (date, total, company, address) |
+**Entity Metrics (Semantic Extraction):**
+- Entity F1 (for SROIE receipts)
+- Per-Type F1 (date, total, company, address)
 
 ## Scoring Strategy
 
