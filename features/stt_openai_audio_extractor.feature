@@ -88,3 +88,42 @@ Feature: OpenAI GPT-4o Audio speech to text extraction
       | extractor_id      | config_json                               |
       | stt-openai-audio  | {"model":"gpt-4o-audio-preview-2024"}    |
     Then the extracted text for the last ingested item equals "Custom model test"
+
+  Scenario: OpenAI Audio extractor converts FLAC to WAV for processing
+    Given I initialized a corpus at "corpus"
+    And a fake OpenAI library is available that returns chat completion "FLAC converted" for any prompt
+    And a fake pydub library is available
+    And an OpenAI API key is configured for this scenario
+    And a file "clip.flac" exists with bytes:
+      """
+      fLaC\x00\x00\x00\x22
+      """
+    When I ingest the file "clip.flac" into corpus "corpus"
+    And I build a "stt-openai-audio" extraction snapshot in corpus "corpus"
+    Then the extracted text for the last ingested item equals "FLAC converted"
+
+  Scenario: OpenAI Audio extractor converts OGG to WAV for processing
+    Given I initialized a corpus at "corpus"
+    And a fake OpenAI library is available that returns chat completion "OGG converted" for any prompt
+    And a fake pydub library is available
+    And an OpenAI API key is configured for this scenario
+    And a file "clip.ogg" exists with bytes:
+      """
+      OggS
+      """
+    When I ingest the file "clip.ogg" into corpus "corpus"
+    And I build a "stt-openai-audio" extraction snapshot in corpus "corpus"
+    Then the extracted text for the last ingested item equals "OGG converted"
+
+  Scenario: OpenAI Audio extractor skips FLAC when pydub unavailable
+    Given I initialized a corpus at "corpus"
+    And a fake OpenAI library is available
+    And the pydub dependency is unavailable
+    And an OpenAI API key is configured for this scenario
+    And a file "clip.flac" exists with bytes:
+      """
+      fLaC\x00\x00\x00\x22
+      """
+    When I ingest the file "clip.flac" into corpus "corpus"
+    And I build a "stt-openai-audio" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot does not include extracted text for the last ingested item
