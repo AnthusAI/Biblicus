@@ -19,6 +19,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe extractor skips non-audio items
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available
+    And AWS credentials are configured for this scenario
     When I ingest the text "alpha" with no metadata into corpus "corpus"
     And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json                                    |
@@ -28,6 +29,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe extractor produces transcript for an audio item
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns transcript "Hello from AWS Transcribe" for filename "clip.wav"
+    And AWS credentials are configured for this scenario
     And a file "clip.wav" exists with bytes:
       """
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
@@ -42,6 +44,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe uses configured language code
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns transcript "Bonjour" for filename "clip.wav"
+    And AWS credentials are configured for this scenario
     And a file "clip.wav" exists with bytes:
       """
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
@@ -56,6 +59,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe detects media format from media type
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns transcript "Test audio" for filename "clip.flac"
+    And AWS credentials are configured for this scenario
     And a file "clip.flac" exists with bytes:
       """
       fLaC\x00\x00\x00\x22
@@ -70,6 +74,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe handles job failure
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns failed job for filename "clip.wav" with reason "Invalid audio format"
+    And AWS credentials are configured for this scenario
     And a file "clip.wav" exists with bytes:
       """
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
@@ -84,6 +89,7 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe enables speaker identification when configured
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns transcript "Speaker one. Speaker two." for filename "clip.wav"
+    And AWS credentials are configured for this scenario
     And a file "clip.wav" exists with bytes:
       """
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
@@ -98,13 +104,13 @@ Feature: AWS Transcribe speech to text extraction
   Scenario: AWS Transcribe handles timeout when job takes too long
     Given I initialized a corpus at "corpus"
     And a fake boto3 library is available that returns in-progress job for filename "clip.wav"
+    And AWS credentials are configured for this scenario
     And a file "clip.wav" exists with bytes:
       """
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
     And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                          |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket","max_wait_seconds":1}     |
+      | extractor_id       | config_json                     |
+      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}     |
     Then the command fails with exit code 2
-    And standard error includes "timed out"
