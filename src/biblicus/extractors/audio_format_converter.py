@@ -176,7 +176,7 @@ class AudioFormatConverterExtractor(TextExtractor):
             converted_item = corpus.ingest_item(
                 data=converted_data,
                 media_type=f"audio/{target_format}",
-                source_uri=f"converted://{item.item_id}",
+                source_uri=f"converted://{item.id}",
                 tags=item.tags + ["converted", f"converted-from-{source_format}"]
             )
 
@@ -186,10 +186,10 @@ class AudioFormatConverterExtractor(TextExtractor):
                 producer_extractor_id=self.extractor_id,
                 metadata={
                     "conversion": "success",
-                    "source_item_id": item.item_id,
+                    "source_item_id": item.id,
                     "source_format": source_format,
                     "target_format": target_format,
-                    "converted_item_id": converted_item.item_id,
+                    "converted_item_id": converted_item.id,
                     "converted_relpath": converted_item.relpath,
                     "sample_rate": parsed_config.sample_rate,
                     "channels": parsed_config.channels,

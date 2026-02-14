@@ -47,8 +47,8 @@ def _install_fake_google_speech_module(context) -> None:
     google_module.cloud = cloud_module
     cloud_module.speech = speech_module
 
-    # Create enums for audio encoding
-    class AudioEncoding:
+    # Create enums for audio encoding as module-level first
+    class _AudioEncoding:
         LINEAR16 = 1
         FLAC = 2
         MP3 = 3
@@ -56,7 +56,7 @@ def _install_fake_google_speech_module(context) -> None:
         WEBM_OPUS = 9
 
     class RecognitionConfig:
-        AudioEncoding = AudioEncoding
+        AudioEncoding = _AudioEncoding
 
         def __init__(
             self,
