@@ -1,0 +1,202 @@
+{
+  "benchmark_timestamp": "2026-02-14T06:43:52.311845",
+  "corpus_path": "corpora/librispeech_benchmark",
+  "total_providers": 6,
+  "successful_providers": 6,
+  "failed_providers": 0,
+  "providers": [
+    {
+      "name": "OpenAI Whisper",
+      "snapshot_id": "f1fbcf5a399d4db1bee13cd727fe43560f6428eb9d097c0e9de9d372df56abf3",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.0354999193626393,
+          "median": 0.0,
+          "avg_substitutions": 0.36774193548387096,
+          "avg_deletions": 0.11612903225806452,
+          "avg_insertions": 0.014516129032258065
+        },
+        "cer": {
+          "avg": 0.012343209729522256,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9701943353923974,
+          "avg_recall": 0.9670498149346236,
+          "avg_f1": 0.9683221046913801,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "OpenAI Whisper",
+        "extractor_id": "stt-openai",
+        "model": "whisper-1",
+        "response_format": "json"
+      },
+      "total_audio_files": 620
+    },
+    {
+      "name": "OpenAI GPT-4o Audio",
+      "snapshot_id": "48c3ed0e6b92f33742d102c61f4ad7648d9452b26c66bd5d32abd73cf53dfbd7",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.372856609159078,
+          "median": 0.0,
+          "avg_substitutions": 1.3983870967741936,
+          "avg_deletions": 0.45806451612903226,
+          "avg_insertions": 1.3451612903225807
+        },
+        "cer": {
+          "avg": 0.3279879013726146,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.8706663909020291,
+          "avg_recall": 0.877257114857434,
+          "avg_f1": 0.8701475734971321,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "OpenAI GPT-4o Audio",
+        "extractor_id": "stt-openai-audio",
+        "model": "gpt-4o-audio-preview",
+        "prompt": "Transcribe this audio accurately, preserving all spoken words."
+      },
+      "total_audio_files": 620
+    },
+    {
+      "name": "Faster-Whisper large-v3",
+      "snapshot_id": "dc43afd29c0bfa38676e62f7e5b1d28d1ec13f16665357208fe8d3af9e8b7b7b",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.0435993443445511,
+          "median": 0.0,
+          "avg_substitutions": 0.33548387096774196,
+          "avg_deletions": 0.10967741935483871,
+          "avg_insertions": 0.43548387096774194
+        },
+        "cer": {
+          "avg": 0.020215866896053432,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9705064284960405,
+          "avg_recall": 0.9706961345420716,
+          "avg_f1": 0.9702463126895792,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "Faster-Whisper large-v3",
+        "extractor_id": "stt-faster-whisper",
+        "model_size": "large-v3",
+        "device": "auto",
+        "compute_type": "int8",
+        "beam_size": 5
+      },
+      "total_audio_files": 620
+    },
+    {
+      "name": "Deepgram Nova-3",
+      "snapshot_id": "2925e22800b76bbd905e5c2d0b0ee7e6836135dc150ad2107882d6510e54c4d0",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.031035109005526872,
+          "median": 0.0,
+          "avg_substitutions": 0.3435483870967742,
+          "avg_deletions": 0.06935483870967742,
+          "avg_insertions": 0.027419354838709678
+        },
+        "cer": {
+          "avg": 0.010596581999971622,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9718422255567042,
+          "avg_recall": 0.968953036714076,
+          "avg_f1": 0.9702292340397072,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "Deepgram Nova-3",
+        "extractor_id": "stt-deepgram",
+        "model": "nova-3",
+        "punctuate": true,
+        "smart_format": true
+      },
+      "total_audio_files": 620
+    },
+    {
+      "name": "Aldea",
+      "snapshot_id": "530da775d386fe39d05c231bdd3be2f5a52b7e9333b2157f6bf9423b80d4c4bd",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.03350475287228537,
+          "median": 0.0,
+          "avg_substitutions": 0.47317073170731705,
+          "avg_deletions": 0.0943089430894309,
+          "avg_insertions": 0.01788617886178862
+        },
+        "cer": {
+          "avg": 0.01368878181770151,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9688618932899127,
+          "avg_recall": 0.9647694217502887,
+          "avg_f1": 0.9666996605859086,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "Aldea",
+        "extractor_id": "stt-aldea"
+      },
+      "total_audio_files": 615
+    },
+    {
+      "name": "AWS Transcribe",
+      "snapshot_id": "881d695037a791d8d70b7076fe07180ad04539796367ea5825f65015b5c9f0ca",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.028266936801847265,
+          "median": 0.0,
+          "avg_substitutions": 0.3241935483870968,
+          "avg_deletions": 0.05967741935483871,
+          "avg_insertions": 0.02903225806451613
+        },
+        "cer": {
+          "avg": 0.0100883334433747,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9738231757121459,
+          "avg_recall": 0.9710104851865594,
+          "avg_f1": 0.972264991119078,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "AWS Transcribe",
+        "extractor_id": "stt-aws-transcribe",
+        "language_code": "en-US",
+        "region_name": "us-east-1",
+        "s3_bucket": "biblicus-transcribe-temp"
+      },
+      "total_audio_files": 620
+    }
+  ],
+  "best_performers": {
+    "lowest_wer": "AWS Transcribe",
+    "lowest_cer": "AWS Transcribe",
+    "best_f1": "AWS Transcribe"
+  }
+}

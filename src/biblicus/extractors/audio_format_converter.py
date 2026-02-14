@@ -189,7 +189,7 @@ class AudioFormatConverterExtractor(TextExtractor):
                     "source_item_id": item.id,
                     "source_format": source_format,
                     "target_format": target_format,
-                    "converted_item_id": converted_item.id,
+                    "converted_item_id": converted_item.item_id,
                     "converted_relpath": converted_item.relpath,
                     "sample_rate": parsed_config.sample_rate,
                     "channels": parsed_config.channels,
