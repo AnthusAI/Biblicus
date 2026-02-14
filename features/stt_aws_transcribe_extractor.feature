@@ -94,3 +94,17 @@ Feature: AWS Transcribe speech to text extraction
       | stt-aws-transcribe | {"s3_bucket":"test-bucket","identify_speakers":true,"max_speakers":2}        |
     Then the extracted text for the last ingested item equals "Speaker one. Speaker two."
     And the AWS Transcribe job enabled speaker labels
+
+  Scenario: AWS Transcribe handles timeout when job takes too long
+    Given I initialized a corpus at "corpus"
+    And a fake boto3 library is available that returns in-progress job for filename "clip.wav"
+    And a file "clip.wav" exists with bytes:
+      """
+      RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
+      """
+    When I ingest the file "clip.wav" into corpus "corpus"
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id       | config_json                                          |
+      | stt-aws-transcribe | {"s3_bucket":"test-bucket","max_wait_seconds":1}     |
+    Then the command fails with exit code 2
+    And standard error includes "timed out"

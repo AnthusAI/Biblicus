@@ -105,7 +105,7 @@ def _install_fake_azure_speech_module(context) -> None:
 
         def set_profanity(self, option: str) -> None:
             self._profanity = option
-            speechsdk_module.last_profanity = option  # type: ignore[attr-defined]
+            speechsdk_module.last_profanity_option = option  # type: ignore[attr-defined]
 
         def enable_dictation(self) -> None:
             self._dictation_enabled = True
@@ -143,7 +143,7 @@ def _install_fake_azure_speech_module(context) -> None:
     speechsdk_module.last_audio_filename = None
     speechsdk_module.last_speech_config = None
     speechsdk_module.last_audio_config = None
-    speechsdk_module.last_profanity = None
+    speechsdk_module.last_profanity_option = None
     speechsdk_module.last_dictation_enabled = False
 
     sys.modules["azure"] = azure_module
@@ -243,3 +243,12 @@ def step_azure_speech_enabled_dictation(context) -> None:
     assert speechsdk_module is not None
     enabled = getattr(speechsdk_module, "last_dictation_enabled", False)
     assert enabled is True
+
+
+@then('the Azure Speech recognizer used profanity option "{option}"')
+def step_azure_speech_used_profanity_option(context, option: str) -> None:
+    _ = context
+    speechsdk_module = sys.modules.get("azure.cognitiveservices.speech")
+    assert speechsdk_module is not None
+    actual = getattr(speechsdk_module, "last_profanity_option", None)
+    assert actual == option

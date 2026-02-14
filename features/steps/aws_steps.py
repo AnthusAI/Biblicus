@@ -226,9 +226,30 @@ def step_fake_boto3_returns_failed_job(context, filename: str, reason: str) -> N
     )
 
 
+@given('a fake boto3 library is available that returns in-progress job for filename "{filename}"')
+def step_fake_boto3_returns_in_progress_job(context, filename: str) -> None:
+    _install_fake_boto3_module(context)
+    behaviors = _ensure_fake_aws_transcription_behaviors(context)
+    behaviors[filename] = _FakeAwsTranscriptionBehavior(
+        transcript="",
+        job_status="IN_PROGRESS",
+        failure_reason=None
+    )
+
+
 @given("the boto3 dependency is unavailable")
 def step_boto3_dependency_unavailable(context) -> None:
     _install_boto3_unavailable_module(context)
+
+
+@given("AWS credentials are configured for this scenario")
+def step_aws_credentials_configured(context) -> None:
+    extra_env = getattr(context, "extra_env", None)
+    if extra_env is None:
+        extra_env = {}
+        context.extra_env = extra_env
+    extra_env["AWS_ACCESS_KEY_ID"] = "fake-access-key"
+    extra_env["AWS_SECRET_ACCESS_KEY"] = "fake-secret-key"
 
 
 @then('the AWS Transcribe job used language code "{language_code}"')
