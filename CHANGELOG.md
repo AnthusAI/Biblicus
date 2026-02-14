@@ -1,6 +1,179 @@
 # CHANGELOG
 
 
+## v1.6.0 (2026-02-14)
+
+### Bug Fixes
+
+- Correct benchmark results to show all 6 pipelines successful
+  ([`3eda1e0`](https://github.com/AnthusAI/Biblicus/commit/3eda1e0bcb89e8e58b593a0ed4f42598f59ea4fe))
+
+Updated benchmark-results.md to accurately reflect the final benchmark run where all 6 pipelines
+  succeeded (6/6, not 3/4). The document was showing outdated results from an earlier run before
+  Tesseract and PaddleOCR were fully installed.
+
+Corrected results: - PaddleOCR: F1 0.787 (best overall) - Docling-Smol/Granite: F1 0.728 -
+  Unstructured: F1 0.631 - Baseline Tesseract: F1 0.542 - RapidOCR: F1 0.508
+
+All dependencies (Tesseract, PaddleOCR, Docling, Unstructured, RapidOCR) are installed and
+  functional. Benchmarks are repeatable.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Correct STT benchmark WER calculation, median, and failed provider handling
+  ([`063cbb4`](https://github.com/AnthusAI/Biblicus/commit/063cbb437fd172fc704161aa37ce3656892a69b2))
+
+- Fix WER backtracking to check which operation produced current cell value * Compare
+  predecessor+cost against current cell (not just predecessors) * Ensures correct
+  substitution/deletion/insertion counts
+
+- Fix median calculation for even and odd length lists * Even: average of two middle elements * Odd:
+  true middle element (not off-by-one)
+
+- Fix failed provider tracking in benchmark runner * Always add result to list (even when evaluation
+  fails) * Ensures correct totals in final summary
+
+- Fix LibriSpeech download script to use source_uri for deduplication
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Resolve Ruff linter errors in STT code
+  ([`4269988`](https://github.com/AnthusAI/Biblicus/commit/4269988e54ab40f66295064a88082ffeca0a5e84))
+
+Fixed 4 linting issues: - Removed unused del_cost variable in WER calculation - Removed unused
+  start_time variable in benchmark - Fixed import ordering in aws_transcribe_stt.py - Fixed import
+  ordering in openai_audio_stt.py
+
+All Ruff checks now pass.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+### Chores
+
+- Exclude new STT extractors from coverage
+  ([`fdbc140`](https://github.com/AnthusAI/Biblicus/commit/fdbc140719070de9277720e09efb3de3d35e6822))
+
+The new STT provider extractors added in the benchmarking milestone require external API credentials
+  and dependencies to test. Following the existing pattern of excluding aldea_stt.py and deepgram_*,
+  exclude these new extractors from coverage requirements:
+
+- aws_transcribe_stt.py - azure_speech_stt.py - google_speech_stt.py - faster_whisper_stt.py -
+  openai_audio_stt.py - audio_format_converter.py
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Sync beads (Biblicus-51c)
+  ([`bdd28c7`](https://github.com/AnthusAI/Biblicus/commit/bdd28c7796e35d3d9dc38a97f54e7eabdf3f1735))
+
+### Continuous Integration
+
+- Rebase release job before semantic-release (Biblicus-51c)
+  ([`c7385aa`](https://github.com/AnthusAI/Biblicus/commit/c7385aa2cdf2a3ca91f08a3412801e246657eb98))
+
+### Documentation
+
+- Reorganize benchmarking documentation with hub-and-spoke structure
+  ([`35393ca`](https://github.com/AnthusAI/Biblicus/commit/35393cad80cc057888f778ec658eac6f60b116a1))
+
+Major documentation restructure to eliminate duplication and improve discoverability of benchmarking
+  features. Emphasizes Biblicus as a benchmarking platform for evaluating extraction pipelines.
+
+New hub-and-spoke documentation: - benchmarking-overview.md: top-level platform introduction -
+  pipeline-catalog.md: complete reference of 8+ pipelines - metrics-reference.md: comprehensive
+  metric explanations - quickstart-benchmarking.md: 5-minute getting started guide
+
+Updated existing docs: - README.md: added prominent benchmarking section - benchmark-results.md:
+  rewritten with fresh Feb 2026 results - ocr-benchmarking.md: removed duplication, added
+  cross-references - document-understanding-benchmark.md: added cross-references
+
+Benchmark results (6/6 pipelines successful): - PaddleOCR: F1 0.787 (best overall) -
+  Docling-Smol/Granite: F1 0.728 (high precision) - Unstructured: F1 0.631 - Baseline Tesseract: F1
+  0.542 - RapidOCR: F1 0.508
+
+All benchmarks verified repeatable with current codebase.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+### Features
+
+- Add STT benchmarking infrastructure
+  ([`9a09456`](https://github.com/AnthusAI/Biblicus/commit/9a094562f1d60c58d622b6968c14bf71a9bf415c))
+
+- Add STT benchmark evaluation module (stt_benchmark.py) * WER/CER calculation with edit distance *
+  Word-level metrics (precision, recall, F1) * Per-audio and aggregate reporting
+
+- Add STT benchmark runner (benchmark_all_stt_providers.py) * Tests all 3 providers: OpenAI Whisper,
+  Deepgram Nova-3, Aldea * Comprehensive comparison tables and JSON reports * Support for quick
+  testing with --limit flag
+
+- Add LibriSpeech download script (download_librispeech_samples.py) * Downloads test-clean subset
+  (~346 MB, 5.4 hours audio) * Parses ground truth transcriptions from .trans.txt files * Ingests
+  audio and stores ground truth in metadata/ground_truth/
+
+- Add STT benchmark configuration files * stt-quick.yaml: 20 files, 2-5 min * stt-standard.yaml: 100
+  files, 10-20 min * stt-full.yaml: ~2600 files, 2-4 hours
+
+- Add comprehensive STT benchmarking documentation * stt-benchmarking.md: Complete guide with
+  metrics, examples, troubleshooting * Update benchmarking-overview.md to include STT benchmarks
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Complete STT benchmark with working provider comparison
+  ([`53d2da9`](https://github.com/AnthusAI/Biblicus/commit/53d2da9214133c61624d5501e11c4389b5e8e72b))
+
+- Fix benchmark runner to wrap STT extractors in pipeline - Successfully run benchmark on all 3
+  providers (OpenAI, Deepgram, Aldea) - Generate comparison report with WER, CER, and F1 metrics
+
+Results on 20 LibriSpeech test-clean samples: - OpenAI Whisper: WER 0.026, CER 0.008, F1 0.979 (best
+  CER, best F1) - Deepgram Nova-3: WER 0.032, CER 0.011, F1 0.978 - Aldea: WER 0.024, CER 0.009, F1
+  0.976 (best WER)
+
+All providers show excellent performance (WER < 0.05 = human-level)
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+- Comprehensive STT provider benchmarking framework
+  ([`ac54fca`](https://github.com/AnthusAI/Biblicus/commit/ac54fca7865b8099bc17606c14b636c076de82e5))
+
+Add complete infrastructure for benchmarking Speech-to-Text providers with real-world results on 120
+  LibriSpeech samples.
+
+## New STT Providers (6 total)
+
+### Cloud APIs - AWS Transcribe (3.57% WER) - Best accuracy, requires S3 - Aldea (3.60% WER) -
+  Excellent balance of speed/cost/accuracy - Deepgram Nova-3 (3.76% WER) - Fastest, recommended for
+  production - OpenAI Whisper API (4.30% WER) - Widely available, good performance - GPT-4o Audio
+  (45.11% WER) - Not suitable for STT tasks
+
+### Local Inference - Faster-Whisper large-v3 (4.33% WER) - Free, matches OpenAI Whisper
+
+## Benchmark Results
+
+120-sample LibriSpeech test-clean evaluation shows: - Top 3 providers (AWS, Aldea, Deepgram)
+  statistically tied at ~3.6-3.8% WER - Faster-Whisper matches paid APIs at zero cost - GPT-4o Audio
+  10x worse - designed for conversation, not transcription - Recommendation: Deepgram Nova-3 for
+  best speed-accuracy tradeoff
+
+## New Dataset Infrastructure
+
+Download scripts for 7 STT datasets: - LibriSpeech (working, 500 samples downloaded) - OpenSLR
+  generic downloader - Common Voice (requires manual download) - FLEURS multilingual (requires
+  datasets library) - TED-LIUM, VoxForge, AN4 (infrastructure ready, URLs need fixing)
+
+## Documentation
+
+- Complete STT benchmarking guide - Detailed 120-sample benchmark comparison - Dataset status and
+  recommendations - Best practices and troubleshooting
+
+## Results
+
+All top 5 providers achieve excellent accuracy on clean speech: - Production recommended: Deepgram
+  Nova-3 (fastest, top-tier accuracy) - Cost-sensitive: Faster-Whisper (free, matches paid APIs) -
+  Maximum accuracy: AWS Transcribe (marginal improvement, slower/pricier)
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v1.5.0 (2026-02-12)
 
 ### Bug Fixes
