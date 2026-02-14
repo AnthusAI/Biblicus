@@ -109,3 +109,33 @@ Feature: Audio format conversion
       | audio-format-converter   | {"target_format":"invalid"}      |
     Then the command fails with exit code 2
     And standard error includes "Invalid target_format"
+
+  Scenario: Audio converter detects MP3 source format
+    Given I initialized a corpus at "corpus"
+    And a fake pydub library is available
+    And a file "clip.mp3" exists with bytes:
+      """
+      ID3
+      """
+    When I ingest the file "clip.mp3" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id             | config_json                    |
+      | audio-format-converter   | {"target_format":"wav"}       |
+    Then the extraction snapshot item provenance uses extractor "audio-format-converter"
+    And the audio conversion loaded format "mp3"
+    And the audio conversion exported format "wav"
+
+  Scenario: Audio converter handles M4A audio format
+    Given I initialized a corpus at "corpus"
+    And a fake pydub library is available
+    And a file "clip.m4a" exists with bytes:
+      """
+      ftypM4A
+      """
+    When I ingest the file "clip.m4a" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id             | config_json                    |
+      | audio-format-converter   | {"target_format":"wav"}       |
+    Then the extraction snapshot item provenance uses extractor "audio-format-converter"
+    And the audio conversion loaded format "m4a"
+    And the audio conversion exported format "wav"
