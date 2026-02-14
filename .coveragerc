@@ -11,6 +11,12 @@ omit =
     */biblicus/extraction.py
     */biblicus/extractors/aldea_stt.py
     */biblicus/extractors/deepgram_*
+    */biblicus/extractors/aws_transcribe_stt.py
+    */biblicus/extractors/azure_speech_stt.py
+    */biblicus/extractors/google_speech_stt.py
+    */biblicus/extractors/faster_whisper_stt.py
+    */biblicus/extractors/openai_audio_stt.py
+    */biblicus/extractors/audio_format_converter.py
     */biblicus/cli.py
     */biblicus/graph/neo4j.py
     */biblicus/graph/extraction.py
