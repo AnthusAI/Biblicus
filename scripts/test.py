@@ -93,14 +93,18 @@ def main() -> int:
 
     behave_args: list[str] = []
     if not args.integration:
-        behave_args.extend(["--tags", "~@integration"])
+        behave_args.extend(["--tags=-@integration"])
     elif not args.ocr:
-        behave_args.extend(["--tags", "~@ocr"])
+        behave_args.extend(["--tags=-@ocr"])
     if args.integration and not args.unstructured:
-        behave_args.extend(["--tags", "~@unstructured"])
-    behave_args.extend(["--tags", "~@skip"])
+        behave_args.extend(["--tags=-@unstructured"])
+    behave_args.extend(["--tags=-@skip"])
     behave_exit_code = _run(
         [sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args],
+        env=env,
+    )
+    pytest_exit_code = _run(
+        [sys.executable, "-m", "coverage", "run", "-a", "-m", "pytest"],
         env=env,
     )
     coverage_report_exit_code = _run(
@@ -113,7 +117,14 @@ def main() -> int:
     )
 
     print(f"Coverage report in Hypertext Markup Language: {htmlcov_dir / 'index.html'}")
-    return int(max(behave_exit_code, coverage_report_exit_code, coverage_html_exit_code))
+    return int(
+        max(
+            behave_exit_code,
+            pytest_exit_code,
+            coverage_report_exit_code,
+            coverage_html_exit_code,
+        )
+    )
 
 
 if __name__ == "__main__":

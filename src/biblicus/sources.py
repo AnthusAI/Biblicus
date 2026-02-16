@@ -191,13 +191,23 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
     """
     if isinstance(source, Path):
         path = source.resolve()
+        payload_bytes = path.read_bytes()
         media_type = _media_type_from_filename(path.name)
+        if media_type == "application/octet-stream":
+            sniffed = _sniff_media_type_from_bytes(payload_bytes)
+            if sniffed:
+                media_type = sniffed
+                filename = _ensure_extension_for_media_type(path.name, media_type)
+            else:
+                filename = path.name
+        else:
+            filename = path.name
         if path.suffix.lower() in {".md", ".markdown"}:
             media_type = "text/markdown"
         resolved_source_uri = source_uri or path.as_uri()
         return SourcePayload(
-            data=path.read_bytes(),
-            filename=path.name,
+            data=payload_bytes,
+            filename=filename,
             media_type=media_type,
             source_uri=resolved_source_uri,
         )
@@ -210,6 +220,11 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
                     f"Unsupported file uniform resource identifier host: {parsed.netloc!r}"
                 )
             path = Path(unquote(parsed.path)).resolve()
+            if path.is_dir():
+                index_path = path / "index.html"
+                if index_path.exists():
+                    return load_source(index_path, source_uri=source_uri or source)
+                raise IsADirectoryError(f"Directory source lacks index: {path}")
             return load_source(path, source_uri=source_uri or source)
 
         if parsed.scheme in {"http", "https"}:

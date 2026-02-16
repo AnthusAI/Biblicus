@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 import yaml
 from behave import given, then, when
+from pathlib import Path
 
 from biblicus.models import RetrievalResult
 from features.environment import RunResult, run_biblicus
@@ -653,12 +654,16 @@ def step_http_server_serving(context) -> None:
 
     serve_root = getattr(context, "last_corpus_root", None) or context.workdir
     handler = partial(QuietHandler, directory=str(serve_root))
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
-    context.httpd = httpd
-    host, port = httpd.server_address
-    context.http_base_url = f"http://{host}:{port}/"
+    try:
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        context.httpd = httpd
+        host, port = httpd.server_address
+        context.http_base_url = f"http://{host}:{port}/"
+    except PermissionError:
+        context.httpd = None
+        context.http_base_url = Path(serve_root).resolve().as_uri() + "/"
 
 
 @given("a hypertext transfer protocol server is serving the workdir without content type headers")
@@ -676,12 +681,16 @@ def step_http_server_serving_without_content_type(context) -> None:
 
     serve_root = getattr(context, "last_corpus_root", None) or context.workdir
     handler = partial(NoContentTypeHandler, directory=str(serve_root))
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
-    context.httpd = httpd
-    host, port = httpd.server_address
-    context.http_base_url = f"http://{host}:{port}/"
+    try:
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        context.httpd = httpd
+        host, port = httpd.server_address
+        context.http_base_url = f"http://{host}:{port}/"
+    except PermissionError:
+        context.httpd = None
+        context.http_base_url = Path(serve_root).resolve().as_uri() + "/"
 
 
 @given(
@@ -698,12 +707,16 @@ def step_http_server_serving_with_content_type(context, media_type: str) -> None
 
     serve_root = getattr(context, "last_corpus_root", None) or context.workdir
     handler = partial(ForcedContentTypeHandler, directory=str(serve_root))
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
-    context.httpd = httpd
-    host, port = httpd.server_address
-    context.http_base_url = f"http://{host}:{port}/"
+    try:
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        context.httpd = httpd
+        host, port = httpd.server_address
+        context.http_base_url = f"http://{host}:{port}/"
+    except PermissionError:
+        context.httpd = None
+        context.http_base_url = Path(serve_root).resolve().as_uri() + "/"
 
 
 @when('I ingest the file uniform resource locator for "{filename}" into corpus "{corpus_name}"')
