@@ -139,3 +139,23 @@ Feature: Audio format conversion
     Then the extraction snapshot item provenance uses extractor "audio-format-converter"
     And the audio conversion loaded format "m4a"
     And the audio conversion exported format "wav"
+
+  Scenario: Audio converter uses default format for unknown audio types
+    Given I initialized a corpus at "corpus"
+    And a fake pydub library is available
+    And a file "clip.aac" exists with bytes:
+      """
+      \xFF\xF1
+      """
+    When I ingest the file "clip.aac" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id             | config_json                    |
+      | audio-format-converter   | {"target_format":"wav"}       |
+    Then the extraction snapshot item provenance uses extractor "audio-format-converter"
+    And the audio conversion loaded format "wav"
+
+  Scenario: Audio converter rejects extraction at runtime when optional dependency is missing
+    Given I initialized a corpus at "corpus"
+    And the pydub dependency is unavailable
+    When I call the audio converter extract_text with dependency unavailable
+    Then a fatal extraction error is raised

@@ -4,6 +4,7 @@ import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from urllib.parse import unquote
 
 from behave import given, then
 
@@ -62,7 +63,13 @@ def _install_fake_faster_whisper_module(context) -> None:
             faster_whisper_module.last_beam_size = beam_size  # type: ignore[attr-defined]
 
             # Extract filename from path
-            filename = audio_path.rsplit("/", 1)[-1]
+            base_filename = audio_path.rsplit("/", 1)[-1]
+            # Strip the UUID prefix (format: uuid--originalfile)
+            filename = base_filename.split("--", 1)[-1] if "--" in base_filename else base_filename
+            # URL decode if needed
+            filename = unquote(filename)
+            # Extract just the basename (in case it's a full file:// URI)
+            filename = filename.rsplit("/", 1)[-1]
 
             # Find behavior for this filename
             behavior = behaviors.get(filename)

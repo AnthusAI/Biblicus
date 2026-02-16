@@ -5,6 +5,7 @@ import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+from urllib.parse import unquote
 
 from behave import given, then
 
@@ -76,7 +77,13 @@ def _install_fake_boto3_module(context) -> None:
 
             # Extract bucket and key from S3 URI
             s3_key = media_uri.replace("s3://", "").split("/", 1)[1]
-            filename = s3_key.split("/")[-1]
+            base_filename = s3_key.split("/")[-1]
+            # Strip the UUID prefix (format: uuid--originalfile)
+            filename = base_filename.split("--", 1)[-1] if "--" in base_filename else base_filename
+            # URL decode if needed
+            filename = unquote(filename)
+            # Extract just the basename (in case it's a full file:// URI)
+            filename = filename.rsplit("/", 1)[-1]
 
             # Find behavior for this filename
             behavior = behaviors.get(filename)
@@ -136,6 +143,7 @@ def _install_fake_boto3_module(context) -> None:
             raise ValueError(f"Unsupported service: {service_name}")
 
     boto3_module = types.ModuleType("boto3")
+    boto3_module.IS_FAKE_BOTO3 = True  # Marker to identify the mock
     boto3_module.client = client
     boto3_module.last_s3_service = None
     boto3_module.last_s3_region = None
@@ -159,7 +167,6 @@ def _install_fake_boto3_module(context) -> None:
 
     def fake_urlopen(url: str) -> Any:
         if "fake-transcript-uri" in str(url):
-            import io
             data = json.dumps(boto3_module.transcript_data).encode('utf-8')  # type: ignore[attr-defined]
 
             class FakeResponse:
@@ -183,20 +190,39 @@ def _install_fake_boto3_module(context) -> None:
     context._fake_boto3_original_modules = original_modules
 
 
+class _Boto3ImportBlocker:
+    """Meta path finder that blocks boto3 imports."""
+
+    def find_module(self, fullname: str, path: Optional[Any] = None) -> Optional[Any]:
+        if fullname == "boto3" or fullname.startswith("boto3."):
+            return self
+        if fullname == "botocore" or fullname.startswith("botocore."):
+            return self
+        return None
+
+    def load_module(self, fullname: str) -> types.ModuleType:
+        raise ImportError(f"No module named '{fullname}'")
+
+
 def _install_boto3_unavailable_module(context) -> None:
     already_installed = getattr(context, "_fake_boto3_unavailable_installed", False)
     if already_installed:
         return
 
     original_modules: Dict[str, object] = {}
-    if "boto3" in sys.modules:
-        original_modules["boto3"] = sys.modules["boto3"]
+    module_names = ["boto3", "botocore"]
+    for name in module_names:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
+            sys.modules.pop(name, None)
 
-    boto3_module = types.ModuleType("boto3")
-    sys.modules["boto3"] = boto3_module
+    # Install import blocker
+    blocker = _Boto3ImportBlocker()
+    sys.meta_path.insert(0, blocker)
 
     context._fake_boto3_unavailable_installed = True
     context._fake_boto3_unavailable_original_modules = original_modules
+    context._fake_boto3_import_blocker = blocker
 
 
 @given("a fake boto3 library is available")

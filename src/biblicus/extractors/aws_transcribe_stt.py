@@ -38,6 +38,10 @@ class AwsTranscribeSpeechToTextExtractorConfig(BaseModel):
     :vartype show_alternatives: bool
     :ivar max_alternatives: Number of alternative transcriptions (2-10).
     :vartype max_alternatives: int or None
+    :ivar max_wait_seconds: Maximum time to wait for job completion.
+    :vartype max_wait_seconds: float
+    :ivar poll_interval_seconds: Interval between job status polls.
+    :vartype poll_interval_seconds: float
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -50,6 +54,8 @@ class AwsTranscribeSpeechToTextExtractorConfig(BaseModel):
     vocabulary_name: Optional[str] = Field(default=None, min_length=1)
     show_alternatives: bool = Field(default=False)
     max_alternatives: Optional[int] = Field(default=None, ge=2, le=10)
+    max_wait_seconds: float = Field(default=600.0, gt=0)
+    poll_interval_seconds: float = Field(default=5.0, gt=0)
 
 
 class AwsTranscribeSpeechToTextExtractor(TextExtractor):
@@ -180,8 +186,8 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
             transcribe_client.start_transcription_job(**job_args)
 
             # Poll for completion
-            max_wait_seconds = 600  # 10 minutes
-            poll_interval = 5
+            max_wait_seconds = parsed_config.max_wait_seconds
+            poll_interval = parsed_config.poll_interval_seconds
             elapsed = 0
 
             while elapsed < max_wait_seconds:

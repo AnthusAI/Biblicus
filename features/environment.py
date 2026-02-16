@@ -10,6 +10,18 @@ from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
 
+_BASELINE_HOME = os.environ.get("HOME")
+_EPHEMERAL_ENV_KEYS = [
+    "OPENAI_API_KEY",
+    "HUGGINGFACE_API_KEY",
+    "DEEPGRAM_API_KEY",
+    "ALDEA_API_KEY",
+    "AZURE_SPEECH_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+]
+
 
 def _repo_root() -> Path:
     """
@@ -35,6 +47,10 @@ def before_scenario(context, scenario) -> None:
     import biblicus.__main__ as _biblicus_main
 
     _ = _biblicus_main
+    # Ensure in-repo sources are imported (not any site-packages install)
+    repo_src = str(_repo_root() / "src")
+    if repo_src not in sys.path:
+        sys.path.insert(0, repo_src)
     try:
         from biblicus.extractors.paddleocr_vl_text import PaddleOcrVlExtractor
 
@@ -62,6 +78,16 @@ def before_scenario(context, scenario) -> None:
         del context.fake_hmmlearn_behavior
     if hasattr(context, "fake_aldea_transcriptions"):
         del context.fake_aldea_transcriptions
+    if hasattr(context, "fake_aws_transcriptions"):
+        del context.fake_aws_transcriptions
+    if hasattr(context, "fake_azure_recognitions"):
+        del context.fake_azure_recognitions
+    if hasattr(context, "fake_google_recognitions"):
+        del context.fake_google_recognitions
+    if hasattr(context, "fake_whisper_behaviors"):
+        del context.fake_whisper_behaviors
+    if hasattr(context, "fake_audio_segment_behaviors"):
+        del context.fake_audio_segment_behaviors
     for attr in [
         "_fake_paddleocr_layout_empty",
         "_fake_paddleocr_layout_missing_coordinates",
@@ -95,9 +121,21 @@ def before_scenario(context, scenario) -> None:
     context._fake_spacy_short_relations_original_module = None
     context._fake_tesseract_installed = False
     context._fake_tesseract_original_modules = {}
+    for name in [
+        "azure",
+        "azure.cognitiveservices",
+        "azure.cognitiveservices.speech",
+    ]:
+        sys.modules.pop(name, None)
 
+    for key in _EPHEMERAL_ENV_KEYS:
+        os.environ.pop(key, None)
+
+    # Isolate user configuration per scenario to avoid leaking real API keys
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
+    context._prior_home = os.environ.get("HOME")
+    os.environ["HOME"] = str(context.workdir)
     context.repo_root = _repo_root()
     context.env = dict(os.environ)
     context.extra_env = {}
@@ -363,6 +401,117 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_markitdown_unavailable_installed = False
         context._fake_markitdown_unavailable_original_modules = {}
+    if getattr(context, "_fake_boto3_installed", False):
+        original_modules = getattr(context, "_fake_boto3_original_modules", {})
+        for name in ["boto3", "botocore"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_boto3_installed = False
+        context._fake_boto3_original_modules = {}
+    if getattr(context, "_fake_boto3_unavailable_installed", False):
+        # Remove import blocker
+        blocker = getattr(context, "_fake_boto3_import_blocker", None)
+        if blocker is not None and blocker in sys.meta_path:
+            sys.meta_path.remove(blocker)
+        original_modules = getattr(context, "_fake_boto3_unavailable_original_modules", {})
+        for name in ["boto3", "botocore"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_boto3_unavailable_installed = False
+        context._fake_boto3_unavailable_original_modules = {}
+        context._fake_boto3_import_blocker = None
+    if getattr(context, "_fake_azure_speech_installed", False):
+        # Reset module state before cleanup
+        speechsdk_module = sys.modules.get("azure.cognitiveservices.speech")
+        if speechsdk_module is not None:
+            speechsdk_module.last_api_key = None
+            speechsdk_module.last_region = None
+            speechsdk_module.last_endpoint = None
+            speechsdk_module.last_audio_filename = None
+            speechsdk_module.last_speech_config = None
+            speechsdk_module.last_audio_config = None
+            speechsdk_module.last_profanity_option = None
+            speechsdk_module.last_dictation_enabled = False
+        original_modules = getattr(context, "_fake_azure_speech_original_modules", {})
+        for name in ["azure", "azure.cognitiveservices", "azure.cognitiveservices.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_azure_speech_installed = False
+        context._fake_azure_speech_original_modules = {}
+    if getattr(context, "_fake_azure_speech_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_azure_speech_unavailable_original_modules", {})
+        for name in ["azure", "azure.cognitiveservices", "azure.cognitiveservices.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_azure_speech_unavailable_installed = False
+        context._fake_azure_speech_unavailable_original_modules = {}
+    if getattr(context, "_fake_google_speech_installed", False):
+        original_modules = getattr(context, "_fake_google_speech_original_modules", {})
+        for name in ["google", "google.cloud", "google.cloud.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_google_speech_installed = False
+        context._fake_google_speech_original_modules = {}
+    if getattr(context, "_fake_google_speech_unavailable_installed", False):
+        # Remove import blocker
+        blocker = getattr(context, "_fake_google_speech_import_blocker", None)
+        if blocker is not None and blocker in sys.meta_path:
+            sys.meta_path.remove(blocker)
+        original_modules = getattr(context, "_fake_google_speech_unavailable_original_modules", {})
+        for name in ["google", "google.cloud", "google.cloud.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_google_speech_unavailable_installed = False
+        context._fake_google_speech_unavailable_original_modules = {}
+        context._fake_google_speech_import_blocker = None
+    if getattr(context, "_fake_faster_whisper_installed", False):
+        original_modules = getattr(context, "_fake_faster_whisper_original_modules", {})
+        for name in ["faster_whisper"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_faster_whisper_installed = False
+        context._fake_faster_whisper_original_modules = {}
+    if getattr(context, "_fake_faster_whisper_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_faster_whisper_unavailable_original_modules", {})
+        for name in ["faster_whisper"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_faster_whisper_unavailable_installed = False
+        context._fake_faster_whisper_unavailable_original_modules = {}
+    if getattr(context, "_fake_pydub_installed", False):
+        original_modules = getattr(context, "_fake_pydub_original_modules", {})
+        for name in ["pydub"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_pydub_installed = False
+        context._fake_pydub_original_modules = {}
+    if getattr(context, "_fake_pydub_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_pydub_unavailable_original_modules", {})
+        for name in ["pydub"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_pydub_unavailable_installed = False
+        context._fake_pydub_unavailable_original_modules = {}
     # Clear fake paddleocr behaviors FIRST (before removing modules)
     if hasattr(context, "fake_paddleocr_vl_behaviors"):
         context.fake_paddleocr_vl_behaviors.clear()
@@ -567,8 +716,16 @@ def after_scenario(context, scenario) -> None:
     if original_sys_version_info is not None:
         sys.version_info = original_sys_version_info
         context._original_sys_version_info = None
+    # Restore HOME after scenario isolation
+    prior_home = getattr(context, "_prior_home", None)
+    if prior_home is not None:
+        os.environ["HOME"] = prior_home
+    else:
+        os.environ.pop("HOME", None)
     if hasattr(context, "_tmp"):
         context._tmp.cleanup()
+    for name in ["sentence_transformers", "datasets"]:
+        sys.modules.pop(name, None)
 
 
 @dataclass

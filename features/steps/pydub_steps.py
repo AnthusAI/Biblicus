@@ -65,23 +65,31 @@ def _install_fake_pydub_module(context) -> None:
             self._channels = channels
             return self
 
-        def export(self, path: str, format: str) -> None:
+        def export(self, path: Any, format: str) -> None:
             pydub_module.last_export_path = path  # type: ignore[attr-defined]
             pydub_module.last_export_format = format  # type: ignore[attr-defined]
 
-            # Write minimal audio data to the file
-            with open(path, "wb") as f:
-                if format == "wav":
-                    # Minimal WAV header
-                    f.write(b"RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data")
-                elif format == "mp3":
-                    f.write(b"ID3")
-                elif format == "flac":
-                    f.write(b"fLaC\x00\x00\x00\x22")
-                elif format == "ogg":
-                    f.write(b"OggS")
-                else:
-                    f.write(b"AUDIO")
+            # Generate audio data based on format
+            if format == "wav":
+                # Minimal WAV header
+                audio_data = b"RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data"
+            elif format == "mp3":
+                audio_data = b"ID3"
+            elif format == "flac":
+                audio_data = b"fLaC\x00\x00\x00\x22"
+            elif format == "ogg":
+                audio_data = b"OggS"
+            else:
+                audio_data = b"AUDIO"
+
+            # Write to file or BytesIO buffer
+            if hasattr(path, "write"):
+                # It's a file-like object (BytesIO)
+                path.write(audio_data)
+            else:
+                # It's a file path string
+                with open(path, "wb") as f:
+                    f.write(audio_data)
 
     pydub_module = types.ModuleType("pydub")
     pydub_module.AudioSegment = AudioSegment

@@ -57,9 +57,10 @@ Feature: Google Speech speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                              |
-      | stt-google-speech  | {"language_code":"fr-FR","model":"latest_long"}         |
+    And I build a "stt-google-speech" extraction snapshot in corpus "corpus" with config:
+      | key           | value       |
+      | language_code | fr-FR       |
+      | model         | latest_long |
     Then the extracted text for the last ingested item equals "Bonjour"
     And the Google Speech request used language code "fr-FR"
     And the Google Speech request used model "latest_long"
@@ -86,9 +87,10 @@ Feature: Google Speech speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                                                  |
-      | stt-google-speech  | {"enable_speaker_diarization":true,"diarization_speaker_count":2}           |
+    And I build a "stt-google-speech" extraction snapshot in corpus "corpus" with config:
+      | key                          | value |
+      | enable_speaker_diarization   | true  |
+      | diarization_speaker_count    | 2     |
     Then the extracted text for the last ingested item equals "Speaker one. Speaker two."
     And the Google Speech request enabled speaker diarization
 
@@ -103,3 +105,9 @@ Feature: Google Speech speech to text extraction
     When I ingest the file "clip.flac" into corpus "corpus"
     And I build a "stt-google-speech" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "FLAC test"
+
+  Scenario: Google Speech extractor rejects extraction at runtime when optional dependency is missing
+    Given I initialized a corpus at "corpus"
+    And the Google Speech dependency is unavailable
+    When I call the Google Speech extractor extract_text with dependency unavailable
+    Then a fatal extraction error is raised

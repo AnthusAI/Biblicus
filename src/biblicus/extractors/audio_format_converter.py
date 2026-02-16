@@ -137,8 +137,12 @@ class AudioFormatConverterExtractor(TextExtractor):
         source_format = self._detect_format(item.media_type)
         target_format = parsed_config.target_format.lower()
 
-        # Skip conversion if already in target format
-        if source_format == target_format:
+        inferred_from_unknown_type = (
+            source_format == "wav" and "wav" not in item.media_type.lower()
+        )
+
+        # Skip conversion if already in target format and the media type was not an unknown default
+        if source_format == target_format and not inferred_from_unknown_type:
             return ExtractedText(
                 text="",  # No text extraction at this stage
                 producer_extractor_id=self.extractor_id,

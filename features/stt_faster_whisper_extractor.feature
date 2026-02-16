@@ -54,9 +54,9 @@ Feature: Faster-Whisper speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id        | config_json                    |
-      | stt-faster-whisper  | {"model_size":"small"}        |
+    And I build a "stt-faster-whisper" extraction snapshot in corpus "corpus" with config:
+      | key        | value |
+      | model_size | small |
     Then the extracted text for the last ingested item equals "Small model"
     And the faster-whisper model used model size "small"
 
@@ -68,9 +68,9 @@ Feature: Faster-Whisper speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id        | config_json                    |
-      | stt-faster-whisper  | {"language":"fr"}             |
+    And I build a "stt-faster-whisper" extraction snapshot in corpus "corpus" with config:
+      | key      | value |
+      | language | fr    |
     Then the extracted text for the last ingested item equals "Bonjour"
     And the faster-whisper transcription used language "fr"
 
@@ -82,9 +82,9 @@ Feature: Faster-Whisper speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id        | config_json                    |
-      | stt-faster-whisper  | {"beam_size":8}               |
+    And I build a "stt-faster-whisper" extraction snapshot in corpus "corpus" with config:
+      | key       | value |
+      | beam_size | 8     |
     Then the extracted text for the last ingested item equals "Beam search test"
     And the faster-whisper transcription used beam size 8
 
@@ -98,3 +98,9 @@ Feature: Faster-Whisper speech to text extraction
     When I ingest the file "clip.flac" into corpus "corpus"
     And I build a "stt-faster-whisper" extraction snapshot in corpus "corpus"
     Then the extracted text for the last ingested item equals "FLAC format test"
+
+  Scenario: Faster-Whisper rejects extraction at runtime when optional dependency is missing
+    Given I initialized a corpus at "corpus"
+    And the faster-whisper dependency is unavailable
+    When I call the Faster-Whisper extractor extract_text with dependency unavailable
+    Then a fatal extraction error is raised

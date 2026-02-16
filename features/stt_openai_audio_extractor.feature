@@ -127,3 +127,16 @@ Feature: OpenAI GPT-4o Audio speech to text extraction
     When I ingest the file "clip.flac" into corpus "corpus"
     And I build a "stt-openai-audio" extraction snapshot in corpus "corpus"
     Then the extraction snapshot does not include extracted text for the last ingested item
+
+  Scenario: OpenAI Audio extractor rejects extraction at runtime when optional dependency is missing
+    Given I initialized a corpus at "corpus"
+    And the OpenAI dependency is unavailable
+    When I call the OpenAI Audio extractor extract_text with dependency unavailable
+    Then a fatal extraction error is raised
+
+  Scenario: OpenAI Audio extractor rejects extraction at runtime when API key is missing
+    Given I initialized a corpus at "corpus"
+    And a fake OpenAI library is available
+    And no OpenAI API key is configured
+    When I call the OpenAI Audio extractor extract_text with no API key
+    Then a fatal extraction error is raised

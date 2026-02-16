@@ -5,6 +5,7 @@ import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from urllib.parse import unquote
 
 from behave import given, then
 
@@ -121,7 +122,13 @@ def _install_fake_google_speech_module(context) -> None:
         def recognize(self, config: RecognitionConfig, audio: RecognitionAudio) -> _RecognitionResponse:
             # Extract filename hint from audio size or use default behavior
             audio_size = getattr(speech_module, "last_audio_size", 0)
-            filename_hint = getattr(speech_module, "current_filename_hint", f"audio_{audio_size}")
+            base_filename_hint = getattr(speech_module, "current_filename_hint", f"audio_{audio_size}")
+            # Strip the UUID prefix (format: uuid--originalfile)
+            filename_hint = base_filename_hint.split("--", 1)[-1] if "--" in base_filename_hint else base_filename_hint
+            # URL decode if needed
+            filename_hint = unquote(filename_hint)
+            # Extract just the basename (in case it's a full file:// URI)
+            filename_hint = filename_hint.rsplit("/", 1)[-1]
 
             behavior = behaviors.get(filename_hint)
             if behavior is None:
@@ -158,6 +165,18 @@ def _install_fake_google_speech_module(context) -> None:
     context._fake_google_speech_original_modules = original_modules
 
 
+class _GoogleSpeechImportBlocker:
+    """Meta path finder that blocks google.cloud.speech imports."""
+
+    def find_module(self, fullname: str, path: Optional[Any] = None) -> Optional[Any]:
+        if fullname == "google" or fullname.startswith("google."):
+            return self
+        return None
+
+    def load_module(self, fullname: str) -> types.ModuleType:
+        raise ImportError(f"No module named '{fullname}'")
+
+
 def _install_google_speech_unavailable_module(context) -> None:
     already_installed = getattr(context, "_fake_google_speech_unavailable_installed", False)
     if already_installed:
@@ -168,13 +187,15 @@ def _install_google_speech_unavailable_module(context) -> None:
     for name in module_names:
         if name in sys.modules:
             original_modules[name] = sys.modules[name]
+            sys.modules.pop(name, None)
 
-    # Create minimal module structure that will fail import check
-    google_module = types.ModuleType("google")
-    sys.modules["google"] = google_module
+    # Install import blocker
+    blocker = _GoogleSpeechImportBlocker()
+    sys.meta_path.insert(0, blocker)
 
     context._fake_google_speech_unavailable_installed = True
     context._fake_google_speech_unavailable_original_modules = original_modules
+    context._fake_google_speech_import_blocker = blocker
 
 
 @given("a fake Google Speech library is available")

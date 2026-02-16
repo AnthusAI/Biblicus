@@ -20,6 +20,8 @@ from biblicus.evaluation.benchmark_runner import BenchmarkConfig, BenchmarkRunne
 from biblicus.evaluation.metrics.entity_metrics import normalize_entity_value, calculate_string_similarity
 from biblicus.evaluation.stt_benchmark import STTBenchmark, STTBenchmarkReport, calculate_wer
 from biblicus.sync.amplify_publisher import AmplifyPublisher
+from biblicus.evaluation.metrics import entity_metrics
+from biblicus import inference, user_config
 
 
 def test_span_markup_config_requires_verifier():
@@ -356,3 +358,31 @@ def test_markov_span_markup_and_llm_labels(monkeypatch):
         cache_context=None,
     )
     assert labeled[0].llm_label == "START"
+
+
+def test_entity_metrics_paths():
+    ground = {"date": "2024/01/01", "company": "Acme LLC", "address": "12 st.", "total": "$10.00"}
+    extracted = {"date": "2024-01-01", "company": "Acme", "address": "12 street", "total": "$10.00"}
+    metrics = entity_metrics.calculate_entity_metrics(ground, extracted)
+    assert metrics["overall"]["exact_accuracy"] < 1
+    f1 = entity_metrics.calculate_entity_f1([ground], [extracted])
+    assert f1["overall"]["f1"] >= 0
+    entities = entity_metrics.extract_entities_from_text("ACME Inc.\nTotal: $12.34\n123 Road")
+    assert "total" in entities
+    custom = entity_metrics.extract_entities_from_text(
+        "custom", entity_patterns={"foo": r"custom"}
+    )
+    assert custom["foo"] == "custom"
+
+
+def test_inference_hf_user_config(monkeypatch):
+    class FakeHF:
+        api_key = "hf-key"
+
+    class FakeConfig:
+        huggingface = FakeHF()
+        openai = None
+
+    monkeypatch.setenv("HUGGINGFACE_API_KEY", "")
+    monkeypatch.setattr(user_config, "load_user_config", lambda *args, **kwargs: FakeConfig())
+    assert inference.resolve_api_key(provider=inference.ApiProvider.HUGGINGFACE) == "hf-key"

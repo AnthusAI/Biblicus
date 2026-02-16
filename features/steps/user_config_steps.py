@@ -12,6 +12,10 @@ def _write_user_config(path: Path, api_key: str, provider: str = "openai") -> No
     path.parent.mkdir(parents=True, exist_ok=True)
     text = f"{provider}:\n  api_key: {api_key}\n"
     path.write_text(text, encoding="utf-8")
+    loaded = load_user_config(paths=[path])
+    resolved = getattr(loaded, provider.replace("-", "_"), None)
+    assert resolved is not None, f"{provider} config not written to {path}"
+    assert getattr(resolved, "api_key") == api_key
 
 
 @given('a local Biblicus user config exists with OpenAI API key "{api_key}"')
@@ -20,6 +24,9 @@ def step_local_user_config_exists(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key)
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["OPENAI_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @given('a home Biblicus user config exists with OpenAI API key "{api_key}"')
@@ -47,6 +54,9 @@ def step_local_user_config_exists_huggingface(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key, provider="huggingface")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["HUGGINGFACE_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @given('a home Biblicus user config exists with HuggingFace API key "{api_key}"')
@@ -90,6 +100,9 @@ def step_local_user_config_exists_deepgram(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key, provider="deepgram")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["DEEPGRAM_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @then('the loaded user configuration has Deepgram API key "{api_key}"')
@@ -188,6 +201,9 @@ def step_local_user_config_exists_aldea(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key, provider="aldea")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["ALDEA_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @when("I call resolve_aldea_api_key helper function")

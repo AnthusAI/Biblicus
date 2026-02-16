@@ -33,6 +33,7 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(standard_output)
 
 
+
 def _ensure_fake_bertopic_behavior(context) -> _FakeBerTopicBehavior:
     behavior = getattr(context, "fake_bertopic_behavior", None)
     if behavior is None:

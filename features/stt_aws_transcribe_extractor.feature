@@ -10,9 +10,9 @@ Feature: AWS Transcribe speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                    |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}                    |
+    And I attempt to build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key       | value       |
+      | s3_bucket | test-bucket |
     Then the command fails with exit code 2
     And standard error includes "biblicus[aws]"
 
@@ -21,9 +21,9 @@ Feature: AWS Transcribe speech to text extraction
     And a fake boto3 library is available
     And AWS credentials are configured for this scenario
     When I ingest the text "alpha" with no metadata into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                    |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}                    |
+    And I build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key        | value        |
+      | s3_bucket  | test-bucket  |
     Then the extraction snapshot does not include extracted text for the last ingested item
 
   Scenario: AWS Transcribe extractor produces transcript for an audio item
@@ -35,9 +35,9 @@ Feature: AWS Transcribe speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                    |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}                    |
+    And I build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key        | value        |
+      | s3_bucket  | test-bucket  |
     Then the extracted text for the last ingested item equals "Hello from AWS Transcribe"
     And the extraction snapshot item provenance uses extractor "stt-aws-transcribe"
 
@@ -50,9 +50,10 @@ Feature: AWS Transcribe speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                            |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket","language_code":"fr-FR"}    |
+    And I build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key           | value        |
+      | s3_bucket     | test-bucket  |
+      | language_code | fr-FR        |
     Then the extracted text for the last ingested item equals "Bonjour"
     And the AWS Transcribe job used language code "fr-FR"
 
@@ -65,9 +66,9 @@ Feature: AWS Transcribe speech to text extraction
       fLaC\x00\x00\x00\x22
       """
     When I ingest the file "clip.flac" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                    |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}                    |
+    And I build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key        | value        |
+      | s3_bucket  | test-bucket  |
     Then the extracted text for the last ingested item equals "Test audio"
     And the AWS Transcribe job used media format "flac"
 
@@ -95,9 +96,11 @@ Feature: AWS Transcribe speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                                                                   |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket","identify_speakers":true,"max_speakers":2}        |
+    And I build a "stt-aws-transcribe" extraction snapshot in corpus "corpus" with config:
+      | key               | value        |
+      | s3_bucket         | test-bucket  |
+      | identify_speakers | true         |
+      | max_speakers      | 2            |
     Then the extracted text for the last ingested item equals "Speaker one. Speaker two."
     And the AWS Transcribe job enabled speaker labels
 
@@ -111,6 +114,12 @@ Feature: AWS Transcribe speech to text extraction
       """
     When I ingest the file "clip.wav" into corpus "corpus"
     And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id       | config_json                     |
-      | stt-aws-transcribe | {"s3_bucket":"test-bucket"}     |
+      | extractor_id       | config_json                                                                |
+      | stt-aws-transcribe | {"s3_bucket":"test-bucket","max_wait_seconds":0.2,"poll_interval_seconds":0.05} |
     Then the command fails with exit code 2
+
+  Scenario: AWS Transcribe extractor rejects extraction at runtime when optional dependency is missing
+    Given I initialized a corpus at "corpus"
+    And the boto3 dependency is unavailable
+    When I call the AWS Transcribe extractor extract_text with dependency unavailable
+    Then a fatal extraction error is raised

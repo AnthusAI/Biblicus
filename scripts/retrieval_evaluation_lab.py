@@ -12,6 +12,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+try:
+    import pydantic
+except ModuleNotFoundError:  # pragma: no cover - defensive; covered by harness
+    raise
+
 from biblicus.corpus import Corpus
 from biblicus.evaluation.retrieval import EvaluationDataset, EvaluationQuery, evaluate_snapshot
 from biblicus.extraction import build_extraction_snapshot

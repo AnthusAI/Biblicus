@@ -5,6 +5,7 @@ import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+from urllib.parse import unquote
 
 from behave import given, then
 
@@ -31,6 +32,17 @@ def _ensure_fake_azure_recognition_behaviors(
 def _install_fake_azure_speech_module(context) -> None:
     already_installed = getattr(context, "_fake_azure_speech_installed", False)
     if already_installed:
+        # Reset module state even if already installed
+        speechsdk_module = sys.modules.get("azure.cognitiveservices.speech")
+        if speechsdk_module is not None:
+            speechsdk_module.last_api_key = None
+            speechsdk_module.last_region = None
+            speechsdk_module.last_endpoint = None
+            speechsdk_module.last_audio_filename = None
+            speechsdk_module.last_speech_config = None
+            speechsdk_module.last_audio_config = None
+            speechsdk_module.last_profanity_option = None
+            speechsdk_module.last_dictation_enabled = False
         return
 
     original_modules: Dict[str, object] = {}
@@ -120,7 +132,13 @@ def _install_fake_azure_speech_module(context) -> None:
 
         def recognize_once(self) -> _RecognitionResult:
             filename = getattr(speechsdk_module, "last_audio_filename", "unknown")
-            base_name = filename.rsplit("/", 1)[-1]
+            base_filename = filename.rsplit("/", 1)[-1]
+            # Strip the UUID prefix (format: uuid--originalfile)
+            base_name = base_filename.split("--", 1)[-1] if "--" in base_filename else base_filename
+            # URL decode if needed
+            base_name = unquote(base_name)
+            # Extract just the basename (in case it's a full file:// URI)
+            base_name = base_name.rsplit("/", 1)[-1]
 
             behavior = behaviors.get(base_name)
             if behavior is None:
@@ -136,7 +154,7 @@ def _install_fake_azure_speech_module(context) -> None:
 
     speechsdk_module.SpeechRecognizer = _SpeechRecognizer
 
-    # Initialize module attributes
+    # Initialize/reset module attributes (including any leftover state from previous tests)
     speechsdk_module.last_api_key = None
     speechsdk_module.last_region = None
     speechsdk_module.last_endpoint = None
@@ -251,4 +269,4 @@ def step_azure_speech_used_profanity_option(context, option: str) -> None:
     speechsdk_module = sys.modules.get("azure.cognitiveservices.speech")
     assert speechsdk_module is not None
     actual = getattr(speechsdk_module, "last_profanity_option", None)
-    assert actual == option
+    assert actual == option, f"Expected profanity option {option!r}, but got {actual!r}"

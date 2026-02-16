@@ -223,6 +223,21 @@ def step_build_extraction_snapshot_with_config(
     context.last_extractor_id = "pipeline"
 
 
+@when('I attempt to build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}" with config:')
+def step_attempt_build_extraction_snapshot_with_config(
+    context, extractor_id: str, corpus_name: str
+) -> None:
+    _ensure_fake_tesseract_for_extractor(context, extractor_id)
+    corpus = _corpus_path(context, corpus_name)
+    stage_config: dict[str, object] = {}
+    for row in context.table:
+        key, value = _table_key_value(row)
+        stage_config[key] = value
+    stage_spec = _build_stage_spec(extractor_id, stage_config)
+    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec]
+    context.last_result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+
+
 @when('I build a "pipeline" extraction snapshot in corpus "{corpus_name}" with stages:')
 def step_build_pipeline_extraction_snapshot(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
