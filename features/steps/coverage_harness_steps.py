@@ -84,7 +84,10 @@ def _temp_corpus() -> Corpus:
 
 
 def _fake_audio_item(root: Path, rel: str = "clip.wav") -> CatalogItem:
-    data = b"RIFF\\x00\\x00\\x00\\x00WAVEfmt \\x10\\x00\\x00\\x00\\x01\\x00\\x01\\x00\\x40\\x1f\\x00\\x00\\x80\\x3e\\x00\\x00\\x02\\x00\\x10\\x00data"
+    data = (
+        b"RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00"
+        b"@\x1f\x00\x00\x80>\x00\x00\x02\x00\x10\x00data"
+    )
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
