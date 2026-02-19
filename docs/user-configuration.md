@@ -66,6 +66,52 @@ aldea:
 
 The Aldea speech to text extractor also supports the `ALDEA_API_KEY` environment variable. Environment takes precedence over configuration.
 
+## Example: Amazon S3 remote sources
+
+Configure AWS credentials for S3 remote sources.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+aws:
+  access_key_id: YOUR_KEY_ID
+  secret_access_key: YOUR_SECRET
+  session_token: YOUR_SESSION_TOKEN
+  region: us-east-1
+```
+
+Environment variables override configuration when present:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN`
+- `AWS_REGION`
+
+## Example: Azure Blob remote sources
+
+Configure Azure Blob credentials for remote sources.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+azure_storage:
+  connection_string: YOUR_CONNECTION_STRING
+```
+
+Alternative account/key form:
+
+```yaml
+azure_storage:
+  account_name: YOUR_ACCOUNT
+  account_key: YOUR_KEY
+```
+
+Environment variables override configuration when present:
+
+- `AZURE_STORAGE_CONNECTION_STRING`
+- `AZURE_STORAGE_ACCOUNT`
+- `AZURE_STORAGE_KEY`
+
 ## Example: Neo4j graph extraction
 
 Graph extraction uses a Neo4j backend. Biblicus can auto-start a local Neo4j Docker container if it is not already running.

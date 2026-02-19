@@ -83,6 +83,12 @@ neo4j = [
 datasets = [
   "datasets>=2.18.0",
 ]
+aws = [
+  "boto3>=1.34",
+]
+azure = [
+  "azure-storage-blob>=12.20",
+]
 
 [project.scripts]
 biblicus = "biblicus.cli:main"

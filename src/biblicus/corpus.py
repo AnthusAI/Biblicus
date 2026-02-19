@@ -39,11 +39,14 @@ from .models import (
     ExtractionSnapshotListEntry,
     ExtractionSnapshotReference,
     IngestResult,
+    RemoteSourcePullResult,
     RetrievalSnapshot,
 )
-from .sources import load_source
+from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
+from .sources import _media_type_from_filename, load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
+from .user_config import resolve_aws_credentials, resolve_azure_storage_credentials
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -321,6 +324,19 @@ def _ensure_biblicus_block(
     return updated_metadata
 
 
+def _update_biblicus_block(metadata: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+    updated_metadata = dict(metadata)
+    existing_biblicus = updated_metadata.get("biblicus")
+    if not isinstance(existing_biblicus, dict):
+        existing_biblicus = {}
+    biblicus_block = dict(existing_biblicus)
+    for key, value in updates.items():
+        if value is not None:
+            biblicus_block[key] = value
+    updated_metadata["biblicus"] = biblicus_block
+    return updated_metadata
+
+
 def _parse_uuid_prefix(filename: str) -> Optional[str]:
     """
     Extract a universally unique identifier prefix from a filename, if present.
@@ -400,6 +416,13 @@ class Corpus:
         self.config = self._load_config()
         self.raw_dir = self._resolve_raw_dir()
         self._hooks = self._load_hooks()
+
+    def _ensure_local_ingest_allowed(self) -> None:
+        if self.config is not None and self.config.source is not None:
+            raise ValueError(
+                "Local ingest is disabled because this corpus is backed by a remote source. "
+                "Use `biblicus source pull` to refresh the corpus."
+            )
 
     def _resolve_raw_dir(self) -> Path:
         """
@@ -544,6 +567,14 @@ class Corpus:
         if raw_dir_name and raw_dir_name != ".":
             relpath = Path(raw_dir_name) / relpath
         return str(relpath)
+
+    def _raw_prefix_for_storage(self, storage_subdir: str) -> Path:
+        raw_dir_name = DEFAULT_RAW_DIR
+        if self.config is not None and isinstance(self.config.raw_dir, str):
+            raw_dir_name = self.config.raw_dir.strip() or DEFAULT_RAW_DIR
+        if raw_dir_name and raw_dir_name != ".":
+            return Path(raw_dir_name) / storage_subdir
+        return Path(storage_subdir)
 
     @classmethod
     def find(cls, start: Path) -> "Corpus":
@@ -1072,6 +1103,7 @@ class Corpus:
         :raises ValueError: If markdown is not Unicode Transformation Format 8.
         :raises IngestCollisionError: If a source uniform resource identifier is already ingested.
         """
+        self._ensure_local_ingest_allowed()
         existing_item = self._find_item_by_source_uri(source_uri)
         if existing_item is not None:
             raise IngestCollisionError(
@@ -1253,6 +1285,7 @@ class Corpus:
         :rtype: IngestResult
         :raises ValueError: If the media_type is text/markdown.
         """
+        self._ensure_local_ingest_allowed()
         if media_type == "text/markdown":
             raise ValueError("Stream ingestion is not supported for Markdown")
 
@@ -1580,6 +1613,7 @@ class Corpus:
         :raises FileNotFoundError: If the source_root does not exist.
         :raises ValueError: If the source root is outside the corpus root.
         """
+        self._ensure_local_ingest_allowed()
         source_root = source_root.resolve()
         if not source_root.is_dir():
             raise FileNotFoundError(f"Import source root does not exist: {source_root}")
@@ -1769,6 +1803,7 @@ class Corpus:
         :return: None.
         :rtype: None
         """
+        self._ensure_local_ingest_allowed()
         _ = filename
         item_id = str(uuid.uuid4())
         destination_relpath = self._raw_relpath(
@@ -1803,6 +1838,220 @@ class Corpus:
             source_uri=source_uri,
         )
         self._upsert_catalog_item(item_record)
+
+    def pull_source(self) -> RemoteSourcePullResult:
+        """
+        Mirror a remote source into the corpus.
+
+        :return: Pull summary.
+        :rtype: RemoteSourcePullResult
+        :raises ValueError: If the corpus has no configured remote source.
+        """
+        if self.config is None or self.config.source is None:
+            raise ValueError("Remote source is not configured for this corpus.")
+        source_config = self.config.source
+        source_name = self._resolve_remote_source_name(source_config)
+        storage_subdir = str(Path("imports") / "remote" / source_name)
+        ignore_spec = load_corpus_ignore_spec(self.root)
+
+        if source_config.kind == "s3":
+            source = S3RemoteSource(source_config, resolve_aws_credentials())
+        elif source_config.kind == "azure-blob":
+            source = AzureBlobRemoteSource(source_config, resolve_azure_storage_credentials())
+        else:
+            raise ValueError(f"Unsupported remote source kind: {source_config.kind}")
+
+        result = RemoteSourcePullResult()
+        items = source.list_items()
+        result.listed = len(items)
+        remote_uris = set()
+
+        for item in items:
+            remote_uris.add(item.source_uri)
+            relative_key = self._relative_remote_key(item.key, prefix=source_config.prefix)
+            if not relative_key:
+                result.skipped += 1
+                continue
+            if ignore_spec.matches(relative_key):
+                result.skipped += 1
+                continue
+            existing_item = self._find_item_by_source_uri(item.source_uri)
+            if existing_item is not None and self._remote_item_unchanged(existing_item, item):
+                result.skipped += 1
+                continue
+            content, content_type = source.fetch_bytes(item)
+            relpath = self._raw_relpath(output_name=relative_key, storage_subdir=storage_subdir)
+            if existing_item is not None and existing_item.relpath != relpath:
+                self._delete_item_files(existing_item.relpath)
+            catalog_item = self._write_remote_item(
+                data=content,
+                relpath=relpath,
+                source_uri=item.source_uri,
+                source_etag=item.etag,
+                source_last_modified=item.last_modified,
+                content_type=content_type or item.content_type,
+                item_id=existing_item.id if existing_item is not None else None,
+                created_at=existing_item.created_at if existing_item is not None else None,
+            )
+            self._upsert_catalog_item(catalog_item)
+            if existing_item is None:
+                result.downloaded += 1
+            else:
+                result.updated += 1
+
+        result.pruned = self._prune_remote_items(
+            storage_subdir=storage_subdir, remote_uris=remote_uris
+        )
+        return result
+
+    def _resolve_remote_source_name(self, source_config) -> str:
+        if source_config.name and source_config.name.strip():
+            return _sanitize_filename(source_config.name.strip())
+        if source_config.kind == "s3" and source_config.bucket:
+            return _sanitize_filename(source_config.bucket)
+        if source_config.kind == "azure-blob" and source_config.container:
+            return _sanitize_filename(source_config.container)
+        return "remote"
+
+    def _relative_remote_key(self, key: str, *, prefix: Optional[str]) -> str:
+        relative_key = key
+        if prefix and relative_key.startswith(prefix):
+            relative_key = relative_key[len(prefix) :]
+        return relative_key.lstrip("/")
+
+    def _remote_item_unchanged(self, existing_item: CatalogItem, item) -> bool:
+        metadata = existing_item.metadata or {}
+        biblicus_block = metadata.get("biblicus") if isinstance(metadata, dict) else None
+        if not isinstance(biblicus_block, dict):
+            biblicus_block = {}
+        existing_etag = biblicus_block.get("source_etag")
+        existing_last_modified = biblicus_block.get("source_last_modified")
+        if item.etag and existing_etag == item.etag:
+            return True
+        if not item.etag and item.last_modified and existing_last_modified == item.last_modified:
+            return True
+        return False
+
+    def _write_remote_item(
+        self,
+        *,
+        data: bytes,
+        relpath: str,
+        source_uri: str,
+        source_etag: Optional[str],
+        source_last_modified: Optional[str],
+        content_type: Optional[str],
+        item_id: Optional[str],
+        created_at: Optional[str],
+    ) -> CatalogItem:
+        output_path = self.root / relpath
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        normalized_type = None
+        if content_type:
+            normalized_type = content_type.split(";", 1)[0].strip()
+        media_type = normalized_type or _media_type_from_filename(output_path.name)
+        if output_path.suffix.lower() in {".md", ".markdown"}:
+            media_type = "text/markdown"
+
+        resolved_item_id = item_id or str(uuid.uuid4())
+        metadata: Dict[str, Any] = {}
+        title: Optional[str] = None
+        tags: List[str] = []
+
+        if media_type == "text/markdown":
+            try:
+                markdown_text = data.decode("utf-8")
+            except UnicodeDecodeError as decode_error:
+                raise ValueError(
+                    f"Markdown must be Unicode Transformation Format 8: {output_path.name}"
+                ) from decode_error
+            sidecar_path = _sidecar_path_for(output_path)
+            if sidecar_path.exists():
+                sidecar_path.unlink()
+            parsed_document = parse_front_matter(markdown_text)
+            frontmatter = dict(parsed_document.metadata)
+            frontmatter = _ensure_biblicus_block(
+                frontmatter, item_id=resolved_item_id, source_uri=source_uri
+            )
+            frontmatter = _update_biblicus_block(
+                frontmatter,
+                {
+                    "source_etag": source_etag,
+                    "source_last_modified": source_last_modified,
+                },
+            )
+            rendered_document = render_front_matter(frontmatter, parsed_document.body)
+            data_to_write = rendered_document.encode("utf-8")
+            metadata = frontmatter
+        else:
+            data_to_write = data
+            sidecar: Dict[str, Any] = {}
+            sidecar["media_type"] = media_type
+            sidecar = _ensure_biblicus_block(
+                sidecar, item_id=resolved_item_id, source_uri=source_uri
+            )
+            sidecar = _update_biblicus_block(
+                sidecar,
+                {
+                    "source_etag": source_etag,
+                    "source_last_modified": source_last_modified,
+                },
+            )
+            _write_sidecar(output_path, sidecar)
+            metadata = sidecar
+
+        title_value = metadata.get("title")
+        if isinstance(title_value, str) and title_value.strip():
+            title = title_value.strip()
+        tags = _merge_tags([], metadata.get("tags"))
+
+        sha256_digest = _sha256_bytes(data_to_write)
+        output_path.write_bytes(data_to_write)
+
+        return CatalogItem(
+            id=resolved_item_id,
+            relpath=relpath,
+            sha256=sha256_digest,
+            bytes=len(data_to_write),
+            media_type=media_type,
+            title=title,
+            tags=list(tags),
+            metadata=dict(metadata or {}),
+            created_at=created_at or utc_now_iso(),
+            source_uri=source_uri,
+        )
+
+    def _delete_item_files(self, relpath: str) -> None:
+        content_path = self.root / relpath
+        if content_path.exists():
+            content_path.unlink()
+        sidecar_path = _sidecar_path_for(content_path)
+        if sidecar_path.exists():
+            sidecar_path.unlink()
+
+    def _prune_remote_items(self, *, storage_subdir: str, remote_uris: set[str]) -> int:
+        catalog = self._load_catalog()
+        prefix_path = self._raw_prefix_for_storage(storage_subdir)
+        prefix_text = prefix_path.as_posix().rstrip("/") + "/"
+        pruned = 0
+        removed_ids = []
+        for item_id, item in catalog.items.items():
+            if not item.relpath.startswith(prefix_text):
+                continue
+            if item.source_uri in remote_uris:
+                continue
+            self._delete_item_files(item.relpath)
+            removed_ids.append(item_id)
+            pruned += 1
+        if removed_ids:
+            for item_id in removed_ids:
+                catalog.items.pop(item_id, None)
+            catalog.order = [item_id for item_id in catalog.order if item_id not in removed_ids]
+            catalog.generated_at = utc_now_iso()
+            catalog.latest_snapshot_id = None
+            self._write_catalog(catalog)
+        return pruned
 
     def reindex(self) -> Dict[str, int]:
         """

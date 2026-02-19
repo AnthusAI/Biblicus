@@ -63,6 +63,39 @@ Ingest a web address:
 python -m biblicus ingest --corpus corpora/example https://example.com --tag web
 ```
 
+## Remote corpus sources
+
+A corpus can mirror a remote storage source as its authoritative input. When configured, the corpus is refreshed by pulling from the remote source, and local ingest is disabled.
+
+Example corpus config (`metadata/config.json`):
+
+```json
+{
+  "schema_version": 2,
+  "created_at": "2026-02-19T12:00:00Z",
+  "corpus_uri": "file:///path/to/corpus",
+  "raw_dir": ".",
+  "source": {
+    "kind": "s3",
+    "name": "client-archive",
+    "bucket": "client-archive",
+    "prefix": "exports/"
+  }
+}
+```
+
+Pull and mirror the remote source:
+
+```
+python -m biblicus source pull --corpus corpora/example
+```
+
+Remote items are stored under:
+
+```
+imports/remote/<source_name>/<remote_key>
+```
+
 ## Crawl a website prefix
 
 To build a corpus from a website section, crawl a root uniform resource locator and restrict the crawl to an allowed prefix.

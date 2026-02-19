@@ -127,6 +127,12 @@ def before_scenario(context, scenario) -> None:
         "azure.cognitiveservices.speech",
     ]:
         sys.modules.pop(name, None)
+    for name in [
+        "azure.storage",
+        "azure.storage.blob",
+        "boto3",
+    ]:
+        sys.modules.pop(name, None)
 
     for key in _EPHEMERAL_ENV_KEYS:
         os.environ.pop(key, None)
@@ -189,6 +195,16 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_unstructured_unavailable_installed = False
         context._fake_unstructured_unavailable_original_modules = {}
+    if getattr(context, "_fake_boto3_remote_blocker", None) in sys.meta_path:
+        sys.meta_path.remove(context._fake_boto3_remote_blocker)
+    if getattr(context, "_fake_azure_blob_blocker", None) in sys.meta_path:
+        sys.meta_path.remove(context._fake_azure_blob_blocker)
+    if getattr(context, "_fake_boto3_remote_original", None):
+        for name, module in context._fake_boto3_remote_original.items():
+            sys.modules[name] = module
+    if getattr(context, "_fake_azure_blob_original", None):
+        for name, module in context._fake_azure_blob_original.items():
+            sys.modules[name] = module
     if getattr(context, "_fake_openai_installed", False):
         original_modules = getattr(context, "_fake_openai_original_modules", {})
         for name in [

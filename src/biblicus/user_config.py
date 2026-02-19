@@ -105,6 +105,47 @@ class Neo4jUserConfig(BaseModel):
     bolt_port: int = Field(default=7687, ge=1)
 
 
+class AwsUserConfig(BaseModel):
+    """
+    Configuration for AWS integrations.
+
+    :ivar access_key_id: AWS access key identifier.
+    :vartype access_key_id: str or None
+    :ivar secret_access_key: AWS secret access key.
+    :vartype secret_access_key: str or None
+    :ivar session_token: Optional AWS session token.
+    :vartype session_token: str or None
+    :ivar region: Optional AWS region.
+    :vartype region: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+    session_token: Optional[str] = None
+    region: Optional[str] = None
+
+
+class AzureStorageUserConfig(BaseModel):
+    """
+    Configuration for Azure Storage integrations.
+
+    :ivar connection_string: Azure Storage connection string.
+    :vartype connection_string: str or None
+    :ivar account_name: Optional Azure storage account name.
+    :vartype account_name: str or None
+    :ivar account_key: Optional Azure storage account key.
+    :vartype account_key: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    connection_string: Optional[str] = None
+    account_name: Optional[str] = None
+    account_key: Optional[str] = None
+
+
 class BiblicusUserConfig(BaseModel):
     """
     Parsed user configuration for Biblicus.
@@ -119,6 +160,10 @@ class BiblicusUserConfig(BaseModel):
     :vartype aldea: AldeaUserConfig or None
     :ivar neo4j: Optional Neo4j configuration.
     :vartype neo4j: Neo4jUserConfig or None
+    :ivar aws: Optional AWS configuration.
+    :vartype aws: AwsUserConfig or None
+    :ivar azure_storage: Optional Azure Storage configuration.
+    :vartype azure_storage: AzureStorageUserConfig or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -128,6 +173,8 @@ class BiblicusUserConfig(BaseModel):
     deepgram: Optional[DeepgramUserConfig] = None
     aldea: Optional[AldeaUserConfig] = None
     neo4j: Optional[Neo4jUserConfig] = None
+    aws: Optional[AwsUserConfig] = None
+    azure_storage: Optional[AzureStorageUserConfig] = None
 
 
 def default_user_config_paths(
@@ -284,3 +331,53 @@ def resolve_aldea_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Opt
     if loaded.aldea is None:
         return None
     return loaded.aldea.api_key
+
+
+def resolve_aws_credentials(*, config: Optional[BiblicusUserConfig] = None) -> AwsUserConfig:
+    """
+    Resolve AWS credentials from environment or user configuration.
+
+    Environment takes precedence over configuration.
+
+    :param config: Optional pre-loaded user configuration.
+    :type config: BiblicusUserConfig or None
+    :return: Parsed AWS configuration.
+    :rtype: AwsUserConfig
+    """
+    env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    env_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    env_session_token = os.environ.get("AWS_SESSION_TOKEN")
+    env_region = os.environ.get("AWS_REGION")
+    loaded = config or load_user_config()
+    base = loaded.aws or AwsUserConfig()
+    return AwsUserConfig(
+        access_key_id=env_access_key or base.access_key_id,
+        secret_access_key=env_secret_key or base.secret_access_key,
+        session_token=env_session_token or base.session_token,
+        region=env_region or base.region,
+    )
+
+
+def resolve_azure_storage_credentials(
+    *, config: Optional[BiblicusUserConfig] = None
+) -> AzureStorageUserConfig:
+    """
+    Resolve Azure Storage credentials from environment or user configuration.
+
+    Environment takes precedence over configuration.
+
+    :param config: Optional pre-loaded user configuration.
+    :type config: BiblicusUserConfig or None
+    :return: Parsed Azure Storage configuration.
+    :rtype: AzureStorageUserConfig
+    """
+    env_connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+    env_account = os.environ.get("AZURE_STORAGE_ACCOUNT")
+    env_key = os.environ.get("AZURE_STORAGE_KEY")
+    loaded = config or load_user_config()
+    base = loaded.azure_storage or AzureStorageUserConfig()
+    return AzureStorageUserConfig(
+        connection_string=env_connection_string or base.connection_string,
+        account_name=env_account or base.account_name,
+        account_key=env_key or base.account_key,
+    )

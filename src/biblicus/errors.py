@@ -31,6 +31,15 @@ class IngestCollisionError(RuntimeError):
         self.source_uri = source_uri
         self.existing_item_id = existing_item_id
         self.existing_relpath = existing_relpath
+
+
+class RemoteSourceDependencyError(RuntimeError):
+    """
+    Raised when a remote source dependency is unavailable.
+
+    :param message: Error message describing the missing dependency.
+    :type message: str
+    """
         message = (
             "Source already ingested"
             f": source_uri={source_uri} existing_item_id={existing_item_id}"

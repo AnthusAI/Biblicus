@@ -24,7 +24,7 @@ from .context import (
 )
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
-from .errors import ExtractionSnapshotFatalError, IngestCollisionError
+from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
 from .evaluation.retrieval import evaluate_snapshot, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_snapshot, load_or_build_extraction_snapshot
@@ -35,9 +35,11 @@ from .extraction_evaluation import (
 )
 from .migration import migrate_layout
 from .models import (
+    CorpusConfig,
     ExtractionSnapshotReference,
     QueryBudget,
     RetrievalResult,
+    RemoteCorpusSourceConfig,
     parse_extraction_snapshot_reference,
 )
 from .retrievers import get_retriever
@@ -247,6 +249,80 @@ def cmd_import_tree(arguments: argparse.Namespace) -> int:
     tags = _parse_tags(arguments.tags, arguments.tag)
     stats = corpus.import_tree(Path(arguments.path), tags=tags)
     print(json.dumps(stats, indent=2, sort_keys=False))
+    return 0
+
+
+def cmd_source_set(arguments: argparse.Namespace) -> int:
+    """
+    Configure a remote source for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    config_path = corpus.meta_dir / "config.json"
+    config_data = json.loads(config_path.read_text(encoding="utf-8"))
+    config = CorpusConfig.model_validate(config_data)
+    source_payload = {
+        "kind": arguments.kind,
+        "name": arguments.name,
+        "bucket": arguments.bucket,
+        "container": arguments.container,
+        "prefix": arguments.prefix or "",
+        "region": arguments.region,
+        "endpoint_url": arguments.endpoint_url,
+        "account_url": arguments.account_url,
+        "account_name": arguments.account_name,
+    }
+    remote_source = RemoteCorpusSourceConfig.model_validate(source_payload)
+    updated = config.model_copy(update={"source": remote_source})
+    config_path.write_text(updated.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    print(remote_source.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_source_show(arguments: argparse.Namespace) -> int:
+    """
+    Show the configured remote source.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    if corpus.config is None or corpus.config.source is None:
+        raise ValueError("Remote source is not configured for this corpus.")
+    print(corpus.config.source.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_source_pull(arguments: argparse.Namespace) -> int:
+    """
+    Pull the configured remote source into the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    result = corpus.pull_source()
+    print(result.model_dump_json(indent=2))
     return 0
 
 
@@ -1680,6 +1756,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_import_tree.set_defaults(func=cmd_import_tree)
 
+    p_source = sub.add_parser("source", help="Manage remote corpus sources.")
+    source_sub = p_source.add_subparsers(dest="source_command", required=True)
+
+    p_source_set = source_sub.add_parser("set", help="Configure the remote source for a corpus.")
+    _add_common_corpus_arg(p_source_set)
+    p_source_set.add_argument("--kind", required=True, choices=["s3", "azure-blob"])
+    p_source_set.add_argument("--name", default=None, help="Local storage namespace for the source.")
+    p_source_set.add_argument("--bucket", default=None, help="S3 bucket name.")
+    p_source_set.add_argument("--container", default=None, help="Azure Blob container name.")
+    p_source_set.add_argument("--prefix", default=None, help="Optional remote prefix to mirror.")
+    p_source_set.add_argument("--region", default=None, help="AWS region override.")
+    p_source_set.add_argument("--endpoint-url", default=None, help="S3-compatible endpoint URL.")
+    p_source_set.add_argument("--account-url", default=None, help="Azure storage account URL.")
+    p_source_set.add_argument("--account-name", default=None, help="Azure storage account name.")
+    p_source_set.set_defaults(func=cmd_source_set)
+
+    p_source_show = source_sub.add_parser("show", help="Show the configured remote source.")
+    _add_common_corpus_arg(p_source_show)
+    p_source_show.set_defaults(func=cmd_source_show)
+
+    p_source_pull = source_sub.add_parser("pull", help="Mirror the remote source into the corpus.")
+    _add_common_corpus_arg(p_source_pull)
+    p_source_pull.set_defaults(func=cmd_source_pull)
+
     p_purge = sub.add_parser(
         "purge", help="Delete all items and derived files (requires confirmation)."
     )
@@ -2186,6 +2286,7 @@ def main(argument_list: Optional[List[str]] = None) -> int:
         KeyError,
         ValueError,
         ExtractionSnapshotFatalError,
+        RemoteSourceDependencyError,
         NotImplementedError,
         ValidationError,
     ) as exception:

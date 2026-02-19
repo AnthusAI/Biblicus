@@ -38,6 +38,7 @@ class CorpusConfig(BaseModel):
     raw_dir: str = "."
     notes: Optional[Dict[str, Any]] = None
     hooks: Optional[List[HookSpec]] = None
+    source: Optional["RemoteCorpusSourceConfig"] = None
 
     @model_validator(mode="after")
     def _enforce_schema_version(self) -> "CorpusConfig":
@@ -63,6 +64,113 @@ class IngestResult(BaseModel):
     item_id: str
     relpath: str
     sha256: str
+
+
+class RemoteCorpusSourceConfig(BaseModel):
+    """
+    Configuration for a remote corpus source.
+
+    :ivar kind: Remote source kind (s3 or azure-blob).
+    :vartype kind: str
+    :ivar name: Optional local namespace for storage.
+    :vartype name: str or None
+    :ivar bucket: S3 bucket name.
+    :vartype bucket: str or None
+    :ivar container: Azure Blob container name.
+    :vartype container: str or None
+    :ivar prefix: Optional remote prefix to scope the mirror.
+    :vartype prefix: str
+    :ivar region: Optional AWS region name.
+    :vartype region: str or None
+    :ivar endpoint_url: Optional S3-compatible endpoint URL.
+    :vartype endpoint_url: str or None
+    :ivar account_url: Optional Azure storage account URL.
+    :vartype account_url: str or None
+    :ivar account_name: Optional Azure storage account name.
+    :vartype account_name: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str = Field(min_length=1)
+    name: Optional[str] = None
+    bucket: Optional[str] = None
+    container: Optional[str] = None
+    prefix: str = Field(default="")
+    region: Optional[str] = None
+    endpoint_url: Optional[str] = None
+    account_url: Optional[str] = None
+    account_name: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_source_kind(self) -> "RemoteCorpusSourceConfig":
+        if self.kind not in {"s3", "azure-blob"}:
+            raise ValueError(f"Unsupported remote source kind: {self.kind}")
+        if self.kind == "s3":
+            if not (isinstance(self.bucket, str) and self.bucket.strip()):
+                raise ValueError("Remote S3 source requires bucket")
+        if self.kind == "azure-blob":
+            if not (isinstance(self.container, str) and self.container.strip()):
+                raise ValueError("Remote Azure Blob source requires container")
+            if not (self.account_url or self.account_name):
+                raise ValueError("Remote Azure Blob source requires account_url or account_name")
+        return self
+
+
+class RemoteSourceItem(BaseModel):
+    """
+    Remote source object metadata.
+
+    :ivar key: Remote object key or blob name.
+    :vartype key: str
+    :ivar source_uri: Source uniform resource identifier.
+    :vartype source_uri: str
+    :ivar etag: Optional entity tag for change detection.
+    :vartype etag: str or None
+    :ivar last_modified: Optional International Organization for Standardization 8601 timestamp.
+    :vartype last_modified: str or None
+    :ivar size: Size of the object in bytes.
+    :vartype size: int
+    :ivar content_type: Optional media type.
+    :vartype content_type: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    source_uri: str
+    etag: Optional[str] = None
+    last_modified: Optional[str] = None
+    size: int = Field(ge=0)
+    content_type: Optional[str] = None
+
+
+class RemoteSourcePullResult(BaseModel):
+    """
+    Summary of a remote source pull operation.
+
+    :ivar listed: Number of remote items listed.
+    :vartype listed: int
+    :ivar downloaded: Number of new items downloaded.
+    :vartype downloaded: int
+    :ivar updated: Number of existing items updated.
+    :vartype updated: int
+    :ivar skipped: Number of items skipped (no change).
+    :vartype skipped: int
+    :ivar pruned: Number of local items pruned.
+    :vartype pruned: int
+    :ivar errored: Number of items that failed to process.
+    :vartype errored: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    listed: int = Field(default=0, ge=0)
+    downloaded: int = Field(default=0, ge=0)
+    updated: int = Field(default=0, ge=0)
+    skipped: int = Field(default=0, ge=0)
+    pruned: int = Field(default=0, ge=0)
+    errored: int = Field(default=0, ge=0)
 
 
 class CatalogItem(BaseModel):
