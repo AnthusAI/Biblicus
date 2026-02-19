@@ -1902,6 +1902,7 @@ class Corpus:
         result.pruned = self._prune_remote_items(
             storage_subdir=storage_subdir, remote_uris=remote_uris
         )
+        self.reindex()
         return result
 
     def _resolve_remote_source_name(self, source_config) -> str:

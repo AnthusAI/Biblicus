@@ -253,6 +253,7 @@ def step_configure_azure_source(
 
 
 @given("a fake S3 source contains objects:")
+@when("a fake S3 source contains objects:")
 def step_fake_s3_objects(context) -> None:
     _ensure_fake_boto3(context)
     objects = []
@@ -270,6 +271,7 @@ def step_fake_s3_objects(context) -> None:
 
 
 @given("a fake Azure Blob source contains blobs:")
+@when("a fake Azure Blob source contains blobs:")
 def step_fake_azure_blobs(context) -> None:
     _ensure_fake_azure_blob(context)
     blobs = []
