@@ -243,3 +243,42 @@ def step_call_resolve_aldea_api_key(context):
             os.environ["HOME"] = old_env_home
         elif "HOME" in os.environ:
             del os.environ["HOME"]
+
+
+@when("I resolve the OpenAI API key from user configuration")
+def step_resolve_openai_api_key_from_config(context):
+    from pathlib import Path
+
+    from biblicus.user_config import resolve_openai_api_key
+
+    old_env_key = os.environ.get("OPENAI_API_KEY")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "OPENAI_API_KEY" in extra_env:
+        os.environ["OPENAI_API_KEY"] = extra_env["OPENAI_API_KEY"]
+    elif "OPENAI_API_KEY" in os.environ:
+        del os.environ["OPENAI_API_KEY"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        context.resolved_api_key = resolve_openai_api_key()
+    finally:
+        os.chdir(old_cwd)
+
+        if old_env_key is not None:
+            os.environ["OPENAI_API_KEY"] = old_env_key
+        elif "OPENAI_API_KEY" in os.environ:
+            del os.environ["OPENAI_API_KEY"]
+
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]

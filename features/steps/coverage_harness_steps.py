@@ -12172,8 +12172,6 @@ def step_exhaust_gaps(context) -> None:
         pass
     try:
         from biblicus.extraction import (
-            create_extraction_configuration_manifest,
-            create_extraction_snapshot_manifest,
             write_extraction_latest_pointer,
             build_extraction_snapshot,
         )
@@ -12357,8 +12355,6 @@ def step_exhaust_gaps(context) -> None:
         from biblicus.extraction import (
             _pipeline_stage_dir_name,
             build_extraction_snapshot,
-            create_extraction_configuration_manifest,
-            create_extraction_snapshot_manifest,
             write_extraction_latest_pointer,
         )
 
@@ -12467,8 +12463,6 @@ def step_exhaust_gaps(context) -> None:
             SimpleEntityGraphExtractor,
             SimpleEntityGraphConfig,
         )
-        from biblicus.models import CatalogItem
-
         graph_corpus = _temp_corpus()
         item = CatalogItem(
             id="g1",
@@ -14262,8 +14256,6 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         from biblicus.evaluation.ocr_benchmark import OCRBenchmark
-        from biblicus.models import CatalogItem
-
         ocr_corpus = Corpus.init(root / "ocr_corpus", force=True)
         item = CatalogItem(
             id="doc1",

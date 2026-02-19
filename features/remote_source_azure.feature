@@ -7,6 +7,7 @@ Feature: Remote Azure Blob corpus source
     And a remote Azure Blob source is configured for corpus "corpus" with account "acct" and container "demo" and prefix "docs/"
     And a fake Azure Blob source contains blobs:
       | name       | content      | etag   | last_modified           |
+      | docs/      |              |        | 2026-02-19T09:59:00Z    |
       | docs/a.md  | Alpha note   | a1     | 2026-02-19T10:00:00Z    |
       | docs/b.md  | Beta note    | b2     | 2026-02-19T10:05:00Z    |
     When I pull the remote source for corpus "corpus"
@@ -42,3 +43,15 @@ Feature: Remote Azure Blob corpus source
     When I pull the remote source for corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "azure-storage-blob"
+
+  Scenario: Azure account key credentials use account URL
+    Given I initialized a corpus at "corpus"
+    And the environment variable "AZURE_STORAGE_ACCOUNT" is set to "acct"
+    And the environment variable "AZURE_STORAGE_KEY" is set to "test-key"
+    And a remote Azure Blob source is configured for corpus "corpus" with account "acct" and container "demo" and prefix "docs/"
+    And a fake Azure Blob source contains blobs:
+      | name       | content      | etag   | last_modified           | content_type |
+      | docs/a.md  | Alpha note   | a1     | 2026-02-19T10:00:00Z    |             |
+    When I pull the remote source for corpus "corpus"
+    Then the catalog contains source uris:
+      | azure-blob://acct/demo/docs/a.md |

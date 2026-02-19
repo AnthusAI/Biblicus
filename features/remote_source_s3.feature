@@ -8,6 +8,7 @@ Feature: Remote S3 corpus source
     And a remote S3 source is configured for corpus "corpus" with bucket "demo" and prefix "docs/"
     And a fake S3 source contains objects:
       | key        | content      | etag   | last_modified           |
+      | docs/      |              |        | 2026-02-19T09:59:00Z    |
       | docs/a.md  | Alpha note   | e1     | 2026-02-19T10:00:00Z    |
       | docs/b.md  | Beta note    | e2     | 2026-02-19T10:05:00Z    |
     When I pull the remote source for corpus "corpus"
@@ -54,3 +55,13 @@ Feature: Remote S3 corpus source
     When I pull the remote source for corpus "corpus"
     Then the command fails with exit code 2
     And standard error includes "boto3"
+
+  Scenario: Missing S3 credentials errors on pull
+    Given I initialized a corpus at "corpus"
+    And a remote S3 source is configured for corpus "corpus" with bucket "demo" and prefix "docs/"
+    And a fake S3 source contains objects:
+      | key        | content      | etag   | last_modified           |
+      | docs/a.md  | Alpha note   | e1     | 2026-02-19T10:00:00Z    |
+    When I pull the remote source for corpus "corpus"
+    Then the command fails with exit code 2
+    And standard error includes "credentials"

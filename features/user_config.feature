@@ -100,3 +100,9 @@ Feature: User configuration files
     Given I initialized a corpus at "corpus"
     When I call resolve_aldea_api_key helper function
     Then the resolved API key is None
+
+  Scenario: Resolve OpenAI API key from config via helper function
+    Given I initialized a corpus at "corpus"
+    And a local Biblicus user config exists with OpenAI API key "config-openai-key"
+    When I resolve the OpenAI API key from user configuration
+    Then the resolved API key equals "config-openai-key"

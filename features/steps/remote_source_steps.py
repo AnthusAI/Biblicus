@@ -10,6 +10,16 @@ from typing import Any, Dict, List
 
 from behave import given, then, when
 
+from biblicus.models import RemoteCorpusSourceConfig
+from biblicus.remote_sources import (
+    AzureBlobRemoteSource,
+    S3RemoteSource,
+    _isoformat_timestamp,
+    _normalize_etag,
+    iter_items,
+)
+from biblicus.user_config import AwsUserConfig, AzureStorageUserConfig
+
 from features.environment import run_biblicus
 
 
@@ -147,12 +157,15 @@ def _ensure_fake_azure_blob(context) -> None:
             for blob in context.fake_azure_blobs:
                 if not blob.name.startswith(name_starts_with):
                     continue
+                content_settings = None
+                if blob.content_type is not None:
+                    content_settings = types.SimpleNamespace(content_type=blob.content_type)
                 yield types.SimpleNamespace(
                     name=blob.name,
                     etag=blob.etag,
                     last_modified=blob.last_modified,
                     size=len(blob.content),
-                    content_settings=types.SimpleNamespace(content_type=blob.content_type),
+                    content_settings=content_settings,
                 )
 
         def download_blob(self, blob: str):
@@ -276,13 +289,16 @@ def step_fake_azure_blobs(context) -> None:
     _ensure_fake_azure_blob(context)
     blobs = []
     for row in context.table:
+        content_type = row.get("content_type", "text/markdown")
+        if isinstance(content_type, str) and not content_type.strip():
+            content_type = None
         blobs.append(
             types.SimpleNamespace(
                 name=row["name"],
                 content=row["content"].encode("utf-8"),
                 etag=row["etag"],
                 last_modified=_parse_timestamp(row["last_modified"]),
-                content_type="text/markdown",
+                content_type=content_type,
             )
         )
     context.fake_azure_blobs = blobs
@@ -333,3 +349,154 @@ def step_catalog_item_etag(context, source_uri: str, etag: str) -> None:
             assert actual == etag, f"Expected etag {etag} but got {actual}"
             return
     raise AssertionError(f"Source uri not found: {source_uri}")
+
+
+@when('I normalize a remote source etag "{etag}"')
+def step_normalize_remote_source_etag(context, etag: str) -> None:
+    context.normalized_etag = _normalize_etag(etag)
+
+
+@when("I normalize a quoted remote source etag")
+def step_normalize_remote_source_etag_quoted(context) -> None:
+    context.normalized_etag = _normalize_etag('"etag"')
+
+
+@when("I normalize a remote source etag with no value")
+def step_normalize_remote_source_etag_empty(context) -> None:
+    context.normalized_etag = _normalize_etag("")
+
+
+@then('the normalized remote source etag equals "{etag}"')
+def step_normalized_remote_source_etag_equals(context, etag: str) -> None:
+    assert context.normalized_etag == etag
+
+
+@then("the normalized remote source etag is None")
+def step_normalized_remote_source_etag_none(context) -> None:
+    assert context.normalized_etag is None
+
+
+@when("I normalize a remote source timestamp with no value")
+def step_normalize_remote_source_timestamp_none(context) -> None:
+    context.normalized_timestamp = _isoformat_timestamp(None)
+
+
+@when('I normalize a remote source timestamp "{timestamp}"')
+def step_normalize_remote_source_timestamp(context, timestamp: str) -> None:
+    parsed = datetime.fromisoformat(timestamp)
+    context.normalized_timestamp = _isoformat_timestamp(parsed)
+
+
+@then('the normalized remote source timestamp equals "{timestamp}"')
+def step_normalized_remote_source_timestamp_equals(context, timestamp: str) -> None:
+    assert context.normalized_timestamp == timestamp
+
+
+@then("the normalized remote source timestamp is None")
+def step_normalized_remote_source_timestamp_none(context) -> None:
+    assert context.normalized_timestamp is None
+
+
+@given("a configured fake S3 remote source adapter")
+def step_configured_fake_s3_adapter(context) -> None:
+    _ensure_fake_boto3(context)
+    config = RemoteCorpusSourceConfig(
+        kind="s3",
+        name="demo",
+        bucket="demo",
+        prefix="docs/",
+    )
+    aws = AwsUserConfig(
+        access_key_id="test-key",
+        secret_access_key="test-secret",
+        session_token=None,
+        region=None,
+    )
+    context.s3_adapter = S3RemoteSource(config, aws)
+
+
+@given("a configured fake Azure Blob remote source adapter")
+def step_configured_fake_azure_adapter(context) -> None:
+    _ensure_fake_azure_blob(context)
+    config = RemoteCorpusSourceConfig(
+        kind="azure-blob",
+        name="demo",
+        container="demo",
+        prefix="docs/",
+        account_name="acct",
+    )
+    azure = AzureStorageUserConfig(
+        connection_string="UseDevelopmentStorage=true",
+        account_name=None,
+        account_key=None,
+    )
+    context.azure_adapter = AzureBlobRemoteSource(config, azure)
+
+
+@when("I iterate remote source items for the S3 adapter")
+def step_iterate_s3_adapter(context) -> None:
+    context.iterated_items = list(iter_items(context.s3_adapter))
+
+
+@when("I iterate remote source items for the Azure adapter")
+def step_iterate_azure_adapter(context) -> None:
+    context.iterated_items = list(iter_items(context.azure_adapter))
+
+
+@then("the iterated remote source item count is 1")
+def step_iterated_item_count(context) -> None:
+    assert len(context.iterated_items) == 1
+
+
+@when("I iterate remote source items for an unsupported adapter")
+def step_iterate_unsupported_adapter(context) -> None:
+    try:
+        iter_items(object())
+    except Exception as exc:
+        context.remote_source_iteration_error = str(exc)
+    else:
+        context.remote_source_iteration_error = None
+
+
+@then('the remote source iteration error includes "{message}"')
+def step_iteration_error_includes(context, message: str) -> None:
+    assert context.remote_source_iteration_error is not None
+    assert message in context.remote_source_iteration_error
+
+
+def _attempt_remote_source_validate(context, payload: Dict[str, Any]) -> None:
+    try:
+        RemoteCorpusSourceConfig.model_validate(payload)
+    except Exception as exc:
+        context.remote_source_validation_error = str(exc)
+    else:
+        context.remote_source_validation_error = None
+
+
+@when("I validate a remote source config with unsupported kind")
+def step_validate_remote_source_invalid_kind(context) -> None:
+    _attempt_remote_source_validate(context, {"kind": "gcs", "name": "demo"})
+
+
+@when("I validate a remote source config without an S3 bucket")
+def step_validate_remote_source_missing_bucket(context) -> None:
+    _attempt_remote_source_validate(context, {"kind": "s3", "name": "demo"})
+
+
+@when("I validate a remote source config without an Azure container")
+def step_validate_remote_source_missing_container(context) -> None:
+    _attempt_remote_source_validate(context, {"kind": "azure-blob", "name": "demo"})
+
+
+@when("I validate a remote source config without an Azure account")
+def step_validate_remote_source_missing_account(context) -> None:
+    _attempt_remote_source_validate(
+        context,
+        {"kind": "azure-blob", "name": "demo", "container": "demo"},
+    )
+
+
+@then('the remote source validation error includes "{message}"')
+def step_remote_source_validation_error_includes(context, message: str) -> None:
+    assert context.remote_source_validation_error is not None
+    assert message in context.remote_source_validation_error

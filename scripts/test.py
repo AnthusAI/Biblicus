@@ -102,11 +102,28 @@ def main() -> int:
         behave_args.extend(["--tags=-@unstructured"])
     behave_args.extend(["--tags=-@skip"])
     behave_exit_code = _run(
-        [sys.executable, "-m", "coverage", "run", "-m", "behave", *behave_args],
+        [
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "--parallel-mode",
+            "-m",
+            "behave",
+            *behave_args,
+        ],
         env=env,
     )
     pytest_exit_code = _run(
-        [sys.executable, "-m", "coverage", "run", "-m", "pytest"],
+        [
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "--parallel-mode",
+            "-m",
+            "pytest",
+        ],
         env=env,
     )
     coverage_combine_exit_code = _run(
