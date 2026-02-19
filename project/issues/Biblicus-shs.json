@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-shs",
+  "title": "Add Aldea as STT provider alongside Deepgram and OpenAI",
+  "description": "High-level goal: support Aldea Speech-to-Text as a third STT extractor. Config: aldea.api_key in user config and ALDEA_API_KEY env var (env wins). API: POST https://api.aldea.ai/v1/listen, Bearer auth; response shape matches Deepgram (channels/alternatives/transcript). Implementation should mirror stt-deepgram and stt-openai: optional extra, user config resolution, Pydantic config, BDD specs, and docs. Sub-tasks (beads): user config + resolver, stt-aldea extractor, BDD feature + steps, docs and README.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-11T22:12:06.581836Z",
+  "updated_at": "2026-02-11T23:16:37.019513Z",
+  "closed_at": "2026-02-12T04:16:35.534070Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

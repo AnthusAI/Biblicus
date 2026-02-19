@@ -1,0 +1,133 @@
+{
+  "id": "blbs-1ffc4162-6688-4d17-bd57-83dbb3b22263",
+  "title": "Reach 100% coverage and pass quality gates",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "6188b4b4-1ff3-4168-9d01-46df9902370c",
+      "author": "unknown",
+      "text": "Baseline: coverage 98.6046% (12,437/12,613) after behave (non-integration) + pytest. Remaining gaps: cli.py (37 lines), corpus.py (34), extraction.py (26), stt extractors deepgram/aws/azure/aldea, topic_modeling, markov. Kanbus epic created: Code quality. Next: add BDD specs/steps to cover remaining branches, rerun coverage+lint, then check GitHub Actions via gh.",
+      "created_at": "2026-02-17T01:06:00.931544Z"
+    },
+    {
+      "id": "6197d10d-b145-4fa5-978c-3bb17f1c7030",
+      "author": "unknown",
+      "text": "Continuing BDD-only coverage work. Next: run behave/pytest/coverage with py311, inspect gaps, add specs/steps, re-run quality gates, then gh CI check.",
+      "created_at": "2026-02-17T01:20:27.575970Z"
+    },
+    {
+      "id": "b127a949-62f5-46f1-aa5b-a0627f2aa571",
+      "author": "unknown",
+      "text": "Resuming coverage push per plan. Will target remaining uncovered lines (analysis/markov, topic_modeling, cli, corpus, extraction, extractors, migration) via BDD-only steps in features/steps/coverage_harness_steps.py, then run tests/coverage/ruff/black and check CI via gh.",
+      "created_at": "2026-02-17T01:56:51.331838Z"
+    },
+    {
+      "id": "af35aa96-670e-485c-989e-eecf54f065e2",
+      "author": "unknown",
+      "text": "Plan confirmed; reread AGENTS.md and CONTRIBUTING_AGENT.md. Proceeding with BDD-only coverage push using kbs.",
+      "created_at": "2026-02-17T02:30:57.751634Z"
+    },
+    {
+      "id": "ae5b7c6c-87b2-4d00-a846-93f2b5e74af8",
+      "author": "unknown",
+      "text": "Ran scripts/test.py after new coverage harness additions; tests pass but coverage still 97% with same missing lines (dotyaml, markov, topic_modeling, cli, corpus, extraction, stt, benchmark_runner, user_config, workflow, neo4j, amplify_publisher). Continuing targeted coverage work.",
+      "created_at": "2026-02-17T02:56:31.797574Z"
+    },
+    {
+      "id": "47a516c1-133b-453e-a72e-f4c3756c5996",
+      "author": "unknown",
+      "text": "Planning next coverage push: confirm current coverage + remaining gaps, then add BDD scenarios/steps to hit missing lines (cli/corpus/extraction/markov/topic_modeling/STT/benchmark_runner/dotyaml). Will run behave + pytest + coverage, then ruff/black, then gh CI. Next: run coverage report with precision and identify why gap not moving.",
+      "created_at": "2026-02-17T02:58:26.186788Z"
+    },
+    {
+      "id": "dfeb68c7-6772-4863-a4ee-8bab71230f41",
+      "author": "unknown",
+      "text": "Resuming coverage push. Plan: add new BDD scenarios and extend coverage harness steps to hit remaining uncovered modules (analysis/models, profiling, topic_modeling, extraction, corpus/cli, extractors, retrieval, migration, hooks, graph/neo4j, chunking). Will iterate run behave/pytest/coverage in py311 and log results with precision; no pytest-only tests; keep changes in features/*.feature + step defs.",
+      "created_at": "2026-02-17T03:30:35.220459Z"
+    },
+    {
+      "id": "cf5d9f67-3777-4342-a177-6180796d53a3",
+      "author": "unknown",
+      "text": "Ran behave -n 'Exhaust coverage gaps' (pass). Ran conda run -n py311 python scripts/test.py (coverage fail-under=100; total 90%). Coverage report shows largest remaining gaps: cli.py (142 lines), profiling.py (93), topic_modeling.py (77), extraction_evaluation.py (66), crawl.py (63), ocr_benchmark.py (57), corpus.py (54), evaluation/retrieval.py (51), neo4j.py (40), multiple extractors (docling*, openai_stt, rapidocr, etc.). Added more coverage harness logic and helper _write_minimal_extraction_snapshot; next steps: extend harness to exercise profiling/topic_modeling/extraction_evaluation/crawl, and mock optional extractor dependencies to cover remaining modules.",
+      "created_at": "2026-02-17T03:54:35.273777Z"
+    },
+    {
+      "id": "50aa131f-b1dd-4a8d-a20d-6c965917be1d",
+      "author": "unknown",
+      "text": "Continuing coverage push per plan. Read CONTRIBUTING_AGENT.md. Next: re-run behave coverage scenario and coverage report to locate remaining gaps, then extend BDD scenarios/steps in features/coverage_harness.feature + features/steps/coverage_harness_steps.py to cover cli/corpus/extraction/analysis/extractors/graph/crawl/evaluation gaps. Will log each batch.",
+      "created_at": "2026-02-17T03:55:30.968225Z"
+    },
+    {
+      "id": "0e007610-c08e-47a2-86cb-66d547fd02ed",
+      "author": "unknown",
+      "text": "Starting execution of plan: BDD-only coverage to 100%. Read CONTRIBUTING_AGENT.md; will add Gherkin scenarios + steps to cover remaining gaps (cli/corpus/extraction/analysis/topic modeling/STT). Next: inspect current coverage report, add scenarios, run behave/pytest/coverage, then lint and GH CI.",
+      "created_at": "2026-02-17T04:25:56.564873Z"
+    },
+    {
+      "id": "bc0630cc-71ac-40f1-b0f4-7549b9d3f242",
+      "author": "unknown",
+      "text": "Ran: conda run -n py311 python scripts/test.py. Coverage 94% (TOTAL 12613, missing 676, fail-under=100). Report at reports/htmlcov/index.html. Notable misses: analysis/profiling.py (many), cli.py (large), corpus.py (37), extraction.py (24), analysis/markov.py, analysis/topic_modeling.py, evaluation/ocr_benchmark.py, graph/extraction.py, graph/neo4j.py, retrievers/sqlite_full_text_search.py, tf_vector.py, sources.py, several extractors (docling_*, faster_whisper_stt.py, openai_*_stt.py, paddleocr_vl_text.py, select_* overrides), ignore.py, workflow.py. Next: target BDD scenarios and steps to cover these edges per plan.",
+      "created_at": "2026-02-17T04:27:41.507282Z"
+    },
+    {
+      "id": "e3855b71-d0d9-4a09-9a10-781cb9f31f69",
+      "author": "unknown",
+      "text": "Ran: conda run -n py311 python scripts/test.py. Coverage now 95% (TOTAL 12613, missing 506). Notable remaining misses: cli.py still 139 lines; corpus.py 37 lines; extraction.py 24 lines; graph/extraction.py 12; graph/neo4j.py 13; graph/extractors __init__/cooccurrence/dependency/ner/simple each 1; analysis/profiling.py still 93; analysis/markov.py 24; analysis/topic_modeling.py 36; evaluation/ocr_benchmark.py 57; several extractors (docling_*, faster_whisper_stt.py, openai_*_stt.py, paddleocr_vl_text.py, select_* overrides, rapidocr_text.py, pdf_text.py), retrievers/sqlite_full_text_search.py, tf_vector.py, sources.py, ignore.py, workflow.py. Next: target those modules via coverage harness updates.",
+      "created_at": "2026-02-17T04:43:19.739539Z"
+    },
+    {
+      "id": "5da3907a-2387-4f16-b7f1-a0a37cb736aa",
+      "author": "unknown",
+      "text": "Plan confirmed: push BDD-only coverage to 100% by adding targeted scenarios/steps for CLI, corpus, extraction, markov/topic modeling, and STT extractors; run Behave+pytest, coverage report/json, ruff/black/lint, then check CI via gh.",
+      "created_at": "2026-02-17T05:01:56.755904Z"
+    },
+    {
+      "id": "7d9025a7-554b-4198-87fc-9fab479362f2",
+      "author": "unknown",
+      "text": "Ran conda run -n py311 python scripts/test.py. Coverage now 97% (TOTAL 12613 stmts, 309 miss). Key misses: cli.py (92% - lines 464-472, 484, 527->534, 547->549, 1332-1356, 1382, 1391-1409, 1454-1473, 1511, 1517-1520, 1549, 1552-1553, 1562, 1569, 1572-1575, 1580-1601); corpus.py (94% - many lines incl 532, 539->541, 600, 1003, 1297->1302, 1330->1339, 1404-1411, 1416, 1447-1450, 1455-1460, 1462->1465, 1473, 1587, 1653-1677, 1831, 1975-1978, 1984); extraction.py (90% - 492, 544-547, 579-584, 608, 678, 693, 917->927, 972-987, 1031-1036); topic_modeling.py (98% - 528, 771, 861-862, 959); benchmark_runner.py (72% - many branches); plus extractors still missing: aldea_stt.py, aws_transcribe_stt.py, azure_speech_stt.py, deepgram_stt.py, deepgram_transform.py, google_speech_stt.py; neo4j.py 99% line 122. Need further BDD harness coverage for those remaining branches.",
+      "created_at": "2026-02-17T05:24:04.455723Z"
+    },
+    {
+      "id": "e3340c85-01e6-44b0-95e9-f06dfa7b6ee0",
+      "author": "unknown",
+      "text": "Re-ran conda run -n py311 python scripts/test.py after additional harness changes. Coverage dropped to 95% (TOTAL 12613 stmts, 491 miss). New misses include openai_audio_stt.py (124-125,141), google_speech_stt.py (word-time + diarization branches), knowledge_base.py (124,129), migration.py (multiple), user_config.py (165,226,246,266,286), plus neo4j.py line 122 still missing. Need to fix harness errors causing earlier coverage not to execute and add coverage for these modules.",
+      "created_at": "2026-02-17T05:35:14.495526Z"
+    },
+    {
+      "id": "3572f37a-b881-4ab1-ba42-e4c896ab84cb",
+      "author": "unknown",
+      "text": "Starting execution of approved plan: focus BDD specs for remaining coverage gaps in cli/corpus/extraction/analysis/STT/bench. Next step: re-measure coverage and enumerate remaining misses with precision.",
+      "created_at": "2026-02-17T05:36:42.797728Z"
+    },
+    {
+      "id": "316cb0fa-e07c-46ba-aa25-bc2f384d920a",
+      "author": "unknown",
+      "text": "Resuming coverage push: target remaining branches in amplify_publisher (S3 bucket config branch + _create_catalog_item retry/raise paths). Will run py311 scripts/test.py after updates.",
+      "created_at": "2026-02-17T06:27:40.164944Z"
+    },
+    {
+      "id": "aa11c4ab-a4af-49fb-a086-8b2c4c3ad249",
+      "author": "ryan.porter",
+      "text": "Request to lower coverage threshold to 98% conflicts with project policy (100% BDD coverage required). Did not change fail-under. Current status: coverage 98%, failing gate.",
+      "created_at": "2026-02-19T04:46:50.703790Z"
+    },
+    {
+      "id": "934fc5ef-e20c-47d5-9d16-760d21c54e03",
+      "author": "ryan.porter",
+      "text": "Updated coverage fail-under to 98% per directive (pyproject.toml and .coveragerc).",
+      "created_at": "2026-02-19T04:47:36.402363Z"
+    }
+  ],
+  "created_at": "2026-02-17T01:05:56.449396Z",
+  "updated_at": "2026-02-19T04:47:40.868024Z",
+  "closed_at": "2026-02-19T04:47:40.868024Z",
+  "custom": {}
+}

@@ -1,5 +1,15 @@
 # Biblicus (Project Memory)
 
+
+## Project management with Kanbus
+
+Use Kanbus for task management.
+Why: Kanbus task management is MANDATORY here; every task must live in Kanbus.
+When: Create/update the Kanbus task before coding; close it only after the change lands.
+How: See CONTRIBUTING_AGENT.md for the Kanbus workflow, hierarchy, status rules, priorities, command examples, and the sins to avoid. Never inspect project/ or issue JSON directly (including with cat or jq); use Kanbus commands only.
+Performance: Prefer kanbusr (Rust) when available; kanbus (Python) is equivalent but slower.
+Warning: Editing project/ directly is a sin against The Way. Do not read or write anything in project/; work only through Kanbus.
+
 ## What we're building
 
 - **Biblicus**: a product and reference implementation for **managing knowledge bases** (ingest, curate, query) and **evaluating** different retrieval and retrieval-augmented generation approaches against shared data, including a **pluggable interface** for connecting knowledge base backends to **Tactus procedures**.
@@ -92,7 +102,7 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Behavior-driven development discipline**: specifications first; every behavior specified; one official way (no fallbacks).
 - **Modeling discipline**: Pydantic at boundaries; validation errors must be clear.
 - **Development flow**: update `features/*.feature`, implement, run tests; use the command-line interface to ingest; `reindex` refreshes catalog.
-- **Beads and agent instructions**: This project uses **Beads** for issue and task tracking; using it is **mandatory**. See [AGENT_INSTRUCTIONS.md](AGENT_INSTRUCTIONS.md) for detailed operational instructions for agents (workflows, landing the plane, session workflow, quality gates).
+- **Kanbus tracking**: This project uses **Kanbus** for issue and task tracking (project key `blbs`). Use `kbs`/`kanbus` commands; do not use Beads.
 
 ## Local telemetry for AI-assisted iteration
 
@@ -303,7 +313,6 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```

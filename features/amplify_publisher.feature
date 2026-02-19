@@ -113,6 +113,13 @@ Feature: AWS Amplify Publisher
     When I call sync_catalog
     Then catalog metadata is updated with item count 25
 
+  Scenario: Sync catalog serializes item metadata when present
+    Given Amplify environment variables are configured
+    Given an AmplifyPublisher for corpus "my-corpus"
+    And a local catalog with 1 items and metadata
+    When I call sync_catalog
+    Then a full replacement sync is performed
+
   Scenario: Execute GraphQL handles network errors
     Given Amplify environment variables are configured
     Given an AmplifyPublisher for corpus "my-corpus"
@@ -134,6 +141,20 @@ Feature: AWS Amplify Publisher
     When I sync a catalog with 1 item
     Then the item is created after retry
 
+  Scenario: Create catalog item raises when retries are exhausted
+    Given Amplify environment variables are configured
+    Given an AmplifyPublisher for corpus "my-corpus"
+    And catalog item creation will fail without retries
+    When I attempt to create a catalog item directly
+    Then a catalog item error is raised
+
+  Scenario: Create catalog item does nothing when retry attempts are empty
+    Given Amplify environment variables are configured
+    Given an AmplifyPublisher for corpus "my-corpus"
+    And catalog item creation has no retry attempts
+    When I attempt to create a catalog item directly
+    Then no catalog item error is raised
+
   Scenario: Catalog hash computation is deterministic
     Given Amplify environment variables are configured
     Given an AmplifyPublisher for corpus "my-corpus"
@@ -154,6 +175,20 @@ Feature: AWS Amplify Publisher
     And an Amplify config file with S3_BUCKET exists
     When I create an AmplifyPublisher for corpus "test-corpus"
     Then the publisher is configured with S3 bucket from file
+
+  Scenario: AmplifyPublisher replaces empty S3 bucket from config file
+    Given fake AWS and HTTP services are available
+    And AMPLIFY_S3_BUCKET is empty in environment
+    And an Amplify config file with S3_BUCKET exists
+    When I create an AmplifyPublisher for corpus "test-corpus"
+    Then the publisher is configured with S3 bucket from file
+
+  Scenario: AmplifyPublisher keeps S3 bucket from environment when config file also provides it
+    Given fake AWS and HTTP services are available
+    And AMPLIFY_S3_BUCKET is set to "env-bucket" only
+    And an Amplify config file with all settings exists
+    When I create an AmplifyPublisher for corpus "test-corpus"
+    Then the publisher S3 bucket equals "env-bucket"
 
   Scenario: Sync catalog uses incremental sync for large catalogs
     Given Amplify environment variables are configured

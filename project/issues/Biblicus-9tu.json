@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-9tu",
+  "title": "Implement stt-aldea extractor plugin for Aldea STT API",
+  "description": "Part of Biblicus-shs (Aldea STT epic). New extractor stt-aldea in src/biblicus/extractors/aldea_stt.py. Use direct REST with httpx: POST https://api.aldea.ai/v1/listen, Authorization Bearer, body raw audio; parse results.channels[0].alternatives[0].transcript. Optional extra biblicus[aldea] = httpx. Config: language, diarization, timestamps. validate_config: require optional dep and resolve_aldea_api_key(). Register in extractors/__init__.py. Add aldea = [httpx>=0.24] in pyproject.toml.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-11T22:12:16.939405Z",
+  "updated_at": "2026-02-11T23:16:37.019032Z",
+  "closed_at": "2026-02-12T04:16:35.534070Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "Biblicus-yr4",
+  "title": "Add node_modules to .gitignore root level",
+  "description": "The root-level node_modules directory was showing up as untracked in git status.\n\nProblem:\n- .gitignore only had apps/dashboard/node_modules/ on line 32\n- Root-level node_modules/ was not ignored\n- This appeared in git status as untracked\n\nFix:\n- Added node_modules/ to .gitignore on line 32 (before apps/dashboard/node_modules/)\n- Now both root and subdirectory node_modules are properly ignored\n\nFile modified:\n- .gitignore:32",
+  "type": "bug",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-10T00:16:16.017016Z",
+  "updated_at": "2026-02-10T00:16:20.332852Z",
+  "closed_at": "2026-02-10T00:16:20.332852Z",
+  "custom": {
+    "beads_close_reason": "Completed: Added node_modules/ to .gitignore root level. Git status no longer shows node_modules as untracked.",
+    "beads_owner": "rap@endymion.com"
+  }
+}

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -18,15 +19,14 @@ def test_llm_extraction_empty_response(monkeypatch):
     docs = [TopicModelingDocument(document_id="1", source_item_id="s", text="t")]
     config = TopicModelingLlmExtractionConfig(
         enabled=True,
-        client={"provider": "mock", "model": "m", "model_family": "x"},
+        client={"provider": "mock", "model": "m"},
         prompt_template="{text}",
         system_prompt="sys {text}",
         method=TopicModelingLlmExtractionMethod.SINGLE,
     )
     monkeypatch.setattr(topic_modeling, "generate_completion", lambda **kwargs: "")
-    report, extracted = topic_modeling._apply_llm_extraction(documents=docs, config=config)
-    assert report.errors
-    assert not extracted
+    with pytest.raises(ValueError):
+        topic_modeling._apply_llm_extraction(documents=docs, config=config)
 
 
 def test_entity_removal_log_interval(monkeypatch, tmp_path):
@@ -36,12 +36,12 @@ def test_entity_removal_log_interval(monkeypatch, tmp_path):
         provider="spacy",
         model="en",
         entity_types=[],
-        replace_with=None,
+        replace_with="",
         regex_patterns=[],
         regex_replace_with="",
         collapse_whitespace=False,
     )
-    topic_modeling.spacy = SimpleNamespace(load=lambda model: (lambda text: SimpleNamespace(ents=[])))
+    sys.modules["spacy"] = SimpleNamespace(load=lambda model: (lambda text: SimpleNamespace(ents=[])))
     report, processed = topic_modeling._apply_entity_removal(documents=docs, config=config, cache_path=None)
     assert report.output_documents == 55
     assert len(processed) == 55
@@ -64,17 +64,19 @@ def test_llm_fine_tuning_log_interval(monkeypatch):
     topics = [
         topic_modeling.TopicModelingTopic(
             topic_id=1,
+            label="L",
+            label_source=topic_modeling.TopicModelingLabelSource.LLM,
             keywords=[topic_modeling.TopicModelingKeyword(keyword="k", score=1.0)],
             document_ids=["d1"],
-            category=None,
+            document_count=1,
         )
         for _ in range(12)
     ]
     docs = [TopicModelingDocument(document_id="d1", source_item_id="s", text="hello")]
     config = TopicModelingLlmFineTuningConfig(
         enabled=True,
-        client={"provider": "mock", "model": "m", "model_family": "x"},
-        prompt_template="tmpl {keywords}",
+        client={"provider": "mock", "model": "m"},
+        prompt_template="tmpl {keywords} {documents}",
         system_prompt="sys",
         max_keywords=1,
         max_documents=1,

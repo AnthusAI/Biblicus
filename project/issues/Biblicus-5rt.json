@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-5rt",
+  "title": "Restore 100% coverage and fix coverage harness",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-15T17:34:00.173860Z",
+  "updated_at": "2026-02-15T17:34:00.173860Z",
+  "closed_at": null,
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

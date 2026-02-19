@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-evr",
+  "title": "Create STT benchmarking documentation guide",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:53.391364Z",
+  "updated_at": "2026-02-14T02:52:13.480286Z",
+  "closed_at": "2026-02-14T02:52:13.480288Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

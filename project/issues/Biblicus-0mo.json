@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-0mo",
+  "title": "Create STT benchmark runner script (benchmark_all_stt_providers.py)",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:52.929026Z",
+  "updated_at": "2026-02-14T02:43:59.508480Z",
+  "closed_at": "2026-02-14T02:43:59.508483Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

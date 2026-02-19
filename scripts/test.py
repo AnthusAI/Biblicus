@@ -32,6 +32,8 @@ def _env_with_src() -> dict[str, str]:
     env = dict(os.environ)
     src = str(repo_root / "src")
     env["PYTHONPATH"] = src + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    env["COVERAGE_PROCESS_START"] = str(repo_root / ".coveragerc")
+    env["COVERAGE_FILE"] = str(repo_root / ".coverage")
     return env
 
 
@@ -104,7 +106,11 @@ def main() -> int:
         env=env,
     )
     pytest_exit_code = _run(
-        [sys.executable, "-m", "coverage", "run", "-a", "-m", "pytest"],
+        [sys.executable, "-m", "coverage", "run", "-m", "pytest"],
+        env=env,
+    )
+    coverage_combine_exit_code = _run(
+        [sys.executable, "-m", "coverage", "combine"],
         env=env,
     )
     coverage_report_exit_code = _run(
@@ -121,6 +127,7 @@ def main() -> int:
         max(
             behave_exit_code,
             pytest_exit_code,
+            coverage_combine_exit_code,
             coverage_report_exit_code,
             coverage_html_exit_code,
         )

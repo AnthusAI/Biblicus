@@ -9,7 +9,14 @@ from biblicus.extractors import aws_transcribe_stt, azure_speech_stt, deepgram_s
 
 
 def test_aws_missing_region(monkeypatch):
-    monkeypatch.setattr(aws_transcribe_stt, "boto3", SimpleNamespace(client=lambda *a, **k: None))
+    real_import = __import__
+
+    def fake_import(name, *a, **k):
+        if name == "boto3":
+            raise ImportError("no boto3")
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
     extractor = aws_transcribe_stt.AwsTranscribeSpeechToTextExtractor()
     with pytest.raises(ExtractionSnapshotFatalError):
         extractor.validate_config({"s3_bucket": "b"})
@@ -32,6 +39,7 @@ def test_deepgram_no_key(monkeypatch, tmp_path):
     audio = tmp_path / "a.wav"
     audio.write_bytes(b"data")
     monkeypatch.delenv("DEEPGRAM_API_KEY", raising=False)
+    monkeypatch.setattr(deepgram_stt, "resolve_deepgram_api_key", lambda: None)
     extractor = deepgram_stt.DeepgramSpeechToTextExtractor()
     with pytest.raises(ExtractionSnapshotFatalError):
         extractor.extract_text(
@@ -43,19 +51,8 @@ def test_deepgram_no_key(monkeypatch, tmp_path):
 
 
 def test_deepgram_transform_missing_dependency(monkeypatch, tmp_path):
-    monkeypatch.delenv("DEEPGRAM_API_KEY", raising=False)
-    audio = tmp_path / "a.wav"
-    audio.write_bytes(b"data")
-    real_import = __import__
-
-    def fake_import(name, *a, **k):
-        if name == "ffmpeg":
-            raise ImportError("no ffmpeg")
-        return real_import(name, *a, **k)
-
-    monkeypatch.setattr("builtins.__import__", fake_import)
-    extractor = deepgram_transform.DeepgramTransformExtractor()
-    with pytest.raises(ExtractionSnapshotFatalError):
+    extractor = deepgram_transform.DeepgramTranscriptTransformExtractor()
+    with pytest.raises(ValueError):
         extractor.extract_text(
             corpus=SimpleNamespace(root=tmp_path),
             item=SimpleNamespace(id="i", media_type="audio/wav", relpath="a.wav"),

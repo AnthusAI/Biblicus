@@ -421,6 +421,16 @@ def step_local_catalog(context, catalog_hash: str = None, item_count: int = None
         })
 
 
+@given('a local catalog with {item_count:d} items and metadata')
+def step_local_catalog_with_metadata(context, item_count: int):
+    step_local_catalog(context, item_count=item_count)
+    item_id = next(iter(context.catalog.items))
+    items = dict(context.catalog.items)
+    items[item_id] = items[item_id].model_copy(update={"metadata": {"source": "example"}})
+    context.catalog = context.catalog.model_copy(update={"items": items})
+    context.catalog_path.write_text(context.catalog.model_dump_json())
+
+
 @when("I call sync_catalog")
 def step_call_sync_catalog(context):
     context.sync_result = context.publisher.sync_catalog(context.catalog_path)
@@ -520,16 +530,77 @@ def step_graphql_fail_then_succeed(context):
     context.graphql_responses = [{"data": {"createCatalogItem": {"corpusId": "my-corpus", "itemId": "item-0"}}}]
 
 
+@given("catalog item creation will fail without retries")
+def step_catalog_item_fail_no_retries(context):
+    context.retry_patch = mock.patch.object(type(context.publisher), "_retry_attempts", return_value=[0])
+    context.retry_patch.start()
+    context.execute_patch = mock.patch.object(
+        type(context.publisher),
+        "_execute_graphql",
+        side_effect=Exception("Catalog item failure"),
+    )
+    context.execute_mock = context.execute_patch.start()
+
+
+@given("catalog item creation has no retry attempts")
+def step_catalog_item_no_retry_attempts(context):
+    context.retry_patch = mock.patch.object(type(context.publisher), "_retry_attempts", return_value=[])
+    context.retry_patch.start()
+    context.execute_patch = mock.patch.object(
+        type(context.publisher),
+        "_execute_graphql",
+        side_effect=Exception("Should not execute"),
+    )
+    context.execute_mock = context.execute_patch.start()
+
+
 @when("I sync a catalog with {count:d} item")
 def step_sync_catalog_with_items(context, count: int):
     step_local_catalog(context, item_count=count)
     step_call_sync_catalog(context)
 
 
+@when("I attempt to create a catalog item directly")
+def step_attempt_create_catalog_item(context):
+    from biblicus.models import CatalogItem
+
+    item = CatalogItem(
+        id="item-0",
+        relpath="item-0.txt",
+        sha256="sha256-0",
+        bytes=100,
+        media_type="text/plain",
+        tags=[],
+        metadata={},
+        created_at="2024-01-01T00:00:00Z",
+        source_uri="test"
+    )
+    context.catalog_item_error = None
+    try:
+        context.publisher._create_catalog_item(item)
+    except Exception as error:
+        context.catalog_item_error = error
+    finally:
+        if hasattr(context, "execute_patch"):
+            context.execute_patch.stop()
+        if hasattr(context, "retry_patch"):
+            context.retry_patch.stop()
+
+
 @then("the item is created after retry")
 def step_item_created_after_retry(context):
     assert context.sync_result.created == 1
     assert len(context.sync_result.errors) == 0
+
+
+@then("a catalog item error is raised")
+def step_catalog_item_error_raised(context):
+    assert context.catalog_item_error is not None
+
+
+@then("no catalog item error is raised")
+def step_no_catalog_item_error(context):
+    assert context.catalog_item_error is None
 
 
 @given("a catalog with items in random order")
@@ -639,11 +710,31 @@ def step_partial_env_no_bucket(context):
     os.environ.pop("AWS_REGION", None)
 
 
+@given("AMPLIFY_S3_BUCKET is empty in environment")
+def step_empty_bucket_env(context):
+    _ensure_fake_aws_installed(context)
+    os.environ["AMPLIFY_APPSYNC_ENDPOINT"] = "https://test.appsync-api.us-west-2.amazonaws.com/graphql"
+    os.environ["AMPLIFY_API_KEY"] = "test-key"
+    os.environ["AMPLIFY_S3_BUCKET"] = ""
+    os.environ.pop("AWS_REGION", None)
+
+
+@given('AMPLIFY_S3_BUCKET is set to "{bucket}" only')
+def step_bucket_only_env(context, bucket: str):
+    _ensure_fake_aws_installed(context)
+    os.environ["AMPLIFY_S3_BUCKET"] = bucket
+    os.environ.pop("AMPLIFY_APPSYNC_ENDPOINT", None)
+    os.environ.pop("AMPLIFY_API_KEY", None)
+    os.environ.pop("AWS_REGION", None)
+
+
 @given("an Amplify config file with all settings exists")
 def step_config_file_all_settings(context):
     config_path = Path.home() / '.biblicus' / 'amplify.env'
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text("""AMPLIFY_S3_BUCKET=bucket-from-config
+AMPLIFY_APPSYNC_ENDPOINT=https://config.appsync-api.us-west-2.amazonaws.com/graphql
+AMPLIFY_API_KEY=config-api-key-789
 AWS_REGION=us-west-2
 """)
     context.amplify_config_path = config_path
@@ -652,3 +743,8 @@ AWS_REGION=us-west-2
 @then("the publisher is configured with S3 bucket from config file")
 def step_publisher_bucket_from_config(context):
     assert context.publisher.s3_bucket == "bucket-from-config"
+
+
+@then('the publisher S3 bucket equals "{bucket}"')
+def step_publisher_bucket_equals(context, bucket: str):
+    assert context.publisher.s3_bucket == bucket

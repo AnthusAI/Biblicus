@@ -1,0 +1,22 @@
+{
+  "id": "Biblicus-v3a",
+  "title": "Add real-time analysis pipeline tracking and visualization",
+  "description": "Enable real-time visibility into analysis pipeline execution so users can monitor analysis backends (profiling, topic-modeling, markov) as they run, including:\n\n- Current analysis stage (e.g., \"Text Collection\", \"LLM Extraction\", \"BERTopic Training\", \"State Naming\")\n- Stage progress: input/output document counts, processing rate\n- Overall progress: total items processed, ETA, stage dependencies\n- Intermediate results: segment counts, observation counts, model convergence metrics\n- Cache hits/misses and their impact on performance\n- Warnings and errors per stage with context\n- Cancellation capability for long-running analyses\n\nCurrently analysis progress is only logged to stderr and runs synchronously to completion with no real-time updates. This feature will:\n1. Emit analysis events from backend pipelines (stage_started, stage_progress, stage_completed, error_occurred)\n2. Expose real-time analysis status via API endpoints (similar to extraction)\n3. Update dashboard to show live analysis progress with per-stage metrics\n4. Support backend-specific stage visualizations (e.g., topic model convergence for topic-modeling)",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-09T20:24:49.962579Z",
+  "updated_at": "2026-02-09T20:25:18.877499Z",
+  "closed_at": null,
+  "custom": {
+    "beads_issue_type": "feature",
+    "beads_notes": "RELATED WORK:\nThis feature is complementary to Biblicus-5fp (extraction tracking).\n\nBoth features share:\n- Common real-time event streaming architecture\n- Shared API endpoint patterns\n- Shared dashboard component patterns\n- In-memory event queue with subscriber callbacks\n\nKey difference:\n- Extraction tracks per-item progress across stages\n- Analysis tracks aggregate progress through backend-specific stages\n\nRecommendation: Implement extraction tracking first (Biblicus-5fp), then leverage that architecture for analysis tracking.",
+    "beads_owner": "rap@endymion.com"
+  }
+}

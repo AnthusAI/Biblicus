@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 import boto3
 import requests
@@ -66,8 +66,9 @@ class AmplifyPublisher:
                             self.api_key = value
                         elif key == 'AWS_REGION':
                             self.region = value
-                        elif key == 'AMPLIFY_S3_BUCKET' and not self.s3_bucket:
-                            self.s3_bucket = value
+                        elif key == 'AMPLIFY_S3_BUCKET':
+                            if not self.s3_bucket:
+                                self.s3_bucket = value
 
     def create_corpus(self) -> Dict[str, Any]:
         """Create or update corpus record."""
@@ -348,6 +349,9 @@ class AmplifyPublisher:
         # TODO: Implement proper diff logic
         return self._full_replacement_sync(catalog, catalog_hash)
 
+    def _retry_attempts(self) -> Iterable[int]:
+        return range(3)
+
     def _create_catalog_item(self, item):
         """Create or update a catalog item with retry."""
         mutation = """
@@ -376,16 +380,23 @@ class AmplifyPublisher:
             }
         }
 
-        # Retry logic
-        for attempt in range(3):
+        published = False
+        last_error: Exception | None = None
+        for attempt in self._retry_attempts():
             try:
                 self._execute_graphql(mutation, variables)
-                return
+                published = True
+                break
             except Exception as e:
+                last_error = e
                 if attempt < 2 and 'Network' in str(e):
                     time.sleep(2 ** attempt)
                     continue
-                raise
+                break
+        if published:
+            return
+        if last_error is not None:
+            raise last_error
 
     def _execute_graphql(self, query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
         """Execute GraphQL mutation against AppSync."""

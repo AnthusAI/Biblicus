@@ -15,5 +15,6 @@ Feature: Coverage harness
     And I exhaust the remaining dotyaml gaps
     And I exhaust the remaining embedding gaps
     And I exhaust the remaining stt gaps
+    And I exhaust the remaining core gaps
     And I exhaust the remaining migration gaps
     Then the coverage gap sweeps complete

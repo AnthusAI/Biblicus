@@ -258,10 +258,41 @@ def step_have_file_with_contents(context, filename: str, contents: str) -> None:
     path.write_text(contents, encoding="utf-8")
 
 
+@given('I have a binary file "{filename}" with bytes:')
+def step_have_binary_file_with_bytes(context, filename: str) -> None:
+    payload = context.text or ""
+    hex_bytes = "".join(payload.split())
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(bytes.fromhex(hex_bytes))
+
+
+@given('I have a directory "{path}"')
+def step_have_directory(context, path: str) -> None:
+    target = _resolve_fixture_path(context, path)
+    target.mkdir(parents=True, exist_ok=True)
+
+
 @when('I load the source "{source}"')
 def step_load_source(context, source: str) -> None:
     candidate_path = (context.workdir / source).resolve()
     context.loaded_source = load_source(str(candidate_path))
+
+
+@when('I load the source uniform resource identifier for "{path}"')
+def step_load_source_uri(context, path: str) -> None:
+    candidate_path = (context.workdir / path).resolve()
+    context.loaded_source = load_source(candidate_path.as_uri())
+
+
+@when('I attempt to load the source uniform resource identifier for "{path}"')
+def step_attempt_load_source_uri(context, path: str) -> None:
+    candidate_path = (context.workdir / path).resolve()
+    try:
+        context.loaded_source = load_source(candidate_path.as_uri())
+        context.load_source_error = None
+    except Exception as exc:
+        context.load_source_error = exc
 
 
 @then('the source payload filename is "{filename}"')
@@ -271,11 +302,25 @@ def step_source_payload_filename(context, filename: str) -> None:
     assert payload.filename == filename
 
 
+@then('the source payload media type is "{media_type}"')
+def step_source_payload_media_type(context, media_type: str) -> None:
+    payload = getattr(context, "loaded_source", None)
+    assert payload is not None
+    assert payload.media_type == media_type
+
+
 @then('the source payload source uniform resource identifier starts with "{prefix}"')
 def step_source_payload_source_uri_prefix(context, prefix: str) -> None:
     payload = getattr(context, "loaded_source", None)
     assert payload is not None
     assert payload.source_uri.startswith(prefix), payload.source_uri
+
+
+@then('the source load error includes "{text}"')
+def step_source_load_error_includes(context, text: str) -> None:
+    err = getattr(context, "load_source_error", None)
+    assert err is not None
+    assert text in str(err)
 
 
 @when("I execute a hook manager with a non-Pydantic hook result")
