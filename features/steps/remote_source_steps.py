@@ -296,7 +296,11 @@ def step_azure_blob_dependency_unavailable(context) -> None:
 @when('I pull the remote source for corpus "{corpus_name}"')
 def step_pull_remote_source(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
-    result = run_biblicus(context, ["--corpus", str(corpus), "source", "pull"])
+    result = run_biblicus(
+        context,
+        ["--corpus", str(corpus), "source", "pull"],
+        extra_env=getattr(context, "extra_env", None),
+    )
     context.last_result = result
 
 

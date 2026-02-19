@@ -133,6 +133,10 @@ def before_scenario(context, scenario) -> None:
         "boto3",
     ]:
         sys.modules.pop(name, None)
+    context._fake_boto3_remote_installed = False
+    context._fake_boto3_remote_original = {}
+    context._fake_azure_blob_installed = False
+    context._fake_azure_blob_original = {}
 
     for key in _EPHEMERAL_ENV_KEYS:
         os.environ.pop(key, None)

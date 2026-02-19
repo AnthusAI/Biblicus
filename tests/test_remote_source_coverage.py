@@ -87,12 +87,15 @@ def _install_fake_azure_blob(monkeypatch, *, blobs):
             for blob in blobs:
                 if not blob["name"].startswith(name_starts_with):
                     continue
+                content_settings = blob.get("content_settings")
+                if content_settings is None and "content_settings" not in blob:
+                    content_settings = types.SimpleNamespace(content_type=blob.get("content_type"))
                 yield types.SimpleNamespace(
                     name=blob["name"],
                     etag=blob.get("etag"),
                     last_modified=blob.get("last_modified"),
                     size=len(blob.get("content") or b""),
-                    content_settings=types.SimpleNamespace(content_type=blob.get("content_type")),
+                    content_settings=content_settings,
                 )
 
         def download_blob(self, blob):
@@ -212,6 +215,41 @@ def test_azure_remote_source_missing_credentials(monkeypatch):
     azure = AzureStorageUserConfig(connection_string=None, account_name=None, account_key=None)
     with pytest.raises(ValueError):
         AzureBlobRemoteSource(config, azure)
+
+
+def test_azure_remote_source_account_url_branch(monkeypatch):
+    last_modified = datetime(2026, 2, 19, 10, 0, 0, tzinfo=timezone.utc)
+    _install_fake_azure_blob(
+        monkeypatch,
+        blobs=[
+            {
+                "name": "docs/",
+                "etag": None,
+                "last_modified": last_modified,
+                "content": b"",
+                "content_settings": None,
+            },
+            {
+                "name": "docs/x.md",
+                "etag": None,
+                "last_modified": last_modified,
+                "content": b"alpha",
+                "content_settings": None,
+            },
+        ],
+    )
+    config = RemoteCorpusSourceConfig(
+        kind="azure-blob",
+        name="demo",
+        container="container",
+        prefix="docs/",
+        account_name="acct",
+    )
+    azure = AzureStorageUserConfig(connection_string=None, account_name="acct", account_key="key")
+    source = AzureBlobRemoteSource(config, azure)
+    items = source.list_items()
+    assert len(items) == 1
+    assert items[0].source_uri == "azure-blob://acct/container/docs/x.md"
 
 
 def test_iter_items_rejects_unknown_source():
