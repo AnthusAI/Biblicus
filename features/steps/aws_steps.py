@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.abc
+import importlib.machinery
 import json
 import sys
 import types
@@ -190,18 +192,26 @@ def _install_fake_boto3_module(context) -> None:
     context._fake_boto3_original_modules = original_modules
 
 
-class _Boto3ImportBlocker:
+class _Boto3ImportBlocker(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     """Meta path finder that blocks boto3 imports."""
 
-    def find_module(self, fullname: str, path: Optional[Any] = None) -> Optional[Any]:
+    def find_spec(
+        self,
+        fullname: str,
+        path: Optional[Any] = None,
+        target: Optional[types.ModuleType] = None,
+    ) -> Optional[importlib.machinery.ModuleSpec]:
         if fullname == "boto3" or fullname.startswith("boto3."):
-            return self
+            return importlib.machinery.ModuleSpec(fullname, self)
         if fullname == "botocore" or fullname.startswith("botocore."):
-            return self
+            return importlib.machinery.ModuleSpec(fullname, self)
         return None
 
-    def load_module(self, fullname: str) -> types.ModuleType:
-        raise ImportError(f"No module named '{fullname}'")
+    def create_module(self, spec: importlib.machinery.ModuleSpec) -> Optional[types.ModuleType]:
+        return None
+
+    def exec_module(self, module: types.ModuleType) -> None:
+        raise ImportError(f"No module named '{module.__name__}'")
 
 
 def _install_boto3_unavailable_module(context) -> None:
