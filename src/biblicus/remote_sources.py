@@ -61,6 +61,13 @@ class S3RemoteSource:
         )
 
     def list_items(self) -> list[RemoteSourceItem]:
+        """
+        List items available in the configured S3 bucket and prefix.
+
+        :return: Remote source items describing each object.
+        :rtype: list[RemoteSourceItem]
+        :raises ValueError: If required configuration fields are missing.
+        """
         bucket = self._config.bucket
         prefix = self._config.prefix or ""
         response = self._client.list_objects_v2(Bucket=bucket, Prefix=prefix)
@@ -87,6 +94,14 @@ class S3RemoteSource:
         return items
 
     def fetch_bytes(self, item: RemoteSourceItem) -> Tuple[bytes, Optional[str]]:
+        """
+        Fetch the raw bytes for a remote S3 object.
+
+        :param item: Remote source item to download.
+        :type item: RemoteSourceItem
+        :return: Tuple containing the object bytes and content type.
+        :rtype: tuple[bytes, Optional[str]]
+        """
         response = self._client.get_object(Bucket=self._config.bucket, Key=item.key)
         body = response["Body"].read()
         content_type = response.get("ContentType") or item.content_type
@@ -127,6 +142,13 @@ class AzureBlobRemoteSource:
         )
 
     def list_items(self) -> list[RemoteSourceItem]:
+        """
+        List items available in the configured Azure blob container and prefix.
+
+        :return: Remote source items describing each blob.
+        :rtype: list[RemoteSourceItem]
+        :raises ValueError: If required configuration fields are missing.
+        """
         prefix = self._config.prefix or ""
         items = []
         for entry in self._client.list_blobs(name_starts_with=prefix):
@@ -154,12 +176,29 @@ class AzureBlobRemoteSource:
         return items
 
     def fetch_bytes(self, item: RemoteSourceItem) -> Tuple[bytes, Optional[str]]:
+        """
+        Fetch the raw bytes for a remote Azure blob.
+
+        :param item: Remote source item to download.
+        :type item: RemoteSourceItem
+        :return: Tuple containing the blob bytes and content type.
+        :rtype: tuple[bytes, Optional[str]]
+        """
         downloader = self._client.download_blob(item.key)
         content = downloader.readall()
         return content, item.content_type
 
 
 def iter_items(source: object) -> Iterable[RemoteSourceItem]:
+    """
+    Return the iterable of items for a supported remote source adapter.
+
+    :param source: Remote source adapter instance.
+    :type source: object
+    :return: Iterable of remote source items.
+    :rtype: Iterable[RemoteSourceItem]
+    :raises ValueError: If the source adapter type is unsupported.
+    """
     if isinstance(source, S3RemoteSource):
         return source.list_items()
     if isinstance(source, AzureBlobRemoteSource):

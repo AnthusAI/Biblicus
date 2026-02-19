@@ -38,8 +38,8 @@ from .models import (
     CorpusConfig,
     ExtractionSnapshotReference,
     QueryBudget,
-    RetrievalResult,
     RemoteCorpusSourceConfig,
+    RetrievalResult,
     parse_extraction_snapshot_reference,
 )
 from .retrievers import get_retriever
