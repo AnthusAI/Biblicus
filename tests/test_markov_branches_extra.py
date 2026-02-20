@@ -276,3 +276,76 @@ def test_markov_embeddings_use_llm_summary(monkeypatch):
     observations = markov._build_observations(segments=segments, config=config, cache_context=None)
     assert observations[1].embedding == [1.0, 0.0]
     assert observations[0].embedding == [0.0, 0.0]
+
+
+def test_markov_topic_modeling_requires_segments():
+    observations = [
+        markov.MarkovAnalysisObservation(
+            item_id="i",
+            segment_index=1,
+            segment_text="START",
+            token_count=0,
+            llm_label=None,
+            llm_label_confidence=None,
+            llm_summary=None,
+            embedding=None,
+            topic_id=None,
+            topic_label=None,
+        ),
+        markov.MarkovAnalysisObservation(
+            item_id="i",
+            segment_index=2,
+            segment_text="END",
+            token_count=0,
+            llm_label=None,
+            llm_label_confidence=None,
+            llm_summary=None,
+            embedding=None,
+            topic_id=None,
+            topic_label=None,
+        ),
+    ]
+    config = SimpleNamespace(topic_modeling=SimpleNamespace(enabled=True, configuration=SimpleNamespace()))
+    with pytest.raises(ValueError):
+        markov._apply_topic_modeling(observations=observations, config=config)
+
+
+def test_markov_topic_modeling_assigns_topics(monkeypatch, capsys):
+    monkeypatch.setattr(
+        markov,
+        "run_topic_modeling_for_documents",
+        lambda documents, config, artifacts_dir=None: SimpleNamespace(
+            topics=[SimpleNamespace(topic_id=1, label="Label", document_ids=[documents[0].document_id])]
+        ),
+    )
+    observations = [
+        markov.MarkovAnalysisObservation(
+            item_id="i",
+            segment_index=1,
+            segment_text="START",
+            token_count=0,
+            llm_label=None,
+            llm_label_confidence=None,
+            llm_summary=None,
+            embedding=None,
+            topic_id=None,
+            topic_label=None,
+        ),
+        markov.MarkovAnalysisObservation(
+            item_id="i",
+            segment_index=2,
+            segment_text="body",
+            token_count=0,
+            llm_label=None,
+            llm_label_confidence=None,
+            llm_summary=None,
+            embedding=None,
+            topic_id=None,
+            topic_label=None,
+        ),
+    ]
+    config = SimpleNamespace(topic_modeling=SimpleNamespace(enabled=True, configuration=SimpleNamespace()))
+    updated, report = markov._apply_topic_modeling(observations=observations, config=config)
+    assert updated[1].topic_id == 1
+    assert updated[1].topic_label == "Label"
+    assert report is not None
