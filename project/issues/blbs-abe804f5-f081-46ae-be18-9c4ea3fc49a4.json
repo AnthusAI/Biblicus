@@ -1,0 +1,31 @@
+{
+  "id": "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4",
+  "title": "Test harness: remote source mocks",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7ebea1b2-fd83-42d2-a917-4137b064923e",
+      "author": "ryan.porter",
+      "text": "Added remote source step definitions in features/steps/remote_source_steps.py and isolation in features/environment.py.",
+      "created_at": "2026-02-19T05:36:00.657042Z"
+    },
+    {
+      "id": "f9629594-e50a-4c26-9898-18824b405b11",
+      "author": "ryan.porter",
+      "text": "Implemented remote source mocks and cleanup in features/steps/remote_source_steps.py and features/environment.py.",
+      "created_at": "2026-02-19T05:43:48.295290Z"
+    }
+  ],
+  "created_at": "2026-02-19T05:32:34.179261Z",
+  "updated_at": "2026-02-19T05:43:51.170230Z",
+  "closed_at": "2026-02-19T05:43:51.170230Z",
+  "custom": {}
+}

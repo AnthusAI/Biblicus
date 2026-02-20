@@ -1,0 +1,18 @@
+{
+  "id": "blbs-fda72784-6cb2-403b-92d2-eb0d77941455",
+  "title": "Remote collections and pipeline recipes",
+  "description": "Collections discover remote subfolders and materialize corpora; pipeline recipes run extraction/retrieval/analysis by recipe.",
+  "type": "epic",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:24:24.345678Z",
+  "updated_at": "2026-02-19T23:24:24.345678Z",
+  "closed_at": null,
+  "custom": {}
+}

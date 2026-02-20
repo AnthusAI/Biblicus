@@ -1,0 +1,25 @@
+{
+  "id": "blbs-05fe0bd1-806f-4f1f-95dd-d95445e53cab",
+  "title": "Run remote source BDD tests",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "cab53a46-cddc-44bf-a541-23cd70bc2b8d",
+      "author": "ryan.porter",
+      "text": "Follow-up: install behave or use project test env, then run python -m behave features/remote_source_s3.feature features/remote_source_azure.feature.",
+      "created_at": "2026-02-19T05:51:08.417855Z"
+    }
+  ],
+  "created_at": "2026-02-19T05:51:05.991605Z",
+  "updated_at": "2026-02-19T05:51:08.417855Z",
+  "closed_at": null,
+  "custom": {}
+}

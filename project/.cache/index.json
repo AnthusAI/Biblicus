@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-02-18T22:28:18Z",
+  "built_at": "2026-02-19T18:00:47Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1771273691.474875,
     "Biblicus-0mo.json": 1771273691.474949,
@@ -8,7 +8,7 @@
     "Biblicus-4sx.json": 1771273691.475153,
     "Biblicus-51c.json": 1771273691.475217,
     "Biblicus-5fp.json": 1771273691.475274,
-    "Biblicus-5rt.json": 1771273691.475329,
+    "Biblicus-5rt.json": 1771486555.336037,
     "Biblicus-6du.json": 1771273691.475384,
     "Biblicus-788.json": 1771453684.557389,
     "Biblicus-7k4.json": 1771273691.475503,
@@ -28,8 +28,19 @@
     "Biblicus-v3a.json": 1771273691.476436,
     "Biblicus-wk4.json": 1771273691.476493,
     "Biblicus-yr4.json": 1771273691.476564,
-    "blbs-1ffc4162-6688-4d17-bd57-83dbb3b22263.json": 1771309660.165124,
-    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1771290259.974393
+    "blbs-0085bfe9-dca3-473e-b9cb-765052a34240.json": 1771479811.514152,
+    "blbs-05fe0bd1-806f-4f1f-95dd-d95445e53cab.json": 1771480268.418008,
+    "blbs-1ffc4162-6688-4d17-bd57-83dbb3b22263.json": 1771476460.86821,
+    "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08.json": 1771523842.082091,
+    "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1771479824.841124,
+    "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1771523908.78081,
+    "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1771476921.006637,
+    "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1771479817.523381,
+    "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4.json": 1771479831.170346,
+    "blbs-ba86e064-80ee-4884-b8f6-a72ea5ceebc0.json": 1771476924.785152,
+    "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1771483473.822066,
+    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1771290259.974393,
+    "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1771481468.324001
   },
   "issues": [
     {
@@ -588,92 +599,177 @@
     },
     {
       "assignee": null,
+      "closed_at": "2026-02-19T05:43:31.514030Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:32:58.644598Z",
+          "id": "1f48131d-93c1-4d39-b545-1fd116bfcecd",
+          "text": "Drafted PR-FAQ at docs/pr-faq/remote-corpus-source.md."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:43:28.161806Z",
+          "id": "ff3566cb-6b1c-4d00-a085-a94f1a855766",
+          "text": "Completed PR-FAQ draft in docs/pr-faq/remote-corpus-source.md."
+        }
+      ],
+      "created_at": "2026-02-19T05:31:51.153401Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-0085bfe9-dca3-473e-b9cb-765052a34240",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "closed",
+      "title": "PR-FAQ: remote corpus source",
+      "type": "task",
+      "updated_at": "2026-02-19T05:43:31.514030Z"
+    },
+    {
+      "assignee": null,
       "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:51:08.417855Z",
+          "id": "cab53a46-cddc-44bf-a541-23cd70bc2b8d",
+          "text": "Follow-up: install behave or use project test env, then run python -m behave features/remote_source_s3.feature features/remote_source_azure.feature."
+        }
+      ],
+      "created_at": "2026-02-19T05:51:05.991605Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-05fe0bd1-806f-4f1f-95dd-d95445e53cab",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "open",
+      "title": "Run remote source BDD tests",
+      "type": "task",
+      "updated_at": "2026-02-19T05:51:08.417855Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-02-19T04:47:40.868024Z",
       "comments": [
         {
           "author": "unknown",
           "created_at": "2026-02-17T01:06:00.931544Z",
+          "id": "6188b4b4-1ff3-4168-9d01-46df9902370c",
           "text": "Baseline: coverage 98.6046% (12,437/12,613) after behave (non-integration) + pytest. Remaining gaps: cli.py (37 lines), corpus.py (34), extraction.py (26), stt extractors deepgram/aws/azure/aldea, topic_modeling, markov. Kanbus epic created: Code quality. Next: add BDD specs/steps to cover remaining branches, rerun coverage+lint, then check GitHub Actions via gh."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T01:20:27.575970Z",
+          "id": "6197d10d-b145-4fa5-978c-3bb17f1c7030",
           "text": "Continuing BDD-only coverage work. Next: run behave/pytest/coverage with py311, inspect gaps, add specs/steps, re-run quality gates, then gh CI check."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T01:56:51.331838Z",
+          "id": "b127a949-62f5-46f1-aa5b-a0627f2aa571",
           "text": "Resuming coverage push per plan. Will target remaining uncovered lines (analysis/markov, topic_modeling, cli, corpus, extraction, extractors, migration) via BDD-only steps in features/steps/coverage_harness_steps.py, then run tests/coverage/ruff/black and check CI via gh."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T02:30:57.751634Z",
+          "id": "af35aa96-670e-485c-989e-eecf54f065e2",
           "text": "Plan confirmed; reread AGENTS.md and CONTRIBUTING_AGENT.md. Proceeding with BDD-only coverage push using kbs."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T02:56:31.797574Z",
+          "id": "ae5b7c6c-87b2-4d00-a846-93f2b5e74af8",
           "text": "Ran scripts/test.py after new coverage harness additions; tests pass but coverage still 97% with same missing lines (dotyaml, markov, topic_modeling, cli, corpus, extraction, stt, benchmark_runner, user_config, workflow, neo4j, amplify_publisher). Continuing targeted coverage work."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T02:58:26.186788Z",
+          "id": "47a516c1-133b-453e-a72e-f4c3756c5996",
           "text": "Planning next coverage push: confirm current coverage + remaining gaps, then add BDD scenarios/steps to hit missing lines (cli/corpus/extraction/markov/topic_modeling/STT/benchmark_runner/dotyaml). Will run behave + pytest + coverage, then ruff/black, then gh CI. Next: run coverage report with precision and identify why gap not moving."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T03:30:35.220459Z",
+          "id": "dfeb68c7-6772-4863-a4ee-8bab71230f41",
           "text": "Resuming coverage push. Plan: add new BDD scenarios and extend coverage harness steps to hit remaining uncovered modules (analysis/models, profiling, topic_modeling, extraction, corpus/cli, extractors, retrieval, migration, hooks, graph/neo4j, chunking). Will iterate run behave/pytest/coverage in py311 and log results with precision; no pytest-only tests; keep changes in features/*.feature + step defs."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T03:54:35.273777Z",
+          "id": "cf5d9f67-3777-4342-a177-6180796d53a3",
           "text": "Ran behave -n 'Exhaust coverage gaps' (pass). Ran conda run -n py311 python scripts/test.py (coverage fail-under=100; total 90%). Coverage report shows largest remaining gaps: cli.py (142 lines), profiling.py (93), topic_modeling.py (77), extraction_evaluation.py (66), crawl.py (63), ocr_benchmark.py (57), corpus.py (54), evaluation/retrieval.py (51), neo4j.py (40), multiple extractors (docling*, openai_stt, rapidocr, etc.). Added more coverage harness logic and helper _write_minimal_extraction_snapshot; next steps: extend harness to exercise profiling/topic_modeling/extraction_evaluation/crawl, and mock optional extractor dependencies to cover remaining modules."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T03:55:30.968225Z",
+          "id": "50aa131f-b1dd-4a8d-a20d-6c965917be1d",
           "text": "Continuing coverage push per plan. Read CONTRIBUTING_AGENT.md. Next: re-run behave coverage scenario and coverage report to locate remaining gaps, then extend BDD scenarios/steps in features/coverage_harness.feature + features/steps/coverage_harness_steps.py to cover cli/corpus/extraction/analysis/extractors/graph/crawl/evaluation gaps. Will log each batch."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T04:25:56.564873Z",
+          "id": "0e007610-c08e-47a2-86cb-66d547fd02ed",
           "text": "Starting execution of plan: BDD-only coverage to 100%. Read CONTRIBUTING_AGENT.md; will add Gherkin scenarios + steps to cover remaining gaps (cli/corpus/extraction/analysis/topic modeling/STT). Next: inspect current coverage report, add scenarios, run behave/pytest/coverage, then lint and GH CI."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T04:27:41.507282Z",
+          "id": "bc0630cc-71ac-40f1-b0f4-7549b9d3f242",
           "text": "Ran: conda run -n py311 python scripts/test.py. Coverage 94% (TOTAL 12613, missing 676, fail-under=100). Report at reports/htmlcov/index.html. Notable misses: analysis/profiling.py (many), cli.py (large), corpus.py (37), extraction.py (24), analysis/markov.py, analysis/topic_modeling.py, evaluation/ocr_benchmark.py, graph/extraction.py, graph/neo4j.py, retrievers/sqlite_full_text_search.py, tf_vector.py, sources.py, several extractors (docling_*, faster_whisper_stt.py, openai_*_stt.py, paddleocr_vl_text.py, select_* overrides), ignore.py, workflow.py. Next: target BDD scenarios and steps to cover these edges per plan."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T04:43:19.739539Z",
+          "id": "e3855b71-d0d9-4a09-9a10-781cb9f31f69",
           "text": "Ran: conda run -n py311 python scripts/test.py. Coverage now 95% (TOTAL 12613, missing 506). Notable remaining misses: cli.py still 139 lines; corpus.py 37 lines; extraction.py 24 lines; graph/extraction.py 12; graph/neo4j.py 13; graph/extractors __init__/cooccurrence/dependency/ner/simple each 1; analysis/profiling.py still 93; analysis/markov.py 24; analysis/topic_modeling.py 36; evaluation/ocr_benchmark.py 57; several extractors (docling_*, faster_whisper_stt.py, openai_*_stt.py, paddleocr_vl_text.py, select_* overrides, rapidocr_text.py, pdf_text.py), retrievers/sqlite_full_text_search.py, tf_vector.py, sources.py, ignore.py, workflow.py. Next: target those modules via coverage harness updates."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T05:01:56.755904Z",
+          "id": "5da3907a-2387-4f16-b7f1-a0a37cb736aa",
           "text": "Plan confirmed: push BDD-only coverage to 100% by adding targeted scenarios/steps for CLI, corpus, extraction, markov/topic modeling, and STT extractors; run Behave+pytest, coverage report/json, ruff/black/lint, then check CI via gh."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T05:24:04.455723Z",
+          "id": "7d9025a7-554b-4198-87fc-9fab479362f2",
           "text": "Ran conda run -n py311 python scripts/test.py. Coverage now 97% (TOTAL 12613 stmts, 309 miss). Key misses: cli.py (92% - lines 464-472, 484, 527->534, 547->549, 1332-1356, 1382, 1391-1409, 1454-1473, 1511, 1517-1520, 1549, 1552-1553, 1562, 1569, 1572-1575, 1580-1601); corpus.py (94% - many lines incl 532, 539->541, 600, 1003, 1297->1302, 1330->1339, 1404-1411, 1416, 1447-1450, 1455-1460, 1462->1465, 1473, 1587, 1653-1677, 1831, 1975-1978, 1984); extraction.py (90% - 492, 544-547, 579-584, 608, 678, 693, 917->927, 972-987, 1031-1036); topic_modeling.py (98% - 528, 771, 861-862, 959); benchmark_runner.py (72% - many branches); plus extractors still missing: aldea_stt.py, aws_transcribe_stt.py, azure_speech_stt.py, deepgram_stt.py, deepgram_transform.py, google_speech_stt.py; neo4j.py 99% line 122. Need further BDD harness coverage for those remaining branches."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T05:35:14.495526Z",
+          "id": "e3340c85-01e6-44b0-95e9-f06dfa7b6ee0",
           "text": "Re-ran conda run -n py311 python scripts/test.py after additional harness changes. Coverage dropped to 95% (TOTAL 12613 stmts, 491 miss). New misses include openai_audio_stt.py (124-125,141), google_speech_stt.py (word-time + diarization branches), knowledge_base.py (124,129), migration.py (multiple), user_config.py (165,226,246,266,286), plus neo4j.py line 122 still missing. Need to fix harness errors causing earlier coverage not to execute and add coverage for these modules."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T05:36:42.797728Z",
+          "id": "3572f37a-b881-4ab1-ba42-e4c896ab84cb",
           "text": "Starting execution of approved plan: focus BDD specs for remaining coverage gaps in cli/corpus/extraction/analysis/STT/bench. Next step: re-measure coverage and enumerate remaining misses with precision."
         },
         {
           "author": "unknown",
           "created_at": "2026-02-17T06:27:40.164944Z",
+          "id": "316cb0fa-e07c-46ba-aa25-bc2f384d920a",
           "text": "Resuming coverage push: target remaining branches in amplify_publisher (S3 bucket config branch + _create_catalog_item retry/raise paths). Will run py311 scripts/test.py after updates."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:46:50.703790Z",
+          "id": "aa11c4ab-a4af-49fb-a086-8b2c4c3ad249",
+          "text": "Request to lower coverage threshold to 98% conflicts with project policy (100% BDD coverage required). Did not change fail-under. Current status: coverage 98%, failing gate."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:47:36.402363Z",
+          "id": "934fc5ef-e20c-47d5-9d16-760d21c54e03",
+          "text": "Updated coverage fail-under to 98% per directive (pyproject.toml and .coveragerc)."
         }
       ],
       "created_at": "2026-02-17T01:05:56.449396Z",
@@ -685,10 +781,270 @@
       "labels": [],
       "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
       "priority": 2,
-      "status": "in_progress",
+      "status": "closed",
       "title": "Reach 100% coverage and pass quality gates",
       "type": "task",
-      "updated_at": "2026-02-17T06:27:40.164944Z"
+      "updated_at": "2026-02-19T04:47:40.868024Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T17:57:22.081976Z",
+          "id": "8d0a64d4-b6dd-45ad-97b2-8ddc35aedcd1",
+          "text": "Task created and set In Progress. Acceptance plan: configure azure_storage.connection_string in ~/.biblicus/config.yml (or AZURE_STORAGE_CONNECTION_STRING env var), set corpus metadata/config.json source kind azure-blob + container, then run source pull and build STT extraction snapshot for ~10 MP3s."
+        }
+      ],
+      "created_at": "2026-02-19T17:57:09.332124Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Acceptance test: use Azure Blob container with ~10 MP3s, configure remote corpus source, run source pull, then build an STT extraction snapshot via an information pipeline recipe to verify text extraction from all 10 items.",
+      "id": "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "in_progress",
+      "title": "Run acceptance test for Azure Blob remote corpus",
+      "type": "task",
+      "updated_at": "2026-02-19T17:57:22.081976Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-02-19T05:43:44.841003Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:35:57.902967Z",
+          "id": "ca8da7d1-e931-4452-a3d3-f0335bda0444",
+          "text": "Added feature specs features/remote_source_s3.feature and features/remote_source_azure.feature."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:43:41.794331Z",
+          "id": "f22be556-fc2b-4853-b8a7-29e2a3582000",
+          "text": "Added BDD specs in features/remote_source_s3.feature and features/remote_source_azure.feature."
+        }
+      ],
+      "created_at": "2026-02-19T05:32:29.290380Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "closed",
+      "title": "BDD specs: remote corpus source",
+      "type": "task",
+      "updated_at": "2026-02-19T05:43:44.841003Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:54:04.460536Z",
+          "id": "0913bca1-f702-408e-9a01-a7ab293a0592",
+          "text": "As a data engineer, I want to configure a remote storage-backed corpus source, so that I can ingest and use remote content for extraction, retrieval, and analysis like any other corpus. Proposed name: Remote corpus source (provider-specific kinds: azure-blob, s3). Definition of Done: stories for Azure Blob and S3 behavior specs are implemented, specs green, docs updated."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:55:28.026833Z",
+          "id": "622d91f9-e097-41bf-9546-5ffcfa65d26d",
+          "text": "Note: kbs create failed to resolve parent blbs-482709 without --no-validate (error: not found). Created stories blbs-539435 and blbs-ba86e0 using --no-validate so parent could be set. Orphan story blbs-654efa deleted."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:07:24.560665Z",
+          "id": "9ac327d9-0016-4eb2-bdc5-a62fdd4088b1",
+          "text": "Confirmed name: Remote corpus source (provider-specific kinds: azure-blob, s3)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:32:36.691115Z",
+          "id": "36dd50c6-94ba-4275-aecf-021db740ec2e",
+          "text": "Tasks created: PR-FAQ blbs-0085bf, Docs blbs-854fbe, BDD specs blbs-3730fe, Implementation blbs-e4d207, Test harness blbs-abe804."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T17:58:28.780671Z",
+          "id": "32a5cd7f-9b71-46e5-9957-a40c7a326883",
+          "text": "Checked parent associations: tasks 0085bf, 3730fe, 854fbe, abe804, e4d207, 05fe0b, d8ecce, and 25f7ee are all parented to epic 482709. If the epic view shows no descendants, try console reload or clear filters."
+        }
+      ],
+      "created_at": "2026-02-19T04:54:00.311281Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "labels": [],
+      "parent": null,
+      "priority": 2,
+      "status": "open",
+      "title": "Remote corpus sources",
+      "type": "epic",
+      "updated_at": "2026-02-19T17:58:28.780671Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:55:21.006497Z",
+          "id": "ea4c3c85-d8ae-4fe5-a7fa-9b40fbf8a665",
+          "text": "Feature: Azure Blob corpus source\\n  Scenario: Ingest items from Azure Blob storage\\n    Given a corpus configuration with a source kind of \"azure-blob\" and valid container and prefix settings\\n    When I run corpus ingestion\\n    Then Biblicus registers items with provenance URIs in the azure-blob scheme\\n    And retrieval evidence references those item identifiers"
+        }
+      ],
+      "created_at": "2026-02-19T04:55:09.838991Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "open",
+      "title": "Configure Azure Blob corpus source",
+      "type": "story",
+      "updated_at": "2026-02-19T04:55:21.006497Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-02-19T05:43:37.523262Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:33:28.545590Z",
+          "id": "d14b58ed-7541-46e7-a11a-e27f5f9fe8ff",
+          "text": "Updated docs/CORPUS.md, docs/user-configuration.md, and .biblicus/config.example.yml for remote sources."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:43:34.535717Z",
+          "id": "4af87450-a0de-45ce-93c8-7713a34d8945",
+          "text": "Docs updated for remote sources in docs/CORPUS.md, docs/user-configuration.md, and .biblicus/config.example.yml."
+        }
+      ],
+      "created_at": "2026-02-19T05:32:27.070347Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "closed",
+      "title": "Docs: remote corpus source",
+      "type": "task",
+      "updated_at": "2026-02-19T05:43:37.523262Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-02-19T05:43:51.170230Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:36:00.657042Z",
+          "id": "7ebea1b2-fd83-42d2-a917-4137b064923e",
+          "text": "Added remote source step definitions in features/steps/remote_source_steps.py and isolation in features/environment.py."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:43:48.295290Z",
+          "id": "f9629594-e50a-4c26-9898-18824b405b11",
+          "text": "Implemented remote source mocks and cleanup in features/steps/remote_source_steps.py and features/environment.py."
+        }
+      ],
+      "created_at": "2026-02-19T05:32:34.179261Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "closed",
+      "title": "Test harness: remote source mocks",
+      "type": "task",
+      "updated_at": "2026-02-19T05:43:51.170230Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T04:55:24.784995Z",
+          "id": "4742eb53-b7f0-4087-bb89-a5d1eeb16bf2",
+          "text": "Feature: S3 corpus source\\n  Scenario: Ingest items from Amazon S3\\n    Given a corpus configuration with a source kind of \"s3\" and valid bucket and prefix settings\\n    When I run corpus ingestion\\n    Then Biblicus registers items with provenance URIs in the s3 scheme\\n    And retrieval evidence references those item identifiers"
+        }
+      ],
+      "created_at": "2026-02-19T04:55:15.496942Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-ba86e064-80ee-4884-b8f6-a72ea5ceebc0",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "open",
+      "title": "Configure S3 corpus source",
+      "type": "story",
+      "updated_at": "2026-02-19T04:55:24.784995Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T06:13:01.106492Z",
+          "id": "ac14e64b-ce93-4fa4-8d95-c26f7198ca67",
+          "text": "CI failed ruff: unsorted imports in cli.py and missing public docstrings in remote_sources. Applying import reorder and adding rST docstrings."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T06:13:31.145516Z",
+          "id": "277ba56e-24d1-498d-b820-3f2a88a80316",
+          "text": "Reordered imports in cli.py and added docstrings in remote_sources. Ruff passes locally via /opt/anaconda3/bin/conda run -n py311 python -m ruff check src/biblicus/. Pushed fix: bad0587."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T06:23:00.033464Z",
+          "id": "ca1d51c7-38ce-41c0-8e46-e5a9586d5f90",
+          "text": "Added pytest coverage for remote_sources, remote source config validation, and new credential resolvers (tests/test_remote_source_coverage.py). Local pytest run: 10 passed."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T06:44:33.821874Z",
+          "id": "b4ac2d6e-da2a-4026-acc2-7e0674ce04e0",
+          "text": "Fixed remote source BDD failures by passing extra_env to source pull, and resetting fake boto3/azure flags per scenario. Extended pytest azure coverage to hit account_url and content_settings branches. Remote source behave scenarios pass locally; pytest file now 11 tests."
+        }
+      ],
+      "created_at": "2026-02-19T06:12:51.634197Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Fix CI lint failures for remote sources (import order + docstrings)",
+      "id": "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "in_progress",
+      "title": "Fix remote source lint errors",
+      "type": "task",
+      "updated_at": "2026-02-19T06:44:33.821874Z"
     },
     {
       "assignee": null,
@@ -707,6 +1063,55 @@
       "title": "Code quality",
       "type": "epic",
       "updated_at": "2026-02-17T01:04:19.974258Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-02-19T05:43:57.434235Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:42:18.731767Z",
+          "id": "8d7e17a8-3cd2-4cea-ae39-e2ea54bb75c0",
+          "text": "Implemented remote source core: models, user config, remote source adapters, corpus pull logic, CLI source commands, and ingest blocking. Added optional deps in pyproject.toml."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:42:48.009840Z",
+          "id": "2c3f1444-4286-42db-b9f5-89b250941aa4",
+          "text": "Tried running: python -m behave features/remote_source_s3.feature features/remote_source_azure.feature (python not found). python3 -m behave ... failed: behave not installed."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:43:54.240612Z",
+          "id": "b384e5b4-fc1d-498a-b57a-52f8de7898de",
+          "text": "Implemented remote source core (models, user config, adapters, corpus pull logic, CLI source commands, ingest blocking). Added optional deps; tests attempted but behave missing."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T05:54:31.381109Z",
+          "id": "9f3c5ea1-947c-4aa8-8187-fabed281d00b",
+          "text": "Fixed IndentationError in src/biblicus/errors.py (restored IngestCollisionError message). Re-running tests."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-19T06:11:08.323371Z",
+          "id": "4eb0d11c-ccc2-446e-a039-15e9c187ed10",
+          "text": "Applied fixes after test failures: restored IngestCollisionError init, added @when aliases for fake source steps, and reindex after pull_source to ensure catalog reflects remote items. Attempting to rerun tests in py311; conda/behave invocations appear to hang."
+        }
+      ],
+      "created_at": "2026-02-19T05:32:31.604371Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5",
+      "labels": [],
+      "parent": "blbs-482709",
+      "priority": 2,
+      "status": "closed",
+      "title": "Implementation: remote corpus source",
+      "type": "task",
+      "updated_at": "2026-02-19T06:11:08.323371Z"
     }
   ],
   "reverse_deps": {},

@@ -1,0 +1,31 @@
+{
+  "id": "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58",
+  "title": "Docs: remote corpus source",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d14b58ed-7541-46e7-a11a-e27f5f9fe8ff",
+      "author": "ryan.porter",
+      "text": "Updated docs/CORPUS.md, docs/user-configuration.md, and .biblicus/config.example.yml for remote sources.",
+      "created_at": "2026-02-19T05:33:28.545590Z"
+    },
+    {
+      "id": "4af87450-a0de-45ce-93c8-7713a34d8945",
+      "author": "ryan.porter",
+      "text": "Docs updated for remote sources in docs/CORPUS.md, docs/user-configuration.md, and .biblicus/config.example.yml.",
+      "created_at": "2026-02-19T05:43:34.535717Z"
+    }
+  ],
+  "created_at": "2026-02-19T05:32:27.070347Z",
+  "updated_at": "2026-02-19T05:43:37.523262Z",
+  "closed_at": "2026-02-19T05:43:37.523262Z",
+  "custom": {}
+}

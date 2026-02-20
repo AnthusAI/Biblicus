@@ -1,0 +1,18 @@
+{
+  "id": "blbs-a0e65267-c651-4fe7-871b-f2ab4c44e609",
+  "title": "PR-FAQ: collections and pipeline recipes",
+  "description": "Draft PR-FAQ for collection discovery and pipeline recipes; align on mirror terminology and multi-source profiles.",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-fda727",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:25:11.701936Z",
+  "updated_at": "2026-02-19T23:25:11.701936Z",
+  "closed_at": null,
+  "custom": {}
+}

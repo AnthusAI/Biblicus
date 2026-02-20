@@ -1,0 +1,18 @@
+{
+  "id": "blbs-acf5a662-3e7b-450e-900f-b5acbf423a3b",
+  "title": "Pipeline recipes run extraction/retrieval/analysis",
+  "description": "As a data engineer, I want a single pipeline recipe that names a corpus (or collection selector) and its extraction, retrieval, and analysis steps, so I can run repeatable information pipelines.",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-fda727",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:25:02.698711Z",
+  "updated_at": "2026-02-19T23:25:02.698711Z",
+  "closed_at": null,
+  "custom": {}
+}
