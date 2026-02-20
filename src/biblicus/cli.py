@@ -22,6 +22,7 @@ from .context import (
     fit_context_pack_to_character_budget,
     fit_context_pack_to_token_budget,
 )
+from .collections import load_collection_config, pull_collection
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
@@ -42,6 +43,7 @@ from .models import (
     RetrievalResult,
     parse_extraction_snapshot_reference,
 )
+from .pipelines import run_pipeline_recipe
 from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
 
@@ -271,14 +273,11 @@ def cmd_source_set(arguments: argparse.Namespace) -> int:
     config = CorpusConfig.model_validate(config_data)
     source_payload = {
         "kind": arguments.kind,
+        "profile": arguments.profile,
         "name": arguments.name,
         "bucket": arguments.bucket,
         "container": arguments.container,
         "prefix": arguments.prefix or "",
-        "region": arguments.region,
-        "endpoint_url": arguments.endpoint_url,
-        "account_url": arguments.account_url,
-        "account_name": arguments.account_name,
     }
     remote_source = RemoteCorpusSourceConfig.model_validate(source_payload)
     updated = config.model_copy(update={"source": remote_source})
@@ -323,6 +322,59 @@ def cmd_source_pull(arguments: argparse.Namespace) -> int:
     )
     result = corpus.pull_source()
     print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_collection_show(arguments: argparse.Namespace) -> int:
+    """
+    Show the configured collection metadata.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    collection_root = Path(arguments.collection)
+    config = load_collection_config(collection_root)
+    print(config.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_collection_pull(arguments: argparse.Namespace) -> int:
+    """
+    Pull a remote collection into local corpora.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    collection_root = Path(arguments.collection)
+    result = pull_collection(collection_root)
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_pipeline_run(arguments: argparse.Namespace) -> int:
+    """
+    Run a pipeline recipe.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    result = run_pipeline_recipe(Path(arguments.recipe))
+    print(
+        json.dumps(
+            {
+                "corpora": result.corpora,
+                "extraction_snapshot_ids": result.extraction_snapshot_ids,
+                "retrieval_snapshot_ids": result.retrieval_snapshot_ids,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -1762,14 +1814,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_source_set = source_sub.add_parser("set", help="Configure the remote source for a corpus.")
     _add_common_corpus_arg(p_source_set)
     p_source_set.add_argument("--kind", required=True, choices=["s3", "azure-blob"])
+    p_source_set.add_argument("--profile", required=True, help="Source profile name.")
     p_source_set.add_argument("--name", default=None, help="Local storage namespace for the source.")
     p_source_set.add_argument("--bucket", default=None, help="S3 bucket name.")
     p_source_set.add_argument("--container", default=None, help="Azure Blob container name.")
     p_source_set.add_argument("--prefix", default=None, help="Optional remote prefix to mirror.")
-    p_source_set.add_argument("--region", default=None, help="AWS region override.")
-    p_source_set.add_argument("--endpoint-url", default=None, help="S3-compatible endpoint URL.")
-    p_source_set.add_argument("--account-url", default=None, help="Azure storage account URL.")
-    p_source_set.add_argument("--account-name", default=None, help="Azure storage account name.")
     p_source_set.set_defaults(func=cmd_source_set)
 
     p_source_show = source_sub.add_parser("show", help="Show the configured remote source.")
@@ -1779,6 +1828,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_source_pull = source_sub.add_parser("pull", help="Mirror the remote source into the corpus.")
     _add_common_corpus_arg(p_source_pull)
     p_source_pull.set_defaults(func=cmd_source_pull)
+
+    p_collection = sub.add_parser("collection", help="Manage remote collections.")
+    collection_sub = p_collection.add_subparsers(dest="collection_command", required=True)
+    p_collection_show = collection_sub.add_parser("show", help="Show the collection config.")
+    p_collection_show.add_argument("--collection", required=True, help="Collection root path.")
+    p_collection_show.set_defaults(func=cmd_collection_show)
+    p_collection_pull = collection_sub.add_parser("pull", help="Mirror a remote collection.")
+    p_collection_pull.add_argument("--collection", required=True, help="Collection root path.")
+    p_collection_pull.set_defaults(func=cmd_collection_pull)
+
+    p_pipeline = sub.add_parser("pipeline", help="Run pipeline recipes.")
+    pipeline_sub = p_pipeline.add_subparsers(dest="pipeline_command", required=True)
+    p_pipeline_run = pipeline_sub.add_parser("run", help="Run a pipeline recipe.")
+    p_pipeline_run.add_argument("--recipe", required=True, help="Pipeline recipe path.")
+    p_pipeline_run.set_defaults(func=cmd_pipeline_run)
 
     p_purge = sub.add_parser(
         "purge", help="Delete all items and derived files (requires confirmation)."

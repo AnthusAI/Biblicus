@@ -10,7 +10,7 @@ import mimetypes
 import shutil
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 from urllib.parse import quote, unquote, urlparse
 
 import yaml
@@ -46,7 +46,7 @@ from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
 from .sources import _media_type_from_filename, load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
-from .user_config import resolve_aws_credentials, resolve_azure_storage_credentials
+from .user_config import resolve_source_profile
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -1839,7 +1839,9 @@ class Corpus:
         )
         self._upsert_catalog_item(item_record)
 
-    def pull_source(self) -> RemoteSourcePullResult:
+    def pull_source(
+        self, *, tag_resolver: Optional[Callable[[str], List[str]]] = None
+    ) -> RemoteSourcePullResult:
         """
         Mirror a remote source into the corpus.
 
@@ -1854,10 +1856,16 @@ class Corpus:
         storage_subdir = str(Path("imports") / "remote" / source_name)
         ignore_spec = load_corpus_ignore_spec(self.root)
 
+        profile = resolve_source_profile(source_config.profile)
+        if source_config.kind != profile.kind:
+            raise ValueError(
+                "Remote source kind does not match source profile kind: "
+                f"{source_config.kind} vs {profile.kind}"
+            )
         if source_config.kind == "s3":
-            source = S3RemoteSource(source_config, resolve_aws_credentials())
+            source = S3RemoteSource(source_config, profile)
         elif source_config.kind == "azure-blob":
-            source = AzureBlobRemoteSource(source_config, resolve_azure_storage_credentials())
+            source = AzureBlobRemoteSource(source_config, profile)
         else:
             raise ValueError(f"Unsupported remote source kind: {source_config.kind}")
 
@@ -1883,6 +1891,7 @@ class Corpus:
             relpath = self._raw_relpath(output_name=relative_key, storage_subdir=storage_subdir)
             if existing_item is not None and existing_item.relpath != relpath:
                 self._delete_item_files(existing_item.relpath)
+            extra_tags = tag_resolver(relative_key) if tag_resolver is not None else []
             catalog_item = self._write_remote_item(
                 data=content,
                 relpath=relpath,
@@ -1892,6 +1901,7 @@ class Corpus:
                 content_type=content_type or item.content_type,
                 item_id=existing_item.id if existing_item is not None else None,
                 created_at=existing_item.created_at if existing_item is not None else None,
+                extra_tags=extra_tags,
             )
             self._upsert_catalog_item(catalog_item)
             if existing_item is None:
@@ -1944,6 +1954,7 @@ class Corpus:
         content_type: Optional[str],
         item_id: Optional[str],
         created_at: Optional[str],
+        extra_tags: Optional[Sequence[str]] = None,
     ) -> CatalogItem:
         output_path = self.root / relpath
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1982,6 +1993,10 @@ class Corpus:
                     "source_last_modified": source_last_modified,
                 },
             )
+            if extra_tags:
+                merged_tags = _merge_tags([], frontmatter.get("tags"))
+                merged_tags = _merge_tags(merged_tags, extra_tags)
+                frontmatter["tags"] = list(merged_tags)
             rendered_document = render_front_matter(frontmatter, parsed_document.body)
             data_to_write = rendered_document.encode("utf-8")
             metadata = frontmatter
@@ -1999,6 +2014,10 @@ class Corpus:
                     "source_last_modified": source_last_modified,
                 },
             )
+            if extra_tags:
+                merged_tags = _merge_tags([], sidecar.get("tags"))
+                merged_tags = _merge_tags(merged_tags, extra_tags)
+                sidecar["tags"] = list(merged_tags)
             _write_sidecar(output_path, sidecar)
             metadata = sidecar
 

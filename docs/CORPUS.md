@@ -67,6 +67,9 @@ python -m biblicus ingest --corpus corpora/example https://example.com --tag web
 
 A corpus can mirror a remote storage source as its authoritative input. When configured, the corpus is refreshed by pulling from the remote source, and local ingest is disabled.
 
+If a remote root contains **many subfolders** that should each become a corpus, use **collections** instead of configuring a single corpus. See `docs/collections.md`.
+If you want one file to run extraction, retrieval, and analysis for a corpus or collection, see `docs/pipeline-recipes.md`.
+
 Example corpus config (`metadata/config.json`):
 
 ```json
@@ -77,6 +80,7 @@ Example corpus config (`metadata/config.json`):
   "raw_dir": ".",
   "source": {
     "kind": "s3",
+    "profile": "s3-archive",
     "name": "client-archive",
     "bucket": "client-archive",
     "prefix": "exports/"

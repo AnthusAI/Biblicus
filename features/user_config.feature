@@ -106,3 +106,17 @@ Feature: User configuration files
     And a local Biblicus user config exists with OpenAI API key "config-openai-key"
     When I resolve the OpenAI API key from user configuration
     Then the resolved API key equals "config-openai-key"
+
+  Scenario: Resolve source profile from config with environment overrides
+    Given a file ".biblicus/config.yml" exists with contents:
+      """
+      sources:
+        - name: s3-prod
+          kind: s3
+          access_key_id: config-key
+          secret_access_key: config-secret
+      """
+    And the environment variable "AWS_ACCESS_KEY_ID" is set to "env-key"
+    When I resolve the source profile "s3-prod"
+    Then the resolved source profile kind is "s3"
+    And the resolved source profile access key is "env-key"

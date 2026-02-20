@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._vendor.dotyaml import ConfigLoader
 
@@ -105,10 +105,14 @@ class Neo4jUserConfig(BaseModel):
     bolt_port: int = Field(default=7687, ge=1)
 
 
-class AwsUserConfig(BaseModel):
+class SourceProfileConfig(BaseModel):
     """
-    Configuration for AWS integrations.
+    Configuration for remote source profiles.
 
+    :ivar name: Unique profile name.
+    :vartype name: str
+    :ivar kind: Remote source kind (s3 or azure-blob).
+    :vartype kind: str
     :ivar access_key_id: AWS access key identifier.
     :vartype access_key_id: str or None
     :ivar secret_access_key: AWS secret access key.
@@ -117,33 +121,37 @@ class AwsUserConfig(BaseModel):
     :vartype session_token: str or None
     :ivar region: Optional AWS region.
     :vartype region: str or None
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    access_key_id: Optional[str] = None
-    secret_access_key: Optional[str] = None
-    session_token: Optional[str] = None
-    region: Optional[str] = None
-
-
-class AzureStorageUserConfig(BaseModel):
-    """
-    Configuration for Azure Storage integrations.
-
+    :ivar endpoint_url: Optional S3-compatible endpoint URL.
+    :vartype endpoint_url: str or None
     :ivar connection_string: Azure Storage connection string.
     :vartype connection_string: str or None
     :ivar account_name: Optional Azure storage account name.
     :vartype account_name: str or None
     :ivar account_key: Optional Azure storage account key.
     :vartype account_key: str or None
+    :ivar account_url: Optional Azure storage account URL.
+    :vartype account_url: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
+    name: str = Field(min_length=1)
+    kind: str = Field(min_length=1)
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+    session_token: Optional[str] = None
+    region: Optional[str] = None
+    endpoint_url: Optional[str] = None
     connection_string: Optional[str] = None
     account_name: Optional[str] = None
     account_key: Optional[str] = None
+    account_url: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_kind(self) -> "SourceProfileConfig":
+        if self.kind not in {"s3", "azure-blob"}:
+            raise ValueError(f"Unsupported source profile kind: {self.kind}")
+        return self
 
 
 class BiblicusUserConfig(BaseModel):
@@ -160,10 +168,8 @@ class BiblicusUserConfig(BaseModel):
     :vartype aldea: AldeaUserConfig or None
     :ivar neo4j: Optional Neo4j configuration.
     :vartype neo4j: Neo4jUserConfig or None
-    :ivar aws: Optional AWS configuration.
-    :vartype aws: AwsUserConfig or None
-    :ivar azure_storage: Optional Azure Storage configuration.
-    :vartype azure_storage: AzureStorageUserConfig or None
+    :ivar sources: Optional remote source profiles.
+    :vartype sources: list[SourceProfileConfig] or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -173,8 +179,7 @@ class BiblicusUserConfig(BaseModel):
     deepgram: Optional[DeepgramUserConfig] = None
     aldea: Optional[AldeaUserConfig] = None
     neo4j: Optional[Neo4jUserConfig] = None
-    aws: Optional[AwsUserConfig] = None
-    azure_storage: Optional[AzureStorageUserConfig] = None
+    sources: Optional[list[SourceProfileConfig]] = None
 
 
 def default_user_config_paths(
@@ -333,51 +338,75 @@ def resolve_aldea_api_key(*, config: Optional[BiblicusUserConfig] = None) -> Opt
     return loaded.aldea.api_key
 
 
-def resolve_aws_credentials(*, config: Optional[BiblicusUserConfig] = None) -> AwsUserConfig:
+def resolve_source_profile(
+    profile_name: str, *, config: Optional[BiblicusUserConfig] = None
+) -> SourceProfileConfig:
     """
-    Resolve AWS credentials from environment or user configuration.
+    Resolve a remote source profile from user configuration and environment.
 
     Environment takes precedence over configuration.
 
+    :param profile_name: Profile name to resolve.
+    :type profile_name: str
     :param config: Optional pre-loaded user configuration.
     :type config: BiblicusUserConfig or None
-    :return: Parsed AWS configuration.
-    :rtype: AwsUserConfig
+    :return: Resolved source profile configuration.
+    :rtype: SourceProfileConfig
+    :raises ValueError: If the profile is missing or incomplete.
     """
-    env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
-    env_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-    env_session_token = os.environ.get("AWS_SESSION_TOKEN")
-    env_region = os.environ.get("AWS_REGION")
+    if not profile_name or not str(profile_name).strip():
+        raise ValueError("Source profile name must be provided")
     loaded = config or load_user_config()
-    base = loaded.aws or AwsUserConfig()
-    return AwsUserConfig(
-        access_key_id=env_access_key or base.access_key_id,
-        secret_access_key=env_secret_key or base.secret_access_key,
-        session_token=env_session_token or base.session_token,
-        region=env_region or base.region,
-    )
+    profiles = list(loaded.sources or [])
+    profile = next((item for item in profiles if item.name == profile_name), None)
+    if profile is None:
+        raise ValueError(f"Source profile not found: {profile_name}")
+
+    resolved = profile.model_copy()
+
+    if resolved.kind == "s3":
+        env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+        env_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        env_session_token = os.environ.get("AWS_SESSION_TOKEN")
+        env_region = os.environ.get("AWS_REGION")
+        resolved.access_key_id = env_access_key or resolved.access_key_id
+        resolved.secret_access_key = env_secret_key or resolved.secret_access_key
+        resolved.session_token = env_session_token or resolved.session_token
+        resolved.region = env_region or resolved.region
+        if not (resolved.access_key_id and resolved.secret_access_key):
+            raise ValueError(
+                "S3 credentials not found. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY "
+                "or configure sources in .biblicus/config.yml."
+            )
+    elif resolved.kind == "azure-blob":
+        env_connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+        env_account = os.environ.get("AZURE_STORAGE_ACCOUNT")
+        env_key = os.environ.get("AZURE_STORAGE_KEY")
+        resolved.connection_string = env_connection_string or resolved.connection_string
+        resolved.account_name = env_account or resolved.account_name
+        resolved.account_key = env_key or resolved.account_key
+        if resolved.connection_string and not resolved.account_name:
+            parsed_account = _parse_account_name_from_connection_string(
+                resolved.connection_string
+            )
+            resolved.account_name = parsed_account or resolved.account_name
+        if resolved.connection_string:
+            return resolved
+        if not (resolved.account_name and resolved.account_key):
+            raise ValueError(
+                "Azure storage credentials not found. Set AZURE_STORAGE_CONNECTION_STRING "
+                "or configure sources in .biblicus/config.yml."
+            )
+    else:
+        raise ValueError(f"Unsupported source profile kind: {resolved.kind}")
+
+    return resolved
 
 
-def resolve_azure_storage_credentials(
-    *, config: Optional[BiblicusUserConfig] = None
-) -> AzureStorageUserConfig:
-    """
-    Resolve Azure Storage credentials from environment or user configuration.
-
-    Environment takes precedence over configuration.
-
-    :param config: Optional pre-loaded user configuration.
-    :type config: BiblicusUserConfig or None
-    :return: Parsed Azure Storage configuration.
-    :rtype: AzureStorageUserConfig
-    """
-    env_connection_string = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
-    env_account = os.environ.get("AZURE_STORAGE_ACCOUNT")
-    env_key = os.environ.get("AZURE_STORAGE_KEY")
-    loaded = config or load_user_config()
-    base = loaded.azure_storage or AzureStorageUserConfig()
-    return AzureStorageUserConfig(
-        connection_string=env_connection_string or base.connection_string,
-        account_name=env_account or base.account_name,
-        account_key=env_key or base.account_key,
-    )
+def _parse_account_name_from_connection_string(connection_string: str) -> Optional[str]:
+    for part in connection_string.split(";"):
+        if part.startswith("AccountName="):
+            value = part.split("=", 1)[1].strip()
+            if value:
+                return value
+    return None

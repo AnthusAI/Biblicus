@@ -33,6 +33,10 @@ Feature: Remote source helpers
     When I validate a remote source config with unsupported kind
     Then the remote source validation error includes "Unsupported remote source kind"
 
+  Scenario: Remote source config requires profile
+    When I validate a remote source config without a profile
+    Then the remote source validation error includes "profile"
+
   Scenario: Remote source config requires bucket
     When I validate a remote source config without an S3 bucket
     Then the remote source validation error includes "Remote S3 source requires bucket"
@@ -40,7 +44,3 @@ Feature: Remote source helpers
   Scenario: Remote source config requires container
     When I validate a remote source config without an Azure container
     Then the remote source validation error includes "Remote Azure Blob source requires container"
-
-  Scenario: Remote source config requires Azure account info
-    When I validate a remote source config without an Azure account
-    Then the remote source validation error includes "Remote Azure Blob source requires account_url or account_name"

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .constants import SCHEMA_VERSION
+from .constants import COLLECTION_SCHEMA_VERSION, SCHEMA_VERSION
 from .hooks import HookSpec
 
 
@@ -28,6 +28,8 @@ class CorpusConfig(BaseModel):
     :vartype notes: dict[str, Any] or None
     :ivar hooks: Optional hook specifications for corpus lifecycle events.
     :vartype hooks: list[HookSpec] or None
+    :ivar collection: Optional collection membership metadata.
+    :vartype collection: CollectionMembership or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -39,6 +41,7 @@ class CorpusConfig(BaseModel):
     notes: Optional[Dict[str, Any]] = None
     hooks: Optional[List[HookSpec]] = None
     source: Optional["RemoteCorpusSourceConfig"] = None
+    collection: Optional["CollectionMembership"] = None
 
     @model_validator(mode="after")
     def _enforce_schema_version(self) -> "CorpusConfig":
@@ -72,6 +75,8 @@ class RemoteCorpusSourceConfig(BaseModel):
 
     :ivar kind: Remote source kind (s3 or azure-blob).
     :vartype kind: str
+    :ivar profile: Source profile name in user configuration.
+    :vartype profile: str
     :ivar name: Optional local namespace for storage.
     :vartype name: str or None
     :ivar bucket: S3 bucket name.
@@ -80,27 +85,16 @@ class RemoteCorpusSourceConfig(BaseModel):
     :vartype container: str or None
     :ivar prefix: Optional remote prefix to scope the mirror.
     :vartype prefix: str
-    :ivar region: Optional AWS region name.
-    :vartype region: str or None
-    :ivar endpoint_url: Optional S3-compatible endpoint URL.
-    :vartype endpoint_url: str or None
-    :ivar account_url: Optional Azure storage account URL.
-    :vartype account_url: str or None
-    :ivar account_name: Optional Azure storage account name.
-    :vartype account_name: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
     kind: str = Field(min_length=1)
+    profile: str = Field(min_length=1)
     name: Optional[str] = None
     bucket: Optional[str] = None
     container: Optional[str] = None
     prefix: str = Field(default="")
-    region: Optional[str] = None
-    endpoint_url: Optional[str] = None
-    account_url: Optional[str] = None
-    account_name: Optional[str] = None
 
     @model_validator(mode="after")
     def _validate_source_kind(self) -> "RemoteCorpusSourceConfig":
@@ -112,9 +106,233 @@ class RemoteCorpusSourceConfig(BaseModel):
         if self.kind == "azure-blob":
             if not (isinstance(self.container, str) and self.container.strip()):
                 raise ValueError("Remote Azure Blob source requires container")
-            if not (self.account_url or self.account_name):
-                raise ValueError("Remote Azure Blob source requires account_url or account_name")
         return self
+
+
+class CollectionMembership(BaseModel):
+    """
+    Collection membership metadata for a corpus.
+
+    :ivar collection_name: Collection name.
+    :vartype collection_name: str
+    :ivar corpus_name: Corpus name within the collection.
+    :vartype corpus_name: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    collection_name: str = Field(min_length=1)
+    corpus_name: str = Field(min_length=1)
+
+
+class RemoteCorpusCollectionDiscovery(BaseModel):
+    """
+    Discovery configuration for a remote collection.
+
+    :ivar mode: Discovery mode (subfolder or partition).
+    :vartype mode: str
+    :ivar depth: Subfolder depth to discover.
+    :vartype depth: int
+    :ivar include_root_files: Whether to include root files under a reserved corpus.
+    :vartype include_root_files: bool
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: str = Field(min_length=1)
+    depth: int = Field(default=1, ge=1)
+    include_root_files: bool = False
+
+    @model_validator(mode="after")
+    def _validate_mode(self) -> "RemoteCorpusCollectionDiscovery":
+        if self.mode not in {"subfolder", "partition"}:
+            raise ValueError(f"Unsupported collection discovery mode: {self.mode}")
+        return self
+
+
+class RemoteCorpusCollectionConfig(BaseModel):
+    """
+    Configuration for a remote corpus collection.
+
+    :ivar schema_version: Version of the collection config schema.
+    :vartype schema_version: int
+    :ivar created_at: International Organization for Standardization 8601 timestamp.
+    :vartype created_at: str
+    :ivar collection_name: Collection name.
+    :vartype collection_name: str
+    :ivar source: Remote source configuration.
+    :vartype source: RemoteCorpusSourceConfig
+    :ivar discovery: Discovery configuration.
+    :vartype discovery: RemoteCorpusCollectionDiscovery
+    :ivar corpus_root: Filesystem path to the corpus root directory.
+    :vartype corpus_root: str
+    :ivar auto_create: Whether to auto-create discovered corpora.
+    :vartype auto_create: bool
+    :ivar deletion_policy: Policy for missing remote folders (archive or delete).
+    :vartype deletion_policy: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: int = Field(ge=1)
+    created_at: str
+    collection_name: str = Field(min_length=1)
+    source: RemoteCorpusSourceConfig
+    discovery: RemoteCorpusCollectionDiscovery
+    corpus_root: str = Field(min_length=1)
+    auto_create: bool = True
+    deletion_policy: str = Field(default="archive", min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_deletion_policy(self) -> "RemoteCorpusCollectionConfig":
+        if self.schema_version != COLLECTION_SCHEMA_VERSION:
+            raise ValueError(
+                f"Unsupported collection config schema version: {self.schema_version}"
+            )
+        if self.deletion_policy not in {"archive", "delete"}:
+            raise ValueError(
+                f"Unsupported collection deletion policy: {self.deletion_policy}"
+            )
+        return self
+
+
+class RemoteCollectionPullResult(BaseModel):
+    """
+    Summary of a collection pull operation.
+
+    :ivar discovered: Number of discovered subfolders or partitions.
+    :vartype discovered: int
+    :ivar created: Number of corpora created.
+    :vartype created: int
+    :ivar mirrored: Number of corpora mirrored.
+    :vartype mirrored: int
+    :ivar archived: Number of corpora archived.
+    :vartype archived: int
+    :ivar errored: Number of errors.
+    :vartype errored: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    discovered: int = Field(default=0, ge=0)
+    created: int = Field(default=0, ge=0)
+    mirrored: int = Field(default=0, ge=0)
+    archived: int = Field(default=0, ge=0)
+    errored: int = Field(default=0, ge=0)
+
+
+class PipelineCorpusSelector(BaseModel):
+    """
+    Corpus selection for a pipeline recipe.
+
+    :ivar path: Optional corpus path.
+    :vartype path: str or None
+    :ivar collection: Optional collection name or path.
+    :vartype collection: str or None
+    :ivar selector: Optional selector pattern for collection corpora.
+    :vartype selector: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: Optional[str] = None
+    collection: Optional[str] = None
+    selector: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_selector(self) -> "PipelineCorpusSelector":
+        has_path = isinstance(self.path, str) and self.path.strip()
+        has_collection = isinstance(self.collection, str) and self.collection.strip()
+        if has_path and has_collection:
+            raise ValueError("Pipeline recipe must specify corpus path or collection, not both")
+        if not has_path and not has_collection:
+            raise ValueError("Pipeline recipe must specify corpus path or collection")
+        if has_collection and not (self.selector and self.selector.strip()):
+            raise ValueError("Pipeline recipe collection requires a selector")
+        return self
+
+
+class PipelineMirrorConfig(BaseModel):
+    """
+    Mirror configuration for a pipeline recipe.
+
+    :ivar collection: Collection path or name to mirror before running.
+    :vartype collection: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    collection: str = Field(min_length=1)
+
+
+class PipelineExtractionConfig(BaseModel):
+    """
+    Extraction configuration for a pipeline recipe.
+
+    :ivar recipe: Path to extraction recipe YAML.
+    :vartype recipe: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipe: str = Field(min_length=1)
+
+
+class PipelineRetrievalConfig(BaseModel):
+    """
+    Retrieval configuration for a pipeline recipe.
+
+    :ivar retriever: Retriever identifier.
+    :vartype retriever: str
+    :ivar configuration: Path to retriever configuration file.
+    :vartype configuration: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    retriever: str = Field(min_length=1)
+    configuration: str = Field(min_length=1)
+
+
+class PipelineAnalysisConfig(BaseModel):
+    """
+    Analysis configuration for a pipeline recipe.
+
+    :ivar kind: Analysis kind identifier.
+    :vartype kind: str
+    :ivar configuration: Path to analysis configuration file.
+    :vartype configuration: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str = Field(min_length=1)
+    configuration: str = Field(min_length=1)
+
+
+class PipelineRecipeConfig(BaseModel):
+    """
+    Pipeline recipe configuration.
+
+    :ivar corpus: Corpus selection information.
+    :vartype corpus: PipelineCorpusSelector
+    :ivar mirror: Optional mirror configuration.
+    :vartype mirror: PipelineMirrorConfig or None
+    :ivar extraction: Optional extraction configuration.
+    :vartype extraction: PipelineExtractionConfig or None
+    :ivar retrieval: Optional retrieval configuration.
+    :vartype retrieval: PipelineRetrievalConfig or None
+    :ivar analysis: Optional analysis configuration list.
+    :vartype analysis: list[PipelineAnalysisConfig] or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    corpus: PipelineCorpusSelector
+    mirror: Optional[PipelineMirrorConfig] = None
+    extraction: Optional[PipelineExtractionConfig] = None
+    retrieval: Optional[PipelineRetrievalConfig] = None
+    analysis: Optional[List[PipelineAnalysisConfig]] = None
 
 
 class RemoteSourceItem(BaseModel):

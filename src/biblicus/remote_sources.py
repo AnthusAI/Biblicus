@@ -9,7 +9,7 @@ from typing import Iterable, Optional, Tuple
 
 from .errors import RemoteSourceDependencyError
 from .models import RemoteCorpusSourceConfig, RemoteSourceItem
-from .user_config import AwsUserConfig, AzureStorageUserConfig
+from .user_config import SourceProfileConfig
 
 
 def _isoformat_timestamp(value: Optional[datetime]) -> Optional[str]:
@@ -34,7 +34,7 @@ class S3RemoteSource:
     Remote source adapter for Amazon S3.
     """
 
-    def __init__(self, config: RemoteCorpusSourceConfig, aws: AwsUserConfig) -> None:
+    def __init__(self, config: RemoteCorpusSourceConfig, aws: SourceProfileConfig) -> None:
         self._config = config
         self._aws = aws
         self._client = self._build_client()
@@ -46,18 +46,13 @@ class S3RemoteSource:
             raise RemoteSourceDependencyError(
                 'Remote S3 sources require boto3. Install it with pip install "biblicus[aws]".'
             ) from import_error
-        if not (self._aws.access_key_id and self._aws.secret_access_key):
-            raise ValueError(
-                "S3 credentials not found. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY "
-                "or configure aws.* in .biblicus/config.yml."
-            )
         return boto3.client(
             "s3",
-            region_name=self._aws.region or self._config.region,
+            region_name=self._aws.region,
             aws_access_key_id=self._aws.access_key_id,
             aws_secret_access_key=self._aws.secret_access_key,
             aws_session_token=self._aws.session_token,
-            endpoint_url=self._config.endpoint_url,
+            endpoint_url=self._aws.endpoint_url,
         )
 
     def list_items(self) -> list[RemoteSourceItem]:
@@ -113,7 +108,7 @@ class AzureBlobRemoteSource:
     Remote source adapter for Azure Blob Storage.
     """
 
-    def __init__(self, config: RemoteCorpusSourceConfig, azure: AzureStorageUserConfig) -> None:
+    def __init__(self, config: RemoteCorpusSourceConfig, azure: SourceProfileConfig) -> None:
         self._config = config
         self._azure = azure
         self._client = self._build_client()
@@ -130,13 +125,8 @@ class AzureBlobRemoteSource:
             return ContainerClient.from_connection_string(
                 self._azure.connection_string, self._config.container
             )
-        account_name = self._config.account_name or self._azure.account_name
-        if not (account_name and self._azure.account_key):
-            raise ValueError(
-                "Azure storage credentials not found. Set AZURE_STORAGE_CONNECTION_STRING "
-                "or configure azure_storage.* in .biblicus/config.yml."
-            )
-        account_url = self._config.account_url or f"https://{account_name}.blob.core.windows.net"
+        account_name = self._azure.account_name
+        account_url = self._azure.account_url or f"https://{account_name}.blob.core.windows.net"
         return ContainerClient.from_account_url(
             account_url, self._config.container, credential=self._azure.account_key
         )
@@ -162,7 +152,7 @@ class AzureBlobRemoteSource:
             content_settings = getattr(entry, "content_settings", None)
             if content_settings is not None:
                 content_type = getattr(content_settings, "content_type", None)
-            account = self._config.account_name or self._azure.account_name or "account"
+            account = self._azure.account_name or "account"
             items.append(
                 RemoteSourceItem(
                     key=key,

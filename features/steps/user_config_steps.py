@@ -195,6 +195,57 @@ def step_call_resolve_deepgram_api_key(context):
             del os.environ["HOME"]
 
 
+@when('I resolve the source profile "{profile_name}"')
+def step_resolve_source_profile(context, profile_name: str) -> None:
+    from pathlib import Path
+
+    from biblicus.user_config import resolve_source_profile
+
+    old_env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "AWS_ACCESS_KEY_ID" in extra_env:
+        os.environ["AWS_ACCESS_KEY_ID"] = extra_env["AWS_ACCESS_KEY_ID"]
+    elif "AWS_ACCESS_KEY_ID" in os.environ:
+        del os.environ["AWS_ACCESS_KEY_ID"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        context.resolved_source_profile = resolve_source_profile(profile_name)
+    finally:
+        os.chdir(old_cwd)
+        if old_env_access_key is not None:
+            os.environ["AWS_ACCESS_KEY_ID"] = old_env_access_key
+        elif "AWS_ACCESS_KEY_ID" in os.environ:
+            del os.environ["AWS_ACCESS_KEY_ID"]
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]
+
+
+@then('the resolved source profile kind is "{kind}"')
+def step_resolved_source_profile_kind(context, kind: str) -> None:
+    profile = getattr(context, "resolved_source_profile", None)
+    assert profile is not None
+    assert profile.kind == kind
+
+
+@then('the resolved source profile access key is "{access_key}"')
+def step_resolved_source_profile_access_key(context, access_key: str) -> None:
+    profile = getattr(context, "resolved_source_profile", None)
+    assert profile is not None
+    assert profile.access_key_id == access_key
+
+
 @given('a local Biblicus user config exists with Aldea API key "{api_key}"')
 def step_local_user_config_exists_aldea(context, api_key: str) -> None:
     workdir = getattr(context, "workdir", None)

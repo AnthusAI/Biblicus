@@ -6,7 +6,7 @@ import sys
 import types
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from behave import given, then, when
 
@@ -18,7 +18,7 @@ from biblicus.remote_sources import (
     _normalize_etag,
     iter_items,
 )
-from biblicus.user_config import AwsUserConfig, AzureStorageUserConfig
+from biblicus.user_config import SourceProfileConfig
 
 from features.environment import run_biblicus
 
@@ -36,6 +36,22 @@ def _write_corpus_config(corpus: Path, config: Dict[str, Any]) -> None:
     meta_dir.mkdir(parents=True, exist_ok=True)
     config_path = meta_dir / "config.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_source_profile(
+    context, *, profile_name: str, kind: str, extra_fields: Optional[Dict[str, Any]] = None
+) -> None:
+    import yaml
+
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    path = Path(workdir) / ".biblicus" / "config.yml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    profile = {"name": profile_name, "kind": kind}
+    if extra_fields:
+        profile.update(extra_fields)
+    payload = {"sources": [profile]}
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
 
 
 def _load_catalog(corpus: Path) -> Dict[str, Any]:
@@ -226,6 +242,7 @@ def _parse_timestamp(raw: str) -> datetime:
 def step_configure_s3_source(context, corpus_name: str, bucket: str, prefix: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
+    _write_source_profile(context, profile_name="demo-profile", kind="s3")
     config = {
         "schema_version": 2,
         "created_at": "2026-02-19T12:00:00Z",
@@ -233,6 +250,7 @@ def step_configure_s3_source(context, corpus_name: str, bucket: str, prefix: str
         "raw_dir": ".",
         "source": {
             "kind": "s3",
+            "profile": "demo-profile",
             "name": "demo",
             "bucket": bucket,
             "prefix": prefix,
@@ -249,6 +267,12 @@ def step_configure_azure_source(
 ) -> None:
     corpus = _corpus_path(context, corpus_name)
     context.last_corpus_root = corpus
+    _write_source_profile(
+        context,
+        profile_name="demo-profile",
+        kind="azure-blob",
+        extra_fields={"account_name": account},
+    )
     config = {
         "schema_version": 2,
         "created_at": "2026-02-19T12:00:00Z",
@@ -256,10 +280,10 @@ def step_configure_azure_source(
         "raw_dir": ".",
         "source": {
             "kind": "azure-blob",
+            "profile": "demo-profile",
             "name": "demo",
             "container": container,
             "prefix": prefix,
-            "account_name": account,
         },
     }
     _write_corpus_config(corpus, config)
@@ -402,11 +426,14 @@ def step_configured_fake_s3_adapter(context) -> None:
     _ensure_fake_boto3(context)
     config = RemoteCorpusSourceConfig(
         kind="s3",
+        profile="demo-profile",
         name="demo",
         bucket="demo",
         prefix="docs/",
     )
-    aws = AwsUserConfig(
+    aws = SourceProfileConfig(
+        name="demo-profile",
+        kind="s3",
         access_key_id="test-key",
         secret_access_key="test-secret",
         session_token=None,
@@ -420,15 +447,15 @@ def step_configured_fake_azure_adapter(context) -> None:
     _ensure_fake_azure_blob(context)
     config = RemoteCorpusSourceConfig(
         kind="azure-blob",
+        profile="demo-profile",
         name="demo",
         container="demo",
         prefix="docs/",
-        account_name="acct",
     )
-    azure = AzureStorageUserConfig(
+    azure = SourceProfileConfig(
+        name="demo-profile",
+        kind="azure-blob",
         connection_string="UseDevelopmentStorage=true",
-        account_name=None,
-        account_key=None,
     )
     context.azure_adapter = AzureBlobRemoteSource(config, azure)
 
@@ -475,24 +502,27 @@ def _attempt_remote_source_validate(context, payload: Dict[str, Any]) -> None:
 
 @when("I validate a remote source config with unsupported kind")
 def step_validate_remote_source_invalid_kind(context) -> None:
-    _attempt_remote_source_validate(context, {"kind": "gcs", "name": "demo"})
+    _attempt_remote_source_validate(
+        context, {"kind": "gcs", "name": "demo", "profile": "demo-profile"}
+    )
+
+
+@when("I validate a remote source config without a profile")
+def step_validate_remote_source_missing_profile(context) -> None:
+    _attempt_remote_source_validate(context, {"kind": "s3", "name": "demo", "bucket": "demo"})
 
 
 @when("I validate a remote source config without an S3 bucket")
 def step_validate_remote_source_missing_bucket(context) -> None:
-    _attempt_remote_source_validate(context, {"kind": "s3", "name": "demo"})
+    _attempt_remote_source_validate(
+        context, {"kind": "s3", "name": "demo", "profile": "demo-profile"}
+    )
 
 
 @when("I validate a remote source config without an Azure container")
 def step_validate_remote_source_missing_container(context) -> None:
-    _attempt_remote_source_validate(context, {"kind": "azure-blob", "name": "demo"})
-
-
-@when("I validate a remote source config without an Azure account")
-def step_validate_remote_source_missing_account(context) -> None:
     _attempt_remote_source_validate(
-        context,
-        {"kind": "azure-blob", "name": "demo", "container": "demo"},
+        context, {"kind": "azure-blob", "name": "demo", "profile": "demo-profile"}
     )
 
 
