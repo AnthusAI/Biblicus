@@ -321,3 +321,67 @@ def test_aws_transcribe_failure_raises_and_cleans_up(monkeypatch, tmp_path):
     with pytest.raises(ExtractionSnapshotFatalError):
         extractor.extract_text(corpus=corpus, item=item, config=config, previous_extractions=[])
     assert fake_transcribe.deleted and fake_s3.deleted
+
+
+def test_aws_transcribe_failed_status_covers_cleanup(monkeypatch, tmp_path):
+    class FakeTranscribe:
+        def __init__(self):
+            self.deleted = False
+
+        def start_transcription_job(self, **kwargs):
+            return None
+
+        def get_transcription_job(self, TranscriptionJobName):
+            return {
+                "TranscriptionJob": {
+                    "TranscriptionJobStatus": "FAILED",
+                    "FailureReason": "boom",
+                    "Transcript": {"TranscriptFileUri": "http://example.com"},
+                }
+            }
+
+        def delete_transcription_job(self, TranscriptionJobName):
+            self.deleted = True
+
+    class FakeS3:
+        def __init__(self):
+            self.deleted = False
+
+        def upload_fileobj(self, fileobj, bucket, key):
+            return None
+
+        def delete_object(self, Bucket, Key):
+            self.deleted = True
+
+    fake_transcribe = FakeTranscribe()
+    fake_s3 = FakeS3()
+
+    class FakeBoto3(ModuleType):
+        def client(self, name, region_name=None):
+            if name == "transcribe":
+                return fake_transcribe
+            if name == "s3":
+                return fake_s3
+            raise ValueError(name)
+
+    sys.modules["boto3"] = FakeBoto3("boto3")
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    monkeypatch.setattr("urllib.request.urlopen", lambda url: SimpleNamespace(read=lambda: b"{}"))
+
+    extractor = AwsTranscribeSpeechToTextExtractor()
+    config = AwsTranscribeSpeechToTextExtractorConfig(
+        language_code="en-US",
+        region_name="us-east-1",
+        s3_bucket="bucket",
+        identify_speakers=True,
+        max_speakers=2,
+        vocabulary_name="vocab",
+        show_alternatives=True,
+        max_alternatives=2,
+    )
+    item = _fake_corpus_with_file(tmp_path, "clip.wav", "audio/wav")
+    corpus = Corpus(tmp_path)
+
+    with pytest.raises(ExtractionSnapshotFatalError):
+        extractor.extract_text(corpus=corpus, item=item, config=config, previous_extractions=[])
+    assert fake_transcribe.deleted and fake_s3.deleted
