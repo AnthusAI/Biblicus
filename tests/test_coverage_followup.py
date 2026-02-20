@@ -13,6 +13,7 @@ from biblicus.analysis.models import (
 from biblicus.corpus import Corpus, _update_biblicus_block
 from biblicus.models import CatalogItem, CorpusCatalog, RemoteCorpusSourceConfig
 from biblicus.pipelines import _normalize_extraction_configuration
+from biblicus.extraction import build_extraction_snapshot
 
 
 def test_markov_collect_documents_truncates_and_warns(tmp_path, monkeypatch):
@@ -153,6 +154,32 @@ def test_corpus_prune_remote_items_removes_missing(tmp_path):
     assert not (corpus.root / relpath).exists()
 
 
+def test_extraction_catalog_sync_logs_warning(monkeypatch, tmp_path, capsys):
+    corpus = Corpus(tmp_path)
+    corpus.meta_dir.mkdir(parents=True, exist_ok=True)
+    corpus._write_catalog(
+        CorpusCatalog(
+            schema_version=2,
+            generated_at="2024-01-01T00:00:00Z",
+            corpus_uri=tmp_path.as_uri(),
+            raw_dir="raw",
+            items={},
+            order=[],
+        )
+    )
+    monkeypatch.setenv("AMPLIFY_AUTO_SYNC_CATALOG", "false")
+    manifest = SimpleNamespace(snapshot_id="snap", items=[], configuration_id="cfg")
+    with monkeypatch.context() as m:
+        m.setattr("biblicus.extraction.load_or_build_extraction_snapshot", lambda *a, **k: manifest)
+        result = build_extraction_snapshot(
+            corpus,
+            extractor_id="pipeline",
+            configuration_name="cfg",
+            configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
+        )
+    assert isinstance(result.snapshot_id, str) and result.snapshot_id
+
+
 def test_corpus_raw_prefix_respects_custom_and_dot(tmp_path):
     meta = tmp_path / ".biblicus"
     meta.mkdir()
@@ -285,3 +312,34 @@ def test_markov_llm_observation_retries_then_succeeds(monkeypatch):
     )
     assert observations[0].llm_label == "x"
     assert calls["count"] == 2
+
+
+def test_markov_llm_observation_uses_cache(monkeypatch, tmp_path):
+    llm_config = SimpleNamespace(
+        enabled=True,
+        client=SimpleNamespace(response_format=None),
+        prompt_template="{segment}",
+        system_prompt=None,
+        cache=SimpleNamespace(
+            enabled=True,
+            cache_dir=tmp_path,
+            cache_name="cache",
+        ),
+        max_workers=1,
+    )
+    cache_dir = tmp_path / "items"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cached_payload = {
+        "item_id": "i",
+        "segments": [{"segment_index": 1, "segment_text_hash": markov.hash_text("hello"), "llm_label": "cached", "llm_label_confidence": 0.9, "llm_summary": "sum"}],
+    }
+    (cache_dir / "i.json").write_text(json.dumps(cached_payload), encoding="utf-8")
+    segments = [SimpleNamespace(item_id="i", segment_index=1, text="hello")]
+    config = SimpleNamespace(llm_observations=llm_config, embeddings=SimpleNamespace(enabled=False))
+    cache_context = markov._LlmObservationCacheContext(cache_id="id", cache_dir=tmp_path, enabled=True)
+    observations = markov._build_observations(
+        segments=segments,
+        config=config,
+        cache_context=cache_context,
+    )
+    assert observations[0].llm_label == "cached"
