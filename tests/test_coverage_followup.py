@@ -343,3 +343,30 @@ def test_markov_llm_observation_uses_cache(monkeypatch, tmp_path):
         cache_context=cache_context,
     )
     assert observations[0].llm_label == "cached"
+
+
+def test_markov_observation_handles_invalid_json(monkeypatch):
+    monkeypatch.setattr(
+        markov,
+        "generate_completion",
+        lambda **kwargs: "not-json",
+    )
+    monkeypatch.setattr(
+        markov,
+        "_parse_json_object",
+        lambda text, error_label: (_ for _ in ()).throw(ValueError("bad json")),
+    )
+    config = SimpleNamespace(
+        llm_observations=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            prompt_template="{segment}",
+            system_prompt=None,
+            cache=SimpleNamespace(enabled=False),
+            max_workers=1,
+        ),
+        embeddings=SimpleNamespace(enabled=False),
+    )
+    segments = [SimpleNamespace(item_id="i", segment_index=1, text="hello")]
+    observations = markov._build_observations(segments=segments, config=config, cache_context=None)
+    assert observations[0].llm_label == "unknown"

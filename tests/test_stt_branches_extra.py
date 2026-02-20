@@ -1,4 +1,5 @@
 import sys
+import json
 from types import ModuleType, SimpleNamespace
 from pathlib import Path
 
@@ -176,3 +177,87 @@ def test_google_speech_diarization_and_confidence(monkeypatch, tmp_path):
     assert result is not None
     assert "hello world" in result.text
     assert result.metadata["confidences"][0] == 0.8
+
+
+def test_aws_transcribe_success_fetches_transcript(monkeypatch, tmp_path):
+    transcript_payload = {
+        "results": {"transcripts": [{"transcript": "hello there"}], "speaker_labels": {}}
+    }
+
+    class FakeURLResponse:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda url: FakeURLResponse(transcript_payload),
+    )
+
+    class FakeTranscribe:
+        def __init__(self):
+            self.started = False
+            self.deleted = False
+
+        def start_transcription_job(self, **kwargs):
+            self.started = True
+
+        def get_transcription_job(self, TranscriptionJobName):
+            return {
+                "TranscriptionJob": {
+                    "TranscriptionJobStatus": "COMPLETED",
+                    "Transcript": {"TranscriptFileUri": "http://example.com"},
+                }
+            }
+
+        def delete_transcription_job(self, TranscriptionJobName):
+            self.deleted = True
+
+    class FakeS3:
+        def __init__(self):
+            self.deleted = False
+
+        def upload_fileobj(self, fileobj, bucket, key):
+            self.uploaded = True
+
+        def delete_object(self, Bucket, Key):
+            self.deleted = True
+
+    fake_transcribe = FakeTranscribe()
+    fake_s3 = FakeS3()
+
+    class FakeBoto3(ModuleType):
+        def client(self, name, region_name=None):
+            if name == "transcribe":
+                return fake_transcribe
+            if name == "s3":
+                return fake_s3
+            raise ValueError(name)
+
+    sys.modules["boto3"] = FakeBoto3("boto3")
+    monkeypatch.setattr("time.sleep", lambda s: None)
+
+    extractor = AwsTranscribeSpeechToTextExtractor()
+    config = AwsTranscribeSpeechToTextExtractorConfig(
+        language_code="en-US",
+        region_name="us-east-1",
+        s3_bucket="bucket",
+        identify_speakers=False,
+        show_alternatives=True,
+        max_alternatives=2,
+    )
+    item = _fake_corpus_with_file(tmp_path, "clip.wav", "audio/wav")
+    corpus = Corpus(tmp_path)
+
+    result = extractor.extract_text(corpus=corpus, item=item, config=config, previous_extractions=[])
+    assert result is not None
+    assert "hello there" in result.text
+    assert fake_transcribe.deleted and fake_s3.deleted
