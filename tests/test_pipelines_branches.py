@@ -81,7 +81,7 @@ def test_run_analysis_loads_configuration(monkeypatch, tmp_path):
     )
 
     class DummyBackend:
-        def run_analysis(self, corpus, configuration_name, configuration):
+        def run_analysis(self, corpus, configuration_name, configuration, **kwargs):
             loaded["ran"] = (configuration_name, configuration)
 
     monkeypatch.setattr(pipelines, "get_analysis_backend", lambda kind: DummyBackend())
