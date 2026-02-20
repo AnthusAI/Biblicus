@@ -11458,6 +11458,7 @@ def step_exhaust_gaps(context) -> None:
         best_pipeline="p2",
         best_score=0.6,
         primary_metric="f1",
+        primary_score=0.6,
         processing_time_seconds=1.0,
     )
     cat_res2 = benchmark_runner.CategoryResult(
@@ -11468,6 +11469,7 @@ def step_exhaust_gaps(context) -> None:
         best_pipeline="p1",
         best_score=0.5,
         primary_metric="recall",
+        primary_score=0.5,
         processing_time_seconds=0.5,
     )
     bench_cfg = benchmark_runner.BenchmarkConfig(

@@ -238,6 +238,7 @@ def _run_analysis(
                 corpus,
                 configuration_name=Path(analysis.configuration).stem,
                 configuration=configuration_data,
+                extraction_snapshot=resolved_snapshot,
             )
         except ValidationError as exc:
             raise ValueError(f"Invalid analysis configuration: {exc}") from exc
