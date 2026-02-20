@@ -11,7 +11,7 @@ from biblicus.analysis.models import (
     MarkovAnalysisTextSourceConfig,
 )
 from biblicus.corpus import Corpus, _update_biblicus_block
-from biblicus.models import CatalogItem, RemoteCorpusSourceConfig
+from biblicus.models import CatalogItem, CorpusCatalog, RemoteCorpusSourceConfig
 from biblicus.pipelines import _normalize_extraction_configuration
 
 
@@ -118,6 +118,41 @@ def test_corpus_update_biblicus_block_handles_non_mapping():
     assert updated["biblicus"]["source_etag"] == "x"
 
 
+def test_corpus_prune_remote_items_removes_missing(tmp_path):
+    corpus = Corpus(tmp_path)
+    catalog = CorpusCatalog(
+        schema_version=2,
+        generated_at="2024-01-01T00:00:00Z",
+        corpus_uri=tmp_path.as_uri(),
+        raw_dir="raw",
+        items={},
+        order=[],
+    )
+    corpus.meta_dir.mkdir(parents=True, exist_ok=True)
+    relpath = "imports/remote/name/file.txt"
+    (corpus.root / relpath).parent.mkdir(parents=True, exist_ok=True)
+    (corpus.root / relpath).write_text("data", encoding="utf-8")
+    item = CatalogItem(
+        id="one",
+        relpath=relpath,
+        sha256="",
+        bytes=4,
+        media_type="text/plain",
+        title=None,
+        tags=[],
+        metadata={},
+        created_at="now",
+        source_uri="s3://bucket/file.txt",
+    )
+    catalog.items[item.id] = item
+    catalog.order.append(item.id)
+    corpus._write_catalog(catalog)
+
+    pruned = corpus._prune_remote_items(storage_subdir="imports/remote/name", remote_uris=set())
+    assert pruned == 1
+    assert not (corpus.root / relpath).exists()
+
+
 def test_corpus_raw_prefix_respects_custom_and_dot(tmp_path):
     meta = tmp_path / ".biblicus"
     meta.mkdir()
@@ -194,6 +229,30 @@ def test_markov_span_markup_chunks_multiple_iterations(monkeypatch):
         item_id="item-1", text="abcdefghij", config=config  # len>chunk size to iterate
     )
     assert len(segments) >= 2
+
+
+def test_markov_span_markup_requires_label_when_prepending():
+    spans = [SimpleNamespace(text="x", attributes={})]
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(markov, "apply_text_annotate", lambda request: SimpleNamespace(spans=spans))
+    markup_config = SimpleNamespace(
+        label_attribute=None,
+        prepend_label=True,
+        chunk_characters=None,
+        chunk_overlap_characters=0,
+        system_prompt=None,
+        prompt_template="extract",
+        max_rounds=1,
+        max_edits_per_round=1,
+        normalize_nested_spans=False,
+        client={"provider": "openai", "model": "gpt-4o"},
+    )
+    llm_config = SimpleNamespace(prompt_template="{text}", client={"provider": "openai"}, system_prompt="{text}")
+    segmentation = SimpleNamespace(span_markup=markup_config, llm=llm_config)
+    config = SimpleNamespace(segmentation=segmentation)
+    with pytest.raises(ValueError):
+        markov._span_markup_segments(item_id="i", text="body", config=config)
+    monkeypatch.undo()
 
 
 def test_markov_llm_observation_retries_then_succeeds(monkeypatch):
