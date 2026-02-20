@@ -11,12 +11,12 @@ from typing import Dict, Optional
 
 from .constants import (
     ANALYSIS_DIR_NAME,
-    SCHEMA_VERSION,
     CORPUS_DIR_NAME,
     EXTRACTED_DIR_NAME,
     GRAPH_DIR_NAME,
     LEGACY_CORPUS_DIR_NAME,
     RETRIEVAL_DIR_NAME,
+    SCHEMA_VERSION,
 )
 from .models import CorpusCatalog, CorpusConfig, RetrievalSnapshot
 from .time import utc_now_iso

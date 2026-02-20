@@ -4,6 +4,7 @@ Pydantic models for Biblicus domain concepts.
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -800,8 +801,5 @@ class ExtractionStageOutput(BaseModel):
     error_type: Optional[str] = None
     error_message: Optional[str] = None
 
-
-# Expose graph extraction results without duplicating schema definitions.
-from importlib import import_module
 
 GraphExtractionResult = import_module("biblicus.graph.models").GraphExtractionResult
