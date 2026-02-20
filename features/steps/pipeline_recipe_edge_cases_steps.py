@@ -321,9 +321,14 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     except FileNotFoundError:
         pass
 
-    resolved_root = _resolve_corpus_root(workdir / "collections" / "demo", collection_config)
+    collections_root = workdir / "collections" / "demo"
+    assert collections_root.parent.name == "collections"
+    resolved_root = _resolve_corpus_root(collections_root, collection_config)
     expected_root = (workdir / "corpora" / "demo").resolve()
     assert resolved_root == expected_root, "Expected corpus root resolution for collections dir"
+    non_collection_root = workdir / "not-collections" / "demo"
+    resolved_non_collection = _resolve_corpus_root(non_collection_root, collection_config)
+    assert resolved_non_collection == (workdir / "not-collections" / "corpora" / "demo").resolve()
 
     absolute_root = workdir / "absolute"
     resolved_absolute = _resolve_corpus_root(
@@ -474,7 +479,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     )
     original_load_collection = collections_module.load_collection_config
     collections_module.load_collection_config = lambda *_: unsupported_config
-    collections_module.resolve_source_profile = lambda *_: SourceProfileConfig(
+    collections_module.resolve_source_profile = lambda *_: SourceProfileConfig.model_construct(
         name="profile",
         kind="gcs",
     )
