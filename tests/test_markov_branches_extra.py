@@ -214,3 +214,65 @@ def test_markov_llm_observation_uses_cache_and_handles_transient(monkeypatch, tm
     assert observations[0].llm_summary == "cached summary"
     assert observations[1].llm_label == "unknown"
     assert cache_context.cached_segments == 1
+
+
+def test_markov_apply_start_end_labels_rejects(monkeypatch):
+    monkeypatch.setattr(
+        markov,
+        "generate_completion",
+        lambda client, system_prompt, user_prompt: '{"is_end": false, "reason": "no end"}',
+    )
+    markup_config = SimpleNamespace(
+        start_label_value="START",
+        end_label_value="END",
+        end_reject_label_value="REJECT",
+        end_reject_reason_prefix="Because",
+        end_label_verifier=SimpleNamespace(
+            client=SimpleNamespace(response_format=None),
+            system_prompt="{text}",
+            prompt_template="prompt",
+        ),
+    )
+    config = SimpleNamespace(segmentation=SimpleNamespace(span_markup=markup_config))
+    payloads = [{"segment_index": 1, "text": "body"}]
+    segments = markov._apply_start_end_labels(item_id="i", payloads=payloads, config=config)
+    assert segments[0].text.startswith("START\n")
+    assert "REJECT" in segments[-1].text
+    assert "Because" in segments[-1].text
+
+
+def test_markov_embeddings_use_llm_summary(monkeypatch):
+    monkeypatch.setattr(
+        markov,
+        "generate_completion",
+        lambda client, system_prompt, user_prompt: '{"label": "z", "label_confidence": 0.8, "summary": "sum"}',
+    )
+    monkeypatch.setattr(markov, "_parse_json_object", lambda text, error_label: json.loads(text))
+    monkeypatch.setattr(
+        markov,
+        "generate_embeddings_batch",
+        lambda client, texts: [[1.0, 0.0] for _ in texts],
+    )
+    config = SimpleNamespace(
+        llm_observations=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            prompt_template="{segment}",
+            system_prompt=None,
+            cache=SimpleNamespace(enabled=False),
+            max_workers=1,
+        ),
+        embeddings=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            text_source="llm_summary",
+        ),
+    )
+    segments = [
+        markov.MarkovAnalysisSegment(item_id="i", segment_index=1, text="START"),
+        markov.MarkovAnalysisSegment(item_id="i", segment_index=2, text="body"),
+        markov.MarkovAnalysisSegment(item_id="i", segment_index=3, text="END"),
+    ]
+    observations = markov._build_observations(segments=segments, config=config, cache_context=None)
+    assert observations[1].embedding == [1.0, 0.0]
+    assert observations[0].embedding == [0.0, 0.0]
