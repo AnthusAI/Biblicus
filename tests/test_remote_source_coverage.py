@@ -14,13 +14,11 @@ from biblicus.remote_sources import (
     iter_items,
 )
 from biblicus.user_config import (
-    AwsUserConfig,
-    AzureStorageUserConfig,
     BiblicusUserConfig,
     OpenAiUserConfig,
-    resolve_aws_credentials,
-    resolve_azure_storage_credentials,
+    SourceProfileConfig,
     resolve_openai_api_key,
+    resolve_source_profile,
 )
 
 
@@ -149,8 +147,21 @@ def test_s3_remote_source_list_and_fetch(monkeypatch):
             },
         ],
     )
-    config = RemoteCorpusSourceConfig(kind="s3", name="demo", bucket="bucket", prefix="docs/")
-    aws = AwsUserConfig(access_key_id="id", secret_access_key="secret", session_token=None, region="us-east-1")
+    config = RemoteCorpusSourceConfig(
+        kind="s3",
+        profile="profile",
+        name="demo",
+        bucket="bucket",
+        prefix="docs/",
+    )
+    aws = SourceProfileConfig(
+        name="profile",
+        kind="s3",
+        access_key_id="id",
+        secret_access_key="secret",
+        session_token=None,
+        region="us-east-1",
+    )
     source = S3RemoteSource(config, aws)
     items = source.list_items()
     assert len(items) == 1
@@ -164,10 +175,17 @@ def test_s3_remote_source_list_and_fetch(monkeypatch):
 
 def test_s3_remote_source_missing_credentials(monkeypatch):
     _install_fake_boto3(monkeypatch, objects=[])
-    config = RemoteCorpusSourceConfig(kind="s3", name="demo", bucket="bucket")
-    aws = AwsUserConfig(access_key_id=None, secret_access_key=None, session_token=None, region=None)
-    with pytest.raises(ValueError):
-        S3RemoteSource(config, aws)
+    config = RemoteCorpusSourceConfig(kind="s3", profile="profile", name="demo", bucket="bucket")
+    aws = SourceProfileConfig(
+        name="profile",
+        kind="s3",
+        access_key_id=None,
+        secret_access_key=None,
+        session_token=None,
+        region=None,
+    )
+    source = S3RemoteSource(config, aws)
+    assert source.list_items() == []
 
 
 def test_azure_remote_source_list_and_fetch(monkeypatch):
@@ -186,12 +204,18 @@ def test_azure_remote_source_list_and_fetch(monkeypatch):
     )
     config = RemoteCorpusSourceConfig(
         kind="azure-blob",
+        profile="profile",
         name="demo",
         container="container",
         prefix="docs/",
-        account_name="acct",
     )
-    azure = AzureStorageUserConfig(connection_string="UseDevelopmentStorage=true", account_name=None, account_key=None)
+    azure = SourceProfileConfig(
+        name="profile",
+        kind="azure-blob",
+        connection_string="UseDevelopmentStorage=true",
+        account_name="acct",
+        account_key=None,
+    )
     source = AzureBlobRemoteSource(config, azure)
     items = source.list_items()
     assert len(items) == 1
@@ -207,14 +231,20 @@ def test_azure_remote_source_missing_credentials(monkeypatch):
     _install_fake_azure_blob(monkeypatch, blobs=[])
     config = RemoteCorpusSourceConfig(
         kind="azure-blob",
+        profile="profile",
         name="demo",
         container="container",
         prefix="docs/",
-        account_name="acct",
     )
-    azure = AzureStorageUserConfig(connection_string=None, account_name=None, account_key=None)
-    with pytest.raises(ValueError):
-        AzureBlobRemoteSource(config, azure)
+    azure = SourceProfileConfig(
+        name="profile",
+        kind="azure-blob",
+        connection_string=None,
+        account_name=None,
+        account_key=None,
+    )
+    source = AzureBlobRemoteSource(config, azure)
+    assert source.list_items() == []
 
 
 def test_azure_remote_source_account_url_branch(monkeypatch):
@@ -240,12 +270,18 @@ def test_azure_remote_source_account_url_branch(monkeypatch):
     )
     config = RemoteCorpusSourceConfig(
         kind="azure-blob",
+        profile="profile",
         name="demo",
         container="container",
         prefix="docs/",
-        account_name="acct",
     )
-    azure = AzureStorageUserConfig(connection_string=None, account_name="acct", account_key="key")
+    azure = SourceProfileConfig(
+        name="profile",
+        kind="azure-blob",
+        connection_string=None,
+        account_name="acct",
+        account_key="key",
+    )
     source = AzureBlobRemoteSource(config, azure)
     items = source.list_items()
     assert len(items) == 1
@@ -259,13 +295,17 @@ def test_iter_items_rejects_unknown_source():
 
 def test_remote_corpus_source_config_validation():
     with pytest.raises(ValueError):
-        RemoteCorpusSourceConfig(kind="gcs", name="demo")
+        RemoteCorpusSourceConfig(kind="gcs", profile="profile", name="demo")
     with pytest.raises(ValueError):
-        RemoteCorpusSourceConfig(kind="s3", name="demo")
+        RemoteCorpusSourceConfig(kind="s3", profile="profile", name="demo")
     with pytest.raises(ValueError):
-        RemoteCorpusSourceConfig(kind="azure-blob", name="demo", account_name="acct")
-    with pytest.raises(ValueError):
-        RemoteCorpusSourceConfig(kind="azure-blob", name="demo", container="container")
+        RemoteCorpusSourceConfig(kind="azure-blob", profile="profile", name="demo")
+    RemoteCorpusSourceConfig(
+        kind="azure-blob",
+        profile="profile",
+        name="demo",
+        container="container",
+    )
 
 
 def test_resolve_openai_api_key_from_config(monkeypatch):
@@ -274,38 +314,46 @@ def test_resolve_openai_api_key_from_config(monkeypatch):
     assert resolve_openai_api_key(config=cfg) == "cfg-openai"
 
 
-def test_resolve_aws_credentials_env_override(monkeypatch):
+def test_resolve_s3_profile_env_override(monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "env-id")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "env-secret")
     monkeypatch.setenv("AWS_SESSION_TOKEN", "env-token")
     monkeypatch.setenv("AWS_REGION", "us-west-2")
     cfg = BiblicusUserConfig(
-        aws=AwsUserConfig(
-            access_key_id="cfg-id",
-            secret_access_key="cfg-secret",
-            session_token=None,
-            region="us-east-1",
-        )
+        sources=[
+            SourceProfileConfig(
+                name="prod",
+                kind="s3",
+                access_key_id="cfg-id",
+                secret_access_key="cfg-secret",
+                session_token=None,
+                region="us-east-1",
+            )
+        ]
     )
-    resolved = resolve_aws_credentials(config=cfg)
+    resolved = resolve_source_profile("prod", config=cfg)
     assert resolved.access_key_id == "env-id"
     assert resolved.secret_access_key == "env-secret"
     assert resolved.session_token == "env-token"
     assert resolved.region == "us-west-2"
 
 
-def test_resolve_azure_storage_credentials_env_override(monkeypatch):
+def test_resolve_azure_profile_env_override(monkeypatch):
     monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "UseDevelopmentStorage=true")
     monkeypatch.setenv("AZURE_STORAGE_ACCOUNT", "env-acct")
     monkeypatch.setenv("AZURE_STORAGE_KEY", "env-key")
     cfg = BiblicusUserConfig(
-        azure_storage=AzureStorageUserConfig(
-            connection_string="cfg-conn",
-            account_name="cfg-acct",
-            account_key="cfg-key",
-        )
+        sources=[
+            SourceProfileConfig(
+                name="azure",
+                kind="azure-blob",
+                connection_string="cfg-conn",
+                account_name="cfg-acct",
+                account_key="cfg-key",
+            )
+        ]
     )
-    resolved = resolve_azure_storage_credentials(config=cfg)
+    resolved = resolve_source_profile("azure", config=cfg)
     assert resolved.connection_string == "UseDevelopmentStorage=true"
     assert resolved.account_name == "env-acct"
     assert resolved.account_key == "env-key"

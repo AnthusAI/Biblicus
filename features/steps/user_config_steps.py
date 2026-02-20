@@ -199,7 +199,7 @@ def step_call_resolve_deepgram_api_key(context):
 def step_resolve_source_profile(context, profile_name: str) -> None:
     from pathlib import Path
 
-    from biblicus.user_config import resolve_source_profile
+    from biblicus.user_config import load_user_config, resolve_source_profile
 
     old_env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     old_env_home = os.environ.get("HOME")
@@ -219,7 +219,15 @@ def step_resolve_source_profile(context, profile_name: str) -> None:
         os.chdir(workdir)
 
     try:
-        context.resolved_source_profile = resolve_source_profile(profile_name)
+        config = None
+        if workdir:
+            config_path = Path(workdir) / ".biblicus" / "config.yml"
+            if config_path.is_file():
+                try:
+                    config = load_user_config(paths=[config_path])
+                except TypeError:
+                    config = load_user_config()
+        context.resolved_source_profile = resolve_source_profile(profile_name, config=config)
     finally:
         os.chdir(old_cwd)
         if old_env_access_key is not None:

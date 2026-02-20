@@ -79,6 +79,10 @@ def _call_extractor(
     clear_openai_key: bool = False,
     block_modules: Optional[List[str]] = None,
 ) -> Exception | None:
+    prior_home = os.environ.get("HOME")
+    prior_cwd = Path.cwd()
+    os.environ["HOME"] = str(workdir)
+    os.chdir(workdir)
     corpus_root = workdir / "corpus"
     corpus = Corpus.open(corpus_root) if corpus_root.exists() else Corpus.init(corpus_root)
     (corpus_root / "raw").mkdir(parents=True, exist_ok=True)
@@ -110,6 +114,11 @@ def _call_extractor(
             # Remove our blocker if still present.
             if sys.meta_path and sys.meta_path[0] is blocker:
                 sys.meta_path.pop(0)
+        os.chdir(prior_cwd)
+        if prior_home is None:
+            os.environ.pop("HOME", None)
+        else:
+            os.environ["HOME"] = prior_home
     return None
 
 

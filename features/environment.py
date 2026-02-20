@@ -147,6 +147,13 @@ def before_scenario(context, scenario) -> None:
     context._prior_home = os.environ.get("HOME")
     os.environ["HOME"] = str(context.workdir)
     context.repo_root = _repo_root()
+    repo_config = context.repo_root / ".biblicus" / "config.yml"
+    context._repo_config_backup = None
+    context._repo_config_original = repo_config
+    if repo_config.is_file():
+        backup_path = repo_config.with_name("config.yml.bdd-backup")
+        repo_config.rename(backup_path)
+        context._repo_config_backup = backup_path
     context.env = dict(os.environ)
     context.extra_env = {}
     context.last_result = None
@@ -199,6 +206,20 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_unstructured_unavailable_installed = False
         context._fake_unstructured_unavailable_original_modules = {}
+    try:
+        import biblicus.user_config as _user_config
+
+        original_loader = getattr(_user_config, "_original_load_user_config", None)
+        if original_loader is not None:
+            _user_config.load_user_config = original_loader
+            _user_config._original_load_user_config = None
+    except Exception:
+        pass
+    backup_path = getattr(context, "_repo_config_backup", None)
+    original_path = getattr(context, "_repo_config_original", None)
+    if backup_path is not None and original_path is not None:
+        if not original_path.exists() and backup_path.exists():
+            backup_path.rename(original_path)
     if getattr(context, "_fake_boto3_remote_blocker", None) in sys.meta_path:
         sys.meta_path.remove(context._fake_boto3_remote_blocker)
     if getattr(context, "_fake_azure_blob_blocker", None) in sys.meta_path:
