@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import shutil
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 from .corpus import Corpus
 from .models import (
@@ -21,7 +21,6 @@ from .models import (
 from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
 from .time import utc_now_iso
 from .user_config import resolve_source_profile
-
 
 COLLECTION_CONFIG_NAME = "config.json"
 COLLECTION_DIR_NAME = "collections"

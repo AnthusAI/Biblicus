@@ -14,6 +14,7 @@ from typing import Dict, Iterable, List, Optional
 from pydantic import ValidationError
 
 from .analysis import get_analysis_backend
+from .collections import load_collection_config, pull_collection
 from .context import (
     CharacterBudget,
     ContextPackPolicy,
@@ -22,7 +23,6 @@ from .context import (
     fit_context_pack_to_character_budget,
     fit_context_pack_to_token_budget,
 )
-from .collections import load_collection_config, pull_collection
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
