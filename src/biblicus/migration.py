@@ -68,20 +68,11 @@ def _migrate_raw_items(
 ) -> None:
     meta_dir = meta_dir or (root / CORPUS_DIR_NAME)
     candidate_sources = [meta_dir / "raw", root / "raw"]
-    target_raw = root / "raw"
-    target_existed = target_raw.exists()
     for source in candidate_sources:
         if not source.is_dir():
             continue
-        if source.resolve() == target_raw.resolve():
-            if target_existed:
-                for _ in source.iterdir():
-                    stats["moved_raw_items"] += 1
-                shutil.rmtree(source)
-            continue
-        target_raw.mkdir(parents=True, exist_ok=True)
         for entry in source.iterdir():
-            dest = target_raw / entry.name
+            dest = root / entry.name
             _move_entry(entry, dest, force=force)
             stats["moved_raw_items"] += 1
         shutil.rmtree(source)
