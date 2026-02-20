@@ -6,3 +6,8 @@ def test_normalize_entity_value_address():
     normalized = normalize_entity_value(value, entity_type="address")
     assert "street" in normalized
     assert "apartment" in normalized
+
+
+def test_normalize_entity_value_total():
+    normalized = normalize_entity_value("Total: $1,234.50", entity_type="total")
+    assert normalized == "1234.50"
