@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import json
 
 from biblicus.analysis import markov
 from biblicus.analysis.models import MarkovAnalysisConfiguration
@@ -68,3 +69,30 @@ def test_markov_llm_observation_handles_start_end(monkeypatch):
     assert observations[0].llm_label == "START"
     assert observations[1].llm_label == "END"
     assert observations[2].llm_label in {"x", "unknown"}
+
+
+def test_markov_llm_observation_cache_write(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        markov,
+        "generate_completion",
+        lambda client, system_prompt, user_prompt: '{"label": "y", "label_confidence": 0.4, "summary": "s"}',
+    )
+    monkeypatch.setattr(markov, "_parse_json_object", lambda text, error_label: json.loads(text))
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_context = markov._LlmObservationCacheContext(cache_id="cid", cache_dir=cache_dir, enabled=True)
+    config = SimpleNamespace(
+        llm_observations=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            prompt_template="{segment}",
+            system_prompt=None,
+            cache=SimpleNamespace(enabled=True, cache_name="cache"),
+            max_workers=1,
+        ),
+        embeddings=SimpleNamespace(enabled=False),
+    )
+    segments = [markov.MarkovAnalysisSegment(item_id="i", segment_index=1, text="body")]
+    markov._build_observations(segments=segments, config=config, cache_context=cache_context)
+    cache_file = cache_dir / "items" / "i.json"
+    assert cache_file.is_file()
