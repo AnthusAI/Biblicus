@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v1.8.0 (2026-02-20)
+
+### Bug Fixes
+
+- Sort imports for collection cli
+  ([`f6ebc42`](https://github.com/AnthusAI/Biblicus/commit/f6ebc420405a2381e4ebc65ab77c618d4fbe8373))
+
+### Features
+
+- Add collections and pipeline recipes
+  ([`94d9f6b`](https://github.com/AnthusAI/Biblicus/commit/94d9f6b8a981e89b5c03bca810495bd0e0e06df6))
+
+### Testing
+
+- Cover pipeline recipe edge cases
+  ([`e89a981`](https://github.com/AnthusAI/Biblicus/commit/e89a981ab358293b200df2cfc7ef4a69309a6427))
+
+- Stabilize user config isolation and remote source coverage
+  ([`cb4cd59`](https://github.com/AnthusAI/Biblicus/commit/cb4cd59e9633b5ad669a525232d584273dc9ce91))
+
+
 ## v1.7.0 (2026-02-19)
 
 ### Bug Fixes
