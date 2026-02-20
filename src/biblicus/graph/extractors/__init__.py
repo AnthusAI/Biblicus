@@ -10,7 +10,7 @@ from ..base import GraphExtractor
 from .cooccurrence import CooccurrenceGraphExtractor
 from .dependency_relations import DependencyRelationsGraphExtractor
 from .ner_entities import NerEntitiesGraphExtractor
-from .simple_entities import SimpleEntityGraphExtractor
+from .simple_entities import SimpleEntitiesGraphExtractor
 
 
 def available_graph_extractors() -> Dict[str, Type[GraphExtractor]]:
@@ -24,7 +24,7 @@ def available_graph_extractors() -> Dict[str, Type[GraphExtractor]]:
         CooccurrenceGraphExtractor.extractor_id: CooccurrenceGraphExtractor,
         DependencyRelationsGraphExtractor.extractor_id: DependencyRelationsGraphExtractor,
         NerEntitiesGraphExtractor.extractor_id: NerEntitiesGraphExtractor,
-        SimpleEntityGraphExtractor.extractor_id: SimpleEntityGraphExtractor,
+        SimpleEntitiesGraphExtractor.extractor_id: SimpleEntitiesGraphExtractor,
     }
 
 

@@ -1539,6 +1539,8 @@ class MarkovAnalysisObservation(AnalysisSchemaModel):
     :vartype topic_label: str or None
     :ivar embedding: Optional embedding vector for the configured embedding text source.
     :vartype embedding: list[float] or None
+    :ivar token_count: Optional token count for the segment.
+    :vartype token_count: int or None
     """
 
     item_id: str = Field(min_length=1)
@@ -1550,6 +1552,7 @@ class MarkovAnalysisObservation(AnalysisSchemaModel):
     topic_id: Optional[int] = None
     topic_label: Optional[str] = None
     embedding: Optional[List[float]] = None
+    token_count: Optional[int] = Field(default=None, ge=0)
 
 
 class MarkovAnalysisState(AnalysisSchemaModel):

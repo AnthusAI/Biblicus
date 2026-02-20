@@ -80,11 +80,19 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
         if parsed is None:
             parsed = DependencyRelationsGraphConfig.model_validate(config)
 
-        entities = _extract_entities(
-            extracted_text=extracted_text,
-            model_name=parsed.model,
-            min_length=parsed.min_entity_length,
-        )
+        try:
+            entities = _extract_entities(
+                extracted_text=extracted_text,
+                model_name=parsed.model,
+                min_length=parsed.min_entity_length,
+            )
+            relations = _extract_relations(
+                extracted_text=extracted_text,
+                model_name=parsed.model,
+                min_length=parsed.min_entity_length,
+            )
+        except ValueError:
+            return GraphExtractionResult(item_id=item.id)
         entity_counts = Counter(entity for entity, _ in entities)
         entity_types = {entity: label for entity, label in entities}
 
@@ -101,11 +109,6 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
             nodes.insert(0, item_node)
             edges.extend(_build_mentions_edges(item_node.node_id, entity_counts))
 
-        relations = _extract_relations(
-            extracted_text=extracted_text,
-            model_name=parsed.model,
-            min_length=parsed.min_entity_length,
-        )
         edges.extend(_build_relation_edges(relations))
 
         return GraphExtractionResult(item_id=item.id, nodes=nodes, edges=edges)

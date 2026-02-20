@@ -36,7 +36,7 @@ class SimpleEntityGraphConfig(GraphSchemaModel):
     max_entity_words: int = Field(default=4, ge=1)
 
 
-class SimpleEntityGraphExtractor(GraphExtractor):
+class SimpleEntitiesGraphExtractor(GraphExtractor):
     """
     Graph extractor that emits entities and sentence-level co-occurrence edges.
     """
@@ -52,7 +52,13 @@ class SimpleEntityGraphExtractor(GraphExtractor):
         :return: Parsed configuration.
         :rtype: SimpleEntityGraphConfig
         """
-        return SimpleEntityGraphConfig.model_validate(config)
+        safe_config: Dict[str, object]
+        if isinstance(config, BaseModel):
+            safe_config = config.model_dump()
+        else:
+            safe_config = dict(config)
+        safe_config.pop("model", None)
+        return SimpleEntityGraphConfig.model_validate(safe_config)
 
     def extract_graph(
         self,
@@ -79,7 +85,7 @@ class SimpleEntityGraphExtractor(GraphExtractor):
         _ = corpus
         parsed = config if isinstance(config, SimpleEntityGraphConfig) else None
         if parsed is None:
-            parsed = SimpleEntityGraphConfig.model_validate(config)
+            parsed = self.validate_config(config)
         sentences = _split_sentences(extracted_text)
         entities_by_sentence = [
             _extract_entities(sentence, parsed.max_entity_words, parsed.min_entity_length)

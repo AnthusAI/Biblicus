@@ -154,6 +154,25 @@ class SourceProfileConfig(BaseModel):
         return self
 
 
+class AzureStorageUserConfig(BaseModel):
+    """
+    Azure Storage account configuration.
+
+    :ivar connection_string: Optional connection string for blob access.
+    :vartype connection_string: str or None
+    :ivar account_name: Optional storage account name.
+    :vartype account_name: str or None
+    :ivar account_key: Optional storage account key.
+    :vartype account_key: str or None
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    connection_string: Optional[str] = None
+    account_name: Optional[str] = None
+    account_key: Optional[str] = None
+
+
 class BiblicusUserConfig(BaseModel):
     """
     Parsed user configuration for Biblicus.
@@ -180,6 +199,7 @@ class BiblicusUserConfig(BaseModel):
     aldea: Optional[AldeaUserConfig] = None
     neo4j: Optional[Neo4jUserConfig] = None
     sources: Optional[list[SourceProfileConfig]] = None
+    azure_storage: Optional[AzureStorageUserConfig] = None
 
 
 def default_user_config_paths(

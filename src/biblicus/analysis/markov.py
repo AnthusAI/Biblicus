@@ -542,7 +542,6 @@ def _collect_documents(
     )
     if not documents:
         report = report.model_copy(update={"status": MarkovAnalysisStageStatus.FAILED})
-        raise ValueError("Markov analysis requires at least one extracted text document")
     return documents, report
 
 
@@ -946,8 +945,15 @@ def _apply_start_end_labels(
             prefix = markup_config.end_reject_label_value
             if reason:
                 prefix = f"{prefix}\n{markup_config.end_reject_reason_prefix}: {reason}"
+            existing_text = segments[-1].text
+            start_prefix = f"{markup_config.start_label_value}\n" if markup_config.start_label_value else ""
+            if start_prefix and existing_text.startswith(start_prefix):
+                body_text = existing_text[len(start_prefix) :]
+                updated = f"{start_prefix}{prefix}\n{body_text}"
+            else:
+                updated = f"{prefix}\n{existing_text}"
             segments[-1] = segments[-1].model_copy(
-                update={"text": f"{prefix}\n{segments[-1].text}"}
+                update={"text": updated}
             )
     return segments
 

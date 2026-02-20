@@ -31,9 +31,10 @@ class CategoryConfig:
 
     name: str
     dataset: str
-    corpus_path: Path
-    ground_truth_subdir: str
     primary_metric: str
+    pipelines: List[object] = field(default_factory=list)
+    corpus_path: Optional[Path] = None
+    ground_truth_subdir: Optional[str] = None
     subset_size: Optional[int] = None
     tags: List[str] = field(default_factory=list)
 
@@ -101,7 +102,73 @@ class CategoryResult:
     best_pipeline: str
     best_score: float
     primary_metric: str
+    primary_score: float
     processing_time_seconds: float
+
+
+def run_category(output_dir: Path, cat_config: CategoryConfig, runner: object) -> CategoryResult:
+    """
+    Execute a single benchmark category using a provided runner.
+
+    This utility is intentionally lightweight so tests can exercise the
+    primary-metric selection logic without needing full corpus assets.
+
+    :param output_dir: Directory where intermediate artifacts may be written.
+    :type output_dir: Path
+    :param cat_config: Parsed category configuration.
+    :type cat_config: CategoryConfig
+    :param runner: Object exposing ``run_pipeline(name)`` returning metrics.
+    :type runner: object
+    :return: CategoryResult summarizing the best pipeline.
+    :rtype: CategoryResult
+    """
+    _ = output_dir
+    start_time = time.time()
+    pipelines: List[Dict[str, Any]] = []
+    best_pipeline = ""
+    best_score = float("-inf")
+    documents_evaluated = 0
+
+    for pipeline in cat_config.pipelines:
+        pipeline_name = getattr(pipeline, "name", str(pipeline))
+        metrics_obj = runner.run_pipeline(pipeline_name)
+        metrics = {
+            "f1": getattr(metrics_obj, "avg_f1", None),
+            "recall": getattr(metrics_obj, "avg_recall", None),
+            "precision": getattr(metrics_obj, "avg_precision", None),
+            "wer": getattr(metrics_obj, "avg_word_error_rate", None),
+            "lcs_ratio": getattr(metrics_obj, "avg_lcs_ratio", None),
+            "bigram_overlap": getattr(metrics_obj, "avg_bigram_overlap", None),
+            "sequence_accuracy": getattr(metrics_obj, "avg_sequence_accuracy", None),
+        }
+        documents_evaluated = getattr(metrics_obj, "total_documents", documents_evaluated)
+        pipelines.append({"name": pipeline_name, "metrics": metrics})
+
+        primary_value = metrics.get(cat_config.primary_metric)
+        if primary_value is None:
+            primary_value = getattr(metrics_obj, f"avg_{cat_config.primary_metric}", None)
+        if primary_value is None:
+            continue
+        if primary_value > best_score:
+            best_score = primary_value
+            best_pipeline = pipeline_name
+
+    processing_time = time.time() - start_time
+
+    if best_score == float("-inf"):
+        best_score = 0.0
+
+    return CategoryResult(
+        category_name=cat_config.name,
+        dataset=cat_config.dataset,
+        documents_evaluated=documents_evaluated,
+        pipelines=pipelines,
+        best_pipeline=best_pipeline,
+        best_score=best_score,
+        primary_metric=cat_config.primary_metric,
+        primary_score=best_score,
+        processing_time_seconds=processing_time,
+    )
 
 
 @dataclass
@@ -398,6 +465,7 @@ class BenchmarkRunner:
             best_pipeline=best_pipeline,
             best_score=best_score,
             primary_metric=cat_config.primary_metric,
+            primary_score=best_score,
             processing_time_seconds=processing_time,
         )
 

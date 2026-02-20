@@ -385,6 +385,8 @@ def _merge_metadata(front: Dict[str, Any], side: Dict[str, Any]) -> Dict[str, An
     for metadata_key, metadata_value in side.items():
         if metadata_key in {"biblicus", "tags"}:
             continue
+        if metadata_key in merged_metadata:
+            continue
         merged_metadata[metadata_key] = metadata_value
 
     return merged_metadata

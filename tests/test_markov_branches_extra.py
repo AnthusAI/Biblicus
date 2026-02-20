@@ -1,6 +1,8 @@
+import json
 from pathlib import Path
 from types import SimpleNamespace
-import json
+
+import pytest
 
 from biblicus.analysis import markov
 from biblicus.analysis.models import MarkovAnalysisConfiguration, MarkovAnalysisTextSourceConfig

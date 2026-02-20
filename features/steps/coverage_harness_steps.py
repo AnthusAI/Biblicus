@@ -12460,7 +12460,7 @@ def step_exhaust_gaps(context) -> None:
             NerEntitiesGraphConfig,
         )
         from biblicus.graph.extractors.simple_entities import (
-            SimpleEntityGraphExtractor,
+            SimpleEntitiesGraphExtractor,
             SimpleEntityGraphConfig,
         )
         graph_corpus = _temp_corpus()
@@ -12487,7 +12487,7 @@ def step_exhaust_gaps(context) -> None:
             extracted_text="alpha beta",
             config=NerEntitiesGraphConfig(),
         )
-        SimpleEntityGraphExtractor().extract(
+        SimpleEntitiesGraphExtractor().extract(
             corpus=graph_corpus,
             item=item,
             extracted_text="alpha beta",
@@ -14299,7 +14299,7 @@ def step_exhaust_core(context) -> None:
             extracted_text="hello",
             config={"model": "en_core_web_sm"},
         )
-        simple_entities.SimpleEntityGraphExtractor().extract(
+        simple_entities.SimpleEntitiesGraphExtractor().extract(
             corpus=_temp_corpus(),
             item=_fake_text_item(_temp_corpus().root),
             extracted_text="hello",

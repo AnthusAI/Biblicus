@@ -205,7 +205,7 @@ def test_ner_entities_validates_config_dict(monkeypatch):
 
 
 def test_simple_entities_validates_config_dict():
-    extractor = simple_entities.SimpleEntityGraphExtractor()
+    extractor = simple_entities.SimpleEntitiesGraphExtractor()
     extraction = extractor.extract_graph(
         corpus=SimpleNamespace(),
         item=SimpleNamespace(id="i1", title="t", relpath="r"),

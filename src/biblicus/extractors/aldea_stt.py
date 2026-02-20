@@ -29,6 +29,10 @@ class AldeaSpeechToTextExtractorConfig(BaseModel):
     :vartype diarization: bool
     :ivar timestamps: Whether to include per-word timestamps in response.
     :vartype timestamps: bool
+    :ivar api_key: Optional override for the Aldea API key.
+    :vartype api_key: str or None
+    :ivar url: Endpoint for the Aldea transcription API.
+    :vartype url: str
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -36,6 +40,8 @@ class AldeaSpeechToTextExtractorConfig(BaseModel):
     language: Optional[str] = Field(default=None, min_length=1)
     diarization: bool = Field(default=False)
     timestamps: bool = Field(default=False)
+    api_key: Optional[str] = Field(default=None, min_length=1)
+    url: str = Field(default=ALDEA_LISTEN_URL, min_length=1)
 
 
 class AldeaSpeechToTextExtractor(TextExtractor):
@@ -61,15 +67,8 @@ class AldeaSpeechToTextExtractor(TextExtractor):
         :rtype: AldeaSpeechToTextExtractorConfig
         :raises ExtractionSnapshotFatalError: If the optional dependency or required environment is missing.
         """
-        try:
-            import httpx  # noqa: F401
-        except ImportError as import_error:
-            raise ExtractionSnapshotFatalError(
-                "Aldea speech to text extractor requires an optional dependency. "
-                'Install it with pip install "biblicus[aldea]".'
-            ) from import_error
-
-        api_key = resolve_aldea_api_key()
+        parsed = AldeaSpeechToTextExtractorConfig.model_validate(config)
+        api_key = parsed.api_key or resolve_aldea_api_key()
         if api_key is None:
             raise ExtractionSnapshotFatalError(
                 "Aldea speech to text extractor requires an Aldea API key. "
@@ -77,7 +76,7 @@ class AldeaSpeechToTextExtractor(TextExtractor):
                 "aldea.api_key."
             )
 
-        return AldeaSpeechToTextExtractorConfig.model_validate(config)
+        return parsed.model_copy(update={"api_key": api_key})
 
     def extract_text(
         self,
@@ -112,7 +111,7 @@ class AldeaSpeechToTextExtractor(TextExtractor):
             else AldeaSpeechToTextExtractorConfig.model_validate(config)
         )
 
-        api_key = resolve_aldea_api_key()
+        api_key = parsed_config.api_key or resolve_aldea_api_key()
         if api_key is None:
             raise ExtractionSnapshotFatalError(
                 "Aldea speech to text extractor requires an Aldea API key. "
@@ -121,7 +120,7 @@ class AldeaSpeechToTextExtractor(TextExtractor):
             )
 
         try:
-            import httpx
+            import httpx  # noqa: F401
         except ImportError as import_error:
             raise ExtractionSnapshotFatalError(
                 "Aldea speech to text extractor requires an optional dependency. "
@@ -129,8 +128,11 @@ class AldeaSpeechToTextExtractor(TextExtractor):
             ) from import_error
 
         source_path = corpus.root / item.relpath
-        with source_path.open("rb") as audio_handle:
-            audio_data = audio_handle.read()
+        try:
+            with source_path.open("rb") as audio_handle:
+                audio_data = audio_handle.read()
+        except FileNotFoundError:
+            return ExtractedText(text="", producer_extractor_id=self.extractor_id, metadata={"aldea": {}})
 
         params: Dict[str, Any] = {}
         if parsed_config.language is not None:
@@ -144,8 +146,10 @@ class AldeaSpeechToTextExtractor(TextExtractor):
         if parsed_config.timestamps:
             headers["timestamps"] = "true"
 
+        import httpx
+
         response = httpx.post(
-            ALDEA_LISTEN_URL,
+            parsed_config.url,
             content=audio_data,
             params=params if params else None,
             headers=headers,

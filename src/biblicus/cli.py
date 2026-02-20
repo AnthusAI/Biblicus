@@ -48,6 +48,38 @@ from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
 
 
+def _get_or_build_extraction_snapshot(
+    *,
+    corpus: Corpus,
+    recipe_path: Path,
+    analysis_label: str,
+) -> ExtractionSnapshotReference:
+    """
+    Reuse the latest extraction snapshot when available, otherwise build one.
+
+    This helper keeps the CLI logic small and is intentionally minimal: it falls
+    back to the pipeline extractor with an empty configuration when no recipe is
+    provided.
+    """
+    existing = corpus.latest_extraction_snapshot_reference(extractor_id="pipeline")
+    if existing is not None:
+        return existing
+
+    extractor_id = "pipeline"
+    config: Dict[str, object] = {}
+    if recipe_path.exists():
+        try:
+            with recipe_path.open("r", encoding="utf-8") as handle:
+                recipe_data = json.load(handle)
+            extractor_id = recipe_data.get("extractor_id", extractor_id)
+            config = recipe_data.get("config", config)
+        except Exception:
+            pass
+
+    snapshot = corpus.extract(extractor_id=extractor_id, config=config, label=analysis_label)
+    return ExtractionSnapshotReference(extractor_id=extractor_id, snapshot_id=snapshot.snapshot_id)
+
+
 def _add_common_corpus_arg(parser: argparse.ArgumentParser) -> None:
     """
     Add the common --corpus argument to a parser.
@@ -1441,7 +1473,10 @@ def cmd_benchmark_download(arguments: argparse.Namespace) -> int:
     """
     import subprocess
 
-    datasets = [d.strip() for d in arguments.datasets.split(",")]
+    if isinstance(arguments.datasets, str):
+        datasets = [d.strip() for d in arguments.datasets.split(",")]
+    else:
+        datasets = [str(d).strip() for d in arguments.datasets]
     corpus_dir = Path(arguments.corpus_dir)
     count = arguments.count
     force = arguments.force

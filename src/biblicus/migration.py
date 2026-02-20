@@ -11,6 +11,7 @@ from typing import Dict, Optional
 
 from .constants import (
     ANALYSIS_DIR_NAME,
+    SCHEMA_VERSION,
     CORPUS_DIR_NAME,
     EXTRACTED_DIR_NAME,
     GRAPH_DIR_NAME,
@@ -18,6 +19,7 @@ from .constants import (
     RETRIEVAL_DIR_NAME,
 )
 from .models import CorpusCatalog, CorpusConfig, RetrievalSnapshot
+from .time import utc_now_iso
 
 
 def migrate_layout(*, corpus_root: Path, force: bool = False) -> Dict[str, int]:
@@ -54,23 +56,35 @@ def migrate_layout(*, corpus_root: Path, force: bool = False) -> Dict[str, int]:
 
     shutil.move(str(old_meta), str(new_meta))
 
-    _migrate_raw_items(root=root, force=force, stats=stats)
+    _migrate_raw_items(root=root, meta_dir=new_meta, force=force, stats=stats)
     _migrate_snapshots(root=root, meta_dir=new_meta, force=force, stats=stats)
     _update_config_and_catalog(meta_dir=new_meta, stats=stats)
 
     return stats
 
 
-def _migrate_raw_items(*, root: Path, force: bool, stats: Dict[str, int]) -> None:
-    old_raw = root / "raw"
-    if not old_raw.is_dir():
-        return
-    for entry in old_raw.iterdir():
-        dest = root / entry.name
-        _move_entry(entry, dest, force=force)
-        stats["moved_raw_items"] += 1
-    if old_raw.exists():
-        shutil.rmtree(old_raw)
+def _migrate_raw_items(
+    *, root: Path, meta_dir: Optional[Path] = None, force: bool, stats: Dict[str, int]
+) -> None:
+    meta_dir = meta_dir or (root / CORPUS_DIR_NAME)
+    candidate_sources = [meta_dir / "raw", root / "raw"]
+    target_raw = root / "raw"
+    target_existed = target_raw.exists()
+    for source in candidate_sources:
+        if not source.is_dir():
+            continue
+        if source.resolve() == target_raw.resolve():
+            if target_existed:
+                for _ in source.iterdir():
+                    stats["moved_raw_items"] += 1
+                shutil.rmtree(source)
+            continue
+        target_raw.mkdir(parents=True, exist_ok=True)
+        for entry in source.iterdir():
+            dest = target_raw / entry.name
+            _move_entry(entry, dest, force=force)
+            stats["moved_raw_items"] += 1
+        shutil.rmtree(source)
 
 
 def _migrate_snapshots(
@@ -197,6 +211,18 @@ def _update_config_and_catalog(*, meta_dir: Path, stats: Dict[str, int]) -> None
         config = CorpusConfig.model_validate(json.loads(config_path.read_text(encoding="utf-8")))
         updated_config = config.model_copy(update={"raw_dir": "."})
         config_path.write_text(updated_config.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    else:
+        default_config = CorpusConfig(
+            schema_version=SCHEMA_VERSION,
+            created_at=utc_now_iso(),
+            corpus_uri=meta_dir.parent.resolve().as_uri(),
+            raw_dir=".",
+            notes=None,
+            hooks=None,
+            source=None,
+            collection=None,
+        )
+        config_path.write_text(default_config.model_dump_json(indent=2) + "\n", encoding="utf-8")
     if catalog_path.is_file():
         catalog = CorpusCatalog.model_validate(json.loads(catalog_path.read_text(encoding="utf-8")))
         updated_items = {}

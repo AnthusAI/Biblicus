@@ -34,7 +34,7 @@ from biblicus.cli import cmd_graph_extract
 from biblicus.graph.extractors.cooccurrence import CooccurrenceGraphExtractor, _windowed
 from biblicus.graph.extractors.dependency_relations import DependencyRelationsGraphExtractor
 from biblicus.graph.extractors.ner_entities import NerEntitiesGraphExtractor
-from biblicus.graph.extractors.simple_entities import SimpleEntityGraphExtractor
+from biblicus.graph.extractors.simple_entities import SimpleEntitiesGraphExtractor
 from biblicus.models import CatalogItem, ExtractionSnapshotReference
 
 
@@ -579,14 +579,14 @@ def step_extract_cooccurrence_high_min(context) -> None:
 
 @when('I extract simple entity graph edges from "{text}"')
 def step_extract_simple_entities(context, text: str) -> None:
-    extractor = SimpleEntityGraphExtractor()
+    extractor = SimpleEntitiesGraphExtractor()
     result = extractor.extract_graph(corpus=Corpus.init(context.workdir / "corpus", force=True), item=_sample_item(), extracted_text=text, config={"min_entity_length": 3, "max_entity_words": 2, "include_item_node": True})
     context._graph_results.append(result)
 
 
 @when('I extract simple entity graph edges with minimum length {min_length:d} from "{text}"')
 def step_extract_simple_entities_min_length(context, min_length: int, text: str) -> None:
-    extractor = SimpleEntityGraphExtractor()
+    extractor = SimpleEntitiesGraphExtractor()
     result = extractor.extract_graph(
         corpus=Corpus.init(context.workdir / "corpus", force=True),
         item=_sample_item(),
@@ -598,7 +598,7 @@ def step_extract_simple_entities_min_length(context, min_length: int, text: str)
 
 @when("I extract simple entity graph edges without item node")
 def step_extract_simple_entities_no_item(context) -> None:
-    extractor = SimpleEntityGraphExtractor()
+    extractor = SimpleEntitiesGraphExtractor()
     result = extractor.extract_graph(corpus=Corpus.init(context.workdir / "corpus", force=True), item=_sample_item(), extracted_text="Alice and BOB", config={"min_entity_length": 3, "max_entity_words": 2, "include_item_node": False})
     context._graph_results.append(result)
 

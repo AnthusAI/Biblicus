@@ -599,13 +599,39 @@ def build_extraction_snapshot(
         text_relpath = str(Path("stages") / stage_dir_name / "text" / f"{item.id}.txt")
         text_path = snapshot_dir / text_relpath
         if not text_path.is_file():
-            return None
-        text_value = text_path.read_text(encoding="utf-8")
+            legacy_text_path = next(
+                (
+                    path
+                    for path in snapshot_dir.parent.glob(f"*/stages/{stage_dir_name}/text/{item.id}.txt")
+                    if path.is_file()
+                ),
+                None,
+            )
+            if legacy_text_path is None:
+                return None
+            text_value = legacy_text_path.read_text(encoding="utf-8")
+            text_path.parent.mkdir(parents=True, exist_ok=True)
+            text_path.write_text(text_value, encoding="utf-8")
+        else:
+            text_value = text_path.read_text(encoding="utf-8")
         metadata_relpath = str(Path("stages") / stage_dir_name / "metadata" / f"{item.id}.json")
         metadata_path = snapshot_dir / metadata_relpath
         metadata_value: Dict[str, Any] = {}
         if metadata_path.is_file():
             metadata_value = json.loads(metadata_path.read_text(encoding="utf-8"))
+        else:
+            legacy_metadata_path = next(
+                (
+                    path
+                    for path in snapshot_dir.parent.glob(f"*/stages/{stage_dir_name}/metadata/{item.id}.json")
+                    if path.is_file()
+                ),
+                None,
+            )
+            if legacy_metadata_path is not None:
+                metadata_value = json.loads(legacy_metadata_path.read_text(encoding="utf-8"))
+                metadata_path.parent.mkdir(parents=True, exist_ok=True)
+                metadata_path.write_text(legacy_metadata_path.read_text(encoding="utf-8"), encoding="utf-8")
         stage_result = ExtractionStageResult(
             stage_index=stage_index,
             extractor_id=extractor_id,
@@ -657,6 +683,28 @@ def build_extraction_snapshot(
         final_text_relpath = str(Path("text") / f"{item.id}.txt")
         final_metadata_relpath = str(Path("metadata") / f"{item.id}.json")
         final_text_path = snapshot_dir / final_text_relpath
+
+        if not force and not final_text_path.is_file():
+            legacy_text_path = next(
+                (
+                    path
+                    for path in snapshot_dir.parent.glob(f"*/text/{item.id}.txt")
+                    if path.is_file()
+                ),
+                None,
+            )
+            if legacy_text_path is not None:
+                legacy_text = legacy_text_path.read_text(encoding="utf-8")
+                final_text_path.parent.mkdir(parents=True, exist_ok=True)
+                final_text_path.write_text(legacy_text, encoding="utf-8")
+                legacy_metadata_path = legacy_text_path.parent.parent / "metadata" / f"{item.id}.json"
+                if legacy_metadata_path.is_file():
+                    legacy_metadata_dest = snapshot_dir / final_metadata_relpath
+                    legacy_metadata_dest.parent.mkdir(parents=True, exist_ok=True)
+                    legacy_metadata_dest.write_text(
+                        legacy_metadata_path.read_text(encoding="utf-8"),
+                        encoding="utf-8",
+                    )
 
         if not force and final_text_path.is_file():
             final_text_value = final_text_path.read_text(encoding="utf-8")

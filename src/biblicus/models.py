@@ -799,3 +799,9 @@ class ExtractionStageOutput(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
     error_type: Optional[str] = None
     error_message: Optional[str] = None
+
+
+# Expose graph extraction results without duplicating schema definitions.
+from importlib import import_module
+
+GraphExtractionResult = import_module("biblicus.graph.models").GraphExtractionResult
