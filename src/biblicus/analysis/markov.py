@@ -542,6 +542,8 @@ def _collect_documents(
     )
     if not documents:
         report = report.model_copy(update={"status": MarkovAnalysisStageStatus.FAILED})
+        if config.sample_size is None:
+            raise ValueError("Markov analysis requires at least one extracted text document")
     return documents, report
 
 
