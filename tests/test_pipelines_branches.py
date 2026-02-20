@@ -11,6 +11,8 @@ from biblicus.corpus import Corpus
 def test_normalize_extraction_configuration_validates_max_workers():
     with pytest.raises(ValueError):
         pipelines._normalize_extraction_configuration({"max_workers": 0})
+    with pytest.raises(ValueError):
+        pipelines._normalize_extraction_configuration({"max_workers": True})
     extractor_id, config, workers = pipelines._normalize_extraction_configuration(
         {"extractor_id": "pass-through-text", "configuration": {"foo": "bar"}}
     )
