@@ -385,3 +385,66 @@ def test_aws_transcribe_failed_status_covers_cleanup(monkeypatch, tmp_path):
     with pytest.raises(ExtractionSnapshotFatalError):
         extractor.extract_text(corpus=corpus, item=item, config=config, previous_extractions=[])
     assert fake_transcribe.deleted and fake_s3.deleted
+
+
+def test_aws_transcribe_timeout_triggers_cleanup(monkeypatch, tmp_path):
+    class FakeTranscribe:
+        def __init__(self):
+            self.deleted = False
+            self.calls = 0
+
+        def start_transcription_job(self, **kwargs):
+            return None
+
+        def get_transcription_job(self, TranscriptionJobName):
+            self.calls += 1
+            return {
+                "TranscriptionJob": {
+                    "TranscriptionJobStatus": "IN_PROGRESS",
+                    "Transcript": {"TranscriptFileUri": "http://example.com"},
+                }
+            }
+
+        def delete_transcription_job(self, TranscriptionJobName):
+            self.deleted = True
+
+    class FakeS3:
+        def __init__(self):
+            self.deleted = False
+
+        def upload_fileobj(self, fileobj, bucket, key):
+            return None
+
+        def delete_object(self, Bucket, Key):
+            self.deleted = True
+
+    fake_transcribe = FakeTranscribe()
+    fake_s3 = FakeS3()
+
+    class FakeBoto3(ModuleType):
+        def client(self, name, region_name=None):
+            if name == "transcribe":
+                return fake_transcribe
+            if name == "s3":
+                return fake_s3
+            raise ValueError(name)
+
+    sys.modules["boto3"] = FakeBoto3("boto3")
+    monkeypatch.setattr("time.sleep", lambda s: None)
+
+    extractor = AwsTranscribeSpeechToTextExtractor()
+    config = AwsTranscribeSpeechToTextExtractorConfig(
+        language_code="en-US",
+        region_name="us-east-1",
+        s3_bucket="bucket",
+        poll_interval_seconds=1,
+        max_wait_seconds=2,
+    )
+    item = _fake_corpus_with_file(tmp_path, "clip.wav", "audio/wav")
+    corpus = Corpus(tmp_path)
+
+    with pytest.raises(ExtractionSnapshotFatalError, match="timed out"):
+        extractor.extract_text(corpus=corpus, item=item, config=config, previous_extractions=[])
+
+    assert fake_transcribe.deleted and fake_s3.deleted
+    assert fake_transcribe.calls >= 2
