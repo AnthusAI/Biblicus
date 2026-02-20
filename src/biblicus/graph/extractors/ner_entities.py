@@ -80,14 +80,11 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         if parsed is None:
             parsed = NerEntitiesGraphConfig.model_validate(config)
 
-        try:
-            entities = _extract_entities(
-                extracted_text=extracted_text,
-                model_name=parsed.model,
-                min_length=parsed.min_entity_length,
-            )
-        except ValueError:
-            return GraphExtractionResult(item_id=item.id)
+        entities = _extract_entities(
+            extracted_text=extracted_text,
+            model_name=parsed.model,
+            min_length=parsed.min_entity_length,
+        )
         entity_counts = Counter(entity for entity, _ in entities)
         entity_types = {entity: label for entity, label in entities}
 
