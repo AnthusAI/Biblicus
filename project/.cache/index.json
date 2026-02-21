@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-02-20T08:20:40Z",
+  "built_at": "2026-02-21T00:52:14Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1771273691.474875,
     "Biblicus-0mo.json": 1771273691.474949,
@@ -8,7 +8,7 @@
     "Biblicus-4sx.json": 1771273691.475153,
     "Biblicus-51c.json": 1771273691.475217,
     "Biblicus-5fp.json": 1771273691.475274,
-    "Biblicus-5rt.json": 1771486555.336037,
+    "Biblicus-5rt.json": 1771595952.63246,
     "Biblicus-6du.json": 1771273691.475384,
     "Biblicus-788.json": 1771453684.557389,
     "Biblicus-7k4.json": 1771273691.475503,
@@ -48,7 +48,7 @@
     "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1771566540.430013,
     "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1771290259.974393,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1771566540.430452,
-    "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1771573648.136604
+    "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1771634779.734092
   },
   "issues": [
     {
@@ -198,7 +198,44 @@
     {
       "assignee": null,
       "closed_at": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:21:07.820029Z",
+          "id": "9eebcd08-1832-4aa6-ad64-13cf761bcc0e",
+          "text": "Investigating CI coverage gate failures. GH Actions shows coverage 99% despite local 100% run. Pulling logs to find uncovered branches and adding targeted tests."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:27:57.732244Z",
+          "id": "fa7ddea3-9e6a-4dfa-b049-ea5637da3924",
+          "text": "Added unit tests covering Markov sample_size truncation and topic-modeling invalid entity spans (commit 067b09b). Pushed to main; monitoring CI."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:34:41.139188Z",
+          "id": "e671031e-4c8f-4796-88ef-1f91ef3778af",
+          "text": "Graph extractors now propagate spaCy missing errors to satisfy graph NLP dependency scenarios; committed fix 324503c."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:40:06.294274Z",
+          "id": "3ae3f7c7-a683-4b47-b551-4cec7eb1145a",
+          "text": "Adjusted graph extractor branch tests to expect ValueError when spaCy is unavailable; pushed commit 5de1c4a."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:48:31.863838Z",
+          "id": "f77babf3-f508-4b6b-b9bd-ded81c3f7582",
+          "text": "Added coverage tests for simple_entities, graph extractor min-length skips, and retrieval snapshot listing to close remaining branches. Local pytest green; pushing."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T13:59:12.631962Z",
+          "id": "ee11efd6-f07f-4371-a45d-480e82876289",
+          "text": "Patched pipeline analysis to pass extraction_snapshot into profiling backend; fixed coverage harness CategoryResult construction to avoid primary_score error. Re-running CI."
+        }
+      ],
       "created_at": "2026-02-15T17:34:00.173860Z",
       "creator": "Ryan Alyn Porter",
       "custom": {
@@ -210,10 +247,10 @@
       "labels": [],
       "parent": null,
       "priority": 1,
-      "status": "open",
+      "status": "in_progress",
       "title": "Restore 100% coverage and fix coverage harness",
       "type": "task",
-      "updated_at": "2026-02-15T17:34:00.173860Z"
+      "updated_at": "2026-02-20T13:59:12.631962Z"
     },
     {
       "assignee": null,
@@ -1249,8 +1286,21 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
-      "comments": [],
+      "closed_at": "2026-02-21T00:46:11.067139Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-20T23:33:24.951530Z",
+          "id": "b02d351a-4bff-4518-8200-bd96d382197f",
+          "text": "Ran behave after reboot: remote_collection_azure, collection_partitions, pipeline_recipes all green (conda py311). Collections mirror/prune, partition tagging, and pipeline recipes now verified."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-02-21T00:46:19.734011Z",
+          "id": "a3bfc462-c54c-42c3-8026-f66d9a750126",
+          "text": "Closed. Collections + pipeline recipes delivered: docs, models, CLI, and Behave specs passing (remote_collection_azure, collection_partitions, pipeline_recipes)."
+        }
+      ],
       "created_at": "2026-02-19T23:24:24.345678Z",
       "creator": null,
       "custom": {},
@@ -1260,10 +1310,10 @@
       "labels": [],
       "parent": null,
       "priority": 2,
-      "status": "open",
+      "status": "closed",
       "title": "Remote collections and pipeline recipes",
       "type": "epic",
-      "updated_at": "2026-02-19T23:24:24.345678Z"
+      "updated_at": "2026-02-21T00:46:19.734011Z"
     }
   ],
   "reverse_deps": {},

@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 *.egg-info/
 build/
+console.log
 
 .coverage
 coverage.json

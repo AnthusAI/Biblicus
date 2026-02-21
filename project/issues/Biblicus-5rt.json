@@ -40,10 +40,16 @@
       "author": "ryan.porter",
       "text": "Added coverage tests for simple_entities, graph extractor min-length skips, and retrieval snapshot listing to close remaining branches. Local pytest green; pushing.",
       "created_at": "2026-02-20T13:48:31.863838Z"
+    },
+    {
+      "id": "ee11efd6-f07f-4371-a45d-480e82876289",
+      "author": "ryan.porter",
+      "text": "Patched pipeline analysis to pass extraction_snapshot into profiling backend; fixed coverage harness CategoryResult construction to avoid primary_score error. Re-running CI.",
+      "created_at": "2026-02-20T13:59:12.631962Z"
     }
   ],
   "created_at": "2026-02-15T17:34:00.173860Z",
-  "updated_at": "2026-02-20T13:48:31.863838Z",
+  "updated_at": "2026-02-20T13:59:12.631962Z",
   "closed_at": null,
   "custom": {
     "beads_owner": "rap@endymion.com"
