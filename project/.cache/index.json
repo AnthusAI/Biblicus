@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-05T02:23:09Z",
+  "built_at": "2026-03-05T04:44:46Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1771273691.474875,
     "Biblicus-0mo.json": 1771273691.474949,
@@ -30,7 +30,8 @@
     "Biblicus-yr4.json": 1771273691.476564,
     "blbs-0085bfe9-dca3-473e-b9cb-765052a34240.json": 1771566540.424804,
     "blbs-05fe0bd1-806f-4f1f-95dd-d95445e53cab.json": 1771566540.425095,
-    "blbs-1c169961-d916-4594-9dca-e7cc5e253db3.json": 1772677288.502603,
+    "blbs-1b295536-5753-4a67-b7a2-f1cdfff59390.json": 1772685031.369727,
+    "blbs-1c169961-d916-4594-9dca-e7cc5e253db3.json": 1772681041.713407,
     "blbs-1ffc4162-6688-4d17-bd57-83dbb3b22263.json": 1771476460.86821,
     "blbs-22be8a87-575b-4f44-8883-dda971c99c71.json": 1771566540.425452,
     "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08.json": 1772665948.377604,
@@ -39,17 +40,21 @@
     "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1771566540.426432,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1771635193.202607,
     "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1772665721.651532,
+    "blbs-7a566888-792b-4664-86f3-71a9d4e9accf.json": 1772685471.083742,
     "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1771566540.427558,
     "blbs-9355e702-3ef3-4aab-b15a-d4869d9d0a58.json": 1771570388.154926,
     "blbs-9d599111-36cc-4b3c-a327-a34389150675.json": 1771570388.154429,
     "blbs-a0e65267-c651-4fe7-871b-f2ab4c44e609.json": 1771570388.154086,
+    "blbs-a1b092c0-0463-44be-84b7-dcf7c339425d.json": 1772685287.078913,
     "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4.json": 1771566540.428712,
     "blbs-acf5a662-3e7b-450e-900f-b5acbf423a3b.json": 1771566540.429089,
     "blbs-ba86e064-80ee-4884-b8f6-a72ea5ceebc0.json": 1772665721.699099,
     "blbs-bfaab6f3-2daa-477d-afca-18d146b65c6f.json": 1771570388.153711,
     "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1772665100.497779,
     "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1771290259.974393,
+    "blbs-e1b3a82b-ef75-4b50-b99c-ee6578f723c7.json": 1772683833.996846,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1771566540.430452,
+    "blbs-ead8d212-a68b-45b5-8d08-ce2c5da2f21e.json": 1772685834.779335,
     "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1771634779.734092,
     "blbs-ff55d2ab-021d-4961-b0ab-19239ffadf03.json": 1772665721.733671
   },
@@ -703,7 +708,44 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
+      "closed_at": "2026-03-05T04:30:31.369572Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:27:37.638790Z",
+          "id": "e5143913-7d99-4ad1-b358-8ff33979dd5e",
+          "text": "Plan: enable topic_modeling.llm_extraction to extract key customer intent per transcript, then rerun topic modeling for residio."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:28:32.801864Z",
+          "id": "d0cef2b2-23e6-48ad-8c72-36ecfa1d3aa1",
+          "text": "Topic modeling run started (residio-topic-intent). LLM intent extraction in progress: 50/231 docs (~1.55/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:30:24.510338Z",
+          "id": "2595e880-4e56-444f-a3eb-08a9c56d0192",
+          "text": "Topic modeling complete: snapshot bc5f0dfc... (residio-topic-intent). Artifacts in corpora/residio-google-drive/analysis/topic-modeling/bc5f0dfc.../output.json."
+        }
+      ],
+      "created_at": "2026-03-05T04:27:23.344358Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-1b295536-5753-4a67-b7a2-f1cdfff59390",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Topic modeling on key customer intent",
+      "type": "task",
+      "updated_at": "2026-03-05T04:30:31.369572Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-03-05T03:24:01.713053Z",
       "comments": [
         {
           "author": "ryan.porter",
@@ -728,6 +770,132 @@
           "created_at": "2026-03-05T02:21:28.502202Z",
           "id": "863d4e65-7980-48cf-9806-375e40c4f3a8",
           "text": "Stopped slow span_markup run. Switching to faster LLM JSON segmentation for high-level phases (still labels each phase with noun-phrase + exemplar quote). Updated configurations/analysis/residio-markov-conversation.yml accordingly and will rerun sample + full."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:23:27.858758Z",
+          "id": "0ad4dc58-470e-44ce-8525-b5bd02455ec1",
+          "text": "Progress: updated configurations/analysis/residio-markov-conversation.yml to use LLM JSON segmentation (verbatim text spans) + LLM noun-phrase+quote labels. Sample run completed with larger segments and llm_label in observations.jsonl. Next: run full analysis with extraction snapshot pipeline:a92c0e..., then generate GraphViz PNG artifact from transitions.dot."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:24:18.434340Z",
+          "id": "d3390f8d-8bdb-477a-9ac7-1c1aee463be8",
+          "text": "Started full markov run using updated LLM segmentation config. Snapshot: 1e802bbcad8c2550800adc5f0cdfec8d5fb5c98c63d1aefc1ed0571dc18ea1d5 (extraction pipeline:a92c0e...). Will generate transitions.png after completion."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:27:04.270311Z",
+          "id": "233a2362-a29c-4854-85f9-b51fceb0bc5a",
+          "text": "Run progress: segmentation 25/230 docs after 183.9s (~0.14/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:29:37.383782Z",
+          "id": "f2ace0c8-9370-4db5-9397-9243a7cd5140",
+          "text": "Run progress: segmentation 50/230 docs after 341.4s (~0.15/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:31:53.327626Z",
+          "id": "771fedd5-3add-4abf-8170-85f54eaf98c2",
+          "text": "Run progress: segmentation 75/230 docs after 474.6s (~0.16/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:34:58.766697Z",
+          "id": "737efb6d-429c-43ea-97b3-1c7120bb2b0e",
+          "text": "Run progress: segmentation 100/230 docs after 657.3s (~0.15/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:37:39.957225Z",
+          "id": "807348f0-4bc6-48c7-a116-e2873418db2e",
+          "text": "Run progress: segmentation 125/230 docs after 819.7s (~0.15/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:40:12.183076Z",
+          "id": "25456a5f-f479-49b1-885a-f5405851c176",
+          "text": "Run progress: segmentation 150/230 docs after 970.6s (~0.15/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:41:27.451171Z",
+          "id": "c28d393f-3f42-47bb-ab2f-e17324605583",
+          "text": "Run progress: segmentation 175/230 docs after 1048.6s (~0.17/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:44:23.826690Z",
+          "id": "a57b953c-65e4-42c4-b027-030f96e6a5f4",
+          "text": "Run progress: segmentation 200/230 docs after 1219.5s (~0.16/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:47:12.744989Z",
+          "id": "623eaef3-d26e-4b2d-9335-c09e002242df",
+          "text": "Run progress: segmentation 225/230 docs after 1390.6s (~0.16/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:48:41.348471Z",
+          "id": "048f8c68-3293-4b97-a6b8-24b1a2e62794",
+          "text": "Segmentation complete: 230/230 docs, 6926 segments. Labeling 6466 segments with 4 workers now."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:53:40.707810Z",
+          "id": "73d9394b-6f8c-45d0-8e94-c236aab1d8bf",
+          "text": "Labeling progress: 1000/6466 segments (~3.31/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:58:13.998945Z",
+          "id": "17d90184-8d61-4e40-bdc0-217d906dd0c7",
+          "text": "Labeling progress: 2000/6466 segments (~3.49/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:02:24.251612Z",
+          "id": "33a7fffd-2f00-464e-88e3-f7a44f1c5bb5",
+          "text": "Labeling progress: 3000/6466 segments (~3.66/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:08:06.184132Z",
+          "id": "837e9ea0-8e98-41cd-9a1b-4eefbd218249",
+          "text": "Labeling progress: 4000/6466 segments (~3.45/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:11:45.314427Z",
+          "id": "134a720e-d588-4962-88cb-7e0906881bb5",
+          "text": "Labeling progress: 5000/6466 segments (~3.61/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:18:28.328551Z",
+          "id": "d93c60e1-a081-48ae-b9f7-f265e33b8efe",
+          "text": "Run complete: snapshot 1e802bbcad8c2550800adc5f0cdfec8d5fb5c98c63d1aefc1ed0571dc18ea1d5. Generated GraphViz PNG at corpora/residio-google-drive/analysis/markov/1e802.../transitions.png. Next: surface exemplar outputs and finalize artifacts."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:21:27.969061Z",
+          "id": "aad63b39-d219-40f5-8f40-a374f274c93d",
+          "text": "Topic modeling run started with configurations/analysis/residio-topic.yml after installing spaCy + en_core_web_sm. Progress: entity removal 50/231 docs (rate ~4.3/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:23:01.853926Z",
+          "id": "82564e3c-3baa-4588-91c3-4baea45c7b45",
+          "text": "Topic modeling complete: snapshot c5fd8719c911882db2e6fa5df602b00fb81a9d44a3d7450c80e9eca665b5cce4. Artifacts in corpora/residio-google-drive/analysis/topic-modeling/c5fd... (output.json, entity_removal.jsonl). output.json includes topics with exemplar documents."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:23:58.171223Z",
+          "id": "eb570bf9-33ff-4639-bd8d-7b256bce485a",
+          "text": "Note: Markov fit warns about many parameters vs data (n_states=10, segments=6926). If we want a more stable HMM, consider reducing n_states or tfidf max_features in a follow-up."
         }
       ],
       "created_at": "2026-03-05T01:19:02.230829Z",
@@ -739,10 +907,10 @@
       "labels": [],
       "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
       "priority": 2,
-      "status": "blocked",
+      "status": "closed",
       "title": "Apply Alfa LLM segmentation to residio HMM and generate artifacts",
       "type": "story",
-      "updated_at": "2026-03-05T02:21:28.502202Z"
+      "updated_at": "2026-03-05T03:24:01.713053Z"
     },
     {
       "assignee": null,
@@ -1136,6 +1304,31 @@
     },
     {
       "assignee": null,
+      "closed_at": "2026-03-05T04:37:51.083635Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:37:23.377958Z",
+          "id": "06593a1d-696d-40b6-a4b2-e1d35de6e2ae",
+          "text": "Implemented cleanup for GoogleDriveRemoteSource (close + context manager + __del__) and added test."
+        }
+      ],
+      "created_at": "2026-03-05T04:37:09.659762Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-7a566888-792b-4664-86f3-71a9d4e9accf",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Fix GoogleDriveRemoteSource temp dir cleanup",
+      "type": "bug",
+      "updated_at": "2026-03-05T04:37:51.083635Z"
+    },
+    {
+      "assignee": null,
       "closed_at": "2026-02-19T05:43:37.523262Z",
       "comments": [
         {
@@ -1218,6 +1411,37 @@
       "title": "PR-FAQ: collections and pipeline recipes",
       "type": "task",
       "updated_at": "2026-02-19T23:25:11.701936Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-03-05T04:34:47.078784Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:33:58.513594Z",
+          "id": "ac3f4ddd-4113-4d9c-9545-90ba0617c448",
+          "text": "Creating Markdown report from intent-based topic modeling output (snapshot bc5f0dfc...)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:34:39.839921Z",
+          "id": "dc4d41d9-9491-4885-90bb-bf1329ff0243",
+          "text": "Markdown report generated at reports/topic-modeling/residio-topic-intent.md."
+        }
+      ],
+      "created_at": "2026-03-05T04:33:47.475835Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-a1b092c0-0463-44be-84b7-dcf7c339425d",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Generate residio topic modeling markdown report",
+      "type": "task",
+      "updated_at": "2026-03-05T04:34:47.078784Z"
     },
     {
       "assignee": null,
@@ -1380,6 +1604,85 @@
     },
     {
       "assignee": null,
+      "closed_at": "2026-03-05T04:10:33.996677Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:34:20.454748Z",
+          "id": "85b8b1c7-d4a2-4043-9176-e17b05b76035",
+          "text": "Starting: add agent-only LLM phase segmentation config (parallelized), run sample, then full HMM if sample looks correct."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:36:35.694521Z",
+          "id": "c908dc4b-aeba-476f-b5da-de9caf61acd7",
+          "text": "Updated config to agent-only phases with stricter filtering; ran sample snapshot f947df06... Segments are more agent-focused but still include some caller content due to unlabeled transcripts. Need decision: accept approximation or add stronger speaker separation (e.g., agent-only sentence extraction + phase grouping)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T03:46:57.806040Z",
+          "id": "8989b64a-7088-426d-8cfa-5d3e06ba0c40",
+          "text": "User clarified target: extract agent script items (e.g., closing prompt like 'Any other questions...') as phases. Will adjust LLM segmentation instructions accordingly and rerun sample."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:00:32.103679Z",
+          "id": "f9285774-3a96-4b1d-8e6e-8ca62728480e",
+          "text": "Implemented llm_agent_phase (two-pass: sentence classifier -> agent-only phase segmentation). Updated config and ran sample snapshot 1f4c88c... Closing prompt isolated as its own segment. Ready to run full corpus."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:03:54.647079Z",
+          "id": "fecf9d9a-f101-45d9-824f-c6b0e603d17c",
+          "text": "Full run failed: classifier returned non-integer indices. Updated parser to coerce integer-like floats/strings. Restarting full run."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:04:33.433367Z",
+          "id": "3b092162-cbfd-412f-b8e5-8d13a61c551b",
+          "text": "Run failed again; classifier returned non-integer string. Expanded parser to accept integer-like floats/strings and comma-separated lists. Retrying full run."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:05:10.446508Z",
+          "id": "375d7bb6-9158-4d14-a1b7-db6b595ecb65",
+          "text": "Classifier output still non-integer; expanded parser to handle dict/list forms and added prompt constraint (integers only). Retrying full run."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:05:46.652093Z",
+          "id": "5be80f3e-42a7-40d4-9860-3edfcf98b2fa",
+          "text": "Full run restarted with updated prompt/parser. Snapshot cbb926c8... Segmentation progress: 25/230 docs (rate ~1.34/s)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:07:54.537408Z",
+          "id": "49aa19fc-fe57-4aba-b88d-a45aa536f1c9",
+          "text": "Segmentation complete: 230/230 docs, 1388 segments. Labeling 927 segments with 8 workers (current 50/927)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:09:36.588720Z",
+          "id": "f35f367d-f8b0-4a6b-8ba9-1b9656535668",
+          "text": "Full run complete: snapshot cbb926c8... Segments=1388, labeled=927. GraphViz PNG generated at corpora/residio-google-drive/analysis/markov/cbb926c8.../transitions.png."
+        }
+      ],
+      "created_at": "2026-03-05T03:34:09.878245Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-e1b3a82b-ef75-4b50-b99c-ee6578f723c7",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Agent-only LLM segmentation for residio HMM",
+      "type": "task",
+      "updated_at": "2026-03-05T04:10:33.996677Z"
+    },
+    {
+      "assignee": null,
       "closed_at": "2026-02-19T05:43:57.434235Z",
       "comments": [
         {
@@ -1426,6 +1729,37 @@
       "title": "Implementation: remote corpus source",
       "type": "task",
       "updated_at": "2026-02-19T06:11:08.323371Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-03-05T04:43:54.779196Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:41:19.914302Z",
+          "id": "c3c6578a-09cc-4db4-96ee-06eab797cd82",
+          "text": "Locating markdown-to-PDF tooling and generating PDF for residio-topic-intent report."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T04:43:50.493149Z",
+          "id": "fb0c575c-8696-453e-9e1c-7df90f9ad922",
+          "text": "Generated PDF via pandoc + tectonic. Output: reports/topic-modeling/residio-topic-intent.pdf. Tectonic emitted overfull hbox warnings but PDF created successfully."
+        }
+      ],
+      "created_at": "2026-03-05T04:41:07.080672Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-ead8d212-a68b-45b5-8d08-ce2c5da2f21e",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Generate PDF from topic modeling markdown report",
+      "type": "task",
+      "updated_at": "2026-03-05T04:43:54.779196Z"
     },
     {
       "assignee": null,

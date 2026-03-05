@@ -1,0 +1,31 @@
+{
+  "id": "blbs-90f753a4-397e-4049-97d9-b16071971f95",
+  "title": "Fix GoogleDriveRemoteSource cleanup in pull_remote_source",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "3fea493a-0d5e-409e-9a88-8d7f285d1a04",
+      "author": "ryan.porter",
+      "text": "Investigating pull_remote_source usage of GoogleDriveRemoteSource; will wrap in context manager for deterministic temp dir cleanup.",
+      "created_at": "2026-03-05T04:44:58.991017Z"
+    },
+    {
+      "id": "3169ace9-6087-485d-bfed-e5f7a3027173",
+      "author": "ryan.porter",
+      "text": "Updated pull_source to use a context-managed remote source and added a unit test asserting __enter__/__exit__ are called when pulling a Google Drive source.",
+      "created_at": "2026-03-05T04:47:24.651834Z"
+    }
+  ],
+  "created_at": "2026-03-05T04:44:52.830284Z",
+  "updated_at": "2026-03-05T04:47:24.651834Z",
+  "closed_at": null,
+  "custom": {}
+}

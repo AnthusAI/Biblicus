@@ -1872,57 +1872,58 @@ class Corpus:
                 f"{source_config.kind} vs {profile.kind}"
             )
         if source_config.kind == "s3":
-            source = S3RemoteSource(source_config, profile)
+            source_factory = lambda: S3RemoteSource(source_config, profile)
         elif source_config.kind == "azure-blob":
-            source = AzureBlobRemoteSource(source_config, profile)
+            source_factory = lambda: AzureBlobRemoteSource(source_config, profile)
         elif source_config.kind == "google-drive":
-            source = GoogleDriveRemoteSource(source_config, profile)
+            source_factory = lambda: GoogleDriveRemoteSource(source_config, profile)
         else:
             raise ValueError(f"Unsupported remote source kind: {source_config.kind}")
 
         result = RemoteSourcePullResult()
-        items = source.list_items()
-        result.listed = len(items)
-        remote_uris = set()
+        with source_factory() as source:
+            items = source.list_items()
+            result.listed = len(items)
+            remote_uris = set()
 
-        for item in items:
-            remote_uris.add(item.source_uri)
-            relative_key = self._relative_remote_key(item.key, prefix=source_config.prefix)
-            if not relative_key:
-                result.skipped += 1
-                continue
-            if ignore_spec.matches(relative_key):
-                result.skipped += 1
-                continue
-            existing_item = self._find_item_by_source_uri(item.source_uri)
-            if existing_item is not None and self._remote_item_unchanged(existing_item, item):
-                result.skipped += 1
-                continue
-            content, content_type = source.fetch_bytes(item)
-            relpath = self._raw_relpath(output_name=relative_key, storage_subdir=storage_subdir)
-            if existing_item is not None and existing_item.relpath != relpath:
-                self._delete_item_files(existing_item.relpath)
-            extra_tags = tag_resolver(relative_key) if tag_resolver is not None else []
-            catalog_item = self._write_remote_item(
-                data=content,
-                relpath=relpath,
-                source_uri=item.source_uri,
-                source_etag=item.etag,
-                source_last_modified=item.last_modified,
-                content_type=content_type or item.content_type,
-                item_id=existing_item.id if existing_item is not None else None,
-                created_at=existing_item.created_at if existing_item is not None else None,
-                extra_tags=extra_tags,
+            for item in items:
+                remote_uris.add(item.source_uri)
+                relative_key = self._relative_remote_key(item.key, prefix=source_config.prefix)
+                if not relative_key:
+                    result.skipped += 1
+                    continue
+                if ignore_spec.matches(relative_key):
+                    result.skipped += 1
+                    continue
+                existing_item = self._find_item_by_source_uri(item.source_uri)
+                if existing_item is not None and self._remote_item_unchanged(existing_item, item):
+                    result.skipped += 1
+                    continue
+                content, content_type = source.fetch_bytes(item)
+                relpath = self._raw_relpath(output_name=relative_key, storage_subdir=storage_subdir)
+                if existing_item is not None and existing_item.relpath != relpath:
+                    self._delete_item_files(existing_item.relpath)
+                extra_tags = tag_resolver(relative_key) if tag_resolver is not None else []
+                catalog_item = self._write_remote_item(
+                    data=content,
+                    relpath=relpath,
+                    source_uri=item.source_uri,
+                    source_etag=item.etag,
+                    source_last_modified=item.last_modified,
+                    content_type=content_type or item.content_type,
+                    item_id=existing_item.id if existing_item is not None else None,
+                    created_at=existing_item.created_at if existing_item is not None else None,
+                    extra_tags=extra_tags,
+                )
+                self._upsert_catalog_item(catalog_item)
+                if existing_item is None:
+                    result.downloaded += 1
+                else:
+                    result.updated += 1
+
+            result.pruned = self._prune_remote_items(
+                storage_subdir=storage_subdir, remote_uris=remote_uris
             )
-            self._upsert_catalog_item(catalog_item)
-            if existing_item is None:
-                result.downloaded += 1
-            else:
-                result.updated += 1
-
-        result.pruned = self._prune_remote_items(
-            storage_subdir=storage_subdir, remote_uris=remote_uris
-        )
         self.reindex()
         return result
 

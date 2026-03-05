@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2b1eac16-3c12-47e6-9a41-b9722df7dea5",
+  "issue_id": "blbs-90f753a4-397e-4049-97d9-b16071971f95",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T04:44:52.830Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 2,
+    "status": "open",
+    "title": "Fix GoogleDriveRemoteSource cleanup in pull_remote_source"
+  }
+}

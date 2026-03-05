@@ -46,6 +46,32 @@ class S3RemoteSource:
         self._aws = aws
         self._client = self._build_client()
 
+    def __enter__(self) -> "S3RemoteSource":
+        """
+        Enter the context manager and return the source.
+
+        :return: The current S3 remote source instance.
+        :rtype: S3RemoteSource
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Exit the context manager.
+
+        :param exc_type: Exception type if raised.
+        :type exc_type: type or None
+        :param exc_value: Exception value if raised.
+        :type exc_value: BaseException or None
+        :param traceback: Traceback if raised.
+        :type traceback: TracebackType or None
+        :return: None.
+        :rtype: None
+        """
+        _ = exc_type
+        _ = exc_value
+        _ = traceback
+
     def _build_client(self):
         try:
             import boto3
@@ -119,6 +145,32 @@ class AzureBlobRemoteSource:
         self._config = config
         self._azure = azure
         self._client = self._build_client()
+
+    def __enter__(self) -> "AzureBlobRemoteSource":
+        """
+        Enter the context manager and return the source.
+
+        :return: The current Azure Blob remote source instance.
+        :rtype: AzureBlobRemoteSource
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Exit the context manager.
+
+        :param exc_type: Exception type if raised.
+        :type exc_type: type or None
+        :param exc_value: Exception value if raised.
+        :type exc_value: BaseException or None
+        :param traceback: Traceback if raised.
+        :type traceback: TracebackType or None
+        :return: None.
+        :rtype: None
+        """
+        _ = exc_type
+        _ = exc_value
+        _ = traceback
 
     def _build_client(self):
         try:
