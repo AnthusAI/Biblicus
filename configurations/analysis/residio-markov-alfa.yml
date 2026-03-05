@@ -1,0 +1,139 @@
+schema_version: 1
+text_source:
+  sample_size: null
+  min_text_characters: 200
+segmentation:
+  method: span_markup
+  max_workers: 8
+  span_markup:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+    normalize_nested_spans: true
+    max_rounds: 40
+    max_edits_per_round: 1
+    chunk_characters: 400
+    chunk_overlap_characters: 0
+    system_prompt: null
+    prompt_template: |
+      Return only the automated agent (bot) utterances. Exclude anything said by the human caller.
+      If the transcript contains speaker labels like "Speaker 0:" and "Speaker 1:", treat Speaker 0 as the bot and Speaker 1 as the human caller.
+      If the speaker is unclear, exclude it.
+      Extract one complete sentence at a time. Do not group multiple sentences into a single span.
+      Only wrap sentences from lines that start with "Speaker 0:". Never wrap any sentence from lines that start with "Speaker 1:".
+      Each span must contain exactly one sentence. A span must end at the first sentence-ending punctuation (., ?, or !).
+      Never include multiple sentence-ending punctuation marks inside a single span.
+      Do not create overlapping or nested spans. Skip any text that would overlap an existing span.
+      Work left-to-right and wrap one utterance at a time using long, unique substrings.
+      If an utterance repeats, include adjacent unique context so the match is unique.
+      Insert spans for all agent sentences in the chunk.
+      Only wrap complete sentences; do not wrap partial sentence fragments.
+  llm:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    system_prompt: |
+      You extract only the automated agent utterances from call transcripts.
+      Return only JSON.
+    prompt_template: |
+      Extract the automated agent (bot) utterances from the transcript.
+      If the transcript contains speaker labels like "Speaker 0:" and "Speaker 1:", treat Speaker 0 as the bot and Speaker 1 as the human caller.
+
+      Requirements:
+      - Return a JSON object with key "segments".
+      - "segments" is a JSON array of strings.
+      - Each string is exactly one complete sentence from the agent.
+      - Exclude anything said by the human caller.
+      - If the speaker is unclear, exclude it.
+      - Include all agent sentences from the transcript in order.
+      - Only include sentences from lines that start with "Speaker 0:". Never include sentences from lines that start with "Speaker 1:".
+      - Each segment must end at the first sentence-ending punctuation (., ?, or !).
+      - Return only JSON.
+
+      Text:
+      ---
+      {text}
+      ---
+llm_observations:
+  enabled: false
+topic_modeling:
+  enabled: true
+  configuration:
+    schema_version: 1
+    text_source:
+      sample_size: null
+      min_text_characters: 80
+    llm_extraction:
+      enabled: false
+      method: single
+    entity_removal:
+      enabled: true
+      provider: spacy
+      model: en_core_web_sm
+      entity_types:
+        - PERSON
+        - GPE
+        - LOC
+        - ORG
+        - FAC
+        - DATE
+        - TIME
+        - MONEY
+        - PERCENT
+        - ORDINAL
+      replace_with: ""
+      collapse_whitespace: true
+      regex_patterns:
+        - "\\b\\d{5}(-\\d{4})?\\b"
+        - "\\b\\d{3}[-. ]?\\d{3}[-. ]?\\d{4}\\b"
+        - "\\b[0-9]{6,}\\b"
+        - "\\b(?:\\d[ -]?){6,}\\b"
+        - "\\b[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b"
+      regex_replace_with: ""
+    lexical_processing:
+      enabled: true
+      lowercase: true
+      strip_punctuation: false
+      collapse_whitespace: true
+    bertopic_analysis:
+      parameters: {}
+      vectorizer:
+        ngram_range: [1, 2]
+        stop_words: english
+    llm_fine_tuning:
+      enabled: true
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+      system_prompt: |
+        You label topics from call center transcripts.
+        Return only the label. Do not include extra text.
+      prompt_template: |
+        I have a topic from call center transcripts described by these keywords:
+        [KEYWORDS] {keywords}
+
+        Representative examples:
+        [DOCUMENTS]
+        {documents}
+
+        Return a short descriptive noun phrase plus an exemplar quote in quotes.
+        Format: <noun phrase> "exemplar quote"
+        The quote can be synthesized but should sound like the examples.
+      max_keywords: 12
+      max_documents: 20
+observations:
+  encoder: tfidf
+  categorical_source: topic_label
+model:
+  family: categorical
+  n_states: 12
+artifacts:
+  graphviz:
+    enabled: true
+    rankdir: TB
+report:
+  max_state_exemplars: 25

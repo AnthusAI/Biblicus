@@ -1,0 +1,71 @@
+schema_version: 1
+text_source:
+  sample_size: null
+  min_text_characters: 200
+segmentation:
+  method: llm
+  max_workers: 4
+  llm:
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    system_prompt: |
+      You segment call transcripts into high-level conversation phases.
+      Return only JSON.
+    prompt_template: |
+      Segment the transcript into high-level conversation phases.
+
+      Requirements:
+      - Return a JSON object with key "segments".
+      - "segments" is a JSON array of strings.
+      - Each string is the exact transcript text for one contiguous phase.
+      - Copy text verbatim from the transcript. Do not paraphrase or label.
+      - Do not return phase names like "Greeting" or "Closing"; return the actual text spans.
+      - Prefer phases like greeting/opening, identity verification, reason for call,
+        clarification, resolution steps, handoff/escalation, closing.
+      - Preserve original order.
+      - Do not add labels, summaries, or commentary.
+      - Avoid very short fragments; merge small leftovers into adjacent phases.
+
+      Text:
+      ---
+      {text}
+      ---
+llm_observations:
+  enabled: true
+  max_workers: 4
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: |
+    You label conversation phases for HMM analysis.
+    Return only JSON.
+  prompt_template: |
+    Return a JSON object with keys:
+    - label: short noun phrase describing the phase
+    - label_confidence: number from 0 to 1
+    - summary: one sentence summary of the phase
+    Return valid JSON only. Do not include commentary or additional keys.
+    Format the label as: <label> "example quote"
+    - The quote must be copied verbatim from the segment.
+    - Keep the quote concise and representative.
+
+    Segment:
+    ---
+    {segment}
+    ---
+observations:
+  encoder: tfidf
+  categorical_source: llm_label
+model:
+  family: categorical
+  n_states: 10
+artifacts:
+  graphviz:
+    enabled: true
+    rankdir: TB
+report:
+  max_state_exemplars: 25
