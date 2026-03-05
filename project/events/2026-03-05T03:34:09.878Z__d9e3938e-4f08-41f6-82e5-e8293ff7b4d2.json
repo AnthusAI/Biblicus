@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "d9e3938e-4f08-41f6-82e5-e8293ff7b4d2",
+  "issue_id": "blbs-e1b3a82b-ef75-4b50-b99c-ee6578f723c7",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T03:34:09.878Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Agent-only LLM segmentation for residio HMM"
+  }
+}

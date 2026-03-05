@@ -1,0 +1,79 @@
+{
+  "id": "blbs-e1b3a82b-ef75-4b50-b99c-ee6578f723c7",
+  "title": "Agent-only LLM segmentation for residio HMM",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "85b8b1c7-d4a2-4043-9176-e17b05b76035",
+      "author": "ryan.porter",
+      "text": "Starting: add agent-only LLM phase segmentation config (parallelized), run sample, then full HMM if sample looks correct.",
+      "created_at": "2026-03-05T03:34:20.454748Z"
+    },
+    {
+      "id": "c908dc4b-aeba-476f-b5da-de9caf61acd7",
+      "author": "ryan.porter",
+      "text": "Updated config to agent-only phases with stricter filtering; ran sample snapshot f947df06... Segments are more agent-focused but still include some caller content due to unlabeled transcripts. Need decision: accept approximation or add stronger speaker separation (e.g., agent-only sentence extraction + phase grouping).",
+      "created_at": "2026-03-05T03:36:35.694521Z"
+    },
+    {
+      "id": "8989b64a-7088-426d-8cfa-5d3e06ba0c40",
+      "author": "ryan.porter",
+      "text": "User clarified target: extract agent script items (e.g., closing prompt like 'Any other questions...') as phases. Will adjust LLM segmentation instructions accordingly and rerun sample.",
+      "created_at": "2026-03-05T03:46:57.806040Z"
+    },
+    {
+      "id": "f9285774-3a96-4b1d-8e6e-8ca62728480e",
+      "author": "ryan.porter",
+      "text": "Implemented llm_agent_phase (two-pass: sentence classifier -> agent-only phase segmentation). Updated config and ran sample snapshot 1f4c88c... Closing prompt isolated as its own segment. Ready to run full corpus.",
+      "created_at": "2026-03-05T04:00:32.103679Z"
+    },
+    {
+      "id": "fecf9d9a-f101-45d9-824f-c6b0e603d17c",
+      "author": "ryan.porter",
+      "text": "Full run failed: classifier returned non-integer indices. Updated parser to coerce integer-like floats/strings. Restarting full run.",
+      "created_at": "2026-03-05T04:03:54.647079Z"
+    },
+    {
+      "id": "3b092162-cbfd-412f-b8e5-8d13a61c551b",
+      "author": "ryan.porter",
+      "text": "Run failed again; classifier returned non-integer string. Expanded parser to accept integer-like floats/strings and comma-separated lists. Retrying full run.",
+      "created_at": "2026-03-05T04:04:33.433367Z"
+    },
+    {
+      "id": "375d7bb6-9158-4d14-a1b7-db6b595ecb65",
+      "author": "ryan.porter",
+      "text": "Classifier output still non-integer; expanded parser to handle dict/list forms and added prompt constraint (integers only). Retrying full run.",
+      "created_at": "2026-03-05T04:05:10.446508Z"
+    },
+    {
+      "id": "5be80f3e-42a7-40d4-9860-3edfcf98b2fa",
+      "author": "ryan.porter",
+      "text": "Full run restarted with updated prompt/parser. Snapshot cbb926c8... Segmentation progress: 25/230 docs (rate ~1.34/s).",
+      "created_at": "2026-03-05T04:05:46.652093Z"
+    },
+    {
+      "id": "49aa19fc-fe57-4aba-b88d-a45aa536f1c9",
+      "author": "ryan.porter",
+      "text": "Segmentation complete: 230/230 docs, 1388 segments. Labeling 927 segments with 8 workers (current 50/927).",
+      "created_at": "2026-03-05T04:07:54.537408Z"
+    },
+    {
+      "id": "f35f367d-f8b0-4a6b-8ba9-1b9656535668",
+      "author": "ryan.porter",
+      "text": "Full run complete: snapshot cbb926c8... Segments=1388, labeled=927. GraphViz PNG generated at corpora/residio-google-drive/analysis/markov/cbb926c8.../transitions.png.",
+      "created_at": "2026-03-05T04:09:36.588720Z"
+    }
+  ],
+  "created_at": "2026-03-05T03:34:09.878245Z",
+  "updated_at": "2026-03-05T04:09:36.588720Z",
+  "closed_at": null,
+  "custom": {}
+}
