@@ -64,10 +64,16 @@
       "author": "ryan.porter",
       "text": "Major milestone (Mar 4, 2026 19:53 ET): full residio pipeline run completed end-to-end on Google Drive corpus. Extraction snapshot pipeline:a92c0e... finished 245/245 with stats: extracted=233, skipped=12, errored=0. Topic modeling completed on this snapshot with config residio-topic-full -> snapshot 5fdcaf8d... (documents=231, topics=8). Markov/HMM completed with config residio-markov-full -> snapshot cbfa5292... (items=231, segments=46824, states=5, transitions=24).",
       "created_at": "2026-03-05T00:53:52.675847Z"
+    },
+    {
+      "id": "2e5b0b45-fe22-4052-a656-1a6495416853",
+      "author": "ryan.porter",
+      "text": "Addendum (Mar 4, 2026 20:07 ET): generated GraphViz artifact for HMM transitions. New Markov snapshot with graphviz enabled: 9a8d9d4b... under corpora/residio-google-drive/analysis/markov/9a8d9d4b... includes transitions.dot and rendered transitions.png.",
+      "created_at": "2026-03-05T01:07:34.142430Z"
     }
   ],
   "created_at": "2026-03-04T23:28:25.395503Z",
-  "updated_at": "2026-03-05T00:54:18.555503Z",
+  "updated_at": "2026-03-05T01:07:34.142430Z",
   "closed_at": "2026-03-05T00:54:18.555503Z",
   "custom": {}
 }

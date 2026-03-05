@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2a98071c-9ac1-4012-b733-d698df8d55e2",
+  "issue_id": "blbs-1c169961-d916-4594-9dca-e7cc5e253db3",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T01:19:02.231Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "story",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Apply Alfa LLM segmentation to residio HMM and generate artifacts"
+  }
+}

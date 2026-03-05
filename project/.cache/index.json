@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-04T23:12:25Z",
+  "built_at": "2026-03-05T02:23:09Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1771273691.474875,
     "Biblicus-0mo.json": 1771273691.474949,
@@ -30,9 +30,11 @@
     "Biblicus-yr4.json": 1771273691.476564,
     "blbs-0085bfe9-dca3-473e-b9cb-765052a34240.json": 1771566540.424804,
     "blbs-05fe0bd1-806f-4f1f-95dd-d95445e53cab.json": 1771566540.425095,
+    "blbs-1c169961-d916-4594-9dca-e7cc5e253db3.json": 1772677288.502603,
     "blbs-1ffc4162-6688-4d17-bd57-83dbb3b22263.json": 1771476460.86821,
     "blbs-22be8a87-575b-4f44-8883-dda971c99c71.json": 1771566540.425452,
-    "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08.json": 1771573648.1368,
+    "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08.json": 1772665948.377604,
+    "blbs-2acfce6d-8a58-4243-8284-51bad2b920f3.json": 1772672854.143014,
     "blbs-2b05f72e-5c7f-4ec6-8caf-cde1823c0ff7.json": 1771566540.426152,
     "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1771566540.426432,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1771635193.202607,
@@ -701,6 +703,49 @@
     },
     {
       "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T01:19:21.172711Z",
+          "id": "07f50476-0099-445e-aa7a-6f40ab8575ae",
+          "text": "Starting residio HMM with Alfa-style LLM segmentation (span_markup + LLM fallback) and graphviz artifacts. Using extraction snapshot pipeline:a92c0e..."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T01:20:09.329703Z",
+          "id": "eded7186-ab27-472d-b66d-5fcc7ede2050",
+          "text": "Blocked: Alfa-style HMM segmentation uses OpenAI (gpt-4o-mini). Run fails because OPENAI_API_KEY is not set (message: configure OPENAI_API_KEY or openai.api_key in ~/.biblicus/config.yml). Installed dspy dependency successfully. Once key is set, rerun markov analysis with configurations/analysis/residio-markov-alfa.yml."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T01:52:49.982927Z",
+          "id": "13c7033d-8478-4d58-b135-02c658086bd5",
+          "text": "Switching to conversation-phase segmentation (span_markup) + LLM labeling for noun-phrase+quote state names. New config: configurations/analysis/residio-markov-conversation.yml. Running sample (1 doc) first for preview, then full run."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T02:21:28.502202Z",
+          "id": "863d4e65-7980-48cf-9806-375e40c4f3a8",
+          "text": "Stopped slow span_markup run. Switching to faster LLM JSON segmentation for high-level phases (still labels each phase with noun-phrase + exemplar quote). Updated configurations/analysis/residio-markov-conversation.yml accordingly and will rerun sample + full."
+        }
+      ],
+      "created_at": "2026-03-05T01:19:02.230829Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-1c169961-d916-4594-9dca-e7cc5e253db3",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "blocked",
+      "title": "Apply Alfa LLM segmentation to residio HMM and generate artifacts",
+      "type": "story",
+      "updated_at": "2026-03-05T02:21:28.502202Z"
+    },
+    {
+      "assignee": null,
       "closed_at": "2026-02-19T04:47:40.868024Z",
       "comments": [
         {
@@ -852,7 +897,7 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
+      "closed_at": "2026-03-04T23:12:28.377514Z",
       "comments": [
         {
           "author": "ryan.porter",
@@ -870,10 +915,89 @@
       "labels": [],
       "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
       "priority": 2,
-      "status": "in_progress",
+      "status": "closed",
       "title": "Run acceptance test for Azure Blob remote corpus",
       "type": "task",
-      "updated_at": "2026-02-19T17:57:22.081976Z"
+      "updated_at": "2026-03-04T23:12:28.377514Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-03-05T00:54:18.555503Z",
+      "comments": [
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:06:25.762239Z",
+          "id": "7d8a685a-7922-413b-a613-6251295b709c",
+          "text": "Implemented Google Drive remote source support end-to-end (new kind: google-drive, folder_url support, adapter, CLI wiring, collection wiring, unit+BDD coverage including nested/prefix scenarios). Added robust Drive behavior: gdown folder listing with remaining_ok + direct per-file streaming download (fallback to gdown download), and prefix-aware download filtering. Validated with tests (pytest tests/test_remote_source_coverage.py + remote source Behave features). Real residio run completed with scoped prefix recordings_10 (1)/: source pull listed/downloaded 10 WAV items, then extraction succeeded via stt-faster-whisper tiny (snapshot ef3a34c8...), topic modeling succeeded (snapshot 2d09e3d1..., docs=10, topics=1), and Markov/HMM analysis succeeded (snapshot 8d98ac63..., items=10, segments=1992, states=5, transitions=18)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:07:49.027646Z",
+          "id": "a1ed3635-86db-4c79-bf94-561e0993eca3",
+          "text": "Continuing while user is away: executing full residio corpus run without prefix, then full extraction and analysis reruns. Will record resulting artifact snapshots and metrics."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:29:26.446781Z",
+          "id": "eb8a126b-3077-4b74-a78a-d6b36f91b0d3",
+          "text": "Progress update (Mar 4, 2026 19:22 ET): full Google Drive source pull succeeded for residio corpus. Catalog now has 245 items (233 wav, 12 zip) with nested folder structure under imports/remote/residio. Full-corpus extraction is currently running using stt-faster-whisper tiny/int8; latest heartbeat 79/245 processed, 64 extracted, 11 skipped, 0 errored. Next: finish extraction, then rerun topic modeling and HMM on full extracted snapshot."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:32:40.749199Z",
+          "id": "afd18d30-170f-45a5-930f-275f1df143b9",
+          "text": "Progress update (Mar 4, 2026 19:25 ET): full-corpus extraction is ongoing on residio Google Drive pull. Heartbeats reached 104/245 processed (100 milestone at 752s). Current counters: 88 extracted, 12 skipped, 0 errored. Continuing to completion, then running topic modeling + HMM on the resulting full snapshot."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:37:37.324549Z",
+          "id": "5b37c747-8afb-4d99-8d4b-ce378f19feaf",
+          "text": "Investigation note: extraction is already parallel at item level via ThreadPoolExecutor, but heartbeat currently shows only one active_item so it appears serial. Throughput bottleneck identified in STT path: FasterWhisper extractor creates WhisperModel inside each item call, and get_extractor constructs extractor instances repeatedly. I am applying a performance patch next to cache model/extractor initialization for this workload."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:40:34.688580Z",
+          "id": "8b6f40f6-d21b-4e98-9ed6-9fcb8bf9fc27",
+          "text": "Progress update (Mar 4, 2026 19:31 ET): extraction crossed 150 milestone and is now at 157/245 processed; 138 extracted, 12 skipped, 0 errored. Also implemented perf fixes for future runs: (1) extractor registry now instantiates only the requested extractor instead of constructing all extractors on every call; (2) faster-whisper model loading is now cached by model/device/compute_type to avoid re-initializing per item."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:44:19.296268Z",
+          "id": "dffa8cd1-a547-4f82-b0ef-0b58b3c2e8af",
+          "text": "Action taken (Mar 4, 2026 19:37 ET): stopped slow in-flight extraction run and restarted extraction for the same snapshot. Resume behavior works correctly: previously completed items were reused from cache immediately (checkpoint replay to 175/245 in under a second), confirming no full recompute of already-processed items."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:47:32.425726Z",
+          "id": "32738d62-d8b1-4ef6-a173-3a18d516a735",
+          "text": "Progress update (Mar 4, 2026 19:40 ET): resumed extraction crossed 200 milestone and is currently 205/245 with 188 extracted, 12 skipped, 0 errored. Restart materially improved effective throughput by reusing cached outputs."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T00:53:52.675847Z",
+          "id": "f56cc916-13a7-4de0-9dc4-cc9f856e1ae3",
+          "text": "Major milestone (Mar 4, 2026 19:53 ET): full residio pipeline run completed end-to-end on Google Drive corpus. Extraction snapshot pipeline:a92c0e... finished 245/245 with stats: extracted=233, skipped=12, errored=0. Topic modeling completed on this snapshot with config residio-topic-full -> snapshot 5fdcaf8d... (documents=231, topics=8). Markov/HMM completed with config residio-markov-full -> snapshot cbfa5292... (items=231, segments=46824, states=5, transitions=24)."
+        },
+        {
+          "author": "ryan.porter",
+          "created_at": "2026-03-05T01:07:34.142430Z",
+          "id": "2e5b0b45-fe22-4052-a656-1a6495416853",
+          "text": "Addendum (Mar 4, 2026 20:07 ET): generated GraphViz artifact for HMM transitions. New Markov snapshot with graphviz enabled: 9a8d9d4b... under corpora/residio-google-drive/analysis/markov/9a8d9d4b... includes transitions.dot and rendered transitions.png."
+        }
+      ],
+      "created_at": "2026-03-04T23:28:25.395503Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Add google-drive remote corpus source support, validate nested-folder ingest using the residio Drive folder, and run topic/Markov(HMM) analysis workflows on the ingested corpus.",
+      "id": "blbs-2acfce6d-8a58-4243-8284-51bad2b920f3",
+      "labels": [],
+      "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Support Google Drive remote corpus ingestion for residio corpus",
+      "type": "story",
+      "updated_at": "2026-03-05T01:07:34.142430Z"
     },
     {
       "assignee": null,

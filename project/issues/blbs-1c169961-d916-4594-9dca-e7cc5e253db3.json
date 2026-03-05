@@ -1,0 +1,169 @@
+{
+  "id": "blbs-1c169961-d916-4594-9dca-e7cc5e253db3",
+  "title": "Apply Alfa LLM segmentation to residio HMM and generate artifacts",
+  "description": "",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "07f50476-0099-445e-aa7a-6f40ab8575ae",
+      "author": "ryan.porter",
+      "text": "Starting residio HMM with Alfa-style LLM segmentation (span_markup + LLM fallback) and graphviz artifacts. Using extraction snapshot pipeline:a92c0e...",
+      "created_at": "2026-03-05T01:19:21.172711Z"
+    },
+    {
+      "id": "eded7186-ab27-472d-b66d-5fcc7ede2050",
+      "author": "ryan.porter",
+      "text": "Blocked: Alfa-style HMM segmentation uses OpenAI (gpt-4o-mini). Run fails because OPENAI_API_KEY is not set (message: configure OPENAI_API_KEY or openai.api_key in ~/.biblicus/config.yml). Installed dspy dependency successfully. Once key is set, rerun markov analysis with configurations/analysis/residio-markov-alfa.yml.",
+      "created_at": "2026-03-05T01:20:09.329703Z"
+    },
+    {
+      "id": "13c7033d-8478-4d58-b135-02c658086bd5",
+      "author": "ryan.porter",
+      "text": "Switching to conversation-phase segmentation (span_markup) + LLM labeling for noun-phrase+quote state names. New config: configurations/analysis/residio-markov-conversation.yml. Running sample (1 doc) first for preview, then full run.",
+      "created_at": "2026-03-05T01:52:49.982927Z"
+    },
+    {
+      "id": "863d4e65-7980-48cf-9806-375e40c4f3a8",
+      "author": "ryan.porter",
+      "text": "Stopped slow span_markup run. Switching to faster LLM JSON segmentation for high-level phases (still labels each phase with noun-phrase + exemplar quote). Updated configurations/analysis/residio-markov-conversation.yml accordingly and will rerun sample + full.",
+      "created_at": "2026-03-05T02:21:28.502202Z"
+    },
+    {
+      "id": "0ad4dc58-470e-44ce-8525-b5bd02455ec1",
+      "author": "ryan.porter",
+      "text": "Progress: updated configurations/analysis/residio-markov-conversation.yml to use LLM JSON segmentation (verbatim text spans) + LLM noun-phrase+quote labels. Sample run completed with larger segments and llm_label in observations.jsonl. Next: run full analysis with extraction snapshot pipeline:a92c0e..., then generate GraphViz PNG artifact from transitions.dot.",
+      "created_at": "2026-03-05T02:23:27.858758Z"
+    },
+    {
+      "id": "d3390f8d-8bdb-477a-9ac7-1c1aee463be8",
+      "author": "ryan.porter",
+      "text": "Started full markov run using updated LLM segmentation config. Snapshot: 1e802bbcad8c2550800adc5f0cdfec8d5fb5c98c63d1aefc1ed0571dc18ea1d5 (extraction pipeline:a92c0e...). Will generate transitions.png after completion.",
+      "created_at": "2026-03-05T02:24:18.434340Z"
+    },
+    {
+      "id": "233a2362-a29c-4854-85f9-b51fceb0bc5a",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 25/230 docs after 183.9s (~0.14/s).",
+      "created_at": "2026-03-05T02:27:04.270311Z"
+    },
+    {
+      "id": "f2ace0c8-9370-4db5-9397-9243a7cd5140",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 50/230 docs after 341.4s (~0.15/s).",
+      "created_at": "2026-03-05T02:29:37.383782Z"
+    },
+    {
+      "id": "771fedd5-3add-4abf-8170-85f54eaf98c2",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 75/230 docs after 474.6s (~0.16/s).",
+      "created_at": "2026-03-05T02:31:53.327626Z"
+    },
+    {
+      "id": "737efb6d-429c-43ea-97b3-1c7120bb2b0e",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 100/230 docs after 657.3s (~0.15/s).",
+      "created_at": "2026-03-05T02:34:58.766697Z"
+    },
+    {
+      "id": "807348f0-4bc6-48c7-a116-e2873418db2e",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 125/230 docs after 819.7s (~0.15/s).",
+      "created_at": "2026-03-05T02:37:39.957225Z"
+    },
+    {
+      "id": "25456a5f-f479-49b1-885a-f5405851c176",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 150/230 docs after 970.6s (~0.15/s).",
+      "created_at": "2026-03-05T02:40:12.183076Z"
+    },
+    {
+      "id": "c28d393f-3f42-47bb-ab2f-e17324605583",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 175/230 docs after 1048.6s (~0.17/s).",
+      "created_at": "2026-03-05T02:41:27.451171Z"
+    },
+    {
+      "id": "a57b953c-65e4-42c4-b027-030f96e6a5f4",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 200/230 docs after 1219.5s (~0.16/s).",
+      "created_at": "2026-03-05T02:44:23.826690Z"
+    },
+    {
+      "id": "623eaef3-d26e-4b2d-9335-c09e002242df",
+      "author": "ryan.porter",
+      "text": "Run progress: segmentation 225/230 docs after 1390.6s (~0.16/s).",
+      "created_at": "2026-03-05T02:47:12.744989Z"
+    },
+    {
+      "id": "048f8c68-3293-4b97-a6b8-24b1a2e62794",
+      "author": "ryan.porter",
+      "text": "Segmentation complete: 230/230 docs, 6926 segments. Labeling 6466 segments with 4 workers now.",
+      "created_at": "2026-03-05T02:48:41.348471Z"
+    },
+    {
+      "id": "73d9394b-6f8c-45d0-8e94-c236aab1d8bf",
+      "author": "ryan.porter",
+      "text": "Labeling progress: 1000/6466 segments (~3.31/s).",
+      "created_at": "2026-03-05T02:53:40.707810Z"
+    },
+    {
+      "id": "17d90184-8d61-4e40-bdc0-217d906dd0c7",
+      "author": "ryan.porter",
+      "text": "Labeling progress: 2000/6466 segments (~3.49/s).",
+      "created_at": "2026-03-05T02:58:13.998945Z"
+    },
+    {
+      "id": "33a7fffd-2f00-464e-88e3-f7a44f1c5bb5",
+      "author": "ryan.porter",
+      "text": "Labeling progress: 3000/6466 segments (~3.66/s).",
+      "created_at": "2026-03-05T03:02:24.251612Z"
+    },
+    {
+      "id": "837e9ea0-8e98-41cd-9a1b-4eefbd218249",
+      "author": "ryan.porter",
+      "text": "Labeling progress: 4000/6466 segments (~3.45/s).",
+      "created_at": "2026-03-05T03:08:06.184132Z"
+    },
+    {
+      "id": "134a720e-d588-4962-88cb-7e0906881bb5",
+      "author": "ryan.porter",
+      "text": "Labeling progress: 5000/6466 segments (~3.61/s).",
+      "created_at": "2026-03-05T03:11:45.314427Z"
+    },
+    {
+      "id": "d93c60e1-a081-48ae-b9f7-f265e33b8efe",
+      "author": "ryan.porter",
+      "text": "Run complete: snapshot 1e802bbcad8c2550800adc5f0cdfec8d5fb5c98c63d1aefc1ed0571dc18ea1d5. Generated GraphViz PNG at corpora/residio-google-drive/analysis/markov/1e802.../transitions.png. Next: surface exemplar outputs and finalize artifacts.",
+      "created_at": "2026-03-05T03:18:28.328551Z"
+    },
+    {
+      "id": "aad63b39-d219-40f5-8f40-a374f274c93d",
+      "author": "ryan.porter",
+      "text": "Topic modeling run started with configurations/analysis/residio-topic.yml after installing spaCy + en_core_web_sm. Progress: entity removal 50/231 docs (rate ~4.3/s).",
+      "created_at": "2026-03-05T03:21:27.969061Z"
+    },
+    {
+      "id": "82564e3c-3baa-4588-91c3-4baea45c7b45",
+      "author": "ryan.porter",
+      "text": "Topic modeling complete: snapshot c5fd8719c911882db2e6fa5df602b00fb81a9d44a3d7450c80e9eca665b5cce4. Artifacts in corpora/residio-google-drive/analysis/topic-modeling/c5fd... (output.json, entity_removal.jsonl). output.json includes topics with exemplar documents.",
+      "created_at": "2026-03-05T03:23:01.853926Z"
+    },
+    {
+      "id": "eb570bf9-33ff-4639-bd8d-7b256bce485a",
+      "author": "ryan.porter",
+      "text": "Note: Markov fit warns about many parameters vs data (n_states=10, segments=6926). If we want a more stable HMM, consider reducing n_states or tfidf max_features in a follow-up.",
+      "created_at": "2026-03-05T03:23:58.171223Z"
+    }
+  ],
+  "created_at": "2026-03-05T01:19:02.230829Z",
+  "updated_at": "2026-03-05T03:24:01.713053Z",
+  "closed_at": "2026-03-05T03:24:01.713053Z",
+  "custom": {}
+}
