@@ -1,0 +1,37 @@
+{
+  "id": "blbs-1b295536-5753-4a67-b7a2-f1cdfff59390",
+  "title": "Topic modeling on key customer intent",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "e5143913-7d99-4ad1-b358-8ff33979dd5e",
+      "author": "ryan.porter",
+      "text": "Plan: enable topic_modeling.llm_extraction to extract key customer intent per transcript, then rerun topic modeling for residio.",
+      "created_at": "2026-03-05T04:27:37.638790Z"
+    },
+    {
+      "id": "d0cef2b2-23e6-48ad-8c72-36ecfa1d3aa1",
+      "author": "ryan.porter",
+      "text": "Topic modeling run started (residio-topic-intent). LLM intent extraction in progress: 50/231 docs (~1.55/s).",
+      "created_at": "2026-03-05T04:28:32.801864Z"
+    },
+    {
+      "id": "2595e880-4e56-444f-a3eb-08a9c56d0192",
+      "author": "ryan.porter",
+      "text": "Topic modeling complete: snapshot bc5f0dfc... (residio-topic-intent). Artifacts in corpora/residio-google-drive/analysis/topic-modeling/bc5f0dfc.../output.json.",
+      "created_at": "2026-03-05T04:30:24.510338Z"
+    }
+  ],
+  "created_at": "2026-03-05T04:27:23.344358Z",
+  "updated_at": "2026-03-05T04:30:31.369572Z",
+  "closed_at": "2026-03-05T04:30:31.369572Z",
+  "custom": {}
+}

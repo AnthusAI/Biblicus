@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "1aa6e40d-811d-4562-92cc-d8347e9b8e35",
+  "issue_id": "blbs-1b295536-5753-4a67-b7a2-f1cdfff59390",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T04:27:23.344Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Topic modeling on key customer intent"
+  }
+}
