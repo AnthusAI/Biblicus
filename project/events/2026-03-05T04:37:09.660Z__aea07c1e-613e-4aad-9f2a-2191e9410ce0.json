@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "aea07c1e-613e-4aad-9f2a-2191e9410ce0",
+  "issue_id": "blbs-7a566888-792b-4664-86f3-71a9d4e9accf",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T04:37:09.660Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "bug",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Fix GoogleDriveRemoteSource temp dir cleanup"
+  }
+}
