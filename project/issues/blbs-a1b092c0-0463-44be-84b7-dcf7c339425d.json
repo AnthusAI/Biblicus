@@ -1,0 +1,31 @@
+{
+  "id": "blbs-a1b092c0-0463-44be-84b7-dcf7c339425d",
+  "title": "Generate residio topic modeling markdown report",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ac3f4ddd-4113-4d9c-9545-90ba0617c448",
+      "author": "ryan.porter",
+      "text": "Creating Markdown report from intent-based topic modeling output (snapshot bc5f0dfc...).",
+      "created_at": "2026-03-05T04:33:58.513594Z"
+    },
+    {
+      "id": "dc4d41d9-9491-4885-90bb-bf1329ff0243",
+      "author": "ryan.porter",
+      "text": "Markdown report generated at reports/topic-modeling/residio-topic-intent.md.",
+      "created_at": "2026-03-05T04:34:39.839921Z"
+    }
+  ],
+  "created_at": "2026-03-05T04:33:47.475835Z",
+  "updated_at": "2026-03-05T04:34:47.078784Z",
+  "closed_at": "2026-03-05T04:34:47.078784Z",
+  "custom": {}
+}

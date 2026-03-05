@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "5b15a9ec-2c0a-46d1-a697-9e74eca2fe79",
+  "issue_id": "blbs-a1b092c0-0463-44be-84b7-dcf7c339425d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T04:33:47.476Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Generate residio topic modeling markdown report"
+  }
+}
