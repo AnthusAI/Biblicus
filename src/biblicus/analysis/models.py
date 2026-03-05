@@ -878,7 +878,25 @@ class MarkovAnalysisSegmentationMethod(str, Enum):
     SENTENCE = "sentence"
     FIXED_WINDOW = "fixed_window"
     LLM = "llm"
+    LLM_AGENT_PHASE = "llm_agent_phase"
     SPAN_MARKUP = "span_markup"
+
+
+class MarkovAnalysisLlmAgentSentenceClassifierConfig(AnalysisSchemaModel):
+    """
+    Provider-backed sentence classification configuration.
+
+    :ivar client: LLM client configuration.
+    :vartype client: biblicus.ai.models.LlmClientConfig
+    :ivar prompt_template: Prompt template containing ``{sentences}``.
+    :vartype prompt_template: str
+    :ivar system_prompt: Optional system prompt.
+    :vartype system_prompt: str or None
+    """
+
+    client: LlmClientConfig
+    prompt_template: str = Field(min_length=1)
+    system_prompt: Optional[str] = None
 
 
 class MarkovAnalysisLlmSegmentationConfig(AnalysisSchemaModel):
@@ -896,6 +914,20 @@ class MarkovAnalysisLlmSegmentationConfig(AnalysisSchemaModel):
     client: LlmClientConfig
     prompt_template: str = Field(min_length=1)
     system_prompt: Optional[str] = None
+
+
+class MarkovAnalysisLlmAgentPhaseSegmentationConfig(AnalysisSchemaModel):
+    """
+    Provider-backed two-pass agent phase segmentation configuration.
+
+    :ivar classifier: Sentence-level agent/caller classifier configuration.
+    :vartype classifier: MarkovAnalysisLlmAgentSentenceClassifierConfig
+    :ivar phase_segmentation: Phase segmentation configuration for agent-only text.
+    :vartype phase_segmentation: MarkovAnalysisLlmSegmentationConfig
+    """
+
+    classifier: MarkovAnalysisLlmAgentSentenceClassifierConfig
+    phase_segmentation: MarkovAnalysisLlmSegmentationConfig
 
 
 class MarkovAnalysisSpanMarkupSegmentationConfig(AnalysisSchemaModel):
@@ -1055,6 +1087,8 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
     :vartype fixed_window: MarkovAnalysisFixedWindowSegmentationConfig
     :ivar span_markup: Text extract settings for ``span_markup`` method.
     :vartype span_markup: MarkovAnalysisSpanMarkupSegmentationConfig or None
+    :ivar llm_agent_phase: Agent phase segmentation settings for ``llm_agent_phase`` method.
+    :vartype llm_agent_phase: MarkovAnalysisLlmAgentPhaseSegmentationConfig or None
     """
 
     method: MarkovAnalysisSegmentationMethod = Field(
@@ -1065,6 +1099,7 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
         default_factory=MarkovAnalysisFixedWindowSegmentationConfig
     )
     llm: Optional[MarkovAnalysisLlmSegmentationConfig] = None
+    llm_agent_phase: Optional[MarkovAnalysisLlmAgentPhaseSegmentationConfig] = None
     span_markup: Optional[MarkovAnalysisSpanMarkupSegmentationConfig] = None
 
     @field_validator("method", mode="before")
@@ -1080,6 +1115,13 @@ class MarkovAnalysisSegmentationConfig(AnalysisSchemaModel):
     def _validate_requirements(self) -> "MarkovAnalysisSegmentationConfig":
         if self.method == MarkovAnalysisSegmentationMethod.LLM and self.llm is None:
             raise ValueError("segmentation.llm is required when segmentation.method is 'llm'")
+        if (
+            self.method == MarkovAnalysisSegmentationMethod.LLM_AGENT_PHASE
+            and self.llm_agent_phase is None
+        ):
+            raise ValueError(
+                "segmentation.llm_agent_phase is required when segmentation.method is 'llm_agent_phase'"
+            )
         if self.method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP and self.span_markup is None:
             raise ValueError(
                 "segmentation.span_markup is required when segmentation.method is 'span_markup'"

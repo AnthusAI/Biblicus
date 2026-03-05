@@ -42,6 +42,8 @@ from .models import (
     MarkovAnalysisDecodedPath,
     MarkovAnalysisModelConfig,
     MarkovAnalysisModelFamily,
+    MarkovAnalysisLlmAgentSentenceClassifierConfig,
+    MarkovAnalysisLlmSegmentationConfig,
     MarkovAnalysisObservation,
     MarkovAnalysisObservationsConfig,
     MarkovAnalysisObservationsEncoder,
@@ -574,12 +576,19 @@ def _segment_documents(
             )
         if method == MarkovAnalysisSegmentationMethod.LLM:
             return _llm_segments(item_id=document.item_id, text=filtered_text, config=config)
+        if method == MarkovAnalysisSegmentationMethod.LLM_AGENT_PHASE:
+            return _llm_agent_phase_segments(
+                item_id=document.item_id,
+                text=filtered_text,
+                config=config,
+            )
         if method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP:
             return _span_markup_segments(item_id=document.item_id, text=filtered_text, config=config)
         raise ValueError(f"Unsupported segmentation method: {method}")
 
     if method in {
         MarkovAnalysisSegmentationMethod.LLM,
+        MarkovAnalysisSegmentationMethod.LLM_AGENT_PHASE,
         MarkovAnalysisSegmentationMethod.SPAN_MARKUP,
     } and config.segmentation.max_workers > 1:
         results: List[Optional[List[MarkovAnalysisSegment]]] = [None] * total
@@ -675,8 +684,12 @@ def _add_boundary_segments(
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
 
+def _sentence_tokens(text: str) -> List[str]:
+    return [token.strip() for token in _SENTENCE_SPLIT.split(text) if token.strip()]
+
+
 def _sentence_segments(*, item_id: str, text: str) -> List[MarkovAnalysisSegment]:
-    tokens = [token.strip() for token in _SENTENCE_SPLIT.split(text) if token.strip()]
+    tokens = _sentence_tokens(text)
     segments: List[MarkovAnalysisSegment] = []
     for index, token in enumerate(tokens, start=1):
         segments.append(
@@ -721,6 +734,21 @@ def _llm_segments(
     if llm_config is None:
         raise ValueError("segmentation.llm is required when segmentation.method is 'llm'")
     text = _speaker_filtered_text(text)
+    return _llm_segments_with_config(
+        item_id=item_id,
+        text=text,
+        llm_config=llm_config,
+        error_label="LLM segmentation",
+    )
+
+
+def _llm_segments_with_config(
+    *,
+    item_id: str,
+    text: str,
+    llm_config: MarkovAnalysisLlmSegmentationConfig,
+    error_label: str,
+) -> List[MarkovAnalysisSegment]:
     prompt = llm_config.prompt_template.format(text=text)
     response_text = generate_completion(
         client=llm_config.client,
@@ -728,12 +756,12 @@ def _llm_segments(
         user_prompt=prompt,
     ).strip()
     if llm_config.client.response_format == "json_object":
-        payload = _parse_json_object(response_text, error_label="LLM segmentation")
+        payload = _parse_json_object(response_text, error_label=error_label)
         segments_payload = payload.get("segments")
         if not isinstance(segments_payload, list):
-            raise ValueError("LLM segmentation must return a JSON object with a 'segments' list")
+            raise ValueError(f"{error_label} must return a JSON object with a 'segments' list")
     else:
-        segments_payload = _parse_json_list(response_text, error_label="LLM segmentation")
+        segments_payload = _parse_json_list(response_text, error_label=error_label)
     segments: List[MarkovAnalysisSegment] = []
     for index, value in enumerate(segments_payload, start=1):
         segment_text = str(value).strip()
@@ -743,6 +771,109 @@ def _llm_segments(
             MarkovAnalysisSegment(item_id=item_id, segment_index=index, text=segment_text)
         )
     return segments
+
+
+def _llm_agent_phase_segments(
+    *, item_id: str, text: str, config: MarkovAnalysisConfiguration
+) -> List[MarkovAnalysisSegment]:
+    agent_config = config.segmentation.llm_agent_phase
+    if agent_config is None:
+        raise ValueError(
+            "segmentation.llm_agent_phase is required when segmentation.method is 'llm_agent_phase'"
+        )
+    filtered_text = _speaker_filtered_text(text)
+    sentences = _sentence_tokens(filtered_text)
+    if not sentences:
+        return []
+    agent_indices = _classify_agent_sentence_indices(
+        sentences=sentences,
+        config=agent_config.classifier,
+    )
+    agent_text = " ".join(sentences[index - 1] for index in agent_indices).strip()
+    if not agent_text:
+        return []
+    return _llm_segments_with_config(
+        item_id=item_id,
+        text=agent_text,
+        llm_config=agent_config.phase_segmentation,
+        error_label="LLM agent phase segmentation",
+    )
+
+
+def _classify_agent_sentence_indices(
+    *,
+    sentences: Sequence[str],
+    config: MarkovAnalysisLlmAgentSentenceClassifierConfig,
+) -> List[int]:
+    numbered = "\n".join(
+        f"{index}. {sentence}" for index, sentence in enumerate(sentences, start=1)
+    )
+    prompt = config.prompt_template.format(sentences=numbered)
+    response_text = generate_completion(
+        client=config.client,
+        system_prompt=config.system_prompt,
+        user_prompt=prompt,
+    ).strip()
+    payload = _parse_json_object(response_text, error_label="LLM agent sentence classification")
+    raw_indices = payload.get("agent_sentence_indices")
+    if not isinstance(raw_indices, list):
+        raise ValueError(
+            "LLM agent sentence classification must return a JSON object with "
+            "'agent_sentence_indices' list"
+        )
+    normalized: List[int] = []
+    seen: set[int] = set()
+    for value in raw_indices:
+        candidates: List[object]
+        if isinstance(value, dict):
+            for key in ("index", "sentence_index", "id"):
+                if key in value:
+                    candidates = [value[key]]
+                    break
+            else:
+                raise ValueError("LLM agent sentence indices must be integers")
+        elif isinstance(value, list):
+            candidates = list(value)
+        else:
+            candidates = [value]
+        for candidate in candidates:
+            if isinstance(candidate, float) and candidate.is_integer():
+                candidate = int(candidate)
+            if isinstance(candidate, str):
+                stripped = candidate.strip()
+                if stripped.isdigit():
+                    candidate = int(stripped)
+                else:
+                    parsed: List[int] = []
+                    try:
+                        as_float = float(stripped)
+                    except ValueError:
+                        as_float = None
+                    if as_float is not None and float(as_float).is_integer():
+                        parsed.append(int(as_float))
+                    if not parsed:
+                        for token in re.findall(r"\d+", stripped):
+                            parsed.append(int(token))
+                    if not parsed:
+                        raise ValueError("LLM agent sentence indices must be integers")
+                    for parsed_value in parsed:
+                        if parsed_value < 1 or parsed_value > len(sentences):
+                            raise ValueError("LLM agent sentence index is out of range")
+                        if parsed_value in seen:
+                            continue
+                        seen.add(parsed_value)
+                        normalized.append(parsed_value)
+                    continue
+            if not isinstance(candidate, int):
+                raise ValueError("LLM agent sentence indices must be integers")
+            if candidate < 1 or candidate > len(sentences):
+                raise ValueError("LLM agent sentence index is out of range")
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            normalized.append(candidate)
+    normalized.sort()
+    return normalized
 
 
 def _span_markup_segments(

@@ -3,6 +3,8 @@ import json
 from biblicus.analysis import markov
 from biblicus.analysis.models import (
     MarkovAnalysisConfiguration,
+    MarkovAnalysisLlmAgentPhaseSegmentationConfig,
+    MarkovAnalysisLlmAgentSentenceClassifierConfig,
     MarkovAnalysisSegmentationConfig,
     MarkovAnalysisSegmentationMethod,
     MarkovAnalysisLlmSegmentationConfig,
@@ -36,3 +38,35 @@ def test_llm_segments_retry_non_transient(monkeypatch):
     )
     segments = markov._llm_segments(item_id="i", text="abc", config=config)
     assert segments[0].text == "abc"
+
+
+def test_llm_agent_phase_segments_classify_and_group(monkeypatch):
+    def fake_generate_completion(**kwargs):
+        prompt = kwargs["user_prompt"]
+        if "Sentences:" in prompt:
+            return json.dumps({"agent_sentence_indices": [1, 3]})
+        assert "Agent line one. Agent line two." in prompt
+        return json.dumps({"segments": ["Agent line one. Agent line two."]})
+
+    monkeypatch.setattr(markov, "generate_completion", fake_generate_completion)
+    config = MarkovAnalysisConfiguration(
+        segmentation=MarkovAnalysisSegmentationConfig(
+            method=MarkovAnalysisSegmentationMethod.LLM_AGENT_PHASE,
+            llm_agent_phase=MarkovAnalysisLlmAgentPhaseSegmentationConfig(
+                classifier=MarkovAnalysisLlmAgentSentenceClassifierConfig(
+                    prompt_template="Sentences:\n{sentences}",
+                    client={"provider": "mock", "model": "m", "response_format": "json_object"},
+                ),
+                phase_segmentation=MarkovAnalysisLlmSegmentationConfig(
+                    prompt_template="{text}",
+                    client={"provider": "mock", "model": "m", "response_format": "json_object"},
+                ),
+            ),
+        ),
+    )
+    segments = markov._llm_agent_phase_segments(
+        item_id="i",
+        text="Agent line one. Caller line. Agent line two.",
+        config=config,
+    )
+    assert [segment.text for segment in segments] == ["Agent line one. Agent line two."]

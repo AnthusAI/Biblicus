@@ -1,0 +1,103 @@
+schema_version: 1
+text_source:
+  sample_size: null
+  min_text_characters: 200
+segmentation:
+  method: llm_agent_phase
+  max_workers: 8
+  llm_agent_phase:
+    classifier:
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+        response_format: json_object
+      system_prompt: |
+        You classify call transcript sentences as agent or caller.
+        Return only JSON.
+      prompt_template: |
+        Classify each sentence as "agent" or "caller".
+
+        Requirements:
+        - Return a JSON object with key "agent_sentence_indices".
+        - "agent_sentence_indices" is a JSON array of 1-based indices.
+        - Use integers only (no strings, objects, or ranges).
+        - Include only sentences that are clearly the agent speaking.
+        - If uncertain, exclude the sentence.
+        - Treat questions, instructions, confirmations, and scripted prompts as agent.
+        - Exclude sentences that provide personal details, identifiers, or answers.
+        - Exclude sentences describing the caller's problem or experience.
+        - If a sentence is a short answer to a question (e.g., "yes", "no", "that's right"),
+          exclude it.
+        - If a sentence contains first-person statements about the caller's situation
+          (e.g., "I can't", "I'm trying", "my thermostat"), treat it as caller.
+
+        Sentences:
+        {sentences}
+    phase_segmentation:
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+        response_format: json_object
+      system_prompt: |
+        You segment agent-only utterances into script items.
+        Return only JSON.
+      prompt_template: |
+        Segment the agent-only text into high-level script items.
+
+        Requirements:
+        - Return a JSON object with key "segments".
+        - "segments" is a JSON array of strings.
+        - Each string contains only agent utterances, grouped into a script item.
+        - Copy text verbatim. Do not paraphrase or label.
+        - Each segment should map to one script item (e.g., greeting, info capture,
+          diagnostic questions, step-by-step instructions, account changes, confirmation,
+          closing/next-steps, "any other questions").
+        - Include closing prompts like "Any other questions for me?" as their own segment.
+        - If a segment contains a closing prompt, it must contain only closing/next-step
+          language and goodbyes.
+        - Concatenate the agent utterances for the same script item in order, separated by a single space.
+        - Preserve the original order.
+        - Avoid very short fragments; merge small leftovers into adjacent phases.
+
+        Text:
+        ---
+        {text}
+        ---
+llm_observations:
+  enabled: true
+  max_workers: 8
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: |
+    You label agent conversation phases for HMM analysis.
+    Return only JSON.
+  prompt_template: |
+    Return a JSON object with keys:
+    - label: short noun phrase describing the phase
+    - label_confidence: number from 0 to 1
+    - summary: one sentence summary of the phase
+    Return valid JSON only. Do not include commentary or additional keys.
+    Format the label as: <label> "example quote"
+    - The quote must be copied verbatim from the segment.
+    - Keep the quote concise and representative.
+
+    Segment:
+    ---
+    {segment}
+    ---
+observations:
+  encoder: tfidf
+  categorical_source: llm_label
+model:
+  family: categorical
+  n_states: 10
+artifacts:
+  graphviz:
+    enabled: true
+    rankdir: TB
+report:
+  max_state_exemplars: 25
