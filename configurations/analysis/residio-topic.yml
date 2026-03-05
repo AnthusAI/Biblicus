@@ -2,8 +2,25 @@ schema_version: 1
 text_source:
   min_text_characters: 50
 llm_extraction:
-  enabled: false
+  enabled: true
   method: single
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: |
+    You extract the customer's primary intent from a call transcript.
+    Return only the intent text.
+  prompt_template: |
+    Read the transcript and return the customer's key intent as a short noun phrase.
+    - Focus on what the customer is trying to accomplish.
+    - Use the customer's perspective (e.g., "thermostat registration issue").
+    - Return only the intent text. No quotes, no labels, no extra words.
+
+    Transcript:
+    ---
+    {text}
+    ---
 entity_removal:
   enabled: true
   provider: spacy
