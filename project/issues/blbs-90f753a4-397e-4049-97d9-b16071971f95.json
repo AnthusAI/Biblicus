@@ -3,7 +3,7 @@
   "title": "Fix GoogleDriveRemoteSource cleanup in pull_remote_source",
   "description": "",
   "type": "bug",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -22,10 +22,16 @@
       "author": "ryan.porter",
       "text": "Updated pull_source to use a context-managed remote source and added a unit test asserting __enter__/__exit__ are called when pulling a Google Drive source.",
       "created_at": "2026-03-05T04:47:24.651834Z"
+    },
+    {
+      "id": "bac3f72c-bd57-42aa-b4f3-a01d01622c3e",
+      "author": "ryan.porter",
+      "text": "Attempted: python3 -m pytest tests/test_corpus_remote_edges.py -q. Failed because pytest is not installed in this environment.",
+      "created_at": "2026-03-05T04:47:59.486909Z"
     }
   ],
   "created_at": "2026-03-05T04:44:52.830284Z",
-  "updated_at": "2026-03-05T04:47:24.651834Z",
-  "closed_at": null,
+  "updated_at": "2026-03-05T04:48:02.050632Z",
+  "closed_at": "2026-03-05T04:48:02.050632Z",
   "custom": {}
 }
