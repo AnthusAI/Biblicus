@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2fa0f4ce-00a3-447c-8f8a-652a8c053a11",
+  "issue_id": "blbs-ead8d212-a68b-45b5-8d08-ce2c5da2f21e",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-05T04:41:07.080Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Generate PDF from topic modeling markdown report"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "blbs-ead8d212-a68b-45b5-8d08-ce2c5da2f21e",
+  "title": "Generate PDF from topic modeling markdown report",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "c3c6578a-09cc-4db4-96ee-06eab797cd82",
+      "author": "ryan.porter",
+      "text": "Locating markdown-to-PDF tooling and generating PDF for residio-topic-intent report.",
+      "created_at": "2026-03-05T04:41:19.914302Z"
+    },
+    {
+      "id": "fb0c575c-8696-453e-9e1c-7df90f9ad922",
+      "author": "ryan.porter",
+      "text": "Generated PDF via pandoc + tectonic. Output: reports/topic-modeling/residio-topic-intent.pdf. Tectonic emitted overfull hbox warnings but PDF created successfully.",
+      "created_at": "2026-03-05T04:43:50.493149Z"
+    }
+  ],
+  "created_at": "2026-03-05T04:41:07.080672Z",
+  "updated_at": "2026-03-05T04:43:54.779196Z",
+  "closed_at": "2026-03-05T04:43:54.779196Z",
+  "custom": {}
+}
