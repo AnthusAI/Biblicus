@@ -91,6 +91,9 @@ aws = [
 azure = [
   "azure-storage-blob>=12.20",
 ]
+google-drive = [
+  "gdown>=5.2",
+]
 
 [project.scripts]
 biblicus = "biblicus.cli:main"

@@ -1,0 +1,73 @@
+{
+  "id": "blbs-2acfce6d-8a58-4243-8284-51bad2b920f3",
+  "title": "Support Google Drive remote corpus ingestion for residio corpus",
+  "description": "Add google-drive remote corpus source support, validate nested-folder ingest using the residio Drive folder, and run topic/Markov(HMM) analysis workflows on the ingested corpus.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7d8a685a-7922-413b-a613-6251295b709c",
+      "author": "ryan.porter",
+      "text": "Implemented Google Drive remote source support end-to-end (new kind: google-drive, folder_url support, adapter, CLI wiring, collection wiring, unit+BDD coverage including nested/prefix scenarios). Added robust Drive behavior: gdown folder listing with remaining_ok + direct per-file streaming download (fallback to gdown download), and prefix-aware download filtering. Validated with tests (pytest tests/test_remote_source_coverage.py + remote source Behave features). Real residio run completed with scoped prefix recordings_10 (1)/: source pull listed/downloaded 10 WAV items, then extraction succeeded via stt-faster-whisper tiny (snapshot ef3a34c8...), topic modeling succeeded (snapshot 2d09e3d1..., docs=10, topics=1), and Markov/HMM analysis succeeded (snapshot 8d98ac63..., items=10, segments=1992, states=5, transitions=18).",
+      "created_at": "2026-03-05T00:06:25.762239Z"
+    },
+    {
+      "id": "a1ed3635-86db-4c79-bf94-561e0993eca3",
+      "author": "ryan.porter",
+      "text": "Continuing while user is away: executing full residio corpus run without prefix, then full extraction and analysis reruns. Will record resulting artifact snapshots and metrics.",
+      "created_at": "2026-03-05T00:07:49.027646Z"
+    },
+    {
+      "id": "eb8a126b-3077-4b74-a78a-d6b36f91b0d3",
+      "author": "ryan.porter",
+      "text": "Progress update (Mar 4, 2026 19:22 ET): full Google Drive source pull succeeded for residio corpus. Catalog now has 245 items (233 wav, 12 zip) with nested folder structure under imports/remote/residio. Full-corpus extraction is currently running using stt-faster-whisper tiny/int8; latest heartbeat 79/245 processed, 64 extracted, 11 skipped, 0 errored. Next: finish extraction, then rerun topic modeling and HMM on full extracted snapshot.",
+      "created_at": "2026-03-05T00:29:26.446781Z"
+    },
+    {
+      "id": "afd18d30-170f-45a5-930f-275f1df143b9",
+      "author": "ryan.porter",
+      "text": "Progress update (Mar 4, 2026 19:25 ET): full-corpus extraction is ongoing on residio Google Drive pull. Heartbeats reached 104/245 processed (100 milestone at 752s). Current counters: 88 extracted, 12 skipped, 0 errored. Continuing to completion, then running topic modeling + HMM on the resulting full snapshot.",
+      "created_at": "2026-03-05T00:32:40.749199Z"
+    },
+    {
+      "id": "5b37c747-8afb-4d99-8d4b-ce378f19feaf",
+      "author": "ryan.porter",
+      "text": "Investigation note: extraction is already parallel at item level via ThreadPoolExecutor, but heartbeat currently shows only one active_item so it appears serial. Throughput bottleneck identified in STT path: FasterWhisper extractor creates WhisperModel inside each item call, and get_extractor constructs extractor instances repeatedly. I am applying a performance patch next to cache model/extractor initialization for this workload.",
+      "created_at": "2026-03-05T00:37:37.324549Z"
+    },
+    {
+      "id": "8b6f40f6-d21b-4e98-9ed6-9fcb8bf9fc27",
+      "author": "ryan.porter",
+      "text": "Progress update (Mar 4, 2026 19:31 ET): extraction crossed 150 milestone and is now at 157/245 processed; 138 extracted, 12 skipped, 0 errored. Also implemented perf fixes for future runs: (1) extractor registry now instantiates only the requested extractor instead of constructing all extractors on every call; (2) faster-whisper model loading is now cached by model/device/compute_type to avoid re-initializing per item.",
+      "created_at": "2026-03-05T00:40:34.688580Z"
+    },
+    {
+      "id": "dffa8cd1-a547-4f82-b0ef-0b58b3c2e8af",
+      "author": "ryan.porter",
+      "text": "Action taken (Mar 4, 2026 19:37 ET): stopped slow in-flight extraction run and restarted extraction for the same snapshot. Resume behavior works correctly: previously completed items were reused from cache immediately (checkpoint replay to 175/245 in under a second), confirming no full recompute of already-processed items.",
+      "created_at": "2026-03-05T00:44:19.296268Z"
+    },
+    {
+      "id": "32738d62-d8b1-4ef6-a173-3a18d516a735",
+      "author": "ryan.porter",
+      "text": "Progress update (Mar 4, 2026 19:40 ET): resumed extraction crossed 200 milestone and is currently 205/245 with 188 extracted, 12 skipped, 0 errored. Restart materially improved effective throughput by reusing cached outputs.",
+      "created_at": "2026-03-05T00:47:32.425726Z"
+    },
+    {
+      "id": "f56cc916-13a7-4de0-9dc4-cc9f856e1ae3",
+      "author": "ryan.porter",
+      "text": "Major milestone (Mar 4, 2026 19:53 ET): full residio pipeline run completed end-to-end on Google Drive corpus. Extraction snapshot pipeline:a92c0e... finished 245/245 with stats: extracted=233, skipped=12, errored=0. Topic modeling completed on this snapshot with config residio-topic-full -> snapshot 5fdcaf8d... (documents=231, topics=8). Markov/HMM completed with config residio-markov-full -> snapshot cbfa5292... (items=231, segments=46824, states=5, transitions=24).",
+      "created_at": "2026-03-05T00:53:52.675847Z"
+    }
+  ],
+  "created_at": "2026-03-04T23:28:25.395503Z",
+  "updated_at": "2026-03-05T00:54:18.555503Z",
+  "closed_at": "2026-03-05T00:54:18.555503Z",
+  "custom": {}
+}

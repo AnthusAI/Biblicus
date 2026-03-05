@@ -3,7 +3,7 @@
   "title": "Configure S3 corpus source",
   "description": "",
   "type": "story",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -16,10 +16,16 @@
       "author": "ryan.porter",
       "text": "Feature: S3 corpus source\\n  Scenario: Ingest items from Amazon S3\\n    Given a corpus configuration with a source kind of \"s3\" and valid bucket and prefix settings\\n    When I run corpus ingestion\\n    Then Biblicus registers items with provenance URIs in the s3 scheme\\n    And retrieval evidence references those item identifiers",
       "created_at": "2026-02-19T04:55:24.784995Z"
+    },
+    {
+      "id": "e0b0f1da-eec3-4230-b476-945859e24dcc",
+      "author": "ryan.porter",
+      "text": "Closing as related stale remote-source story per request to close issue set around blbs-539435.",
+      "created_at": "2026-03-04T23:08:41.699012Z"
     }
   ],
   "created_at": "2026-02-19T04:55:15.496942Z",
-  "updated_at": "2026-02-19T04:55:24.784995Z",
-  "closed_at": null,
+  "updated_at": "2026-03-04T23:08:41.699012Z",
+  "closed_at": "2026-03-04T23:08:41.690922Z",
   "custom": {}
 }

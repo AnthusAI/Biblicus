@@ -18,7 +18,7 @@ from .models import (
     RemoteCorpusCollectionDiscovery,
     RemoteCorpusSourceConfig,
 )
-from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
+from .remote_sources import AzureBlobRemoteSource, GoogleDriveRemoteSource, S3RemoteSource
 from .time import utc_now_iso
 from .user_config import resolve_source_profile
 
@@ -96,6 +96,8 @@ def pull_collection(collection_root: Path) -> RemoteCollectionPullResult:
         source = S3RemoteSource(config.source, profile)
     elif config.source.kind == "azure-blob":
         source = AzureBlobRemoteSource(config.source, profile)
+    elif config.source.kind == "google-drive":
+        source = GoogleDriveRemoteSource(config.source, profile)
     else:
         raise ValueError(f"Unsupported remote source kind: {config.source.kind}")
 
@@ -164,6 +166,7 @@ def _build_subfolder_source_config(
         bucket=source_config.bucket,
         container=source_config.container,
         prefix=prefix,
+        folder_url=source_config.folder_url,
     )
 
 
@@ -177,6 +180,7 @@ def _build_partition_source_config(
         bucket=source_config.bucket,
         container=source_config.container,
         prefix=source_config.prefix,
+        folder_url=source_config.folder_url,
     )
 
 

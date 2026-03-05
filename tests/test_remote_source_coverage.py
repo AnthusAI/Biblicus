@@ -2,16 +2,19 @@ import io
 import sys
 import types
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from biblicus.models import RemoteCorpusSourceConfig
 from biblicus.remote_sources import (
     AzureBlobRemoteSource,
+    GoogleDriveRemoteSource,
     S3RemoteSource,
     _isoformat_timestamp,
     _normalize_etag,
     iter_items,
+    parse_google_drive_folder_id,
 )
 from biblicus.user_config import (
     BiblicusUserConfig,
@@ -111,6 +114,46 @@ def _install_fake_azure_blob(monkeypatch, *, blobs):
     monkeypatch.setitem(sys.modules, "azure", azure_module)
     monkeypatch.setitem(sys.modules, "azure.storage", storage_module)
     monkeypatch.setitem(sys.modules, "azure.storage.blob", blob_module)
+
+
+def _install_fake_gdown(monkeypatch, *, mirror_root: Path, files):
+    ordered_files = list(files.items())
+    id_map = {}
+    for index, (relpath, content) in enumerate(ordered_files, start=1):
+        id_map[f"id-{index}"] = {"path": relpath, "content": content}
+
+    def download_folder(*, url, output, quiet, remaining_ok=False, skip_download=False):
+        _ = url
+        _ = quiet
+        _ = remaining_ok
+        _ = output
+        records = []
+        for file_id, details in id_map.items():
+            relpath = details["path"]
+            records.append(
+                types.SimpleNamespace(
+                    id=file_id,
+                    path=relpath,
+                    local_path=str(mirror_root / "mirror" / relpath),
+                )
+            )
+        if skip_download:
+            return records
+        return [record.local_path for record in records]
+
+    def download(*, id, output, quiet=True):
+        _ = quiet
+        details = id_map[id]
+        target = Path(output)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(details["content"])
+        return str(target)
+
+    monkeypatch.setattr("tempfile.mkdtemp", lambda prefix="": str(mirror_root / "mirror"))
+    module = types.ModuleType("gdown")
+    module.download_folder = download_folder
+    module.download = download
+    monkeypatch.setitem(sys.modules, "gdown", module)
 
 
 def test_remote_source_helpers():
@@ -293,6 +336,46 @@ def test_iter_items_rejects_unknown_source():
         iter_items(object())
 
 
+def test_parse_google_drive_folder_id():
+    assert (
+        parse_google_drive_folder_id(
+            "https://drive.google.com/drive/folders/1ySJVifPr5sOdm2fn_o6MN05TSH6uZm-X?usp=drive_link"
+        )
+        == "1ySJVifPr5sOdm2fn_o6MN05TSH6uZm-X"
+    )
+    assert parse_google_drive_folder_id("https://drive.google.com/open?id=abc123") == "abc123"
+    assert parse_google_drive_folder_id("https://example.com") is None
+
+
+def test_google_drive_remote_source_list_and_fetch(monkeypatch, tmp_path):
+    _install_fake_gdown(
+        monkeypatch,
+        mirror_root=tmp_path,
+        files={
+            "root.md": b"alpha",
+            "nested/child.txt": b"beta",
+        },
+    )
+    config = RemoteCorpusSourceConfig(
+        kind="google-drive",
+        profile="profile",
+        name="residio",
+        folder_url="https://drive.google.com/drive/folders/folder123?usp=drive_link",
+        prefix="nested/",
+    )
+    profile = SourceProfileConfig(name="profile", kind="google-drive")
+    source = GoogleDriveRemoteSource(config, profile)
+    items = source.list_items()
+    assert len(items) == 1
+    assert items[0].key == "nested/child.txt"
+    assert items[0].source_uri == "gdrive://folder123/nested/child.txt"
+    assert items[0].etag is not None
+    payload, content_type = source.fetch_bytes(items[0])
+    assert payload == b"beta"
+    assert content_type == "text/plain"
+    assert iter_items(source)[0].source_uri == "gdrive://folder123/nested/child.txt"
+
+
 def test_remote_corpus_source_config_validation():
     with pytest.raises(ValueError):
         RemoteCorpusSourceConfig(kind="gcs", profile="profile", name="demo")
@@ -300,6 +383,8 @@ def test_remote_corpus_source_config_validation():
         RemoteCorpusSourceConfig(kind="s3", profile="profile", name="demo")
     with pytest.raises(ValueError):
         RemoteCorpusSourceConfig(kind="azure-blob", profile="profile", name="demo")
+    with pytest.raises(ValueError):
+        RemoteCorpusSourceConfig(kind="google-drive", profile="profile", name="demo")
     RemoteCorpusSourceConfig(
         kind="azure-blob",
         profile="profile",
@@ -357,3 +442,18 @@ def test_resolve_azure_profile_env_override(monkeypatch):
     assert resolved.connection_string == "UseDevelopmentStorage=true"
     assert resolved.account_name == "env-acct"
     assert resolved.account_key == "env-key"
+
+
+def test_resolve_google_drive_profile(monkeypatch):
+    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("AWS_SECRET_ACCESS_KEY", raising=False)
+    cfg = BiblicusUserConfig(
+        sources=[
+            SourceProfileConfig(
+                name="gdrive",
+                kind="google-drive",
+            )
+        ]
+    )
+    resolved = resolve_source_profile("gdrive", config=cfg)
+    assert resolved.kind == "google-drive"

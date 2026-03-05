@@ -8,6 +8,7 @@ No API costs, fully offline capable.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -41,6 +42,18 @@ class FasterWhisperSpeechToTextExtractorConfig(BaseModel):
     compute_type: str = Field(default="int8", min_length=1)
     language: Optional[str] = Field(default=None, min_length=1)
     beam_size: int = Field(default=5, ge=1, le=10)
+
+
+@lru_cache(maxsize=8)
+def _load_whisper_model(*, model_size: str, device: str, compute_type: str):
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError as import_error:
+        raise ExtractionSnapshotFatalError(
+            "Faster Whisper speech to text extractor requires an optional dependency. "
+            'Install it with pip install "biblicus[faster-whisper]" or pip install faster-whisper.'
+        ) from import_error
+    return WhisperModel(model_size, device=device, compute_type=compute_type)
 
 
 class FasterWhisperSpeechToTextExtractor(TextExtractor):
@@ -110,31 +123,18 @@ class FasterWhisperSpeechToTextExtractor(TextExtractor):
             else FasterWhisperSpeechToTextExtractorConfig.model_validate(config)
         )
 
-        try:
-            from faster_whisper import WhisperModel
-        except ImportError as import_error:
-            raise ExtractionSnapshotFatalError(
-                "Faster Whisper speech to text extractor requires an optional dependency. "
-                'Install it with pip install "biblicus[faster-whisper]" or pip install faster-whisper.'
-            ) from import_error
-
-        # Initialize model (cached per process)
-        model = WhisperModel(
-            parsed_config.model_size,
+        model = _load_whisper_model(
+            model_size=parsed_config.model_size,
             device=parsed_config.device,
-            compute_type=parsed_config.compute_type
+            compute_type=parsed_config.compute_type,
         )
 
         source_path = corpus.root / item.relpath
 
-        # Transcribe audio
         segments, info = model.transcribe(
-            str(source_path),
-            language=parsed_config.language,
-            beam_size=parsed_config.beam_size
+            str(source_path), language=parsed_config.language, beam_size=parsed_config.beam_size
         )
 
-        # Collect all segments
         transcript_parts = []
         for segment in segments:
             transcript_parts.append(segment.text)
@@ -148,6 +148,6 @@ class FasterWhisperSpeechToTextExtractor(TextExtractor):
                 "model": parsed_config.model_size,
                 "language": info.language,
                 "language_probability": info.language_probability,
-                "duration": info.duration
-            }
+                "duration": info.duration,
+            },
         )

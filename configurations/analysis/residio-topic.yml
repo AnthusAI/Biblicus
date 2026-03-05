@@ -1,0 +1,10 @@
+schema_version: 1
+text_source:
+  min_text_characters: 50
+bertopic_analysis:
+  parameters:
+    embedding_model: null
+    calculate_probabilities: false
+  vectorizer:
+    ngram_range: [1, 2]
+    stop_words: english

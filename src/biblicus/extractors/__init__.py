@@ -4,7 +4,7 @@ Text extraction plugins for Biblicus.
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Type
 
 from .aldea_stt import AldeaSpeechToTextExtractor
 from .audio_format_converter import AudioFormatConverterExtractor
@@ -36,6 +36,37 @@ from .select_text import SelectTextExtractor
 from .tesseract_text import TesseractExtractor
 from .unstructured_text import UnstructuredExtractor
 
+EXTRACTOR_CLASSES: Dict[str, Type[TextExtractor]] = {
+    MetadataTextExtractor.extractor_id: MetadataTextExtractor,
+    MockLayoutDetectorExtractor.extractor_id: MockLayoutDetectorExtractor,
+    MarkItDownExtractor.extractor_id: MarkItDownExtractor,
+    DoclingSmolExtractor.extractor_id: DoclingSmolExtractor,
+    DoclingGraniteExtractor.extractor_id: DoclingGraniteExtractor,
+    PassThroughTextExtractor.extractor_id: PassThroughTextExtractor,
+    PipelineExtractor.extractor_id: PipelineExtractor,
+    PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor,
+    OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor,
+    OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor,
+    FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor,
+    AudioFormatConverterExtractor.extractor_id: AudioFormatConverterExtractor,
+    AwsTranscribeSpeechToTextExtractor.extractor_id: AwsTranscribeSpeechToTextExtractor,
+    AzureSpeechToTextExtractor.extractor_id: AzureSpeechToTextExtractor,
+    GoogleSpeechToTextExtractor.extractor_id: GoogleSpeechToTextExtractor,
+    AldeaSpeechToTextExtractor.extractor_id: AldeaSpeechToTextExtractor,
+    DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor,
+    DeepgramTranscriptTransformExtractor.extractor_id: DeepgramTranscriptTransformExtractor,
+    RapidOcrExtractor.extractor_id: RapidOcrExtractor,
+    HeronLayoutExtractor.extractor_id: HeronLayoutExtractor,
+    PaddleOCRLayoutExtractor.extractor_id: PaddleOCRLayoutExtractor,
+    PaddleOcrVlExtractor.extractor_id: PaddleOcrVlExtractor,
+    TesseractExtractor.extractor_id: TesseractExtractor,
+    SelectTextExtractor.extractor_id: SelectTextExtractor,
+    SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor,
+    SelectSmartOverrideExtractor.extractor_id: SelectSmartOverrideExtractor,
+    SelectOverrideExtractor.extractor_id: SelectOverrideExtractor,
+    UnstructuredExtractor.extractor_id: UnstructuredExtractor,
+}
+
 
 def get_extractor(extractor_id: str) -> TextExtractor:
     """
@@ -47,36 +78,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
     :rtype: TextExtractor
     :raises KeyError: If the extractor identifier is not known.
     """
-    extractors: Dict[str, TextExtractor] = {
-        MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
-        MockLayoutDetectorExtractor.extractor_id: MockLayoutDetectorExtractor(),
-        MarkItDownExtractor.extractor_id: MarkItDownExtractor(),
-        DoclingSmolExtractor.extractor_id: DoclingSmolExtractor(),
-        DoclingGraniteExtractor.extractor_id: DoclingGraniteExtractor(),
-        PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
-        PipelineExtractor.extractor_id: PipelineExtractor(),
-        PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
-        OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
-        OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor(),
-        FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor(),
-        AudioFormatConverterExtractor.extractor_id: AudioFormatConverterExtractor(),
-        AwsTranscribeSpeechToTextExtractor.extractor_id: AwsTranscribeSpeechToTextExtractor(),
-        AzureSpeechToTextExtractor.extractor_id: AzureSpeechToTextExtractor(),
-        GoogleSpeechToTextExtractor.extractor_id: GoogleSpeechToTextExtractor(),
-        AldeaSpeechToTextExtractor.extractor_id: AldeaSpeechToTextExtractor(),
-        DeepgramSpeechToTextExtractor.extractor_id: DeepgramSpeechToTextExtractor(),
-        DeepgramTranscriptTransformExtractor.extractor_id: DeepgramTranscriptTransformExtractor(),
-        RapidOcrExtractor.extractor_id: RapidOcrExtractor(),
-        HeronLayoutExtractor.extractor_id: HeronLayoutExtractor(),
-        PaddleOCRLayoutExtractor.extractor_id: PaddleOCRLayoutExtractor(),
-        PaddleOcrVlExtractor.extractor_id: PaddleOcrVlExtractor(),
-        TesseractExtractor.extractor_id: TesseractExtractor(),
-        SelectTextExtractor.extractor_id: SelectTextExtractor(),
-        SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor(),
-        SelectSmartOverrideExtractor.extractor_id: SelectSmartOverrideExtractor(),
-        SelectOverrideExtractor.extractor_id: SelectOverrideExtractor(),
-        UnstructuredExtractor.extractor_id: UnstructuredExtractor(),
-    }
-    if extractor_id not in extractors:
+    extractor_class = EXTRACTOR_CLASSES.get(extractor_id)
+    if extractor_class is None:
         raise KeyError(f"Unknown extractor: {extractor_id!r}")
-    return extractors[extractor_id]
+    return extractor_class()

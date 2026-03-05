@@ -42,7 +42,12 @@ from .models import (
     RemoteSourcePullResult,
     RetrievalSnapshot,
 )
-from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
+from .remote_sources import (
+    AzureBlobRemoteSource,
+    GoogleDriveRemoteSource,
+    S3RemoteSource,
+    parse_google_drive_folder_id,
+)
 from .sources import _media_type_from_filename, load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
@@ -1527,9 +1532,11 @@ class Corpus:
             sha256=sha256_digest,
             bytes=len(data),
             media_type=media_type,
-            title=merged_metadata.get("title")
-            if isinstance(merged_metadata.get("title"), str)
-            else None,
+            title=(
+                merged_metadata.get("title")
+                if isinstance(merged_metadata.get("title"), str)
+                else None
+            ),
             tags=list(resolved_tags),
             metadata=dict(merged_metadata),
             created_at=created_at,
@@ -1868,6 +1875,8 @@ class Corpus:
             source = S3RemoteSource(source_config, profile)
         elif source_config.kind == "azure-blob":
             source = AzureBlobRemoteSource(source_config, profile)
+        elif source_config.kind == "google-drive":
+            source = GoogleDriveRemoteSource(source_config, profile)
         else:
             raise ValueError(f"Unsupported remote source kind: {source_config.kind}")
 
@@ -1924,6 +1933,10 @@ class Corpus:
             return _sanitize_filename(source_config.bucket)
         if source_config.kind == "azure-blob" and source_config.container:
             return _sanitize_filename(source_config.container)
+        if source_config.kind == "google-drive" and source_config.folder_url:
+            folder_id = parse_google_drive_folder_id(source_config.folder_url)
+            if folder_id:
+                return _sanitize_filename(folder_id)
         return "remote"
 
     def _relative_remote_key(self, key: str, *, prefix: Optional[str]) -> str:

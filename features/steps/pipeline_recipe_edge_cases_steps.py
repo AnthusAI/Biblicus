@@ -6,21 +6,37 @@ from types import SimpleNamespace
 from behave import then, when
 from pydantic import BaseModel, ValidationError
 
-from biblicus.collections import init_collection
+from biblicus.cli import (
+    _resolve_extraction_snapshot_for_analysis,
+    cmd_benchmark_download,
+    cmd_benchmark_run,
+    cmd_benchmark_status,
+    cmd_collection_show,
+    cmd_graph_extract,
+    cmd_source_set,
+    cmd_source_show,
+)
 from biblicus.collections import (
     _archive_missing_corpora,
     _discover_subfolders,
+    _ensure_collection_corpus,
+    _ensure_partition_corpus,
     _join_prefix,
     _partition_tag_resolver,
     _relative_key,
     _resolve_corpus_root,
-    _ensure_partition_corpus,
-    _ensure_collection_corpus,
+    init_collection,
     load_collection_config,
     pull_collection,
 )
 from biblicus.constants import COLLECTION_SCHEMA_VERSION
 from biblicus.corpus import Corpus
+from biblicus.evaluation.benchmark_runner import (
+    BenchmarkConfig,
+    BenchmarkRunner,
+    CategoryConfig,
+    CategoryResult,
+)
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import (
     PipelineAnalysisConfig,
@@ -40,22 +56,6 @@ from biblicus.pipelines import (
     _run_retrieval,
     load_pipeline_recipe,
     run_pipeline_recipe,
-)
-from biblicus.evaluation.benchmark_runner import (
-    BenchmarkConfig,
-    BenchmarkRunner,
-    CategoryConfig,
-    CategoryResult,
-)
-from biblicus.cli import (
-    cmd_benchmark_download,
-    cmd_benchmark_run,
-    cmd_benchmark_status,
-    cmd_collection_show,
-    cmd_graph_extract,
-    cmd_source_set,
-    cmd_source_show,
-    _resolve_extraction_snapshot_for_analysis,
 )
 from biblicus.user_config import (
     BiblicusUserConfig,
@@ -261,7 +261,9 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         created_at="2026-02-20T00:00:00Z",
         collection_name="empty",
         source=valid_source,
-        discovery=RemoteCorpusCollectionDiscovery(mode="subfolder", depth=1, include_root_files=False),
+        discovery=RemoteCorpusCollectionDiscovery(
+            mode="subfolder", depth=1, include_root_files=False
+        ),
         corpus_root="corpora/missing",
         auto_create=True,
         deletion_policy="archive",
@@ -291,7 +293,9 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         created_at="2026-02-20T00:00:00Z",
         collection_name="demo",
         source=valid_source,
-        discovery=RemoteCorpusCollectionDiscovery(mode="subfolder", depth=1, include_root_files=False),
+        discovery=RemoteCorpusCollectionDiscovery(
+            mode="subfolder", depth=1, include_root_files=False
+        ),
         corpus_root="corpora/demo",
         auto_create=True,
         deletion_policy="archive",
@@ -411,9 +415,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     (archive_root / "remove").mkdir(parents=True, exist_ok=True)
     (archive_root / ".archived").mkdir(parents=True, exist_ok=True)
     (archive_root / "note.txt").write_text("skip", encoding="utf-8")
-    archived = _archive_missing_corpora(
-        archive_root, ["keep"], deletion_policy="archive"
-    )
+    archived = _archive_missing_corpora(archive_root, ["keep"], deletion_policy="archive")
     assert archived == 1, "Expected one corpus archived"
     assert (archive_root / ".archived").exists(), "Expected archive directory to exist"
 
@@ -425,9 +427,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     delete_root = workdir / "corpora" / "delete"
     (delete_root / "keep").mkdir(parents=True, exist_ok=True)
     (delete_root / "remove").mkdir(parents=True, exist_ok=True)
-    deleted = _archive_missing_corpora(
-        delete_root, ["keep"], deletion_policy="delete"
-    )
+    deleted = _archive_missing_corpora(delete_root, ["keep"], deletion_policy="delete")
     assert deleted == 1, "Expected one corpus deleted"
 
     mismatch_collection_root = workdir / "collections" / "mismatch"
@@ -436,7 +436,9 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         created_at="2026-02-20T00:00:00Z",
         collection_name="mismatch",
         source=valid_source,
-        discovery=RemoteCorpusCollectionDiscovery(mode="subfolder", depth=1, include_root_files=False),
+        discovery=RemoteCorpusCollectionDiscovery(
+            mode="subfolder", depth=1, include_root_files=False
+        ),
         corpus_root="corpora/mismatch",
         auto_create=True,
         deletion_policy="archive",
@@ -472,7 +474,9 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
             container=None,
             prefix="",
         ),
-        discovery=RemoteCorpusCollectionDiscovery(mode="subfolder", depth=1, include_root_files=False),
+        discovery=RemoteCorpusCollectionDiscovery(
+            mode="subfolder", depth=1, include_root_files=False
+        ),
         corpus_root="corpora/unsupported",
         auto_create=True,
         deletion_policy="archive",
@@ -498,7 +502,9 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         created_at="2026-02-20T00:00:00Z",
         collection_name="s3",
         source=valid_source,
-        discovery=RemoteCorpusCollectionDiscovery(mode="subfolder", depth=1, include_root_files=False),
+        discovery=RemoteCorpusCollectionDiscovery(
+            mode="subfolder", depth=1, include_root_files=False
+        ),
         corpus_root="corpora/s3",
         auto_create=True,
         deletion_policy="archive",
@@ -559,9 +565,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         {"extractor_id": "pass-through-text", "configuration": {}}
     )
     assert extractor_id == "pipeline", "Expected pipeline wrapper for non-pipeline extractor"
-    assert (
-        config["stages"][0]["extractor_id"] == "pass-through-text"
-    ), "Expected stage extractor id"
+    assert config["stages"][0]["extractor_id"] == "pass-through-text", "Expected stage extractor id"
     assert workers is None, "Expected max_workers to remain None"
 
     retrieval_config_path = workdir / "retrieval.yml"
@@ -572,9 +576,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
 
     original_build_plan = pipelines_module.build_plan_for_index
 
-    pipelines_module.build_plan_for_index = lambda *args, **kwargs: _FakePlan(
-        "blocked", "blocked"
-    )
+    pipelines_module.build_plan_for_index = lambda *args, **kwargs: _FakePlan("blocked", "blocked")
     try:
         _run_retrieval(Corpus.open(corpus_path), retrieval_config)
         raise AssertionError("Expected blocked retrieval plan to fail")
@@ -657,6 +659,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         name="demo",
         bucket="bucket",
         container=None,
+        folder_url=None,
         prefix="",
     )
     cmd_source_set(source_args)
@@ -690,19 +693,26 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     recipe_dir = corpus_for_analysis.root / "recipes" / "extraction"
     recipe_dir.mkdir(parents=True, exist_ok=True)
     recipe_path = recipe_dir / "default.yml"
-    recipe_path.write_text("extractor_id: pipeline\nconfiguration:\n  stages: []\n", encoding="utf-8")
+    recipe_path.write_text(
+        "extractor_id: pipeline\nconfiguration:\n  stages: []\n", encoding="utf-8"
+    )
 
     import biblicus.cli as cli_module
 
-    manifest_path = corpus_for_analysis.extraction_snapshot_dir(
-        extractor_id=extraction_ref.extractor_id, snapshot_id=extraction_ref.snapshot_id
-    ) / "manifest.json"
+    manifest_path = (
+        corpus_for_analysis.extraction_snapshot_dir(
+            extractor_id=extraction_ref.extractor_id, snapshot_id=extraction_ref.snapshot_id
+        )
+        / "manifest.json"
+    )
     if not manifest_path.exists():
         manifest_path.write_text("{}", encoding="utf-8")
     resolved_snapshot = _resolve_extraction_snapshot_for_analysis(
         corpus=corpus_for_analysis, extraction_snapshot=None, analysis_label="analysis"
     )
-    assert resolved_snapshot.snapshot_id == extraction_ref.snapshot_id, "Expected snapshot reuse path"
+    assert (
+        resolved_snapshot.snapshot_id == extraction_ref.snapshot_id
+    ), "Expected snapshot reuse path"
 
     original_loader = cli_module.load_or_build_extraction_snapshot
     cli_module.load_or_build_extraction_snapshot = lambda *args, **kwargs: SimpleNamespace(
@@ -733,7 +743,11 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         subprocess_module.run = original_run
 
     try:
-        cmd_benchmark_run(SimpleNamespace(config=str(workdir / "missing.yml"), pipelines=None, category=None, output=None))
+        cmd_benchmark_run(
+            SimpleNamespace(
+                config=str(workdir / "missing.yml"), pipelines=None, category=None, output=None
+            )
+        )
         raise AssertionError("Expected missing benchmark config to fail")
     except FileNotFoundError:
         pass
@@ -744,7 +758,11 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         encoding="utf-8",
     )
     try:
-        cmd_benchmark_run(SimpleNamespace(config=str(benchmark_config), pipelines=None, category="missing", output=None))
+        cmd_benchmark_run(
+            SimpleNamespace(
+                config=str(benchmark_config), pipelines=None, category="missing", output=None
+            )
+        )
         raise AssertionError("Expected missing benchmark category to fail")
     except ValueError:
         pass

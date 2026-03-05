@@ -74,7 +74,7 @@ class RemoteCorpusSourceConfig(BaseModel):
     """
     Configuration for a remote corpus source.
 
-    :ivar kind: Remote source kind (s3 or azure-blob).
+    :ivar kind: Remote source kind (s3, azure-blob, or google-drive).
     :vartype kind: str
     :ivar profile: Source profile name in user configuration.
     :vartype profile: str
@@ -86,6 +86,8 @@ class RemoteCorpusSourceConfig(BaseModel):
     :vartype container: str or None
     :ivar prefix: Optional remote prefix to scope the mirror.
     :vartype prefix: str
+    :ivar folder_url: Google Drive folder URL for google-drive sources.
+    :vartype folder_url: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -96,10 +98,11 @@ class RemoteCorpusSourceConfig(BaseModel):
     bucket: Optional[str] = None
     container: Optional[str] = None
     prefix: str = Field(default="")
+    folder_url: Optional[str] = None
 
     @model_validator(mode="after")
     def _validate_source_kind(self) -> "RemoteCorpusSourceConfig":
-        if self.kind not in {"s3", "azure-blob"}:
+        if self.kind not in {"s3", "azure-blob", "google-drive"}:
             raise ValueError(f"Unsupported remote source kind: {self.kind}")
         if self.kind == "s3":
             if not (isinstance(self.bucket, str) and self.bucket.strip()):
@@ -107,6 +110,9 @@ class RemoteCorpusSourceConfig(BaseModel):
         if self.kind == "azure-blob":
             if not (isinstance(self.container, str) and self.container.strip()):
                 raise ValueError("Remote Azure Blob source requires container")
+        if self.kind == "google-drive":
+            if not (isinstance(self.folder_url, str) and self.folder_url.strip()):
+                raise ValueError("Remote Google Drive source requires folder_url")
         return self
 
 
@@ -187,13 +193,9 @@ class RemoteCorpusCollectionConfig(BaseModel):
     @model_validator(mode="after")
     def _validate_deletion_policy(self) -> "RemoteCorpusCollectionConfig":
         if self.schema_version != COLLECTION_SCHEMA_VERSION:
-            raise ValueError(
-                f"Unsupported collection config schema version: {self.schema_version}"
-            )
+            raise ValueError(f"Unsupported collection config schema version: {self.schema_version}")
         if self.deletion_policy not in {"archive", "delete"}:
-            raise ValueError(
-                f"Unsupported collection deletion policy: {self.deletion_policy}"
-            )
+            raise ValueError(f"Unsupported collection deletion policy: {self.deletion_policy}")
         return self
 
 

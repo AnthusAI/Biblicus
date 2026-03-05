@@ -6,20 +6,20 @@ import sys
 import types
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from behave import given, then, when
 
 from biblicus.models import RemoteCorpusSourceConfig
 from biblicus.remote_sources import (
     AzureBlobRemoteSource,
+    GoogleDriveRemoteSource,
     S3RemoteSource,
     _isoformat_timestamp,
     _normalize_etag,
     iter_items,
 )
 from biblicus.user_config import SourceProfileConfig
-
 from features.environment import run_biblicus
 
 
@@ -232,6 +232,89 @@ def _install_azure_blob_unavailable(context) -> None:
     context._fake_azure_blob_original = original_modules
 
 
+def _ensure_fake_gdown(context) -> None:
+    if getattr(context, "_fake_gdown_installed", False):
+        return
+    original_modules = {}
+    if "gdown" in sys.modules:
+        original_modules["gdown"] = sys.modules["gdown"]
+
+    def download_folder(
+        *,
+        url: str,
+        output: str,
+        quiet: bool = True,
+        remaining_ok: bool = False,
+        skip_download: bool = False,
+    ):
+        _ = url
+        _ = quiet
+        _ = remaining_ok
+        fake_download_map = {}
+        for index, file_entry in enumerate(getattr(context, "fake_gdrive_files", []), start=1):
+            fake_download_map[f"id-{index}"] = {
+                "path": file_entry.path,
+                "content": file_entry.content,
+            }
+        records = []
+        for file_id, details in fake_download_map.items():
+            relpath = details["path"]
+            records.append(
+                types.SimpleNamespace(
+                    id=file_id,
+                    path=relpath,
+                    local_path=str(Path(output) / relpath),
+                )
+            )
+        if skip_download:
+            return records
+        return [record.local_path for record in records]
+
+    def download(*, id: str, output: str, quiet: bool = True):
+        _ = quiet
+        fake_download_map = {}
+        for index, file_entry in enumerate(getattr(context, "fake_gdrive_files", []), start=1):
+            fake_download_map[f"id-{index}"] = {
+                "path": file_entry.path,
+                "content": file_entry.content,
+            }
+        details = fake_download_map[id]
+        target = Path(output)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(details["content"])
+        return str(target)
+
+    module = types.ModuleType("gdown")
+    module.download_folder = download_folder
+    module.download = download
+    sys.modules["gdown"] = module
+    context._fake_gdown_installed = True
+    context._fake_gdown_original = original_modules
+    if not hasattr(context, "fake_gdrive_files"):
+        context.fake_gdrive_files = []
+
+
+def _install_gdown_unavailable(context) -> None:
+    if getattr(context, "_fake_gdown_unavailable", False):
+        return
+    original_modules = {}
+    if "gdown" in sys.modules:
+        original_modules["gdown"] = sys.modules["gdown"]
+    sys.modules.pop("gdown", None)
+
+    class _Blocker:
+        def find_spec(self, fullname, path, target=None):
+            if fullname == "gdown" or fullname.startswith("gdown."):
+                raise ImportError("gdown blocked for test")
+            return None
+
+    blocker = _Blocker()
+    sys.meta_path.insert(0, blocker)
+    context._fake_gdown_unavailable = True
+    context._fake_gdown_blocker = blocker
+    context._fake_gdown_original = original_modules
+
+
 def _parse_timestamp(raw: str) -> datetime:
     return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(timezone.utc)
 
@@ -289,6 +372,48 @@ def step_configure_azure_source(
     _write_corpus_config(corpus, config)
 
 
+def _configure_google_drive_source(context, corpus_name: str, folder_url: str, prefix: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    context.last_corpus_root = corpus
+    _write_source_profile(
+        context,
+        profile_name="demo-profile",
+        kind="google-drive",
+    )
+    config = {
+        "schema_version": 2,
+        "created_at": "2026-02-19T12:00:00Z",
+        "corpus_uri": corpus.as_uri(),
+        "raw_dir": ".",
+        "source": {
+            "kind": "google-drive",
+            "profile": "demo-profile",
+            "name": "residio",
+            "folder_url": folder_url,
+            "prefix": prefix,
+        },
+    }
+    _write_corpus_config(corpus, config)
+
+
+@given(
+    'a remote Google Drive source is configured for corpus "{corpus_name}" with folder url "{folder_url}" and prefix "{prefix}"'
+)
+def step_configure_google_drive_source_with_prefix(
+    context, corpus_name: str, folder_url: str, prefix: str
+) -> None:
+    _configure_google_drive_source(context, corpus_name, folder_url, prefix)
+
+
+@given(
+    'a remote Google Drive source is configured for corpus "{corpus_name}" with folder url "{folder_url}" and no prefix'
+)
+def step_configure_google_drive_source_no_prefix(
+    context, corpus_name: str, folder_url: str
+) -> None:
+    _configure_google_drive_source(context, corpus_name, folder_url, "")
+
+
 @given("a fake S3 source contains objects:")
 @when("a fake S3 source contains objects:")
 def step_fake_s3_objects(context) -> None:
@@ -328,9 +453,29 @@ def step_fake_azure_blobs(context) -> None:
     context.fake_azure_blobs = blobs
 
 
+@given("a fake Google Drive source contains files:")
+@when("a fake Google Drive source contains files:")
+def step_fake_google_drive_files(context) -> None:
+    _ensure_fake_gdown(context)
+    files = []
+    for row in context.table:
+        files.append(
+            types.SimpleNamespace(
+                path=row["path"],
+                content=row["content"].encode("utf-8"),
+            )
+        )
+    context.fake_gdrive_files = files
+
+
 @given("the azure blob dependency is unavailable")
 def step_azure_blob_dependency_unavailable(context) -> None:
     _install_azure_blob_unavailable(context)
+
+
+@given("the gdown dependency is unavailable")
+def step_gdown_dependency_unavailable(context) -> None:
+    _install_gdown_unavailable(context)
 
 
 @when('I pull the remote source for corpus "{corpus_name}"')
@@ -460,6 +605,23 @@ def step_configured_fake_azure_adapter(context) -> None:
     context.azure_adapter = AzureBlobRemoteSource(config, azure)
 
 
+@given("a configured fake Google Drive remote source adapter")
+def step_configured_fake_google_drive_adapter(context) -> None:
+    _ensure_fake_gdown(context)
+    config = RemoteCorpusSourceConfig(
+        kind="google-drive",
+        profile="demo-profile",
+        name="demo",
+        folder_url="https://drive.google.com/drive/folders/folder123?usp=drive_link",
+        prefix="docs/",
+    )
+    profile = SourceProfileConfig(
+        name="demo-profile",
+        kind="google-drive",
+    )
+    context.gdrive_adapter = GoogleDriveRemoteSource(config, profile)
+
+
 @when("I iterate remote source items for the S3 adapter")
 def step_iterate_s3_adapter(context) -> None:
     context.iterated_items = list(iter_items(context.s3_adapter))
@@ -468,6 +630,11 @@ def step_iterate_s3_adapter(context) -> None:
 @when("I iterate remote source items for the Azure adapter")
 def step_iterate_azure_adapter(context) -> None:
     context.iterated_items = list(iter_items(context.azure_adapter))
+
+
+@when("I iterate remote source items for the Google Drive adapter")
+def step_iterate_google_drive_adapter(context) -> None:
+    context.iterated_items = list(iter_items(context.gdrive_adapter))
 
 
 @then("the iterated remote source item count is 1")
@@ -523,6 +690,13 @@ def step_validate_remote_source_missing_bucket(context) -> None:
 def step_validate_remote_source_missing_container(context) -> None:
     _attempt_remote_source_validate(
         context, {"kind": "azure-blob", "name": "demo", "profile": "demo-profile"}
+    )
+
+
+@when("I validate a remote source config without a Google Drive folder url")
+def step_validate_remote_source_missing_folder_url(context) -> None:
+    _attempt_remote_source_validate(
+        context, {"kind": "google-drive", "name": "demo", "profile": "demo-profile"}
     )
 
 

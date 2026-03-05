@@ -1,0 +1,18 @@
+{
+  "id": "blbs-ff55d2ab-021d-4961-b0ab-19239ffadf03",
+  "title": "Configure Google Drive corpus source and nested discovery",
+  "description": "Add support for Google Drive folder URLs as remote corpora, recursively ingest nested folders, and enable downstream topic/HMM analysis workflows on resulting corpus.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-03-04T23:06:59.331892Z",
+  "updated_at": "2026-03-04T23:08:41.733467Z",
+  "closed_at": "2026-03-04T23:08:41.733467Z",
+  "custom": {}
+}

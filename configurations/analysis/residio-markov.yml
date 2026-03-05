@@ -1,0 +1,15 @@
+schema_version: 1
+text_source:
+  min_text_characters: 50
+segmentation:
+  method: sentence
+model:
+  family: gaussian
+  n_states: 5
+observations:
+  encoder: tfidf
+  tfidf:
+    max_features: 256
+    ngram_range: [1, 2]
+topic_modeling:
+  enabled: false
