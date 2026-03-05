@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import mimetypes
+import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -220,6 +221,53 @@ class GoogleDriveRemoteSource:
         self._profile = profile
         self._mirror_dir = Path(tempfile.mkdtemp(prefix="biblicus-gdrive-"))
         self._mirrored = False
+        self._closed = False
+
+    def close(self) -> None:
+        """
+        Remove the local mirror directory.
+
+        :return: None.
+        :rtype: None
+        """
+        if self._closed:
+            return
+        self._closed = True
+        if self._mirror_dir.exists():
+            shutil.rmtree(self._mirror_dir, ignore_errors=True)
+
+    def __enter__(self) -> "GoogleDriveRemoteSource":
+        """
+        Enter the context manager and return the source.
+
+        :return: The current Google Drive remote source instance.
+        :rtype: GoogleDriveRemoteSource
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Exit the context manager and clean up mirror resources.
+
+        :param exc_type: Exception type if raised.
+        :type exc_type: type or None
+        :param exc_value: Exception value if raised.
+        :type exc_value: BaseException or None
+        :param traceback: Traceback if raised.
+        :type traceback: TracebackType or None
+        :return: None.
+        :rtype: None
+        """
+        _ = exc_type
+        _ = exc_value
+        _ = traceback
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            return
 
     def _mirror_folder(self) -> None:
         if self._mirrored:

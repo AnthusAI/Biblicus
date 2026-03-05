@@ -376,6 +376,27 @@ def test_google_drive_remote_source_list_and_fetch(monkeypatch, tmp_path):
     assert iter_items(source)[0].source_uri == "gdrive://folder123/nested/child.txt"
 
 
+def test_google_drive_remote_source_cleanup(monkeypatch, tmp_path):
+    _install_fake_gdown(
+        monkeypatch,
+        mirror_root=tmp_path,
+        files={
+            "root.md": b"alpha",
+        },
+    )
+    config = RemoteCorpusSourceConfig(
+        kind="google-drive",
+        profile="profile",
+        name="residio",
+        folder_url="https://drive.google.com/drive/folders/folder123?usp=drive_link",
+    )
+    profile = SourceProfileConfig(name="profile", kind="google-drive")
+    with GoogleDriveRemoteSource(config, profile) as source:
+        mirror_dir = source._mirror_dir
+        assert mirror_dir.exists()
+    assert not mirror_dir.exists()
+
+
 def test_remote_corpus_source_config_validation():
     with pytest.raises(ValueError):
         RemoteCorpusSourceConfig(kind="gcs", profile="profile", name="demo")
