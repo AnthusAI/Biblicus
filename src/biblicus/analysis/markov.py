@@ -858,7 +858,7 @@ def _classify_agent_sentence_indices(
                         raise ValueError("LLM agent sentence indices must be integers")
                     for parsed_value in parsed:
                         if parsed_value < 1 or parsed_value > len(sentences):
-                            raise ValueError("LLM agent sentence index is out of range")
+                            continue
                         if parsed_value in seen:
                             continue
                         seen.add(parsed_value)
@@ -867,7 +867,7 @@ def _classify_agent_sentence_indices(
             if not isinstance(candidate, int):
                 raise ValueError("LLM agent sentence indices must be integers")
             if candidate < 1 or candidate > len(sentences):
-                raise ValueError("LLM agent sentence index is out of range")
+                continue
             if candidate in seen:
                 continue
             seen.add(candidate)

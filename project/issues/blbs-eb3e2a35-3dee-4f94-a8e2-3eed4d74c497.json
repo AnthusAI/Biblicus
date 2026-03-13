@@ -1,0 +1,43 @@
+{
+  "id": "blbs-eb3e2a35-3dee-4f94-a8e2-3eed4d74c497",
+  "title": "Onboard new Residio Google Drive corpus (Mar 2026)",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "2e7b246f-0315-4baa-8be9-28f33ff79cd4",
+      "author": "ryan.porter",
+      "text": "Created new corpus directory corpora/residio-google-drive-2026-03 with updated Google Drive folder URL and source name residio-2026-03.",
+      "created_at": "2026-03-13T17:53:36.465255Z"
+    },
+    {
+      "id": "9fa141d1-2b4d-4b0a-aa5c-e5b5d9570263",
+      "author": "ryan.porter",
+      "text": "Running biblicus source pull for new Google Drive; large dataset (~multiple GB) downloading via gdown temp mirror (current temp dir biblicus-gdrive-q3xh8kwp).",
+      "created_at": "2026-03-13T18:02:28.741871Z"
+    },
+    {
+      "id": "9d6862ff-45b8-47e7-b72d-37c0e9ae7258",
+      "author": "ryan.porter",
+      "text": "Pulled new GDrive corpus with prefix narrowed to Single Day-2026-03-09.csv; 1001 transcripts extracted into individual text items with UUID sidecars; reindexed catalog (1002 items). Built pass-through extraction snapshot pipeline:27887cbe4f7070b0b3cbdc2e7574a72b49700fbbc2f3f860a62e40d97043ddf8. Topic modeling attempts with residio-topic config failing: original llm_extraction hit context window; disabled llm+entity removal; BERTopic run (even sample_size=50) crashes after fit_transform with exit code -1, no artifacts written (likely BERTopic/OpenMP crash).",
+      "created_at": "2026-03-13T18:16:39.691345Z"
+    },
+    {
+      "id": "2b997c31-f964-4c59-81eb-fbfaa038b457",
+      "author": "ryan.porter",
+      "text": "Full Residio GDrive corpus reindexed (1001 transcripts, no truncation). New extraction snapshot pipeline:de8e3cd8e054814ac4354644aa55ba21fd17b13a0c336dbc6a8c2fda7e36efc9. Ran markov agent-phase analysis across all items (no sample); snapshot 66fcb6484b773b0c528b9bf6d2822722262b1459e2fdcf34bf113eba5082d622. Segments=5,927, observations=5,927, states=10; transitions graph exported (transitions.dot/png). Generated Markdown+PDF report in run dir. Fixed llm_agent_phase index overflow (out-of-range indices now ignored) and wrapped collection pulls in remote source context manager to clean Google Drive temp dirs.",
+      "created_at": "2026-03-13T19:31:07.620440Z"
+    }
+  ],
+  "created_at": "2026-03-13T17:53:32.295097Z",
+  "updated_at": "2026-03-13T19:31:07.620440Z",
+  "closed_at": null,
+  "custom": {}
+}

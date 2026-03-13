@@ -1,0 +1,105 @@
+schema_version: 1
+text_source:
+  min_text_characters: 50
+  sample_size: 50
+llm_extraction:
+  enabled: false
+  method: single
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: 'You extract the customer''s primary intent from a call transcript.
+
+    Return only the intent text.
+
+    '
+  prompt_template: 'Read the transcript and return the customer''s key intent as a
+    short noun phrase.
+
+    - Focus on what the customer is trying to accomplish.
+
+    - Use the customer''s perspective (e.g., "thermostat registration issue").
+
+    - Return only the intent text. No quotes, no labels, no extra words.
+
+
+    Transcript:
+
+    ---
+
+    {text}
+
+    ---
+
+    '
+entity_removal:
+  enabled: false
+  provider: spacy
+  model: en_core_web_sm
+  entity_types:
+  - PERSON
+  - GPE
+  - LOC
+  - ORG
+  - FAC
+  - DATE
+  - TIME
+  - MONEY
+  - PERCENT
+  - ORDINAL
+  replace_with: ''
+  collapse_whitespace: true
+  regex_patterns:
+  - \b\d{5}(-\d{4})?\b
+  - \b\d{3}[-. ]?\d{3}[-. ]?\d{4}\b
+  - \b[0-9]{6,}\b
+  - \b(?:\d[ -]?){6,}\b
+  - \b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b
+  regex_replace_with: ''
+lexical_processing:
+  enabled: true
+  lowercase: true
+  strip_punctuation: false
+  collapse_whitespace: true
+bertopic_analysis:
+  parameters:
+    embedding_model: null
+    calculate_probabilities: false
+  vectorizer:
+    ngram_range:
+    - 1
+    - 2
+    stop_words: english
+llm_fine_tuning:
+  enabled: true
+  client:
+    provider: openai
+    model: gpt-4o-mini
+    api_key: null
+  system_prompt: 'You label topics from call transcripts.
+
+    Return only the label. Do not include extra text.
+
+    '
+  prompt_template: 'I have a topic from call transcripts described by these keywords:
+
+    [KEYWORDS] {keywords}
+
+
+    Representative examples:
+
+    [DOCUMENTS]
+
+    {documents}
+
+
+    Return a short descriptive noun phrase plus an exemplar quote in quotes.
+
+    Format: <noun phrase> "exemplar quote"
+
+    The quote should be copied verbatim from one of the example documents.
+
+    '
+  max_keywords: 12
+  max_documents: 20

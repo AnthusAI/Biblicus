@@ -93,11 +93,11 @@ def pull_collection(collection_root: Path) -> RemoteCollectionPullResult:
         )
 
     if config.source.kind == "s3":
-        source = S3RemoteSource(config.source, profile)
+        source_factory = lambda: S3RemoteSource(config.source, profile)
     elif config.source.kind == "azure-blob":
-        source = AzureBlobRemoteSource(config.source, profile)
+        source_factory = lambda: AzureBlobRemoteSource(config.source, profile)
     elif config.source.kind == "google-drive":
-        source = GoogleDriveRemoteSource(config.source, profile)
+        source_factory = lambda: GoogleDriveRemoteSource(config.source, profile)
     else:
         raise ValueError(f"Unsupported remote source kind: {config.source.kind}")
 
@@ -105,43 +105,44 @@ def pull_collection(collection_root: Path) -> RemoteCollectionPullResult:
     discovery = config.discovery
     corpus_root = _resolve_corpus_root(collection_root, config)
 
-    if discovery.mode == "partition":
-        corpus = _ensure_partition_corpus(
-            corpus_root,
-            collection_name=config.collection_name,
-            source_config=_build_partition_source_config(config.source),
-        )
-        tag_resolver = _partition_tag_resolver()
-        mirror = corpus.pull_source(tag_resolver=tag_resolver)
-        result.discovered = len(_discover_subfolders(source, config.source, discovery))
-        result.mirrored = 1 if mirror.listed > 0 else 0
-        return result
-
-    subfolders = _discover_subfolders(source, config.source, discovery)
-    result.discovered = len(subfolders)
-
-    created = 0
-    mirrored = 0
-    for subfolder in subfolders:
-        corpus_path = corpus_root / subfolder
-        created += int(
-            _ensure_collection_corpus(
-                corpus_path,
+    with source_factory() as source:
+        if discovery.mode == "partition":
+            corpus = _ensure_partition_corpus(
+                corpus_root,
                 collection_name=config.collection_name,
-                corpus_name=subfolder,
-                source_config=_build_subfolder_source_config(config.source, subfolder),
-                auto_create=config.auto_create,
+                source_config=_build_partition_source_config(config.source),
             )
-        )
-        corpus = Corpus.open(corpus_path)
-        corpus.pull_source()
-        mirrored += 1
+            tag_resolver = _partition_tag_resolver()
+            mirror = corpus.pull_source(tag_resolver=tag_resolver)
+            result.discovered = len(_discover_subfolders(source, config.source, discovery))
+            result.mirrored = 1 if mirror.listed > 0 else 0
+            return result
 
-    result.created = created
-    result.mirrored = mirrored
-    result.archived = _archive_missing_corpora(
-        corpus_root, subfolders, deletion_policy=config.deletion_policy
-    )
+        subfolders = _discover_subfolders(source, config.source, discovery)
+        result.discovered = len(subfolders)
+
+        created = 0
+        mirrored = 0
+        for subfolder in subfolders:
+            corpus_path = corpus_root / subfolder
+            created += int(
+                _ensure_collection_corpus(
+                    corpus_path,
+                    collection_name=config.collection_name,
+                    corpus_name=subfolder,
+                    source_config=_build_subfolder_source_config(config.source, subfolder),
+                    auto_create=config.auto_create,
+                )
+            )
+            corpus = Corpus.open(corpus_path)
+            corpus.pull_source()
+            mirrored += 1
+
+        result.created = created
+        result.mirrored = mirrored
+        result.archived = _archive_missing_corpora(
+            corpus_root, subfolders, deletion_policy=config.deletion_policy
+        )
     return result
 
 

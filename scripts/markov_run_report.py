@@ -78,16 +78,20 @@ def build_report(run_dir: Path) -> Path:
     :raises ValueError: If required snapshot artifacts are missing or have unexpected structure.
     """
     output = _load_json(run_dir / "output.json")
+    manifest = _load_json(run_dir / "manifest.json")
     report = output["report"]
 
     decoded = {p["item_id"]: p["state_sequence"] for p in report["decoded_paths"]}
     segments = list(_iter_jsonl(run_dir / "segments.jsonl"))
 
-    corpus_uri = output["run"]["corpus_uri"]
+    corpus_uri = manifest.get("corpus_uri") or output.get("corpus_uri")
     if not isinstance(corpus_uri, str) or not corpus_uri.startswith("file://"):
         raise ValueError("Expected file:// corpus_uri in output.json")
     corpus_path = Path(corpus_uri.replace("file://", "", 1))
-    catalog = _load_json(corpus_path / ".biblicus" / "catalog.json")
+    catalog_path = corpus_path / "metadata" / "catalog.json"
+    if not catalog_path.exists():
+        catalog_path = corpus_path / ".biblicus" / "catalog.json"
+    catalog = _load_json(catalog_path)
     catalog_items = catalog["items"]
     if not isinstance(catalog_items, dict):
         raise ValueError("Expected catalog.items to be a mapping")
@@ -105,7 +109,12 @@ def build_report(run_dir: Path) -> Path:
     lines.append("")
     lines.append(f"- Run dir: `{run_dir}`")
     lines.append(f"- Corpus: `{corpus_path}`")
-    lines.append(f"- Run id: `{output['run']['snapshot_id']}`")
+    snapshot_id = (
+        (output.get("snapshot") or {}).get("snapshot_id")
+        or manifest.get("snapshot_id")
+        or "unknown"
+    )
+    lines.append(f"- Run id: `{snapshot_id}`")
     lines.append("")
     lines.append("## What this run learned (high level)")
     lines.append("")

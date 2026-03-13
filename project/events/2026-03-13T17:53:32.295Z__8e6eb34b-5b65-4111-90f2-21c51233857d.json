@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "8e6eb34b-5b65-4111-90f2-21c51233857d",
+  "issue_id": "blbs-eb3e2a35-3dee-4f94-a8e2-3eed4d74c497",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-13T17:53:32.295Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 2,
+    "status": "open",
+    "title": "Onboard new Residio Google Drive corpus (Mar 2026)"
+  }
+}
