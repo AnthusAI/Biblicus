@@ -1,0 +1,18 @@
+{
+  "id": "blbs-7599d3de-1775-42d5-b8dd-af3834cb56a7",
+  "title": "Refine Residio HMM state naming quality",
+  "description": "Follow up on the new topic-driven Residio HMM output. The full-corpus run removed the generic unknown label and produced unique START/END states, but one learned state still received the broad name 'Unassigned State'. Improve the state_naming prompt and/or exemplar selection so generic fallback names are less likely in client-facing reports.",
+  "type": "task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-03-13T20:25:35.529978Z",
+  "updated_at": "2026-03-13T20:25:35.529978Z",
+  "closed_at": null,
+  "custom": {}
+}

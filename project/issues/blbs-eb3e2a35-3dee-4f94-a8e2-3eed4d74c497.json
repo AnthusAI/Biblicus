@@ -34,10 +34,34 @@
       "author": "ryan.porter",
       "text": "Full Residio GDrive corpus reindexed (1001 transcripts, no truncation). New extraction snapshot pipeline:de8e3cd8e054814ac4354644aa55ba21fd17b13a0c336dbc6a8c2fda7e36efc9. Ran markov agent-phase analysis across all items (no sample); snapshot 66fcb6484b773b0c528b9bf6d2822722262b1459e2fdcf34bf113eba5082d622. Segments=5,927, observations=5,927, states=10; transitions graph exported (transitions.dot/png). Generated Markdown+PDF report in run dir. Fixed llm_agent_phase index overflow (out-of-range indices now ignored) and wrapped collection pulls in remote source context manager to clean Google Drive temp dirs.",
       "created_at": "2026-03-13T19:31:07.620440Z"
+    },
+    {
+      "id": "ba8a0ae2-5967-4372-942c-ce28dd270f9a",
+      "author": "ryan.porter",
+      "text": "Starting the topic-driven Residio HMM implementation. Scope: add new Alfa-style agent-phase Markov config (topic_label observations + state naming), upgrade markov_run_report.py to surface named states/artifacts/config-driven narrative, add a separate topic_modeling_run_report.py for customer-intent topic runs, add lightweight report tests, then rerun topic-modeling smoke/full and the new full HMM recipe.",
+      "created_at": "2026-03-13T20:03:22.024782Z"
+    },
+    {
+      "id": "b0185b11-d98f-4589-b0e5-46ac5372111a",
+      "author": "ryan.porter",
+      "text": "Topic-modeling smoke run succeeded with the existing Residio customer-intent recipe against the full non-truncated extraction snapshot. Command used biblicus analyze topics with configurations/analysis/residio-topic.yml, extraction snapshot pipeline:de8e3cd8e054814ac4354644aa55ba21fd17b13a0c336dbc6a8c2fda7e36efc9, sample_size=50, and conservative thread env (OMP/BLAS/NUMBA=1). Snapshot 1d864777ec83106ad299cdb8718a87af4569a5352021a20c8f533099dc3b3486 completed successfully with 50 documents and 2 topics, so I am proceeding to the full topic run.",
+      "created_at": "2026-03-13T20:09:07.924235Z"
+    },
+    {
+      "id": "8bc03934-7f0f-41f3-9266-4e03ad7a5bbf",
+      "author": "ryan.porter",
+      "text": "Reprioritized to the full HMM run after the user clarified the immediate target was the Residio HMM fix, not the separate customer-intent topic rerun. Stopped the in-flight full topic run and launched the new topic-driven HMM config configurations/analysis/residio-markov-agent-phases-topic-driven.yml against extraction snapshot pipeline:de8e3cd8e054814ac4354644aa55ba21fd17b13a0c336dbc6a8c2fda7e36efc9. Full HMM snapshot 9027e126a8c886966369cd62d988bb2d2bbf1606981f82d74a2ec7edc9b9a575 completed: 12 states, 132 transitions, 5927 segments, embedded segment topic_modeling complete with 93 topics. Acceptance check: exactly one START, exactly one END, and unknown_count=0. Generated report.md, report.pdf, transitions.png, topic_modeling.json, topic_assignments.jsonl, segments.jsonl, and observations.jsonl in the run directory.",
+      "created_at": "2026-03-13T20:22:01.154989Z"
+    },
+    {
+      "id": "fd2c4378-25fa-48f3-82bf-fed084f785d4",
+      "author": "ryan.porter",
+      "text": "Completed both final corpus-scale runs. Topic modeling snapshot 3c14f1013b5e830b12d77bfb404f169e6517e2558def680b3ab969f3aba117bb completed on 987 documents with 38 topics; generated report.md and report.pdf in the topic-modeling run dir. Topic-driven HMM snapshot 9027e126a8c886966369cd62d988bb2d2bbf1606981f82d74a2ec7edc9b9a575 completed on 976 items / 5927 segments with 12 states and 132 transitions; generated report.md, report.pdf, transitions.png, topic_modeling.json, topic_assignments.jsonl, segments.jsonl, and observations.jsonl. Acceptance check passed: start_count=1, end_count=1, unknown_count=0.",
+      "created_at": "2026-03-13T20:25:11.328017Z"
     }
   ],
   "created_at": "2026-03-13T17:53:32.295097Z",
-  "updated_at": "2026-03-13T19:31:07.620440Z",
+  "updated_at": "2026-03-13T20:25:11.328017Z",
   "closed_at": null,
   "custom": {}
 }

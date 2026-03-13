@@ -1,0 +1,179 @@
+schema_version: 1
+text_source:
+  sample_size: null
+  min_text_characters: 200
+segmentation:
+  method: llm_agent_phase
+  max_workers: 8
+  llm_agent_phase:
+    classifier:
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+        response_format: json_object
+      system_prompt: |
+        You classify call transcript sentences as agent or caller.
+        Return only JSON.
+      prompt_template: |
+        Classify each sentence as "agent" or "caller".
+
+        Requirements:
+        - Return a JSON object with key "agent_sentence_indices".
+        - "agent_sentence_indices" is a JSON array of 1-based indices.
+        - Use integers only (no strings, objects, or ranges).
+        - Include only sentences that are clearly the agent speaking.
+        - If uncertain, exclude the sentence.
+        - Treat questions, instructions, confirmations, and scripted prompts as agent.
+        - Exclude sentences that provide personal details, identifiers, or answers.
+        - Exclude sentences describing the caller's problem or experience.
+        - If a sentence is a short answer to a question (e.g., "yes", "no", "that's right"),
+          exclude it.
+        - If a sentence contains first-person statements about the caller's situation
+          (e.g., "I can't", "I'm trying", "my thermostat"), treat it as caller.
+
+        Sentences:
+        {sentences}
+    phase_segmentation:
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+        response_format: json_object
+      system_prompt: |
+        You segment agent-only utterances into script items.
+        Return only JSON.
+      prompt_template: |
+        Segment the agent-only text into high-level script items.
+
+        Requirements:
+        - Return a JSON object with key "segments".
+        - "segments" is a JSON array of strings.
+        - Each string contains only agent utterances, grouped into a script item.
+        - Copy text verbatim. Do not paraphrase or label.
+        - Each segment should map to one script item (e.g., greeting, info capture,
+          diagnostic questions, step-by-step instructions, account changes, confirmation,
+          closing/next-steps, "any other questions").
+        - Include closing prompts like "Any other questions for me?" as their own segment.
+        - If a segment contains a closing prompt, it must contain only closing/next-step
+          language and goodbyes.
+        - Concatenate the agent utterances for the same script item in order, separated by a single space.
+        - Preserve the original order.
+        - Avoid very short fragments; merge small leftovers into adjacent phases.
+
+        Text:
+        ---
+        {text}
+        ---
+llm_observations:
+  enabled: false
+topic_modeling:
+  enabled: true
+  configuration:
+    schema_version: 1
+    text_source:
+      sample_size: null
+      min_text_characters: 80
+    llm_extraction:
+      enabled: false
+      method: single
+    entity_removal:
+      enabled: true
+      provider: spacy
+      model: en_core_web_sm
+      entity_types:
+        - PERSON
+        - GPE
+        - LOC
+        - ORG
+        - FAC
+        - DATE
+        - TIME
+        - MONEY
+        - PERCENT
+        - ORDINAL
+      replace_with: ""
+      collapse_whitespace: true
+      regex_patterns:
+        - "\\b\\d{5}(-\\d{4})?\\b"
+        - "\\b\\d{3}[-. ]?\\d{3}[-. ]?\\d{4}\\b"
+        - "\\b[0-9]{6,}\\b"
+        - "\\b(?:\\d[ -]?){6,}\\b"
+        - "\\b[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b"
+      regex_replace_with: ""
+    lexical_processing:
+      enabled: true
+      lowercase: true
+      strip_punctuation: false
+      collapse_whitespace: true
+    bertopic_analysis:
+      parameters: {}
+      vectorizer:
+        ngram_range: [1, 2]
+        stop_words: english
+    llm_fine_tuning:
+      enabled: true
+      client:
+        provider: openai
+        model: gpt-4o-mini
+        api_key: null
+      system_prompt: |
+        You label topics from call center transcripts.
+        Return only the label. Do not include extra text.
+      prompt_template: |
+        I have a topic from agent call phases described by these keywords:
+        [KEYWORDS] {keywords}
+
+        Representative examples:
+        [DOCUMENTS]
+        {documents}
+
+        Return a short descriptive noun phrase plus an exemplar quote in quotes.
+        Format: <noun phrase> "exemplar quote"
+        The quote should be copied verbatim from one of the example documents.
+      max_keywords: 12
+      max_documents: 20
+observations:
+  encoder: tfidf
+  categorical_source: topic_label
+model:
+  family: categorical
+  n_states: 12
+artifacts:
+  graphviz:
+    enabled: true
+    rankdir: TB
+report:
+  max_state_exemplars: 25
+  state_naming:
+    enabled: true
+    client:
+      provider: openai
+      model: gpt-4o-mini
+      api_key: null
+      response_format: json_object
+    token_budget: 2048
+    max_exemplars_per_state: 20
+    max_name_words: 4
+    max_retries: 2
+    system_prompt: |
+      You are naming Markov states from exemplar segments.
+
+      Requirements:
+      - Use short noun phrases (2-4 words).
+      - Names must be unique and human-friendly.
+      - If a state's exemplars include START, name it START.
+      - If a state's exemplars include END, name it END.
+      - Use position hints to prefer opening-style names for states that often follow START,
+        and closing-style names for states that often precede END.
+
+      Context pack:
+      {context_pack}
+    prompt_template: |
+      Return a JSON object with:
+      - state_names: list of objects with keys "state_id" and "name"
+      - start_state_id (optional)
+      - end_state_id (optional)
+
+      Name every state_id exactly once. Use short noun phrases.
+      State ids: {state_ids}

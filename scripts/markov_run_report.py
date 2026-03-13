@@ -1,8 +1,5 @@
 """
-Generate a human-readable report for a Markov analysis snapshot.
-
-This script is intentionally pragmatic: it turns Biblicus' structured Markov artifacts into a small Markdown report
-that a human can read and click through while iterating on configurations.
+Generate a Markdown report for a Markov analysis snapshot.
 """
 
 from __future__ import annotations
@@ -11,7 +8,7 @@ import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 
 def _load_json(path: Path) -> Dict[str, object]:
@@ -27,14 +24,15 @@ def _iter_jsonl(path: Path) -> Iterable[Dict[str, object]]:
             yield json.loads(line)
 
 
-def _label_for_item(catalog_items: Dict[str, Dict[str, object]], item_id: str) -> str:
-    entry = catalog_items.get(item_id, {})
-    tags = entry.get("tags") or []
-    if isinstance(tags, list):
-        for tag in tags:
-            if isinstance(tag, str) and tag.startswith("label:"):
-                return tag
-    return "label:unknown"
+def _load_catalog_items(corpus_path: Path) -> Dict[str, Dict[str, object]]:
+    catalog_path = corpus_path / "metadata" / "catalog.json"
+    if not catalog_path.exists():
+        catalog_path = corpus_path / ".biblicus" / "catalog.json"
+    catalog = _load_json(catalog_path)
+    catalog_items = catalog["items"]
+    if not isinstance(catalog_items, dict):
+        raise ValueError("Expected catalog.items to be a mapping")
+    return catalog_items
 
 
 def _align_segments_to_states(
@@ -42,18 +40,20 @@ def _align_segments_to_states(
 ) -> List[Tuple[int, Dict[str, object]]]:
     aligned: List[Tuple[int, Dict[str, object]]] = []
     by_item: Dict[str, List[Dict[str, object]]] = defaultdict(list)
-    for seg in segments:
-        item_id = str(seg.get("item_id") or "")
+    for segment in segments:
+        item_id = str(segment.get("item_id") or "")
         if not item_id:
             continue
-        by_item[item_id].append(seg)
-    for item_id, segs in by_item.items():
-        seq = decoded_paths.get(item_id)
-        if seq is None:
+        by_item[item_id].append(segment)
+    for item_id, item_segments in by_item.items():
+        state_sequence = decoded_paths.get(item_id)
+        if state_sequence is None:
             continue
-        segs_sorted = sorted(segs, key=lambda s: int(s.get("segment_index") or 0))
-        for seg, state in zip(segs_sorted, seq):
-            aligned.append((int(state), seg))
+        ordered_segments = sorted(
+            item_segments, key=lambda entry: int(entry.get("segment_index") or 0)
+        )
+        for segment, state_id in zip(ordered_segments, state_sequence):
+            aligned.append((int(state_id), segment))
     return aligned
 
 
@@ -66,162 +66,175 @@ def _segments_by_state(
     return grouped
 
 
+def _state_label(state: Dict[str, object]) -> str:
+    raw_label = str(state.get("label") or "").strip()
+    if raw_label:
+        return raw_label
+    return f"State {int(state.get('state_id') or 0)}"
+
+
+def _state_heading(state: Dict[str, object]) -> str:
+    return f"{_state_label(state)} (State {int(state.get('state_id') or 0)})"
+
+
+def _state_label_map(states: Iterable[Dict[str, object]]) -> Dict[int, str]:
+    labels: Dict[int, str] = {}
+    for state in states:
+        state_id = int(state.get("state_id") or 0)
+        labels[state_id] = _state_label(state)
+    return labels
+
+
+def _observation_description(config: Dict[str, object]) -> str:
+    segmentation = dict(config.get("segmentation") or {})
+    observations = dict(config.get("observations") or {})
+    model = dict(config.get("model") or {})
+    topic_modeling = dict(config.get("topic_modeling") or {})
+
+    segmentation_method = str(segmentation.get("method") or "unknown")
+    family = str(model.get("family") or "unknown")
+    if family == "categorical":
+        source = str(observations.get("categorical_source") or "unknown")
+        description = f"Categorical HMM over `{source}` observations"
+    else:
+        encoder = str(observations.get("encoder") or "unknown")
+        text_source = str(observations.get("text_source") or "segment_text")
+        description = f"{family.title()} HMM over `{encoder}` features from `{text_source}`"
+    if bool(topic_modeling.get("enabled")):
+        description += " with segment topic modeling enabled"
+    return f"`{segmentation_method}` segmentation feeding {description}"
+
+
+def _artifact_line(run_dir: Path, name: str) -> str:
+    artifact_path = run_dir / name
+    status = "present" if artifact_path.exists() else "missing"
+    return f"- `{name}`: {status} (`{artifact_path}`)"
+
+
+def _sampled_segment_texts(state_segments: List[Dict[str, object]], limit: int) -> List[str]:
+    samples: List[str] = []
+    for segment in state_segments:
+        text = str(segment.get("text") or "").replace("\n", " ").strip()
+        if not text:
+            continue
+        samples.append(text)
+        if len(samples) >= limit:
+            break
+    return samples
+
+
 def build_report(run_dir: Path) -> Path:
     """
     Build a Markdown report for a Markov analysis snapshot directory.
 
-    :param run_dir: Path to the Markov analysis snapshot directory containing ``output.json`` and
-        related artifacts (for example ``segments.jsonl``).
+    :param run_dir: Path to the Markov analysis snapshot directory containing ``output.json``.
     :type run_dir: pathlib.Path
     :return: Path to the generated report file.
     :rtype: pathlib.Path
-    :raises ValueError: If required snapshot artifacts are missing or have unexpected structure.
+    :raises ValueError: If the run artifacts are malformed.
     """
     output = _load_json(run_dir / "output.json")
     manifest = _load_json(run_dir / "manifest.json")
-    report = output["report"]
-
-    decoded = {p["item_id"]: p["state_sequence"] for p in report["decoded_paths"]}
-    segments = list(_iter_jsonl(run_dir / "segments.jsonl"))
+    report = dict(output["report"])
+    snapshot = dict(output.get("snapshot") or manifest)
+    configuration = dict(dict(snapshot.get("configuration") or {}).get("config") or {})
 
     corpus_uri = manifest.get("corpus_uri") or output.get("corpus_uri")
     if not isinstance(corpus_uri, str) or not corpus_uri.startswith("file://"):
-        raise ValueError("Expected file:// corpus_uri in output.json")
+        raise ValueError("Expected file:// corpus_uri in output.json or manifest.json")
     corpus_path = Path(corpus_uri.replace("file://", "", 1))
-    catalog_path = corpus_path / "metadata" / "catalog.json"
-    if not catalog_path.exists():
-        catalog_path = corpus_path / ".biblicus" / "catalog.json"
-    catalog = _load_json(catalog_path)
-    catalog_items = catalog["items"]
-    if not isinstance(catalog_items, dict):
-        raise ValueError("Expected catalog.items to be a mapping")
+    _load_catalog_items(corpus_path)
 
-    label_counts = Counter()
-    for item_id in decoded:
-        label_counts[_label_for_item(catalog_items, item_id)] += 1
-
-    aligned = _align_segments_to_states(segments=segments, decoded_paths=decoded)
-    state_segment_counts = Counter(state for state, _ in aligned)
-    segments_by_state = _segments_by_state(aligned)
+    decoded_paths = {
+        entry["item_id"]: entry["state_sequence"] for entry in report.get("decoded_paths", [])
+    }
+    segments = list(_iter_jsonl(run_dir / "segments.jsonl"))
+    aligned = _align_segments_to_states(segments=segments, decoded_paths=decoded_paths)
+    state_segment_counts = Counter(state_id for state_id, _segment in aligned)
+    grouped_segments = _segments_by_state(aligned)
+    states = list(report.get("states") or [])
+    label_by_state = _state_label_map(states)
+    transitions = sorted(
+        list(report.get("transitions") or []),
+        key=lambda entry: float(entry.get("weight") or 0.0),
+        reverse=True,
+    )
 
     lines: List[str] = []
     lines.append("# Markov run report")
     lines.append("")
     lines.append(f"- Run dir: `{run_dir}`")
     lines.append(f"- Corpus: `{corpus_path}`")
-    snapshot_id = (
-        (output.get("snapshot") or {}).get("snapshot_id")
-        or manifest.get("snapshot_id")
-        or "unknown"
+    lines.append(
+        f"- Run id: `{snapshot.get('snapshot_id') or manifest.get('snapshot_id') or 'unknown'}`"
     )
-    lines.append(f"- Run id: `{snapshot_id}`")
     lines.append("")
-    lines.append("## What this run learned (high level)")
+    lines.append("## Run summary")
     lines.append("")
-    transitions = report["transitions"]
-    lines.append(f"- States: {len(report['states'])}")
+    lines.append(f"- States: {len(states)}")
     lines.append(f"- Transitions: {len(transitions)}")
-    lines.append(f"- Items analyzed: {len(decoded)}")
-    lines.append(f"- Segments: {len(segments)} (aligned: {sum(state_segment_counts.values())})")
-    lines.append("")
-    lines.append("## Corpus label mix (from catalog tags)")
-    lines.append("")
-    for label, count in label_counts.most_common():
-        lines.append(f"- {label}: {count}")
-    lines.append("")
-    lines.append("## Transitions (graph edges)")
-    lines.append("")
-    for edge in transitions:
-        lines.append(f"- {edge['from_state']} -> {edge['to_state']}: {edge['weight']:.4f}")
-    lines.append("")
-    lines.append("## States (how to interpret)")
-    lines.append("")
+    lines.append(f"- Items analyzed: {len(decoded_paths)}")
+    lines.append(f"- Segments: {len(segments)}")
+    lines.append(f"- Observation pipeline: {_observation_description(configuration)}")
     lines.append(
-        "These are *latent* states learned from the observation vectors (here: TF-IDF over fixed windows). "
-        "They are not pre-named phases. Interpret them by looking at exemplars and by inspecting segments "
-        "assigned to each state."
-    )
-    lines.append(
-        "If a state has only a few exemplars, it usually means the state has very few segments in this run."
+        f"- State naming: {'enabled' if dict(configuration.get('report') or {}).get('state_naming') else 'disabled'}"
     )
     lines.append("")
-
-    for state in report["states"]:
-        state_id = state["state_id"]
-        state_segments = segments_by_state.get(state_id, [])
-        lines.append(f"### State {state_id}")
+    lines.append("## Artifact paths")
+    lines.append("")
+    for name in (
+        "segments.jsonl",
+        "observations.jsonl",
+        "topic_modeling.json",
+        "topic_assignments.jsonl",
+        "transitions.png",
+    ):
+        lines.append(_artifact_line(run_dir, name))
+    lines.append("")
+    lines.append("## State summary")
+    lines.append("")
+    for state in states:
+        state_id = int(state.get("state_id") or 0)
+        lines.append(f"- {_state_heading(state)}: {state_segment_counts.get(state_id, 0)} segments")
+    lines.append("")
+    lines.append("## Transitions")
+    lines.append("")
+    for transition in transitions:
+        from_state = int(transition.get("from_state") or 0)
+        to_state = int(transition.get("to_state") or 0)
+        weight = float(transition.get("weight") or 0.0)
+        lines.append(
+            f"- {label_by_state.get(from_state, f'State {from_state}')} (State {from_state}) "
+            f"-> {label_by_state.get(to_state, f'State {to_state}')} (State {to_state}): {weight:.4f}"
+        )
+    lines.append("")
+    lines.append("## States")
+    lines.append("")
+    for state in states:
+        state_id = int(state.get("state_id") or 0)
+        report_exemplars = [
+            str(exemplar).replace("\n", " ").strip()
+            for exemplar in list(state.get("exemplars") or [])[:5]
+            if str(exemplar).strip()
+        ]
+        sampled_segments = _sampled_segment_texts(grouped_segments.get(state_id, []), limit=10)
+        lines.append(f"### {_state_heading(state)}")
         lines.append("")
+        lines.append(f"- Label: `{_state_label(state)}`")
         lines.append(f"- Segment count: {state_segment_counts.get(state_id, 0)}")
-        lines.append("- Exemplars (from the report):")
-        report_exemplars = list(state.get("exemplars") or [])
-        for ex in report_exemplars[:5]:
-            snippet = str(ex).replace("\n", " ")
-            lines.append(f"  - {snippet}")
-        remaining = 12
-        sampled: List[str] = []
-        for segment in state_segments:
-            text = str(segment.get("text") or "").replace("\n", " ").strip()
-            if not text:
-                continue
-            sampled.append(text)
-            if len(sampled) >= remaining:
-                break
-        if sampled:
-            lines.append("- Exemplars (sampled from segments):")
-            for snippet in sampled:
-                lines.append(f"  - {snippet}")
-        if not report_exemplars and not sampled:
-            lines.append("- Exemplars: none (no segments assigned)")
-        lines.append("")
-
-    # Sports drill-down: show a few example items and their state-labeled segments.
-    sports_items = [
-        item_id
-        for item_id in decoded.keys()
-        if "label:Sports" in (catalog_items[item_id].get("tags") or [])
-    ]
-    lines.append("## Sports slice (example drill-down)")
-    lines.append("")
-    lines.append(f"- Sports items in this run: {len(sports_items)}")
-    lines.append("")
-    example_items = sports_items[:3]
-    for item_id in example_items:
-        entry = catalog_items.get(item_id, {})
-        title = entry.get("title") or ""
-        lines.append(f"### Item {item_id}")
-        if title:
-            lines.append(f"- Title: {title}")
-        lines.append(f"- Decoded states: {decoded[item_id]}")
-        lines.append("- Segments:")
-        segs = [s for s in segments if s.get("item_id") == item_id]
-        segs = sorted(segs, key=lambda s: int(s.get("segment_index") or 0))
-        for seg, st in zip(segs, decoded[item_id]):
-            text = str(seg.get("text") or "").replace("\n", " ")
-            lines.append(f"  - state {st}: {text}")
-        lines.append("")
-
-    lines.append("## Example input text")
-    lines.append("")
-    example_item_id = next(iter(decoded.keys()), None)
-    if example_item_id is None:
-        lines.append("No input items found for this run.")
-    else:
-        entry = catalog_items.get(example_item_id, {})
-        relpath = entry.get("relpath")
-        lines.append(f"- Item id: {example_item_id}")
-        if relpath:
-            lines.append(f"- Source path: `{corpus_path / relpath}`")
-            try:
-                raw_text = (corpus_path / relpath).read_text(encoding="utf-8").strip()
-            except Exception:
-                raw_text = ""
-            if raw_text:
-                lines.append("")
-                lines.append("```\n" + raw_text + "\n```")
-            else:
-                lines.append("- Source text unavailable")
+        lines.append("- Report exemplars:")
+        if report_exemplars:
+            for exemplar in report_exemplars:
+                lines.append(f"  - {exemplar}")
         else:
-            lines.append("- Source path unavailable")
+            lines.append("  - none")
+        lines.append("- Sampled segments:")
+        if sampled_segments:
+            for sample in sampled_segments:
+                lines.append(f"  - {sample}")
+        else:
+            lines.append("  - none")
+        lines.append("")
 
     report_path = run_dir / "report.md"
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -242,8 +255,7 @@ def main() -> int:
         "--run-dir", required=True, help="Path to the Markov analysis snapshot directory."
     )
     args = parser.parse_args()
-    run_dir = Path(args.run_dir).resolve()
-    report_path = build_report(run_dir)
+    report_path = build_report(Path(args.run_dir).resolve())
     print(str(report_path))
     return 0
 
