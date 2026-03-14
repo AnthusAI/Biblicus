@@ -1,0 +1,31 @@
+{
+  "id": "blbs-3b54b5ab-7fa6-443a-8689-fc565fcf9b21",
+  "title": "Integrate dev CI with Ruff, Black, tests, docs, and CodeQL",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "da0fa747-3bb2-4493-a0f2-ab83ff7d08bb",
+      "author": "ryan",
+      "text": "Starting implementation: update CI for dev integration and PRs to include Ruff, Black check, tests/docs, and CodeQL analysis.",
+      "created_at": "2026-03-14T19:26:05.681099Z"
+    },
+    {
+      "id": "dfea06fb-0eda-410c-aaec-b8af5d3604c2",
+      "author": "ryan",
+      "text": "Implemented CI workflow updates: ci.yml now runs on main/dev push+PR and includes Black --check; added new codeql.yml workflow for Python on main/dev plus weekly schedule. Local run shows pre-existing Ruff and Black failures in repository code, so CI will surface those until codebase is brought into compliance.",
+      "created_at": "2026-03-14T19:27:25.301550Z"
+    }
+  ],
+  "created_at": "2026-03-14T19:26:00.960302Z",
+  "updated_at": "2026-03-14T19:27:25.301550Z",
+  "closed_at": null,
+  "custom": {}
+}

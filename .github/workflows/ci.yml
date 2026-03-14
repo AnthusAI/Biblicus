@@ -2,9 +2,13 @@ name: Continuous integration
 
 on:
   pull_request:
+    branches:
+      - main
+      - dev
   push:
     branches:
       - main
+      - dev
 
 permissions:
   contents: read
@@ -29,6 +33,10 @@ jobs:
       - name: Run Ruff linter (including docstring checks)
         run: |
           python -m ruff check src/biblicus/
+
+      - name: Run Black format check
+        run: |
+          python -m black --check src/biblicus/ tests/ features/steps/
 
   test:
     needs: lint
