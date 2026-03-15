@@ -1,0 +1,31 @@
+{
+  "id": "blbs-d9065b28-c5d1-4293-b0de-6d881d37e311",
+  "title": "Stabilize GitHub CI failures on PR #16",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b7d7bb61-9a3b-4957-8f4b-86445f4bea47",
+      "author": "ryan",
+      "text": "Investigating current CI failures on PR #16. Lint + CodeQL pass; all test matrix jobs (3.9-3.12) failing. Pulling failing test logs and patching workflow or code until checks are green.",
+      "created_at": "2026-03-15T01:42:33.050572Z"
+    },
+    {
+      "id": "1dcfd814-f287-41c0-93aa-4111077a1a3a",
+      "author": "ryan",
+      "text": "Patched .coveragerc to include the same omit patterns as pyproject coverage config, fixing CI mismatch where scripts/test.py used stricter inclusion and failed 98% threshold.",
+      "created_at": "2026-03-15T01:43:51.737011Z"
+    }
+  ],
+  "created_at": "2026-03-15T01:42:30.163947Z",
+  "updated_at": "2026-03-15T01:43:51.737011Z",
+  "closed_at": null,
+  "custom": {}
+}
