@@ -16,7 +16,6 @@ from biblicus.analysis.reinforcement_memory._vector_store import (
     _cosine_similarity,
 )
 
-
 # ---------------------------------------------------------------------------
 # _cosine_similarity
 # ---------------------------------------------------------------------------
@@ -167,10 +166,12 @@ def _distinct_vectors(n, dim=4):
 def test_query_nearest_returns_closest(tmp_path):
     store = LocalVectorStore(str(tmp_path), embedding_dim=4)
     # k1 is identical to query; k2 is orthogonal
-    store.put_vectors([
-        VectorRecord("k1", [1.0, 0.0, 0.0, 0.0]),
-        VectorRecord("k2", [0.0, 1.0, 0.0, 0.0]),
-    ])
+    store.put_vectors(
+        [
+            VectorRecord("k1", [1.0, 0.0, 0.0, 0.0]),
+            VectorRecord("k2", [0.0, 1.0, 0.0, 0.0]),
+        ]
+    )
     query = np.array([1.0, 0.0, 0.0, 0.0])
     results = store.query_nearest(query, k=1)
     assert len(results) == 1
@@ -189,11 +190,13 @@ def test_query_nearest_respects_k(tmp_path):
 
 def test_query_nearest_ordered_by_similarity(tmp_path):
     store = LocalVectorStore(str(tmp_path), embedding_dim=4)
-    store.put_vectors([
-        VectorRecord("best", [1.0, 0.0, 0.0, 0.0]),
-        VectorRecord("ok", [0.8, 0.2, 0.0, 0.0]),
-        VectorRecord("worst", [0.0, 1.0, 0.0, 0.0]),
-    ])
+    store.put_vectors(
+        [
+            VectorRecord("best", [1.0, 0.0, 0.0, 0.0]),
+            VectorRecord("ok", [0.8, 0.2, 0.0, 0.0]),
+            VectorRecord("worst", [0.0, 1.0, 0.0, 0.0]),
+        ]
+    )
     query = np.array([1.0, 0.0, 0.0, 0.0])
     results = store.query_nearest(query, k=3)
     sims = [r.similarity for r in results]
@@ -202,10 +205,12 @@ def test_query_nearest_ordered_by_similarity(tmp_path):
 
 def test_query_nearest_threshold_filters(tmp_path):
     store = LocalVectorStore(str(tmp_path), embedding_dim=4)
-    store.put_vectors([
-        VectorRecord("close", [1.0, 0.0, 0.0, 0.0]),
-        VectorRecord("far", [0.0, 1.0, 0.0, 0.0]),
-    ])
+    store.put_vectors(
+        [
+            VectorRecord("close", [1.0, 0.0, 0.0, 0.0]),
+            VectorRecord("far", [0.0, 1.0, 0.0, 0.0]),
+        ]
+    )
     query = np.array([1.0, 0.0, 0.0, 0.0])
     results = store.query_nearest(query, k=5, threshold=0.5)
     assert all(r.similarity >= 0.5 for r in results)
@@ -313,9 +318,7 @@ def test_s3_query_nearest_threshold_applied():
         ]
     }
     store = _s3_store(dim=4, mock_client=client)
-    results = store.query_nearest(
-        np.array([0.1, 0.2, 0.3, 0.4]), k=5, threshold=0.5
-    )
+    results = store.query_nearest(np.array([0.1, 0.2, 0.3, 0.4]), k=5, threshold=0.5)
     assert len(results) == 1
     assert results[0].key == "close"
 

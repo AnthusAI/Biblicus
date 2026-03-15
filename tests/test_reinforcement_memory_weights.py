@@ -14,7 +14,6 @@ from biblicus.analysis.reinforcement_memory._weights import (
     update_memory_weights,
 )
 
-
 # ---------------------------------------------------------------------------
 # initial_weight
 # ---------------------------------------------------------------------------

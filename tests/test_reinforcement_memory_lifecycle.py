@@ -193,9 +193,7 @@ def test_invalid_timestamps_ignored():
 
 
 def test_all_invalid_timestamps_fallback():
-    tier, is_new, is_trending, days_inactive = derive_lifecycle(
-        ["bad", "also-bad"], now=NOW
-    )
+    tier, is_new, is_trending, days_inactive = derive_lifecycle(["bad", "also-bad"], now=NOW)
     assert tier == "established"
     assert days_inactive is None
 

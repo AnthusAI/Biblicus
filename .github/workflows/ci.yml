@@ -34,9 +34,29 @@ jobs:
         run: |
           python -m ruff check src/biblicus/
 
-      - name: Run Black format check
+      - name: Collect changed Python files
+        id: changed-python
         run: |
-          python -m black --check src/biblicus/ tests/ features/steps/
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --depth=1 origin "${{ github.event.pull_request.base.ref }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-list --max-parents=0 "$HEAD_SHA")"
+          fi
+
+          CHANGED_PYTHON_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.py' | tr '\n' ' ')"
+          echo "files=$CHANGED_PYTHON_FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Run Black format check on changed files
+        if: ${{ steps.changed-python.outputs.files != '' }}
+        run: |
+          python -m black --check ${{ steps.changed-python.outputs.files }}
 
   test:
     needs: lint

@@ -47,9 +47,7 @@ _LABEL_SYSTEM = (
 )
 
 _LABEL_PROMPT_TEMPLATE = (
-    "Keywords: {keywords}\n\n"
-    "Example texts:\n{exemplars}\n\n"
-    "2-5 word topic label:"
+    "Keywords: {keywords}\n\n" "Example texts:\n{exemplars}\n\n" "2-5 word topic label:"
 )
 
 _CAUSAL_SYSTEM = (
@@ -58,9 +56,7 @@ _CAUSAL_SYSTEM = (
 )
 
 _CAUSAL_PROMPT_TEMPLATE = (
-    "Edit comment: {edit_comment}\n"
-    "{context_block}"
-    "One-sentence root cause (under 20 words):"
+    "Edit comment: {edit_comment}\n" "{context_block}" "One-sentence root cause (under 20 words):"
 )
 
 _SYNTHESIS_SYSTEM = (
@@ -155,9 +151,7 @@ def dspy_synthesizer(client=None) -> SynthesisFn:
     """
     from biblicus.ai.llm import generate_completion
 
-    def _synthesize(
-        label: str, keywords: List[str], causes: List[str]
-    ) -> Optional[str]:
+    def _synthesize(label: str, keywords: List[str], causes: List[str]) -> Optional[str]:
         kw_str = ", ".join(keywords[:8])
         causes_str = "\n".join(f"{i + 1}. {c}" for i, c in enumerate(causes))
         prompt = _SYNTHESIS_PROMPT_TEMPLATE.format(
@@ -193,8 +187,9 @@ def _bedrock_call(
 ) -> Optional[str]:
     """Make a single Bedrock Claude invocation and return the text."""
     try:
-        import boto3
         import json as _json
+
+        import boto3
 
         client = boto3.client("bedrock-runtime", region_name=region)
         body = _json.dumps(
@@ -276,9 +271,7 @@ def bedrock_synthesizer(
     :return: Cause synthesis callable.
     """
 
-    def _synthesize(
-        label: str, keywords: List[str], causes: List[str]
-    ) -> Optional[str]:
+    def _synthesize(label: str, keywords: List[str], causes: List[str]) -> Optional[str]:
         kw_str = ", ".join(keywords[:8])
         causes_str = "\n".join(f"{i + 1}. {c}" for i, c in enumerate(causes))
         prompt = _SYNTHESIS_PROMPT_TEMPLATE.format(
@@ -286,8 +279,6 @@ def bedrock_synthesizer(
             keywords=kw_str,
             causes=causes_str,
         )
-        return _bedrock_call(
-            model_id, region, _SYNTHESIS_SYSTEM, prompt, max_tokens=60
-        )
+        return _bedrock_call(model_id, region, _SYNTHESIS_SYSTEM, prompt, max_tokens=60)
 
     return _synthesize

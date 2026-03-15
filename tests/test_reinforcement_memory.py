@@ -24,7 +24,6 @@ from biblicus.analysis.reinforcement_memory import (
     hash_embedder,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -174,9 +173,7 @@ def test_analyze_isolates_groups(tmp_path):
     assert r1.texts_analyzed == 20
     assert r2.texts_analyzed == 20
     # g2 analysis should not include g1 texts
-    all_ids_r2 = {
-        ex.text_id for t in r2.topics for ex in t.exemplars
-    }
+    all_ids_r2 = {ex.text_id for t in r2.topics for ex in t.exemplars}
     for tid in all_ids_r2:
         assert tid.startswith("g2-")
 
@@ -219,9 +216,7 @@ def test_analyze_label_fn_exception_falls_back_to_keywords(tmp_path):
 def test_analyze_calls_infer_cause(tmp_path):
     infer_cause = MagicMock(return_value="A test cause")
     synthesize_cause = MagicMock(return_value="Synthesized root cause")
-    engine = _make_engine(
-        tmp_path, infer_cause=infer_cause, synthesize_cause=synthesize_cause
-    )
+    engine = _make_engine(tmp_path, infer_cause=infer_cause, synthesize_cause=synthesize_cause)
     engine.ingest(_texts("g1", n=20))
     result = engine.analyze("g1")
     assert infer_cause.called

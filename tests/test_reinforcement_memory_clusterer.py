@@ -14,7 +14,6 @@ from biblicus.analysis.reinforcement_memory._clusterer import (
     _cosine_distance,
 )
 
-
 # ---------------------------------------------------------------------------
 # _cosine_distance
 # ---------------------------------------------------------------------------

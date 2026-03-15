@@ -94,13 +94,12 @@ class S3EmbeddingCache:
             self._s3 = s3_client
         else:
             import boto3
+
             self._s3 = boto3.client("s3")
 
     def get(self, model_id: str, key: str) -> Optional[np.ndarray]:
         """Return cached embedding or None on miss."""
         try:
-            from botocore.exceptions import ClientError
-
             path = _s3_path(model_id, key)
             resp = self._s3.get_object(Bucket=self.bucket_name, Key=path)
             data = json.loads(resp["Body"].read().decode("utf-8"))

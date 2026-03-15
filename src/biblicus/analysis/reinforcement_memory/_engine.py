@@ -172,7 +172,6 @@ class ReinforcementMemory:
 
         # 4 + 5. Build per-topic data
         prior_topics = self._store.get_topics_for_group(group_id)
-        prior_by_id = {t["topic_id"]: t for t in prior_topics}
 
         raw_topics: List[Dict[str, Any]] = []
         for tid in sorted(set(topic_ids)):
@@ -214,9 +213,7 @@ class ReinforcementMemory:
                 label_str = ", ".join(keywords[:3]) if keywords else f"Topic {tid}"
 
             # 6. Lifecycle
-            member_timestamps = [
-                timestamps[i] for i in member_indices if i < len(timestamps)
-            ]
+            member_timestamps = [timestamps[i] for i in member_indices if i < len(timestamps)]
             lifecycle_tier, is_new, is_trending, days_inactive = derive_lifecycle(
                 member_timestamps, now=now
             )
@@ -253,9 +250,7 @@ class ReinforcementMemory:
             )
 
         active_ids = [t["tid"] for t in raw_topics]
-        days_inactive_map = {
-            t["tid"]: t["days_inactive"] or 0 for t in raw_topics
-        }
+        days_inactive_map = {t["tid"]: t["days_inactive"] or 0 for t in raw_topics}
         updated_priors, _ = update_memory_weights(
             prior_cluster_dicts,
             active_cluster_ids=active_ids,
@@ -275,9 +270,7 @@ class ReinforcementMemory:
                         if cause:
                             causes.append(cause)
                     except Exception as exc:
-                        logger.warning(
-                            "Causal inference failed for topic %s: %s", t["tid"], exc
-                        )
+                        logger.warning("Causal inference failed for topic %s: %s", t["tid"], exc)
                 causal_by_tid[t["tid"]] = causes
 
         root_causes: Dict[int, Optional[str]] = {}
@@ -290,9 +283,7 @@ class ReinforcementMemory:
                             t["label"], t["keywords"], causes
                         )
                     except Exception as exc:
-                        logger.warning(
-                            "Cause synthesis failed for topic %s: %s", t["tid"], exc
-                        )
+                        logger.warning("Cause synthesis failed for topic %s: %s", t["tid"], exc)
 
         # 9. Assemble results + persist
         topic_results: List[TopicResult] = []

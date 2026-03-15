@@ -215,21 +215,14 @@ class TopicClusterer:
             feature_names = vectorizer.get_feature_names_out()
             scores = np.asarray(X.sum(axis=0)).flatten()
             top_indices = scores.argsort()[-n:][::-1]
-            return [
-                feature_names[i]
-                for i in top_indices
-                if scores[i] > 0 and feature_names[i]
-            ]
+            return [feature_names[i] for i in top_indices if scores[i] > 0 and feature_names[i]]
         except Exception as exc:
             logger.warning("Failed to extract keywords for topic %s: %s", topic_id, exc)
             return []
 
-    def get_representative_exemplars(
-        self, topic_id: int, n: int = 5
-    ) -> List[Tuple[int, str]]:
+    def get_representative_exemplars(self, topic_id: int, n: int = 5) -> List[Tuple[int, str]]:
         """
-        Return ``(original_index, text)`` pairs for the ``n`` documents closest
-        to the cluster centroid.
+        Return exemplar ``(original_index, text)`` pairs nearest the centroid.
 
         The ``original_index`` is the position in the list passed to
         :meth:`cluster`, enabling callers to map back to document IDs or
@@ -246,9 +239,7 @@ class TopicClusterer:
         centroid = self.cluster_centroids().get(topic_id)
         if centroid is None:
             return []
-        distances = [
-            (_cosine_distance(self._embeddings[i], centroid), int(i)) for i in indices
-        ]
+        distances = [(_cosine_distance(self._embeddings[i], centroid), int(i)) for i in indices]
         distances.sort(key=lambda x: x[0])
         return [(idx, self._documents[idx]) for _, idx in distances[:n]]
 

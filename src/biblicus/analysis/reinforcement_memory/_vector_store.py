@@ -16,10 +16,9 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Dict, Iterable, List, Optional, runtime_checkable
+from typing import Any, Dict, Iterable, List, Optional, Protocol, runtime_checkable
 
 import numpy as np
-from typing import Protocol
 
 from ._models import QueryResult, VectorRecord
 
@@ -269,6 +268,7 @@ class S3VectorStore:
             self._client = client
         else:
             import boto3
+
             self._client = boto3.client("s3vectors", region_name=region)
 
     # ------------------------------------------------------------------

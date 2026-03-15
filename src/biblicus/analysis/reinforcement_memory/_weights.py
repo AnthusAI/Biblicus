@@ -132,10 +132,12 @@ def update_memory_weights(
             pruned.append(cid_int)
             continue
 
-        updated.append({
-            **c,
-            "memory_weight": weight,
-            "memory_tier": tier,
-        })
+        updated.append(
+            {
+                **c,
+                "memory_weight": weight,
+                "memory_tier": tier,
+            }
+        )
 
     return updated, pruned
