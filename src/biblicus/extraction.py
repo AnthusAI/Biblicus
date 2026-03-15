@@ -291,9 +291,7 @@ def _ensure_extraction_alias_snapshot_dir(
     return snapshot_dir
 
 
-def _write_alias_text_artifact(
-    *, alias_snapshot_dir: Path, item: CatalogItem, text: str
-) -> str:
+def _write_alias_text_artifact(*, alias_snapshot_dir: Path, item: CatalogItem, text: str) -> str:
     text_dir = alias_snapshot_dir / "text"
     text_dir.mkdir(parents=True, exist_ok=True)
     relpath = str(Path("text") / f"{item.id}.txt")
@@ -553,6 +551,7 @@ def build_extraction_snapshot(
         flush=True,
         file=sys.stderr,
     )
+
     def _write_partial_manifest() -> None:
         stats = {
             "total_items": total_item_count,
@@ -595,14 +594,18 @@ def build_extraction_snapshot(
     def _load_stage_cache(
         *, stage_index: int, extractor_id: str, item: CatalogItem
     ) -> Optional[Tuple[ExtractionStageResult, ExtractionStageOutput]]:
-        stage_dir_name = _pipeline_stage_dir_name(stage_index=stage_index, extractor_id=extractor_id)
+        stage_dir_name = _pipeline_stage_dir_name(
+            stage_index=stage_index, extractor_id=extractor_id
+        )
         text_relpath = str(Path("stages") / stage_dir_name / "text" / f"{item.id}.txt")
         text_path = snapshot_dir / text_relpath
         if not text_path.is_file():
             legacy_text_path = next(
                 (
                     path
-                    for path in snapshot_dir.parent.glob(f"*/stages/{stage_dir_name}/text/{item.id}.txt")
+                    for path in snapshot_dir.parent.glob(
+                        f"*/stages/{stage_dir_name}/text/{item.id}.txt"
+                    )
                     if path.is_file()
                 ),
                 None,
@@ -623,7 +626,9 @@ def build_extraction_snapshot(
             legacy_metadata_path = next(
                 (
                     path
-                    for path in snapshot_dir.parent.glob(f"*/stages/{stage_dir_name}/metadata/{item.id}.json")
+                    for path in snapshot_dir.parent.glob(
+                        f"*/stages/{stage_dir_name}/metadata/{item.id}.json"
+                    )
                     if path.is_file()
                 ),
                 None,
@@ -631,7 +636,9 @@ def build_extraction_snapshot(
             if legacy_metadata_path is not None:
                 metadata_value = json.loads(legacy_metadata_path.read_text(encoding="utf-8"))
                 metadata_path.parent.mkdir(parents=True, exist_ok=True)
-                metadata_path.write_text(legacy_metadata_path.read_text(encoding="utf-8"), encoding="utf-8")
+                metadata_path.write_text(
+                    legacy_metadata_path.read_text(encoding="utf-8"), encoding="utf-8"
+                )
         stage_result = ExtractionStageResult(
             stage_index=stage_index,
             extractor_id=extractor_id,
@@ -697,7 +704,9 @@ def build_extraction_snapshot(
                 legacy_text = legacy_text_path.read_text(encoding="utf-8")
                 final_text_path.parent.mkdir(parents=True, exist_ok=True)
                 final_text_path.write_text(legacy_text, encoding="utf-8")
-                legacy_metadata_path = legacy_text_path.parent.parent / "metadata" / f"{item.id}.json"
+                legacy_metadata_path = (
+                    legacy_text_path.parent.parent / "metadata" / f"{item.id}.json"
+                )
                 if legacy_metadata_path.is_file():
                     legacy_metadata_dest = snapshot_dir / final_metadata_relpath
                     legacy_metadata_dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1016,23 +1025,26 @@ def build_extraction_snapshot(
     write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
 
     # Auto-sync catalog to Amplify if configured
-    if os.getenv('AMPLIFY_AUTO_SYNC_CATALOG', 'false').lower() == 'true':
+    if os.getenv("AMPLIFY_AUTO_SYNC_CATALOG", "false").lower() == "true":
         try:
             from .sync.amplify_publisher import AmplifyPublisher
 
             publisher = AmplifyPublisher(corpus.name)
-            catalog_path = corpus.root / 'catalog.json'
+            catalog_path = corpus.root / "catalog.json"
 
             if catalog_path.exists():
                 result = publisher.sync_catalog(catalog_path, force=False)
                 if not result.skipped:
-                    print(f'✓ Synced catalog: {result.created} created, {result.updated} updated, {result.deleted} deleted', file=sys.stderr)
+                    print(
+                        f"✓ Synced catalog: {result.created} created, {result.updated} updated, {result.deleted} deleted",
+                        file=sys.stderr,
+                    )
         except ImportError:
             # AmplifyPublisher not available, skip sync
             pass
         except Exception as e:
             # Don't fail extraction if sync fails
-            print(f'Warning: Catalog sync failed: {e}', file=sys.stderr)
+            print(f"Warning: Catalog sync failed: {e}", file=sys.stderr)
 
     return manifest
 
