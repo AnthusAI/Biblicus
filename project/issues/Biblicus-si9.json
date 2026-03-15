@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-si9",
+  "title": "Document Aldea STT extractor and config",
+  "description": "Part of Biblicus-shs (Aldea STT epic). Add docs/extractors/speech-to-text/aldea.md. Update speech-to-text/index.md, extractors/index.md, extraction.md, STT.md, README.md to list stt-aldea and ALDEA_API_KEY / pip install biblicus[aldea].",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-11T22:12:17.579178Z",
+  "updated_at": "2026-02-11T23:16:37.019997Z",
+  "closed_at": "2026-02-12T04:16:35.534070Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

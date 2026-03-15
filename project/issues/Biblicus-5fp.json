@@ -1,0 +1,21 @@
+{
+  "id": "Biblicus-5fp",
+  "title": "Add real-time extraction pipeline tracking and visualization",
+  "description": "Enable real-time visibility into extraction process so users can see what is happening during corpus item extraction, including:\n\n- Which items are currently being extracted\n- What stage/pipeline step each item is at\n- What intermediate artifacts (extracted text, metadata) are being produced\n- Real-time progress, statistics, and estimated time remaining\n- Final stage results and confidence scores\n\nCurrently extraction progress is only logged to stderr; this feature will:\n1. Stream extraction events from the pipeline (item started, stage completed, item finished, errors)\n2. Expose real-time extraction status via API endpoints\n3. Update the dashboard to show live extraction progress and per-stage artifact inspection\n4. Allow users to monitor extraction of large corpora without polling manifests",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-09T20:19:44.335432Z",
+  "updated_at": "2026-02-09T20:20:01.532284Z",
+  "closed_at": null,
+  "custom": {
+    "beads_issue_type": "feature",
+    "beads_owner": "rap@endymion.com"
+  }
+}

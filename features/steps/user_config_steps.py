@@ -12,6 +12,10 @@ def _write_user_config(path: Path, api_key: str, provider: str = "openai") -> No
     path.parent.mkdir(parents=True, exist_ok=True)
     text = f"{provider}:\n  api_key: {api_key}\n"
     path.write_text(text, encoding="utf-8")
+    loaded = load_user_config(paths=[path])
+    resolved = getattr(loaded, provider.replace("-", "_"), None)
+    assert resolved is not None, f"{provider} config not written to {path}"
+    assert getattr(resolved, "api_key") == api_key
 
 
 @given('a local Biblicus user config exists with OpenAI API key "{api_key}"')
@@ -20,6 +24,9 @@ def step_local_user_config_exists(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key)
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["OPENAI_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @given('a home Biblicus user config exists with OpenAI API key "{api_key}"')
@@ -47,6 +54,9 @@ def step_local_user_config_exists_huggingface(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key, provider="huggingface")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["HUGGINGFACE_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @given('a home Biblicus user config exists with HuggingFace API key "{api_key}"')
@@ -90,6 +100,9 @@ def step_local_user_config_exists_deepgram(context, api_key: str) -> None:
     assert workdir is not None
     path = Path(workdir) / ".biblicus" / "config.yml"
     _write_user_config(path, api_key, provider="deepgram")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["DEEPGRAM_API_KEY"] = api_key
+    context.extra_env = extra_env
 
 
 @then('the loaded user configuration has Deepgram API key "{api_key}"')
@@ -175,6 +188,154 @@ def step_call_resolve_deepgram_api_key(context):
             os.environ["DEEPGRAM_API_KEY"] = old_env_key
         elif "DEEPGRAM_API_KEY" in os.environ:
             del os.environ["DEEPGRAM_API_KEY"]
+
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]
+
+
+@when('I resolve the source profile "{profile_name}"')
+def step_resolve_source_profile(context, profile_name: str) -> None:
+    from pathlib import Path
+
+    from biblicus.user_config import load_user_config, resolve_source_profile
+
+    old_env_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "AWS_ACCESS_KEY_ID" in extra_env:
+        os.environ["AWS_ACCESS_KEY_ID"] = extra_env["AWS_ACCESS_KEY_ID"]
+    elif "AWS_ACCESS_KEY_ID" in os.environ:
+        del os.environ["AWS_ACCESS_KEY_ID"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        config = None
+        if workdir:
+            config_path = Path(workdir) / ".biblicus" / "config.yml"
+            if config_path.is_file():
+                try:
+                    config = load_user_config(paths=[config_path])
+                except TypeError:
+                    config = load_user_config()
+        context.resolved_source_profile = resolve_source_profile(profile_name, config=config)
+    finally:
+        os.chdir(old_cwd)
+        if old_env_access_key is not None:
+            os.environ["AWS_ACCESS_KEY_ID"] = old_env_access_key
+        elif "AWS_ACCESS_KEY_ID" in os.environ:
+            del os.environ["AWS_ACCESS_KEY_ID"]
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]
+
+
+@then('the resolved source profile kind is "{kind}"')
+def step_resolved_source_profile_kind(context, kind: str) -> None:
+    profile = getattr(context, "resolved_source_profile", None)
+    assert profile is not None
+    assert profile.kind == kind
+
+
+@then('the resolved source profile access key is "{access_key}"')
+def step_resolved_source_profile_access_key(context, access_key: str) -> None:
+    profile = getattr(context, "resolved_source_profile", None)
+    assert profile is not None
+    assert profile.access_key_id == access_key
+
+
+@given('a local Biblicus user config exists with Aldea API key "{api_key}"')
+def step_local_user_config_exists_aldea(context, api_key: str) -> None:
+    workdir = getattr(context, "workdir", None)
+    assert workdir is not None
+    path = Path(workdir) / ".biblicus" / "config.yml"
+    _write_user_config(path, api_key, provider="aldea")
+    extra_env = getattr(context, "extra_env", None) or {}
+    extra_env["ALDEA_API_KEY"] = api_key
+    context.extra_env = extra_env
+
+
+@when("I call resolve_aldea_api_key helper function")
+def step_call_resolve_aldea_api_key(context):
+    from pathlib import Path
+
+    from biblicus.user_config import resolve_aldea_api_key
+
+    old_env_key = os.environ.get("ALDEA_API_KEY")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "ALDEA_API_KEY" in extra_env:
+        os.environ["ALDEA_API_KEY"] = extra_env["ALDEA_API_KEY"]
+    elif "ALDEA_API_KEY" in os.environ:
+        del os.environ["ALDEA_API_KEY"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        context.resolved_api_key = resolve_aldea_api_key()
+    finally:
+        os.chdir(old_cwd)
+
+        if old_env_key is not None:
+            os.environ["ALDEA_API_KEY"] = old_env_key
+        elif "ALDEA_API_KEY" in os.environ:
+            del os.environ["ALDEA_API_KEY"]
+
+        if old_env_home is not None:
+            os.environ["HOME"] = old_env_home
+        elif "HOME" in os.environ:
+            del os.environ["HOME"]
+
+
+@when("I resolve the OpenAI API key from user configuration")
+def step_resolve_openai_api_key_from_config(context):
+    from pathlib import Path
+
+    from biblicus.user_config import resolve_openai_api_key
+
+    old_env_key = os.environ.get("OPENAI_API_KEY")
+    old_env_home = os.environ.get("HOME")
+    old_cwd = Path.cwd()
+    extra_env = getattr(context, "extra_env", {})
+    workdir = getattr(context, "workdir", None)
+
+    if "OPENAI_API_KEY" in extra_env:
+        os.environ["OPENAI_API_KEY"] = extra_env["OPENAI_API_KEY"]
+    elif "OPENAI_API_KEY" in os.environ:
+        del os.environ["OPENAI_API_KEY"]
+
+    if "HOME" in extra_env:
+        os.environ["HOME"] = extra_env["HOME"]
+
+    if workdir:
+        os.chdir(workdir)
+
+    try:
+        context.resolved_api_key = resolve_openai_api_key()
+    finally:
+        os.chdir(old_cwd)
+
+        if old_env_key is not None:
+            os.environ["OPENAI_API_KEY"] = old_env_key
+        elif "OPENAI_API_KEY" in os.environ:
+            del os.environ["OPENAI_API_KEY"]
 
         if old_env_home is not None:
             os.environ["HOME"] = old_env_home

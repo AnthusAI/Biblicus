@@ -59,7 +59,7 @@ The most useful artifact to open first is the GraphViz file:
 
 ```json
 {
-  "transitions_dot_path": ".../corpora/tutorial_sequence_markov/.biblicus/runs/analysis/markov/<snapshot_id>/transitions.dot"
+  "transitions_dot_path": ".../corpora/tutorial_sequence_markov/analysis/markov/<snapshot_id>/transitions.dot"
 }
 ```
 

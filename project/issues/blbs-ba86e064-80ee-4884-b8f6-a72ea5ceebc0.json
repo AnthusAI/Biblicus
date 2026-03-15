@@ -1,0 +1,25 @@
+{
+  "id": "blbs-ba86e064-80ee-4884-b8f6-a72ea5ceebc0",
+  "title": "Configure S3 corpus source",
+  "description": "",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "4742eb53-b7f0-4087-bb89-a5d1eeb16bf2",
+      "author": "ryan.porter",
+      "text": "Feature: S3 corpus source\\n  Scenario: Ingest items from Amazon S3\\n    Given a corpus configuration with a source kind of \"s3\" and valid bucket and prefix settings\\n    When I run corpus ingestion\\n    Then Biblicus registers items with provenance URIs in the s3 scheme\\n    And retrieval evidence references those item identifiers",
+      "created_at": "2026-02-19T04:55:24.784995Z"
+    }
+  ],
+  "created_at": "2026-02-19T04:55:15.496942Z",
+  "updated_at": "2026-02-19T04:55:24.784995Z",
+  "closed_at": null,
+  "custom": {}
+}

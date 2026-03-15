@@ -5,7 +5,7 @@ Feature: Profiling config overrides
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering. This is a longer document that should remain after filtering." with title "Beta" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     When I snapshot a profiling analysis in corpus "corpus" using the latest extraction snapshot with config overrides:

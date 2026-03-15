@@ -81,7 +81,7 @@ results = corpus.extract_text(extractor_id="pass-through-text")
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: select-text
@@ -130,7 +130,7 @@ This is the body content that is extracted.
 
 ### Mixed Format Pipeline
 
-Use as first step in a multi-format pipeline:
+Use as first stage in a multi-format pipeline:
 
 ```python
 from biblicus import Corpus
@@ -141,7 +141,7 @@ corpus = Corpus.from_directory("mixed-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "markitdown"},
             {"extractor_id": "select-text"}
@@ -224,7 +224,7 @@ Use as the fast path for text in heterogeneous corpora:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: unstructured  # Handles everything else
     - extractor_id: select-text

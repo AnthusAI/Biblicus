@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 from behave import then, when
@@ -23,7 +24,7 @@ def step_run_extraction_evaluation_lab(context, corpus_name: str, dataset_name: 
     dataset_path = (context.workdir / dataset_name).resolve()
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "scripts/extraction_evaluation_lab.py",
             "--corpus",
             str(corpus),

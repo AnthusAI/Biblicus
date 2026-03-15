@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
@@ -13,6 +14,7 @@ from typing import Dict, Iterable, List, Optional
 from pydantic import ValidationError
 
 from .analysis import get_analysis_backend
+from .collections import load_collection_config, pull_collection
 from .context import (
     CharacterBudget,
     ContextPackPolicy,
@@ -23,18 +25,59 @@ from .context import (
 )
 from .corpus import Corpus
 from .crawl import CrawlRequest, crawl_into_corpus
-from .errors import ExtractionSnapshotFatalError, IngestCollisionError
-from .evaluation import evaluate_snapshot, load_dataset
+from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
+from .evaluation.retrieval import evaluate_snapshot, load_dataset
 from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
-from .extraction import build_extraction_snapshot
+from .extraction import build_extraction_snapshot, load_or_build_extraction_snapshot
 from .extraction_evaluation import (
     evaluate_extraction_snapshot,
     load_extraction_dataset,
     write_extraction_evaluation_result,
 )
-from .models import QueryBudget, RetrievalResult, parse_extraction_snapshot_reference
+from .migration import migrate_layout
+from .models import (
+    CorpusConfig,
+    ExtractionSnapshotReference,
+    QueryBudget,
+    RemoteCorpusSourceConfig,
+    RetrievalResult,
+    parse_extraction_snapshot_reference,
+)
+from .pipelines import run_pipeline_recipe
 from .retrievers import get_retriever
 from .uris import corpus_ref_to_path
+
+
+def _get_or_build_extraction_snapshot(
+    *,
+    corpus: Corpus,
+    recipe_path: Path,
+    analysis_label: str,
+) -> ExtractionSnapshotReference:
+    """
+    Reuse the latest extraction snapshot when available, otherwise build one.
+
+    This helper keeps the CLI logic small and is intentionally minimal: it falls
+    back to the pipeline extractor with an empty configuration when no recipe is
+    provided.
+    """
+    existing = corpus.latest_extraction_snapshot_reference(extractor_id="pipeline")
+    if existing is not None:
+        return existing
+
+    extractor_id = "pipeline"
+    config: Dict[str, object] = {}
+    if recipe_path.exists():
+        try:
+            with recipe_path.open("r", encoding="utf-8") as handle:
+                recipe_data = json.load(handle)
+            extractor_id = recipe_data.get("extractor_id", extractor_id)
+            config = recipe_data.get("config", config)
+        except Exception:
+            pass
+
+    snapshot = corpus.extract(extractor_id=extractor_id, config=config, label=analysis_label)
+    return ExtractionSnapshotReference(extractor_id=extractor_id, snapshot_id=snapshot.snapshot_id)
 
 
 def _add_common_corpus_arg(parser: argparse.ArgumentParser) -> None:
@@ -70,6 +113,21 @@ def cmd_init(arguments: argparse.Namespace) -> int:
     corpus_path = corpus_ref_to_path(arguments.path)
     corpus = Corpus.init(corpus_path, force=arguments.force)
     print(f"Initialized corpus at {corpus.root}")
+    return 0
+
+
+def cmd_migrate_layout(arguments: argparse.Namespace) -> int:
+    """
+    Migrate a legacy corpus layout to the current layout.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus_path = corpus_ref_to_path(arguments.path)
+    stats = migrate_layout(corpus_root=corpus_path, force=arguments.force)
+    print(json.dumps(stats, indent=2))
     return 0
 
 
@@ -228,6 +286,130 @@ def cmd_import_tree(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_source_set(arguments: argparse.Namespace) -> int:
+    """
+    Configure a remote source for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    config_path = corpus.meta_dir / "config.json"
+    config_data = json.loads(config_path.read_text(encoding="utf-8"))
+    config = CorpusConfig.model_validate(config_data)
+    source_payload = {
+        "kind": arguments.kind,
+        "profile": arguments.profile,
+        "name": arguments.name,
+        "bucket": arguments.bucket,
+        "container": arguments.container,
+        "prefix": arguments.prefix or "",
+    }
+    remote_source = RemoteCorpusSourceConfig.model_validate(source_payload)
+    updated = config.model_copy(update={"source": remote_source})
+    config_path.write_text(updated.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    print(remote_source.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_source_show(arguments: argparse.Namespace) -> int:
+    """
+    Show the configured remote source.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    if corpus.config is None or corpus.config.source is None:
+        raise ValueError("Remote source is not configured for this corpus.")
+    print(corpus.config.source.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_source_pull(arguments: argparse.Namespace) -> int:
+    """
+    Pull the configured remote source into the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    result = corpus.pull_source()
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_collection_show(arguments: argparse.Namespace) -> int:
+    """
+    Show the configured collection metadata.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    collection_root = Path(arguments.collection)
+    config = load_collection_config(collection_root)
+    print(config.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_collection_pull(arguments: argparse.Namespace) -> int:
+    """
+    Pull a remote collection into local corpora.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    collection_root = Path(arguments.collection)
+    result = pull_collection(collection_root)
+    print(result.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_pipeline_run(arguments: argparse.Namespace) -> int:
+    """
+    Run a pipeline recipe.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    result = run_pipeline_recipe(Path(arguments.recipe))
+    print(
+        json.dumps(
+            {
+                "corpora": result.corpora,
+                "extraction_snapshot_ids": result.extraction_snapshot_ids,
+                "retrieval_snapshot_ids": result.retrieval_snapshot_ids,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
 def cmd_purge(arguments: argparse.Namespace) -> int:
     """
     Purge all items and derived artifacts from a corpus.
@@ -293,25 +475,25 @@ def _parse_config_pairs(pairs: Optional[Iterable[str]]) -> Dict[str, object]:
     return config
 
 
-def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
+def _parse_stage_spec(raw_stage: str) -> tuple[str, Dict[str, object]]:
     """
-    Parse a pipeline step specification.
+    Parse a pipeline stage specification.
 
-    :param raw_step: Step spec in the form extractor_id or extractor_id:key=value,key=value.
-    :type raw_step: str
+    :param raw_stage: Stage spec in the form extractor_id or extractor_id:key=value,key=value.
+    :type raw_stage: str
     :return: Tuple of extractor_id and config mapping.
     :rtype: tuple[str, dict[str, object]]
-    :raises ValueError: If the step spec is invalid.
+    :raises ValueError: If the stage spec is invalid.
     """
-    raw_step = raw_step.strip()
-    if not raw_step:
-        raise ValueError("Step spec must be non-empty")
-    if ":" not in raw_step:
-        return raw_step, {}
-    extractor_id, raw_pairs = raw_step.split(":", 1)
+    raw_stage = raw_stage.strip()
+    if not raw_stage:
+        raise ValueError("Stage spec must be non-empty")
+    if ":" not in raw_stage:
+        return raw_stage, {}
+    extractor_id, raw_pairs = raw_stage.split(":", 1)
     extractor_id = extractor_id.strip()
     if not extractor_id:
-        raise ValueError("Step spec must start with an extractor identifier")
+        raise ValueError("Stage spec must start with an extractor identifier")
     config: Dict[str, object] = {}
     raw_pairs = raw_pairs.strip()
     if not raw_pairs:
@@ -363,11 +545,11 @@ def _parse_step_spec(raw_step: str) -> tuple[str, Dict[str, object]]:
         if not token:
             continue
         if "=" not in token:
-            raise ValueError(f"Step config values must be key=value (got {token!r})")
+            raise ValueError(f"Config values must be key=value (got {token!r})")
         key, value = token.split("=", 1)
         key = key.strip()
         if not key:
-            raise ValueError("Step config keys must be non-empty")
+            raise ValueError("Config keys must be non-empty")
         config[key] = value
     return extractor_id, config
 
@@ -387,6 +569,209 @@ def _budget_from_args(arguments: argparse.Namespace) -> QueryBudget:
         maximum_total_characters=arguments.maximum_total_characters,
         max_items_per_source=arguments.max_items_per_source,
     )
+
+
+def _add_dependency_flags(parser: argparse.ArgumentParser) -> None:
+    """
+    Add dependency execution flags to a subcommand parser.
+
+    :param parser: Argument parser to extend.
+    :type parser: argparse.ArgumentParser
+    :return: None.
+    :rtype: None
+    """
+    parser.add_argument(
+        "--auto-deps",
+        action="store_true",
+        help="Automatically run dependency stages (load/extract/index) when needed.",
+    )
+    parser.add_argument(
+        "--no-deps",
+        action="store_true",
+        help="Fail fast if dependency stages are required.",
+    )
+
+
+def _dependency_mode(arguments: argparse.Namespace) -> str:
+    """
+    Resolve dependency execution mode from CLI arguments.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Dependency mode (auto, none, or prompt).
+    :rtype: str
+    :raises ValueError: If conflicting flags are set.
+    """
+    auto_deps = bool(getattr(arguments, "auto_deps", False))
+    no_deps = bool(getattr(arguments, "no_deps", False))
+    if auto_deps and no_deps:
+        raise ValueError("--auto-deps and --no-deps cannot be combined")
+    if auto_deps:
+        return "auto"
+    if no_deps:
+        return "none"
+    if not sys.stdin.isatty():
+        return "auto"
+    return "prompt"
+
+
+def _default_extraction_recipe_path(corpus: Corpus, *, recipe_name: str = "default") -> Path:
+    return corpus.root / "recipes" / "extraction" / f"{recipe_name}.yml"
+
+def _default_extraction_max_workers() -> int:
+    env_value = os.getenv("BIBLICUS_EXTRACT_MAX_WORKERS")
+    if env_value:
+        try:
+            parsed = int(env_value)
+        except ValueError as exc:
+            raise ValueError(
+                "BIBLICUS_EXTRACT_MAX_WORKERS must be an integer >= 1"
+            ) from exc
+        if parsed < 1:
+            raise ValueError("BIBLICUS_EXTRACT_MAX_WORKERS must be >= 1")
+        return parsed
+    cpu_count = os.cpu_count() or 1
+    return max(4, cpu_count)
+
+
+def _normalize_extraction_configuration(
+    configuration_data: Dict[str, object],
+) -> tuple[str, Dict[str, object], Optional[int]]:
+    extractor_id = configuration_data.get("extractor_id", "pipeline")
+    configuration = configuration_data.get("configuration", {})
+    max_workers = configuration_data.get("max_workers")
+    if configuration is None:
+        configuration = {}
+    if not isinstance(configuration, dict):
+        raise ValueError("Extraction configuration must be a mapping/object")
+    if not isinstance(extractor_id, str) or not extractor_id.strip():
+        raise ValueError("Extraction configuration must include a non-empty extractor_id")
+    extractor_id = extractor_id.strip()
+    if max_workers is not None:
+        if isinstance(max_workers, bool):
+            raise ValueError("Extraction configuration max_workers must be an integer")
+        try:
+            max_workers = int(max_workers)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Extraction configuration max_workers must be an integer") from exc
+        if max_workers < 1:
+            raise ValueError("Extraction configuration max_workers must be >= 1")
+    if extractor_id != "pipeline":
+        return (
+            "pipeline",
+            {"stages": [{"extractor_id": extractor_id, "config": configuration}]},
+            max_workers,
+        )
+    return "pipeline", configuration, max_workers
+
+
+def _resolve_extraction_snapshot_for_analysis(
+    *,
+    corpus: Corpus,
+    extraction_snapshot: Optional[str],
+    analysis_label: str,
+) -> "ExtractionSnapshotReference":
+    from .configuration import load_configuration_view
+    from .models import ExtractionSnapshotReference
+
+    if extraction_snapshot:
+        return parse_extraction_snapshot_reference(extraction_snapshot)
+
+    recipe_path = _default_extraction_recipe_path(corpus)
+    if recipe_path.is_file():
+        latest_snapshot = corpus.latest_extraction_snapshot_reference(extractor_id="pipeline")
+        if latest_snapshot is not None:
+            manifest_path = corpus.extraction_snapshot_dir(
+                extractor_id=latest_snapshot.extractor_id, snapshot_id=latest_snapshot.snapshot_id
+            ) / "manifest.json"
+            if manifest_path.is_file():
+                print(
+                    f"[extract] reusing snapshot {latest_snapshot.snapshot_id}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return latest_snapshot
+        print(
+            f"{analysis_label}: using extraction recipe {recipe_path}",
+            file=sys.stderr,
+            flush=True,
+        )
+        configuration_data = load_configuration_view(
+            [str(recipe_path)],
+            configuration_label="Extraction recipe",
+            mapping_error_message="Extraction recipe must be a mapping/object",
+        )
+        extractor_id, configuration, max_workers = _normalize_extraction_configuration(
+            configuration_data
+        )
+        if max_workers is None:
+            max_workers = _default_extraction_max_workers()
+        configuration_name = recipe_path.stem
+        manifest = load_or_build_extraction_snapshot(
+            corpus,
+            extractor_id=extractor_id,
+            configuration_name=configuration_name,
+            configuration=configuration,
+            max_workers=max_workers,
+        )
+        return ExtractionSnapshotReference(
+            extractor_id=extractor_id,
+            snapshot_id=manifest.snapshot_id,
+        )
+
+    latest_snapshot = corpus.latest_extraction_snapshot_reference()
+    if latest_snapshot is None:
+        raise ValueError(
+            f"{analysis_label} requires an extraction snapshot to supply text inputs. "
+            f"Create an extraction recipe at {recipe_path} or pass --extraction-snapshot."
+        )
+    print(
+        "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
+        file=sys.stderr,
+    )
+    return latest_snapshot
+
+
+def _prompt_dependency_plan(plan, label: str) -> bool:
+    pending = [task.kind for task in plan.tasks if task.status != "complete"]
+    pending_summary = ", ".join(pending) if pending else "none"
+    print(f"Dependencies required for {label}: {pending_summary}")
+    response = input("Run dependencies now? [y/N]: ").strip().lower()
+    return response in {"y", "yes"}
+
+
+def _execute_dependency_plan(
+    plan,
+    *,
+    corpus: Corpus,
+    label: str,
+    mode: str,
+):
+    from .workflow import Plan, build_default_handler_registry
+
+    if plan.status == "complete":
+        return []
+    if plan.status == "blocked":
+        raise ValueError(plan.root.reason or f"Dependencies blocked for {label}")
+    if mode == "none":
+        raise ValueError(f"Dependencies missing for {label}")
+    if mode not in {"prompt", "auto"}:
+        raise ValueError(f"Unsupported dependency mode: {mode}")
+    if mode == "prompt" and not _prompt_dependency_plan(plan, label):
+        raise ValueError(f"Dependencies declined for {label}")
+
+    handler_registry = build_default_handler_registry(corpus)
+    plan_to_execute = plan
+    if getattr(plan.root, "kind", None) == "query":
+        dependency_tasks = [task for task in plan.tasks if task.kind != "query"]
+        if not dependency_tasks:
+            return []
+        plan_to_execute = Plan(
+            tasks=dependency_tasks,
+            root=dependency_tasks[-1],
+            status="ready",
+        )
+    return plan_to_execute.execute(mode="auto", handler_registry=handler_registry)
 
 
 def cmd_build(arguments: argparse.Namespace) -> int:
@@ -421,6 +806,23 @@ def cmd_build(arguments: argparse.Namespace) -> int:
 
     overrides = parse_dotted_overrides(arguments.override)
     configuration = apply_dotted_overrides(base_config, overrides)
+
+    from .workflow import build_plan_for_index
+
+    dependency_mode = _dependency_mode(arguments)
+    index_plan = build_plan_for_index(
+        corpus,
+        retriever_id=arguments.retriever,
+        pipeline_config=None,
+        index_config=configuration,
+        load_handler_available=False,
+    )
+    _execute_dependency_plan(
+        index_plan,
+        corpus=corpus,
+        label="index",
+        mode=dependency_mode,
+    )
 
     snapshot = retriever.build_snapshot(
         corpus,
@@ -462,7 +864,7 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         if loaded_extractor_id != "pipeline":
             extractor_id = "pipeline"
             config = {
-                "steps": [
+                "stages": [
                     {
                         "extractor_id": loaded_extractor_id,
                         "config": loaded_config,
@@ -473,22 +875,45 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
             extractor_id = loaded_extractor_id
             config = loaded_config
     else:
-        # Build from --step arguments
-        raw_steps = list(arguments.step or [])
-        if not raw_steps:
-            raise ValueError("Pipeline extraction requires at least one --step")
-        steps: List[Dict[str, object]] = []
-        for raw_step in raw_steps:
-            step_extractor_id, step_config = _parse_step_spec(raw_step)
-            steps.append({"extractor_id": step_extractor_id, "config": step_config})
-        config = {"steps": steps}
+        # Build from --stage arguments
+        raw_stages = list(arguments.stage or [])
+        if not raw_stages:
+            raise ValueError("Pipeline extraction requires at least one --stage")
+        stages: List[Dict[str, object]] = []
+        for raw_stage in raw_stages:
+            stage_extractor_id, stage_config = _parse_stage_spec(raw_stage)
+            stages.append({"extractor_id": stage_extractor_id, "config": stage_config})
+        config = {"stages": stages}
         extractor_id = "pipeline"
 
-    manifest = build_extraction_snapshot(
+    from .workflow import build_plan_for_extract
+
+    dependency_mode = _dependency_mode(arguments)
+    resolved_max_workers = (
+        int(arguments.max_workers)
+        if arguments.max_workers is not None
+        else _default_extraction_max_workers()
+    )
+    extract_plan = build_plan_for_extract(
+        corpus,
+        pipeline_config=config,
+        load_handler_available=False,
+        force=bool(arguments.force),
+        max_workers=resolved_max_workers,
+    )
+    results = _execute_dependency_plan(
+        extract_plan,
+        corpus=corpus,
+        label="extract",
+        mode=dependency_mode,
+    )
+    manifest = results[-1] if results else build_extraction_snapshot(
         corpus,
         extractor_id=extractor_id,
         configuration_name=arguments.configuration_name,
         configuration=config,
+        force=bool(arguments.force),
+        max_workers=resolved_max_workers,
     )
     print(manifest.model_dump_json(indent=2))
     return 0
@@ -609,6 +1034,109 @@ def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph_extract(arguments: argparse.Namespace) -> int:
+    """
+    Build a graph extraction snapshot for the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
+    from .graph.extraction import build_graph_snapshot
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+
+    base_config: Dict[str, object] = {}
+    if arguments.configuration is not None:
+        base_config = load_configuration_view(
+            arguments.configuration,
+            configuration_label="Graph extraction configuration",
+            mapping_error_message="Graph extraction configuration must be a mapping/object",
+        )
+
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration = apply_dotted_overrides(base_config, overrides)
+
+    if arguments.extraction_snapshot:
+        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
+    else:
+        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
+        if extraction_snapshot is None:
+            raise ValueError("Graph extraction requires an extraction snapshot")
+        print(
+            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
+            file=sys.stderr,
+        )
+
+    manifest = build_graph_snapshot(
+        corpus,
+        extractor_id=arguments.extractor,
+        configuration_name=arguments.configuration_name,
+        configuration=configuration,
+        extraction_snapshot=extraction_snapshot,
+    )
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_graph_list(arguments: argparse.Namespace) -> int:
+    """
+    List graph extraction snapshots stored under the corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import list_graph_snapshots
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    snapshots = list_graph_snapshots(corpus, extractor_id=arguments.extractor_id)
+    print(json.dumps([entry.model_dump() for entry in snapshots], indent=2))
+    return 0
+
+
+def cmd_graph_show(arguments: argparse.Namespace) -> int:
+    """
+    Show a graph snapshot manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import load_graph_snapshot_manifest
+    from .graph.models import parse_graph_snapshot_reference
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    reference = parse_graph_snapshot_reference(arguments.snapshot)
+    manifest = load_graph_snapshot_manifest(
+        corpus,
+        extractor_id=reference.extractor_id,
+        snapshot_id=reference.snapshot_id,
+    )
+    print(manifest.model_dump_json(indent=2))
+    return 0
+
+
 def cmd_query(arguments: argparse.Namespace) -> int:
     """
     Execute a retrieval query.
@@ -624,6 +1152,25 @@ def cmd_query(arguments: argparse.Namespace) -> int:
         else Corpus.find(Path.cwd())
     )
     snapshot_id = arguments.snapshot or corpus.latest_snapshot_id
+    if not snapshot_id:
+        from .workflow import build_plan_for_query
+
+        dependency_mode = _dependency_mode(arguments)
+        retriever_id = arguments.retriever or "tf-vector"
+        query_plan = build_plan_for_query(
+            corpus,
+            retriever_id=retriever_id,
+            pipeline_config=None,
+            index_config=None,
+            load_handler_available=False,
+        )
+        _execute_dependency_plan(
+            query_plan,
+            corpus=corpus,
+            label="query",
+            mode=dependency_mode,
+        )
+        snapshot_id = corpus.latest_snapshot_id
     if not snapshot_id:
         raise ValueError(
             "No snapshot identifier provided and no latest snapshot is recorded for this corpus"
@@ -787,16 +1334,11 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     overrides = parse_dotted_overrides(arguments.override)
     configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError("Topic analysis requires an extraction snapshot to supply text inputs")
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Topic analysis",
+    )
 
     backend = get_analysis_backend("topic-modeling")
     try:
@@ -847,18 +1389,11 @@ def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
         if overrides:
             configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError(
-                "Profiling analysis requires an extraction snapshot to supply text inputs"
-            )
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Profiling analysis",
+    )
 
     backend = get_analysis_backend("profiling")
     try:
@@ -902,18 +1437,11 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     overrides = parse_dotted_overrides(arguments.override)
     configuration_data = apply_dotted_overrides(configuration_data, overrides)
 
-    if arguments.extraction_snapshot:
-        extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
-    else:
-        extraction_snapshot = corpus.latest_extraction_snapshot_reference()
-        if extraction_snapshot is None:
-            raise ValueError(
-                "Markov analysis requires an extraction snapshot to supply text inputs"
-            )
-        print(
-            "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
-            file=sys.stderr,
-        )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Markov analysis",
+    )
 
     backend = get_analysis_backend("markov")
     try:
@@ -926,6 +1454,313 @@ def cmd_analyze_markov(arguments: argparse.Namespace) -> int:
     except ValidationError as exc:
         raise ValueError(f"Invalid Markov analysis configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
+    return 0
+
+
+# -----------------------------------------------------------------
+# Benchmark commands
+# -----------------------------------------------------------------
+
+
+def cmd_benchmark_download(arguments: argparse.Namespace) -> int:
+    """
+    Download benchmark datasets.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import subprocess
+
+    if isinstance(arguments.datasets, str):
+        datasets = [d.strip() for d in arguments.datasets.split(",")]
+    else:
+        datasets = [str(d).strip() for d in arguments.datasets]
+    corpus_dir = Path(arguments.corpus_dir)
+    count = arguments.count
+    force = arguments.force
+
+    print("=" * 70)
+    print("BIBLICUS BENCHMARK DATASET DOWNLOAD")
+    print("=" * 70)
+
+    for dataset in datasets:
+        print(f"\nDownloading {dataset}...")
+
+        if dataset == "funsd":
+            corpus_path = corpus_dir / "funsd_benchmark"
+            cmd = ["python", "scripts/download_funsd_samples.py", "--corpus", str(corpus_path)]
+            if count:
+                cmd.extend(["--count", str(count)])
+            if force:
+                cmd.append("--force")
+
+        elif dataset == "sroie":
+            corpus_path = corpus_dir / "sroie_benchmark"
+            cmd = ["python", "scripts/download_sroie_samples.py", "--corpus", str(corpus_path)]
+            if count:
+                cmd.extend(["--count", str(count)])
+            if force:
+                cmd.append("--force")
+
+        elif dataset == "scanned-arxiv":
+            print("  NOTICE: scanned-arxiv dataset is not yet available.")
+            print("          The HuggingFace dataset lacks actual scanned images.")
+            print("          This category is pending a suitable dataset source.")
+            continue
+
+        else:
+            print(f"  Unknown dataset: {dataset}")
+            continue
+
+        result = subprocess.run(cmd, capture_output=False)
+        if result.returncode != 0:
+            print(f"  ERROR: Failed to download {dataset}")
+        else:
+            print(f"  Downloaded {dataset} to {corpus_path}")
+
+    return 0
+
+
+def cmd_benchmark_run(arguments: argparse.Namespace) -> int:
+    """
+    Run benchmark evaluation.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .evaluation.benchmark_runner import BenchmarkConfig, BenchmarkRunner
+
+    config_path = Path(arguments.config)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Benchmark configuration not found: {config_path}")
+
+    config = BenchmarkConfig.load(config_path)
+
+    # Override pipelines if specified
+    if arguments.pipelines:
+        config.pipelines = [Path(p.strip()) for p in arguments.pipelines.split(",")]
+
+    runner = BenchmarkRunner(config)
+
+    # Run specific category or all
+    if arguments.category:
+        if arguments.category not in config.categories:
+            raise ValueError(f"Unknown category: {arguments.category}. "
+                           f"Available: {', '.join(config.categories.keys())}")
+        cat_config = config.categories[arguments.category]
+        result = runner.run_category(cat_config)
+        print(f"\n{arguments.category.upper()} Results:")
+        print(f"  Best pipeline: {result.best_pipeline} ({result.best_score:.3f} {result.primary_metric})")
+    else:
+        result = runner.run_all()
+        result.print_summary()
+
+        # Save results
+        output_path = Path(arguments.output) if arguments.output else Path(f"results/benchmark_{config.benchmark_name}.json")
+        result.to_json(output_path)
+        print(f"\nResults saved to: {output_path}")
+
+        # Also generate markdown report
+        md_path = output_path.with_suffix(".md")
+        result.to_markdown(md_path)
+        print(f"Markdown report: {md_path}")
+
+    return 0
+
+
+def cmd_benchmark_report(arguments: argparse.Namespace) -> int:
+    """
+    Generate benchmark report from results.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    import glob
+    import json
+
+    input_pattern = arguments.input
+    output_path = Path(arguments.output)
+
+    # Find all matching result files
+    result_files = glob.glob(input_pattern)
+    if not result_files:
+        raise FileNotFoundError(f"No result files found matching: {input_pattern}")
+
+    print(f"Generating report from {len(result_files)} result file(s)...")
+
+    # For now, just use the first/latest result file
+    # TODO: Merge multiple results for comparison
+    result_path = Path(sorted(result_files)[-1])
+
+    with open(result_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Generate markdown report
+    lines = [
+        "# Biblicus Document Understanding Benchmark Results",
+        "",
+        f"**Source:** {result_path.name}",
+        f"**Benchmark:** {data.get('benchmark_name', 'unknown')}",
+        f"**Date:** {data.get('timestamp', 'unknown')}",
+        "",
+        "## Summary",
+        "",
+    ]
+
+    categories = data.get("categories", {})
+    if categories:
+        lines.extend([
+            "| Category | Dataset | Docs | Best Pipeline | Score |",
+            "|----------|---------|------|---------------|-------|",
+        ])
+        for cat_name, cat_data in categories.items():
+            lines.append(
+                f"| {cat_name.title()} | {cat_data.get('dataset', '')} | "
+                f"{cat_data.get('documents_evaluated', 0)} | "
+                f"{cat_data.get('best_pipeline', '')} | "
+                f"{cat_data.get('best_score', 0):.3f} |"
+            )
+
+    recommendations = data.get("recommendations", {})
+    if recommendations:
+        lines.extend(["", "## Recommendations", ""])
+        for rec_type, pipeline in recommendations.items():
+            lines.append(f"- **{rec_type.replace('_', ' ').title()}:** {pipeline}")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print(f"Report generated: {output_path}")
+    return 0
+
+
+def cmd_benchmark_status(arguments: argparse.Namespace) -> int:
+    """
+    Show status of benchmark datasets.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus_dir = Path(arguments.corpus_dir)
+
+    print("=" * 70)
+    print("BIBLICUS BENCHMARK DATASET STATUS")
+    print("=" * 70)
+
+    datasets = [
+        ("funsd", "funsd_benchmark", "funsd_ground_truth"),
+        ("sroie", "sroie_benchmark", "sroie_ground_truth"),
+        # ("scanned-arxiv", "scanned_arxiv_benchmark", "scanned_arxiv_ground_truth"),  # Pending - need dataset with images
+    ]
+
+    for name, corpus_name, gt_subdir in datasets:
+        corpus_path = corpus_dir / corpus_name
+        status = "NOT DOWNLOADED"
+        doc_count = 0
+
+        if corpus_path.exists():
+            # Check both .biblicus (standard) and metadata (legacy) locations
+            meta_dir = corpus_path / ".biblicus"
+            if not meta_dir.exists():
+                meta_dir = corpus_path / "metadata"
+
+            config_file = meta_dir / "config.json"
+            gt_dir = meta_dir / gt_subdir
+
+            if config_file.exists():
+                status = "DOWNLOADED"
+                if gt_dir.exists():
+                    doc_count = len(list(gt_dir.glob("*.txt")))
+                    status = f"READY ({doc_count} docs)"
+
+        print(f"  {name:15} {status}")
+
+    print()
+    print("To download datasets:")
+    print("  biblicus benchmark download --datasets funsd,sroie")
+
+    return 0
+
+
+def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
+    """Sync corpus catalog to Amplify dashboard backend."""
+    from .sync.amplify_publisher import AmplifyPublisher
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.discover()
+    )
+
+    # Create publisher
+    publisher = AmplifyPublisher(corpus.name)
+
+    print(f"Syncing {corpus.name} to dashboard backend...")
+
+    # Create corpus record if it doesn't exist
+    try:
+        publisher.create_corpus()
+        print("✓ Corpus record created/verified")
+    except Exception as e:
+        if 'already exists' not in str(e).lower() and 'duplicate' not in str(e).lower():
+            print(f"✗ Failed to create corpus: {e}", file=sys.stderr)
+            return 1
+
+    # Sync catalog
+    try:
+        result = publisher.sync_catalog(corpus.catalog_path, force=arguments.force)
+
+        if result.skipped:
+            print(f"✓ Catalog unchanged (hash: {result.hash[:8]}...)")
+        else:
+            print(f"✓ Synced: {result.created} created, {result.updated} updated, {result.deleted} deleted")
+
+        if result.errors:
+            print(f"⚠ {len(result.errors)} errors occurred:", file=sys.stderr)
+            for error in result.errors[:5]:
+                print(f"  - {error}", file=sys.stderr)
+            if len(result.errors) > 5:
+                print(f"  ... and {len(result.errors) - 5} more", file=sys.stderr)
+            return 1
+
+        return 0
+    except Exception as e:
+        print(f"✗ Sync failed: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_dashboard_configure(arguments: argparse.Namespace) -> int:
+    """Configure Amplify backend credentials."""
+    from pathlib import Path
+
+    # Save configuration to ~/.biblicus/amplify.env
+    config_dir = Path.home() / '.biblicus'
+    config_dir.mkdir(exist_ok=True)
+
+    config_path = config_dir / 'amplify.env'
+
+    config_content = f"""# Amplify Dashboard Backend Configuration
+AMPLIFY_APPSYNC_ENDPOINT={arguments.endpoint}
+AMPLIFY_API_KEY={arguments.api_key}
+AMPLIFY_S3_BUCKET={arguments.bucket}
+AWS_REGION={arguments.region}
+"""
+
+    config_path.write_text(config_content)
+    print(f"✓ Configuration saved to {config_path}")
+    print()
+    print("Auto-sync will now work automatically after extraction/ingest.")
+    print("Set AMPLIFY_AUTO_SYNC_CATALOG=false to disable auto-sync.")
+
     return 0
 
 
@@ -959,6 +1794,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="Overwrite existing config if present."
     )
     p_init.set_defaults(func=cmd_init)
+
+    p_migrate = sub.add_parser(
+        "migrate-layout", help="Migrate a legacy corpus layout to the current layout."
+    )
+    p_migrate.add_argument("path", help="Corpus path or file:// uniform resource identifier.")
+    p_migrate.add_argument(
+        "--force", action="store_true", help="Overwrite existing paths if present."
+    )
+    p_migrate.set_defaults(func=cmd_migrate_layout)
 
     p_ingest = sub.add_parser("ingest", help="Ingest file(s) and/or text into the corpus.")
     _add_common_corpus_arg(p_ingest)
@@ -999,6 +1843,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_import_tree.set_defaults(func=cmd_import_tree)
 
+    p_source = sub.add_parser("source", help="Manage remote corpus sources.")
+    source_sub = p_source.add_subparsers(dest="source_command", required=True)
+
+    p_source_set = source_sub.add_parser("set", help="Configure the remote source for a corpus.")
+    _add_common_corpus_arg(p_source_set)
+    p_source_set.add_argument("--kind", required=True, choices=["s3", "azure-blob"])
+    p_source_set.add_argument("--profile", required=True, help="Source profile name.")
+    p_source_set.add_argument("--name", default=None, help="Local storage namespace for the source.")
+    p_source_set.add_argument("--bucket", default=None, help="S3 bucket name.")
+    p_source_set.add_argument("--container", default=None, help="Azure Blob container name.")
+    p_source_set.add_argument("--prefix", default=None, help="Optional remote prefix to mirror.")
+    p_source_set.set_defaults(func=cmd_source_set)
+
+    p_source_show = source_sub.add_parser("show", help="Show the configured remote source.")
+    _add_common_corpus_arg(p_source_show)
+    p_source_show.set_defaults(func=cmd_source_show)
+
+    p_source_pull = source_sub.add_parser("pull", help="Mirror the remote source into the corpus.")
+    _add_common_corpus_arg(p_source_pull)
+    p_source_pull.set_defaults(func=cmd_source_pull)
+
+    p_collection = sub.add_parser("collection", help="Manage remote collections.")
+    collection_sub = p_collection.add_subparsers(dest="collection_command", required=True)
+    p_collection_show = collection_sub.add_parser("show", help="Show the collection config.")
+    p_collection_show.add_argument("--collection", required=True, help="Collection root path.")
+    p_collection_show.set_defaults(func=cmd_collection_show)
+    p_collection_pull = collection_sub.add_parser("pull", help="Mirror a remote collection.")
+    p_collection_pull.add_argument("--collection", required=True, help="Collection root path.")
+    p_collection_pull.set_defaults(func=cmd_collection_pull)
+
+    p_pipeline = sub.add_parser("pipeline", help="Run pipeline recipes.")
+    pipeline_sub = p_pipeline.add_subparsers(dest="pipeline_command", required=True)
+    p_pipeline_run = pipeline_sub.add_parser("run", help="Run a pipeline recipe.")
+    p_pipeline_run.add_argument("--recipe", required=True, help="Pipeline recipe path.")
+    p_pipeline_run.set_defaults(func=cmd_pipeline_run)
+
     p_purge = sub.add_parser(
         "purge", help="Delete all items and derived files (requires confirmation)."
     )
@@ -1012,6 +1892,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_build = sub.add_parser("build", help="Build a retrieval snapshot for the corpus.")
     _add_common_corpus_arg(p_build)
+    _add_dependency_flags(p_build)
     p_build.add_argument(
         "--retriever",
         required=True,
@@ -1042,6 +1923,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_extract_build = extract_sub.add_parser("build", help="Build a text extraction snapshot.")
     _add_common_corpus_arg(p_extract_build)
+    _add_dependency_flags(p_extract_build)
     p_extract_build.add_argument(
         "--configuration-name", default="default", help="Human-readable configuration name."
     )
@@ -1049,13 +1931,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--configuration",
         default=None,
         action="append",
-        help="Path to YAML configuration file. If provided, --step arguments are ignored.",
+        help="Path to YAML configuration file. If provided, --stage arguments are ignored.",
     )
     p_extract_build.add_argument(
-        "--step",
+        "--stage",
         action="append",
         default=None,
-        help="Pipeline step spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
+        help="Pipeline stage spec in the form extractor_id or extractor_id:key=value,key=value (repeatable).",
+    )
+    p_extract_build.add_argument(
+        "--force",
+        action="store_true",
+        help="Reprocess items even if extraction artifacts already exist.",
+    )
+    p_extract_build.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help=(
+            "Maximum number of concurrent extraction workers "
+            "(defaults to BIBLICUS_EXTRACT_MAX_WORKERS or CPU count)."
+        ),
     )
     p_extract_build.set_defaults(func=cmd_extract_build)
 
@@ -1109,8 +2005,63 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_extract_evaluate.set_defaults(func=cmd_extract_evaluate)
 
+    p_graph = sub.add_parser("graph", help="Run graph extraction pipelines for the corpus.")
+    graph_sub = p_graph.add_subparsers(dest="graph_command", required=True)
+
+    p_graph_extract = graph_sub.add_parser(
+        "extract", help="Build a graph extraction snapshot."
+    )
+    _add_common_corpus_arg(p_graph_extract)
+    p_graph_extract.add_argument(
+        "--extractor",
+        required=True,
+        help="Graph extractor identifier (for example: cooccurrence).",
+    )
+    p_graph_extract.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id (defaults to latest snapshot).",
+    )
+    p_graph_extract.add_argument(
+        "--configuration-name", default="default", help="Human-readable configuration name."
+    )
+    p_graph_extract.add_argument(
+        "--configuration",
+        default=None,
+        action="append",
+        help="Path to graph extraction configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_graph_extract.add_argument(
+        "--override",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
+    )
+    p_graph_extract.set_defaults(func=cmd_graph_extract)
+
+    p_graph_list = graph_sub.add_parser("list", help="List graph extraction snapshots.")
+    _add_common_corpus_arg(p_graph_list)
+    p_graph_list.add_argument(
+        "--extractor-id",
+        default=None,
+        help="Optional graph extractor identifier filter (for example: cooccurrence).",
+    )
+    p_graph_list.set_defaults(func=cmd_graph_list)
+
+    p_graph_show = graph_sub.add_parser(
+        "show", help="Show a graph extraction snapshot manifest."
+    )
+    _add_common_corpus_arg(p_graph_show)
+    p_graph_show.add_argument(
+        "--snapshot",
+        required=True,
+        help="Graph snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_graph_show.set_defaults(func=cmd_graph_show)
+
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
+    _add_dependency_flags(p_query)
     p_query.add_argument(
         "--snapshot", default=None, help="Snapshot identifier (defaults to latest snapshot)."
     )
@@ -1292,6 +2243,126 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_analyze_markov.set_defaults(func=cmd_analyze_markov)
 
+    # -----------------------------------------------------------------
+    # benchmark subcommand group
+    # -----------------------------------------------------------------
+    p_benchmark = sub.add_parser(
+        "benchmark", help="Run document understanding benchmarks."
+    )
+    benchmark_sub = p_benchmark.add_subparsers(dest="benchmark_command", required=True)
+
+    p_benchmark_download = benchmark_sub.add_parser(
+        "download", help="Download benchmark datasets."
+    )
+    p_benchmark_download.add_argument(
+        "--datasets",
+        required=True,
+        help="Comma-separated list of datasets to download (funsd, sroie, scanned-arxiv).",
+    )
+    p_benchmark_download.add_argument(
+        "--corpus-dir",
+        default="corpora",
+        help="Base directory for benchmark corpora (default: corpora).",
+    )
+    p_benchmark_download.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Number of samples to download per dataset (default: dataset-specific).",
+    )
+    p_benchmark_download.add_argument(
+        "--force", action="store_true", help="Overwrite existing corpus if present."
+    )
+    p_benchmark_download.set_defaults(func=cmd_benchmark_download)
+
+    p_benchmark_run = benchmark_sub.add_parser(
+        "run", help="Run benchmark evaluation."
+    )
+    p_benchmark_run.add_argument(
+        "--config",
+        default="configs/benchmark/standard.yaml",
+        help="Path to benchmark configuration file (default: configs/benchmark/standard.yaml).",
+    )
+    p_benchmark_run.add_argument(
+        "--category",
+        default=None,
+        help="Run only a specific category (forms, academic, receipts).",
+    )
+    p_benchmark_run.add_argument(
+        "--pipelines",
+        default=None,
+        help="Comma-separated list of pipeline config paths to benchmark.",
+    )
+    p_benchmark_run.add_argument(
+        "--output",
+        default=None,
+        help="Output path for results JSON (default: results/benchmark_<name>.json).",
+    )
+    p_benchmark_run.set_defaults(func=cmd_benchmark_run)
+
+    p_benchmark_report = benchmark_sub.add_parser(
+        "report", help="Generate benchmark report from results."
+    )
+    p_benchmark_report.add_argument(
+        "--input",
+        required=True,
+        help="Path to benchmark results JSON file(s). Supports glob patterns.",
+    )
+    p_benchmark_report.add_argument(
+        "--output",
+        default="docs/guides/benchmark-results.md",
+        help="Output path for markdown report.",
+    )
+    p_benchmark_report.set_defaults(func=cmd_benchmark_report)
+
+    p_benchmark_status = benchmark_sub.add_parser(
+        "status", help="Show status of benchmark datasets."
+    )
+    p_benchmark_status.add_argument(
+        "--corpus-dir",
+        default="corpora",
+        help="Base directory for benchmark corpora (default: corpora).",
+    )
+    p_benchmark_status.set_defaults(func=cmd_benchmark_status)
+
+    # Dashboard commands
+    p_dashboard = sub.add_parser("dashboard", help="Manage dashboard backend synchronization.")
+    dashboard_sub = p_dashboard.add_subparsers(dest="dashboard_command", required=True)
+
+    p_dashboard_sync = dashboard_sub.add_parser("sync", help="Sync corpus to dashboard backend.")
+    _add_common_corpus_arg(p_dashboard_sync)
+    p_dashboard_sync.add_argument(
+        "--force",
+        action="store_true",
+        help="Force full sync even if catalog unchanged.",
+    )
+    p_dashboard_sync.set_defaults(func=cmd_dashboard_sync)
+
+    p_dashboard_configure = dashboard_sub.add_parser(
+        "configure", help="Configure Amplify backend credentials."
+    )
+    p_dashboard_configure.add_argument(
+        "--endpoint",
+        required=True,
+        help="AppSync GraphQL endpoint URL.",
+    )
+    p_dashboard_configure.add_argument(
+        "--api-key",
+        required=True,
+        help="AppSync API key.",
+    )
+    p_dashboard_configure.add_argument(
+        "--bucket",
+        required=True,
+        help="S3 bucket name for corpus storage.",
+    )
+    p_dashboard_configure.add_argument(
+        "--region",
+        default="us-west-2",
+        help="AWS region (default: us-west-2).",
+    )
+    p_dashboard_configure.set_defaults(func=cmd_dashboard_configure)
+
     return parser
 
 
@@ -1314,6 +2385,7 @@ def main(argument_list: Optional[List[str]] = None) -> int:
         KeyError,
         ValueError,
         ExtractionSnapshotFatalError,
+        RemoteSourceDependencyError,
         NotImplementedError,
         ValidationError,
     ) as exception:

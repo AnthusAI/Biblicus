@@ -160,9 +160,7 @@ def _latest_extraction_snapshot_manifest_path(context, corpus_name: str) -> Path
     assert isinstance(snapshot_id, str) and snapshot_id
     return (
         corpus
-        / ".biblicus"
-        / "snapshots"
-        / "extraction"
+        / "extracted"
         / extractor_id
         / snapshot_id
         / "manifest.json"
@@ -317,6 +315,19 @@ def step_markov_output_includes_state_count(context, count: int) -> None:
     assert len(states) == count
 
 
+@then("the markov analysis output references an extraction snapshot with artifacts")
+def step_markov_output_references_extraction_snapshot(context) -> None:
+    output = context.last_analysis_output
+    snapshot = output["snapshot"]["input"]["extraction_snapshot"]
+    extractor_id = snapshot["extractor_id"]
+    snapshot_id = snapshot["snapshot_id"]
+    corpus_path = _corpus_path(context, "corpus")
+    manifest_path = (
+        corpus_path / "extracted" / extractor_id / snapshot_id / "manifest.json"
+    )
+    assert manifest_path.is_file(), manifest_path
+
+
 @then(
     "the markov analysis output includes a transition from state {from_state:d} to state {to_state:d}"
 )
@@ -332,6 +343,12 @@ def step_markov_output_includes_decoded_path_count(context, count: int) -> None:
     output = context.last_analysis_output
     paths = output["report"]["decoded_paths"]
     assert len(paths) == count
+
+
+@then("the markov analysis output includes a topic modeling report")
+def step_markov_output_includes_topic_modeling(context) -> None:
+    output = context.last_analysis_output
+    assert output["report"]["topic_modeling"] is not None
 
 
 @then("the analysis snapshot includes a graphviz transitions file")
@@ -382,7 +399,7 @@ def step_append_non_extracted_item_to_manifest(context) -> None:
             "final_text_relpath": None,
             "error_type": "failed",
             "error_message": "failed",
-            "step_results": [],
+            "stage_results": [],
         }
     )
     payload["items"] = items

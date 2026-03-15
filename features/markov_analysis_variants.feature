@@ -5,7 +5,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBetaGammaDeltaEpsilon" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -39,7 +39,7 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha Beta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -77,7 +77,7 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Greeting Wrapup" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -121,7 +121,7 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBeta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -156,7 +156,7 @@ Feature: Markov analysis variants
     And a fake hmmlearn library is available without transmat_ output
     And a fake hmmlearn library is available with predicted states "0,1,1"
     When I ingest the text "Alpha. Beta. Gamma." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -183,7 +183,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And the hmmlearn dependency is unavailable
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -224,7 +224,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -241,7 +241,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -261,7 +261,7 @@ Feature: Markov analysis variants
     And I ingest the text "Beta." with title "Doc2" and tags "t" into corpus "corpus"
     And I ingest the text "Hi" with title "Doc3" and tags "t" into corpus "corpus"
     And I ingest the text "Delta." with title "Doc4" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I append a non-extracted item to the latest extraction snapshot manifest
@@ -296,7 +296,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Hi" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -317,7 +317,7 @@ Feature: Markov analysis variants
     And a fake hmmlearn library is available with predicted states "0,1,0,1"
     When I ingest the text "Alpha. Beta." with title "Doc1" and tags "t" into corpus "corpus"
     And I ingest the text "Gamma. Delta." with title "Doc2" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -340,7 +340,7 @@ Feature: Markov analysis variants
     And a fake OpenAI library is available
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -368,7 +368,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -391,7 +391,7 @@ Feature: Markov analysis variants
     And a fake OpenAI library is available
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -418,7 +418,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0"
     When I ingest the text "Alpha." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -455,7 +455,7 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -504,7 +504,7 @@ Feature: Markov analysis variants
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:
@@ -539,7 +539,7 @@ Feature: Markov analysis variants
     Given I initialized a corpus at "corpus"
     And a fake hmmlearn library is available with predicted states "0,1,1"
     When I ingest the text "Alpha. Beta. Gamma." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:

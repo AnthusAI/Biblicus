@@ -20,7 +20,7 @@ Feature: Extraction snapshot configuration files
       """
       extractor_id: pipeline
       configuration:
-        steps:
+        stages:
           - extractor_id: pass-through-text
             configuration: {}
       """

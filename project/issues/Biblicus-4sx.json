@@ -1,0 +1,22 @@
+{
+  "id": "Biblicus-4sx",
+  "title": "Fix Local/Cloud selector centering and responsive layout",
+  "description": "Fixed the Local/Cloud selector positioning and responsive behavior in the dashboard top menu bar.\n\nCompleted:\n- Centered selector on desktop (flex-1 + justify-center)\n- Move to right on mobile (flex-1 + justify-end)\n- Hide text labels on narrow screens ([&_span.text-xs]:hidden)\n- Fixed icon shrinkage with inline style={{ width: 16, height: 16 }}\n- Set 96px minimum width to prevent grid cell collapse\n- Icons maintain 16px at all viewports\n\nFiles:\n- apps/dashboard/src/components/explorer/StackManager.tsx:407-426\n- apps/dashboard/src/components/ui/animated-selector.tsx:160",
+  "type": "story",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-09T23:26:31.626816Z",
+  "updated_at": "2026-02-09T23:26:35.348029Z",
+  "closed_at": "2026-02-09T23:26:35.348029Z",
+  "custom": {
+    "beads_close_reason": "Completed: Selector now centers on desktop, moves right on mobile, icons stay 16px at all viewports. Layout works correctly across all screen sizes.",
+    "beads_issue_type": "feature",
+    "beads_owner": "rap@endymion.com"
+  }
+}

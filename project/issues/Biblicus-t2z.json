@@ -1,0 +1,21 @@
+{
+  "id": "Biblicus-t2z",
+  "title": "Restore coverage for Aldea API key resolver",
+  "description": "Add user_config Aldea API key coverage to satisfy CI fail-under 100%.",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-12T06:37:40.191128Z",
+  "updated_at": "2026-02-12T06:39:02.310915Z",
+  "closed_at": "2026-02-12T06:39:02.310915Z",
+  "custom": {
+    "beads_close_reason": "Completed: added Aldea API key coverage; CI fail-under 100% now satisfied.",
+    "beads_owner": "rap@endymion.com"
+  }
+}

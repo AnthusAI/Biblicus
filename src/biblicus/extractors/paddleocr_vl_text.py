@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
 from ..inference import ApiProvider, InferenceBackendConfig, InferenceBackendMode, resolve_api_key
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -118,7 +118,7 @@ class PaddleOcrVlExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Extract text from an image using PaddleOCR-VL.
@@ -129,8 +129,8 @@ class PaddleOcrVlExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: PaddleOcrVlExtractorConfig
-        :param previous_extractions: Prior step outputs for this item.
-        :type previous_extractions: list[ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item.
+        :type previous_extractions: list[ExtractionStageOutput]
         :return: Extracted text with confidence, or None for non-image items.
         :rtype: ExtractedText or None
         """
@@ -185,7 +185,7 @@ class PaddleOcrVlExtractor(TextExtractor):
                 lang=config.lang,
             )
             PaddleOcrVlExtractor._model_cache[cache_key] = ocr
-        result = ocr.ocr(str(source_path), cls=config.use_angle_cls)
+        result = ocr.ocr(str(source_path))
 
         if result is None or not result:
             return "", None
@@ -193,22 +193,39 @@ class PaddleOcrVlExtractor(TextExtractor):
         lines: list[str] = []
         confidences: list[float] = []
 
+        # Handle new PaddleOCR API (v4+) that returns dict with rec_texts/rec_scores
         for page_result in result:
             if page_result is None:
                 continue
-            for line_result in page_result:
-                if not isinstance(line_result, (list, tuple)) or len(line_result) < 2:
-                    continue
-                text_info = line_result[1]
-                if isinstance(text_info, (list, tuple)) and len(text_info) >= 2:
-                    text_value = text_info[0]
-                    conf_value = text_info[1]
+
+            # New API: dict with 'rec_texts' and 'rec_scores'
+            if isinstance(page_result, dict):
+                rec_texts = page_result.get('rec_texts', [])
+                rec_scores = page_result.get('rec_scores', [])
+
+                for text_value, conf_value in zip(rec_texts, rec_scores):
                     if isinstance(conf_value, (int, float)):
                         confidence = float(conf_value)
                         if confidence >= config.min_confidence:
                             if isinstance(text_value, str) and text_value.strip():
                                 lines.append(text_value.strip())
                                 confidences.append(confidence)
+
+            # Old API: list of [bbox, (text, confidence)]
+            elif isinstance(page_result, (list, tuple)):
+                for line_result in page_result:
+                    if not isinstance(line_result, (list, tuple)) or len(line_result) < 2:
+                        continue
+                    text_info = line_result[1]
+                    if isinstance(text_info, (list, tuple)) and len(text_info) >= 2:
+                        text_value = text_info[0]
+                        conf_value = text_info[1]
+                        if isinstance(conf_value, (int, float)):
+                            confidence = float(conf_value)
+                            if confidence >= config.min_confidence:
+                                if isinstance(text_value, str) and text_value.strip():
+                                    lines.append(text_value.strip())
+                                    confidences.append(confidence)
 
         text = config.joiner.join(lines).strip()
         avg_confidence = sum(confidences) / len(confidences) if confidences else None

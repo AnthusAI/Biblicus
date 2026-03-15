@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -68,7 +68,7 @@ class MetadataTextExtractor(TextExtractor):
         corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Extract a metadata-based text payload for the item.
@@ -79,8 +79,8 @@ class MetadataTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: MetadataTextExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Extracted text payload, or ``None`` if no metadata is available.
         :rtype: ExtractedText or None
         """

@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-788",
+  "title": "Restore BDD coverage to 100%",
+  "description": "Investigate coverage gaps in features/ and src/biblicus, add missing behavior specs, and adjust code to reach 100% coverage per project policy.",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-12T04:30:05.739312Z",
+  "updated_at": "2026-02-18T22:28:04.557210Z",
+  "closed_at": "2026-02-18T22:28:04.557210Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

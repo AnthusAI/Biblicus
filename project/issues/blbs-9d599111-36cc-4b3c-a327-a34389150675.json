@@ -1,0 +1,18 @@
+{
+  "id": "blbs-9d599111-36cc-4b3c-a327-a34389150675",
+  "title": "Docs: collections and pipeline recipes",
+  "description": "Update corpus/docs to describe collections, source profiles, mirror semantics, and pipeline recipe YAML.",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-fda727",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:25:16.130087Z",
+  "updated_at": "2026-02-19T23:25:16.130087Z",
+  "closed_at": null,
+  "custom": {}
+}

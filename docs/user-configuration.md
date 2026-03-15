@@ -53,6 +53,90 @@ deepgram:
 
 The Deepgram speech to text extractor also supports the `DEEPGRAM_API_KEY` environment variable. Environment takes precedence over configuration.
 
+## Example: Aldea speech to text
+
+Create a config file with an Aldea API key.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+aldea:
+  api_key: YOUR_KEY_HERE
+```
+
+The Aldea speech to text extractor also supports the `ALDEA_API_KEY` environment variable. Environment takes precedence over configuration.
+
+## Source profiles (remote collections and corpora)
+
+Biblicus supports **multiple source profiles** so you can connect to many accounts and providers at once.
+Profiles live in `~/.biblicus/config.yml` or `./.biblicus/config.yml` (repo root).
+
+Example profiles:
+
+```yaml
+sources:
+  - name: azure-prod
+    kind: azure-blob
+    connection_string: YOUR_CONNECTION_STRING
+    account_name: YOUR_ACCOUNT_NAME
+  - name: s3-archive
+    kind: s3
+    access_key_id: YOUR_KEY_ID
+    secret_access_key: YOUR_SECRET
+    session_token: YOUR_SESSION_TOKEN
+    region: us-east-1
+    endpoint_url: https://s3.us-east-1.amazonaws.com
+```
+
+Environment variables override configuration when present:
+
+- `AZURE_STORAGE_CONNECTION_STRING`
+- `AZURE_STORAGE_ACCOUNT`
+- `AZURE_STORAGE_KEY`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN`
+- `AWS_REGION`
+
+## Example: Neo4j graph extraction
+
+Graph extraction uses a Neo4j backend. Biblicus can auto-start a local Neo4j Docker container if it is not already running.
+
+Install the Neo4j Python driver before running graph extraction:
+
+```
+python -m pip install neo4j
+```
+
+If you use NLP-based graph extractors (for example `ner-entities` or `dependency-relations`), install the NLP model
+package and the model data your configuration references.
+
+`~/.biblicus/config.yml`:
+
+```yaml
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: testpassword
+  auto_start: true
+  container_name: biblicus-neo4j
+  docker_image: neo4j:5
+  http_port: 7474
+  bolt_port: 7687
+```
+
+Environment variables override configuration when present:
+
+- `NEO4J_URI`
+- `NEO4J_USERNAME`
+- `NEO4J_PASSWORD`
+- `NEO4J_DATABASE`
+- `BIBLICUS_NEO4J_AUTO_START`
+- `BIBLICUS_NEO4J_CONTAINER_NAME`
+- `BIBLICUS_NEO4J_IMAGE`
+- `BIBLICUS_NEO4J_HTTP_PORT`
+- `BIBLICUS_NEO4J_BOLT_PORT`
+
 ## Common pitfalls
 
 - Saving secrets in the corpus directory instead of a user config file.

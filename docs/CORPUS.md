@@ -12,20 +12,30 @@ The main goals are:
 
 ```
 corpus/
-  raw/
-    <item files>
-  .biblicus/
+  metadata/
     config.json
     catalog.json
-    runs/
-      <snapshot manifests and artifacts>
+  extracted/
+    <extractor>/<snapshot_id>/...
+    <extractor>/latest.json
+  graph/
+    <extractor>/<snapshot_id>/...
+    <extractor>/latest.json
+  retrieval/
+    <backend_id>/<snapshot_id>/...
+    <backend_id>/latest.json
+  analysis/
+    <analysis_id>/<snapshot_id>/...
+    <analysis_id>/latest.json
+  <raw files and folders>
+  <sidecars next to raw files> *.biblicus.yml
 ```
 
 ## Core concepts
 
 - **Item**: raw bytes plus metadata and provenance.
 - **Catalog**: the inventory of items and their metadata.
-- **Run**: a reproducible snapshot of derived artifacts (extraction, retrieval, analysis).
+- **Snapshot**: a reproducible snapshot of derived artifacts (extraction, retrieval, analysis).
 
 The corpus is designed so the raw items remain the source of truth and everything else can be rebuilt.
 
@@ -45,10 +55,49 @@ Ingest a local file:
 python -m biblicus ingest --corpus corpora/example path/to/file.pdf --tag paper
 ```
 
+Local file ingestion requires the file to live under the corpus root. If it is outside, move it into the corpus and run `reindex`.
+
 Ingest a web address:
 
 ```
 python -m biblicus ingest --corpus corpora/example https://example.com --tag web
+```
+
+## Remote corpus sources
+
+A corpus can mirror a remote storage source as its authoritative input. When configured, the corpus is refreshed by pulling from the remote source, and local ingest is disabled.
+
+If a remote root contains **many subfolders** that should each become a corpus, use **collections** instead of configuring a single corpus. See `docs/collections.md`.
+If you want one file to run extraction, retrieval, and analysis for a corpus or collection, see `docs/pipeline-recipes.md`.
+
+Example corpus config (`metadata/config.json`):
+
+```json
+{
+  "schema_version": 2,
+  "created_at": "2026-02-19T12:00:00Z",
+  "corpus_uri": "file:///path/to/corpus",
+  "raw_dir": ".",
+  "source": {
+    "kind": "s3",
+    "profile": "s3-archive",
+    "name": "client-archive",
+    "bucket": "client-archive",
+    "prefix": "exports/"
+  }
+}
+```
+
+Pull and mirror the remote source:
+
+```
+python -m biblicus source pull --corpus corpora/example
+```
+
+Remote items are stored under:
+
+```
+imports/remote/<source_name>/<remote_key>
 ```
 
 ## Crawl a website prefix
@@ -120,7 +169,7 @@ Create a `.biblicusignore` file in the corpus root and add ignore patterns.
 
 ## Import a folder tree
 
-To ingest an existing folder tree into a corpus while preserving relative paths, use the import command.
+To ingest an existing folder tree into a corpus while preserving relative paths, place the folder tree under the corpus root and use the import command.
 
 ```
 python -m biblicus import-tree --corpus corpora/example /path/to/folder/tree --tag imported

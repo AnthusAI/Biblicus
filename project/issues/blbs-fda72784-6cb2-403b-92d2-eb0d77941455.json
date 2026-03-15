@@ -1,0 +1,31 @@
+{
+  "id": "blbs-fda72784-6cb2-403b-92d2-eb0d77941455",
+  "title": "Remote collections and pipeline recipes",
+  "description": "Collections discover remote subfolders and materialize corpora; pipeline recipes run extraction/retrieval/analysis by recipe.",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b02d351a-4bff-4518-8200-bd96d382197f",
+      "author": "ryan.porter",
+      "text": "Ran behave after reboot: remote_collection_azure, collection_partitions, pipeline_recipes all green (conda py311). Collections mirror/prune, partition tagging, and pipeline recipes now verified.",
+      "created_at": "2026-02-20T23:33:24.951530Z"
+    },
+    {
+      "id": "a3bfc462-c54c-42c3-8026-f66d9a750126",
+      "author": "ryan.porter",
+      "text": "Closed. Collections + pipeline recipes delivered: docs, models, CLI, and Behave specs passing (remote_collection_azure, collection_partitions, pipeline_recipes).",
+      "created_at": "2026-02-21T00:46:19.734011Z"
+    }
+  ],
+  "created_at": "2026-02-19T23:24:24.345678Z",
+  "updated_at": "2026-02-21T00:46:19.734011Z",
+  "closed_at": "2026-02-21T00:46:11.067139Z",
+  "custom": {}
+}

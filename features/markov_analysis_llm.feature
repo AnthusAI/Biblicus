@@ -21,7 +21,7 @@ Feature: Markov analysis with provider-backed stages
     And a fake OpenAI library is available that returns embedding vector "0.0,1.0" for input text "Beta summary"
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "AlphaBeta" with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:

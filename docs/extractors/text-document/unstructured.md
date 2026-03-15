@@ -121,7 +121,7 @@ results = corpus.extract_text(extractor_id="unstructured")
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: unstructured  # Catch-all for remaining formats
@@ -133,7 +133,7 @@ config:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: markitdown
     - extractor_id: unstructured
     - extractor_id: select-longest-text
@@ -175,7 +175,7 @@ Maximum format coverage with multiple extractors:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: markitdown
@@ -285,7 +285,7 @@ Use as last resort in pipelines:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: markitdown
     - extractor_id: unstructured
@@ -337,7 +337,7 @@ Position Unstructured as a catch-all in pipelines:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: specialized-extractor
     - extractor_id: unstructured  # Fallback
     - extractor_id: select-text

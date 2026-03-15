@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-m3a",
+  "title": "Update main benchmarking docs to include STT",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:53.551512Z",
+  "updated_at": "2026-02-14T02:52:36.132860Z",
+  "closed_at": "2026-02-14T02:52:36.132864Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

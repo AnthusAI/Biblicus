@@ -1,0 +1,57 @@
+{
+  "benchmark_timestamp": "2026-02-03T17:35:46.997558",
+  "corpus_path": "corpora/funsd_benchmark",
+  "total_pipelines": 1,
+  "successful_pipelines": 1,
+  "failed_pipelines": 0,
+  "pipelines": [
+    {
+      "name": "baseline-ocr",
+      "snapshot_id": "b5ee5f5d3441fe89cbcc266579578923212b467c035cae2c652bb0bd66a8b954",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.6072843202661438,
+          "avg_precision": 0.6255081563853031,
+          "avg_recall": 0.5992724615693936,
+          "median_f1": 0.6551724137931034
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.627676995981824,
+          "avg_sequence_accuracy": 0.01264967367994974,
+          "avg_lcs_ratio": 0.46531647331379516,
+          "median_word_error_rate": 0.7117117117117117,
+          "median_sequence_accuracy": 0.009009009009009009
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.34975804965879437,
+          "avg_trigram_overlap": 0.25338933579797057
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "steps": [
+            {
+              "extractor_id": "ocr-tesseract",
+              "config": {
+                "min_confidence": 0.0,
+                "lang": "eng",
+                "psm": 3,
+                "oem": 3
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.07053995132446289
+    }
+  ],
+  "best_performers": {
+    "best_f1": "baseline-ocr",
+    "best_sequence_accuracy": "baseline-ocr",
+    "lowest_wer": "baseline-ocr",
+    "best_bigram": "baseline-ocr"
+  }
+}

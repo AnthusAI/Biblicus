@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from ..user_config import resolve_openai_api_key
 from .base import TextExtractor
 
@@ -100,7 +100,7 @@ class OpenAiSpeechToTextExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Transcribe an audio item.
@@ -111,8 +111,8 @@ class OpenAiSpeechToTextExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: OpenAiSpeechToTextExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Extracted text payload, or None when the item is not audio.
         :rtype: ExtractedText or None
         :raises ExtractionSnapshotFatalError: If the optional dependency or required configuration is missing.

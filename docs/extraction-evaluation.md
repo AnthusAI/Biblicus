@@ -81,7 +81,7 @@ print(result.model_dump())
 Extraction evaluation artifacts are stored under:
 
 ```
-.biblicus/runs/evaluation/extraction/<snapshot_id>/output.json
+analysis/evaluation/extraction/<snapshot_id>/output.json
 ```
 
 ## Reading the output
@@ -149,7 +149,7 @@ The dataset is small and deterministic. Each entry maps a corpus item to the exp
 3) Inspect the evaluation output:
 
 ```
-cat corpora/extraction_eval_lab/.biblicus/runs/evaluation/extraction/<snapshot_id>/output.json
+cat corpora/extraction_eval_lab/analysis/evaluation/extraction/<snapshot_id>/output.json
 ```
 
 The output includes:

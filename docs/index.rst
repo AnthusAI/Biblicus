@@ -105,6 +105,7 @@ Biblicus uses a small set of domain terms in its docs. The most important one is
    extraction
    retrieval
    analysis
+   graph-extraction
 
 Core Building Blocks
 --------------------
@@ -184,6 +185,7 @@ slot them into ETL-like workflows without building a custom agent every time.
 
    utilities
    text-utilities
+   entity-removal
    text-extract
    text-slice
    text-annotate

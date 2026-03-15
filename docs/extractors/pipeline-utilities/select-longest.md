@@ -6,7 +6,7 @@
 
 ## Overview
 
-The select-longest-text extractor chooses the extraction with the most text from previous pipeline steps. It implements a length-based selection policy for scenarios where multiple extractors may produce different outputs for the same item.
+The select-longest-text extractor chooses the extraction with the most text from previous pipeline stages. It implements a length-based selection policy for scenarios where multiple extractors may produce different outputs for the same item.
 
 This extractor is useful when you want to maximize extracted content, assuming that longer outputs are more complete. It's ideal for comparing different extraction methods and choosing the one that extracts the most information.
 
@@ -41,7 +41,7 @@ This extractor currently accepts no configuration options.
 The extractor selects text using the following rules:
 
 1. **Longest usable text**: Select the extraction with the greatest character count (after stripping whitespace)
-2. **Tie breaking**: If multiple extractions have the same length, select the earliest (lowest step index)
+2. **Tie breaking**: If multiple extractions have the same length, select the earliest (lowest stage index)
 3. **No usable text**: If all extractions are empty, select the earliest extraction
 4. **No extractions**: If no previous extractions exist, return `None`
 
@@ -55,7 +55,7 @@ Select-longest-text is always used within a pipeline:
 
 ```bash
 biblicus extract my-corpus --extractor pipeline \
-  --config 'steps=[{"extractor_id":"ocr-rapidocr"},{"extractor_id":"docling-smol"},{"extractor_id":"select-longest-text"}]'
+  --config 'stages=[{"extractor_id":"ocr-rapidocr"},{"extractor_id":"docling-smol"},{"extractor_id":"select-longest-text"}]'
 ```
 
 ### Configuration File
@@ -63,7 +63,7 @@ biblicus extract my-corpus --extractor pipeline \
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr
     - extractor_id: docling-smol
     - extractor_id: select-longest-text  # Select longest result
@@ -83,7 +83,7 @@ corpus = Corpus.from_directory("my-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "ocr-rapidocr"},
             {"extractor_id": "docling-smol"},
             {"extractor_id": "select-longest-text"}
@@ -101,7 +101,7 @@ Try multiple OCR approaches and keep the best:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr
     - extractor_id: ocr-paddleocr-vl
     - extractor_id: select-longest-text  # Keep most complete
@@ -114,7 +114,7 @@ Test different VLM models and select the most thorough:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: docling-smol
     - extractor_id: docling-granite
     - extractor_id: select-longest-text
@@ -132,7 +132,7 @@ corpus = Corpus.from_directory("complex-docs")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pdf-text"},
             {"extractor_id": "markitdown"},
             {"extractor_id": "docling-smol"},
@@ -149,7 +149,7 @@ Combine text extraction with OCR:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-longest-text
@@ -171,7 +171,7 @@ All extractors in the pipeline run on the same item. This differs from select-te
 
 ### Source Tracking
 
-The selected extraction retains its `producer_extractor_id` and `source_step_index`, allowing you to identify which extractor produced the final text.
+The selected extraction retains its `producer_extractor_id` and `source_stage_index`, allowing you to identify which extractor produced the final text.
 
 ### Performance Consideration
 
@@ -206,13 +206,13 @@ Group extractors that target the same content type:
 
 ```yaml
 # OCR comparison
-steps:
+stages:
   - ocr-rapidocr
   - ocr-paddleocr-vl
   - select-longest-text
 
 # VLM comparison
-steps:
+stages:
   - docling-smol
   - docling-granite
   - select-longest-text
@@ -224,7 +224,7 @@ Running all extractors is expensive:
 
 ```yaml
 # Expensive but thorough
-steps:
+stages:
   - pdf-text           # Fast
   - markitdown         # Moderate
   - docling-smol       # Slow
@@ -236,7 +236,7 @@ Consider using select-text for performance:
 
 ```yaml
 # Faster fallback chain
-steps:
+stages:
   - pdf-text
   - markitdown
   - docling-smol
@@ -248,7 +248,7 @@ steps:
 Select-longest-text should always be the final step:
 
 ```yaml
-steps:
+stages:
   - extractor-1
   - extractor-2
   - extractor-3
@@ -263,7 +263,7 @@ Track which extractors produce the longest outputs:
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "ocr-rapidocr"},
             {"extractor_id": "docling-smol"},
             {"extractor_id": "select-longest-text"}
@@ -284,7 +284,7 @@ Compare different extractors to find the best:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: markitdown
     - extractor_id: unstructured
@@ -299,7 +299,7 @@ Try both text extraction and OCR:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text       # Works for digital PDFs
     - extractor_id: ocr-rapidocr   # Works for scanned PDFs
     - extractor_id: select-longest-text
@@ -318,7 +318,7 @@ corpus = Corpus.from_directory("documents")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "markitdown"},
@@ -337,7 +337,7 @@ Systematically compare extractor performance:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: markitdown
     - extractor_id: unstructured
     - extractor_id: docling-smol

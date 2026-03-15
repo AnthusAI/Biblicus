@@ -1,0 +1,25 @@
+{
+  "id": "blbs-25f7ee42-7f27-4709-872d-6fd7e43afb08",
+  "title": "Run acceptance test for Azure Blob remote corpus",
+  "description": "Acceptance test: use Azure Blob container with ~10 MP3s, configure remote corpus source, run source pull, then build an STT extraction snapshot via an information pipeline recipe to verify text extraction from all 10 items.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "8d0a64d4-b6dd-45ad-97b2-8ddc35aedcd1",
+      "author": "ryan.porter",
+      "text": "Task created and set In Progress. Acceptance plan: configure azure_storage.connection_string in ~/.biblicus/config.yml (or AZURE_STORAGE_CONNECTION_STRING env var), set corpus metadata/config.json source kind azure-blob + container, then run source pull and build STT extraction snapshot for ~10 MP3s.",
+      "created_at": "2026-02-19T17:57:22.081976Z"
+    }
+  ],
+  "created_at": "2026-02-19T17:57:09.332124Z",
+  "updated_at": "2026-02-19T17:57:22.081976Z",
+  "closed_at": null,
+  "custom": {}
+}

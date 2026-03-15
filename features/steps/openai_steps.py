@@ -733,3 +733,25 @@ def step_openai_client_configured_with_api_key(context, expected_api_key: str) -
     assert openai_module is not None
     configured = getattr(openai_module, "last_api_key", None)
     assert configured == expected_api_key
+
+
+@given("no OpenAI API key is configured")
+def step_no_openai_api_key_configured(context) -> None:
+    """Ensure no OpenAI API key is available from any source."""
+    # Remove from environment
+    if "OPENAI_API_KEY" in os.environ:
+        if not hasattr(context, "_saved_openai_key"):
+            context._saved_openai_key = os.environ["OPENAI_API_KEY"]
+        del os.environ["OPENAI_API_KEY"]
+
+    # Mock the config loader to return None for API key
+    import biblicus.user_config as config_module
+    original_load = getattr(config_module, "_original_load_user_config", None)
+    if original_load is None:
+        config_module._original_load_user_config = config_module.load_user_config
+
+    def mock_load_user_config():
+        from biblicus.user_config import BiblicusUserConfig
+        return BiblicusUserConfig(openai=None, aldea=None)
+
+    config_module.load_user_config = mock_load_user_config

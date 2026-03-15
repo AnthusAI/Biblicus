@@ -41,6 +41,16 @@ def apply_text_extract(request: TextExtractRequest) -> TextExtractResult:
         if result.last_error:
             message_error = _extract_validation_error_from_messages(result.messages)
             if message_error:
+                if request.normalize_nested_spans and "nested spans" in message_error:
+                    normalized = _normalize_nested_spans(result.text)
+                    _validate_preserved_text(original=request.text, marked_up=normalized)
+                    spans = _extract_spans(marked_up_text=normalized)
+                    warnings.append("Text extract normalized nested spans from model output")
+                    return TextExtractResult(
+                        marked_up_text=normalized,
+                        spans=spans,
+                        warnings=warnings,
+                    )
                 raise ValueError(f"Text extract failed: {message_error}")
             raise ValueError(f"Text extract failed: {result.last_error}")
         warnings.append("Text extract reached max rounds without done=true")
@@ -106,6 +116,34 @@ def _validate_preserved_text(*, original: str, marked_up: str) -> None:
 
 def _strip_span_tags(text: str) -> str:
     return text.replace("<span>", "").replace("</span>", "")
+
+
+def _normalize_nested_spans(marked_up_text: str) -> str:
+    open_tag = "<span>"
+    close_tag = "</span>"
+    tag_pattern = re.compile(re.escape(open_tag) + "|" + re.escape(close_tag))
+    output: List[str] = []
+    cursor = 0
+    depth = 0
+
+    for match in tag_pattern.finditer(marked_up_text):
+        output.append(marked_up_text[cursor : match.start()])
+        tag = match.group(0)
+        if tag == open_tag:
+            if depth == 0:
+                output.append(tag)
+            depth += 1
+        else:
+            if depth > 0:
+                if depth == 1:
+                    output.append(tag)
+                depth -= 1
+            else:
+                output.append(tag)
+        cursor = match.end()
+
+    output.append(marked_up_text[cursor:])
+    return "".join(output)
 
 
 def _extract_spans(*, marked_up_text: str) -> List[TextExtractSpan]:

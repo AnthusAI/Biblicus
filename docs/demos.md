@@ -97,12 +97,112 @@ Text extraction is a separate pipeline stage from retrieval. An extraction snaps
 This extractor reads text items and skips non-text items.
 
 ```
-python -m biblicus extract build --corpus corpora/demo --step pass-through-text
+python -m biblicus extract build --corpus corpora/demo --stage pass-through-text
 ```
 
 The output includes a `snapshot_id` you can reuse when building a retrieval backend.
 
 Text extraction details: `docs/extraction.md`
+
+### Graph extraction demo
+
+Graph extraction runs after text extraction and writes to a Neo4j backend. The demo script will reuse the latest extraction
+snapshot or build a minimal one if needed.
+
+```
+python scripts/graph_extraction_demo.py --corpus corpora/demo --build-extraction --prepare-demo --verify
+```
+
+Graph extraction details: `docs/graph-extraction.md`
+
+### Graph extraction integration run
+
+Use the integration script to download a small Wikipedia corpus, run extraction, and build a Neo4j graph snapshot
+with the `simple-entities` extractor.
+
+```
+python -m pip install neo4j
+```
+
+```
+python scripts/graph_extraction_integration.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --verify \
+  --report-path reports/graph_extraction_story.md
+```
+
+The report written to `reports/graph_extraction_story.md` summarizes the run in a shareable format.
+
+### Graph extraction baselines
+
+Once the baseline extractors are enabled, you can compare different graph extractors by switching the extractor id
+and configuration:
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor ner-entities \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/ner-entities.yml
+```
+
+```
+python -m biblicus graph extract \
+  --corpus corpora/example \
+  --extractor dependency-relations \
+  --extraction-snapshot pipeline:RUN_ID \
+  --configuration configurations/graph/dependency-relations.yml
+```
+
+### Graph extractor narrative demos
+
+Use the narrative demo script to run the full pipeline for a single extractor and print inputs + outputs.
+Each command downloads a small Wikipedia corpus, builds extraction and graph snapshots, and prints sample
+entities/terms and edges.
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor simple-entities
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor cooccurrence
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor ner-entities
+```
+
+```
+python scripts/graph_extraction_extractor_demo.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --extractor dependency-relations
+```
+
+### Graph extractor narrative demos (all extractors)
+
+Use the multi-extractor demo script to run the narrative demo for every extractor in sequence. The first
+extractor run initializes the corpus; the remaining runs reuse it.
+
+```
+python scripts/graph_extraction_demo_all.py \
+  --corpus corpora/wiki_graph_demo \
+  --force \
+  --limit 5 \
+  --report-dir reports
+```
+
+Graph extraction details: `docs/graph-extraction.md`
 
 ### Topic modeling integration run
 
@@ -191,13 +291,13 @@ Profiling details: `docs/profiling.md`
 
 ### Select extracted text within a pipeline
 
-When you want an explicit choice among multiple extraction outputs, add a selection extractor step at the end of the pipeline.
+When you want an explicit choice among multiple extraction outputs, add a selection extractor stage at the end of the pipeline.
 
 ```
 python -m biblicus extract build --corpus corpora/demo \
-  --step pass-through-text \
-  --step metadata-text \
-  --step select-text
+  --stage pass-through-text \
+  --stage metadata-text \
+  --stage select-text
 ```
 
 Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `EXTRACTION_SNAPSHOT_ID` in the next command.
@@ -217,7 +317,7 @@ This example downloads a small set of public Portable Document Format files, ext
 rm -rf corpora/pdf_samples
 python scripts/download_pdf_samples.py --corpus corpora/pdf_samples --force
 
-python -m biblicus extract build --corpus corpora/pdf_samples --step pdf-text
+python -m biblicus extract build --corpus corpora/pdf_samples --stage pdf-text
 ```
 
 Copy the `snapshot_id` from the JavaScript Object Notation output. Use it as `PDF_EXTRACTION_SNAPSHOT_ID` in the next command.
@@ -236,7 +336,7 @@ MarkItDown requires Python 3.10 or higher. This example uses the `py311` conda e
 ```
 conda run -n py311 python -m pip install -e . "markitdown[all]"
 conda run -n py311 python scripts/download_mixed_samples.py --corpus corpora/markitdown_demo_py311 --force
-conda run -n py311 python -m biblicus extract build --corpus corpora/markitdown_demo_py311 --step markitdown
+conda run -n py311 python -m biblicus extract build --corpus corpora/markitdown_demo_py311 --stage markitdown
 ```
 
 ### Mixed modality integration corpus
@@ -269,7 +369,7 @@ python -m pip install "biblicus[ocr]"
 Then build an extraction snapshot:
 
 ```
-python -m biblicus extract build --corpus corpora/image_samples --step ocr-rapidocr
+python -m biblicus extract build --corpus corpora/image_samples --stage ocr-rapidocr
 ```
 
 ### Optional: Unstructured as a last-resort extractor
@@ -285,7 +385,7 @@ python -m pip install "biblicus[unstructured]"
 Then build an extraction snapshot:
 
 ```
-python -m biblicus extract build --corpus corpora/pdf_samples --step unstructured
+python -m biblicus extract build --corpus corpora/pdf_samples --stage unstructured
 ```
 
 To see Unstructured handle a non-Portable-Document-Format format, use the mixed corpus demo, which includes a `.docx` sample:
@@ -293,16 +393,16 @@ To see Unstructured handle a non-Portable-Document-Format format, use the mixed 
 ```
 rm -rf corpora/mixed_samples
 python scripts/download_mixed_samples.py --corpus corpora/mixed_samples --force
-python -m biblicus extract build --corpus corpora/mixed_samples --step unstructured
+python -m biblicus extract build --corpus corpora/mixed_samples --stage unstructured
 ```
 
-When you want to prefer one extractor over another for the same item types, order the steps and end with `select-text`:
+When you want to prefer one extractor over another for the same item types, order the stages and end with `select-text`:
 
 ```
 python -m biblicus extract build --corpus corpora/pdf_samples \
-  --step unstructured \
-  --step pdf-text \
-  --step select-text
+  --stage unstructured \
+  --stage pdf-text \
+  --stage select-text
 ```
 
 ### Optional: Speech to text for audio items
@@ -321,7 +421,7 @@ python -m biblicus list --corpus corpora/audio_samples
 If you only want a metadata-only baseline, extract `metadata-text`:
 
 ```
-python -m biblicus extract build --corpus corpora/audio_samples --step metadata-text
+python -m biblicus extract build --corpus corpora/audio_samples --stage metadata-text
 ```
 
 For real speech to text transcription with the OpenAI backend, install the optional dependency and set an API key:
@@ -330,7 +430,7 @@ For real speech to text transcription with the OpenAI backend, install the optio
 python -m pip install "biblicus[openai]"
 mkdir -p .biblicus
 printf "openai:\n  api_key: ...\n" > .biblicus/config.yml
-python -m biblicus extract build --corpus corpora/audio_samples --step stt-openai
+python -m biblicus extract build --corpus corpora/audio_samples --stage stt-openai
 ```
 
 ### Build and query the minimal backend

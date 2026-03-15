@@ -17,6 +17,22 @@ def _corpus_path(context, name: str) -> Path:
     return (context.workdir / name).resolve()
 
 
+def _resolve_fixture_path(context, filename: str) -> Path:
+    """Resolve fixture path, accounting for corpus root if set."""
+    candidate = Path(filename)
+    if candidate.is_absolute():
+        return candidate
+    workdir_path = (context.workdir / candidate).resolve()
+    if candidate.parts and candidate.parts[0] == ".biblicus":
+        return workdir_path
+    corpus_root = getattr(context, "last_corpus_root", None)
+    if corpus_root is not None:
+        if candidate.parts and candidate.parts[0] == corpus_root.name:
+            return workdir_path
+        return (corpus_root / candidate).resolve()
+    return workdir_path
+
+
 def _data_for_media_type(media_type: str) -> bytes:
     """
     Provide deterministic fixture data for a media type.
@@ -216,7 +232,7 @@ def step_ingest_item_python_with_source_uri(
 @then('the corpus "{name}" hook logs do not include "{text}"')
 def step_hook_logs_do_not_include(context, name: str, text: str) -> None:
     corpus_path = _corpus_path(context, name)
-    log_dir = corpus_path / ".biblicus" / "hook_logs"
+    log_dir = corpus_path / "metadata" / "hook_logs"
     combined = ""
     if log_dir.is_dir():
         for p in sorted(log_dir.glob("*.jsonl")):
@@ -227,7 +243,7 @@ def step_hook_logs_do_not_include(context, name: str, text: str) -> None:
 @then('the corpus "{name}" hook logs include "{text}"')
 def step_hook_logs_include(context, name: str, text: str) -> None:
     corpus_path = _corpus_path(context, name)
-    log_dir = corpus_path / ".biblicus" / "hook_logs"
+    log_dir = corpus_path / "metadata" / "hook_logs"
     combined = ""
     if log_dir.is_dir():
         for p in sorted(log_dir.glob("*.jsonl")):
@@ -237,13 +253,46 @@ def step_hook_logs_include(context, name: str, text: str) -> None:
 
 @given('I have a file "{filename}" with contents "{contents}"')
 def step_have_file_with_contents(context, filename: str, contents: str) -> None:
-    (context.workdir / filename).write_text(contents, encoding="utf-8")
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(contents, encoding="utf-8")
+
+
+@given('I have a binary file "{filename}" with bytes:')
+def step_have_binary_file_with_bytes(context, filename: str) -> None:
+    payload = context.text or ""
+    hex_bytes = "".join(payload.split())
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(bytes.fromhex(hex_bytes))
+
+
+@given('I have a directory "{path}"')
+def step_have_directory(context, path: str) -> None:
+    target = _resolve_fixture_path(context, path)
+    target.mkdir(parents=True, exist_ok=True)
 
 
 @when('I load the source "{source}"')
 def step_load_source(context, source: str) -> None:
     candidate_path = (context.workdir / source).resolve()
     context.loaded_source = load_source(str(candidate_path))
+
+
+@when('I load the source uniform resource identifier for "{path}"')
+def step_load_source_uri(context, path: str) -> None:
+    candidate_path = (context.workdir / path).resolve()
+    context.loaded_source = load_source(candidate_path.as_uri())
+
+
+@when('I attempt to load the source uniform resource identifier for "{path}"')
+def step_attempt_load_source_uri(context, path: str) -> None:
+    candidate_path = (context.workdir / path).resolve()
+    try:
+        context.loaded_source = load_source(candidate_path.as_uri())
+        context.load_source_error = None
+    except Exception as exc:
+        context.load_source_error = exc
 
 
 @then('the source payload filename is "{filename}"')
@@ -253,11 +302,25 @@ def step_source_payload_filename(context, filename: str) -> None:
     assert payload.filename == filename
 
 
+@then('the source payload media type is "{media_type}"')
+def step_source_payload_media_type(context, media_type: str) -> None:
+    payload = getattr(context, "loaded_source", None)
+    assert payload is not None
+    assert payload.media_type == media_type
+
+
 @then('the source payload source uniform resource identifier starts with "{prefix}"')
 def step_source_payload_source_uri_prefix(context, prefix: str) -> None:
     payload = getattr(context, "loaded_source", None)
     assert payload is not None
     assert payload.source_uri.startswith(prefix), payload.source_uri
+
+
+@then('the source load error includes "{text}"')
+def step_source_load_error_includes(context, text: str) -> None:
+    err = getattr(context, "load_source_error", None)
+    assert err is not None
+    assert text in str(err)
 
 
 @when("I execute a hook manager with a non-Pydantic hook result")

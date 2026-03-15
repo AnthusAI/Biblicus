@@ -6,7 +6,7 @@ Feature: Profiling analysis
     And a binary file "blob.bin" exists
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I snapshot a profiling analysis in corpus "corpus" using the latest extraction snapshot
@@ -30,7 +30,7 @@ Feature: Profiling analysis
     And a binary file "blob.bin" exists
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I snapshot a profiling analysis in corpus "corpus"
@@ -42,7 +42,7 @@ Feature: Profiling analysis
     And a binary file "blob.bin" exists
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create a profiling configuration file "profiling_recipe.yml" with:
@@ -59,7 +59,7 @@ Feature: Profiling analysis
 
   Scenario: Profiling analysis reports empty corpus distributions
     Given I initialized a corpus at "corpus"
-    When I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    When I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I snapshot a profiling analysis in corpus "corpus" using the latest extraction snapshot
@@ -71,7 +71,7 @@ Feature: Profiling analysis
   Scenario: Profiling analysis counts empty extracted text
     Given I initialized a corpus at "corpus"
     When I ingest the text "   " with title "Blank" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I snapshot a profiling analysis in corpus "corpus" using the latest extraction snapshot
@@ -81,7 +81,7 @@ Feature: Profiling analysis
   Scenario: Profiling analysis respects minimum text length
     Given I initialized a corpus at "corpus"
     When I ingest the text "short" with title "Short" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create a profiling configuration file "profiling_min_text.yml" with:
@@ -97,7 +97,7 @@ Feature: Profiling analysis
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "Beta note" with title "Beta" and tags "other" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create a profiling configuration file "profiling_tags.yml" with:
@@ -131,7 +131,7 @@ Feature: Profiling analysis
   Scenario: Profiling analysis rejects invalid configuration values
     Given I initialized a corpus at "corpus"
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I create a profiling configuration file "profiling_invalid_values.yml" with:

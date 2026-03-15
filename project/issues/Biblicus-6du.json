@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-6du",
+  "title": "Add Switchboard conversational corpus to STT benchmark",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:54.046521Z",
+  "updated_at": "2026-02-14T01:38:54.046521Z",
+  "closed_at": null,
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

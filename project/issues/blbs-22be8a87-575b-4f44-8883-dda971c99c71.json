@@ -1,0 +1,18 @@
+{
+  "id": "blbs-22be8a87-575b-4f44-8883-dda971c99c71",
+  "title": "Test harness: connectors and discovery mocks",
+  "description": "Extend fake connectors for Azure/S3/FTP/HTTP listing, plus collection discovery fixtures.",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-fda727",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:25:31.128788Z",
+  "updated_at": "2026-02-19T23:25:31.128788Z",
+  "closed_at": null,
+  "custom": {}
+}

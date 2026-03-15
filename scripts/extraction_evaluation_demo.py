@@ -104,7 +104,7 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
         extractor_id="pipeline",
         configuration_name=arguments.extraction_configuration_name,
         configuration={
-            "steps": [
+            "stages": [
                 {
                     "extractor_id": arguments.extraction_step,
                     "config": {},

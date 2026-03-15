@@ -21,7 +21,7 @@ generation are all derived from that evidence.
 ## Core Concepts
 
 - **Corpus**: a named, mutable collection rooted at a path or uniform resource identifier. In
-  version zero it is typically a local folder containing raw files plus a `.biblicus/` directory
+  version zero it is typically a local folder containing raw files plus a `metadata/` directory
   for minimal metadata.
 - **Item**: the unit of ingestion in a corpus: raw bytes of any modality, including text, images,
   Portable Document Format documents, audio, and video, plus optional metadata and provenance.
@@ -38,7 +38,7 @@ generation are all derived from that evidence.
   none and operate on demand.
 - **Evidence**: structured retrieval output from backend queries. Evidence includes spans, scores,
   and provenance used by downstream retrieval augmented generation procedures.
-- **Pipeline stage / editorial layer**: a structured step that transforms, filters, extracts, or
+- **Pipeline stage / editorial layer**: a structured stage that transforms, filters, extracts, or
   curates content, such as raw, curated, and published, or extract text from Portable Document
   Format documents.
 

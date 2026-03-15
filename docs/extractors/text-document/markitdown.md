@@ -125,7 +125,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text  # Handle text files
     - extractor_id: markitdown          # Convert Office docs
     - extractor_id: select-text
@@ -166,7 +166,7 @@ corpus = Corpus.from_directory("mixed-docs")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "markitdown"},
             {"extractor_id": "select-text"}
@@ -350,7 +350,7 @@ Combine with other extractors for robustness:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: markitdown
     - extractor_id: unstructured  # Fallback
     - extractor_id: select-longest-text

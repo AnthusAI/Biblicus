@@ -37,3 +37,12 @@ class IngestCollisionError(RuntimeError):
             f" existing_relpath={existing_relpath}"
         )
         super().__init__(message)
+
+
+class RemoteSourceDependencyError(RuntimeError):
+    """
+    Raised when a remote source dependency is unavailable.
+
+    :param message: Error message describing the missing dependency.
+    :type message: str
+    """

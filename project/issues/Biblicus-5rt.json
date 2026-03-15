@@ -1,0 +1,57 @@
+{
+  "id": "Biblicus-5rt",
+  "title": "Restore 100% coverage and fix coverage harness",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "9eebcd08-1832-4aa6-ad64-13cf761bcc0e",
+      "author": "ryan.porter",
+      "text": "Investigating CI coverage gate failures. GH Actions shows coverage 99% despite local 100% run. Pulling logs to find uncovered branches and adding targeted tests.",
+      "created_at": "2026-02-20T13:21:07.820029Z"
+    },
+    {
+      "id": "fa7ddea3-9e6a-4dfa-b049-ea5637da3924",
+      "author": "ryan.porter",
+      "text": "Added unit tests covering Markov sample_size truncation and topic-modeling invalid entity spans (commit 067b09b). Pushed to main; monitoring CI.",
+      "created_at": "2026-02-20T13:27:57.732244Z"
+    },
+    {
+      "id": "e671031e-4c8f-4796-88ef-1f91ef3778af",
+      "author": "ryan.porter",
+      "text": "Graph extractors now propagate spaCy missing errors to satisfy graph NLP dependency scenarios; committed fix 324503c.",
+      "created_at": "2026-02-20T13:34:41.139188Z"
+    },
+    {
+      "id": "3ae3f7c7-a683-4b47-b551-4cec7eb1145a",
+      "author": "ryan.porter",
+      "text": "Adjusted graph extractor branch tests to expect ValueError when spaCy is unavailable; pushed commit 5de1c4a.",
+      "created_at": "2026-02-20T13:40:06.294274Z"
+    },
+    {
+      "id": "f77babf3-f508-4b6b-b9bd-ded81c3f7582",
+      "author": "ryan.porter",
+      "text": "Added coverage tests for simple_entities, graph extractor min-length skips, and retrieval snapshot listing to close remaining branches. Local pytest green; pushing.",
+      "created_at": "2026-02-20T13:48:31.863838Z"
+    },
+    {
+      "id": "ee11efd6-f07f-4371-a45d-480e82876289",
+      "author": "ryan.porter",
+      "text": "Patched pipeline analysis to pass extraction_snapshot into profiling backend; fixed coverage harness CategoryResult construction to avoid primary_score error. Re-running CI.",
+      "created_at": "2026-02-20T13:59:12.631962Z"
+    }
+  ],
+  "created_at": "2026-02-15T17:34:00.173860Z",
+  "updated_at": "2026-02-20T13:59:12.631962Z",
+  "closed_at": null,
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

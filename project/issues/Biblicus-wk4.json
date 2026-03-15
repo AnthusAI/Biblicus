@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-wk4",
+  "title": "Add Mozilla Common Voice dataset to STT benchmark",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:53.736287Z",
+  "updated_at": "2026-02-14T01:38:53.736287Z",
+  "closed_at": null,
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
 import sys
 import types
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from behave import given, then
+from behave import given, then, when
+
+from biblicus.user_config import load_user_config, resolve_deepgram_api_key
 
 
 @dataclass
@@ -40,6 +43,19 @@ def _install_fake_deepgram_module(context) -> None:
     class _Alternative:
         def __init__(self, transcript: str) -> None:
             self.transcript = transcript
+            words = [
+                {"word": word, "channel": 0, "speaker": 0}
+                for word in transcript.split()
+                if word
+            ]
+            self.words = words
+            self.utterances = [
+                {
+                    "transcript": transcript,
+                    "channel": 0,
+                    "speaker": 0,
+                }
+            ]
 
     class _Channel:
         def __init__(self, alternatives: list) -> None:
@@ -48,25 +64,63 @@ def _install_fake_deepgram_module(context) -> None:
     class _Results:
         def __init__(self, channels: list) -> None:
             self.channels = channels
+            alternatives = channels[0].alternatives if channels else []
+            utterances = []
+            words = []
+            if alternatives:
+                utterances = alternatives[0].utterances
+                words = alternatives[0].words
+            self.utterances = utterances
+            self.words = words
 
     class _TranscriptionResponseNormal:
         def __init__(self, transcript: str) -> None:
             self.results = _Results([_Channel([_Alternative(transcript)])])
 
+        def to_dict(self) -> Dict[str, Any]:
+            alternatives = self.results.channels[0].alternatives if self.results.channels else []
+            payload = {"results": {"channels": []}}
+            if alternatives:
+                alternative = alternatives[0]
+                payload["results"]["channels"].append(
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": alternative.transcript,
+                                "words": alternative.words,
+                                "utterances": alternative.utterances,
+                            }
+                        ]
+                    }
+                )
+                payload["results"]["utterances"] = alternative.utterances
+                payload["results"]["words"] = alternative.words
+            return payload
+
     class _TranscriptionResponseNoResults:
         def __init__(self) -> None:
             self.results = None
+
+        def to_dict(self) -> Dict[str, Any]:
+            return {"results": None}
 
     class _TranscriptionResponseEmptyChannels:
         def __init__(self) -> None:
             self.results = _Results([])
 
+        def to_dict(self) -> Dict[str, Any]:
+            return {"results": {"channels": []}}
+
     class _TranscriptionResponseEmptyAlternatives:
         def __init__(self) -> None:
             self.results = _Results([_Channel([])])
 
+        def to_dict(self) -> Dict[str, Any]:
+            return {"results": {"channels": [{"alternatives": []}]}}
+
     class _TranscribeApi:
-        def transcribe_file(self, audio_data: Dict[str, Any], options: Dict[str, Any]) -> object:
+        def transcribe_file(self, *args: Any, **kwargs: Any) -> object:
+            options = {key: value for key, value in kwargs.items() if key != "request"}
             deepgram_module.last_transcription_model = options.get("model")
             deepgram_module.last_transcription_options = dict(options)
             behaviors_map = _ensure_fake_deepgram_transcription_behaviors(context)
@@ -81,20 +135,17 @@ def _install_fake_deepgram_module(context) -> None:
                     return _TranscriptionResponseNormal(behavior.transcript)
             return _TranscriptionResponseNormal("")
 
-    class _ListenRestVersion:
+    class _ListenV1Media:
+        def transcribe_file(self, *args: Any, **kwargs: Any) -> object:
+            return _TranscribeApi().transcribe_file(*args, **kwargs)
+
+    class _ListenV1:
         def __init__(self) -> None:
-            pass
-
-        def transcribe_file(self, audio_data: Dict[str, Any], options: Dict[str, Any]) -> object:
-            return _TranscribeApi().transcribe_file(audio_data, options)
-
-    class _ListenRest:
-        def v(self, version: str) -> _ListenRestVersion:
-            return _ListenRestVersion()
+            self.media = _ListenV1Media()
 
     class _Listen:
         def __init__(self) -> None:
-            self.rest = _ListenRest()
+            self.v1 = _ListenV1()
 
     class DeepgramClient:
         def __init__(self, api_key: str = "", **kwargs: Any) -> None:
@@ -175,12 +226,32 @@ def step_fake_deepgram_returns_empty_alternatives(context, filename: str) -> Non
 
 
 @given("a Deepgram API key is configured for this scenario")
+@when("a Deepgram API key is configured for this scenario")
 def step_deepgram_api_key_configured(context) -> None:
+    api_key = resolve_deepgram_api_key()
+    if not api_key and getattr(context, "repo_root", None) is not None:
+        repo_root = context.repo_root
+        candidate = repo_root / ".biblicus" / "config.yml"
+        if candidate.is_file():
+            loaded = load_user_config(paths=[candidate])
+            if loaded.deepgram is not None:
+                api_key = loaded.deepgram.api_key
+    if not api_key:
+        scenario = getattr(context, "scenario", None)
+        tags = set(getattr(scenario, "tags", [])) if scenario else set()
+        feature = getattr(context, "feature", None)
+        if feature is not None:
+            tags.update(getattr(feature, "tags", []))
+        if "deepgram" in tags or "integration" in tags:
+            if scenario is not None:
+                scenario.skip("DEEPGRAM_API_KEY is required for Deepgram integration scenarios.")
+            return
+        api_key = "test-deepgram-key"
     extra_env = getattr(context, "extra_env", None)
     if extra_env is None:
         extra_env = {}
         context.extra_env = extra_env
-    extra_env["DEEPGRAM_API_KEY"] = "test-deepgram-key"
+    extra_env["DEEPGRAM_API_KEY"] = api_key
 
 
 @given("the Deepgram dependency is unavailable")

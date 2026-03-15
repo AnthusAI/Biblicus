@@ -1,0 +1,25 @@
+{
+  "id": "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49",
+  "title": "Configure Azure Blob corpus source",
+  "description": "",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ea4c3c85-d8ae-4fe5-a7fa-9b40fbf8a665",
+      "author": "ryan.porter",
+      "text": "Feature: Azure Blob corpus source\\n  Scenario: Ingest items from Azure Blob storage\\n    Given a corpus configuration with a source kind of \"azure-blob\" and valid container and prefix settings\\n    When I run corpus ingestion\\n    Then Biblicus registers items with provenance URIs in the azure-blob scheme\\n    And retrieval evidence references those item identifiers",
+      "created_at": "2026-02-19T04:55:21.006497Z"
+    }
+  ],
+  "created_at": "2026-02-19T04:55:09.838991Z",
+  "updated_at": "2026-02-19T04:55:21.006497Z",
+  "closed_at": null,
+  "custom": {}
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -601,7 +602,7 @@ def step_eval_latest_run_invalid_dataset(context, filename: str) -> None:
 def step_download_wikipedia_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
-        ["python3", "scripts/download_wikipedia.py", "--corpus", str(corpus), "--limit", "5"],
+        [sys.executable, "scripts/download_wikipedia.py", "--corpus", str(corpus), "--limit", "5"],
         cwd=context.repo_root,
         capture_output=True,
         text=True,
@@ -614,7 +615,7 @@ def step_download_wikipedia_corpus(context, corpus_name: str) -> None:
 def step_download_pdf_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
-        ["python3", "scripts/download_pdf_samples.py", "--corpus", str(corpus), "--force"],
+        [sys.executable, "scripts/download_pdf_samples.py", "--corpus", str(corpus), "--force"],
         cwd=context.repo_root,
         capture_output=True,
         text=True,
@@ -627,7 +628,7 @@ def step_download_pdf_corpus(context, corpus_name: str) -> None:
 def step_download_mixed_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
-        ["python3", "scripts/download_mixed_samples.py", "--corpus", str(corpus), "--force"],
+        [sys.executable, "scripts/download_mixed_samples.py", "--corpus", str(corpus), "--force"],
         cwd=context.repo_root,
         capture_output=True,
         text=True,
@@ -640,7 +641,7 @@ def step_download_mixed_corpus(context, corpus_name: str) -> None:
 def step_download_audio_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
-        ["python3", "scripts/download_audio_samples.py", "--corpus", str(corpus), "--force"],
+        [sys.executable, "scripts/download_audio_samples.py", "--corpus", str(corpus), "--force"],
         cwd=context.repo_root,
         capture_output=True,
         text=True,
@@ -653,7 +654,28 @@ def step_download_audio_corpus(context, corpus_name: str) -> None:
 def step_download_image_corpus(context, corpus_name: str) -> None:
     corpus = _corpus_path(context, corpus_name)
     result = subprocess.run(
-        ["python3", "scripts/download_image_samples.py", "--corpus", str(corpus), "--force"],
+        [sys.executable, "scripts/download_image_samples.py", "--corpus", str(corpus), "--force"],
+        cwd=context.repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@when('I download a layout OCR corpus into "{corpus_name}"')
+def step_download_layout_ocr_corpus(context, corpus_name: str) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    result = subprocess.run(
+        [
+            "python3",
+            "scripts/download_funsd_samples.py",
+            "--corpus",
+            str(corpus),
+            "--count",
+            "3",
+            "--force",
+        ],
         cwd=context.repo_root,
         capture_output=True,
         text=True,

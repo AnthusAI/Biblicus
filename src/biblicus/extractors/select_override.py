@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -72,7 +72,7 @@ class SelectOverrideExtractor(TextExtractor):
         corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Select extracted text using simple override logic.
@@ -83,8 +83,8 @@ class SelectOverrideExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: SelectOverrideConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Selected extracted text payload or None when no prior outputs exist.
         :rtype: ExtractedText or None
         """
@@ -116,6 +116,6 @@ class SelectOverrideExtractor(TextExtractor):
         return ExtractedText(
             text=candidate.text or "",
             producer_extractor_id=producer,
-            source_step_index=candidate.step_index,
+            source_stage_index=candidate.stage_index,
             confidence=candidate.confidence,
         )

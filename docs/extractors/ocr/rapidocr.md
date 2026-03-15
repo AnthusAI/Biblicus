@@ -112,7 +112,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-text
@@ -256,7 +256,7 @@ Combine with other extractors:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr

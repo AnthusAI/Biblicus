@@ -1,0 +1,372 @@
+from types import SimpleNamespace
+import json
+from pathlib import Path
+
+import pytest
+
+from biblicus import cli
+from biblicus.analysis import markov
+from biblicus.analysis.models import (
+    MarkovAnalysisObservation,
+    MarkovAnalysisTextSourceConfig,
+)
+from biblicus.corpus import Corpus, _update_biblicus_block
+from biblicus.models import CatalogItem, CorpusCatalog, RemoteCorpusSourceConfig
+from biblicus.pipelines import _normalize_extraction_configuration
+from biblicus.extraction import build_extraction_snapshot
+
+
+def test_markov_collect_documents_truncates_and_warns(tmp_path, monkeypatch):
+    class FakeItem:
+        def __init__(self, item_id: str, relpath: str, status: str = "extracted"):
+            self.item_id = item_id
+            self.final_text_relpath = relpath
+            self.status = status
+
+    manifest_items = [
+        FakeItem("item-1", "text/1.txt"),
+        FakeItem("item-2", "text/2.txt"),
+        FakeItem("item-3", "text/3.txt"),
+    ]
+
+    for index, content in enumerate(["first doc", "second doc", ""], start=1):
+        text_path = tmp_path / "text" / f"{index}.txt"
+        text_path.parent.mkdir(parents=True, exist_ok=True)
+        text_path.write_text(content, encoding="utf-8")
+
+    manifest = SimpleNamespace(items=manifest_items)
+
+    class FakeCorpus:
+        def __init__(self, root: Path):
+            self.root = root
+
+        def load_extraction_snapshot_manifest(self, extractor_id: str, snapshot_id: str):
+            return manifest
+
+        def extraction_snapshot_dir(self, extractor_id: str, snapshot_id: str) -> Path:
+            return self.root
+
+    config = MarkovAnalysisTextSourceConfig(sample_size=1)
+    documents, report = markov._collect_documents(  # type: ignore[arg-type]
+        corpus=FakeCorpus(tmp_path),
+        extraction_snapshot=SimpleNamespace(extractor_id="pipeline", snapshot_id="snap"),
+        config=config,
+    )
+
+    assert len(documents) == 1
+    assert "Text collection truncated to sample_size" in report.warnings
+    assert report.empty_texts == 1
+
+
+def test_cli_benchmark_download_handles_unknown_and_pending(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr("subprocess.run", lambda *a, **k: SimpleNamespace(returncode=0))
+    arguments = SimpleNamespace(
+        datasets="scanned-arxiv,unknown", corpus_dir=str(tmp_path), count=None, force=False
+    )
+    cli.cmd_benchmark_download(arguments)
+    output = capsys.readouterr().out
+    assert "scanned-arxiv dataset is not yet available" in output
+    assert "Unknown dataset" in output
+
+
+def test_cli_benchmark_status_uses_legacy_metadata_dir(tmp_path, capsys):
+    corpus_dir = tmp_path / "datasets"
+    meta_dir = corpus_dir / "funsd_benchmark" / "metadata"
+    meta_dir.mkdir(parents=True)
+    (meta_dir / "config.json").write_text("{}", encoding="utf-8")
+    gt_dir = meta_dir / "funsd_ground_truth"
+    gt_dir.mkdir(parents=True)
+    (gt_dir / "sample.txt").write_text("ok", encoding="utf-8")
+
+    arguments = SimpleNamespace(corpus_dir=str(corpus_dir))
+    cli.cmd_benchmark_status(arguments)
+    output = capsys.readouterr().out
+    assert "READY (1 docs)" in output
+
+
+def test_pipeline_normalize_rejects_bool_max_workers():
+    with pytest.raises(ValueError):
+        _normalize_extraction_configuration({"extractor_id": "x", "max_workers": True})
+
+
+def test_corpus_remote_helpers(tmp_path):
+    corpus = Corpus(tmp_path)
+    source_config = RemoteCorpusSourceConfig(
+        kind="s3", bucket="MyBucket", profile="my-profile"
+    )
+    assert corpus._resolve_remote_source_name(source_config) == "MyBucket"
+
+    source = SimpleNamespace(etag="abc", last_modified=None)
+    existing = CatalogItem(
+        id="i1",
+        relpath="imports/remote/sample/file.txt",
+        sha256="",
+        bytes=0,
+        media_type="text/plain",
+        title=None,
+        tags=[],
+        metadata={"biblicus": {"source_etag": "abc"}},
+        created_at="now",
+        source_uri="s3://bucket/file.txt",
+    )
+    assert corpus._remote_item_unchanged(existing, source)
+
+
+def test_corpus_update_biblicus_block_handles_non_mapping():
+    data = {"biblicus": "not-a-dict"}
+    updated = _update_biblicus_block(data, {"source_etag": "x"})
+    assert isinstance(updated["biblicus"], dict)
+    assert updated["biblicus"]["source_etag"] == "x"
+
+
+def test_corpus_prune_remote_items_removes_missing(tmp_path):
+    corpus = Corpus(tmp_path)
+    catalog = CorpusCatalog(
+        schema_version=2,
+        generated_at="2024-01-01T00:00:00Z",
+        corpus_uri=tmp_path.as_uri(),
+        raw_dir="raw",
+        items={},
+        order=[],
+    )
+    corpus.meta_dir.mkdir(parents=True, exist_ok=True)
+    relpath = "imports/remote/name/file.txt"
+    (corpus.root / relpath).parent.mkdir(parents=True, exist_ok=True)
+    (corpus.root / relpath).write_text("data", encoding="utf-8")
+    item = CatalogItem(
+        id="one",
+        relpath=relpath,
+        sha256="",
+        bytes=4,
+        media_type="text/plain",
+        title=None,
+        tags=[],
+        metadata={},
+        created_at="now",
+        source_uri="s3://bucket/file.txt",
+    )
+    catalog.items[item.id] = item
+    catalog.order.append(item.id)
+    corpus._write_catalog(catalog)
+
+    pruned = corpus._prune_remote_items(storage_subdir="imports/remote/name", remote_uris=set())
+    assert pruned == 1
+    assert not (corpus.root / relpath).exists()
+
+
+def test_extraction_catalog_sync_logs_warning(monkeypatch, tmp_path, capsys):
+    corpus = Corpus(tmp_path)
+    corpus.meta_dir.mkdir(parents=True, exist_ok=True)
+    corpus._write_catalog(
+        CorpusCatalog(
+            schema_version=2,
+            generated_at="2024-01-01T00:00:00Z",
+            corpus_uri=tmp_path.as_uri(),
+            raw_dir="raw",
+            items={},
+            order=[],
+        )
+    )
+    monkeypatch.setenv("AMPLIFY_AUTO_SYNC_CATALOG", "false")
+    manifest = SimpleNamespace(snapshot_id="snap", items=[], configuration_id="cfg")
+    with monkeypatch.context() as m:
+        m.setattr("biblicus.extraction.load_or_build_extraction_snapshot", lambda *a, **k: manifest)
+        result = build_extraction_snapshot(
+            corpus,
+            extractor_id="pipeline",
+            configuration_name="cfg",
+            configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
+        )
+    assert isinstance(result.snapshot_id, str) and result.snapshot_id
+
+
+def test_corpus_raw_prefix_respects_custom_and_dot(tmp_path):
+    meta = tmp_path / ".biblicus"
+    meta.mkdir()
+    base_config = {
+        "schema_version": 2,
+        "created_at": "2024-01-01T00:00:00Z",
+        "corpus_uri": tmp_path.as_uri(),
+    }
+    (meta / "config.json").write_text(
+        json.dumps({**base_config, "raw_dir": "custom"}), encoding="utf-8"
+    )
+    corpus = Corpus(tmp_path)
+    assert corpus._raw_prefix_for_storage("remote") == Path("custom") / "remote"
+
+    (meta / "config.json").write_text(
+        json.dumps({**base_config, "raw_dir": "."}), encoding="utf-8"
+    )
+    corpus = Corpus(tmp_path)
+    assert corpus._raw_prefix_for_storage("remote").as_posix() == "remote"
+
+
+def test_cli_benchmark_download_force_and_error(monkeypatch, capsys, tmp_path):
+    called = {}
+
+    def fake_run(cmd, capture_output):
+        called["cmd"] = cmd
+        return SimpleNamespace(returncode=1)
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+    arguments = SimpleNamespace(
+        datasets="funsd", corpus_dir=str(tmp_path), count=2, force=True
+    )
+    cli.cmd_benchmark_download(arguments)
+    out = capsys.readouterr().out
+    assert "ERROR: Failed to download funsd" in out
+    assert "--count" in " ".join(called["cmd"])
+    assert "--force" in " ".join(called["cmd"])
+
+
+def test_cli_benchmark_status_downloaded_but_not_ready(tmp_path, capsys):
+    corpus_dir = tmp_path / "datasets"
+    meta_dir = corpus_dir / "sroie_benchmark" / ".biblicus"
+    meta_dir.mkdir(parents=True)
+    (meta_dir / "config.json").write_text("{}", encoding="utf-8")
+
+    arguments = SimpleNamespace(corpus_dir=str(corpus_dir))
+    cli.cmd_benchmark_status(arguments)
+    out = capsys.readouterr().out
+    assert "sroie" in out and "DOWNLOADED" in out
+
+
+def test_markov_span_markup_chunks_multiple_iterations(monkeypatch):
+    spans = [SimpleNamespace(text="first"), SimpleNamespace(text="second")]
+    monkeypatch.setattr(
+        markov,
+        "apply_text_extract",
+        lambda request: SimpleNamespace(spans=spans),
+    )
+    markup_config = SimpleNamespace(
+        label_attribute=None,
+        prepend_label=False,
+        chunk_characters=5,
+        chunk_overlap_characters=2,
+        system_prompt=None,
+        prompt_template="extract",
+        max_rounds=1,
+        max_edits_per_round=1,
+        normalize_nested_spans=False,
+        client={"provider": "openai", "model": "gpt-4o"},
+    )
+    segmentation = SimpleNamespace(span_markup=markup_config, llm=SimpleNamespace())
+    config = SimpleNamespace(segmentation=segmentation)
+    segments = markov._span_markup_segments(
+        item_id="item-1", text="abcdefghij", config=config  # len>chunk size to iterate
+    )
+    assert len(segments) >= 2
+
+
+def test_markov_span_markup_requires_label_when_prepending():
+    spans = [SimpleNamespace(text="x", attributes={})]
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(markov, "apply_text_annotate", lambda request: SimpleNamespace(spans=spans))
+    markup_config = SimpleNamespace(
+        label_attribute=None,
+        prepend_label=True,
+        chunk_characters=None,
+        chunk_overlap_characters=0,
+        system_prompt=None,
+        prompt_template="extract",
+        max_rounds=1,
+        max_edits_per_round=1,
+        normalize_nested_spans=False,
+        client={"provider": "openai", "model": "gpt-4o"},
+    )
+    llm_config = SimpleNamespace(prompt_template="{text}", client={"provider": "openai"}, system_prompt="{text}")
+    segmentation = SimpleNamespace(span_markup=markup_config, llm=llm_config)
+    config = SimpleNamespace(segmentation=segmentation)
+    with pytest.raises(ValueError):
+        markov._span_markup_segments(item_id="i", text="body", config=config)
+    monkeypatch.undo()
+
+
+def test_markov_llm_observation_retries_then_succeeds(monkeypatch):
+    calls = {"count": 0}
+
+    def fake_generate_completion(client, system_prompt, user_prompt):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise ValueError("Rate limit temporary")
+        return json.dumps({"label": "x", "label_confidence": 0.5, "summary": "ok"})
+
+    monkeypatch.setattr(markov, "generate_completion", fake_generate_completion)
+    monkeypatch.setattr(markov, "_parse_json_object", lambda text, error_label: json.loads(text))
+    config = SimpleNamespace(
+        llm_observations=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            prompt_template="{segment}",
+            system_prompt=None,
+            cache=SimpleNamespace(enabled=False),
+            max_workers=1,
+        ),
+        embeddings=SimpleNamespace(enabled=False),
+    )
+    segments = [SimpleNamespace(item_id="i", segment_index=1, text="hello")]
+    observations = markov._build_observations(
+        segments=segments,
+        config=config,
+        cache_context=None,
+    )
+    assert observations[0].llm_label == "x"
+    assert calls["count"] == 2
+
+
+def test_markov_llm_observation_uses_cache(monkeypatch, tmp_path):
+    llm_config = SimpleNamespace(
+        enabled=True,
+        client=SimpleNamespace(response_format=None),
+        prompt_template="{segment}",
+        system_prompt=None,
+        cache=SimpleNamespace(
+            enabled=True,
+            cache_dir=tmp_path,
+            cache_name="cache",
+        ),
+        max_workers=1,
+    )
+    cache_dir = tmp_path / "items"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cached_payload = {
+        "item_id": "i",
+        "segments": [{"segment_index": 1, "segment_text_hash": markov.hash_text("hello"), "llm_label": "cached", "llm_label_confidence": 0.9, "llm_summary": "sum"}],
+    }
+    (cache_dir / "i.json").write_text(json.dumps(cached_payload), encoding="utf-8")
+    segments = [SimpleNamespace(item_id="i", segment_index=1, text="hello")]
+    config = SimpleNamespace(llm_observations=llm_config, embeddings=SimpleNamespace(enabled=False))
+    cache_context = markov._LlmObservationCacheContext(cache_id="id", cache_dir=tmp_path, enabled=True)
+    observations = markov._build_observations(
+        segments=segments,
+        config=config,
+        cache_context=cache_context,
+    )
+    assert observations[0].llm_label == "cached"
+
+
+def test_markov_observation_handles_invalid_json(monkeypatch):
+    monkeypatch.setattr(
+        markov,
+        "generate_completion",
+        lambda **kwargs: "not-json",
+    )
+    monkeypatch.setattr(
+        markov,
+        "_parse_json_object",
+        lambda text, error_label: (_ for _ in ()).throw(ValueError("bad json")),
+    )
+    config = SimpleNamespace(
+        llm_observations=SimpleNamespace(
+            enabled=True,
+            client=SimpleNamespace(response_format=None),
+            prompt_template="{segment}",
+            system_prompt=None,
+            cache=SimpleNamespace(enabled=False),
+            max_workers=1,
+        ),
+        embeddings=SimpleNamespace(enabled=False),
+    )
+    segments = [SimpleNamespace(item_id="i", segment_index=1, text="hello")]
+    observations = markov._build_observations(segments=segments, config=config, cache_context=None)
+    assert observations[0].llm_label == "unknown"

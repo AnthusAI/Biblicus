@@ -1,0 +1,191 @@
+@import "@radix-ui/colors/gray.css";
+@import "@radix-ui/colors/gray-dark.css";
+@import "@radix-ui/colors/blue.css";
+@import "@radix-ui/colors/blue-dark.css";
+@import "@radix-ui/colors/sand.css";
+@import "@radix-ui/colors/sand-dark.css";
+@import "springstack/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Radix Gray scale aliases (step 1 page bg, 2 card/muted, 3–5 component states, 6–8 borders, 11–12 text) */
+    --background: var(--gray-1);
+    --foreground: var(--gray-12);
+    --card: var(--gray-2);
+    --card-foreground: var(--gray-12);
+    --muted: var(--gray-2);
+    --muted-foreground: var(--gray-11);
+    --accent: var(--gray-2);
+    --accent-foreground: var(--gray-12);
+    --popover: var(--gray-2);
+    --popover-foreground: var(--gray-12);
+    --border: var(--gray-6);
+    --input: var(--gray-6);
+    --ring: var(--gray-8);
+    --hover: var(--gray-3);
+    --selected: var(--gray-4);
+    --selected-foreground: var(--gray-12);
+
+    /* Custom HSL tokens (accent/status; Tailwind uses hsl(var(--x))) */
+    --primary: 300 20% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --secondary-muted: 220 30% 90%;
+    --primary-text: 300 50% 30%;
+    --status-true: 140 20% 40%;
+    --status-true-foreground: 0 0% 100%;
+    --status-false: 350 20% 40%;
+    --status-false-foreground: 0 0% 100%;
+    --status-danger: 0 84.2% 60.2%;
+    --status-danger-foreground: 210 40% 98%;
+    --status-warning: 38 92% 50%;
+    --status-warning-foreground: 0 0% 0%;
+
+    --radius: 0.25rem;
+  }
+
+  .topbar-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .dark {
+    --secondary-muted: 220 30% 25%;
+    --primary-text: 300 50% 90%;
+    --primary: 300 30% 60%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 30% 60%;
+    --secondary-foreground: 0 0% 0%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --status-true: 140 30% 60%;
+    --status-true-foreground: 0 0% 0%;
+    --status-false: 350 30% 60%;
+    --status-false-foreground: 0 0% 0%;
+    --status-danger: 0 62.8% 60%;
+    --status-danger-foreground: 0 0% 0%;
+    --status-warning: 38 92% 50%;
+    --status-warning-foreground: 0 0% 0%;
+  }
+
+  /* COOL THEME: Radix Blue for neutrals */
+  .theme-cool {
+    --background: var(--blue-1);
+    --foreground: var(--blue-12);
+    --card: var(--blue-2);
+    --card-foreground: var(--blue-12);
+    --muted: var(--blue-2);
+    --muted-foreground: var(--blue-11);
+    --accent: var(--blue-2);
+    --accent-foreground: var(--blue-12);
+    --popover: var(--blue-2);
+    --popover-foreground: var(--blue-12);
+    --border: var(--blue-6);
+    --input: var(--blue-6);
+    --ring: var(--blue-8);
+    --hover: var(--blue-3);
+    --selected: var(--blue-4);
+    --selected-foreground: var(--blue-12);
+
+    --primary: 300 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 90% 56%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-muted: 220 60% 90%;
+    --primary-text: 300 60% 30%;
+    --status-true: 150 60% 45%;
+    --status-false: 340 70% 50%;
+  }
+  .theme-cool.dark {
+    --primary: 300 70% 60%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 90% 65%;
+    --secondary-foreground: 0 0% 0%;
+    --secondary-muted: 220 50% 25%;
+    --primary-text: 300 80% 90%;
+    --status-true: 150 60% 55%;
+    --status-false: 340 70% 60%;
+  }
+
+  /* WARM THEME: Radix Sand for neutrals */
+  .theme-warm {
+    --background: var(--sand-1);
+    --foreground: var(--sand-12);
+    --card: var(--sand-2);
+    --card-foreground: var(--sand-12);
+    --muted: var(--sand-2);
+    --muted-foreground: var(--sand-11);
+    --accent: var(--sand-2);
+    --accent-foreground: var(--sand-12);
+    --popover: var(--sand-2);
+    --popover-foreground: var(--sand-12);
+    --border: var(--sand-6);
+    --input: var(--sand-6);
+    --ring: var(--sand-8);
+    --hover: var(--sand-3);
+    --selected: var(--sand-4);
+    --selected-foreground: var(--sand-12);
+
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+    --secondary-muted: 40 60% 90%;
+    --primary-text: 24 70% 30%;
+    --status-true: 85 60% 40%;
+    --status-false: 10 80% 55%;
+  }
+  .theme-warm.dark {
+    --primary: 24 95% 63%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 40 100% 60%;
+    --secondary-foreground: 0 0% 0%;
+    --secondary-muted: 40 50% 25%;
+    --primary-text: 24 80% 90%;
+    --status-true: 85 60% 50%;
+    --status-false: 10 80% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    /* Ensure smooth transitions for theme changes */
+    transition: background-color var(--theme-transition-duration, 300ms),
+      border-color var(--theme-transition-duration, 300ms),
+      color var(--theme-transition-duration, 300ms),
+      fill var(--theme-transition-duration, 300ms),
+      stroke var(--theme-transition-duration, 300ms);
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    overflow-y: scroll;
+  }
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+}

@@ -23,6 +23,17 @@ It can be used alongside LangGraph, Tactus, Pydantic AI, any agent framework, or
 
 See [retrieval augmented generation overview] for a short introduction to the idea.
 
+## Web Dashboard
+
+The [Dashboard app](apps/dashboard/) provides a real-time web interface for viewing and managing your corpus data, powered by AWS Amplify Gen 2. Features include:
+
+- Browse corpus catalog items with filtering by tags and media type
+- View extraction snapshots and track progress in real-time
+- Automatic catalog sync after extraction runs
+- GSAP-animated, responsive React interface
+
+See [apps/dashboard/README.md](apps/dashboard/README.md) for setup and deployment instructions.
+
 ## Analysis highlights
 
 - `biblicus analyze markov` learns a directed, weighted state transition graph over segmented text.
@@ -30,6 +41,8 @@ See [retrieval augmented generation overview] for a short introduction to the id
 - Text extract splits long texts with an LLM by inserting XML tags in-place for structured spans.
 - See `docs/markov-analysis.md` for Markov analysis details and runnable demos.
 - See `docs/text-extract.md` for the text extract utility and examples.
+- Graph extraction supports deterministic NLP baselines (NER entities, dependency relations) for graph-aware retrieval experiments.
+- Graph extractor demos are runnable from the repository (single extractor or all extractors).
 
 ## Start with a knowledge base
 
@@ -72,6 +85,17 @@ Think in three stages.
 - Ingest puts raw items into a corpus. This is file first and human inspectable.
 - Extract turns items into usable text. This is where you would do text extraction from Portable Document Format files, optical character recognition for images, or speech to text for audio. If an item is already text, extraction can simply read it. Extraction outputs are derived artifacts, not edits to the raw files.
 - Retrieve searches extracted text and returns evidence. Evidence is structured so you can turn it into context for your model call in whatever way your project prefers.
+
+## Workflow planning (load → extract → index)
+
+Biblicus exposes dependency planning in `biblicus.workflow`. It builds deterministic task plans that describe which steps must run before a query or index operation. You can use it to check whether a corpus needs loading, extraction, or indexing and execute those steps in order.
+
+```python
+from biblicus.workflow import build_default_handler_registry, build_plan_for_index
+
+plan = build_plan_for_index(corpus, retriever_id="tf-vector")
+results = plan.execute(mode="auto", handler_registry=build_default_handler_registry(corpus))
+```
 
 If you learn a few project words, the rest of the system becomes predictable.
 
@@ -149,6 +173,7 @@ Some extractors are optional so the base install stays small.
 - Document understanding with Docling VLM and MLX acceleration: `python -m pip install "biblicus[docling-mlx]"`
 - Speech to text transcription with OpenAI: `python -m pip install "biblicus[openai]"` (requires an OpenAI API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Speech to text transcription with Deepgram: `python -m pip install "biblicus[deepgram]"` (requires a Deepgram API key in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
+- Speech to text transcription with Aldea: `python -m pip install "biblicus[aldea]"` (requires `ALDEA_API_KEY` or `aldea.api_key` in `~/.biblicus/config.yml` or `./.biblicus/config.yml`)
 - Broad document parsing fallback: `python -m pip install "biblicus[unstructured]"`
 - MarkItDown document conversion (requires Python 3.10 or higher): `python -m pip install "biblicus[markitdown]"`
 - Topic modeling analysis with BERTopic: `python -m pip install "biblicus[topic-modeling]"`
@@ -163,7 +188,7 @@ biblicus init corpora/example
 biblicus ingest --corpus corpora/example notes/example.txt
 echo "A short note" | biblicus ingest --corpus corpora/example --stdin --title "First note"
 biblicus list --corpus corpora/example
-biblicus extract build --corpus corpora/example --step pass-through-text --step metadata-text
+biblicus extract build --corpus corpora/example --stage pass-through-text --stage metadata-text
 biblicus extract list --corpus corpora/example
 biblicus build --corpus corpora/example --backend scan
 biblicus query --corpus corpora/example --query "note"
@@ -210,7 +235,7 @@ biblicus crawl \
   --tags "tutorials,blog"
 ```
 
-The `--allowed-prefix` parameter restricts the crawler to only follow links that start with the specified URL prefix, preventing it from crawling outside the intended scope. The crawler respects `.biblicusignore` rules and stores items under `raw/imports/crawl/` in your corpus.
+The `--allowed-prefix` parameter restricts the crawler to only follow links that start with the specified URL prefix, preventing it from crawling outside the intended scope. The crawler respects `.biblicusignore` rules and stores items under `imports/crawl/` in your corpus.
 
 ## End-to-end example: lower-level control
 
@@ -434,6 +459,45 @@ From Python, the same flow is available through the Corpus class and backend int
 - Query a run with `backend.query`.
 - Evaluate with `evaluate_run`.
 
+## Benchmarking
+
+Biblicus is designed as a **retrieval augmented generation platform** where you can experiment with different extraction pipelines and benchmark them against each other.
+
+### Quick Start
+
+```bash
+# Download benchmark dataset
+python scripts/download_funsd_samples.py
+
+# Run benchmark on all pipelines
+python scripts/benchmark_all_pipelines.py
+
+# View results
+cat results/final_benchmark.json | jq '.pipelines[] | {name, f1: .metrics.set_based.avg_f1}'
+```
+
+### Available Benchmarks
+
+- **Forms (FUNSD)**: 199 scanned form documents with ground truth
+- **Receipts (SROIE)**: 626 receipt images for entity extraction
+- **Academic Papers (Scanned ArXiv)**: Multi-column layout understanding *(dataset pending)*
+
+### Evaluation Metrics
+
+- **Set-based**: Precision, Recall, F1 Score (position-agnostic accuracy)
+- **Order-aware**: Word Error Rate, LCS Ratio (reading order quality)
+- **N-gram**: Bigram and trigram overlap (local ordering)
+
+### Pipeline Comparison
+
+| Pipeline | F1 Score | Recall | Use Case |
+|----------|----------|--------|----------|
+| PaddleOCR | 0.787 | 0.782 | Best overall accuracy |
+| Docling-Smol | 0.728 | 0.675 | Tables & formulas |
+| Heron + Tesseract | 0.519 | 0.810 | Maximum extraction |
+
+See the [Benchmarking Overview][benchmarking] for complete documentation.
+
 ## Learn more
 
 Full documentation is published on GitHub Pages: https://anthusai.github.io/Biblicus/
@@ -447,6 +511,7 @@ The documents below follow the pipeline from raw items to model context:
 - [Backends][backends]
 - [Context packs][context-packs]
 - [Testing and evaluation][testing]
+- [Benchmarking][benchmarking]
 
 Reference:
 
@@ -461,29 +526,27 @@ Design and implementation map:
 
 ## Metadata and catalog
 
-Raw items are stored as files in the corpus raw directory. Metadata can live in a Markdown front matter block or a sidecar file with the suffix `.biblicus.yml`. The catalog lives in `.biblicus/catalog.json` and can be rebuilt at any time with `biblicus reindex`.
+Raw items are stored as files directly under the corpus root. Metadata can live in a Markdown front matter block or a sidecar file with the suffix `.biblicus.yml`. The catalog lives in `metadata/catalog.json` and can be rebuilt at any time with `biblicus reindex`.
 
 ## Corpus layout
 
 ```
 corpus/
-  raw/
-    item.bin
-    item.bin.biblicus.yml
-  .biblicus/
+  metadata/
     config.json
     catalog.json
-    runs/
-      extraction/
-        pipeline/
-          <snapshot id>/
-            manifest.json
-            text/
-              <item id>.txt
-      retrieval/
-        <backend id>/
-          <snapshot id>/
-            manifest.json
+  extracted/
+    pipeline/
+      <snapshot id>/
+        manifest.json
+        text/
+          <item id>.txt
+  retrieval/
+    <backend id>/
+      <snapshot id>/
+        manifest.json
+  item.bin
+  item.bin.biblicus.yml
 ```
 
 ## Retrieval backends
@@ -529,6 +592,7 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 
 - [`stt-openai`](docs/extractors/speech-to-text/openai.md) performs speech to text on audio using OpenAI (optional).
 - [`stt-deepgram`](docs/extractors/speech-to-text/deepgram.md) performs speech to text on audio using Deepgram (optional).
+- [`stt-aldea`](docs/extractors/speech-to-text/aldea.md) performs speech to text on audio using Aldea (optional).
 
 ### Pipeline utilities
 
@@ -577,7 +641,7 @@ If `--extraction-run` is omitted, Biblicus uses the most recent extraction snaps
 reproducibility. The analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/topic-modeling/<snapshot_id>/output.json
+analysis/topic-modeling/<snapshot_id>/output.json
 ```
 
 Minimal configuration example:
@@ -686,6 +750,7 @@ License terms are in `LICENSE`.
 [context-packs]: docs/context-pack.md
 [demos]: docs/demos.md
 [testing]: docs/testing.md
+[benchmarking]: docs/guides/benchmarking-overview.md
 
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json

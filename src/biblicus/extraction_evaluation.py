@@ -269,7 +269,7 @@ def write_extraction_evaluation_result(
     :return: Output path.
     :rtype: Path
     """
-    output_dir = corpus.snapshots_dir / "evaluation" / "extraction" / snapshot_id
+    output_dir = corpus.analysis_dir / "evaluation" / "extraction" / snapshot_id
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "output.json"
     output_path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")

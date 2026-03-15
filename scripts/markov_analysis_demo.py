@@ -145,7 +145,7 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
         raise SystemExit(message)
 
     corpus = Corpus.open(corpus_path)
-    extraction_config = {"steps": [{"extractor_id": "pass-through-text", "config": {}}]}
+    extraction_config = {"stages": [{"extractor_id": "pass-through-text", "config": {}}]}
     extraction_manifest = build_extraction_snapshot(
         corpus,
         extractor_id="pipeline",

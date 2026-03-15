@@ -15,7 +15,7 @@ Feature: Markov analysis categorical models
       """
     And a fake hmmlearn library is available with predicted states "0,1"
     When I ingest the text "Alpha. Beta." with title "Doc" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "markov.yml" exists with content:

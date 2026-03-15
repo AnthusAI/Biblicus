@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import os
 import sys
 import tempfile
@@ -8,6 +9,18 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
+
+_BASELINE_HOME = os.environ.get("HOME")
+_EPHEMERAL_ENV_KEYS = [
+    "OPENAI_API_KEY",
+    "HUGGINGFACE_API_KEY",
+    "DEEPGRAM_API_KEY",
+    "ALDEA_API_KEY",
+    "AZURE_SPEECH_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+]
 
 
 def _repo_root() -> Path:
@@ -34,6 +47,16 @@ def before_scenario(context, scenario) -> None:
     import biblicus.__main__ as _biblicus_main
 
     _ = _biblicus_main
+    # Ensure in-repo sources are imported (not any site-packages install)
+    repo_src = str(_repo_root() / "src")
+    if repo_src not in sys.path:
+        sys.path.insert(0, repo_src)
+    try:
+        from biblicus.extractors.paddleocr_vl_text import PaddleOcrVlExtractor
+
+        PaddleOcrVlExtractor._model_cache = {}
+    except Exception:
+        pass
 
     # Clear fake module behaviors at the START of each scenario
     # Delete and recreate to ensure fresh state
@@ -53,10 +76,84 @@ def before_scenario(context, scenario) -> None:
         del context.fake_bertopic_behavior
     if hasattr(context, "fake_hmmlearn_behavior"):
         del context.fake_hmmlearn_behavior
+    if hasattr(context, "fake_aldea_transcriptions"):
+        del context.fake_aldea_transcriptions
+    if hasattr(context, "fake_aws_transcriptions"):
+        del context.fake_aws_transcriptions
+    if hasattr(context, "fake_azure_recognitions"):
+        del context.fake_azure_recognitions
+    if hasattr(context, "fake_google_recognitions"):
+        del context.fake_google_recognitions
+    if hasattr(context, "fake_whisper_behaviors"):
+        del context.fake_whisper_behaviors
+    if hasattr(context, "fake_audio_segment_behaviors"):
+        del context.fake_audio_segment_behaviors
+    for attr in [
+        "_fake_paddleocr_layout_empty",
+        "_fake_paddleocr_layout_missing_coordinates",
+        "_fake_paddleocr_layout_non_dict",
+        "_fake_paddleocr_layout_no_image",
+        "_fake_heron_empty_results",
+        "_fake_heron_image_none",
+    ]:
+        setattr(context, attr, False)
+    for attr in [
+        "_fake_spacy_relations_installed",
+        "_fake_spacy_short_installed",
+        "_fake_spacy_short_relations_installed",
+        "_fake_spacy_short_relations_no_lemma",
+    ]:
+        setattr(context, attr, False)
+    context._fake_docker_installed = False
+    context.fake_docker_state = None
+    context.fake_docker_log = None
+    spacy_original = getattr(context, "_fake_spacy_relations_original_module", None)
+    if spacy_original is None:
+        spacy_original = getattr(context, "_fake_spacy_short_original_module", None)
+    if spacy_original is None:
+        spacy_original = getattr(context, "_fake_spacy_short_relations_original_module", None)
+    if spacy_original is not None:
+        sys.modules["spacy"] = spacy_original
+    else:
+        sys.modules.pop("spacy", None)
+    context._fake_spacy_relations_original_module = None
+    context._fake_spacy_short_original_module = None
+    context._fake_spacy_short_relations_original_module = None
+    context._fake_tesseract_installed = False
+    context._fake_tesseract_original_modules = {}
+    for name in [
+        "azure",
+        "azure.cognitiveservices",
+        "azure.cognitiveservices.speech",
+    ]:
+        sys.modules.pop(name, None)
+    for name in [
+        "azure.storage",
+        "azure.storage.blob",
+        "boto3",
+    ]:
+        sys.modules.pop(name, None)
+    context._fake_boto3_remote_installed = False
+    context._fake_boto3_remote_original = {}
+    context._fake_azure_blob_installed = False
+    context._fake_azure_blob_original = {}
 
+    for key in _EPHEMERAL_ENV_KEYS:
+        os.environ.pop(key, None)
+
+    # Isolate user configuration per scenario to avoid leaking real API keys
     context._tmp = tempfile.TemporaryDirectory(prefix="biblicus-bdd-")
     context.workdir = Path(context._tmp.name)
+    context._prior_home = os.environ.get("HOME")
+    os.environ["HOME"] = str(context.workdir)
     context.repo_root = _repo_root()
+    repo_config = context.repo_root / ".biblicus" / "config.yml"
+    context._repo_config_backup = None
+    context._repo_config_original = repo_config
+    if repo_config.is_file():
+        backup_path = repo_config.with_name("config.yml.bdd-backup")
+        repo_config.rename(backup_path)
+        context._repo_config_backup = backup_path
     context.env = dict(os.environ)
     context.extra_env = {}
     context.last_result = None
@@ -109,6 +206,30 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_unstructured_unavailable_installed = False
         context._fake_unstructured_unavailable_original_modules = {}
+    try:
+        import biblicus.user_config as _user_config
+
+        original_loader = getattr(_user_config, "_original_load_user_config", None)
+        if original_loader is not None:
+            _user_config.load_user_config = original_loader
+            _user_config._original_load_user_config = None
+    except Exception:
+        pass
+    backup_path = getattr(context, "_repo_config_backup", None)
+    original_path = getattr(context, "_repo_config_original", None)
+    if backup_path is not None and original_path is not None:
+        if not original_path.exists() and backup_path.exists():
+            backup_path.rename(original_path)
+    if getattr(context, "_fake_boto3_remote_blocker", None) in sys.meta_path:
+        sys.meta_path.remove(context._fake_boto3_remote_blocker)
+    if getattr(context, "_fake_azure_blob_blocker", None) in sys.meta_path:
+        sys.meta_path.remove(context._fake_azure_blob_blocker)
+    if getattr(context, "_fake_boto3_remote_original", None):
+        for name, module in context._fake_boto3_remote_original.items():
+            sys.modules[name] = module
+    if getattr(context, "_fake_azure_blob_original", None):
+        for name, module in context._fake_azure_blob_original.items():
+            sys.modules[name] = module
     if getattr(context, "_fake_openai_installed", False):
         original_modules = getattr(context, "_fake_openai_original_modules", {})
         for name in [
@@ -204,6 +325,35 @@ def after_scenario(context, scenario) -> None:
             sys.modules.pop("bertopic", None)
         context._fake_bertopic_unavailable_installed = False
         context._fake_bertopic_unavailable_original_modules = {}
+    if getattr(context, "_fake_neo4j_installed", False):
+        original_module = getattr(context, "_fake_neo4j_original_module", None)
+        if original_module is None:
+            sys.modules.pop("neo4j", None)
+        else:
+            sys.modules["neo4j"] = original_module
+        context._fake_neo4j_installed = False
+        context._fake_neo4j_original_module = None
+    if getattr(context, "_fake_spacy_installed", False):
+        original_module = getattr(context, "_fake_spacy_original_module", None)
+        if original_module is None:
+            sys.modules.pop("spacy", None)
+        else:
+            sys.modules["spacy"] = original_module
+        context._fake_spacy_installed = False
+        context._fake_spacy_original_module = None
+    if getattr(context, "_fake_tesseract_installed", False):
+        original_modules = getattr(context, "_fake_tesseract_original_modules", {})
+        for name in ["pytesseract", "PIL", "PIL.Image"]:
+            if name in original_modules:
+                module = original_modules[name]
+                if module is None:
+                    sys.modules.pop(name, None)
+                else:
+                    sys.modules[name] = module
+            else:
+                sys.modules.pop(name, None)
+        context._fake_tesseract_installed = False
+        context._fake_tesseract_original_modules = {}
     if getattr(context, "_fake_sklearn_installed", False):
         original_modules = getattr(context, "_fake_sklearn_original_modules", {})
         for name in [
@@ -255,6 +405,21 @@ def after_scenario(context, scenario) -> None:
     # Clear fake rapidocr behaviors
     if hasattr(context, "fake_rapidocr_behaviors"):
         context.fake_rapidocr_behaviors.clear()
+    if getattr(context, "_aldea_post_patcher", None) is not None:
+        try:
+            context._aldea_post_patcher.stop()
+        except Exception:
+            pass
+        context._aldea_post_patcher = None
+    if getattr(context, "_fake_aldea_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_aldea_unavailable_original_modules", {})
+        for name in ["httpx"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_aldea_unavailable_installed = False
+        context._fake_aldea_unavailable_original_modules = {}
     if getattr(context, "_fake_markitdown_installed", False):
         original_modules = getattr(context, "_fake_markitdown_original_modules", {})
         for name in [
@@ -277,6 +442,117 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_markitdown_unavailable_installed = False
         context._fake_markitdown_unavailable_original_modules = {}
+    if getattr(context, "_fake_boto3_installed", False):
+        original_modules = getattr(context, "_fake_boto3_original_modules", {})
+        for name in ["boto3", "botocore"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_boto3_installed = False
+        context._fake_boto3_original_modules = {}
+    if getattr(context, "_fake_boto3_unavailable_installed", False):
+        # Remove import blocker
+        blocker = getattr(context, "_fake_boto3_import_blocker", None)
+        if blocker is not None and blocker in sys.meta_path:
+            sys.meta_path.remove(blocker)
+        original_modules = getattr(context, "_fake_boto3_unavailable_original_modules", {})
+        for name in ["boto3", "botocore"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_boto3_unavailable_installed = False
+        context._fake_boto3_unavailable_original_modules = {}
+        context._fake_boto3_import_blocker = None
+    if getattr(context, "_fake_azure_speech_installed", False):
+        # Reset module state before cleanup
+        speechsdk_module = sys.modules.get("azure.cognitiveservices.speech")
+        if speechsdk_module is not None:
+            speechsdk_module.last_api_key = None
+            speechsdk_module.last_region = None
+            speechsdk_module.last_endpoint = None
+            speechsdk_module.last_audio_filename = None
+            speechsdk_module.last_speech_config = None
+            speechsdk_module.last_audio_config = None
+            speechsdk_module.last_profanity_option = None
+            speechsdk_module.last_dictation_enabled = False
+        original_modules = getattr(context, "_fake_azure_speech_original_modules", {})
+        for name in ["azure", "azure.cognitiveservices", "azure.cognitiveservices.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_azure_speech_installed = False
+        context._fake_azure_speech_original_modules = {}
+    if getattr(context, "_fake_azure_speech_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_azure_speech_unavailable_original_modules", {})
+        for name in ["azure", "azure.cognitiveservices", "azure.cognitiveservices.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_azure_speech_unavailable_installed = False
+        context._fake_azure_speech_unavailable_original_modules = {}
+    if getattr(context, "_fake_google_speech_installed", False):
+        original_modules = getattr(context, "_fake_google_speech_original_modules", {})
+        for name in ["google", "google.cloud", "google.cloud.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_google_speech_installed = False
+        context._fake_google_speech_original_modules = {}
+    if getattr(context, "_fake_google_speech_unavailable_installed", False):
+        # Remove import blocker
+        blocker = getattr(context, "_fake_google_speech_import_blocker", None)
+        if blocker is not None and blocker in sys.meta_path:
+            sys.meta_path.remove(blocker)
+        original_modules = getattr(context, "_fake_google_speech_unavailable_original_modules", {})
+        for name in ["google", "google.cloud", "google.cloud.speech"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_google_speech_unavailable_installed = False
+        context._fake_google_speech_unavailable_original_modules = {}
+        context._fake_google_speech_import_blocker = None
+    if getattr(context, "_fake_faster_whisper_installed", False):
+        original_modules = getattr(context, "_fake_faster_whisper_original_modules", {})
+        for name in ["faster_whisper"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_faster_whisper_installed = False
+        context._fake_faster_whisper_original_modules = {}
+    if getattr(context, "_fake_faster_whisper_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_faster_whisper_unavailable_original_modules", {})
+        for name in ["faster_whisper"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_faster_whisper_unavailable_installed = False
+        context._fake_faster_whisper_unavailable_original_modules = {}
+    if getattr(context, "_fake_pydub_installed", False):
+        original_modules = getattr(context, "_fake_pydub_original_modules", {})
+        for name in ["pydub"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_pydub_installed = False
+        context._fake_pydub_original_modules = {}
+    if getattr(context, "_fake_pydub_unavailable_installed", False):
+        original_modules = getattr(context, "_fake_pydub_unavailable_original_modules", {})
+        for name in ["pydub"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_pydub_unavailable_installed = False
+        context._fake_pydub_unavailable_original_modules = {}
     # Clear fake paddleocr behaviors FIRST (before removing modules)
     if hasattr(context, "fake_paddleocr_vl_behaviors"):
         context.fake_paddleocr_vl_behaviors.clear()
@@ -334,6 +610,8 @@ def after_scenario(context, scenario) -> None:
         for name in [
             "docling.pipeline_options",
             "docling.document_converter",
+            "docling.datamodel.pipeline_options",
+            "docling.datamodel",
             "docling",
         ]:
             if name in original_modules:
@@ -347,6 +625,8 @@ def after_scenario(context, scenario) -> None:
         for name in [
             "docling.pipeline_options",
             "docling.document_converter",
+            "docling.datamodel.pipeline_options",
+            "docling.datamodel",
             "docling",
         ]:
             if name in original_modules:
@@ -355,6 +635,121 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_docling_unavailable_installed = False
         context._fake_docling_unavailable_original_modules = {}
+    if getattr(context, "_fake_heron_installed", False):
+        original_modules = getattr(context, "_fake_heron_original_modules", {})
+        for name in ["transformers", "torch", "PIL", "PIL.Image"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_heron_installed = False
+        context._fake_heron_original_modules = {}
+    if getattr(context, "_fake_heron_import_blocked", False):
+        original_import = getattr(context, "_fake_heron_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        original_transformers = getattr(context, "_fake_heron_original_transformers", None)
+        if original_transformers is not None:
+            sys.modules["transformers"] = original_transformers
+        original_torch = getattr(context, "_fake_heron_original_torch", None)
+        if original_torch is not None:
+            sys.modules["torch"] = original_torch
+        context._fake_heron_import_blocked = False
+        context._fake_heron_original_import = None
+        context._fake_heron_original_transformers = None
+        context._fake_heron_original_torch = None
+    if getattr(context, "_fake_paddleocr_layout_installed", False):
+        original_modules = getattr(context, "_fake_paddleocr_layout_original_modules", {})
+        for name in ["paddleocr", "cv2"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
+        context._fake_paddleocr_layout_installed = False
+        context._fake_paddleocr_layout_original_modules = {}
+    if getattr(context, "_fake_paddleocr_layout_import_blocked", False):
+        original_import = getattr(context, "_fake_paddleocr_layout_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        original_module = getattr(context, "_fake_paddleocr_layout_original_module", None)
+        if original_module is not None:
+            sys.modules["paddleocr"] = original_module
+        context._fake_paddleocr_layout_import_blocked = False
+        context._fake_paddleocr_layout_original_import = None
+        context._fake_paddleocr_layout_original_module = None
+    if getattr(context, "_fake_spacy_relations_installed", False):
+        original_module = getattr(context, "_fake_spacy_relations_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_relations_installed = False
+        context._fake_spacy_relations_original_module = None
+    if getattr(context, "_fake_spacy_short_installed", False):
+        original_module = getattr(context, "_fake_spacy_short_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_short_installed = False
+        context._fake_spacy_short_original_module = None
+    if getattr(context, "_fake_spacy_short_relations_installed", False):
+        original_module = getattr(context, "_fake_spacy_short_relations_original_module", None)
+        if original_module is not None:
+            sys.modules["spacy"] = original_module
+        else:
+            sys.modules.pop("spacy", None)
+        context._fake_spacy_short_relations_installed = False
+        context._fake_spacy_short_relations_original_module = None
+    if getattr(context, "_spacy_import_blocked", False):
+        original_import = getattr(context, "_spacy_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        context._spacy_import_blocked = False
+        context._spacy_original_import = None
+    original_spacy_module = getattr(context, "_spacy_original_module", None)
+    if original_spacy_module is not None:
+        sys.modules["spacy"] = original_spacy_module
+        context._spacy_original_module = None
+    if getattr(context, "_fake_neo4j_internal_installed", False):
+        original_module = getattr(context, "_fake_neo4j_internal_original", None)
+        if original_module is not None:
+            sys.modules["neo4j"] = original_module
+        else:
+            sys.modules.pop("neo4j", None)
+        context._fake_neo4j_internal_installed = False
+        context._fake_neo4j_internal_original = None
+    if getattr(context, "_tesseract_import_blocked", False):
+        original_import = getattr(context, "_tesseract_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+        context._tesseract_import_blocked = False
+        context._tesseract_original_import = None
+    original_tesseract_module = getattr(context, "_tesseract_original_module", None)
+    if original_tesseract_module is not None:
+        sys.modules["pytesseract"] = original_tesseract_module
+        context._tesseract_original_module = None
+    if getattr(context, "_tesseract_fake_installed", False):
+        original_modules = getattr(context, "_tesseract_original_modules", {})
+        if "pytesseract" in original_modules:
+            sys.modules["pytesseract"] = original_modules["pytesseract"]
+        else:
+            sys.modules.pop("pytesseract", None)
+        context._tesseract_fake_installed = False
+        context._tesseract_original_modules = {}
+    editdistance_import_patcher = getattr(context, "_editdistance_import_patcher", None)
+    if editdistance_import_patcher is not None:
+        original_import = getattr(context, "_editdistance_original_import", None)
+        if original_import is not None:
+            builtins.__import__ = original_import
+            context._editdistance_original_import = None
+        context._editdistance_import_patcher = None
+    original_editdistance = getattr(context, "_editdistance_original_module", None)
+    if original_editdistance is not None:
+        sys.modules["editdistance"] = original_editdistance
+        context._editdistance_original_module = None
+    elif "editdistance" in sys.modules and getattr(context, "_editdistance_original_module", None) is None:
+        sys.modules.pop("editdistance", None)
     # Clear fake docling behaviors
     if hasattr(context, "fake_docling_behaviors"):
         context.fake_docling_behaviors.clear()
@@ -362,8 +757,16 @@ def after_scenario(context, scenario) -> None:
     if original_sys_version_info is not None:
         sys.version_info = original_sys_version_info
         context._original_sys_version_info = None
+    # Restore HOME after scenario isolation
+    prior_home = getattr(context, "_prior_home", None)
+    if prior_home is not None:
+        os.environ["HOME"] = prior_home
+    else:
+        os.environ.pop("HOME", None)
     if hasattr(context, "_tmp"):
         context._tmp.cleanup()
+    for name in ["sentence_transformers", "datasets"]:
+        sys.modules.pop(name, None)
 
 
 @dataclass

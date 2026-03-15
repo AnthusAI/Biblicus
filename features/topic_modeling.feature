@@ -13,7 +13,7 @@ Feature: Topic modeling analysis
     And I ingest the text "Gamma note" with title "Gamma" and tags "t" into corpus "corpus"
     And I ingest the file "blob.bin" into corpus "corpus"
     And I ingest the file "empty.txt" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -40,13 +40,88 @@ Feature: Topic modeling analysis
       | alpha |
       | gamma |
 
+  Scenario: Topic analysis removes entities before BERTopic
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    And a fake spaCy library is available with entities:
+      | text  | label  |
+      | Alice | PERSON |
+    When I ingest the text "Alice requested the address." with title "Doc" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      entity_removal:
+        enabled: true
+        provider: spacy
+        model: en_core_web_sm
+        entity_types: [PERSON]
+        replace_with: ""
+        collapse_whitespace: true
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the BERTopic input documents do not include "Alice"
+
+  Scenario: Topic analysis reuses cached entity removal when spaCy is unavailable
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    And a fake spaCy library is available with entities:
+      | text  | label  |
+      | Alice | PERSON |
+    When I ingest the text "Alice requested the address." with title "Doc" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      entity_removal:
+        enabled: true
+        provider: spacy
+        model: en_core_web_sm
+        entity_types: [PERSON]
+        replace_with: ""
+        collapse_whitespace: true
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    And the spaCy dependency is unavailable
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the command succeeds
+    And the analysis manifest includes artifact path "entity_removal.jsonl"
+
   Scenario: Topic analysis reports vectorizer ngram range
     Given I initialized a corpus at "corpus"
     And a fake BERTopic library is available with topic assignments "0" and keywords:
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -74,7 +149,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -101,7 +176,7 @@ Feature: Topic modeling analysis
     Given I initialized a corpus at "corpus"
     And a fake BERTopic library without a fake marker is available
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -128,7 +203,7 @@ Feature: Topic modeling analysis
     And a fake BERTopic library without a fake marker is available
     And the scikit-learn dependency is unavailable
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -157,7 +232,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -186,7 +261,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -217,7 +292,7 @@ Feature: Topic modeling analysis
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
     And I ingest the text "Beta note" with title "Beta" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -244,7 +319,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -273,7 +348,7 @@ Feature: Topic modeling analysis
       | 0        | alpha    |
     And a binary file "blob.bin" exists
     When I ingest the file "blob.bin" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -303,7 +378,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "[\"First item\", \"Second item\"]" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -337,7 +412,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -371,7 +446,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "{}" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -405,7 +480,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "Billing questions" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "Billing note" with title "Billing" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -438,7 +513,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "Billing note" with title "Billing" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -468,11 +543,11 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "First note" with title "First" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I ingest the text "Second note" with title "Second" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -497,7 +572,7 @@ Feature: Topic modeling analysis
     Given I initialized a corpus at "corpus"
     And the BERTopic dependency is unavailable
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -524,7 +599,7 @@ Feature: Topic modeling analysis
       | 0        | alpha    |
     And a fake OpenAI library is available
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -557,7 +632,7 @@ Feature: Topic modeling analysis
       | 0        | alpha    |
     And the DSPy dependency is unavailable
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -591,7 +666,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available
     And an OpenAI API key is configured for this scenario
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -624,7 +699,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available
     And an OpenAI API key is configured for this scenario
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -656,7 +731,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available
     And an OpenAI API key is configured for this scenario
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -689,7 +764,7 @@ Feature: Topic modeling analysis
       | 0        | alpha    |
     When I ingest the text "Tiny" with title "Short" and tags "t" into corpus "corpus"
     And I ingest the text "This is a longer note" with title "Long" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -716,7 +791,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha  Note!" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -747,7 +822,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "Extracted text" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -780,7 +855,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -814,7 +889,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "not json" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -848,7 +923,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "[\"First\", \"\", 123]" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -879,7 +954,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -908,7 +983,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -936,7 +1011,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -963,7 +1038,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -996,7 +1071,7 @@ Feature: Topic modeling analysis
     And a fake OpenAI library is available that returns chat completion "\"not json\"" for any prompt
     And an OpenAI API key is configured for this scenario
     When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:
@@ -1028,7 +1103,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And I snapshot a topic analysis in corpus "corpus" using configuration "missing.yml" and the latest extraction snapshot
@@ -1041,7 +1116,7 @@ Feature: Topic modeling analysis
       | topic_id | keywords |
       | 0        | alpha    |
     When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id      | config_json |
       | pass-through-text | {}          |
     And a configuration file "topic.yml" exists with content:

@@ -1,8 +1,8 @@
 Feature: Extraction pipeline
-  Extractors are composed as an explicit pipeline where each step can see the outputs of prior steps.
+  Extractors are composed as an explicit pipeline where each stage can see the outputs of prior stages.
   The final extracted text is the last extracted output in pipeline order.
 
-  Scenario: Pipeline final output comes from the last extracted step
+  Scenario: Pipeline final output comes from the last extracted stage
     Given I initialized a corpus at "corpus"
     And a file "note.md" exists with markdown front matter:
       | key   | value |
@@ -13,7 +13,7 @@ Feature: Extraction pipeline
       body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | metadata-text      | {}          |
@@ -24,7 +24,7 @@ Feature: Extraction pipeline
       """
     And the extraction snapshot item provenance uses extractor "metadata-text"
 
-  Scenario: Selection step can choose an earlier output
+  Scenario: Selection stage can choose an earlier output
     Given I initialized a corpus at "corpus"
     And a file "note.md" exists with markdown front matter:
       | key   | value |
@@ -35,7 +35,7 @@ Feature: Extraction pipeline
       body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | metadata-text      | {}          |
@@ -43,56 +43,56 @@ Feature: Extraction pipeline
     Then the extracted text for the last ingested item equals "body"
     And the extraction snapshot item provenance uses extractor "pass-through-text"
 
-  Scenario: Pipeline rejects steps that include the pipeline extractor
+  Scenario: Pipeline rejects stages that include the pipeline extractor
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "pipeline"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with stage spec "pipeline"
     Then the command fails with exit code 2
-    And standard error includes "Pipeline steps cannot include the pipeline extractor itself"
+    And standard error includes "Pipeline stages cannot include the pipeline extractor itself"
 
-  Scenario: Pipeline requires at least one step
+  Scenario: Pipeline requires at least one stage
     Given I initialized a corpus at "corpus"
     When I snapshot "extract build" in corpus "corpus"
     Then the command fails with exit code 2
-    And standard error includes "Pipeline extraction requires at least one --step"
+    And standard error includes "Pipeline extraction requires at least one --stage"
 
-  Scenario: Step spec without extractor identifier is rejected
+  Scenario: Stage spec without extractor identifier is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec ":x=y"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with stage spec ":x=y"
     Then the command fails with exit code 2
-    And standard error includes "Step spec must start with an extractor identifier"
+    And standard error includes "Stage spec must start with an extractor identifier"
 
-  Scenario: Step spec with trailing colon is accepted
+  Scenario: Stage spec with trailing colon is accepted
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I snapshot "extract build --step pass-through-text:" in corpus "corpus"
+    And I snapshot "extract build --stage pass-through-text:" in corpus "corpus"
     Then the command succeeds
 
-  Scenario: Step spec ignores empty tokens
+  Scenario: Stage spec ignores empty tokens
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I snapshot "extract build --step metadata-text:,, " in corpus "corpus"
+    And I snapshot "extract build --stage metadata-text:,, " in corpus "corpus"
     Then the command succeeds
 
-  Scenario: Step spec can pass config values to an extractor
+  Scenario: Stage spec can pass config values to an extractor
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "Test" and tags "a" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id   | config_json               |
       | metadata-text  | {"include_title": false}  |
     Then the extracted text for the last ingested item equals "tags: a"
     And the extraction snapshot item provenance uses extractor "metadata-text"
 
-  Scenario: Step spec without key value pairs is rejected
+  Scenario: Stage spec without key value pairs is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:badtoken"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with stage spec "metadata-text:badtoken"
     Then the command fails with exit code 2
-    And standard error includes "Step config values must be key=value"
+    And standard error includes "Config values must be key=value"
 
-  Scenario: Step spec with empty key is rejected
+  Scenario: Stage spec with empty key is rejected
     Given I initialized a corpus at "corpus"
-    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with step spec "metadata-text:=x"
+    When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with stage spec "metadata-text:=x"
     Then the command fails with exit code 2
-    And standard error includes "Step config keys must be non-empty"
+    And standard error includes "Config keys must be non-empty"
 
   Scenario: Pipeline extractor cannot be executed directly
     When I call the pipeline extractor directly

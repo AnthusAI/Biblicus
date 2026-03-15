@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
+import sys
 from pathlib import Path
 
 from behave import then, when
@@ -29,7 +30,7 @@ def step_run_retrieval_evaluation_lab(context, corpus_name: str, dataset_name: s
     dataset_path = (context.workdir / dataset_name).resolve()
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "scripts/retrieval_evaluation_lab.py",
             "--corpus",
             str(corpus),

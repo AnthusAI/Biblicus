@@ -17,7 +17,7 @@ Backends implement two operations:
 Backends store artifacts and manifests under:
 
 ```
-.biblicus/runs/retrieval/<backend_id>/<snapshot_id>/
+retrieval/<backend_id>/<snapshot_id>/
   manifest.json
   <backend artifacts>
 ```
@@ -39,7 +39,7 @@ The manifest is the reproducible contract. Artifacts are backend-specific and li
 ## Design notes
 
 - Treat **runs** as immutable manifests with reproducible parameters.
-- If your backend needs artifacts, store them under `.biblicus/runs/` and record paths in `artifact_paths`.
+- If your backend needs artifacts, store them under `retrieval/` and record paths in `artifact_paths`.
 - Keep **text extraction** in explicit pipeline stages, not in backend ingestion.
   See `docs/extraction.md` for how extraction snapshots are built and referenced from backend configs.
 

@@ -1,0 +1,107 @@
+{
+  "evaluation_timestamp": "2026-02-03T17:15:15.175586",
+  "corpus_path": "/Users/ryan.porter/Projects/Biblicus/corpora/funsd_demo",
+  "pipeline_configuration": {
+    "extractor_id": "pipeline",
+    "config": {
+      "steps": [
+        {
+          "extractor_id": "ocr-tesseract",
+          "config": {
+            "min_confidence": 0.0,
+            "lang": "eng",
+            "psm": 3,
+            "oem": 3
+          }
+        }
+      ]
+    }
+  },
+  "total_documents": 5,
+  "avg_precision": 0.7169000937811383,
+  "avg_recall": 0.6016847128398288,
+  "avg_f1": 0.6427062230600429,
+  "median_precision": 0.743801652892562,
+  "median_recall": 0.7547169811320755,
+  "median_f1": 0.75,
+  "min_f1": 0.36809815950920244,
+  "max_f1": 0.8,
+  "processing_time_seconds": 0.003400087356567383,
+  "per_document_results": [
+    {
+      "document_id": "342db705-8c91-4835-86cf-c0327699eff5",
+      "image_path": "raw/342db705-8c91-4835-86cf-c0327699eff5--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpsb6sakor%2Fdataset%2Ftesting_data%2Fimages%2F82250337_0338.png",
+      "ground_truth_text": "TO: FROM: DATE: MANUFACTURER: BRAND: Oct. Dec. Jan. Nov. X B&W 82250337 COMPETITIVE PRODUCT INTRODUCTION PROGRESS REPORT Sam Zolot Kool Waterfall All Packings TYPE OF PACKINGS: D. J. Landro 2- Dec- 97 REPORTING PERIODS: TEST MARKET GEOGRAPHY: Divisions 621 and 627 wisconsin PRICE POINT: FULLS $ P/ V $ (Indicate Distributor's Cost Per Carton) SALES FORCE INVOLVEMENT: They have crew- worked distribution, and it is reported that they may crew- work it again Sales force has been busy promoting old style backs to clean up inventory. All POS is being converted to \"B\" Kool. DISTRIBUTORS ACCEPTANCE INTRO TERMS INTRO DEALS INVOLVEMENT: All accounts have the new packaging. It was not a problem obtaining new distribution. All accounts appear to have 100% distribution of new packings. CHAINS ACCEPTANCE/ MERCHANDISING: This has not been a problem. New packaging is just following on the old \"packaging\". INDEPENDENTS ACCEPTANCE/ MERCHANDISING: Very well received. The packs are peing consolidated and promoted in select retail locations at 40 off $4 00 off cartons. ADVERTISING EFFECTIVENESS OF P. O. S.: The theme \"B\" Kool has replaced all previous POS. They have effectively replaced all old POS. New door signage, hour signs, poster mats, and clocks have the new design. \"B\" Kool also appears on billboards in llinois. PAGE 1 OF 2",
+      "extracted_text": "COMPETITIVE\nPRODUCT\nINTRODUCTION\nPROGRESS\nREPORT\nTo:\nSamZolot\nMANUFACTURER:\n__BaW\nFROM:\n_D.J.\nLando\nBRAND:\nKool\nWaterat\nDATE:\n2.0897\nTYPE\nOF\nPACKINGS:\nAl\nPacking\nREPORTING\nPERIODS:\noot\nNow\nX\nee.\nJan.\n\u2018TEST\nMARKET\nGEOGRAPHY:\nivisonse21\nandar\n(Cwsiscomsim)\nPRICE\nPOINT:\nFULLS\n_PIVS\n(indicate\nDistrbutor\u2019s\nCost\nPer\nCaron)\nSALES\nFORCE\nINVOLVEME!\n\u2018They\nhave\nctew-worked\ndistribution,\nand\nitis\nreported\nthat\nthey\nmay\ncrew-workit\nagain.\nSales\nforce\nhas\nbeen\nbusy\npromoting\nold\nstyle\npacks\nto\nclean\nup\ninventory.\nAll\nPOS\nis\nbeing\nconverted\nto\n\"B*\nKool\nDISTRIBUTORS\n-\nACCEPTANCEMNTRO\nTERMS/INTRO\nDEALS/INVOLVEMENT:\n\u2018Allaccounts\nhave\nthe\nnew\npackaging.\nItwas\nnot\na\nproblem\nobtaining\nnew\ndistribution.\nAll\naccounts\nappear\nto\nhave\n100%\ndistribution\nof\nnew\npackings.\nCHAINS\n-\nACCEPTANCE/MERCHANDISING:\n\u2018This\nhas\nnot\nbeen\na\nproblem.\nNew\npackaging\nis\njust\nfollowing\nup\non\nthe\nold\n\u201cpackaging\u201d.\nINDEPENDENTS\n-\nACCEPTANCE/MERCHANDISING:\nVery\nwell\nreceived.\nThe\nold\npacks\nare\nboing\nconsolidated\nand\npromoted\nin\nselect\nretail\nications\nat\n40\u00a2\nCoff$4.00\noff\ncartons,\nADVERTISING\n-\nEFFECTIVENESS\nOF\nP.0.S.:\n\u2018Koo\nhas\nreplaced\nall\nprevious\nPOS.\nThey\nhave\neffectively\nreplaced\nall\nold\nPOS.\nNew\ndoor\nsignage,\nhour\nsigns,\nposter\nmats,\nand\nclocks\nhave\nthe\nnew\ndesign.\n\u201cB*\nKool\nalso\nappears\non\nbillboards\n\u201cThe\ntheme\n\"\nin\nWino.\nPAGE\n1\nOF\n2\nL280S228",
+      "precision": 0.743801652892562,
+      "recall": 0.7692307692307693,
+      "f1_score": 0.7563025210084033,
+      "character_accuracy": 0.875,
+      "true_positives": 90,
+      "false_positives": 31,
+      "false_negatives": 27,
+      "word_count_gt": 171,
+      "word_count_ocr": 163
+    },
+    {
+      "document_id": "a47b225b-892d-4a33-ae94-1cd7346eb39d",
+      "image_path": "raw/a47b225b-892d-4a33-ae94-1cd7346eb39d--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpsb6sakor%2Fdataset%2Ftesting_data%2Fimages%2F82252956_2958.png.biblicus.yml",
+      "ground_truth_text": "AUG 4 SEP 15 JUN 23 MAY 12 REGION: DIVISION: 7 7 TO: FROM: SUBJECT: OLOGOLD.XLS 82252956 GEOGRAPHY DISTRIBUTION 144/14 93 K. A. Sparrow SUBMISSION DATE D. J. Landro OLD GOLD MENTHOL LIGHTS & ULTRA LIGHTS 100'S PROGRESS REPORT (ONLY IF PARTIAL REGION CONTINUE WITH DIVISION (S) SCOPE) DIVISION NAME: DIVISION NAME: DIVISION NAME: Milw. South Milw. North DIVISION NAME: DIVISION NAME: DIVISION NAME: # REP # REP # REPS DIRECT ACCOUNTS AND CHAINS HEADQUARTERED WITHIN THE REGION (15 + STORES) STOCKING NO OLD GOLD MENTHOL LIGHTS OR ULTRA LIGHTS 100'S NAME OF ACCOUNT IND/LOR VOLUME NO. OF STORES NAME OF ACCOUNT IND/LOR VOLUME NO. OF TORES Page1 of 3 Pages Walgreen Drug",
+      "extracted_text": "KA,\nSparrow\nFROM:\nD.\nJ.\nLandro\nMay\n4[\naus\n4|\nJUN\n23)\nSEP\n45\n\u2018SUBJECT:\nOLD\nGOLD\nMENTHOL\nLIGHTS\n&\nULTRA\nLIGHTS\n100'S\n-\nPROGRESS\nREPORT\nREGION:\n(ONLY\nIF\nPARTIAL\nREGION\nCONTINUE\nWITH\nDIVISION(S)\nSCOPE)\nDIVISION:\nDIVISION\nNAME:\nMilw.\nSouth\n_\nDIVISION\nNAME:\n#REP\nz\nDIVISION\nNAME:\nMilw.\nNorth\n_\nDIVISION\nNAME:\n#REP\nz\nDIVISION\nNAME:\nDIVISION\nNAME:\n#REPS\nDIRECT\nACCOUNTS\nAND\nCHAINS\nHEADQUARTERED\nWITHIN\nTHE\nREGION\n(15\n+\nSTORES)\nSTOCKING\nNO\nOLD\nGOLD\nMENTHOL\nLIGHTS\nOR\nULTRA\nLIGHTS\n100'S\n[Walgreen\nDrug\nInga\n93]\notecoto\nxis\nPaget\nof\n3\nPages\n95675208",
+      "precision": 0.851063829787234,
+      "recall": 0.7547169811320755,
+      "f1_score": 0.8,
+      "character_accuracy": 0.9555555555555556,
+      "true_positives": 40,
+      "false_positives": 7,
+      "false_negatives": 13,
+      "word_count_gt": 83,
+      "word_count_ocr": 70
+    },
+    {
+      "document_id": "bb929d4e-d336-4f60-86ad-ab10a31992f4",
+      "image_path": "raw/bb929d4e-d336-4f60-86ad-ab10a31992f4--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpsb6sakor%2Fdataset%2Ftesting_data%2Fimages%2F82200067_0069.png",
+      "ground_truth_text": "TO: FROM: x SUBJECT: DIVISION: DIVISION: DIVISION: DIVISION: REGION: DIVISION: DIVISION: DIVISION: 225 27 15 31 18 19 20 82200067 09/ 17/ 97 10: 55 603 841 1898 LORILLARD PTLD \u2611 001 K. A. Sparrow T. D. Blachly OLD GOLD MENTHOL LIGHTS & ULTRA LIGHTS 100'S PROGRESS REPORT AUG 4 SEP 15 MAY 12 JUN 23 (ONLY IF PARTIAL REGION CONTINUE WITH DIVISION (S) SCOPE) Portland # REPS: 6 Boise # REPS: 2. 5 Eugene # REPS: 5 Seattle South # REPS: 7 Seattle North # REPS: 4 Helena # REPS: 4 DIRECT ACCOUNTS AND CHAINS HEADQUARTERED WITHIN THE REGION (15 + STORES) STOCKING NO OLD GOLD MENTHOL LIGHTS OR ULTRA LIGHTS 100'S NAME OF ACCOUNT VOLUME NO. OF STORES NAME OF ACCOUNT VOLUME NO. OF STORES Texaco Seattle Texaco Portland Maid -O Clover Dari Mart Zip Trip Maverick Astro Gas 105 / 5 61 / 3 20 / 2 125 / 5 106 / 4 77 / 1 600 / 7 Page 1 of 3 Pages",
+      "extracted_text": "09/17/97\n10:85\nTRSOS\n641\n1898\nLORTLLARD\nPTLD\nGoo\nTo:\nA.\nSparraw\nFROM:\n7.0,\netacnty\n(ONLY\nIF\nPARTIAL\nREGION\nCONTINUE\nWITH\nDIVISIONIS!\nSCOPE)\nDMvision:\nDIVISION:\nPortland\n\u2014-#\nREPS:\n&\nDIVISION:\nSeatde\nSouth\n#\nREPS:\n7\nDIVISION:\nBoise\n#\nREPS:\n2.5\nDIVISION:\nSwale\nNonh\nREPS:\n4\nDIVISION:\nEugene\nPREPS:\nS\nDIVISION:\nHelena\na\nREPS:\n6\nDIRECT\nACCOUNTS\nAND\nCHAINS\nHEADQUARTERED\nWITHIN\nTHE\nREGION\n(15\n+\nSTORES)\nSTOCKING\nNO\nOLD\nGOLD\nMENTHOL\nLIGHTS\nOR\nULTRA\nLIGHTS\n10'S\nPaget\nof\n3\nPages\n29000278",
+      "precision": 0.6458333333333334,
+      "recall": 0.4626865671641791,
+      "f1_score": 0.5391304347826088,
+      "character_accuracy": 0.8958333333333334,
+      "true_positives": 31,
+      "false_positives": 17,
+      "false_negatives": 36,
+      "word_count_gt": 98,
+      "word_count_ocr": 59
+    },
+    {
+      "document_id": "8abf490c-5b7a-4ae9-a4c2-836f8809f8f1",
+      "image_path": "raw/8abf490c-5b7a-4ae9-a4c2-836f8809f8f1--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpsb6sakor%2Fdataset%2Ftesting_data%2Fimages%2F82251504.png.biblicus.yml",
+      "ground_truth_text": "17 cc: : From: Area: Region: 5 X Chains: Independents: 82251504 11/05/97 11: 03 813 384 0683 LORILLARD TAMPA GREENSBOR 0002/ 003 Retail Excel Progress Report Submission for: Distribution by/ to: DM to RSM 1st of Month RSM to R W. C. 10th D. O. S. R. W. Caldarella Kent B. Mills July 31 August 29 September 30 October 31 November 28 December 30 Acceptance/ Response: What is the retailers response to Lorillard's Excel Merchandising plan? This program has been successful to date with chains where our \"Flex Payment\". was not place. The chains where were using the \"Flex Payment\" system we have not been las successful. The P. O. S. requirements of the P- 1 Plan with Oil Companies is difficult to obtain. Additional P. V. merchandising is being secured quickly, Additional monies have assisted Region 17 in fighting PM Exclusives and PM/ RJR co-existence situations. Hardware Evaluation/ Effectiveness: Comment on the assembly of displays and application of shields: The displays are easily assembled and durable. Some questions have been raised conceming the inability to be flush with the counter and/ or against the register. As well as the ability to place this or the Back Bar if the settlement goes through Pemanent Advertising Evaluation/ Effectiveness/ Acceptance: (P- 1/ P- 5 & C 5 Plans Only: Not available at this time",
+      "extracted_text": "\u201c11/08/07\n11:03\nwees\n884\noses\nLORILLARDTANPA.\n+++\nGREENSBOR\n@o02/003\nRetail\nExcel\nProgress\nReport\nSubmission\nfor:\nDistribution\nby/to:\n\u2018iy\n37\n3)\nOM\nto\nRSM\n1st\nof\nMonth\nAugust29()\nTo:\nB.W.Caldarella\nRSM\nto\nRW.C,\n10th\nSeptember\n30\n(\n)\noo:\nDOS.\nOctober31\n(X)\nFrom:\nKent\nB,\nMills\nNovember28\n(\n)\nDecember30\n(\n)\nArea:\n\u00a7\nRegion:\n17\nAcceptance/Response:\nWhat\nMerchandising\npian?\nthe\nretailers\nresponse\nto\nLorillard's\nExcel\nHardware\nEvaluation/Effectiveness:\nComment\non\nthe\nessembly\nof\ndisplays\nand\napplication\nof\nshields:\n+\nvOSLSZZ8",
+      "precision": 0.6,
+      "recall": 0.26548672566371684,
+      "f1_score": 0.36809815950920244,
+      "character_accuracy": 0.8260869565217391,
+      "true_positives": 30,
+      "false_positives": 20,
+      "false_negatives": 83,
+      "word_count_gt": 156,
+      "word_count_ocr": 53
+    },
+    {
+      "document_id": "4d4e57e0-d644-4be2-a61d-628a6dda26f8",
+      "image_path": "raw/4d4e57e0-d644-4be2-a61d-628a6dda26f8--file%3A%2F%2F%2Fprivate%2Fvar%2Ffolders%2Fgb%2Fd2rz0yr907x6sl234fhp7mbm0000gn%2FT%2Ftmpsb6sakor%2Fdataset%2Ftesting_data%2Fimages%2F82092117.png.biblicus.yml",
+      "ground_truth_text": "TO: DATE: 3 Fax: NOTE: 82092117 614 -466 -5087 Dec 10 '98 17 :46 P. 01 ATT. GEN. ADMIN. OFFICE Attorney General Betty D. Montgomery CONFIDENTIAL FACSIMILE TRANSMISSION COVER SHEET (614) 466- 5087 FAX NO. George Baroody (336) 335- 7392 FAX NUMBER: PHONE NUMBER: (336) 335- 7363 NUMBER OF PAGES INCLUDING COVER SHEET: June Flynn for Eric Brown/ (614) 466- 8980 SENDER /PHONE NUMBER: SPECIAL INSTRUCTIONS: IF YOU DO NOT RECEIVE ANY OF THE PAGES PROPERLY, PLEASE CONTACT SENDER AS SOON AS POSSIBLE THIS MESSAGE IS INTENDED ONLY FOR THE USE OF THE INDIVIDUAL OR ENTITY TO WHOM IT IS ADDRESSED AND MAY CONTAIN INFORMATION THAT IS PRIVILEGED. CONFIDENTIAL, AND EXEMPT FROM DISCLOSURE UNDER APPLICABLE LAW. If the reader of this message is not the intended recipient of the employee or agent responsible for delivering the message to the intended recipient, you are hereby notified that any dissemination, distribution, copying, or conveying of this communication in any manner is strictly prohibited. If you have received this comunication in error, please notify us immediately by telephone and return the original message to us at the address below via the U. S. Postal Service. Thank you for your cooperation. State Office Tower / 30 East Broad Street/ Columbus, Ohio 43215 -3428 www ag state oh us An Equal Opportunity Employer Primed an 12 /10 /98",
+      "extracted_text": "4\nAIT.\nGEN,\nADMIN,\nOFFICE\nFax:614-~466-S087\nDec\n10\n'98\n17:06\nP.Ot\nEAA,\nAttomey\nGeneral\nCONFIDENTIAL\nFACSIMILE\n\u2018TRANSMISSION\nCOVER\nSHEET\nFAX\nNO.\n(614)\n466-5087\n\u2018TO:\n_George\nBaroody\nFAX\nNUMBER:\n(336)\n335-7392.\nPHONE\nNUMBER:\n(336)\n335-7363\nDATE:\n12/10/98\n:\nNUMBER\nOF\nPAGES\nINCLUDING\nCOVER\nSHEET:\n3\nSENDER/PHONE\nNUMBER:\n__June\nFlynn\nfor\nErie\nBrows/(614)\n466.9980\n\u2018SPECIAL\nINSTRUCTIONS:\nyou.\nOF\nOP}\nELEASE\nCONTACT\nSENDER\nAS:\nLE\nNOTE:\nTHIS\nMESSAGE\nIS\nINTENDED\nONLY\nFOR\nTHE\nUSE\nOF\nTHE\nINDIVIDUAL\nOR\nENTITY\n7O|\nWHOM\nIT\nIS\nADDRESSED\nAND\nMAY\nCONTAIN\nINFORMATION\nTHAT\nIS\nPRIVILEGED,\n|\nCONFIDENTIAL,\nAND\nEXEMPT\nFROM\nDISCLOSURE\nUNDER\nAPPLICABLE\nLAW.\nIf\nthe|\nreader\nof\nthis\nmessage\nisnot\nthe\nintended\nrecipient\nof\nthe\nemployee\nor\nagent\nresponsible\nfor\ndelivering|\nthe\nmessage\nto\nthe\nintended\nrecplent,\nyou\nare\nhereby\nnotified\nthat\nany\ndissemination,\ndisribuson\n|\ncopying.\nor\nconveying\nof\nthis\ncommunication\nin\naxy\nmanner\nis\nstrictly\nprohibited.\n\"If\nyou.\nhave)\nreceived\nthis\ncommunication\nia\neror,\nplease\nnotify\nus\nimmediatly\nby\ntelephone\nend\nfeuur\nthe|\noriginal\nmessage\nto\nus\nat\nthe\naddress\nbelow\nvia\nthe\nU.S.\nPostal\nService,\nThank\nyou\nfor\nyour\n\u201ccoop\u00e9fatoa.\n\u2018State\nOffice\nTower\n/\n$0\nEast\nBroad\nStret\n/\nColumbus,\nOhio\n43215-9428\nwwwag.state.oh.us\n\u2018An\nEqual\nOpportunity\nEmployer\n41426028\nServint\non\nenretod\nreper",
+      "precision": 0.743801652892562,
+      "recall": 0.7563025210084033,
+      "f1_score": 0.75,
+      "character_accuracy": 0.9772727272727273,
+      "true_positives": 90,
+      "false_positives": 31,
+      "false_negatives": 29,
+      "word_count_gt": 171,
+      "word_count_ocr": 156
+    }
+  ]
+}

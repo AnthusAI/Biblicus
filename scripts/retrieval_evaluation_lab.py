@@ -12,8 +12,13 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+try:
+    import pydantic
+except ModuleNotFoundError:  # pragma: no cover - defensive; covered by harness
+    raise
+
 from biblicus.corpus import Corpus
-from biblicus.evaluation import EvaluationDataset, EvaluationQuery, evaluate_snapshot
+from biblicus.evaluation.retrieval import EvaluationDataset, EvaluationQuery, evaluate_snapshot
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
 from biblicus.retrievers import get_retriever
@@ -123,7 +128,7 @@ def _ingest_lab_items(corpus: Corpus) -> Dict[str, str]:
     for item_path in sorted(LAB_ITEMS_DIR.iterdir()):
         if not item_path.is_file():
             continue
-        result = corpus.ingest_source(item_path, tags=["retrieval_lab"])
+        result = corpus.ingest_source(item_path, tags=["retrieval_lab"], allow_external=True)
         filename_map[item_path.name] = result.item_id
     return filename_map
 
@@ -182,7 +187,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         extractor_id="pipeline",
         configuration_name=arguments.extraction_configuration_name,
         configuration={
-            "steps": [
+            "stages": [
                 {
                     "extractor_id": arguments.extraction_step,
                     "config": {},

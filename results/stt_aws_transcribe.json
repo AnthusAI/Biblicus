@@ -1,0 +1,46 @@
+{
+  "benchmark_timestamp": "2026-02-13T23:28:38.902044",
+  "corpus_path": "corpora/librispeech_benchmark",
+  "total_providers": 1,
+  "successful_providers": 1,
+  "failed_providers": 0,
+  "providers": [
+    {
+      "name": "AWS Transcribe",
+      "snapshot_id": "d5b42b249538dd8c4f9d63b7b8631d6a329c36d7cc8398d48d4936d020f7db76",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.023674242424242424,
+          "median": 0.0,
+          "avg_substitutions": 0.25,
+          "avg_deletions": 0.0,
+          "avg_insertions": 0.0
+        },
+        "cer": {
+          "avg": 0.008250480159042154,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9763257575757576,
+          "avg_recall": 0.9763257575757576,
+          "avg_f1": 0.9763257575757576,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "AWS Transcribe",
+        "extractor_id": "stt-aws-transcribe",
+        "language_code": "en-US",
+        "region_name": "us-east-1",
+        "s3_bucket": "biblicus-transcribe-temp"
+      },
+      "total_audio_files": 20
+    }
+  ],
+  "best_performers": {
+    "lowest_wer": "AWS Transcribe",
+    "lowest_cer": "AWS Transcribe",
+    "best_f1": "AWS Transcribe"
+  }
+}

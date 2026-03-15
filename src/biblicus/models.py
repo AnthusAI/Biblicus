@@ -4,11 +4,12 @@ Pydantic models for Biblicus domain concepts.
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .constants import SCHEMA_VERSION
+from .constants import COLLECTION_SCHEMA_VERSION, SCHEMA_VERSION
 from .hooks import HookSpec
 
 
@@ -28,6 +29,8 @@ class CorpusConfig(BaseModel):
     :vartype notes: dict[str, Any] or None
     :ivar hooks: Optional hook specifications for corpus lifecycle events.
     :vartype hooks: list[HookSpec] or None
+    :ivar collection: Optional collection membership metadata.
+    :vartype collection: CollectionMembership or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -35,9 +38,11 @@ class CorpusConfig(BaseModel):
     schema_version: int = Field(ge=1)
     created_at: str
     corpus_uri: str
-    raw_dir: str = "raw"
+    raw_dir: str = "."
     notes: Optional[Dict[str, Any]] = None
     hooks: Optional[List[HookSpec]] = None
+    source: Optional["RemoteCorpusSourceConfig"] = None
+    collection: Optional["CollectionMembership"] = None
 
     @model_validator(mode="after")
     def _enforce_schema_version(self) -> "CorpusConfig":
@@ -63,6 +68,328 @@ class IngestResult(BaseModel):
     item_id: str
     relpath: str
     sha256: str
+
+
+class RemoteCorpusSourceConfig(BaseModel):
+    """
+    Configuration for a remote corpus source.
+
+    :ivar kind: Remote source kind (s3 or azure-blob).
+    :vartype kind: str
+    :ivar profile: Source profile name in user configuration.
+    :vartype profile: str
+    :ivar name: Optional local namespace for storage.
+    :vartype name: str or None
+    :ivar bucket: S3 bucket name.
+    :vartype bucket: str or None
+    :ivar container: Azure Blob container name.
+    :vartype container: str or None
+    :ivar prefix: Optional remote prefix to scope the mirror.
+    :vartype prefix: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str = Field(min_length=1)
+    profile: str = Field(min_length=1)
+    name: Optional[str] = None
+    bucket: Optional[str] = None
+    container: Optional[str] = None
+    prefix: str = Field(default="")
+
+    @model_validator(mode="after")
+    def _validate_source_kind(self) -> "RemoteCorpusSourceConfig":
+        if self.kind not in {"s3", "azure-blob"}:
+            raise ValueError(f"Unsupported remote source kind: {self.kind}")
+        if self.kind == "s3":
+            if not (isinstance(self.bucket, str) and self.bucket.strip()):
+                raise ValueError("Remote S3 source requires bucket")
+        if self.kind == "azure-blob":
+            if not (isinstance(self.container, str) and self.container.strip()):
+                raise ValueError("Remote Azure Blob source requires container")
+        return self
+
+
+class CollectionMembership(BaseModel):
+    """
+    Collection membership metadata for a corpus.
+
+    :ivar collection_name: Collection name.
+    :vartype collection_name: str
+    :ivar corpus_name: Corpus name within the collection.
+    :vartype corpus_name: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    collection_name: str = Field(min_length=1)
+    corpus_name: str = Field(min_length=1)
+
+
+class RemoteCorpusCollectionDiscovery(BaseModel):
+    """
+    Discovery configuration for a remote collection.
+
+    :ivar mode: Discovery mode (subfolder or partition).
+    :vartype mode: str
+    :ivar depth: Subfolder depth to discover.
+    :vartype depth: int
+    :ivar include_root_files: Whether to include root files under a reserved corpus.
+    :vartype include_root_files: bool
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: str = Field(min_length=1)
+    depth: int = Field(default=1, ge=1)
+    include_root_files: bool = False
+
+    @model_validator(mode="after")
+    def _validate_mode(self) -> "RemoteCorpusCollectionDiscovery":
+        if self.mode not in {"subfolder", "partition"}:
+            raise ValueError(f"Unsupported collection discovery mode: {self.mode}")
+        return self
+
+
+class RemoteCorpusCollectionConfig(BaseModel):
+    """
+    Configuration for a remote corpus collection.
+
+    :ivar schema_version: Version of the collection config schema.
+    :vartype schema_version: int
+    :ivar created_at: International Organization for Standardization 8601 timestamp.
+    :vartype created_at: str
+    :ivar collection_name: Collection name.
+    :vartype collection_name: str
+    :ivar source: Remote source configuration.
+    :vartype source: RemoteCorpusSourceConfig
+    :ivar discovery: Discovery configuration.
+    :vartype discovery: RemoteCorpusCollectionDiscovery
+    :ivar corpus_root: Filesystem path to the corpus root directory.
+    :vartype corpus_root: str
+    :ivar auto_create: Whether to auto-create discovered corpora.
+    :vartype auto_create: bool
+    :ivar deletion_policy: Policy for missing remote folders (archive or delete).
+    :vartype deletion_policy: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: int = Field(ge=1)
+    created_at: str
+    collection_name: str = Field(min_length=1)
+    source: RemoteCorpusSourceConfig
+    discovery: RemoteCorpusCollectionDiscovery
+    corpus_root: str = Field(min_length=1)
+    auto_create: bool = True
+    deletion_policy: str = Field(default="archive", min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_deletion_policy(self) -> "RemoteCorpusCollectionConfig":
+        if self.schema_version != COLLECTION_SCHEMA_VERSION:
+            raise ValueError(
+                f"Unsupported collection config schema version: {self.schema_version}"
+            )
+        if self.deletion_policy not in {"archive", "delete"}:
+            raise ValueError(
+                f"Unsupported collection deletion policy: {self.deletion_policy}"
+            )
+        return self
+
+
+class RemoteCollectionPullResult(BaseModel):
+    """
+    Summary of a collection pull operation.
+
+    :ivar discovered: Number of discovered subfolders or partitions.
+    :vartype discovered: int
+    :ivar created: Number of corpora created.
+    :vartype created: int
+    :ivar mirrored: Number of corpora mirrored.
+    :vartype mirrored: int
+    :ivar archived: Number of corpora archived.
+    :vartype archived: int
+    :ivar errored: Number of errors.
+    :vartype errored: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    discovered: int = Field(default=0, ge=0)
+    created: int = Field(default=0, ge=0)
+    mirrored: int = Field(default=0, ge=0)
+    archived: int = Field(default=0, ge=0)
+    errored: int = Field(default=0, ge=0)
+
+
+class PipelineCorpusSelector(BaseModel):
+    """
+    Corpus selection for a pipeline recipe.
+
+    :ivar path: Optional corpus path.
+    :vartype path: str or None
+    :ivar collection: Optional collection name or path.
+    :vartype collection: str or None
+    :ivar selector: Optional selector pattern for collection corpora.
+    :vartype selector: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: Optional[str] = None
+    collection: Optional[str] = None
+    selector: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_selector(self) -> "PipelineCorpusSelector":
+        has_path = isinstance(self.path, str) and self.path.strip()
+        has_collection = isinstance(self.collection, str) and self.collection.strip()
+        if has_path and has_collection:
+            raise ValueError("Pipeline recipe must specify corpus path or collection, not both")
+        if not has_path and not has_collection:
+            raise ValueError("Pipeline recipe must specify corpus path or collection")
+        if has_collection and not (self.selector and self.selector.strip()):
+            raise ValueError("Pipeline recipe collection requires a selector")
+        return self
+
+
+class PipelineMirrorConfig(BaseModel):
+    """
+    Mirror configuration for a pipeline recipe.
+
+    :ivar collection: Collection path or name to mirror before running.
+    :vartype collection: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    collection: str = Field(min_length=1)
+
+
+class PipelineExtractionConfig(BaseModel):
+    """
+    Extraction configuration for a pipeline recipe.
+
+    :ivar recipe: Path to extraction recipe YAML.
+    :vartype recipe: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    recipe: str = Field(min_length=1)
+
+
+class PipelineRetrievalConfig(BaseModel):
+    """
+    Retrieval configuration for a pipeline recipe.
+
+    :ivar retriever: Retriever identifier.
+    :vartype retriever: str
+    :ivar configuration: Path to retriever configuration file.
+    :vartype configuration: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    retriever: str = Field(min_length=1)
+    configuration: str = Field(min_length=1)
+
+
+class PipelineAnalysisConfig(BaseModel):
+    """
+    Analysis configuration for a pipeline recipe.
+
+    :ivar kind: Analysis kind identifier.
+    :vartype kind: str
+    :ivar configuration: Path to analysis configuration file.
+    :vartype configuration: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str = Field(min_length=1)
+    configuration: str = Field(min_length=1)
+
+
+class PipelineRecipeConfig(BaseModel):
+    """
+    Pipeline recipe configuration.
+
+    :ivar corpus: Corpus selection information.
+    :vartype corpus: PipelineCorpusSelector
+    :ivar mirror: Optional mirror configuration.
+    :vartype mirror: PipelineMirrorConfig or None
+    :ivar extraction: Optional extraction configuration.
+    :vartype extraction: PipelineExtractionConfig or None
+    :ivar retrieval: Optional retrieval configuration.
+    :vartype retrieval: PipelineRetrievalConfig or None
+    :ivar analysis: Optional analysis configuration list.
+    :vartype analysis: list[PipelineAnalysisConfig] or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    corpus: PipelineCorpusSelector
+    mirror: Optional[PipelineMirrorConfig] = None
+    extraction: Optional[PipelineExtractionConfig] = None
+    retrieval: Optional[PipelineRetrievalConfig] = None
+    analysis: Optional[List[PipelineAnalysisConfig]] = None
+
+
+class RemoteSourceItem(BaseModel):
+    """
+    Remote source object metadata.
+
+    :ivar key: Remote object key or blob name.
+    :vartype key: str
+    :ivar source_uri: Source uniform resource identifier.
+    :vartype source_uri: str
+    :ivar etag: Optional entity tag for change detection.
+    :vartype etag: str or None
+    :ivar last_modified: Optional International Organization for Standardization 8601 timestamp.
+    :vartype last_modified: str or None
+    :ivar size: Size of the object in bytes.
+    :vartype size: int
+    :ivar content_type: Optional media type.
+    :vartype content_type: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    key: str
+    source_uri: str
+    etag: Optional[str] = None
+    last_modified: Optional[str] = None
+    size: int = Field(ge=0)
+    content_type: Optional[str] = None
+
+
+class RemoteSourcePullResult(BaseModel):
+    """
+    Summary of a remote source pull operation.
+
+    :ivar listed: Number of remote items listed.
+    :vartype listed: int
+    :ivar downloaded: Number of new items downloaded.
+    :vartype downloaded: int
+    :ivar updated: Number of existing items updated.
+    :vartype updated: int
+    :ivar skipped: Number of items skipped (no change).
+    :vartype skipped: int
+    :ivar pruned: Number of local items pruned.
+    :vartype pruned: int
+    :ivar errored: Number of items that failed to process.
+    :vartype errored: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    listed: int = Field(default=0, ge=0)
+    downloaded: int = Field(default=0, ge=0)
+    updated: int = Field(default=0, ge=0)
+    skipped: int = Field(default=0, ge=0)
+    pruned: int = Field(default=0, ge=0)
+    errored: int = Field(default=0, ge=0)
 
 
 class CatalogItem(BaseModel):
@@ -117,6 +444,8 @@ class CorpusCatalog(BaseModel):
     :vartype corpus_uri: str
     :ivar raw_dir: Relative path to the raw items folder.
     :vartype raw_dir: str
+    :ivar latest_run_id: Latest extraction run identifier, if any.
+    :vartype latest_run_id: str or None
     :ivar latest_snapshot_id: Latest retrieval snapshot identifier, if any.
     :vartype latest_snapshot_id: str or None
     :ivar items: Mapping of item IDs to catalog entries.
@@ -130,7 +459,8 @@ class CorpusCatalog(BaseModel):
     schema_version: int = Field(ge=1)
     generated_at: str
     corpus_uri: str
-    raw_dir: str = "raw"
+    raw_dir: str = "."
+    latest_run_id: Optional[str] = None
     latest_snapshot_id: Optional[str] = None
     items: Dict[str, CatalogItem] = Field(default_factory=dict)
     order: List[str] = Field(default_factory=list)
@@ -412,8 +742,8 @@ class ExtractedText(BaseModel):
     :vartype text: str
     :ivar producer_extractor_id: Extractor identifier that produced this text.
     :vartype producer_extractor_id: str
-    :ivar source_step_index: Optional pipeline step index where this text originated.
-    :vartype source_step_index: int or None
+    :ivar source_stage_index: Optional pipeline stage index where this text originated.
+    :vartype source_stage_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
     :ivar metadata: Optional structured metadata for passing data between pipeline stages.
@@ -424,20 +754,20 @@ class ExtractedText(BaseModel):
 
     text: str
     producer_extractor_id: str = Field(min_length=1)
-    source_step_index: Optional[int] = Field(default=None, ge=1)
+    source_stage_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ExtractionStepOutput(BaseModel):
+class ExtractionStageOutput(BaseModel):
     """
-    In-memory representation of a pipeline step output for a single item.
+    In-memory representation of a pipeline stage output for a single item.
 
-    :ivar step_index: One-based pipeline step index.
-    :vartype step_index: int
-    :ivar extractor_id: Extractor identifier for the step.
+    :ivar stage_index: One-based pipeline stage index.
+    :vartype stage_index: int
+    :ivar extractor_id: Extractor identifier for the stage.
     :vartype extractor_id: str
-    :ivar status: Step status, extracted, skipped, or errored.
+    :ivar status: Stage status, extracted, skipped, or errored.
     :vartype status: str
     :ivar text: Extracted text content, when produced.
     :vartype text: str or None
@@ -445,28 +775,31 @@ class ExtractionStepOutput(BaseModel):
     :vartype text_characters: int
     :ivar producer_extractor_id: Extractor identifier that produced the text content.
     :vartype producer_extractor_id: str or None
-    :ivar source_step_index: Optional step index that supplied the text for selection-style extractors.
-    :vartype source_step_index: int or None
+    :ivar source_stage_index: Optional stage index that supplied the text for selection-style extractors.
+    :vartype source_stage_index: int or None
     :ivar confidence: Optional confidence score from 0.0 to 1.0.
     :vartype confidence: float or None
     :ivar metadata: Optional structured metadata for passing data between pipeline stages.
     :vartype metadata: dict[str, Any]
-    :ivar error_type: Optional error type name for errored steps.
+    :ivar error_type: Optional error type name for errored stages.
     :vartype error_type: str or None
-    :ivar error_message: Optional error message for errored steps.
+    :ivar error_message: Optional error message for errored stages.
     :vartype error_message: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    step_index: int = Field(ge=1)
+    stage_index: int = Field(ge=1)
     extractor_id: str
     status: str
     text: Optional[str] = None
     text_characters: int = Field(default=0, ge=0)
     producer_extractor_id: Optional[str] = None
-    source_step_index: Optional[int] = Field(default=None, ge=1)
+    source_stage_index: Optional[int] = Field(default=None, ge=1)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     error_type: Optional[str] = None
     error_message: Optional[str] = None
+
+
+GraphExtractionResult = import_module("biblicus.graph.models").GraphExtractionResult

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The pipeline extractor is a configuration shim that enables multi-step extraction workflows. It allows you to compose multiple extractors into a sequential pipeline where each step can build upon or choose from the results of previous steps.
+The pipeline extractor is a configuration shim that enables multi-stage extraction workflows. It allows you to compose multiple extractors into a sequential pipeline where each stage can build upon or choose from the results of previous stages.
 
 Pipelines are the fundamental composition mechanism in Biblicus, enabling sophisticated extraction strategies like fallback chains, parallel extraction with selection, and media type-specific routing.
 
@@ -27,27 +27,27 @@ All media types are supported. The pipeline delegates to configured extractors, 
 ### Config Schema
 
 ```python
-class PipelineStepSpec(BaseModel):
+class PipelineStageSpec(BaseModel):
     extractor_id: str
     config: Dict[str, Any] = {}
 
 class PipelineExtractorConfig(BaseModel):
-    steps: List[PipelineStepSpec]
+    stages: List[PipelineStageSpec]
 ```
 
 ### Configuration Options
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
-| `steps` | list | ✅ | Ordered list of extractor steps |
-| `steps[].extractor_id` | str | ✅ | Extractor identifier for this step |
-| `steps[].config` | dict | ❌ | Configuration for this extractor |
+| `stages` | list | ✅ | Ordered list of extractor stages |
+| `stages[].extractor_id` | str | ✅ | Extractor identifier for this stage |
+| `stages[].config` | dict | ❌ | Configuration for this extractor |
 
 ### Constraints
 
-- Must have at least one step
-- Cannot include `pipeline` as a step (no nested pipelines)
-- Steps are executed in order
+- Must have at least one stage
+- Cannot include `pipeline` as a stage (no nested pipelines)
+- Stages are executed in order
 
 ## Usage
 
@@ -57,7 +57,7 @@ class PipelineExtractorConfig(BaseModel):
 
 ```bash
 biblicus extract my-corpus --extractor pipeline \
-  --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"select-text"}]'
+  --config 'stages=[{"extractor_id":"pdf-text"},{"extractor_id":"select-text"}]'
 ```
 
 #### Configuration File
@@ -65,7 +65,7 @@ biblicus extract my-corpus --extractor pipeline \
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
@@ -86,7 +86,7 @@ corpus = Corpus.from_directory("my-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "ocr-rapidocr"},
@@ -102,7 +102,7 @@ results = corpus.extract_text(
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {
                 "extractor_id": "pdf-text",
                 "config": {"max_pages": 100}
@@ -126,7 +126,7 @@ Try extractors in order, use first success:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text  # Try text first
     - extractor_id: pdf-text           # Then PDF
     - extractor_id: markitdown         # Then Office docs
@@ -141,7 +141,7 @@ Run all extractors, choose best:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr
     - extractor_id: ocr-paddleocr-vl
     - extractor_id: docling-smol
@@ -155,7 +155,7 @@ Route different types to different extractors:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
@@ -175,7 +175,7 @@ Intelligent quality-based routing:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text           # Fast
     - extractor_id: docling-smol       # Accurate
     - extractor_id: select-smart-override
@@ -193,7 +193,7 @@ Handle text and PDFs:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: select-text
@@ -206,7 +206,7 @@ Maximum format coverage:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: markitdown
@@ -221,7 +221,7 @@ Try fast OCR, fall back to VLM:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr
     - extractor_id: docling-smol
     - extractor_id: select-smart-override
@@ -242,7 +242,7 @@ corpus = Corpus.from_directory("multilingual")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {
                 "extractor_id": "ocr-paddleocr-vl",
@@ -265,7 +265,7 @@ Try free methods before paid APIs:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text    # Free
     - extractor_id: pdf-text             # Free
     - extractor_id: markitdown           # Free
@@ -278,15 +278,15 @@ config:
 
 ### Sequential Execution
 
-Steps execute in order. Each step can access results from all previous steps.
+Stages execute in order. Each stage can access results from all previous stages.
 
 ### Per-Item Processing
 
-The pipeline runs completely for each item before moving to the next. It does not process all items through step 1, then all through step 2.
+The pipeline runs completely for each item before moving to the next. It does not process all items through stage 1, then all through stage 2.
 
 ### Previous Extractions
 
-Selector extractors (select-text, etc.) receive all previous step outputs for the current item.
+Selector extractors (select-text, etc.) receive all previous stage outputs for the current item.
 
 ### Short-Circuiting
 
@@ -296,7 +296,7 @@ Some patterns enable short-circuiting:
 
 ### Error Handling
 
-Errors in individual steps are recorded but don't halt the pipeline. The pipeline continues with remaining steps.
+Errors in individual stages are recorded but don't halt the pipeline. The pipeline continues with remaining stages.
 
 ### No Nested Pipelines
 
@@ -310,7 +310,7 @@ Order matters for performance:
 
 ```yaml
 # Fast to slow (efficient)
-steps:
+stages:
   - pass-through-text  # Instant
   - pdf-text           # Fast
   - ocr-rapidocr       # Moderate
@@ -318,7 +318,7 @@ steps:
   - select-text        # Stop at first success
 
 # Slow to fast (inefficient)
-steps:
+stages:
   - docling-smol       # Runs for everything!
   - pass-through-text
   - select-text
@@ -336,14 +336,14 @@ Pipeline order affects API costs:
 
 ```yaml
 # Cost-optimized
-steps:
+stages:
   - pass-through-text  # Free
   - pdf-text           # Free
   - stt-openai         # Paid - only runs if free methods fail
   - select-text
 
 # Expensive
-steps:
+stages:
   - stt-openai         # Paid - runs for everything!
   - pass-through-text
   - select-longest-text
@@ -353,10 +353,10 @@ steps:
 
 ### Always Include a Selector
 
-End pipelines with a selection step:
+End pipelines with a selection stage:
 
 ```yaml
-steps:
+stages:
   - extractor-1
   - extractor-2
   - select-text  # Always include
@@ -366,14 +366,14 @@ steps:
 
 ```yaml
 # By speed (recommended)
-steps:
+stages:
   - fast-extractor
   - moderate-extractor
   - slow-extractor
   - select-text
 
 # By accuracy
-steps:
+stages:
   - best-extractor
   - good-extractor
   - fallback-extractor
@@ -382,10 +382,10 @@ steps:
 
 ### Configure Steps Appropriately
 
-Provide per-step configuration when needed:
+Provide per-stage configuration when needed:
 
 ```yaml
-steps:
+stages:
   - extractor_id: pdf-text
     config:
       max_pages: 100
@@ -403,7 +403,7 @@ For complex pipelines, always use configuration files:
 # configuration.yml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
       config:
@@ -439,7 +439,7 @@ Handle any document type:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: markitdown
@@ -455,7 +455,7 @@ Prioritize accuracy:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: docling-granite
     - extractor_id: docling-smol
     - extractor_id: ocr-rapidocr
@@ -469,7 +469,7 @@ Prioritize performance:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: metadata-text
@@ -483,7 +483,7 @@ Maximum extraction quality:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: markitdown
@@ -502,10 +502,10 @@ This is invalid:
 # ❌ Invalid - nested pipelines not allowed
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pipeline  # Not allowed!
       config:
-        steps: [...]
+        stages: [...]
 ```
 
 ### Linear Flow Only

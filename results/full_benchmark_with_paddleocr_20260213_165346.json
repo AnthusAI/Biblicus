@@ -1,0 +1,174 @@
+{
+  "benchmark_timestamp": "2026-02-13T16:56:59.442477",
+  "corpus_path": "corpora/funsd_benchmark",
+  "total_pipelines": 5,
+  "successful_pipelines": 4,
+  "failed_pipelines": 1,
+  "pipelines": [
+    {
+      "name": "ocr-rapidocr",
+      "snapshot_id": "ea7222cff31150b4f57c396d4d38aada9ddbfce808126f3d6e909a11821a8092",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.5075164654755208,
+          "avg_precision": 0.5678278163397579,
+          "avg_recall": 0.467658020099526,
+          "median_f1": 0.5132743362831858
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.7484695207726699,
+          "avg_sequence_accuracy": 0.013590403245607136,
+          "avg_lcs_ratio": 0.3335636813973421,
+          "median_word_error_rate": 0.7619047619047619,
+          "median_sequence_accuracy": 0.0045045045045045045
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.20618346365657697,
+          "avg_trigram_overlap": 0.1226900596294022
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "stages": [
+            {
+              "extractor_id": "ocr-rapidocr",
+              "config": {
+                "min_confidence": 0.0
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.11014795303344727
+    },
+    {
+      "name": "ocr-paddleocr",
+      "snapshot_id": "d8adc44f7cdbfcebb58fc72c15f0a454578655a8b3c81da6063fa0be8b876ecb",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.7871177688651296,
+          "avg_precision": 0.7991190791181361,
+          "avg_recall": 0.7820890302073593,
+          "median_f1": 0.8050847457627118
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.5327441288659601,
+          "avg_sequence_accuracy": 0.031226865900204275,
+          "avg_lcs_ratio": 0.6069223336452032,
+          "median_word_error_rate": 0.5533333333333333,
+          "median_sequence_accuracy": 0.019230769230769232
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.4656981396918486,
+          "avg_trigram_overlap": 0.3525906731900444
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "stages": [
+            {
+              "extractor_id": "ocr-paddleocr-vl",
+              "config": {
+                "min_confidence": 0.0,
+                "lang": "en"
+              }
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.13733220100402832
+    },
+    {
+      "name": "docling-smol",
+      "snapshot_id": "f4b46f67f120a70c15a0295f70f9a40bef18f44557259be5b9294ed69e85719f",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.7278584785659521,
+          "avg_precision": 0.8212242069943816,
+          "avg_recall": 0.6746073701642106,
+          "median_f1": 0.8023255813953488
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.6447251465477196,
+          "avg_sequence_accuracy": 0.020934301250577214,
+          "avg_lcs_ratio": 0.5140081696779369,
+          "median_word_error_rate": 0.7105263157894737,
+          "median_sequence_accuracy": 0.013157894736842105
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.4297822031812827,
+          "avg_trigram_overlap": 0.3331556378629154
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "stages": [
+            {
+              "extractor_id": "docling-smol",
+              "config": {}
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.11741495132446289
+    },
+    {
+      "name": "docling-granite",
+      "snapshot_id": "232c97305b487eeb13e42a25de3044b5f9b2d3cc94fdde70b582cdb69d8cacb3",
+      "success": true,
+      "metrics": {
+        "set_based": {
+          "avg_f1": 0.7278584785659521,
+          "avg_precision": 0.8212242069943816,
+          "avg_recall": 0.6746073701642106,
+          "median_f1": 0.8023255813953488
+        },
+        "order_aware": {
+          "avg_word_error_rate": 0.6447251465477196,
+          "avg_sequence_accuracy": 0.020934301250577214,
+          "avg_lcs_ratio": 0.5140081696779369,
+          "median_word_error_rate": 0.7105263157894737,
+          "median_sequence_accuracy": 0.013157894736842105
+        },
+        "ngram": {
+          "avg_bigram_overlap": 0.4297822031812827,
+          "avg_trigram_overlap": 0.3331556378629154
+        }
+      },
+      "pipeline_configuration": {
+        "extractor_id": "pipeline",
+        "config": {
+          "stages": [
+            {
+              "extractor_id": "docling-granite",
+              "config": {}
+            }
+          ]
+        }
+      },
+      "total_documents": 20,
+      "processing_time": 0.11253976821899414
+    },
+    {
+      "name": "unstructured",
+      "snapshot_id": "394e44d9c6af1d032176ba7d700648d6bc07b5c35d3cf6bf8f9bb5dff0a0667c",
+      "success": false,
+      "error": "Text directory not found: /Users/ryan.porter/Projects/Biblicus/corpora/funsd_benchmark/extracted/pipeline/394e44d9c6af1d032176ba7d700648d6bc07b5c35d3cf6bf8f9bb5dff0a0667c/text"
+    }
+  ],
+  "best_performers": {
+    "best_f1": "ocr-paddleocr",
+    "best_sequence_accuracy": "ocr-paddleocr",
+    "lowest_wer": "ocr-paddleocr",
+    "best_bigram": "ocr-paddleocr"
+  }
+}

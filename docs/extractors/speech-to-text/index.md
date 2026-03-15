@@ -8,6 +8,8 @@ Audio transcription extractors for converting spoken content into text.
 
 openai
 deepgram
+aldea
+deepgram-transform
 ```
 
 ## Overview
@@ -52,6 +54,29 @@ Deepgram Nova-3 for fast, accurate transcription:
 
 **Best for**: High-accuracy transcription, speaker diarization, professional content
 
+### [stt-aldea](aldea.md)
+
+Aldea Speech-to-Text API for audio transcription:
+
+- **API**: REST pre-recorded audio (`POST /v1/listen`)
+- **Response**: Deepgram-compatible (channels, alternatives, transcript)
+- **Features**: Language hint, speaker diarization, word timestamps
+- **Formats**: MP3, AAC, FLAC, WAV, OGG, WebM, Opus, M4A
+
+**Installation**: `pip install biblicus[aldea]`
+
+**Best for**: Aldea-hosted transcription, Deepgram-compatible workflows
+
+### [deepgram-transform](deepgram-transform.md)
+
+Render Deepgram structured metadata into text:
+
+- **Source**: transcript, utterances, or words
+- **Filters**: channel and speaker selection
+- **Labels**: optional channel/speaker prefixes
+
+**Best for**: Diarized filtering, channel selection, and structured transcript rendering
+
 ## Choosing an Extractor
 
 | Use Case | Recommended | Notes |
@@ -62,6 +87,7 @@ Deepgram Nova-3 for fast, accurate transcription:
 | Translation to English | [stt-openai](openai.md) | Built-in translation |
 | Cost-sensitive | [stt-deepgram](deepgram.md) | Competitive pricing |
 | OpenAI workflow | [stt-openai](openai.md) | Single API key |
+| Aldea / Deepgram-shaped API | [stt-aldea](aldea.md) | Aldea-hosted, same response shape as Deepgram |
 
 ## Performance Comparison
 
@@ -142,6 +168,9 @@ openai:
 
 deepgram:
   api_key: YOUR_DEEPGRAM_KEY
+
+aldea:
+  api_key: org_YOUR_ALDEA_KEY
 ```
 
 ## Supported Audio Formats

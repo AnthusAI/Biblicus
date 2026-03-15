@@ -12,7 +12,7 @@ Feature: Longest text selection
       body body body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id         | config_json |
       | metadata-text        | {}          |
       | pass-through-text    | {}          |
@@ -23,7 +23,7 @@ Feature: Longest text selection
       """
     And the extraction snapshot item provenance uses extractor "pass-through-text"
 
-  Scenario: Longest selection chooses the earliest step when there is a length tie
+  Scenario: Longest selection chooses the earliest stage when there is a length tie
     Given I initialized a corpus at "corpus"
     And a file "note.md" exists with markdown front matter:
       | key   | value |
@@ -33,7 +33,7 @@ Feature: Longest text selection
       alpha
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id         | config_json |
       | pass-through-text    | {}          |
       | pass-through-text    | {}          |
@@ -44,7 +44,7 @@ Feature: Longest text selection
     Given I initialized a corpus at "corpus"
     And a binary file "image.png" exists
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id         | config_json |
       | select-longest-text  | {}          |
     Then the extraction snapshot does not include extracted text for the last ingested item
@@ -58,7 +58,7 @@ Feature: Longest text selection
       """
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id         | config_json |
       | pass-through-text    | {}          |
       | select-longest-text  | {}          |

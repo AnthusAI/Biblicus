@@ -1,6 +1,6 @@
 Feature: Speech to text extraction
   Audio items can produce derived text artifacts through a speech to text extractor plugin.
-  The raw audio bytes remain unchanged in the corpus raw directory.
+  The raw audio bytes remain unchanged in the corpus root.
 
   Scenario: Speech to text extractor requires an optional dependency
     Given I initialized a corpus at "corpus"
@@ -60,7 +60,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id | config_json                                                        |
       | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
     Then the extracted text for the last ingested item is empty
@@ -76,7 +76,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I attempt to build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id | config_json                                  |
       | stt-openai   | {"no_speech_probability_threshold":0.9}      |
     Then the command fails with exit code 2
@@ -94,7 +94,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id | config_json                                                        |
       | stt-openai   | {"response_format":"verbose_json","no_speech_probability_threshold":0.9} |
     Then the extracted text for the last ingested item equals "Real words"
@@ -131,7 +131,7 @@ Feature: Speech to text extraction
       RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x40\x1f\x00\x00\x80\x3e\x00\x00\x02\x00\x10\x00data
       """
     When I ingest the file "clip.wav" with tags "audio,example" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id   | config_json |
       | metadata-text  | {}          |
       | stt-openai     | {}          |

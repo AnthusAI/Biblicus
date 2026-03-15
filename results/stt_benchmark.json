@@ -1,0 +1,106 @@
+{
+  "benchmark_timestamp": "2026-02-13T22:00:50.289457",
+  "corpus_path": "corpora/librispeech_benchmark",
+  "total_providers": 3,
+  "successful_providers": 3,
+  "failed_providers": 0,
+  "providers": [
+    {
+      "name": "OpenAI Whisper",
+      "snapshot_id": "2d97ac29312763c0ebd1cf262de46f6b606cb299908e3c5386c8b2a243241ad2",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.024841824841824844,
+          "median": 0.0,
+          "avg_substitutions": 0.35,
+          "avg_deletions": 0.15,
+          "avg_insertions": 0.0
+        },
+        "cer": {
+          "avg": 0.005673949546797254,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9792782450995524,
+          "avg_recall": 0.9784810606060607,
+          "avg_f1": 0.9788125323839608,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "OpenAI Whisper",
+        "extractor_id": "stt-openai",
+        "model": "whisper-1",
+        "response_format": "json"
+      },
+      "total_audio_files": 20
+    },
+    {
+      "name": "Deepgram Nova-3",
+      "snapshot_id": "66d841d4161269ca31e10f7c882711a33aa042e136bb9875f2e31d91230bc705",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.02478354978354978,
+          "median": 0.0,
+          "avg_substitutions": 0.3,
+          "avg_deletions": 0.0,
+          "avg_insertions": 0.05
+        },
+        "cer": {
+          "avg": 0.008263792909541382,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.9785984848484848,
+          "avg_recall": 0.9765984848484848,
+          "avg_f1": 0.9775780766852196,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "Deepgram Nova-3",
+        "extractor_id": "stt-deepgram",
+        "model": "nova-3",
+        "punctuate": true,
+        "smart_format": true
+      },
+      "total_audio_files": 20
+    },
+    {
+      "name": "Aldea",
+      "snapshot_id": "bc988755ff7475d9ca6b4ef0609dd2ce5e381fdeda0b077584be340fe04153d7",
+      "success": true,
+      "metrics": {
+        "wer": {
+          "avg": 0.0237978687978688,
+          "median": 0.0,
+          "avg_substitutions": 0.35,
+          "avg_deletions": 0.05,
+          "avg_insertions": 0.0
+        },
+        "cer": {
+          "avg": 0.009018599328115412,
+          "median": 0.0
+        },
+        "word_level": {
+          "avg_precision": 0.976628787878788,
+          "avg_recall": 0.9747121212121213,
+          "avg_f1": 0.9756508967223253,
+          "median_f1": 1.0
+        }
+      },
+      "provider_configuration": {
+        "provider": "Aldea",
+        "extractor_id": "stt-aldea"
+      },
+      "total_audio_files": 20
+    }
+  ],
+  "best_performers": {
+    "lowest_wer": "Aldea",
+    "lowest_cer": "OpenAI Whisper",
+    "best_f1": "OpenAI Whisper"
+  }
+}

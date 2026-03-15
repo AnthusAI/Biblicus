@@ -1,0 +1,5 @@
+extractor_id: pipeline
+configuration:
+  stages:
+    - extractor_id: stt-openai
+      config: {}

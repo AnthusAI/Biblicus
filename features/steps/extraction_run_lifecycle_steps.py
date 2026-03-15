@@ -152,5 +152,5 @@ def step_extraction_snapshot_artifacts_do_not_exist(context, name: str) -> None:
     reference = _remembered_reference(context, name)
     extractor_id, snapshot_id = _extractor_and_snapshot_id(reference)
     corpus = _corpus_path(context, "corpus")
-    snapshot_dir = corpus / ".biblicus" / "snapshots" / "extraction" / extractor_id / snapshot_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
     assert not snapshot_dir.exists(), snapshot_dir

@@ -52,6 +52,7 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
             str(source_path),
             tags=["use-case", "retrieval-lab"],
             source_uri=source_path.resolve().as_uri(),
+            allow_external=True,
         )
         ingested_item_ids.append(ingest_result.item_id)
     corpus.reindex()
@@ -60,7 +61,7 @@ def run_demo(*, repo_root: Path, corpus_path: Path, force: bool) -> Dict[str, ob
         corpus,
         extractor_id="pipeline",
         configuration_name="Use case: pass-through text",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
 
     backend = get_retriever("sqlite-full-text-search")

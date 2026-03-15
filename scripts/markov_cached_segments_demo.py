@@ -392,7 +392,11 @@ def _snapshot_hmm_from_segments(
     )
     snapshot_dir.mkdir(parents=True, exist_ok=True)
 
-    observations = _build_observations(segments=segments, config=config)
+    observations = _build_observations(
+        segments=segments,
+        config=config,
+        cache_context=None,
+    )
     observation_matrix, lengths = _encode_observations(observations=observations, config=config)
     predicted_states, transitions, state_count = _fit_and_decode(
         observations=observation_matrix,

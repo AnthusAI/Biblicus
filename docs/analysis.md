@@ -8,7 +8,7 @@ strictly.
 ## How analysis snapshots work
 
 - Analysis runs are tied to a corpus state via the extraction snapshot reference.
-- The analysis output is written under `.biblicus/runs/analysis/<analysis-id>/<snapshot_id>/`.
+- The analysis output is written under `analysis/<analysis-id>/<snapshot_id>/`.
 - Analysis is reproducible when you supply the same extraction snapshot and corpus catalog state.
 - Analysis configuration is stored as a configuration manifest in the run metadata.
 
@@ -20,7 +20,7 @@ repeatable analysis snapshots, always pass the extraction snapshot reference exp
 Every analysis snapshot records a manifest alongside the output:
 
 ```
-.biblicus/runs/analysis/<analysis-id>/<snapshot_id>/
+analysis/<analysis-id>/<snapshot_id>/
   manifest.json
   output.json
 ```
@@ -33,7 +33,7 @@ compared later.
 Analysis outputs are JSON documents. You can view them directly:
 
 ```
-cat corpora/example/.biblicus/runs/analysis/profiling/RUN_ID/output.json
+cat corpora/example/analysis/profiling/RUN_ID/output.json
 ```
 
 Each analysis backend defines its own `report` payload. The run metadata is consistent across backends.

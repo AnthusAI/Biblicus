@@ -78,9 +78,12 @@ class TextExtractRequest(TextToolLoopRequest):
     :type max_rounds: int
     :param max_edits_per_round: Maximum edits per round.
     :type max_edits_per_round: int
+    :param normalize_nested_spans: Whether to normalize nested spans into a single span.
+    :type normalize_nested_spans: bool
     """
 
     system_prompt: str = Field(default=DEFAULT_EXTRACT_SYSTEM_PROMPT, min_length=1)
+    normalize_nested_spans: bool = Field(default=False)
 
 
 class TextSliceRequest(TextToolLoopRequest):

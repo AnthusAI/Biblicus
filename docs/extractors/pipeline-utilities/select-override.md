@@ -64,7 +64,7 @@ Select-override is always used within a pipeline:
 
 ```bash
 biblicus extract my-corpus --extractor pipeline \
-  --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-override","config":{"media_type_patterns":["image/*"]}}]'
+  --config 'stages=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-override","config":{"media_type_patterns":["image/*"]}}]'
 ```
 
 ### Configuration File
@@ -72,7 +72,7 @@ biblicus extract my-corpus --extractor pipeline \
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-override
@@ -95,7 +95,7 @@ corpus = Corpus.from_directory("my-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pdf-text"},
             {"extractor_id": "ocr-rapidocr"},
             {
@@ -119,7 +119,7 @@ Use OCR for images, text extraction for everything else:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-override
@@ -138,7 +138,7 @@ Use VLM for PDFs, basic extraction for everything else:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: docling-smol
@@ -163,7 +163,7 @@ corpus = Corpus.from_directory("mixed-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "markitdown"},
@@ -187,7 +187,7 @@ Default behavior (no fallback):
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: docling-smol
     - extractor_id: select-override  # Uses last for all types
@@ -257,7 +257,7 @@ Select-override should be the **last step** in a pipeline. All extraction attemp
 Put the extractor you want to use for overrides at the end:
 
 ```yaml
-steps:
+stages:
   - extractor_id: pdf-text        # Default for PDFs
   - extractor_id: docling-smol    # Override for PDFs
   - extractor_id: select-override
@@ -295,7 +295,7 @@ media_type_patterns: ["*/*"]
 Select-override should always be the final step:
 
 ```yaml
-steps:
+stages:
   - extractor-1
   - extractor-2
   - extractor-3
@@ -311,7 +311,7 @@ Use advanced OCR for images, basic extraction for documents:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: ocr-paddleocr-vl  # For images
@@ -328,7 +328,7 @@ Use VLM for PDFs, simpler extractors for other types:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: markitdown
     - extractor_id: docling-smol      # For PDFs
@@ -350,7 +350,7 @@ corpus = Corpus.from_directory("corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "ocr-rapidocr"},

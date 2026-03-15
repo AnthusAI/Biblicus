@@ -1,0 +1,3 @@
+schema_version: 1
+window_size: 4
+min_cooccurrence: 2

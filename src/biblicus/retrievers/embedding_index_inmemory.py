@@ -106,7 +106,7 @@ class EmbeddingIndexInMemoryRetriever:
         )
         embeddings_path = corpus.root / paths["embeddings"]
         chunks_path = corpus.root / paths["chunks"]
-        corpus.snapshots_dir.mkdir(parents=True, exist_ok=True)
+        embeddings_path.parent.mkdir(parents=True, exist_ok=True)
 
         write_embeddings(embeddings_path, embeddings)
         write_chunks_jsonl(chunks_path, chunks_to_records(chunks))

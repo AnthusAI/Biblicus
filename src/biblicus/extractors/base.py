@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from ..corpus import Corpus
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 
 
 class TextExtractor(ABC):
@@ -47,7 +47,7 @@ class TextExtractor(ABC):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Derive text for a catalog item.
@@ -60,8 +60,8 @@ class TextExtractor(ABC):
         :type item: CatalogItem
         :param config: Parsed extractor configuration.
         :type config: pydantic.BaseModel
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Extracted text payload or None when skipped.
         :rtype: ExtractedText or None
         """

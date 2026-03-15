@@ -57,6 +57,7 @@ Topic-driven runs emit extra debugging artifacts:
 
 - `topic_modeling.json`: the full topic modeling report used for the run.
 - `topic_assignments.jsonl`: per-segment topic assignments with the original segment text.
+- `entity_removal.jsonl`: redacted segment text used for topic modeling (when enabled).
 
 ## What Markov analysis does
 
@@ -201,13 +202,16 @@ observations:
   encoder: tfidf
 ```
 
-To keep runs reproducible, pass an extraction snapshot explicitly:
+When no extraction snapshot is provided, Markov analysis looks for a default recipe at
+`corpora/<Corpus>/recipes/extraction/default.yml` and builds or reuses the matching snapshot.
+Recipes can include an optional `max_workers` field to control extraction concurrency. To keep
+runs reproducible, pass an extraction snapshot explicitly:
 
 ```
 biblicus analyze markov \
   --corpus corpora/ag_news_demo_2k \
   --configuration configurations/markov/local-discovery.yml \
-  --extraction-run pipeline:RUN_ID
+  --extraction-snapshot pipeline:RUN_ID
 ```
 
 ### Cascading configurations and CLI overrides
@@ -234,12 +238,36 @@ biblicus analyze markov \
 
 Omitted fields use the default values from the Markov analysis schema. Missing required fields remain hard errors.
 
+## LLM observation cache
+
+When `llm_observations.enabled` is true, Biblicus caches per-segment labels and summaries so you can rerun Markov analysis without
+re-labeling the same text. The cache is keyed by the LLM client configuration (minus the API key), the prompt templates, and an
+optional `cache_name`, so changing prompts or models creates a fresh cache automatically. Use `llm_observations.cache.cache_name`
+to version caches for experiments.
+
+Cache location:
+
+```
+.biblicus/cache/markov/llm-observations/<cache_id>/<extractor_id>/<snapshot_id>/
+```
+
+The cache is updated incrementally. If a prior run stopped partway through, rerunning the analysis will only label the missing
+segments and continue.
+
+To disable caching, set:
+
+```
+llm_observations:
+  cache:
+    enabled: false
+```
+
 ## Output location and artifacts
 
 Markov analysis output is stored under:
 
 ```
-.biblicus/runs/analysis/markov/<snapshot_id>/
+analysis/markov/<snapshot_id>/
 ```
 
 The snapshot directory contains a manifest and structured artifacts. The canonical output is `output.json`. Additional files

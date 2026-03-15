@@ -68,7 +68,7 @@ Select-smart-override is always used within a pipeline:
 
 ```bash
 biblicus extract my-corpus --extractor pipeline \
-  --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-smart-override","config":{"media_type_patterns":["application/pdf"]}}]'
+  --config 'stages=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-smart-override","config":{"media_type_patterns":["application/pdf"]}}]'
 ```
 
 ### Configuration File
@@ -76,7 +76,7 @@ biblicus extract my-corpus --extractor pipeline \
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-smart-override
@@ -100,7 +100,7 @@ corpus = Corpus.from_directory("my-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pdf-text"},
             {"extractor_id": "ocr-rapidocr"},
             {
@@ -125,7 +125,7 @@ Use OCR only when text extraction fails:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text      # Fast, works for digital PDFs
     - extractor_id: ocr-rapidocr  # Slower, for scanned PDFs
     - extractor_id: select-smart-override
@@ -144,7 +144,7 @@ Try fast OCR first, fall back to VLM for poor results:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr   # Fast
     - extractor_id: docling-smol   # Accurate but slower
     - extractor_id: select-smart-override
@@ -168,7 +168,7 @@ corpus = Corpus.from_directory("documents")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "markitdown"},       # Fast
             {"extractor_id": "docling-granite"},  # Expensive
             {
@@ -191,7 +191,7 @@ Different strategies for different media types:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
@@ -276,7 +276,7 @@ The smart override compares the **last extraction** against **all previous** ext
 Put cheaper/faster extractors first:
 
 ```yaml
-steps:
+stages:
   - extractor_id: pdf-text         # Free, fast
   - extractor_id: ocr-rapidocr     # Free, moderate
   - extractor_id: docling-granite  # Expensive, slow
@@ -319,7 +319,7 @@ Track which extractors are being selected:
 Select-smart-override should always be the final step:
 
 ```yaml
-steps:
+stages:
   - extractor-1
   - extractor-2
   - extractor-3
@@ -335,7 +335,7 @@ Try free methods before expensive APIs:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text           # Free
     - extractor_id: stt-openai         # Paid
     - extractor_id: select-smart-override
@@ -351,7 +351,7 @@ Use fast extractors when they work, expensive when they don't:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr    # Fast
     - extractor_id: docling-granite # Accurate
     - extractor_id: select-smart-override
@@ -368,7 +368,7 @@ Auto-detect scanned PDFs and apply OCR:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text         # Fails on scanned PDFs
     - extractor_id: ocr-rapidocr     # Works on scanned PDFs
     - extractor_id: select-smart-override
@@ -389,7 +389,7 @@ corpus = Corpus.from_directory("production-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "markitdown"},

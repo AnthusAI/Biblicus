@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..corpus import Corpus
 from ..errors import ExtractionSnapshotFatalError
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -75,7 +75,7 @@ class MarkItDownExtractor(TextExtractor):
         corpus: Corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Extract text for a non-text item using MarkItDown.
@@ -86,8 +86,8 @@ class MarkItDownExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: MarkItDownExtractorConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Extracted text payload, or None when the item is already text.
         :rtype: ExtractedText or None
         """

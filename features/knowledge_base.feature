@@ -46,10 +46,10 @@ Feature: Knowledge base (turnkey workflow)
     Then the knowledge base error includes "not a directory"
 
   Scenario: Knowledge base can use an explicit corpus root
-    Given a folder "notes" exists with text files:
+    Given a folder "kb-root/notes" exists with text files:
       | filename | contents |
       | note1.txt | alpha |
     And a folder "kb-root" exists
-    When I create a knowledge base from folder "notes" using corpus root "kb-root"
+    When I create a knowledge base from folder "kb-root/notes" using corpus root "kb-root"
     And I query the knowledge base for "alpha"
     Then the knowledge base returns evidence that includes "alpha"

@@ -83,3 +83,40 @@ Feature: User configuration files
     Given I initialized a corpus at "corpus"
     When I call resolve_deepgram_api_key helper function
     Then the resolved API key is None
+
+  Scenario: Resolve Aldea API key from environment via helper function
+    Given I initialized a corpus at "corpus"
+    And the environment variable "ALDEA_API_KEY" is set to "env-aldea-key"
+    When I call resolve_aldea_api_key helper function
+    Then the resolved API key equals "env-aldea-key"
+
+  Scenario: Resolve Aldea API key from config file via helper function
+    Given I initialized a corpus at "corpus"
+    And a local Biblicus user config exists with Aldea API key "config-aldea-key"
+    When I call resolve_aldea_api_key helper function
+    Then the resolved API key equals "config-aldea-key"
+
+  Scenario: Resolve Aldea API key returns None when not configured
+    Given I initialized a corpus at "corpus"
+    When I call resolve_aldea_api_key helper function
+    Then the resolved API key is None
+
+  Scenario: Resolve OpenAI API key from config via helper function
+    Given I initialized a corpus at "corpus"
+    And a local Biblicus user config exists with OpenAI API key "config-openai-key"
+    When I resolve the OpenAI API key from user configuration
+    Then the resolved API key equals "config-openai-key"
+
+  Scenario: Resolve source profile from config with environment overrides
+    Given a file ".biblicus/config.yml" exists with contents:
+      """
+      sources:
+        - name: s3-prod
+          kind: s3
+          access_key_id: config-key
+          secret_access_key: config-secret
+      """
+    And the environment variable "AWS_ACCESS_KEY_ID" is set to "env-key"
+    When I resolve the source profile "s3-prod"
+    Then the resolved source profile kind is "s3"
+    And the resolved source profile access key is "env-key"

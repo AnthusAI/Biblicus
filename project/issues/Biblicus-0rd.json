@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-0rd",
+  "title": "Add BDD feature and steps for stt-aldea extractor",
+  "description": "Part of Biblicus-shs (Aldea STT epic). Add features/stt_aldea_extractor.feature mirroring stt_deepgram_extractor.feature. Add features/steps/stt_aldea_steps.py and features/steps/aldea_steps.py: Aldea dependency unavailable, fake Aldea library, Aldea API key configured. Ensure 100% coverage for stt-aldea extractor.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-11T22:12:17.206408Z",
+  "updated_at": "2026-02-11T23:16:37.017388Z",
+  "closed_at": "2026-02-12T04:16:35.534070Z",
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

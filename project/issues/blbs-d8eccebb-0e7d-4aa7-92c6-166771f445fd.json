@@ -1,0 +1,43 @@
+{
+  "id": "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd",
+  "title": "Fix remote source lint errors",
+  "description": "Fix CI lint failures for remote sources (import order + docstrings)",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ac14e64b-ce93-4fa4-8d95-c26f7198ca67",
+      "author": "ryan.porter",
+      "text": "CI failed ruff: unsorted imports in cli.py and missing public docstrings in remote_sources. Applying import reorder and adding rST docstrings.",
+      "created_at": "2026-02-19T06:13:01.106492Z"
+    },
+    {
+      "id": "277ba56e-24d1-498d-b820-3f2a88a80316",
+      "author": "ryan.porter",
+      "text": "Reordered imports in cli.py and added docstrings in remote_sources. Ruff passes locally via /opt/anaconda3/bin/conda run -n py311 python -m ruff check src/biblicus/. Pushed fix: bad0587.",
+      "created_at": "2026-02-19T06:13:31.145516Z"
+    },
+    {
+      "id": "ca1d51c7-38ce-41c0-8e46-e5a9586d5f90",
+      "author": "ryan.porter",
+      "text": "Added pytest coverage for remote_sources, remote source config validation, and new credential resolvers (tests/test_remote_source_coverage.py). Local pytest run: 10 passed.",
+      "created_at": "2026-02-19T06:23:00.033464Z"
+    },
+    {
+      "id": "b4ac2d6e-da2a-4026-acc2-7e0674ce04e0",
+      "author": "ryan.porter",
+      "text": "Fixed remote source BDD failures by passing extra_env to source pull, and resetting fake boto3/azure flags per scenario. Extended pytest azure coverage to hit account_url and content_settings branches. Remote source behave scenarios pass locally; pytest file now 11 tests.",
+      "created_at": "2026-02-19T06:44:33.821874Z"
+    }
+  ],
+  "created_at": "2026-02-19T06:12:51.634197Z",
+  "updated_at": "2026-02-19T06:44:33.821874Z",
+  "closed_at": null,
+  "custom": {}
+}

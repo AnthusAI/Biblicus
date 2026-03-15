@@ -138,6 +138,7 @@ def step_apply_text_extract_with_prompt(context, text: str) -> None:
         system_prompt=system_prompt,
         max_rounds=10,
         max_edits_per_round=200,
+        normalize_nested_spans=True,
     )
     context.text_extract_result = apply_text_extract(request)
 
@@ -157,6 +158,7 @@ def step_apply_text_extract_with_prompt_default_system(context, text: str) -> No
         prompt_template=prompt_template,
         max_rounds=10,
         max_edits_per_round=200,
+        normalize_nested_spans=True,
     )
     context.text_extract_result = apply_text_extract(request)
 

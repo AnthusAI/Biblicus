@@ -153,7 +153,7 @@ results = corpus.extract_text(
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: ocr-paddleocr-vl
     - extractor_id: select-text

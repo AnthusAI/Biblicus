@@ -96,7 +96,7 @@ class KnowledgeBase:
         :type query_budget: QueryBudget or None
         :param tags: Optional tags to apply during import.
         :type tags: Sequence[str] or None
-        :param corpus_root: Optional corpus root override.
+        :param corpus_root: Optional corpus root override. Must contain the source folder.
         :type corpus_root: str or Path or None
         :return: Knowledge base instance.
         :rtype: KnowledgeBase
@@ -117,12 +117,18 @@ class KnowledgeBase:
 
         temp_dir: Optional[TemporaryDirectory] = None
         if corpus_root is None:
-            temp_dir = TemporaryDirectory(prefix="biblicus-knowledge-base-")
-            corpus_root_path = Path(temp_dir.name) / "corpus"
+            corpus_root_path = source_root
         else:
             corpus_root_path = Path(corpus_root).resolve()
+            if not source_root.is_relative_to(corpus_root_path):
+                raise ValueError(
+                    "Knowledge base source folder must live inside the corpus root."
+                )
 
-        corpus = Corpus.init(corpus_root_path)
+        if (corpus_root_path / "metadata" / "config.json").is_file():
+            corpus = Corpus.open(corpus_root_path)
+        else:
+            corpus = Corpus.init(corpus_root_path)
         corpus.import_tree(source_root, tags=resolved_tags)
 
         retriever = get_retriever(resolved_retriever_id)

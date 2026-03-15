@@ -1,0 +1,20 @@
+{
+  "id": "Biblicus-04z",
+  "title": "Add AMI meeting corpus to STT benchmark",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-14T01:38:54.364331Z",
+  "updated_at": "2026-02-14T01:38:54.364331Z",
+  "closed_at": null,
+  "custom": {
+    "beads_owner": "rap@endymion.com"
+  }
+}

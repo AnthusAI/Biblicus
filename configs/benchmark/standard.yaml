@@ -1,0 +1,53 @@
+# Biblicus Document Understanding Benchmark - Standard Configuration
+#
+# Standard benchmark for release validation.
+# Runs ~50-100 documents per category for reliable metrics.
+# Expected runtime: ~30-60 minutes
+
+benchmark_name: standard
+
+categories:
+  forms:
+    dataset: funsd
+    corpus_path: corpora/funsd_benchmark
+    ground_truth_subdir: funsd_ground_truth
+    primary_metric: f1_score
+    subset_size: 50
+    tags:
+      - funsd
+      - scanned
+      - form
+
+  # academic: (pending - need dataset with actual scanned images)
+  #   dataset: scanned-arxiv
+  #   corpus_path: corpora/scanned_arxiv_benchmark
+  #   ground_truth_subdir: scanned_arxiv_ground_truth
+  #   primary_metric: lcs_ratio
+  #   subset_size: 100
+
+  receipts:
+    dataset: sroie
+    corpus_path: corpora/sroie_benchmark
+    ground_truth_subdir: sroie_ground_truth
+    primary_metric: f1_score
+    subset_size: 100
+    tags:
+      - sroie
+      - receipt
+      - scanned
+
+# Pipelines to benchmark
+pipelines:
+  - configs/baseline-ocr.yaml
+  - configs/ocr-paddleocr.yaml
+  - configs/heron-tesseract.yaml
+  - configs/docling-smol.yaml
+  - configs/ocr-rapidocr.yaml
+  - configs/unstructured.yaml
+
+# Weights for aggregate score calculation
+aggregate_weights:
+  forms: 0.60
+  receipts: 0.40
+
+output_dir: results/benchmark

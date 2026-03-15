@@ -1,0 +1,23 @@
+{
+  "id": "Biblicus-gcy",
+  "title": "Align AnimatedSelector colors with breadcrumb selected state",
+  "description": "Updated AnimatedSelector to use the same color scheme as the breadcrumb component for selected states, creating visual consistency across the UI.\n\nChanges:\n- Background: bg-secondary-muted → bg-selected\n- Foreground: text-primary-text → text-selected-foreground\n- Now matches breadcrumb's active state styling exactly\n\nFile:\n- apps/dashboard/src/components/ui/animated-selector.tsx:103,126\n\nResult: Unified visual language for selection across navigation and selector components.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": "Ryan Alyn Porter",
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-09T23:27:44.639896Z",
+  "updated_at": "2026-02-10T00:04:20.250556Z",
+  "closed_at": "2026-02-09T23:27:48.804699Z",
+  "custom": {
+    "beads_close_reason": "Completed: AnimatedSelector now uses bg-selected and text-selected-foreground to match breadcrumb styling. Visual consistency achieved.",
+    "beads_issue_type": "feature",
+    "beads_notes": "ACTUAL FIX LOCATION:\nThe AnimatedSelector used by Biblicus is imported from the Springstack package, not the local copy.\n\nFixed files:\n- /Users/ryan.porter/Projects/Springstack/packages/springstack/src/ui/AnimatedSelector.tsx:113 (bg-secondary-muted → bg-selected)\n- /Users/ryan.porter/Projects/Springstack/packages/springstack/src/ui/AnimatedSelector.tsx:134 (text-primary-text → text-selected-foreground)\n\nThe local Biblicus copy at apps/dashboard/src/components/ui/animated-selector.tsx was also updated but is not used.\n\nResult: Selector now shows same blue color as breadcrumb selected state in both light and dark modes.",
+    "beads_owner": "rap@endymion.com"
+  }
+}

@@ -39,6 +39,25 @@ Extraction
    :members:
    :undoc-members:
 
+Graph
+-----
+
+.. automodule:: biblicus.graph.extraction
+   :members:
+   :undoc-members:
+
+.. automodule:: biblicus.graph.models
+   :members:
+   :undoc-members:
+
+.. automodule:: biblicus.graph.neo4j
+   :members:
+   :undoc-members:
+
+.. automodule:: biblicus.graph.extractors
+   :members:
+   :undoc-members:
+
 Backends
 --------
 

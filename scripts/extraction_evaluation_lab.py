@@ -12,6 +12,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+try:
+    import pydantic
+except ModuleNotFoundError:  # pragma: no cover - defensive; covered by harness
+    raise
+
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.extraction_evaluation import (
@@ -20,6 +25,7 @@ from biblicus.extraction_evaluation import (
     evaluate_extraction_snapshot,
     write_extraction_evaluation_result,
 )
+from biblicus.sources import load_source
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -125,7 +131,17 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         source_path = (LAB_ITEMS_DIR / label.filename).resolve()
         if not source_path.is_file():
             raise FileNotFoundError(f"Missing lab item: {source_path}")
-        result = corpus.ingest_source(source_path, tags=["extraction_lab"])
+        payload = load_source(source_path)
+        result = corpus.ingest_item(
+            payload.data,
+            filename=payload.filename,
+            media_type=payload.media_type,
+            title=None,
+            tags=["extraction_lab"],
+            metadata=None,
+            source_uri=payload.source_uri,
+            storage_subdir="imports",
+        )
         ingested_ids.append(result.item_id)
 
     extraction_manifest = build_extraction_snapshot(
@@ -133,7 +149,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         extractor_id="pipeline",
         configuration_name=arguments.extraction_configuration_name,
         configuration={
-            "steps": [
+            "stages": [
                 {
                     "extractor_id": arguments.extraction_step,
                     "config": {},

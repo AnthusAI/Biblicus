@@ -125,7 +125,7 @@ What it does:
 - Supports an explicit extractor pipeline through the `pipeline` extractor.
 - Includes a Portable Document Format text extractor plugin.
 - Includes a speech to text extractor plugin for audio items.
-- Includes a selection extractor step for choosing extracted text within a pipeline.
+- Includes a selection extractor stage for choosing extracted text within a pipeline.
 - Includes a MarkItDown extractor plugin for document conversion.
 
 Documentation:
@@ -170,6 +170,30 @@ Behavior specifications:
 Primary implementation:
 
 - `src/biblicus/extraction_evaluation.py`
+
+## Graph extraction stage
+
+What it does:
+
+- Builds graph snapshots from extracted text.
+- Writes graph nodes and edges to a Neo4j backend.
+- Supports deterministic graph identifiers for reproducible experiments.
+- Includes deterministic NLP baselines (NER entities, dependency relations).
+
+Documentation:
+
+- `docs/graph-extraction.md`
+
+Behavior specifications:
+
+- `features/graph_extraction.feature`
+- `features/integration_graph_extraction.feature`
+- `features/graph_extraction_baselines.feature`
+
+Primary implementation:
+
+- `src/biblicus/graph/`
+- `src/biblicus/graph/neo4j.py`
 
 ## Retrieval backends
 

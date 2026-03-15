@@ -12,7 +12,7 @@ Feature: Pipeline selection
       body
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json |
       | metadata-text      | {}          |
       | pass-through-text  | {}          |
@@ -34,7 +34,7 @@ Feature: Pipeline selection
       """
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | metadata-text      | {}          |
@@ -50,7 +50,7 @@ Feature: Pipeline selection
     Given I initialized a corpus at "corpus"
     And a binary file "image.png" exists
     When I ingest the file "image.png" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id  | config_json |
       | select-text   | {}          |
     Then the extraction snapshot does not include extracted text for the last ingested item
@@ -64,7 +64,7 @@ Feature: Pipeline selection
       """
       """
     When I ingest the file "note.md" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with steps:
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
       | extractor_id       | config_json |
       | pass-through-text  | {}          |
       | select-text        | {}          |

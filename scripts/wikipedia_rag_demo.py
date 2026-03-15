@@ -127,7 +127,7 @@ def run_demo(*, corpus_path: Path, limit: int, force: bool, query: str) -> Dict[
         corpus,
         extractor_id="pipeline",
         configuration_name="Wikipedia demo extraction",
-        configuration={"steps": [{"extractor_id": "pass-through-text", "config": {}}]},
+        configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
     )
 
     backend = get_retriever("sqlite-full-text-search")

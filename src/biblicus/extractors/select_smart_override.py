@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models import CatalogItem, ExtractedText, ExtractionStepOutput
+from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
 
@@ -88,7 +88,7 @@ class SelectSmartOverrideExtractor(TextExtractor):
         corpus,
         item: CatalogItem,
         config: BaseModel,
-        previous_extractions: List[ExtractionStepOutput],
+        previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
         Select extracted text using smart override logic.
@@ -99,8 +99,8 @@ class SelectSmartOverrideExtractor(TextExtractor):
         :type item: CatalogItem
         :param config: Parsed configuration model.
         :type config: SelectSmartOverrideConfig
-        :param previous_extractions: Prior step outputs for this item within the pipeline.
-        :type previous_extractions: list[biblicus.models.ExtractionStepOutput]
+        :param previous_extractions: Prior stage outputs for this item within the pipeline.
+        :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
         :return: Selected extracted text payload or None when no prior outputs exist.
         :rtype: ExtractedText or None
         """
@@ -147,13 +147,13 @@ class SelectSmartOverrideExtractor(TextExtractor):
         return self._extraction_to_result(last_extraction)
 
     def _is_meaningful(
-        self, extraction: ExtractionStepOutput, config: SelectSmartOverrideConfig
+        self, extraction: ExtractionStageOutput, config: SelectSmartOverrideConfig
     ) -> bool:
         """
         Check if an extraction has meaningful content.
 
-        :param extraction: Extraction step output to check.
-        :type extraction: ExtractionStepOutput
+        :param extraction: Extraction stage output to check.
+        :type extraction: ExtractionStageOutput
         :param config: Parsed configuration.
         :type config: SelectSmartOverrideConfig
         :return: True if the extraction has meaningful content.
@@ -169,12 +169,12 @@ class SelectSmartOverrideExtractor(TextExtractor):
 
         return True
 
-    def _extraction_to_result(self, extraction: ExtractionStepOutput) -> ExtractedText:
+    def _extraction_to_result(self, extraction: ExtractionStageOutput) -> ExtractedText:
         """
-        Convert an ExtractionStepOutput to ExtractedText.
+        Convert an ExtractionStageOutput to ExtractedText.
 
-        :param extraction: Extraction step output to convert.
-        :type extraction: ExtractionStepOutput
+        :param extraction: Extraction stage output to convert.
+        :type extraction: ExtractionStageOutput
         :return: Extracted text result.
         :rtype: ExtractedText
         """
@@ -182,6 +182,6 @@ class SelectSmartOverrideExtractor(TextExtractor):
         return ExtractedText(
             text=extraction.text or "",
             producer_extractor_id=producer,
-            source_step_index=extraction.step_index,
+            source_stage_index=extraction.stage_index,
             confidence=extraction.confidence,
         )

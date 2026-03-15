@@ -6,7 +6,7 @@
 
 ## Overview
 
-The select-text extractor chooses the first usable extracted text from previous pipeline steps. It implements a simple, deterministic selection policy for fallback chains where multiple extractors may produce results for the same item.
+The select-text extractor chooses the first usable extracted text from previous pipeline stages. It implements a simple, deterministic selection policy for fallback chains where multiple extractors may produce results for the same item.
 
 This extractor is fundamental to pipeline composition, enabling graceful fallback patterns where you try fast extractors first and fall back to more powerful (but slower) alternatives.
 
@@ -54,7 +54,7 @@ Select-text is always used within a pipeline:
 
 ```bash
 biblicus extract my-corpus --extractor pipeline \
-  --config 'steps=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-text"}]'
+  --config 'stages=[{"extractor_id":"pdf-text"},{"extractor_id":"ocr-rapidocr"},{"extractor_id":"select-text"}]'
 ```
 
 ### Configuration File
@@ -62,7 +62,7 @@ biblicus extract my-corpus --extractor pipeline \
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pdf-text
     - extractor_id: ocr-rapidocr
     - extractor_id: select-text  # Select first usable result
@@ -82,7 +82,7 @@ corpus = Corpus.from_directory("my-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pdf-text"},
             {"extractor_id": "ocr-rapidocr"},
             {"extractor_id": "select-text"}
@@ -100,7 +100,7 @@ Try fast extraction first, fall back to slower methods:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text  # Fastest
     - extractor_id: pdf-text           # Fast
     - extractor_id: ocr-rapidocr       # Moderate
@@ -115,7 +115,7 @@ Prefer text extraction over OCR:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: select-text  # Prefer text over OCR
@@ -133,7 +133,7 @@ corpus = Corpus.from_directory("mixed-corpus")
 results = corpus.extract_text(
     extractor_id="pipeline",
     config={
-        "steps": [
+        "stages": [
             {"extractor_id": "pass-through-text"},
             {"extractor_id": "pdf-text"},
             {"extractor_id": "markitdown"},
@@ -151,7 +151,7 @@ Try multiple OCR approaches:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: ocr-rapidocr
     - extractor_id: ocr-paddleocr-vl
     - extractor_id: docling-smol
@@ -170,7 +170,7 @@ If all previous extractors produce empty text, select-text returns the first emp
 
 ### Source Tracking
 
-The selected extraction retains its `producer_extractor_id` and `source_step_index`, allowing you to identify which extractor produced the final text.
+The selected extraction retains its `producer_extractor_id` and `source_stage_index`, allowing you to identify which extractor produced the final text.
 
 ### Determinism
 
@@ -204,7 +204,7 @@ Given the same pipeline configuration and inputs, select-text always produces th
 Put faster extractors first:
 
 ```yaml
-steps:
+stages:
   - pass-through-text  # Instant
   - pdf-text           # Fast
   - markitdown         # Moderate
@@ -217,7 +217,7 @@ steps:
 Or prioritize accuracy:
 
 ```yaml
-steps:
+stages:
   - docling-granite    # Best accuracy
   - docling-smol       # Good accuracy
   - ocr-rapidocr       # Basic OCR
@@ -229,7 +229,7 @@ steps:
 Select-text should always be the final step:
 
 ```yaml
-steps:
+stages:
   - extractor-1
   - extractor-2
   - extractor-3
@@ -245,14 +245,14 @@ extractor_id: select-smart-override
 config:
   default_extractor: pipeline
   default_config:
-    steps:
+    stages:
       - extractor_id: pass-through-text
       - extractor_id: select-text
   overrides:
     - media_type_pattern: "application/pdf"
       extractor: pipeline
       config:
-        steps:
+        stages:
           - extractor_id: pdf-text
           - extractor_id: docling-smol
           - extractor_id: select-text
@@ -267,7 +267,7 @@ Process corpora with mixed document types:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text
     - extractor_id: pdf-text
     - extractor_id: markitdown
@@ -282,7 +282,7 @@ Try free/cheap methods before expensive APIs:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: pass-through-text  # Free
     - extractor_id: pdf-text           # Free
     - extractor_id: stt-openai         # Paid API
@@ -296,7 +296,7 @@ Provide fallbacks for when preferred extractors fail:
 ```yaml
 extractor_id: pipeline
 config:
-  steps:
+  stages:
     - extractor_id: docling-granite  # Preferred
     - extractor_id: docling-smol     # Fallback 1
     - extractor_id: ocr-rapidocr     # Fallback 2

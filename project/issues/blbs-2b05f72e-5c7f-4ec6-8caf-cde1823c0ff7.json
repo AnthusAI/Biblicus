@@ -1,0 +1,18 @@
+{
+  "id": "blbs-2b05f72e-5c7f-4ec6-8caf-cde1823c0ff7",
+  "title": "Collection discovery materializes corpora",
+  "description": "As a data engineer, I want a collection that discovers remote subfolders and materializes corpora, so that each prospect folder becomes its own corpus.",
+  "type": "story",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-fda727",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-02-19T23:24:58.749223Z",
+  "updated_at": "2026-02-19T23:24:58.749223Z",
+  "closed_at": null,
+  "custom": {}
+}

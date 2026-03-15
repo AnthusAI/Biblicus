@@ -1,0 +1,31 @@
+{
+  "id": "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85",
+  "title": "BDD specs: remote corpus source",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ca8da7d1-e931-4452-a3d3-f0335bda0444",
+      "author": "ryan.porter",
+      "text": "Added feature specs features/remote_source_s3.feature and features/remote_source_azure.feature.",
+      "created_at": "2026-02-19T05:35:57.902967Z"
+    },
+    {
+      "id": "f22be556-fc2b-4853-b8a7-29e2a3582000",
+      "author": "ryan.porter",
+      "text": "Added BDD specs in features/remote_source_s3.feature and features/remote_source_azure.feature.",
+      "created_at": "2026-02-19T05:43:41.794331Z"
+    }
+  ],
+  "created_at": "2026-02-19T05:32:29.290380Z",
+  "updated_at": "2026-02-19T05:43:44.841003Z",
+  "closed_at": "2026-02-19T05:43:44.841003Z",
+  "custom": {}
+}

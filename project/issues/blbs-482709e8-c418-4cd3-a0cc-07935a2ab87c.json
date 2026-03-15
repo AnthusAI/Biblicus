@@ -1,0 +1,55 @@
+{
+  "id": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+  "title": "Remote corpus sources",
+  "description": "",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "0913bca1-f702-408e-9a01-a7ab293a0592",
+      "author": "ryan.porter",
+      "text": "As a data engineer, I want to configure a remote storage-backed corpus source, so that I can ingest and use remote content for extraction, retrieval, and analysis like any other corpus. Proposed name: Remote corpus source (provider-specific kinds: azure-blob, s3). Definition of Done: stories for Azure Blob and S3 behavior specs are implemented, specs green, docs updated.",
+      "created_at": "2026-02-19T04:54:04.460536Z"
+    },
+    {
+      "id": "622d91f9-e097-41bf-9546-5ffcfa65d26d",
+      "author": "ryan.porter",
+      "text": "Note: kbs create failed to resolve parent blbs-482709 without --no-validate (error: not found). Created stories blbs-539435 and blbs-ba86e0 using --no-validate so parent could be set. Orphan story blbs-654efa deleted.",
+      "created_at": "2026-02-19T04:55:28.026833Z"
+    },
+    {
+      "id": "9ac327d9-0016-4eb2-bdc5-a62fdd4088b1",
+      "author": "ryan.porter",
+      "text": "Confirmed name: Remote corpus source (provider-specific kinds: azure-blob, s3).",
+      "created_at": "2026-02-19T05:07:24.560665Z"
+    },
+    {
+      "id": "36dd50c6-94ba-4275-aecf-021db740ec2e",
+      "author": "ryan.porter",
+      "text": "Tasks created: PR-FAQ blbs-0085bf, Docs blbs-854fbe, BDD specs blbs-3730fe, Implementation blbs-e4d207, Test harness blbs-abe804.",
+      "created_at": "2026-02-19T05:32:36.691115Z"
+    },
+    {
+      "id": "32a5cd7f-9b71-46e5-9957-a40c7a326883",
+      "author": "ryan.porter",
+      "text": "Checked parent associations: tasks 0085bf, 3730fe, 854fbe, abe804, e4d207, 05fe0b, d8ecce, and 25f7ee are all parented to epic 482709. If the epic view shows no descendants, try console reload or clear filters.",
+      "created_at": "2026-02-19T17:58:28.780671Z"
+    },
+    {
+      "id": "c4e7132e-5815-4869-b9b9-7bf38c472a43",
+      "author": "ryan.porter",
+      "text": "Closed. Remote corpus sources delivered (Azure + S3): docs, specs, CLI, and Behave passing; lint/coverage fixes merged.",
+      "created_at": "2026-02-21T00:53:13.202467Z"
+    }
+  ],
+  "created_at": "2026-02-19T04:54:00.311281Z",
+  "updated_at": "2026-02-21T00:53:13.202467Z",
+  "closed_at": "2026-02-21T00:52:55.484124Z",
+  "custom": {}
+}
