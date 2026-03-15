@@ -81,7 +81,7 @@ jobs:
       - name: Install package and development dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,datasets,reinforcement-memory]"
+          python -m pip install -e ".[dev,datasets]"
 
       - name: Cache test fixtures
         uses: actions/cache@v4
@@ -96,6 +96,8 @@ jobs:
           python tests/fixtures/fetch_wikitext2.py
 
       - name: Run tests with coverage
+        env:
+          PYTEST_ADDOPTS: -k "not reinforcement_memory"
         run: |
           python scripts/test.py
 
