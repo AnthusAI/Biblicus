@@ -3203,6 +3203,7 @@ def step_run_harness(context) -> None:
             best_pipeline="",
             best_score=0.0,
             primary_metric="f1",
+            primary_score=0.0,
             processing_time_seconds=0.1,
         )})
     except Exception:
@@ -6146,6 +6147,7 @@ def step_exhaust_gaps(context) -> None:
             best_pipeline="p1",
             best_score=0.8,
             primary_metric="f1",
+            primary_score=0.8,
             processing_time_seconds=1.0,
         )
         bench_result = benchmark_runner.BenchmarkResult(
@@ -6194,6 +6196,7 @@ def step_exhaust_gaps(context) -> None:
                     best_pipeline="p1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=0.1,
                 )
             },
@@ -11681,6 +11684,7 @@ def step_exhaust_gaps(context) -> None:
         best_pipeline="",
         best_score=0.0,
         primary_metric="f1",
+        primary_score=0.0,
         processing_time_seconds=0.1,
     )
     runner = benchmark_runner.BenchmarkRunner(
@@ -13929,6 +13933,7 @@ def step_exhaust_core(context) -> None:
                     best_pipeline="pipe1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=1.0,
                 )
             },
