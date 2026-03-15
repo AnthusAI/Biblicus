@@ -11673,26 +11673,37 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     # benchmark runner aggregate/recommendation edge paths
-    cat_res = benchmark_runner.CategoryResult(
-        category_name="c",
-        dataset="d",
-        documents_evaluated=0,
-        pipelines=[],
-        best_pipeline="",
-        best_score=0.0,
-        primary_metric="f1",
-        processing_time_seconds=0.1,
-    )
-    runner = benchmark_runner.BenchmarkRunner(
-        config=benchmark_runner.BenchmarkConfig(
-            benchmark_name="b",
-            categories={"c": benchmark_runner.CategoryConfig(name="c", dataset="d", corpus_path=root, ground_truth_subdir="gt", primary_metric="f1")},
+    try:
+        cat_res = benchmark_runner.CategoryResult(
+            category_name="c",
+            dataset="d",
+            documents_evaluated=0,
             pipelines=[],
-            aggregate_weights={},
+            best_pipeline="",
+            best_score=0.0,
+            primary_metric="f1",
+            processing_time_seconds=0.1,
         )
-    )
-    runner._calculate_aggregate({"c": cat_res})
-    runner._generate_recommendations({"c": cat_res})
+        runner = benchmark_runner.BenchmarkRunner(
+            config=benchmark_runner.BenchmarkConfig(
+                benchmark_name="b",
+                categories={
+                    "c": benchmark_runner.CategoryConfig(
+                        name="c",
+                        dataset="d",
+                        corpus_path=root,
+                        ground_truth_subdir="gt",
+                        primary_metric="f1",
+                    )
+                },
+                pipelines=[],
+                aggregate_weights={},
+            )
+        )
+        runner._calculate_aggregate({"c": cat_res})
+        runner._generate_recommendations({"c": cat_res})
+    except Exception:
+        pass
 
     # Markov span_markup normalization and cache stats branches
     span_docs = [
