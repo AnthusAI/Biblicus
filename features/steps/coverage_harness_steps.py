@@ -3203,6 +3203,7 @@ def step_run_harness(context) -> None:
             best_pipeline="",
             best_score=0.0,
             primary_metric="f1",
+            primary_score=0.0,
             processing_time_seconds=0.1,
         )})
     except Exception:
@@ -6146,6 +6147,7 @@ def step_exhaust_gaps(context) -> None:
             best_pipeline="p1",
             best_score=0.8,
             primary_metric="f1",
+            primary_score=0.8,
             processing_time_seconds=1.0,
         )
         bench_result = benchmark_runner.BenchmarkResult(
@@ -6194,6 +6196,7 @@ def step_exhaust_gaps(context) -> None:
                     best_pipeline="p1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=0.1,
                 )
             },
@@ -11673,37 +11676,27 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     # benchmark runner aggregate/recommendation edge paths
-    try:
-        cat_res = benchmark_runner.CategoryResult(
-            category_name="c",
-            dataset="d",
-            documents_evaluated=0,
+    cat_res = benchmark_runner.CategoryResult(
+        category_name="c",
+        dataset="d",
+        documents_evaluated=0,
+        pipelines=[],
+        best_pipeline="",
+        best_score=0.0,
+        primary_metric="f1",
+        primary_score=0.0,
+        processing_time_seconds=0.1,
+    )
+    runner = benchmark_runner.BenchmarkRunner(
+        config=benchmark_runner.BenchmarkConfig(
+            benchmark_name="b",
+            categories={"c": benchmark_runner.CategoryConfig(name="c", dataset="d", corpus_path=root, ground_truth_subdir="gt", primary_metric="f1")},
             pipelines=[],
-            best_pipeline="",
-            best_score=0.0,
-            primary_metric="f1",
-            processing_time_seconds=0.1,
+            aggregate_weights={},
         )
-        runner = benchmark_runner.BenchmarkRunner(
-            config=benchmark_runner.BenchmarkConfig(
-                benchmark_name="b",
-                categories={
-                    "c": benchmark_runner.CategoryConfig(
-                        name="c",
-                        dataset="d",
-                        corpus_path=root,
-                        ground_truth_subdir="gt",
-                        primary_metric="f1",
-                    )
-                },
-                pipelines=[],
-                aggregate_weights={},
-            )
-        )
-        runner._calculate_aggregate({"c": cat_res})
-        runner._generate_recommendations({"c": cat_res})
-    except Exception:
-        pass
+    )
+    runner._calculate_aggregate({"c": cat_res})
+    runner._generate_recommendations({"c": cat_res})
 
     # Markov span_markup normalization and cache stats branches
     span_docs = [
@@ -13940,6 +13933,7 @@ def step_exhaust_core(context) -> None:
                     best_pipeline="pipe1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=1.0,
                 )
             },
