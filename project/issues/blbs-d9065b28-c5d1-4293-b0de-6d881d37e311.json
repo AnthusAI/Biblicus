@@ -22,10 +22,16 @@
       "author": "ryan",
       "text": "Patched .coveragerc to include the same omit patterns as pyproject coverage config, fixing CI mismatch where scripts/test.py used stricter inclusion and failed 98% threshold.",
       "created_at": "2026-03-15T01:43:51.737011Z"
+    },
+    {
+      "id": "a3ea3298-d532-4886-9b68-2b501b3cc044",
+      "author": "ryan",
+      "text": "Root cause now confirmed from GitHub logs: test matrix failed due to missing optional dependencies required by reinforcement-memory tests (virtuus, scikit-learn). Updated CI test install command to include reinforcement-memory extras.",
+      "created_at": "2026-03-15T01:48:32.255502Z"
     }
   ],
   "created_at": "2026-03-15T01:42:30.163947Z",
-  "updated_at": "2026-03-15T01:43:51.737011Z",
+  "updated_at": "2026-03-15T01:48:32.255502Z",
   "closed_at": null,
   "custom": {}
 }
