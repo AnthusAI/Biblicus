@@ -107,6 +107,7 @@ source = ["biblicus"]
 omit = [
   "*/biblicus/_vendor/*",
   "*/biblicus/analysis/*",
+  "*/biblicus/analysis/reinforcement_memory/*",
   "*/biblicus/evaluation/*",
   "*/biblicus/ai/*",
   "*/biblicus/corpus.py",
