@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "6c2872a1-be0a-4615-8d86-2edd32f6025c",
+  "issue_id": "blbs-1b4dbc3e-fe33-4a24-a1e8-c679c89f97dd",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-16T16:31:24.163Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Confirm dev passes GitHub CI; if not, fix and push; then create PR from dev into main with summary.",
+    "issue_type": "task",
+    "labels": [
+      "ci",
+      "git",
+      "release"
+    ],
+    "parent": null,
+    "priority": 0,
+    "status": "open",
+    "title": "Validate dev CI and open dev->main PR"
+  }
+}
