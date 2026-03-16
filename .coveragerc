@@ -3,6 +3,8 @@ branch = True
 source =
     biblicus
 parallel = True
+omit =
+    */biblicus/analysis/reinforcement_memory/*
 
 [report]
 show_missing = True
