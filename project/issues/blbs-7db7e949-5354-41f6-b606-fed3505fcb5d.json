@@ -3,7 +3,7 @@
   "title": "Add and run local CodeQL workflow in Biblicus",
   "description": "Port Kanbus local CodeQL runner into Biblicus, run it for python/javascript, and fix findings.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 0,
   "assignee": null,
   "creator": null,
@@ -15,7 +15,7 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-03-16T17:50:24.329041Z",
-  "updated_at": "2026-03-16T17:50:26.634278Z",
-  "closed_at": null,
+  "updated_at": "2026-03-16T18:10:28.957320Z",
+  "closed_at": "2026-03-16T18:10:28.957320Z",
   "custom": {}
 }
