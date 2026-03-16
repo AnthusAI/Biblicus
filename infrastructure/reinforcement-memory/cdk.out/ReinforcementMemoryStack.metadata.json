@@ -1,0 +1,110 @@
+{
+  "/ReinforcementMemoryStack/ReinforcementMemoryVectorBucket": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ReinforcementMemoryVectorBucket"
+    }
+  ],
+  "/ReinforcementMemoryStack/ReinforcementMemoryVectorIndex": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ReinforcementMemoryVectorIndex"
+    }
+  ],
+  "/ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+    {
+      "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+      "data": true
+    }
+  ],
+  "/ReinforcementMemoryStack/S3VectorBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "S3VectorBucketName"
+    }
+  ],
+  "/ReinforcementMemoryStack/S3VectorBucketArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "S3VectorBucketArn"
+    }
+  ],
+  "/ReinforcementMemoryStack/S3VectorIndexName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "S3VectorIndexName"
+    }
+  ],
+  "/ReinforcementMemoryStack/S3VectorIndexArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "S3VectorIndexArn"
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsBucketName"
+    }
+  ],
+  "/ReinforcementMemoryStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/ReinforcementMemoryStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsBucket71985974"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketAutoDeleteObjects"
+      }
+    }
+  ],
+  "/ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+    }
+  ],
+  "/ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+    }
+  ],
+  "/ReinforcementMemoryStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsBucketPolicy543770B1"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketPolicyStatements"
+      }
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsBucket/AutoDeleteObjectsCustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsBucketAutoDeleteObjectsCustomResource133A821E"
+    }
+  ]
+}

@@ -506,7 +506,9 @@ def build_extraction_snapshot(
                 extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
             )
         except FileNotFoundError:
-            pass
+            manifest_path = snapshot_dir / "manifest.json"
+            if manifest_path.exists():
+                raise
     else:
         snapshot_dir.mkdir(parents=True, exist_ok=False)
 

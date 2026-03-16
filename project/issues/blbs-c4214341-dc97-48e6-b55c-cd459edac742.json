@@ -1,0 +1,31 @@
+{
+  "id": "blbs-c4214341-dc97-48e6-b55c-cd459edac742",
+  "title": "Audit CI checks for ruleset",
+  "description": "Determine if Biblicus repo has CI test action/check name to require in branch ruleset.",
+  "type": "chore",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "108ed117-7ca5-4956-acc3-8dd3a91ba4f1",
+      "author": "derek",
+      "text": "Latest Biblicus CI check names: lint, test (3.9), test (3.10), test (3.11), test (3.12), docs, deploy-docs, release. Recommend requiring lint + test matrix, and not requiring release/deploy-docs/docs unless you want docs/publishing gating.",
+      "created_at": "2026-02-26T21:44:58.209484101Z"
+    },
+    {
+      "id": "ca84f2db-0f56-49b7-861c-28f555ce863e",
+      "author": "derek",
+      "text": "Created ruleset 'main-branch-protection' for refs/heads/main with PR requirement (1 approval, dismiss stale, require last push approval), required status checks: lint, test (3.9), test (3.10), test (3.11), test (3.12); plus block deletions and force pushes. No bypass actors.",
+      "created_at": "2026-02-26T21:45:56.768284515Z"
+    }
+  ],
+  "created_at": "2026-02-26T21:44:39.005062976Z",
+  "updated_at": "2026-02-26T21:45:59.150902212Z",
+  "closed_at": "2026-02-26T21:45:59.150902212Z",
+  "custom": {}
+}

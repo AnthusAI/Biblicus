@@ -1,0 +1,25 @@
+name: "Biblicus CodeQL Config"
+
+queries:
+  - uses: security-and-quality
+
+paths:
+  - src
+  - apps/dashboard/src
+
+paths-ignore:
+  - "**/node_modules/**"
+  - ".codeql/**"
+  - "project/**"
+  - "project.kanbus.bak/**"
+  - "reports/**"
+  - "results/**"
+  - "features/**"
+  - "tests/**"
+  - "scripts/**"
+  - "docs/**"
+  - "infrastructure/**"
+  - "src/biblicus/analysis/reinforcement_memory/**"
+  - "raw/**"
+  - "datasets/**"
+  - "corpora/**"

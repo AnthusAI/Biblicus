@@ -1,0 +1,29 @@
+{
+  "id": "blbs-1b4dbc3e-fe33-4a24-a1e8-c679c89f97dd",
+  "title": "Validate dev CI and open dev->main PR",
+  "description": "Confirm dev passes GitHub CI; if not, fix and push; then create PR from dev into main with summary.",
+  "type": "task",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "ci",
+    "git",
+    "release"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "a13b4bb8-d3bf-4469-a599-86669f2c8d59",
+      "author": "ryan",
+      "text": "Opened PR #17 (dev -> main), iterated on failing CI by excluding optional reinforcement-memory tests in default runner and omitting optional reinforcement-memory package from default coverage run. PR #17 checks are now green across lint, test matrix, docs, and CodeQL.",
+      "created_at": "2026-03-16T16:56:16.603391Z"
+    }
+  ],
+  "created_at": "2026-03-16T16:31:24.162657Z",
+  "updated_at": "2026-03-16T16:56:16.619846Z",
+  "closed_at": "2026-03-16T16:56:16.619846Z",
+  "custom": {}
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "event_id": "b1f7fd84-c751-4c5c-94a3-bf5bcd6389ee",
+  "issue_id": "blbs-7db7e949-5354-41f6-b606-fed3505fcb5d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-16T17:50:24.330Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Port Kanbus local CodeQL runner into Biblicus, run it for python/javascript, and fix findings.",
+    "issue_type": "task",
+    "labels": [
+      "codeql",
+      "ci"
+    ],
+    "parent": null,
+    "priority": 0,
+    "status": "open",
+    "title": "Add and run local CodeQL workflow in Biblicus"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "f297c0dd-ce02-40c0-841e-abdee0d4eb32",
+  "issue_id": "blbs-18636d83-e8fe-4099-8b57-e4fb3d26f38d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-15T12:31:12.374Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Switch local to dev, merge feat/pipeline-metadata-field directly, run quick checks, and push dev.",
+    "issue_type": "task",
+    "labels": [
+      "ci",
+      "git",
+      "merge"
+    ],
+    "parent": null,
+    "priority": 0,
+    "status": "open",
+    "title": "Merge feat/pipeline-metadata-field into dev"
+  }
+}

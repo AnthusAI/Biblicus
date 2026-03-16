@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react';
 import { localAPI } from '@/lib/local-api';
-import { Card } from '@/components/ui/card';
 
 export interface AggregateStatsBarProps {
   corpusName: string;

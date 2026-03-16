@@ -1,0 +1,29 @@
+{
+  "id": "blbs-18636d83-e8fe-4099-8b57-e4fb3d26f38d",
+  "title": "Merge feat/pipeline-metadata-field into dev",
+  "description": "Switch local to dev, merge feat/pipeline-metadata-field directly, run quick checks, and push dev.",
+  "type": "task",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "ci",
+    "git",
+    "merge"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "11ac0226-13e6-44a5-845e-5badd88d4dd2",
+      "author": "ryan",
+      "text": "Merged feat/pipeline-metadata-field directly into dev with --allow-unrelated-histories, resolved add/add conflicts by taking feature-side content in conflicted files, and pushed dev to origin (edf2bf6).",
+      "created_at": "2026-03-15T12:31:58.528150Z"
+    }
+  ],
+  "created_at": "2026-03-15T12:31:12.373541Z",
+  "updated_at": "2026-03-15T12:31:58.536395Z",
+  "closed_at": "2026-03-15T12:31:58.536395Z",
+  "custom": {}
+}

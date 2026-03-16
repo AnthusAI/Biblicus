@@ -236,9 +236,7 @@ def _run_markov(
         observations = _load_observations(observations_cache_path)
         observations_from_cache = True
         topic_report = (
-            _load_topic_modeling_report(run_dir=run_dir)
-            if config.topic_modeling.enabled
-            else None
+            _load_topic_modeling_report(run_dir=run_dir) if config.topic_modeling.enabled else None
         )
         if config.topic_modeling.enabled and topic_report is None:
             observations, topic_report = _apply_topic_modeling(
@@ -277,9 +275,7 @@ def _run_markov(
         and cache_context.generated_segments == 0
     ):
         cache_context.cached_segments = sum(
-            1
-            for observation in observations
-            if observation.segment_text not in {"START", "END"}
+            1 for observation in observations if observation.segment_text not in {"START", "END"}
         )
 
     observation_matrix, lengths = _encode_observations(observations=observations, config=config)
@@ -575,13 +571,19 @@ def _segment_documents(
         if method == MarkovAnalysisSegmentationMethod.LLM:
             return _llm_segments(item_id=document.item_id, text=filtered_text, config=config)
         if method == MarkovAnalysisSegmentationMethod.SPAN_MARKUP:
-            return _span_markup_segments(item_id=document.item_id, text=filtered_text, config=config)
+            return _span_markup_segments(
+                item_id=document.item_id, text=filtered_text, config=config
+            )
         raise ValueError(f"Unsupported segmentation method: {method}")
 
-    if method in {
-        MarkovAnalysisSegmentationMethod.LLM,
-        MarkovAnalysisSegmentationMethod.SPAN_MARKUP,
-    } and config.segmentation.max_workers > 1:
+    if (
+        method
+        in {
+            MarkovAnalysisSegmentationMethod.LLM,
+            MarkovAnalysisSegmentationMethod.SPAN_MARKUP,
+        }
+        and config.segmentation.max_workers > 1
+    ):
         results: List[Optional[List[MarkovAnalysisSegment]]] = [None] * total
         completed = 0
         with ThreadPoolExecutor(max_workers=config.segmentation.max_workers) as executor:
@@ -948,15 +950,15 @@ def _apply_start_end_labels(
             if reason:
                 prefix = f"{prefix}\n{markup_config.end_reject_reason_prefix}: {reason}"
             existing_text = segments[-1].text
-            start_prefix = f"{markup_config.start_label_value}\n" if markup_config.start_label_value else ""
+            start_prefix = (
+                f"{markup_config.start_label_value}\n" if markup_config.start_label_value else ""
+            )
             if start_prefix and existing_text.startswith(start_prefix):
                 body_text = existing_text[len(start_prefix) :]
                 updated = f"{start_prefix}{prefix}\n{body_text}"
             else:
                 updated = f"{prefix}\n{existing_text}"
-            segments[-1] = segments[-1].model_copy(
-                update={"text": updated}
-            )
+            segments[-1] = segments[-1].model_copy(update={"text": updated})
     return segments
 
 
@@ -1529,7 +1531,7 @@ def _fit_and_decode(
 
             X = np.asarray(X, dtype=int)
         except ImportError:
-            pass
+            X = [[int(value)] for value in encoded]
         model = CategoricalHMM(n_components=config.model.n_states)
         model.fit(X, lengths=lengths)
         if hasattr(model, "startprob_"):
@@ -1551,13 +1553,12 @@ def _fit_and_decode(
         predicted = list(model.predict(X, lengths=lengths))
     else:
         matrix = list(observations)  # type: ignore[arg-type]
-        X = matrix
         try:
             import numpy as np
 
             X = np.asarray(matrix, dtype=float)
         except ImportError:
-            pass
+            X = matrix
         model = GaussianHMM(n_components=config.model.n_states)
         model.fit(X, lengths=lengths)
         if hasattr(model, "startprob_"):
