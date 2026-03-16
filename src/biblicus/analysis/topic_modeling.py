@@ -224,7 +224,9 @@ def _run_topic_modeling(
     if config.entity_removal.enabled:
         artifact_paths.append("entity_removal.jsonl")
 
-    run_manifest = run_manifest.model_copy(update={"artifact_paths": artifact_paths, "stats": run_stats})
+    run_manifest = run_manifest.model_copy(
+        update={"artifact_paths": artifact_paths, "stats": run_stats}
+    )
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
     _write_latest_pointer(
         corpus=corpus,
@@ -412,7 +414,6 @@ def _collect_documents(
         errors=errors,
     )
     if not documents:
-        report = report.model_copy(update={"status": TopicModelingStageStatus.FAILED})
         raise ValueError("Topic modeling requires at least one extracted text document")
     return documents, report
 
@@ -509,7 +510,6 @@ def _apply_llm_extraction(
         errors=errors,
     )
     if not extracted_documents:
-        report = report.model_copy(update={"status": TopicModelingStageStatus.FAILED})
         raise ValueError("LLM extraction produced no usable documents")
     return report, extracted_documents
 
@@ -589,7 +589,7 @@ def _apply_entity_removal(
         import spacy
     except ImportError as import_error:
         raise ValueError(
-            "Entity removal requires spaCy. Install it with pip install \"biblicus[ner]\"."
+            'Entity removal requires spaCy. Install it with pip install "biblicus[ner]".'
         ) from import_error
 
     try:
@@ -786,6 +786,7 @@ def _apply_lexical_processing(
                 file=sys.stderr,
             )
             last_log_time = now
+
     for document in documents:
         text_value = document.text
         if config.lowercase:

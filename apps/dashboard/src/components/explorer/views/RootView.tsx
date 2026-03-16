@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { api, Corpus } from '../../../lib/api';
-import { Folder, Hash, FileText } from 'lucide-react';
+import { Corpus } from '../../../lib/api';
+import { FileText, Folder } from 'lucide-react';
 
 interface RootViewProps {
   onSelect: (corpus: Corpus) => void;
@@ -15,7 +14,7 @@ export function RootView({ onSelect, corpora, loading, stackedCorpora = [], isAc
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-2`}>
-      {corpora.map((corpus, corpusIndex) => {
+      {corpora.map((corpus) => {
         const isInStack = stackedCorpora.includes(corpus.name);
 
         // If in stack, don't render here - it's rendered in breadcrumb area

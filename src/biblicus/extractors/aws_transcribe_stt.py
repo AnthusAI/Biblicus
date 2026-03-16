@@ -7,6 +7,7 @@ languages, custom vocabularies, and speaker identification.
 
 from __future__ import annotations
 
+import sys
 import time
 from typing import Any, Dict, List, Optional
 
@@ -136,13 +137,14 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
             ) from import_error
 
         # Initialize AWS clients
-        s3_client = boto3.client('s3', region_name=parsed_config.region_name)
-        transcribe_client = boto3.client('transcribe', region_name=parsed_config.region_name)
+        s3_client = boto3.client("s3", region_name=parsed_config.region_name)
+        transcribe_client = boto3.client("transcribe", region_name=parsed_config.region_name)
 
         source_path = corpus.root / item.relpath
 
         # Generate unique job name
         import uuid
+
         job_name = f"biblicus-{item.id}-{uuid.uuid4().hex[:8]}"
 
         # Upload audio to S3 (Transcribe requires S3 URI)
@@ -151,7 +153,7 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
 
         try:
             # Upload audio to S3
-            with source_path.open('rb') as audio_file:
+            with source_path.open("rb") as audio_file:
                 s3_client.upload_fileobj(audio_file, bucket_name, s3_key)
 
             # Detect media format from media type
@@ -159,29 +161,29 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
 
             # Start transcription job
             job_args = {
-                'TranscriptionJobName': job_name,
-                'Media': {'MediaFileUri': f's3://{bucket_name}/{s3_key}'},
-                'MediaFormat': media_format,
-                'LanguageCode': parsed_config.language_code,
+                "TranscriptionJobName": job_name,
+                "Media": {"MediaFileUri": f"s3://{bucket_name}/{s3_key}"},
+                "MediaFormat": media_format,
+                "LanguageCode": parsed_config.language_code,
             }
 
             # Add optional settings
             settings = {}
             if parsed_config.identify_speakers:
-                settings['ShowSpeakerLabels'] = True
+                settings["ShowSpeakerLabels"] = True
                 if parsed_config.max_speakers is not None:
-                    settings['MaxSpeakerLabels'] = parsed_config.max_speakers
+                    settings["MaxSpeakerLabels"] = parsed_config.max_speakers
 
             if parsed_config.vocabulary_name:
-                settings['VocabularyName'] = parsed_config.vocabulary_name
+                settings["VocabularyName"] = parsed_config.vocabulary_name
 
             if parsed_config.show_alternatives:
-                settings['ShowAlternatives'] = True
+                settings["ShowAlternatives"] = True
                 if parsed_config.max_alternatives is not None:
-                    settings['MaxAlternatives'] = parsed_config.max_alternatives
+                    settings["MaxAlternatives"] = parsed_config.max_alternatives
 
             if settings:
-                job_args['Settings'] = settings
+                job_args["Settings"] = settings
 
             transcribe_client.start_transcription_job(**job_args)
 
@@ -191,43 +193,41 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
             elapsed = 0
 
             while elapsed < max_wait_seconds:
-                response = transcribe_client.get_transcription_job(
-                    TranscriptionJobName=job_name
-                )
-                status = response['TranscriptionJob']['TranscriptionJobStatus']
+                response = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+                status = response["TranscriptionJob"]["TranscriptionJobStatus"]
 
-                if status == 'COMPLETED':
+                if status == "COMPLETED":
                     # Get transcript
-                    transcript_uri = response['TranscriptionJob']['Transcript']['TranscriptFileUri']
+                    transcript_uri = response["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
 
                     import json as json_module
                     import urllib.request
 
                     with urllib.request.urlopen(transcript_uri) as response_data:
-                        transcript_data = json_module.loads(response_data.read().decode('utf-8'))
+                        transcript_data = json_module.loads(response_data.read().decode("utf-8"))
 
                     # Extract text
-                    transcript_text = transcript_data['results']['transcripts'][0]['transcript']
+                    transcript_text = transcript_data["results"]["transcripts"][0]["transcript"]
 
                     # Extract metadata
                     metadata = {
-                        'job_name': job_name,
-                        'language_code': parsed_config.language_code,
-                        'speaker_labels': parsed_config.identify_speakers
+                        "job_name": job_name,
+                        "language_code": parsed_config.language_code,
+                        "speaker_labels": parsed_config.identify_speakers,
                     }
 
                     # Add speaker information if available
-                    if 'speaker_labels' in transcript_data['results']:
-                        metadata['speakers'] = transcript_data['results']['speaker_labels']
+                    if "speaker_labels" in transcript_data["results"]:
+                        metadata["speakers"] = transcript_data["results"]["speaker_labels"]
 
                     return ExtractedText(
                         text=transcript_text.strip(),
                         producer_extractor_id=self.extractor_id,
-                        metadata=metadata
+                        metadata=metadata,
                     )
 
-                elif status == 'FAILED':
-                    failure_reason = response['TranscriptionJob'].get('FailureReason', 'Unknown')
+                elif status == "FAILED":
+                    failure_reason = response["TranscriptionJob"].get("FailureReason", "Unknown")
                     raise ExtractionSnapshotFatalError(
                         f"AWS Transcribe job failed: {failure_reason}"
                     )
@@ -244,13 +244,19 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
             # Cleanup: Delete transcription job and S3 object
             try:
                 transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
-            except Exception:
-                pass
+            except Exception as cleanup_error:
+                print(
+                    f"Warning: failed to delete AWS Transcribe job {job_name}: {cleanup_error}",
+                    file=sys.stderr,
+                )
 
             try:
                 s3_client.delete_object(Bucket=bucket_name, Key=s3_key)
-            except Exception:
-                pass
+            except Exception as cleanup_error:
+                print(
+                    f"Warning: failed to delete temporary S3 object {s3_key}: {cleanup_error}",
+                    file=sys.stderr,
+                )
 
     def _detect_media_format(self, media_type: str) -> str:
         """
@@ -263,17 +269,17 @@ class AwsTranscribeSpeechToTextExtractor(TextExtractor):
         """
         media_type_lower = media_type.lower()
 
-        if 'flac' in media_type_lower:
-            return 'flac'
-        elif 'wav' in media_type_lower or 'wave' in media_type_lower:
-            return 'wav'
-        elif 'mp3' in media_type_lower or 'mpeg' in media_type_lower:
-            return 'mp3'
-        elif 'mp4' in media_type_lower or 'm4a' in media_type_lower:
-            return 'mp4'
-        elif 'ogg' in media_type_lower:
-            return 'ogg'
-        elif 'webm' in media_type_lower:
-            return 'webm'
+        if "flac" in media_type_lower:
+            return "flac"
+        elif "wav" in media_type_lower or "wave" in media_type_lower:
+            return "wav"
+        elif "mp3" in media_type_lower or "mpeg" in media_type_lower:
+            return "mp3"
+        elif "mp4" in media_type_lower or "m4a" in media_type_lower:
+            return "mp4"
+        elif "ogg" in media_type_lower:
+            return "ogg"
+        elif "webm" in media_type_lower:
+            return "webm"
         else:
-            return 'wav'  # default
+            return "wav"  # default

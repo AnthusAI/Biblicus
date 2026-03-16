@@ -73,8 +73,9 @@ def _get_or_build_extraction_snapshot(
                 recipe_data = json.load(handle)
             extractor_id = recipe_data.get("extractor_id", extractor_id)
             config = recipe_data.get("config", config)
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError):
+            extractor_id = "pipeline"
+            config = {}
 
     snapshot = corpus.extract(extractor_id=extractor_id, config=config, label=analysis_label)
     return ExtractionSnapshotReference(extractor_id=extractor_id, snapshot_id=snapshot.snapshot_id)
@@ -618,15 +619,14 @@ def _dependency_mode(arguments: argparse.Namespace) -> str:
 def _default_extraction_recipe_path(corpus: Corpus, *, recipe_name: str = "default") -> Path:
     return corpus.root / "recipes" / "extraction" / f"{recipe_name}.yml"
 
+
 def _default_extraction_max_workers() -> int:
     env_value = os.getenv("BIBLICUS_EXTRACT_MAX_WORKERS")
     if env_value:
         try:
             parsed = int(env_value)
         except ValueError as exc:
-            raise ValueError(
-                "BIBLICUS_EXTRACT_MAX_WORKERS must be an integer >= 1"
-            ) from exc
+            raise ValueError("BIBLICUS_EXTRACT_MAX_WORKERS must be an integer >= 1") from exc
         if parsed < 1:
             raise ValueError("BIBLICUS_EXTRACT_MAX_WORKERS must be >= 1")
         return parsed
@@ -681,9 +681,13 @@ def _resolve_extraction_snapshot_for_analysis(
     if recipe_path.is_file():
         latest_snapshot = corpus.latest_extraction_snapshot_reference(extractor_id="pipeline")
         if latest_snapshot is not None:
-            manifest_path = corpus.extraction_snapshot_dir(
-                extractor_id=latest_snapshot.extractor_id, snapshot_id=latest_snapshot.snapshot_id
-            ) / "manifest.json"
+            manifest_path = (
+                corpus.extraction_snapshot_dir(
+                    extractor_id=latest_snapshot.extractor_id,
+                    snapshot_id=latest_snapshot.snapshot_id,
+                )
+                / "manifest.json"
+            )
             if manifest_path.is_file():
                 print(
                     f"[extract] reusing snapshot {latest_snapshot.snapshot_id}",
@@ -907,13 +911,17 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         label="extract",
         mode=dependency_mode,
     )
-    manifest = results[-1] if results else build_extraction_snapshot(
-        corpus,
-        extractor_id=extractor_id,
-        configuration_name=arguments.configuration_name,
-        configuration=config,
-        force=bool(arguments.force),
-        max_workers=resolved_max_workers,
+    manifest = (
+        results[-1]
+        if results
+        else build_extraction_snapshot(
+            corpus,
+            extractor_id=extractor_id,
+            configuration_name=arguments.configuration_name,
+            configuration=config,
+            force=bool(arguments.force),
+            max_workers=resolved_max_workers,
+        )
     )
     print(manifest.model_dump_json(indent=2))
     return 0
@@ -1549,18 +1557,26 @@ def cmd_benchmark_run(arguments: argparse.Namespace) -> int:
     # Run specific category or all
     if arguments.category:
         if arguments.category not in config.categories:
-            raise ValueError(f"Unknown category: {arguments.category}. "
-                           f"Available: {', '.join(config.categories.keys())}")
+            raise ValueError(
+                f"Unknown category: {arguments.category}. "
+                f"Available: {', '.join(config.categories.keys())}"
+            )
         cat_config = config.categories[arguments.category]
         result = runner.run_category(cat_config)
         print(f"\n{arguments.category.upper()} Results:")
-        print(f"  Best pipeline: {result.best_pipeline} ({result.best_score:.3f} {result.primary_metric})")
+        print(
+            f"  Best pipeline: {result.best_pipeline} ({result.best_score:.3f} {result.primary_metric})"
+        )
     else:
         result = runner.run_all()
         result.print_summary()
 
         # Save results
-        output_path = Path(arguments.output) if arguments.output else Path(f"results/benchmark_{config.benchmark_name}.json")
+        output_path = (
+            Path(arguments.output)
+            if arguments.output
+            else Path(f"results/benchmark_{config.benchmark_name}.json")
+        )
         result.to_json(output_path)
         print(f"\nResults saved to: {output_path}")
 
@@ -1582,7 +1598,6 @@ def cmd_benchmark_report(arguments: argparse.Namespace) -> int:
     :rtype: int
     """
     import glob
-    import json
 
     input_pattern = arguments.input
     output_path = Path(arguments.output)
@@ -1615,10 +1630,12 @@ def cmd_benchmark_report(arguments: argparse.Namespace) -> int:
 
     categories = data.get("categories", {})
     if categories:
-        lines.extend([
-            "| Category | Dataset | Docs | Best Pipeline | Score |",
-            "|----------|---------|------|---------------|-------|",
-        ])
+        lines.extend(
+            [
+                "| Category | Dataset | Docs | Best Pipeline | Score |",
+                "|----------|---------|------|---------------|-------|",
+            ]
+        )
         for cat_name, cat_data in categories.items():
             lines.append(
                 f"| {cat_name.title()} | {cat_data.get('dataset', '')} | "
@@ -1696,9 +1713,7 @@ def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
     from .sync.amplify_publisher import AmplifyPublisher
 
     corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.discover()
+        Corpus.open(arguments.corpus) if getattr(arguments, "corpus", None) else Corpus.discover()
     )
 
     # Create publisher
@@ -1711,7 +1726,7 @@ def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
         publisher.create_corpus()
         print("✓ Corpus record created/verified")
     except Exception as e:
-        if 'already exists' not in str(e).lower() and 'duplicate' not in str(e).lower():
+        if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
             print(f"✗ Failed to create corpus: {e}", file=sys.stderr)
             return 1
 
@@ -1722,7 +1737,9 @@ def cmd_dashboard_sync(arguments: argparse.Namespace) -> int:
         if result.skipped:
             print(f"✓ Catalog unchanged (hash: {result.hash[:8]}...)")
         else:
-            print(f"✓ Synced: {result.created} created, {result.updated} updated, {result.deleted} deleted")
+            print(
+                f"✓ Synced: {result.created} created, {result.updated} updated, {result.deleted} deleted"
+            )
 
         if result.errors:
             print(f"⚠ {len(result.errors)} errors occurred:", file=sys.stderr)
@@ -1743,10 +1760,10 @@ def cmd_dashboard_configure(arguments: argparse.Namespace) -> int:
     from pathlib import Path
 
     # Save configuration to ~/.biblicus/amplify.env
-    config_dir = Path.home() / '.biblicus'
+    config_dir = Path.home() / ".biblicus"
     config_dir.mkdir(exist_ok=True)
 
-    config_path = config_dir / 'amplify.env'
+    config_path = config_dir / "amplify.env"
 
     config_content = f"""# Amplify Dashboard Backend Configuration
 AMPLIFY_APPSYNC_ENDPOINT={arguments.endpoint}
@@ -1850,7 +1867,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_corpus_arg(p_source_set)
     p_source_set.add_argument("--kind", required=True, choices=["s3", "azure-blob"])
     p_source_set.add_argument("--profile", required=True, help="Source profile name.")
-    p_source_set.add_argument("--name", default=None, help="Local storage namespace for the source.")
+    p_source_set.add_argument(
+        "--name", default=None, help="Local storage namespace for the source."
+    )
     p_source_set.add_argument("--bucket", default=None, help="S3 bucket name.")
     p_source_set.add_argument("--container", default=None, help="Azure Blob container name.")
     p_source_set.add_argument("--prefix", default=None, help="Optional remote prefix to mirror.")
@@ -2008,9 +2027,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_graph = sub.add_parser("graph", help="Run graph extraction pipelines for the corpus.")
     graph_sub = p_graph.add_subparsers(dest="graph_command", required=True)
 
-    p_graph_extract = graph_sub.add_parser(
-        "extract", help="Build a graph extraction snapshot."
-    )
+    p_graph_extract = graph_sub.add_parser("extract", help="Build a graph extraction snapshot.")
     _add_common_corpus_arg(p_graph_extract)
     p_graph_extract.add_argument(
         "--extractor",
@@ -2048,9 +2065,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_graph_list.set_defaults(func=cmd_graph_list)
 
-    p_graph_show = graph_sub.add_parser(
-        "show", help="Show a graph extraction snapshot manifest."
-    )
+    p_graph_show = graph_sub.add_parser("show", help="Show a graph extraction snapshot manifest.")
     _add_common_corpus_arg(p_graph_show)
     p_graph_show.add_argument(
         "--snapshot",
@@ -2246,14 +2261,10 @@ def build_parser() -> argparse.ArgumentParser:
     # -----------------------------------------------------------------
     # benchmark subcommand group
     # -----------------------------------------------------------------
-    p_benchmark = sub.add_parser(
-        "benchmark", help="Run document understanding benchmarks."
-    )
+    p_benchmark = sub.add_parser("benchmark", help="Run document understanding benchmarks.")
     benchmark_sub = p_benchmark.add_subparsers(dest="benchmark_command", required=True)
 
-    p_benchmark_download = benchmark_sub.add_parser(
-        "download", help="Download benchmark datasets."
-    )
+    p_benchmark_download = benchmark_sub.add_parser("download", help="Download benchmark datasets.")
     p_benchmark_download.add_argument(
         "--datasets",
         required=True,
@@ -2275,9 +2286,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_benchmark_download.set_defaults(func=cmd_benchmark_download)
 
-    p_benchmark_run = benchmark_sub.add_parser(
-        "run", help="Run benchmark evaluation."
-    )
+    p_benchmark_run = benchmark_sub.add_parser("run", help="Run benchmark evaluation.")
     p_benchmark_run.add_argument(
         "--config",
         default="configs/benchmark/standard.yaml",
