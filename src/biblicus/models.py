@@ -187,13 +187,9 @@ class RemoteCorpusCollectionConfig(BaseModel):
     @model_validator(mode="after")
     def _validate_deletion_policy(self) -> "RemoteCorpusCollectionConfig":
         if self.schema_version != COLLECTION_SCHEMA_VERSION:
-            raise ValueError(
-                f"Unsupported collection config schema version: {self.schema_version}"
-            )
+            raise ValueError(f"Unsupported collection config schema version: {self.schema_version}")
         if self.deletion_policy not in {"archive", "delete"}:
-            raise ValueError(
-                f"Unsupported collection deletion policy: {self.deletion_policy}"
-            )
+            raise ValueError(f"Unsupported collection deletion policy: {self.deletion_policy}")
         return self
 
 
