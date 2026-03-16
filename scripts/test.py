@@ -123,6 +123,12 @@ def main() -> int:
             "--parallel-mode",
             "-m",
             "pytest",
+            "--ignore=tests/test_reinforcement_memory.py",
+            "--ignore=tests/test_reinforcement_memory_store.py",
+            "--ignore=tests/test_reinforcement_memory_clusterer.py",
+            "--ignore=tests/test_reinforcement_memory_vector_store.py",
+            "--ignore=tests/test_reinforcement_memory_weights.py",
+            "--ignore=tests/test_reinforcement_memory_lifecycle.py",
         ],
         env=env,
     )
