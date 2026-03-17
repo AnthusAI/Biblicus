@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "d7f447d6-586b-415f-bca2-b857402eb550",
+  "issue_id": "blbs-37f5e1bd-061b-4e03-b840-ed299d4030b0",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-17T16:27:13.271Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "chore",
+    "labels": [],
+    "parent": "blbs-ef8454e0-a76b-4c9e-80e1-3333748dfc9b",
+    "priority": 2,
+    "status": "open",
+    "title": "Create Excalidraw diagram for semantic reinforcement memory process"
+  }
+}

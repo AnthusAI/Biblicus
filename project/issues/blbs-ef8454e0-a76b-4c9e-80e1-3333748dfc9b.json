@@ -1,0 +1,25 @@
+{
+  "id": "blbs-ef8454e0-a76b-4c9e-80e1-3333748dfc9b",
+  "title": "Reinforcement memory diagrams",
+  "description": "",
+  "type": "epic",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-3a601dfa-8179-4131-898a-35c03ebbf66d",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "4bf35d35-3ee4-4f15-8e5d-33e71f89ed4f",
+      "author": "ryan",
+      "text": "Epic created to track conceptual diagrams for reinforcement-memory documentation. First deliverable: a source-only Excalidraw scene in docs/diagrams with the cross-run feedback loop made explicit.",
+      "created_at": "2026-03-17T16:27:13.275250Z"
+    }
+  ],
+  "created_at": "2026-03-17T16:27:10.274203Z",
+  "updated_at": "2026-03-17T16:27:13.275250Z",
+  "closed_at": null,
+  "custom": {}
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "e53f852e-532f-4b75-ae70-cddbc54c4183",
+  "issue_id": "blbs-ef8454e0-a76b-4c9e-80e1-3333748dfc9b",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-17T16:27:10.274Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "epic",
+    "labels": [],
+    "parent": "blbs-3a601dfa-8179-4131-898a-35c03ebbf66d",
+    "priority": 2,
+    "status": "open",
+    "title": "Reinforcement memory diagrams"
+  }
+}

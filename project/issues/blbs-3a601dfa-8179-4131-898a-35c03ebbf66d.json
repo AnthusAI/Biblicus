@@ -1,0 +1,25 @@
+{
+  "id": "blbs-3a601dfa-8179-4131-898a-35c03ebbf66d",
+  "title": "Documentation diagrams",
+  "description": "",
+  "type": "initiative",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1a56f993-5f16-4d45-b1a7-cdd682195cb5",
+      "author": "ryan",
+      "text": "Created initiative for documentation diagram work. Next step: add a reinforcement-memory diagram epic and implementation chore.",
+      "created_at": "2026-03-17T16:27:10.277913Z"
+    }
+  ],
+  "created_at": "2026-03-17T16:27:03.969062Z",
+  "updated_at": "2026-03-17T16:27:10.277913Z",
+  "closed_at": null,
+  "custom": {}
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "9aa171ee-a6da-4a47-b8e3-28afd6d0c8a2",
+  "issue_id": "blbs-3a601dfa-8179-4131-898a-35c03ebbf66d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-17T16:27:03.970Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "initiative",
+    "labels": [],
+    "parent": null,
+    "priority": 2,
+    "status": "open",
+    "title": "Documentation diagrams"
+  }
+}
