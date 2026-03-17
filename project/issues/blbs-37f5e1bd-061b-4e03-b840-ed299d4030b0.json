@@ -3,7 +3,7 @@
   "title": "Create Excalidraw diagram for semantic reinforcement memory process",
   "description": "",
   "type": "chore",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -28,10 +28,16 @@
       "author": "ryan",
       "text": "Verification update: the Excalidraw scene parses as JSON, contains the required conceptual labels, and includes the feedback arrow from persisted topic state back into prior-topic comparison. Docs build sanity was attempted with python -m sphinx -b dummy docs /tmp/biblicus-docs-dummy, but the local environment is missing myst_parser, so full docs-build verification is blocked by environment setup rather than this change.",
       "created_at": "2026-03-17T16:31:59.274748Z"
+    },
+    {
+      "id": "72abf39f-1243-4322-819e-fa70ea031563",
+      "author": "ryan",
+      "text": "Close-out summary: added docs/diagrams/semantic-reinforcement-memory-process.excalidraw as a source-only conceptual reinforcement-memory pipeline diagram. Verification completed by JSON parse plus terminology checks; docs-build verification remains blocked locally by missing myst_parser.",
+      "created_at": "2026-03-17T16:32:38.807631Z"
     }
   ],
   "created_at": "2026-03-17T16:27:13.270910Z",
-  "updated_at": "2026-03-17T16:31:59.274748Z",
-  "closed_at": null,
+  "updated_at": "2026-03-17T16:32:38.808027Z",
+  "closed_at": "2026-03-17T16:32:38.808027Z",
   "custom": {}
 }
