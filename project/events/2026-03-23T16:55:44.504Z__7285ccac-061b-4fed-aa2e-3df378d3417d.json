@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "7285ccac-061b-4fed-aa2e-3df378d3417d",
+  "issue_id": "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-23T16:55:44.504Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "chore",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 1,
+    "status": "open",
+    "title": "Align release workflow with platform-ci reusable semantic release"
+  }
+}
