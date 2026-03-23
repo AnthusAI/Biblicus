@@ -46,10 +46,22 @@
       "author": "derek.norrbom",
       "text": "Updated per user feedback: changed ruleset bypass actor to a team-based entry (actor_type=Team) to match the intended Virtuus-style bypass model.",
       "created_at": "2026-03-23T16:58:04.083166Z"
+    },
+    {
+      "id": "2bbd8917-7767-4e2c-9944-54fcdb0f7a9c",
+      "author": "derek.norrbom",
+      "text": "Scope expanded per user request: add and consume new reusable coverage-badge workflow from platform-ci, including Biblicus caller workflow integration.",
+      "created_at": "2026-03-23T17:12:14.059290Z"
+    },
+    {
+      "id": "0a8bd077-8d85-49c6-b0b6-0f1cafb2c4fc",
+      "author": "derek.norrbom",
+      "text": "Implemented Biblicus integration for reusable coverage badge workflow. CI now exports coverage.json and uploads coverage-json-py312 artifact from Python 3.12 matrix leg. Added .github/workflows/coverage-badge.yml to call platform-ci reusable coverage badge workflow on successful main push CI workflow_run with anthusbot loop guard.",
+      "created_at": "2026-03-23T17:13:55.980248Z"
     }
   ],
   "created_at": "2026-03-23T16:55:44.504275Z",
-  "updated_at": "2026-03-23T16:58:04.083166Z",
+  "updated_at": "2026-03-23T17:13:55.980248Z",
   "closed_at": null,
   "custom": {}
 }
