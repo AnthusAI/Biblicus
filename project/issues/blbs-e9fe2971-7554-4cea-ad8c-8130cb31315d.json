@@ -70,10 +70,28 @@
       "author": "derek.norrbom",
       "text": "Adjusted Biblicus coverage badge caller to match hardened platform-ci reusable workflow contract after security review: removed deprecated checkout_ref input from .github/workflows/coverage-badge.yml.",
       "created_at": "2026-03-23T17:31:14.505552Z"
+    },
+    {
+      "id": "141bc61e-d425-4011-a01c-7ff699b67a76",
+      "author": "derek.norrbom",
+      "text": "Updated Biblicus release workflow caller to match hardened semantic-release reusable workflow contract: replaced removed checkout_ref/install_command inputs with semantic_release_requirement input.",
+      "created_at": "2026-03-23T17:59:42.503056Z"
+    },
+    {
+      "id": "c3f4d1e5-eac9-4592-beaf-f9eaaf21b9f5",
+      "author": "derek.norrbom",
+      "text": "User requested strict workflow contract without deprecated inputs; aligning Biblicus caller accordingly and coordinating updates for all local callers.",
+      "created_at": "2026-03-23T18:00:52.271465Z"
+    },
+    {
+      "id": "9a23be0b-6c17-4ffe-ab75-a64a7fd41b99",
+      "author": "derek.norrbom",
+      "text": "Applied strict caller alignment for semantic-release reusable workflow hardening: release workflow now uses semantic_release_requirement and no longer passes checkout_ref/install_command.",
+      "created_at": "2026-03-23T18:02:08.832193Z"
     }
   ],
   "created_at": "2026-03-23T16:55:44.504275Z",
-  "updated_at": "2026-03-23T17:31:14.505552Z",
+  "updated_at": "2026-03-23T18:02:08.832193Z",
   "closed_at": null,
   "custom": {}
 }
