@@ -1,36 +1,67 @@
 name: Coverage Badge Dry Run
 
 on:
-  workflow_dispatch:
-    inputs:
-      source_workflow_run_id:
-        description: CI workflow run ID that produced coverage artifact
-        required: true
-        type: string
-      source_artifact_name:
-        description: Coverage artifact name
-        required: false
-        default: "coverage-json-py312"
-        type: string
-      coverage_json_path:
-        description: Path to coverage JSON inside artifact
-        required: false
-        default: "coverage.json"
-        type: string
+  push:
+    branches:
+      - feature/release-bot
 
 permissions:
   actions: read
   contents: write
 
 jobs:
+  build-coverage-artifact:
+    if: ${{ github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,datasets]"
+
+      - name: Cache test fixtures
+        uses: actions/cache@v4
+        with:
+          path: |
+            tests/fixtures/cache
+            tests/fixtures/wikitext2_raw
+          key: wikitext2-raw-${{ runner.os }}-py312-v1
+
+      - name: Fetch WikiText-2 raw fixture
+        run: |
+          python tests/fixtures/fetch_wikitext2.py
+
+      - name: Run tests with coverage
+        run: |
+          python scripts/test.py
+
+      - name: Export coverage JSON
+        run: |
+          python -m coverage json -o coverage.json
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-json-py312
+          path: coverage.json
+
   coverage-badge-dry-run:
     if: ${{ github.ref_name != 'main' }}
+    needs: build-coverage-artifact
     uses: AnthusAI/platform-ci/.github/workflows/coverage-badge-reusable.yml@main
     with:
       release_branch: ${{ github.ref_name }}
-      source_workflow_run_id: ${{ inputs.source_workflow_run_id }}
-      source_artifact_name: ${{ inputs.source_artifact_name }}
-      coverage_json_path: ${{ inputs.coverage_json_path }}
+      source_workflow_run_id: ${{ github.run_id }}
+      source_artifact_name: coverage-json-py312
+      coverage_json_path: coverage.json
       badge_output_path: coverage_badge.json
       badge_label: coverage
       commit_message: "chore: dry-run update coverage badge"

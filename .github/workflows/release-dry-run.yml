@@ -1,13 +1,9 @@
 name: Release Dry Run
 
 on:
-  workflow_dispatch:
-    inputs:
-      semantic_release_requirement:
-        description: Requirement specifier for python-semantic-release
-        required: false
-        default: "python-semantic-release~=10.0"
-        type: string
+  push:
+    branches:
+      - feature/release-bot
 
 permissions:
   contents: write
@@ -22,7 +18,7 @@ jobs:
     with:
       python_version: "3.12"
       release_branch: ${{ github.ref_name }}
-      semantic_release_requirement: ${{ inputs.semantic_release_requirement }}
+      semantic_release_requirement: "python-semantic-release~=10.0"
       run_publish: false
     secrets:
       anthusbot_gh_token: ${{ secrets.ANTHUSBOT_GH_TOKEN }}
