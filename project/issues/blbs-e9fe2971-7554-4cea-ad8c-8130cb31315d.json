@@ -1,0 +1,121 @@
+{
+  "id": "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d",
+  "title": "Align release workflow with platform-ci reusable semantic release",
+  "description": "",
+  "type": "chore",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1dfaa333-5731-413c-8dd3-9f19f7748f8a",
+      "author": "derek.norrbom",
+      "text": "Starting implementation: compare Virtuus and Biblicus release workflows, then align Biblicus to shared platform-ci semantic-release workflow including bypass-compatible job configuration.",
+      "created_at": "2026-03-23T16:55:50.191002Z"
+    },
+    {
+      "id": "eaa3e450-7666-4477-bb58-828139d9054d",
+      "author": "derek.norrbom",
+      "text": "Implemented workflow/ruleset alignment for protected-branch semantic release:\n\n- Replaced inline  job with reusable .\n- Passed caller inputs/secrets to match Virtuus pattern ( from workflow_run SHA, , ).\n- Added guard conditions (, same-repo check,  branch, and ) plus release concurrency lock.\n- Added  bypass actor to  so ruleset sync preserves bypass behavior for release pushes.\n\nValidation run: JSON syntax check passed for ruleset file; workflow static lint skipped locally because  is not installed.",
+      "created_at": "2026-03-23T16:57:18.677358Z"
+    },
+    {
+      "id": "4983349a-3910-4a9f-a1f3-751ea8c8e13c",
+      "author": "derek.norrbom",
+      "text": "Implemented workflow/ruleset alignment for protected-branch semantic release.\n\n- Replaced the inline `.github/workflows/release.yml` job with reusable `AnthusAI/platform-ci/.github/workflows/semantic-release-reusable.yml@main`.\n- Passed caller inputs/secrets to match Virtuus pattern (`checkout_ref` from workflow_run SHA, `ANTHUSBOT_GH_TOKEN`, `PYPI_TOKEN`).\n- Added guard conditions (`event == push`, same-repo check, `main` branch, `actor != anthusbot`) and release concurrency lock.\n- Added `anthusbot` bypass actor to `infra/github-rulesets/main-branch-protection.json` so ruleset sync preserves bypass behavior for release pushes.\n\nValidation:\n- `python -m json.tool infra/github-rulesets/main-branch-protection.json` passed.\n- Workflow lint skipped locally because `actionlint` is not installed.",
+      "created_at": "2026-03-23T16:57:25.278755Z"
+    },
+    {
+      "id": "fe9497c2-1b0a-40a9-9281-bd66db1c8325",
+      "author": "derek.norrbom",
+      "text": "User requested alignment check: verify Virtuus bypass actor type (team vs user) and adjust Biblicus ruleset accordingly.",
+      "created_at": "2026-03-23T16:57:45.962274Z"
+    },
+    {
+      "id": "7ad394e2-7e89-417a-a924-b61dd63444e1",
+      "author": "derek.norrbom",
+      "text": "Updated per user feedback: changed ruleset bypass actor to team-based entry () to match the intended Virtuus-style bypass model.",
+      "created_at": "2026-03-23T16:58:00.139894Z"
+    },
+    {
+      "id": "07c3b6e0-826b-45a1-810f-0c09132113b7",
+      "author": "derek.norrbom",
+      "text": "Updated per user feedback: changed ruleset bypass actor to a team-based entry (actor_type=Team) to match the intended Virtuus-style bypass model.",
+      "created_at": "2026-03-23T16:58:04.083166Z"
+    },
+    {
+      "id": "2bbd8917-7767-4e2c-9944-54fcdb0f7a9c",
+      "author": "derek.norrbom",
+      "text": "Scope expanded per user request: add and consume new reusable coverage-badge workflow from platform-ci, including Biblicus caller workflow integration.",
+      "created_at": "2026-03-23T17:12:14.059290Z"
+    },
+    {
+      "id": "0a8bd077-8d85-49c6-b0b6-0f1cafb2c4fc",
+      "author": "derek.norrbom",
+      "text": "Implemented Biblicus integration for reusable coverage badge workflow. CI now exports coverage.json and uploads coverage-json-py312 artifact from Python 3.12 matrix leg. Added .github/workflows/coverage-badge.yml to call platform-ci reusable coverage badge workflow on successful main push CI workflow_run with anthusbot loop guard.",
+      "created_at": "2026-03-23T17:13:55.980248Z"
+    },
+    {
+      "id": "dd664b0e-b349-4183-8796-6770809a7da8",
+      "author": "derek.norrbom",
+      "text": "Adjusted Biblicus coverage badge caller to match hardened platform-ci reusable workflow contract after security review: removed deprecated  input from .github/workflows/coverage-badge.yml.",
+      "created_at": "2026-03-23T17:31:08.077782Z"
+    },
+    {
+      "id": "991ea783-d461-4eb3-bf46-8e330688dfd5",
+      "author": "derek.norrbom",
+      "text": "Adjusted Biblicus coverage badge caller to match hardened platform-ci reusable workflow contract after security review: removed deprecated checkout_ref input from .github/workflows/coverage-badge.yml.",
+      "created_at": "2026-03-23T17:31:14.505552Z"
+    },
+    {
+      "id": "141bc61e-d425-4011-a01c-7ff699b67a76",
+      "author": "derek.norrbom",
+      "text": "Updated Biblicus release workflow caller to match hardened semantic-release reusable workflow contract: replaced removed checkout_ref/install_command inputs with semantic_release_requirement input.",
+      "created_at": "2026-03-23T17:59:42.503056Z"
+    },
+    {
+      "id": "c3f4d1e5-eac9-4592-beaf-f9eaaf21b9f5",
+      "author": "derek.norrbom",
+      "text": "User requested strict workflow contract without deprecated inputs; aligning Biblicus caller accordingly and coordinating updates for all local callers.",
+      "created_at": "2026-03-23T18:00:52.271465Z"
+    },
+    {
+      "id": "9a23be0b-6c17-4ffe-ab75-a64a7fd41b99",
+      "author": "derek.norrbom",
+      "text": "Applied strict caller alignment for semantic-release reusable workflow hardening: release workflow now uses semantic_release_requirement and no longer passes checkout_ref/install_command.",
+      "created_at": "2026-03-23T18:02:08.832193Z"
+    },
+    {
+      "id": "73f0bf0a-1e76-4482-930e-daed3e4ef317",
+      "author": "derek.norrbom",
+      "text": "Adding temporary dry-run harness workflows for branch-level validation: workflow_dispatch semantic-release harness (run_publish=false) and workflow_dispatch coverage-badge harness (input CI run id/artifact).",
+      "created_at": "2026-03-24T16:19:32.093635Z"
+    },
+    {
+      "id": "c306ac6a-c2bc-4545-975b-a72fe85d9757",
+      "author": "derek.norrbom",
+      "text": "Dry-run harness workflows added on feature branch: .github/workflows/release-dry-run.yml (manual semantic release test, branch-scoped, run_publish=false) and .github/workflows/coverage-badge-dry-run.yml (manual coverage badge test with source run id input). Both block execution on main via job-level branch guard.",
+      "created_at": "2026-03-24T16:19:52.676713Z"
+    },
+    {
+      "id": "77149d1f-9dc2-4a59-91b5-13fde73d60a1",
+      "author": "derek.norrbom",
+      "text": "Adjusting dry-run harness workflows to use push trigger on current feature branch so they can run pre-main merge from Actions without workflow_dispatch exposure.",
+      "created_at": "2026-03-24T16:23:40.183392Z"
+    },
+    {
+      "id": "d43cad1a-b552-4f02-af5a-327fdb474f4e",
+      "author": "derek.norrbom",
+      "text": "Updated dry-run harnesses per user request: switched to push triggers scoped to feature/release-bot so they execute pre-main. Coverage dry-run is now self-contained in one workflow run: first job builds and uploads coverage-json-py312 artifact, second job calls reusable badge workflow using source_workflow_run_id=github.run_id.",
+      "created_at": "2026-03-24T16:24:14.432073Z"
+    }
+  ],
+  "created_at": "2026-03-23T16:55:44.504275Z",
+  "updated_at": "2026-03-24T16:24:14.432073Z",
+  "closed_at": null,
+  "custom": {}
+}
