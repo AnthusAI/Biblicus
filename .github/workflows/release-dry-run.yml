@@ -1,0 +1,29 @@
+name: Release Dry Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      semantic_release_requirement:
+        description: Requirement specifier for python-semantic-release
+        required: false
+        default: "python-semantic-release~=10.0"
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-dry-run:
+    if: ${{ github.ref_name != 'main' }}
+    uses: AnthusAI/platform-ci/.github/workflows/semantic-release-reusable.yml@main
+    with:
+      python_version: "3.12"
+      release_branch: ${{ github.ref_name }}
+      semantic_release_requirement: ${{ inputs.semantic_release_requirement }}
+      run_publish: false
+    secrets:
+      anthusbot_gh_token: ${{ secrets.ANTHUSBOT_GH_TOKEN }}
+      semantic_release_pypi_token: ${{ secrets.PYPI_TOKEN }}

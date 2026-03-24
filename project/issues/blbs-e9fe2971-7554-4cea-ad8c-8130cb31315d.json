@@ -88,10 +88,22 @@
       "author": "derek.norrbom",
       "text": "Applied strict caller alignment for semantic-release reusable workflow hardening: release workflow now uses semantic_release_requirement and no longer passes checkout_ref/install_command.",
       "created_at": "2026-03-23T18:02:08.832193Z"
+    },
+    {
+      "id": "73f0bf0a-1e76-4482-930e-daed3e4ef317",
+      "author": "derek.norrbom",
+      "text": "Adding temporary dry-run harness workflows for branch-level validation: workflow_dispatch semantic-release harness (run_publish=false) and workflow_dispatch coverage-badge harness (input CI run id/artifact).",
+      "created_at": "2026-03-24T16:19:32.093635Z"
+    },
+    {
+      "id": "c306ac6a-c2bc-4545-975b-a72fe85d9757",
+      "author": "derek.norrbom",
+      "text": "Dry-run harness workflows added on feature branch: .github/workflows/release-dry-run.yml (manual semantic release test, branch-scoped, run_publish=false) and .github/workflows/coverage-badge-dry-run.yml (manual coverage badge test with source run id input). Both block execution on main via job-level branch guard.",
+      "created_at": "2026-03-24T16:19:52.676713Z"
     }
   ],
   "created_at": "2026-03-23T16:55:44.504275Z",
-  "updated_at": "2026-03-23T18:02:08.832193Z",
+  "updated_at": "2026-03-24T16:19:52.676713Z",
   "closed_at": null,
   "custom": {}
 }

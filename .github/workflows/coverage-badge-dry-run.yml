@@ -1,0 +1,38 @@
+name: Coverage Badge Dry Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_workflow_run_id:
+        description: CI workflow run ID that produced coverage artifact
+        required: true
+        type: string
+      source_artifact_name:
+        description: Coverage artifact name
+        required: false
+        default: "coverage-json-py312"
+        type: string
+      coverage_json_path:
+        description: Path to coverage JSON inside artifact
+        required: false
+        default: "coverage.json"
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  coverage-badge-dry-run:
+    if: ${{ github.ref_name != 'main' }}
+    uses: AnthusAI/platform-ci/.github/workflows/coverage-badge-reusable.yml@main
+    with:
+      release_branch: ${{ github.ref_name }}
+      source_workflow_run_id: ${{ inputs.source_workflow_run_id }}
+      source_artifact_name: ${{ inputs.source_artifact_name }}
+      coverage_json_path: ${{ inputs.coverage_json_path }}
+      badge_output_path: coverage_badge.json
+      badge_label: coverage
+      commit_message: "chore: dry-run update coverage badge"
+    secrets:
+      anthusbot_gh_token: ${{ secrets.ANTHUSBOT_GH_TOKEN }}
