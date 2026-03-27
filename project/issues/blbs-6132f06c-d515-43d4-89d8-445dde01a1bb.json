@@ -3,7 +3,7 @@
   "title": "Drop Python 3.9 support and align Poetry/CI",
   "description": "Raise the project Python floor to 3.10, update CI matrix and tool targets, and validate Poetry install/test flow.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -25,7 +25,7 @@
     }
   ],
   "created_at": "2026-03-27T21:28:41.957330Z",
-  "updated_at": "2026-03-27T21:33:39.388765Z",
-  "closed_at": null,
+  "updated_at": "2026-03-27T21:33:49.239068Z",
+  "closed_at": "2026-03-27T21:33:49.239068Z",
   "custom": {}
 }
