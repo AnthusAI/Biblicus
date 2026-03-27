@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-27T20:16:33Z",
+  "built_at": "2026-03-27T21:28:41Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1773697832.430257,
     "Biblicus-0mo.json": 1773697832.430327,
@@ -39,9 +39,10 @@
     "blbs-2c560cb3-b57b-4f72-9b16-4fc5f9930882.json": 1773697832.432796,
     "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1773697832.432879,
     "blbs-3b54b5ab-7fa6-443a-8689-fc565fcf9b21.json": 1774284647.954848,
-    "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774642593.913898,
+    "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774646344.080839,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1773697832.432958,
     "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1773697832.433044,
+    "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb.json": 1774646921.957454,
     "blbs-7db7e949-5354-41f6-b606-fed3505fcb5d.json": 1774284647.954932,
     "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1773697832.433119,
     "blbs-9355e702-3ef3-4aab-b15a-d4869d9d0a58.json": 1773697832.433197,
@@ -1068,8 +1069,21 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
-      "comments": [],
+      "closed_at": "2026-03-27T20:32:19.289614Z",
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-27T20:16:36.823489Z",
+          "id": "488c3c0b-4ee7-4084-9ae6-ddb6b811627c",
+          "text": "Started Poetry migration task. Next steps: inspect current pyproject/build backend/dependency groups and scripts, convert to Poetry-managed dependency declaration, add/update poetry.lock, and update docs/automation commands. Will run lint/tests after migration and record results."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-27T20:31:57.429562Z",
+          "id": "e47e2c6a-0b70-49bc-a73c-04292f947692",
+          "text": "Implemented Poetry migration updates: switched build backend to poetry-core, moved dev dependencies to [tool.poetry.group.dev.dependencies], retained project dependencies/extras, added Poetry package source mapping, and generated poetry.lock. Updated CI/release workflows to use Poetry install/build/run commands. Updated primary contributor docs to use poetry install/run. Validation: poetry check (pass), poetry install --with dev (pass), poetry run ruff check src/biblicus/ (pass), poetry run biblicus --help (pass), poetry install --with dev --extras datasets (pass), poetry run python tests/fixtures/fetch_wikitext2.py (pass), poetry run python scripts/test.py (pass)."
+        }
+      ],
       "created_at": "2026-03-27T20:16:33.913740Z",
       "creator": null,
       "custom": {},
@@ -1079,10 +1093,10 @@
       "labels": [],
       "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
       "priority": 2,
-      "status": "open",
+      "status": "closed",
       "title": "Migrate project packaging and workflows to Poetry",
       "type": "task",
-      "updated_at": "2026-03-27T20:16:33.913740Z"
+      "updated_at": "2026-03-27T20:32:19.289614Z"
     },
     {
       "assignee": null,
@@ -1163,6 +1177,24 @@
       "title": "Configure Azure Blob corpus source",
       "type": "story",
       "updated_at": "2026-02-19T04:55:21.006497Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [],
+      "created_at": "2026-03-27T21:28:41.957330Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Raise the project Python floor to 3.10, update CI matrix and tool targets, and validate Poetry install/test flow.",
+      "id": "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb",
+      "labels": [],
+      "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+      "priority": 2,
+      "status": "open",
+      "title": "Drop Python 3.9 support and align Poetry/CI",
+      "type": "task",
+      "updated_at": "2026-03-27T21:28:41.957330Z"
     },
     {
       "assignee": null,
