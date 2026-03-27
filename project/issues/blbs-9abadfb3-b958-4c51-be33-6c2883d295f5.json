@@ -22,10 +22,16 @@
       "author": "ryan",
       "text": "Implemented the release fix on develop. Changed .github/workflows/release.yml so the reusable semantic-release job runs with run_publish=false and added a separate publish_pypi job that depends on release, checks released=true, checks out the emitted tag, builds distributions, and publishes with pypa/gh-action-pypi-publish. Removed upload_to_pypi from pyproject.toml. Validation on develop: YAML and TOML structure checks passed, the workflow wiring assertions passed, git diff --check passed, and a local python -m build succeeded and produced both sdist and wheel.",
       "created_at": "2026-03-27T06:49:56.687043Z"
+    },
+    {
+      "id": "044df9e9-df9c-49d8-8d30-87a7d0e02a26",
+      "author": "ryan",
+      "text": "Opened PR #21 from develop to main for the release fix. GitHub currently reports the PR as mergeable and awaiting review. The bug remains in progress until the protected main merge happens and the first post-merge release validates both the GitHub release path and the new explicit PyPI publish job.",
+      "created_at": "2026-03-27T07:01:42.189310Z"
     }
   ],
   "created_at": "2026-03-27T06:48:09.103673Z",
-  "updated_at": "2026-03-27T06:49:56.687043Z",
+  "updated_at": "2026-03-27T07:01:42.189310Z",
   "closed_at": null,
   "custom": {}
 }
