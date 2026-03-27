@@ -15,7 +15,7 @@ evaluation, and analysis.
 From the repository root:
 
 ```
-python -m pip install -e ".[dev]"
+poetry install --with dev
 ```
 
 ### Create a corpus and ingest a few items

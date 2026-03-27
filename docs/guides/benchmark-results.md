@@ -207,10 +207,7 @@ To reproduce these results:
 
 ```bash
 # 1. Install dependencies (optional extras as needed)
-pip install -e .
-pip install "biblicus[paddleocr]"  # For PaddleOCR
-pip install "biblicus[docling]"     # For Docling VLMs
-pip install "biblicus[ocr]"         # For RapidOCR
+poetry install --extras "paddleocr docling ocr"
 brew install tesseract              # For Tesseract-based pipelines (macOS)
 
 # 2. Download FUNSD dataset

@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-23T16:55:44Z",
+  "built_at": "2026-03-27T20:16:33Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1773697832.430257,
     "Biblicus-0mo.json": 1773697832.430327,
@@ -39,11 +39,13 @@
     "blbs-2c560cb3-b57b-4f72-9b16-4fc5f9930882.json": 1773697832.432796,
     "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1773697832.432879,
     "blbs-3b54b5ab-7fa6-443a-8689-fc565fcf9b21.json": 1774284647.954848,
+    "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774642593.913898,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1773697832.432958,
     "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1773697832.433044,
     "blbs-7db7e949-5354-41f6-b606-fed3505fcb5d.json": 1774284647.954932,
     "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1773697832.433119,
     "blbs-9355e702-3ef3-4aab-b15a-d4869d9d0a58.json": 1773697832.433197,
+    "blbs-9abadfb3-b958-4c51-be33-6c2883d295f5.json": 1774642531.738327,
     "blbs-9d599111-36cc-4b3c-a327-a34389150675.json": 1773697832.433282,
     "blbs-a0e65267-c651-4fe7-871b-f2ab4c44e609.json": 1773697832.433352,
     "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4.json": 1773697832.433428,
@@ -54,9 +56,9 @@
     "blbs-c4214341-dc97-48e6-b55c-cd459edac742.json": 1774284647.955078,
     "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1773697832.433771,
     "blbs-d9065b28-c5d1-4293-b0de-6d881d37e311.json": 1774284647.955158,
-    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1773697832.433844,
+    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1774370579.013407,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1773697832.433924,
-    "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774284944.504435,
+    "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774370579.013936,
     "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1773697832.433997
   },
   "issues": [
@@ -1066,6 +1068,24 @@
     },
     {
       "assignee": null,
+      "closed_at": null,
+      "comments": [],
+      "created_at": "2026-03-27T20:16:33.913740Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Convert Biblicus project dependency and tooling workflows to Poetry, update docs/scripts/CI references, and validate with test/lint commands.",
+      "id": "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0",
+      "labels": [],
+      "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+      "priority": 2,
+      "status": "open",
+      "title": "Migrate project packaging and workflows to Poetry",
+      "type": "task",
+      "updated_at": "2026-03-27T20:16:33.913740Z"
+    },
+    {
+      "assignee": null,
       "closed_at": "2026-02-21T00:52:55.484124Z",
       "comments": [
         {
@@ -1213,6 +1233,43 @@
       "title": "Implementation: collections, profiles, pipeline runner",
       "type": "task",
       "updated_at": "2026-02-19T23:25:26.686082Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [
+        {
+          "author": "ryan",
+          "created_at": "2026-03-27T06:48:14.111316Z",
+          "id": "020cc920-f88c-4707-94f6-69272d914d08",
+          "text": "Investigating and implementing the release workflow fix on develop. Plan: disable semantic-release publish, add an explicit PyPI publish job gated on released=true, and remove upload_to_pypi from pyproject.toml. Validation on develop will be workflow wiring inspection plus a local package build; real end-to-end validation will happen after the approved main merge."
+        },
+        {
+          "author": "ryan",
+          "created_at": "2026-03-27T06:49:56.687043Z",
+          "id": "3b09be6c-71a8-4df7-ab3f-7cb1eca6102f",
+          "text": "Implemented the release fix on develop. Changed .github/workflows/release.yml so the reusable semantic-release job runs with run_publish=false and added a separate publish_pypi job that depends on release, checks released=true, checks out the emitted tag, builds distributions, and publishes with pypa/gh-action-pypi-publish. Removed upload_to_pypi from pyproject.toml. Validation on develop: YAML and TOML structure checks passed, the workflow wiring assertions passed, git diff --check passed, and a local python -m build succeeded and produced both sdist and wheel."
+        },
+        {
+          "author": "ryan",
+          "created_at": "2026-03-27T07:01:42.189310Z",
+          "id": "044df9e9-df9c-49d8-8d30-87a7d0e02a26",
+          "text": "Opened PR #21 from develop to main for the release fix. GitHub currently reports the PR as mergeable and awaiting review. The bug remains in progress until the protected main merge happens and the first post-merge release validates both the GitHub release path and the new explicit PyPI publish job."
+        }
+      ],
+      "created_at": "2026-03-27T06:48:09.103673Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-9abadfb3-b958-4c51-be33-6c2883d295f5",
+      "labels": [],
+      "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+      "priority": 1,
+      "status": "in_progress",
+      "title": "Fix PyPI publication in release workflow",
+      "type": "bug",
+      "updated_at": "2026-03-27T07:01:42.189310Z"
     },
     {
       "assignee": null,
@@ -1511,7 +1568,20 @@
     {
       "assignee": null,
       "closed_at": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:41:41.895712Z",
+          "id": "1a2d89b7-a679-45f0-8828-7a15b4c5ac5d",
+          "text": "On feature/release-bot branch: removing temporary dry-run workflows before merge so only production workflow changes remain."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:41:55.491027Z",
+          "id": "c61017fc-23af-448a-a621-c10bef1ad95b",
+          "text": "Removed temporary dry-run workflows from feature/release-bot: .github/workflows/release-dry-run.yml and .github/workflows/coverage-badge-dry-run.yml."
+        }
+      ],
       "created_at": "2026-02-17T01:04:19.974258Z",
       "creator": null,
       "custom": {},
@@ -1524,7 +1594,7 @@
       "status": "open",
       "title": "Code quality",
       "type": "epic",
-      "updated_at": "2026-02-17T01:04:19.974258Z"
+      "updated_at": "2026-03-24T16:41:55.491027Z"
     },
     {
       "assignee": null,
@@ -1578,7 +1648,110 @@
     {
       "assignee": null,
       "closed_at": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:55:50.191002Z",
+          "id": "1dfaa333-5731-413c-8dd3-9f19f7748f8a",
+          "text": "Starting implementation: compare Virtuus and Biblicus release workflows, then align Biblicus to shared platform-ci semantic-release workflow including bypass-compatible job configuration."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:57:18.677358Z",
+          "id": "eaa3e450-7666-4477-bb58-828139d9054d",
+          "text": "Implemented workflow/ruleset alignment for protected-branch semantic release:\n\n- Replaced inline  job with reusable .\n- Passed caller inputs/secrets to match Virtuus pattern ( from workflow_run SHA, , ).\n- Added guard conditions (, same-repo check,  branch, and ) plus release concurrency lock.\n- Added  bypass actor to  so ruleset sync preserves bypass behavior for release pushes.\n\nValidation run: JSON syntax check passed for ruleset file; workflow static lint skipped locally because  is not installed."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:57:25.278755Z",
+          "id": "4983349a-3910-4a9f-a1f3-751ea8c8e13c",
+          "text": "Implemented workflow/ruleset alignment for protected-branch semantic release.\n\n- Replaced the inline `.github/workflows/release.yml` job with reusable `AnthusAI/platform-ci/.github/workflows/semantic-release-reusable.yml@main`.\n- Passed caller inputs/secrets to match Virtuus pattern (`checkout_ref` from workflow_run SHA, `ANTHUSBOT_GH_TOKEN`, `PYPI_TOKEN`).\n- Added guard conditions (`event == push`, same-repo check, `main` branch, `actor != anthusbot`) and release concurrency lock.\n- Added `anthusbot` bypass actor to `infra/github-rulesets/main-branch-protection.json` so ruleset sync preserves bypass behavior for release pushes.\n\nValidation:\n- `python -m json.tool infra/github-rulesets/main-branch-protection.json` passed.\n- Workflow lint skipped locally because `actionlint` is not installed."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:57:45.962274Z",
+          "id": "fe9497c2-1b0a-40a9-9281-bd66db1c8325",
+          "text": "User requested alignment check: verify Virtuus bypass actor type (team vs user) and adjust Biblicus ruleset accordingly."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:58:00.139894Z",
+          "id": "7ad394e2-7e89-417a-a924-b61dd63444e1",
+          "text": "Updated per user feedback: changed ruleset bypass actor to team-based entry () to match the intended Virtuus-style bypass model."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T16:58:04.083166Z",
+          "id": "07c3b6e0-826b-45a1-810f-0c09132113b7",
+          "text": "Updated per user feedback: changed ruleset bypass actor to a team-based entry (actor_type=Team) to match the intended Virtuus-style bypass model."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T17:12:14.059290Z",
+          "id": "2bbd8917-7767-4e2c-9944-54fcdb0f7a9c",
+          "text": "Scope expanded per user request: add and consume new reusable coverage-badge workflow from platform-ci, including Biblicus caller workflow integration."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T17:13:55.980248Z",
+          "id": "0a8bd077-8d85-49c6-b0b6-0f1cafb2c4fc",
+          "text": "Implemented Biblicus integration for reusable coverage badge workflow. CI now exports coverage.json and uploads coverage-json-py312 artifact from Python 3.12 matrix leg. Added .github/workflows/coverage-badge.yml to call platform-ci reusable coverage badge workflow on successful main push CI workflow_run with anthusbot loop guard."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T17:31:08.077782Z",
+          "id": "dd664b0e-b349-4183-8796-6770809a7da8",
+          "text": "Adjusted Biblicus coverage badge caller to match hardened platform-ci reusable workflow contract after security review: removed deprecated  input from .github/workflows/coverage-badge.yml."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T17:31:14.505552Z",
+          "id": "991ea783-d461-4eb3-bf46-8e330688dfd5",
+          "text": "Adjusted Biblicus coverage badge caller to match hardened platform-ci reusable workflow contract after security review: removed deprecated checkout_ref input from .github/workflows/coverage-badge.yml."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T17:59:42.503056Z",
+          "id": "141bc61e-d425-4011-a01c-7ff699b67a76",
+          "text": "Updated Biblicus release workflow caller to match hardened semantic-release reusable workflow contract: replaced removed checkout_ref/install_command inputs with semantic_release_requirement input."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T18:00:52.271465Z",
+          "id": "c3f4d1e5-eac9-4592-beaf-f9eaaf21b9f5",
+          "text": "User requested strict workflow contract without deprecated inputs; aligning Biblicus caller accordingly and coordinating updates for all local callers."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-23T18:02:08.832193Z",
+          "id": "9a23be0b-6c17-4ffe-ab75-a64a7fd41b99",
+          "text": "Applied strict caller alignment for semantic-release reusable workflow hardening: release workflow now uses semantic_release_requirement and no longer passes checkout_ref/install_command."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:19:32.093635Z",
+          "id": "73f0bf0a-1e76-4482-930e-daed3e4ef317",
+          "text": "Adding temporary dry-run harness workflows for branch-level validation: workflow_dispatch semantic-release harness (run_publish=false) and workflow_dispatch coverage-badge harness (input CI run id/artifact)."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:19:52.676713Z",
+          "id": "c306ac6a-c2bc-4545-975b-a72fe85d9757",
+          "text": "Dry-run harness workflows added on feature branch: .github/workflows/release-dry-run.yml (manual semantic release test, branch-scoped, run_publish=false) and .github/workflows/coverage-badge-dry-run.yml (manual coverage badge test with source run id input). Both block execution on main via job-level branch guard."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:23:40.183392Z",
+          "id": "77149d1f-9dc2-4a59-91b5-13fde73d60a1",
+          "text": "Adjusting dry-run harness workflows to use push trigger on current feature branch so they can run pre-main merge from Actions without workflow_dispatch exposure."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-24T16:24:14.432073Z",
+          "id": "d43cad1a-b552-4f02-af5a-327fdb474f4e",
+          "text": "Updated dry-run harnesses per user request: switched to push triggers scoped to feature/release-bot so they execute pre-main. Coverage dry-run is now self-contained in one workflow run: first job builds and uploads coverage-json-py312 artifact, second job calls reusable badge workflow using source_workflow_run_id=github.run_id."
+        }
+      ],
       "created_at": "2026-03-23T16:55:44.504275Z",
       "creator": null,
       "custom": {},
@@ -1588,10 +1761,10 @@
       "labels": [],
       "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
       "priority": 1,
-      "status": "open",
+      "status": "in_progress",
       "title": "Align release workflow with platform-ci reusable semantic release",
       "type": "chore",
-      "updated_at": "2026-03-23T16:55:44.504275Z"
+      "updated_at": "2026-03-24T16:24:14.432073Z"
     },
     {
       "assignee": null,

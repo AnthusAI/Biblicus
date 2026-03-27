@@ -21,7 +21,7 @@ If you are running from a fresh clone, install the development dependencies and 
 extras:
 
 ```bash
-python -m pip install -e ".[dev,topic-modeling]"
+poetry install --with dev --extras topic-modeling
 ```
 
 ```bash
