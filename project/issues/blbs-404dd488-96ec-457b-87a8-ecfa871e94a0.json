@@ -3,7 +3,7 @@
   "title": "Migrate project packaging and workflows to Poetry",
   "description": "Convert Biblicus project dependency and tooling workflows to Poetry, update docs/scripts/CI references, and validate with test/lint commands.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -25,7 +25,7 @@
     }
   ],
   "created_at": "2026-03-27T20:16:33.913740Z",
-  "updated_at": "2026-03-27T20:31:57.429562Z",
-  "closed_at": null,
+  "updated_at": "2026-03-27T20:32:19.289614Z",
+  "closed_at": "2026-03-27T20:32:19.289614Z",
   "custom": {}
 }
