@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-27T21:28:41Z",
+  "built_at": "2026-03-27T21:36:05Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1773697832.430257,
     "Biblicus-0mo.json": 1773697832.430327,
@@ -42,7 +42,7 @@
     "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774646344.080839,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1773697832.432958,
     "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1773697832.433044,
-    "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb.json": 1774646921.957454,
+    "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb.json": 1774647270.701227,
     "blbs-7db7e949-5354-41f6-b606-fed3505fcb5d.json": 1774284647.954932,
     "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1773697832.433119,
     "blbs-9355e702-3ef3-4aab-b15a-d4869d9d0a58.json": 1773697832.433197,
@@ -60,6 +60,7 @@
     "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1774370579.013407,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1773697832.433924,
     "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774370579.013936,
+    "blbs-eb8ee920-e3b3-4821-ba9b-4ad7a0357ef3.json": 1774647365.598188,
     "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1773697832.433997
   },
   "issues": [
@@ -1180,8 +1181,21 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
-      "comments": [],
+      "closed_at": "2026-03-27T21:33:49.239068Z",
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-27T21:28:44.168791Z",
+          "id": "9e71810d-e171-4ac8-a487-e60206af4bf5",
+          "text": "Started follow-up fix for Poetry CI failure. Plan: drop Python 3.9 support (raise floor to 3.10), update CI test matrix, adjust tool target versions, run poetry check/install/ruff/tests, and push."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-27T21:33:39.388765Z",
+          "id": "dbc07b8b-bd90-4dc6-8b75-f5d84fde6bb3",
+          "text": "Implemented fix: dropped Python 3.9 support to resolve Poetry installation/matrix issues. Changes made: requires-python set to >=3.10,<4.0; Black and Ruff targets set to py310; CI matrix removed 3.9; docs updated where minimum version was stated as 3.9. Regenerated poetry.lock and validated: poetry lock, poetry install --with dev --extras datasets, poetry run ruff check src/biblicus/, poetry run python scripts/test.py (pass)."
+        }
+      ],
       "created_at": "2026-03-27T21:28:41.957330Z",
       "creator": null,
       "custom": {},
@@ -1191,10 +1205,10 @@
       "labels": [],
       "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
       "priority": 2,
-      "status": "open",
+      "status": "closed",
       "title": "Drop Python 3.9 support and align Poetry/CI",
       "type": "task",
-      "updated_at": "2026-03-27T21:28:41.957330Z"
+      "updated_at": "2026-03-27T21:33:49.239068Z"
     },
     {
       "assignee": null,
@@ -1797,6 +1811,24 @@
       "title": "Align release workflow with platform-ci reusable semantic release",
       "type": "chore",
       "updated_at": "2026-03-24T16:24:14.432073Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": null,
+      "comments": [],
+      "created_at": "2026-03-27T21:36:05.598046Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "Adjust GitHub ruleset required status checks to remove Python 3.9 entries and match current CI matrix.",
+      "id": "blbs-eb8ee920-e3b3-4821-ba9b-4ad7a0357ef3",
+      "labels": [],
+      "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+      "priority": 2,
+      "status": "open",
+      "title": "Update branch protection checks after dropping Python 3.9",
+      "type": "task",
+      "updated_at": "2026-03-27T21:36:05.598046Z"
     },
     {
       "assignee": null,
