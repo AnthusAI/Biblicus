@@ -1,0 +1,31 @@
+{
+  "id": "blbs-9abadfb3-b958-4c51-be33-6c2883d295f5",
+  "title": "Fix PyPI publication in release workflow",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "020cc920-f88c-4707-94f6-69272d914d08",
+      "author": "ryan",
+      "text": "Investigating and implementing the release workflow fix on develop. Plan: disable semantic-release publish, add an explicit PyPI publish job gated on released=true, and remove upload_to_pypi from pyproject.toml. Validation on develop will be workflow wiring inspection plus a local package build; real end-to-end validation will happen after the approved main merge.",
+      "created_at": "2026-03-27T06:48:14.111316Z"
+    },
+    {
+      "id": "3b09be6c-71a8-4df7-ab3f-7cb1eca6102f",
+      "author": "ryan",
+      "text": "Implemented the release fix on develop. Changed .github/workflows/release.yml so the reusable semantic-release job runs with run_publish=false and added a separate publish_pypi job that depends on release, checks released=true, checks out the emitted tag, builds distributions, and publishes with pypa/gh-action-pypi-publish. Removed upload_to_pypi from pyproject.toml. Validation on develop: YAML and TOML structure checks passed, the workflow wiring assertions passed, git diff --check passed, and a local python -m build succeeded and produced both sdist and wheel.",
+      "created_at": "2026-03-27T06:49:56.687043Z"
+    }
+  ],
+  "created_at": "2026-03-27T06:48:09.103673Z",
+  "updated_at": "2026-03-27T06:49:56.687043Z",
+  "closed_at": null,
+  "custom": {}
+}
