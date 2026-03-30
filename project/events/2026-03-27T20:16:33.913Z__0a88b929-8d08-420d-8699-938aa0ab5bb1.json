@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "0a88b929-8d08-420d-8699-938aa0ab5bb1",
+  "issue_id": "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-27T20:16:33.913Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Convert Biblicus project dependency and tooling workflows to Poetry, update docs/scripts/CI references, and validate with test/lint commands.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 2,
+    "status": "open",
+    "title": "Migrate project packaging and workflows to Poetry"
+  }
+}

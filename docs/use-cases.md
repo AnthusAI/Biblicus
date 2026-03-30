@@ -22,10 +22,10 @@ use_cases/sequence_markov
 
 ## How to run the tutorials
 
-All scripts assume you are running from the repository root with an editable install:
+All scripts assume you are running from the repository root with a Poetry environment:
 
 ```bash
-python -m pip install -e ".[dev]"
+poetry install --with dev
 ```
 
 Each tutorial script accepts:

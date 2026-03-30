@@ -23,7 +23,7 @@ pip install "biblicus[markitdown]"
 - **Minimum**: Python 3.10
 - **Recommended**: Python 3.11 or higher
 
-If you're using Python 3.9 or earlier, use alternative extractors like `unstructured`.
+If your environment cannot use Python 3.10+, use alternative extractors like `unstructured`.
 
 ## Supported Media Types
 
@@ -311,7 +311,7 @@ results = corpus.extract_text(extractor_id="markitdown")
 - Simple, reliable conversion is needed
 
 ### Use Unstructured when:
-- Python 3.9 or earlier is required
+- Python 3.10+ is not available
 - More format coverage is needed
 - You need advanced document parsing
 
@@ -375,7 +375,7 @@ python --version
 
 ### Alternatives
 
-- [unstructured](unstructured.md) - More format coverage, Python 3.9 support
+- [unstructured](unstructured.md) - More format coverage
 - [docling-smol](../vlm-document/docling-smol.md) - VLM for complex documents
 - [docling-granite](../vlm-document/docling-granite.md) - High-accuracy VLM
 

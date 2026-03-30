@@ -43,11 +43,14 @@ class ExemplarRecord:
     :vartype text_id: str
     :ivar metadata: Metadata from the source text.
     :vartype metadata: dict[str, Any]
+    :ivar timestamp: ISO 8601 timestamp of the source text, for recency ordering.
+    :vartype timestamp: str | None
     """
 
     text: str
     text_id: str
     metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: Optional[str] = None
 
 
 @dataclass

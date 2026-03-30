@@ -1,0 +1,31 @@
+{
+  "id": "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0",
+  "title": "Migrate project packaging and workflows to Poetry",
+  "description": "Convert Biblicus project dependency and tooling workflows to Poetry, update docs/scripts/CI references, and validate with test/lint commands.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "488c3c0b-4ee7-4084-9ae6-ddb6b811627c",
+      "author": "derek.norrbom",
+      "text": "Started Poetry migration task. Next steps: inspect current pyproject/build backend/dependency groups and scripts, convert to Poetry-managed dependency declaration, add/update poetry.lock, and update docs/automation commands. Will run lint/tests after migration and record results.",
+      "created_at": "2026-03-27T20:16:36.823489Z"
+    },
+    {
+      "id": "e47e2c6a-0b70-49bc-a73c-04292f947692",
+      "author": "derek.norrbom",
+      "text": "Implemented Poetry migration updates: switched build backend to poetry-core, moved dev dependencies to [tool.poetry.group.dev.dependencies], retained project dependencies/extras, added Poetry package source mapping, and generated poetry.lock. Updated CI/release workflows to use Poetry install/build/run commands. Updated primary contributor docs to use poetry install/run. Validation: poetry check (pass), poetry install --with dev (pass), poetry run ruff check src/biblicus/ (pass), poetry run biblicus --help (pass), poetry install --with dev --extras datasets (pass), poetry run python tests/fixtures/fetch_wikitext2.py (pass), poetry run python scripts/test.py (pass).",
+      "created_at": "2026-03-27T20:31:57.429562Z"
+    }
+  ],
+  "created_at": "2026-03-27T20:16:33.913740Z",
+  "updated_at": "2026-03-27T20:32:19.289614Z",
+  "closed_at": "2026-03-27T20:32:19.289614Z",
+  "custom": {}
+}

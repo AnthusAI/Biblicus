@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "78109fb8-53a0-4d90-b171-6c2319b8e332",
+  "issue_id": "blbs-eb8ee920-e3b3-4821-ba9b-4ad7a0357ef3",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-27T21:36:05.598Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Adjust GitHub ruleset required status checks to remove Python 3.9 entries and match current CI matrix.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 2,
+    "status": "open",
+    "title": "Update branch protection checks after dropping Python 3.9"
+  }
+}

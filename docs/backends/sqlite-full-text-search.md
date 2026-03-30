@@ -20,7 +20,7 @@ pip install biblicus
 
 ### Requirements
 
-- **Python**: 3.9+
+- **Python**: 3.10+
 - **SQLite**: With FTS5 support (included in most Python builds)
 
 ### Verify FTS5 Support

@@ -53,6 +53,9 @@ class ReinforcementMemory:
     :param min_topic_size: Minimum cluster member count passed to
         :class:`~._clusterer.TopicClusterer`.
     :param embedding_dim: Embedding vector dimension.
+    :param max_exemplars: Maximum number of exemplars returned per topic.
+        Exemplars are selected by proximity to the cluster centroid, then
+        sorted most-recent first.  Defaults to 5.
     """
 
     def __init__(
@@ -65,6 +68,7 @@ class ReinforcementMemory:
         synthesize_cause: Optional[SynthesisFn] = None,
         min_topic_size: int = 10,
         embedding_dim: int = 384,
+        max_exemplars: int = 5,
     ) -> None:
         """Initialise the engine and open the Virtuus store."""
         self._store = ReinforcementMemoryStore(data_dir)
@@ -75,6 +79,7 @@ class ReinforcementMemory:
         self._synthesize_cause = synthesize_cause
         self._min_topic_size = min_topic_size
         self._embedding_dim = embedding_dim
+        self._max_exemplars = max_exemplars
 
     # ------------------------------------------------------------------
     # Public API
@@ -183,7 +188,11 @@ class ReinforcementMemory:
 
             keywords = clusterer.get_keywords(int(tid), n=8)
 
-            exemplar_pairs = clusterer.get_representative_exemplars(int(tid), n=3)
+            # Select up to max_exemplars by centroid proximity, then sort
+            # most-recent first so callers can show the freshest examples.
+            exemplar_pairs = clusterer.get_representative_exemplars(
+                int(tid), n=self._max_exemplars
+            )
             exemplars = []
             causal_contexts: List[Dict[str, Any]] = []
             for ex_idx, ex_text in exemplar_pairs:
@@ -197,9 +206,13 @@ class ReinforcementMemory:
                         text=truncated,
                         text_id=text_ids[ex_idx],
                         metadata=metadatas[ex_idx],
+                        timestamp=timestamps[ex_idx] if ex_idx < len(timestamps) else None,
                     )
                 )
                 causal_contexts.append({"edit_comment": ex_text})
+
+            # Sort exemplars most-recent first (ISO 8601 strings compare lexicographically).
+            exemplars.sort(key=lambda e: e.timestamp or "", reverse=True)
 
             # 5. Labels
             label_str: str

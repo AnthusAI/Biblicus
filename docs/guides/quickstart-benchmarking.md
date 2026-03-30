@@ -4,8 +4,8 @@ Get started with benchmarking Biblicus extraction pipelines in under 10 minutes.
 
 ## Prerequisites
 
-- Biblicus installed: `pip install -e .`
-- Python 3.9 or higher
+- Biblicus installed: `poetry install`
+- Python 3.10 or higher
 - Optional dependencies based on pipelines you want to test:
   - `pip install "biblicus[paddleocr]"` for PaddleOCR
   - `pip install "biblicus[docling]"` for Docling VLMs
