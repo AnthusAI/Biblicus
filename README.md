@@ -154,7 +154,7 @@ sequenceDiagram
 This repository is a working Python package. Install it into a virtual environment from the repository root.
 
 ```
-python -m pip install -e .
+poetry install
 ```
 
 After the first release, you can install it from Python Package Index.
@@ -713,13 +713,13 @@ Reference documentation is generated from Sphinx style docstrings.
 Install development dependencies:
 
 ```
-python -m pip install -e ".[dev]"
+poetry install --with dev
 ```
 
 Build the documentation:
 
 ```
-python -m sphinx -b html docs docs/_build/html
+poetry run sphinx -b html docs docs/_build/html
 ```
 
 Preview the documentation locally:
