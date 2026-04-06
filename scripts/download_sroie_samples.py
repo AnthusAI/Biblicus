@@ -17,10 +17,8 @@ import argparse
 import json
 import shutil
 import tempfile
-import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional
-from urllib.request import urlretrieve
+from typing import Dict, Optional
 
 from biblicus.corpus import Corpus
 

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import json
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 
-from biblicus.analysis.reinforcement_memory._models import QueryResult, VectorRecord
+from biblicus.analysis.reinforcement_memory._models import VectorRecord
 from biblicus.analysis.reinforcement_memory._vector_store import (
     LocalVectorStore,
     S3VectorStore,

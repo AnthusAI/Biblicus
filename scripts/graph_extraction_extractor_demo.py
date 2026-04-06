@@ -9,7 +9,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_snapshot

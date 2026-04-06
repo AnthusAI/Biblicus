@@ -1,13 +1,11 @@
 import json
 from pathlib import Path
-from types import SimpleNamespace
 
-import pytest
 
 from biblicus import extraction
 from biblicus.models import CatalogItem
 from biblicus import corpus as corpus_mod
-from biblicus.extraction import ExtractionSnapshotManifest, write_extraction_snapshot_manifest
+from biblicus.extraction import ExtractionSnapshotManifest
 
 
 def _build_manifest(tmp_path: Path, items: list[CatalogItem]) -> ExtractionSnapshotManifest:

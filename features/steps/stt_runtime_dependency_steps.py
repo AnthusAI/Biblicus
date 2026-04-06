@@ -15,7 +15,6 @@ from typing import Iterable, List, Optional
 from behave import when
 
 from biblicus.corpus import Corpus
-from biblicus.errors import ExtractionSnapshotFatalError
 from biblicus.extractors.audio_format_converter import (
     AudioFormatConverterConfig,
     AudioFormatConverterExtractor,

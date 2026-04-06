@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import builtins
-import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -43,7 +42,6 @@ from biblicus.retrievers.hybrid import (
 )
 from biblicus.retrievers.sqlite_full_text_search import (
     SqliteFullTextSearchConfiguration,
-    SqliteFullTextSearchRetriever,
     _apply_rerank_if_enabled,
     _apply_stop_words,
     _build_full_text_search_index,
@@ -80,7 +78,6 @@ from biblicus.retrievers.scan import (
     _find_first_match as find_scan_match,
     _load_text_from_item as load_scan_text,
     _resolve_extraction_reference as resolve_scan_reference,
-    _score_items as score_scan_items,
 )
 from biblicus.extraction import (
     ExtractionItemResult,

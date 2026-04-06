@@ -1,5 +1,4 @@
 import argparse
-from pathlib import Path
 
 from biblicus import cli
 from biblicus.models import ExtractionSnapshotReference

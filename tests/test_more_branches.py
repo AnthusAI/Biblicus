@@ -1,4 +1,3 @@
-import os
 import sys
 from types import SimpleNamespace
 from pathlib import Path

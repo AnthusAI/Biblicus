@@ -1,7 +1,6 @@
 """Step definitions for AWS Amplify Publisher BDD tests."""
 from __future__ import annotations
 
-import json
 import os
 import sys
 import types

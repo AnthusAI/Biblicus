@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 from pathlib import Path
 
 from biblicus.analysis.markov import _collect_documents

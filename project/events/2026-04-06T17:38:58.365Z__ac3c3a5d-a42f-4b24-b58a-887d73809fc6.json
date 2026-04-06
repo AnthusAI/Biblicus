@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "ac3c3a5d-a42f-4b24-b58a-887d73809fc6",
+  "issue_id": "blbs-48e02aba-fc16-42ad-97c1-2ab84d031fa0",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-06T17:38:58.365Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Run Ruff F401 autofix in controlled scope, preserve intentional imports, and validate with tests plus rcql standard-findings report-only counts.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate py/unused-import findings with safe autofix workflow"
+  }
+}

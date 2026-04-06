@@ -4,7 +4,6 @@ import builtins
 import os
 import sys
 import types
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, List
 
@@ -18,7 +17,6 @@ from biblicus.graph.base import GraphExtractor
 from biblicus.graph.models import (
     GraphConfigurationManifest,
     GraphSnapshotManifest,
-    GraphSnapshotReference,
     parse_graph_snapshot_reference,
 )
 from biblicus.graph import neo4j as graph_neo4j

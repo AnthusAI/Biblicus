@@ -7,13 +7,10 @@ callables to verify the full ingest -> analyze -> get_topics pipeline.
 
 from __future__ import annotations
 
-import time
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import List
 from unittest.mock import MagicMock
 
-import numpy as np
-import pytest
 
 from biblicus.analysis.reinforcement_memory import (
     AnalysisResult,

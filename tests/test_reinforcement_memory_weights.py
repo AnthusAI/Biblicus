@@ -3,9 +3,7 @@
 import pytest
 
 from biblicus.analysis.reinforcement_memory._weights import (
-    DEFAULT_HOT_THRESHOLD,
     DEFAULT_PRUNE_THRESHOLD,
-    DEFAULT_WARM_THRESHOLD,
     decay,
     initial_weight,
     reinforce,

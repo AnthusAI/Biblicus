@@ -7,7 +7,6 @@ Usage:
 """
 
 import json
-import os
 from pathlib import Path
 
 def main():

@@ -13,11 +13,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 from urllib.request import urlretrieve
 
 from biblicus.corpus import Corpus

@@ -3,13 +3,11 @@ from __future__ import annotations
 import argparse
 import functools
 import builtins
-import importlib
 import io
 import json
 import os
 import sys
 import tempfile
-import time
 import types
 from pathlib import Path
 from typing import Any, Dict, List
@@ -19,7 +17,6 @@ from unittest import mock
 
 # Core modules we need to touch
 from biblicus import cli, inference
-from biblicus.ai.models import LlmClientConfig
 from biblicus._vendor.dotyaml import loader as dot_loader
 from biblicus._vendor.dotyaml import transformer as dot_transformer
 from biblicus._vendor.dotyaml import interpolation as dot_interpolation
@@ -33,21 +30,15 @@ from biblicus.analysis.markov import (
     _write_latest_pointer,
     _write_segments,
     _write_observations,
-    _load_segments,
-    _load_observations,
-    _write_topic_modeling_report,
 )
 from biblicus.analysis.models import (
     MarkovAnalysisObservation,
     MarkovAnalysisConfiguration,
     TopicModelingConfiguration,
     TopicModelingReport,
-    TopicModelingTopic,
 )
-from biblicus.analysis.topic_modeling import run_topic_modeling_for_documents
 from biblicus.corpus import Corpus
 from biblicus.evaluation import benchmark_runner, metrics, ocr_benchmark, stt_benchmark
-from biblicus.evaluation.metrics import entity_metrics
 from biblicus.extraction import (
     build_extraction_snapshot,
     create_extraction_configuration_manifest,
@@ -68,16 +59,13 @@ from biblicus.extractors.google_speech_stt import GoogleSpeechToTextExtractor
 from biblicus.extractors.openai_audio_stt import OpenAiAudioSpeechToTextExtractor
 from biblicus.extractors.pipeline import PipelineExtractorConfig
 from biblicus.migration import migrate_layout
-import biblicus.migration as migration_mod
 from biblicus.models import (
     CatalogItem,
-    ConfigurationManifest,
     ExtractedText,
     ExtractionStageOutput,
     ExtractionSnapshotReference,
     QueryBudget,
     parse_extraction_snapshot_reference,
-    RetrievalSnapshot,
 )
 from biblicus.user_config import (
     resolve_aldea_api_key,
@@ -867,7 +855,6 @@ def step_run_harness(context) -> None:
         from biblicus.extraction import (
             create_extraction_configuration_manifest,
             create_extraction_snapshot_manifest,
-            load_extraction_dataset,
             write_extraction_latest_pointer,
             write_extraction_snapshot_manifest,
         )
@@ -1608,7 +1595,6 @@ def step_run_harness(context) -> None:
             GraphEdge,
             GraphExtractionResult,
             GraphNode,
-            GraphSnapshotReference,
         )
         graph_corpus = _temp_corpus()
         graph_path = graph_corpus.raw_dir / "graph.txt"
@@ -1855,7 +1841,6 @@ def step_run_harness(context) -> None:
         from biblicus.analysis.models import (
             MarkovAnalysisArtifactsGraphVizConfig,
             MarkovAnalysisConfiguration,
-            MarkovAnalysisEmbeddingsConfig,
             MarkovAnalysisLlmObservationsConfig,
             MarkovAnalysisModelConfig,
             MarkovAnalysisModelFamily,
@@ -2343,7 +2328,7 @@ def step_run_harness(context) -> None:
 
     try:
         from biblicus import corpus as corpus_mod
-        from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
+        from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION
         from biblicus.corpus import Corpus
         from biblicus.frontmatter import FrontMatterDocument
 
@@ -2740,7 +2725,6 @@ def step_run_harness(context) -> None:
     try:
         from biblicus.extractors.deepgram_stt import _deepgram_response_to_dict
         from biblicus.extractors.deepgram_transform import (
-            DeepgramTranscriptTransformExtractor,
             _render_deepgram_text,
         )
 
@@ -7260,7 +7244,7 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         from biblicus.hook_manager import HookManager
-        from biblicus.hooks import HookPoint, HookSpec, IngestMutation, build_builtin_hook
+        from biblicus.hooks import HookPoint, HookSpec, build_builtin_hook
 
         add_tags_hook = build_builtin_hook(
             HookSpec(hook_id="add-tags", hook_points=[HookPoint.before_ingest], config={"tags": ["a", "b"]})
@@ -14209,7 +14193,6 @@ def step_exhaust_core(context) -> None:
         from biblicus.evaluation.stt_benchmark import (
             STTBenchmark,
             STTBenchmarkReport,
-            STTEvaluationResult,
             calculate_wer,
         )
 
@@ -14903,7 +14886,6 @@ def step_exhaust_core(context) -> None:
     except Exception:
         pass
     try:
-        from biblicus.analysis import profiling as profiling_mod
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
             ProfilingConfiguration,

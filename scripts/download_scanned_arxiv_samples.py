@@ -22,7 +22,7 @@ import argparse
 import json
 import tempfile
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from biblicus.corpus import Corpus
 

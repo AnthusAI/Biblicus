@@ -1,9 +1,7 @@
 import pytest
-from types import SimpleNamespace
 
 from biblicus.analysis import topic_modeling
 from biblicus.analysis.models import (
-    TopicModelingConfiguration,
     TopicModelingLlmExtractionConfig,
     TopicModelingLlmExtractionMethod,
     TopicModelingLexicalProcessingConfig,

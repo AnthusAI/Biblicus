@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-03-27T21:36:05Z",
+  "built_at": "2026-04-03T20:52:49Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1773697832.430257,
     "Biblicus-0mo.json": 1773697832.430327,
@@ -39,14 +39,14 @@
     "blbs-2c560cb3-b57b-4f72-9b16-4fc5f9930882.json": 1773697832.432796,
     "blbs-3730fe1e-eff9-481f-92ea-6f2b9b968c85.json": 1773697832.432879,
     "blbs-3b54b5ab-7fa6-443a-8689-fc565fcf9b21.json": 1774284647.954848,
-    "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774646344.080839,
+    "blbs-404dd488-96ec-457b-87a8-ecfa871e94a0.json": 1774890977.233319,
     "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c.json": 1773697832.432958,
     "blbs-53943545-eda9-4160-a77e-2bf36a4ddf49.json": 1773697832.433044,
-    "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb.json": 1774647270.701227,
+    "blbs-6132f06c-d515-43d4-89d8-445dde01a1bb.json": 1774890977.234115,
     "blbs-7db7e949-5354-41f6-b606-fed3505fcb5d.json": 1774284647.954932,
     "blbs-854fbe6c-cce6-4af9-9c6b-8e4007511a58.json": 1773697832.433119,
     "blbs-9355e702-3ef3-4aab-b15a-d4869d9d0a58.json": 1773697832.433197,
-    "blbs-9abadfb3-b958-4c51-be33-6c2883d295f5.json": 1774642531.738327,
+    "blbs-9abadfb3-b958-4c51-be33-6c2883d295f5.json": 1774887155.456439,
     "blbs-9d599111-36cc-4b3c-a327-a34389150675.json": 1773697832.433282,
     "blbs-a0e65267-c651-4fe7-871b-f2ab4c44e609.json": 1773697832.433352,
     "blbs-abe804f5-f081-46ae-be18-9c4ea3fc49a4.json": 1773697832.433428,
@@ -57,10 +57,10 @@
     "blbs-c4214341-dc97-48e6-b55c-cd459edac742.json": 1774284647.955078,
     "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1773697832.433771,
     "blbs-d9065b28-c5d1-4293-b0de-6d881d37e311.json": 1774284647.955158,
-    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1774370579.013407,
+    "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1774887155.456792,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1773697832.433924,
-    "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774370579.013936,
-    "blbs-eb8ee920-e3b3-4821-ba9b-4ad7a0357ef3.json": 1774647365.598188,
+    "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774887155.457047,
+    "blbs-eb8ee920-e3b3-4821-ba9b-4ad7a0357ef3.json": 1774890977.234793,
     "blbs-fda72784-6cb2-403b-92d2-eb0d77941455.json": 1773697832.433997
   },
   "issues": [
@@ -1814,8 +1814,15 @@
     },
     {
       "assignee": null,
-      "closed_at": null,
-      "comments": [],
+      "closed_at": "2026-03-27T21:36:29.683742Z",
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-03-27T21:36:19.602990Z",
+          "id": "8091b344-bd96-4472-8abf-6b69b096efd3",
+          "text": "Updated infra/github-rulesets/main-branch-protection.json: removed required status check context 'test (3.9)' to align with CI matrix (3.10, 3.11, 3.12). Validation: python -m json.tool on ruleset JSON (pass)."
+        }
+      ],
       "created_at": "2026-03-27T21:36:05.598046Z",
       "creator": null,
       "custom": {},
@@ -1825,10 +1832,10 @@
       "labels": [],
       "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
       "priority": 2,
-      "status": "open",
+      "status": "closed",
       "title": "Update branch protection checks after dropping Python 3.9",
       "type": "task",
-      "updated_at": "2026-03-27T21:36:05.598046Z"
+      "updated_at": "2026-03-27T21:36:29.683742Z"
     },
     {
       "assignee": null,

@@ -5,7 +5,6 @@ from pathlib import Path
 from biblicus.extraction import (
     load_or_build_extraction_snapshot,
     create_extraction_configuration_manifest,
-    create_extraction_snapshot_manifest,
     ExtractionSnapshotManifest,
 )
 

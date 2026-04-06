@@ -1,4 +1,3 @@
-from pathlib import Path
 from pydantic import BaseModel
 
 from biblicus import extraction
