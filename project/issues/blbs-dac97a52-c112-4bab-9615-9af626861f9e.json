@@ -3,7 +3,7 @@
   "title": "Resolve Python import-and-import-from and repeated-import findings",
   "description": "",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -25,7 +25,7 @@
     }
   ],
   "created_at": "2026-04-06T18:30:26.919988Z",
-  "updated_at": "2026-04-06T18:34:47.176585Z",
-  "closed_at": null,
+  "updated_at": "2026-04-06T18:35:07.312486Z",
+  "closed_at": "2026-04-06T18:35:07.312486Z",
   "custom": {}
 }
