@@ -172,8 +172,6 @@ def _build_extractor_stages_from_table(table) -> list[dict[str, object]]:
 
 
 def _build_stage_spec(extractor_id: str, config: dict[str, object]) -> str:
-    import json
-
     if not config:
         return extractor_id
 

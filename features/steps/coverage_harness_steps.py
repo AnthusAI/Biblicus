@@ -16,8 +16,8 @@ from unittest import mock
 
 from behave import then, when
 
-import biblicus.analysis.models as models
-import biblicus.extraction as extraction
+from biblicus.analysis import models as models
+from biblicus import extraction as extraction
 
 # Core modules we need to touch
 from biblicus import cli, inference, knowledge_base, workflow
@@ -671,7 +671,7 @@ def step_run_harness(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.evaluation.benchmark_runner as bench_mod
+        from biblicus.evaluation import benchmark_runner as bench_mod
         from biblicus import cli as cli_mod
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
@@ -977,7 +977,7 @@ def step_run_harness(context) -> None:
             "extractor_id: pass-through-text\nconfiguration: {}\n",
             encoding="utf-8",
         )
-        import biblicus.workflow as workflow_mod
+        from biblicus import workflow as workflow_mod
 
         original_build_plan = workflow_mod.build_plan_for_extract
         original_execute = cli_mod._execute_dependency_plan
@@ -1135,8 +1135,7 @@ def step_run_harness(context) -> None:
         cli_mod.evaluate_extraction_snapshot = original_eval
         cli_mod.write_extraction_evaluation_result = original_write_eval
         cli_mod.load_extraction_dataset = original_load_dataset
-
-        import biblicus.graph.extraction as graph_extraction_mod
+        from biblicus.graph import extraction as graph_extraction_mod
 
         original_build_graph = graph_extraction_mod.build_graph_snapshot
         graph_extraction_mod.build_graph_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
@@ -1442,8 +1441,7 @@ def step_run_harness(context) -> None:
             _ignore_expected_coverage_exception()
 
         cli_mod.get_analysis_backend = original_backend
-
-        import biblicus.evaluation.benchmark_runner as bench_mod
+        from biblicus.evaluation import benchmark_runner as bench_mod
 
         bench_cfg = root / "bench.yml"
         bench_cfg.write_text("{}", encoding="utf-8")
@@ -5934,7 +5932,7 @@ def step_exhaust_gaps(context) -> None:
 
 
     try:
-        import biblicus.corpus as corpus_mod
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         reg_root2 = Corpus.init(root / "corpus_register2", force=True)
@@ -7506,7 +7504,7 @@ def step_exhaust_gaps(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.extractors.pdf_text as pdf_text
+        from biblicus.extractors import pdf_text
         from biblicus.extractors.pdf_text import PortableDocumentFormatTextExtractor
 
         class _Page:
@@ -8391,9 +8389,9 @@ def step_exhaust_gaps(context) -> None:
 
     with suppress(Exception):
         import biblicus.graph.extractors.cooccurrence as cooccurrence
-        import biblicus.graph.extractors.dependency_relations as dependency_relations
-        import biblicus.graph.extractors.ner_entities as ner_entities
-        import biblicus.graph.extractors.simple_entities as simple_entities
+        from biblicus.graph.extractors import dependency_relations
+        from biblicus.graph.extractors import ner_entities
+        from biblicus.graph.extractors import simple_entities
         from biblicus.graph.extractors import get_graph_extractor
 
         try:
@@ -8408,7 +8406,7 @@ def step_exhaust_gaps(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.graph.extraction as graph_extraction
+        from biblicus.graph import extraction as graph_extraction
         from biblicus.graph.extraction import (
             build_graph_snapshot,
             latest_graph_snapshot_reference,
@@ -9328,8 +9326,7 @@ def step_exhaust_gaps(context) -> None:
             )
         except Exception:
             _ignore_expected_coverage_exception()
-
-        import biblicus.corpus as corpus_mod
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(
             metadata={"biblicus": {"id": "not-uuid"}, "tags": ["t"]},
@@ -12335,7 +12332,7 @@ def step_exhaust_gaps(context) -> None:
             )
         finally:
             builtins_mod.__import__ = original_import
-        import biblicus.sync.amplify_publisher as amplify_mod
+        from biblicus.sync import amplify_publisher as amplify_mod
         class _BadPublisher:
             def __init__(self, name):
                 _ = name
@@ -12463,7 +12460,7 @@ def step_exhaust_gaps(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.sync.amplify_publisher as amplify_mod
+        from biblicus.sync import amplify_publisher as amplify_mod
         from biblicus.sync.amplify_publisher import AmplifyPublisher
 
         _fake_boto3()
@@ -14452,8 +14449,7 @@ def step_exhaust_core(context) -> None:
         (stage_dir / "metadata" / f"{first_item.id}.json").write_text(
             json.dumps({"x": 1}), encoding="utf-8"
         )
-
-        import biblicus.extraction as extraction_mod
+        from biblicus import extraction as extraction_mod
         original_event = extraction_mod.threading.Event
         class _FastEvent(original_event):
             def __init__(self):
@@ -14982,7 +14978,7 @@ def step_exhaust_core(context) -> None:
         )
 
     with suppress(Exception):
-        import biblicus.crawl as crawl_mod
+        from biblicus import crawl as crawl_mod
         from biblicus.crawl import CrawlRequest, crawl_into_corpus
 
         crawl_corpus = Corpus.init(root / "crawl_corpus", force=True)
@@ -16782,7 +16778,7 @@ def step_exhaust_core(context) -> None:
         corpus.purge(confirm=corpus.name)
 
     with suppress(Exception):
-        import biblicus.workflow as workflow_mod
+        from biblicus import workflow as workflow_mod
         from biblicus import cli as cli_mod
 
         original_get_retriever = cli_mod.get_retriever
@@ -16797,7 +16793,7 @@ def step_exhaust_core(context) -> None:
         original_apply_reranker = cli_mod.apply_evidence_reranker
         original_apply_filter = cli_mod.apply_evidence_filter
         original_corpus_open = cli_mod.Corpus.open
-        import biblicus.graph.extraction as graph_extraction_mod
+        from biblicus.graph import extraction as graph_extraction_mod
         original_graph_build = graph_extraction_mod.build_graph_snapshot
         original_graph_list = graph_extraction_mod.list_graph_snapshots
         original_graph_load = graph_extraction_mod.load_graph_snapshot_manifest
@@ -17237,7 +17233,7 @@ def step_exhaust_migration(context) -> None:
             json.dumps({"biblicus": {"id": "not-uuid"}, "tags": ["t1"]}),
             encoding="utf-8",
         )
-        import biblicus.corpus as corpus_mod
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         try:
@@ -17454,7 +17450,7 @@ def step_exhaust_migration(context) -> None:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
     with suppress(Exception):
-        import biblicus.sync.amplify_publisher as amp_mod
+        from biblicus.sync import amplify_publisher as amp_mod
         config_dir = Path.home() / ".biblicus"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "amplify.env").write_text(
@@ -17481,9 +17477,9 @@ def step_exhaust_migration(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.graph.extractors.dependency_relations as dependency_relations
-        import biblicus.graph.extractors.ner_entities as ner_entities
-        import biblicus.graph.extractors.simple_entities as simple_entities
+        from biblicus.graph.extractors import dependency_relations
+        from biblicus.graph.extractors import ner_entities
+        from biblicus.graph.extractors import simple_entities
         from biblicus.graph.extractors.dependency_relations import (
             DependencyRelationsGraphConfig,
             DependencyRelationsGraphExtractor,
@@ -18296,7 +18292,7 @@ def step_exhaust_migration(context) -> None:
 
 
     with suppress(Exception):
-        import biblicus.analysis.profiling as profiling_mod
+        from biblicus.analysis import profiling as profiling_mod
         from biblicus.analysis.models import ProfilingConfiguration
         from biblicus.analysis.profiling import (
             ProfilingBackend,
@@ -18470,7 +18466,7 @@ def step_exhaust_migration(context) -> None:
 
 
     try:
-        import biblicus.cli as cli_mod
+        from biblicus import cli as cli_mod
         from biblicus.configuration import load_configuration_view, parse_dotted_overrides
 
         cli_mod._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])

@@ -238,7 +238,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         f"mirror:\n  collection: {collection_path.as_posix()}\n",
         encoding="utf-8",
     )
-    import biblicus.pipelines as pipelines_module
+    from biblicus import pipelines as pipelines_module
 
     original_pull = pipelines_module.pull_collection
     pipelines_module.pull_collection = lambda _: None
@@ -442,7 +442,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         deletion_policy="archive",
     )
     init_collection(mismatch_collection_root, mismatch_config)
-    import biblicus.collections as collections_module
+    from biblicus import collections as collections_module
 
     original_resolve_profile = collections_module.resolve_source_profile
     collections_module.resolve_source_profile = lambda *_: SourceProfileConfig(
@@ -692,7 +692,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     recipe_path = recipe_dir / "default.yml"
     recipe_path.write_text("extractor_id: pipeline\nconfiguration:\n  stages: []\n", encoding="utf-8")
 
-    import biblicus.cli as cli_module
+    from biblicus import cli as cli_module
 
     manifest_path = corpus_for_analysis.extraction_snapshot_dir(
         extractor_id=extraction_ref.extractor_id, snapshot_id=extraction_ref.snapshot_id
@@ -776,8 +776,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
     benchmark_gt.mkdir(parents=True, exist_ok=True)
     pipeline_path = workdir / "pipeline.yml"
     pipeline_path.write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
-
-    import biblicus.evaluation.benchmark_runner as benchmark_module
+    from biblicus.evaluation import benchmark_runner as benchmark_module
 
     class _FakeReport:
         avg_f1 = 0.8

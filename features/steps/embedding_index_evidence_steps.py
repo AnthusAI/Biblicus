@@ -90,7 +90,7 @@ def _build_fake_corpus() -> FakeCorpus:
 
 @when("I build in-memory evidence for a non-text item")
 def step_build_inmemory_evidence(context) -> None:
-    import biblicus.retrievers.embedding_index_inmemory as inmemory_module
+    from biblicus.retrievers import embedding_index_inmemory as inmemory_module
 
     corpus = _build_fake_corpus()
     configuration = _build_configuration()
@@ -118,7 +118,7 @@ def step_build_inmemory_evidence(context) -> None:
 
 @when("I build file-backed evidence for a non-text item")
 def step_build_file_evidence(context) -> None:
-    import biblicus.retrievers.embedding_index_file as file_module
+    from biblicus.retrievers import embedding_index_file as file_module
 
     corpus = _build_fake_corpus()
     configuration = _build_configuration()

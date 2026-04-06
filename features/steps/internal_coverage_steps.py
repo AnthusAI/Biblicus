@@ -278,7 +278,7 @@ def step_workflow_dependency_edge_cases(context) -> None:
     query_plan = build_plan_for_query(corpus, "scan", load_handler_available=False)
     assert query_plan.status in {"ready", "blocked"}
 
-    import biblicus.workflow as workflow_module
+    from biblicus import workflow as workflow_module
 
     blocked_task = Task(
         name="extract",
@@ -459,7 +459,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         query_plan_with_deps, corpus=corpus, label="query", mode="auto"
     )
 
-    import biblicus.workflow as workflow_module
+    from biblicus import workflow as workflow_module
 
     original_build_plan = workflow_module.build_plan_for_query
     try:

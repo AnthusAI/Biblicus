@@ -280,6 +280,8 @@ def test_corpus_hooks_reserved_and_import(tmp_path):
 
 
 def test_cli_benchmark_and_dashboard(monkeypatch, tmp_path):
+    from biblicus.sync import amplify_publisher as amplify_mod
+
     import subprocess
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: types.SimpleNamespace(returncode=0))
     cli.cmd_benchmark_download(Namespace(datasets="funsd,unknown,scanned-arxiv", corpus_dir=str(tmp_path), count=None, force=True))
@@ -312,7 +314,6 @@ def test_cli_benchmark_and_dashboard(monkeypatch, tmp_path):
         name = "fake"
         catalog_path = Path("catalog.json")
 
-    import biblicus.sync.amplify_publisher as amplify_mod
     monkeypatch.setattr(amplify_mod, "AmplifyPublisher", FakePublisher)
     monkeypatch.setattr(cli, "Corpus", types.SimpleNamespace(open=lambda path: FakeCorpus(), discover=lambda: FakeCorpus()))
     assert cli.cmd_dashboard_sync(Namespace(corpus=None, force=False)) == 1

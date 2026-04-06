@@ -348,7 +348,7 @@ def step_repeated_text_coverage_only_true(context) -> None:
 
 @when("I attempt missing coverage recovery where autofill produces invalid spans")
 def step_attempt_missing_coverage_recovery_invalid_autofill(context) -> None:
-    import biblicus.text.link as link_module
+    from biblicus.text import link as link_module
 
     original_autofill = link_module._autofill_ref_spans
 
