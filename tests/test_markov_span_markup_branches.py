@@ -133,10 +133,6 @@ def test_llm_observation_cache_stats(monkeypatch, tmp_path):
         }
     )
 
-    observations = [
-        markov.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="body"),
-        markov.MarkovAnalysisObservation(item_id="i", segment_index=2, segment_text="new"),
-    ]
     # force labeling to return predictable payload
     monkeypatch.setattr(
         markov,

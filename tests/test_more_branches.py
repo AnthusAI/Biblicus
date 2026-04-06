@@ -100,7 +100,6 @@ def test_google_speech_non_audio_returns_none():
 
 def test_deepgram_stt_missing_payload_paths(monkeypatch):
     extractor = deepgram_stt.DeepgramSpeechToTextExtractor()
-    dummy_output = SimpleNamespace(metadata={}, text="t")
     # _extract is not defined; we just call _find_audio_payload via extract_text using non-audio
     result = extractor.extract_text(
         corpus=SimpleNamespace(root=Path(".")),

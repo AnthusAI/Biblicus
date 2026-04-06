@@ -664,9 +664,6 @@ def step_pipeline_configuration_edge_cases(context) -> None:
     except KeyError:
         pass
 
-    class DummyDoclingConfig:
-        retriever = "mlx"
-
     import sys
     import types
 

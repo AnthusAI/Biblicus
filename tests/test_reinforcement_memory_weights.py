@@ -223,7 +223,6 @@ def test_update_empty_clusters():
 
 
 def test_update_days_inactive_defaults_to_seven():
-    clusters = [_cluster(0, weight=0.5)]
     # no days_inactive entry for cluster 0 → defaults to 7
     updated_explicit, _ = update_memory_weights(
         [_cluster(0, weight=0.5)], active_cluster_ids=[], days_inactive={0: 7}

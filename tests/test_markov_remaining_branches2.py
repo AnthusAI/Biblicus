@@ -102,10 +102,6 @@ def test_markov_reuses_cached_observations_and_reapplies_topic(monkeypatch, tmp_
     monkeypatch.setattr(markov, "_write_transitions_json", lambda **kwargs: None)
     monkeypatch.setattr(markov, "_write_topic_assignments", lambda **kwargs: None)
     monkeypatch.setattr(markov, "_write_graphviz", lambda **kwargs: None)
-    class DummyReport(SimpleNamespace):
-        def model_dump_json(self, *a, **k):
-            return "{}"
-
     # short-circuit before MarkovAnalysisReport validation: cause _run_markov to raise our sentinel
     class StopRun(RuntimeError):
         pass

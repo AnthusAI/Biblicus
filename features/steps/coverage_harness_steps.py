@@ -4711,7 +4711,7 @@ def step_exhaust_gaps(context) -> None:
 
     # markov cached observations with topic modeling and cache context branches
     cache_corpus_a = _temp_corpus()
-    cache_snap_a = _make_snapshot_dirs(cache_corpus_a, "pipeline", "snap-cache-a")
+    _make_snapshot_dirs(cache_corpus_a, "pipeline", "snap-cache-a")
     cache_cfg_a = markov_mod.MarkovAnalysisConfiguration(
         topic_modeling={"enabled": True, "configuration": tm_config},
         llm_observations={
@@ -4815,7 +4815,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod._apply_topic_modeling = original_apply_topic_modeling
 
     cache_corpus_b = _temp_corpus()
-    cache_snap_b = _make_snapshot_dirs(cache_corpus_b, "pipeline", "snap-cache-b")
+    _make_snapshot_dirs(cache_corpus_b, "pipeline", "snap-cache-b")
     cache_cfg_b = markov_mod.MarkovAnalysisConfiguration(
         topic_modeling={"enabled": False},
         llm_observations={
@@ -5086,7 +5086,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod.generate_completion = original_generate
 
     cache_corpus = _temp_corpus()
-    cache_snap = _make_snapshot_dirs(cache_corpus, "pipeline", "snap-cache2")
+    _make_snapshot_dirs(cache_corpus, "pipeline", "snap-cache2")
     cache_run_id = markov_mod._analysis_snapshot_id(
         configuration_id="cache2",
         extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-cache2"),
@@ -5401,7 +5401,7 @@ def step_exhaust_gaps(context) -> None:
     original_write_latest = markov_mod._write_latest_pointer
     try:
         corpus_cache = _temp_corpus()
-        snap_cache = _make_snapshot_dirs(corpus_cache, "pipeline", "snap-cache")
+        _make_snapshot_dirs(corpus_cache, "pipeline", "snap-cache")
         obs_dir = corpus_cache.analysis_run_dir(
             analysis_id="markov",
             snapshot_id="cache-run",
@@ -10343,7 +10343,7 @@ def step_exhaust_gaps(context) -> None:
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, text="START"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, text="body text"),
         ]
-        obs = markov._build_observations(segments=segs, config=seg_cfg, cache_context=cache_ctx)
+        markov._build_observations(segments=segs, config=seg_cfg, cache_context=cache_ctx)
         # write malformed cache to hit _load_llm_observation_cache defensive branches
         bad_cache = cache_dir / "cache.json"
         bad_cache.write_text("{not json", encoding="utf-8")
@@ -11722,8 +11722,6 @@ def step_exhaust_gaps(context) -> None:
                 prompt_template="{text}",
             ),
         )
-        class _FakeTopicModel:
-            def fit_transform(self, texts): return [0 for _ in texts], None
         class _FakeBERTopic:
             def __init__(self, **kwargs): pass
             def fit_transform(self, texts): return [0 for _ in texts], None
@@ -14167,10 +14165,6 @@ def step_exhaust_core(context) -> None:
         from biblicus.graph.extractors import dependency_relations, ner_entities, simple_entities
         from biblicus.graph.models import GraphExtractionResult
 
-        class _Doc:
-            def __init__(self):
-                self.sents = []
-
         dependency_relations.DependencyRelationsGraphExtractor().extract(
             corpus=_temp_corpus(),
             item=_fake_text_item(_temp_corpus().root),
@@ -15235,13 +15229,6 @@ def step_exhaust_core(context) -> None:
                 self.SpeakerDiarizationConfig = _FakeSpeech.SpeakerDiarizationConfig
                 self.RecognitionAudio = _FakeSpeech.RecognitionAudio
                 self.RecognitionConfig = _FakeSpeech.RecognitionConfig
-        class _FakeClient:
-            def recognize(self, config, audio):
-                _ = config
-                _ = audio
-                alt = types.SimpleNamespace(transcript="hi", confidence=0.5)
-                result = types.SimpleNamespace(alternatives=[alt])
-                return types.SimpleNamespace(results=[result])
         sys.modules["google.cloud.speech"] = _FakeSpeech()
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),

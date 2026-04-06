@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-04-06T18:30:23Z",
+  "built_at": "2026-04-06T18:45:55Z",
   "file_mtimes": {
     "Biblicus-04z.json": 1773697832.430257,
     "Biblicus-0mo.json": 1773697832.430327,
@@ -61,6 +61,7 @@
     "blbs-c4214341-dc97-48e6-b55c-cd459edac742.json": 1774284647.955078,
     "blbs-d8eccebb-0e7d-4aa7-92c6-166771f445fd.json": 1773697832.433771,
     "blbs-d9065b28-c5d1-4293-b0de-6d881d37e311.json": 1774284647.955158,
+    "blbs-dac97a52-c112-4bab-9615-9af626861f9e.json": 1775500507.312789,
     "blbs-ded60666-6844-4c08-a569-07ded185096c.json": 1774887155.456792,
     "blbs-e4d207d4-8173-4ef3-8f83-2d1305a5c0d5.json": 1773697832.433924,
     "blbs-e9fe2971-7554-4cea-ad8c-8130cb31315d.json": 1774887155.457047,
@@ -1774,6 +1775,37 @@
       "title": "Stabilize GitHub CI failures on PR #16",
       "type": "bug",
       "updated_at": "2026-03-15T02:05:24.467011Z"
+    },
+    {
+      "assignee": null,
+      "closed_at": "2026-04-06T18:35:07.312486Z",
+      "comments": [
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-04-06T18:30:31.711418Z",
+          "id": "02b56863-7ed3-423c-b15f-b446947b5cd2",
+          "text": "Starting remediation for py/import-and-import-from and py/repeated-import findings in feature step files. Plan: normalize imports to one style per module, run targeted tests, then run rcql python scan to verify."
+        },
+        {
+          "author": "derek.norrbom",
+          "created_at": "2026-04-06T18:34:47.176585Z",
+          "id": "9dda26ae-9143-45d8-937c-d91f483b820f",
+          "text": "Implemented import-style normalization across Python step/test files and removed redundant json import in extraction steps. Validation: rcql --lang=python --mode standard-findings dropped from 91 warnings to 35; rule checks for py/import-and-import-from and py/repeated-import now return zero findings. Also ran poetry run pytest -q tests/test_coverage_gaps_extra.py (11 passed). Commit: 99592ab."
+        }
+      ],
+      "created_at": "2026-04-06T18:30:26.919988Z",
+      "creator": null,
+      "custom": {},
+      "dependencies": [],
+      "description": "",
+      "id": "blbs-dac97a52-c112-4bab-9615-9af626861f9e",
+      "labels": [],
+      "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+      "priority": 2,
+      "status": "closed",
+      "title": "Resolve Python import-and-import-from and repeated-import findings",
+      "type": "task",
+      "updated_at": "2026-04-06T18:35:07.312486Z"
     },
     {
       "assignee": null,

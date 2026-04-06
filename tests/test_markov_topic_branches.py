@@ -76,8 +76,6 @@ def test_segment_span_markup_retry_falls_back_to_llm(monkeypatch):
     def fake_apply_text_extract(request):
         raise ValueError("boom")
     monkeypatch.setattr(markov, "apply_text_extract", fake_apply_text_extract)
-    class DummySpan(SimpleNamespace):
-        pass
     dummy_result = SimpleNamespace(spans=[SimpleNamespace(text="body", attributes={"label": "LBL"})])
     monkeypatch.setattr(markov, "apply_text_annotate", lambda request: dummy_result)
     monkeypatch.setattr(

@@ -35,7 +35,7 @@ def _build_manifest(tmp_path: Path, items: list[CatalogItem]) -> ExtractionSnaps
 
 def test_extraction_heartbeat_and_cache_paths(tmp_path, monkeypatch):
     corpus = corpus_mod.Corpus.init(tmp_path, force=True)
-    ingest_result = corpus.ingest_item(
+    corpus.ingest_item(
         b"hello",
         filename="i1.txt",
         media_type="text/plain",
