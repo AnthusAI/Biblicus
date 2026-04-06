@@ -45,7 +45,7 @@ def test_extraction_heartbeat_and_cache_paths(tmp_path, monkeypatch):
     )
     snap_dir = corpus.extraction_snapshot_dir(extractor_id="pipeline", snapshot_id="snap1")
     snap_dir.mkdir(parents=True, exist_ok=True)
-    manifest = _build_manifest(tmp_path, [])
+    _build_manifest(tmp_path, [])
 
     # ensure cache load path is hit by writing cached text
     stage_dir = snap_dir / "stages" / "1_select-text" / "text"

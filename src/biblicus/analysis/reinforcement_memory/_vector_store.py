@@ -45,7 +45,7 @@ class VectorStore(Protocol):
 
     def health_check(self) -> bool:
         """Return True if the store is reachable and operational."""
-        ...
+        pass
 
     def put_vectors(self, vectors: List[VectorRecord]) -> None:
         """
@@ -53,7 +53,7 @@ class VectorStore(Protocol):
 
         :param vectors: Vector records to store.
         """
-        ...
+        pass
 
     def query_nearest(
         self,
@@ -69,7 +69,7 @@ class VectorStore(Protocol):
         :param threshold: Optional minimum similarity score for results.
         :return: Results ordered by descending similarity.
         """
-        ...
+        pass
 
     def delete_all(self) -> int:
         """
@@ -77,7 +77,7 @@ class VectorStore(Protocol):
 
         :return: Number of vectors deleted.
         """
-        ...
+        pass
 
     def list_all(self) -> List[VectorRecord]:
         """
@@ -85,7 +85,7 @@ class VectorStore(Protocol):
 
         :return: All :class:`~._models.VectorRecord` objects in the store.
         """
-        ...
+        pass
 
 
 # ---------------------------------------------------------------------------

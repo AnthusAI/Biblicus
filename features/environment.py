@@ -11,7 +11,6 @@ from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
 
-_BASELINE_HOME = os.environ.get("HOME")
 _EPHEMERAL_ENV_KEYS = [
     "OPENAI_API_KEY",
     "HUGGINGFACE_API_KEY",

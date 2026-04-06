@@ -3759,7 +3759,6 @@ def step_exhaust_gaps(context) -> None:
     from biblicus.corpus import Corpus
     from biblicus.models import ConfigurationManifest, CorpusConfig, RetrievalSnapshot
 
-    original_tm_generate = getattr(topic_modeling, "generate_completion", None)
     original_markov_generate = getattr(markov_mod, "generate_completion", None)
     original_markov_apply_text_annotate = getattr(markov_mod, "apply_text_annotate", None)
     original_markov_apply_text_extract = getattr(markov_mod, "apply_text_extract", None)
@@ -8212,7 +8211,6 @@ def step_exhaust_gaps(context) -> None:
 
         retrieval_eval._average_latency_milliseconds([])
         retrieval_eval._percentile_95_latency_milliseconds([])
-        original_bertopic = sys.modules.get("bertopic")
         corpus = _temp_corpus()
         item_path = corpus.raw_dir / "r.txt"
         item_path.parent.mkdir(parents=True, exist_ok=True)
@@ -18747,9 +18745,6 @@ def step_exhaust_migration(context) -> None:
         )
         cli_mod.get_retriever = original_get_retriever
         cli_mod._execute_dependency_plan = original_execute
-    except Exception:
-        _ignore_expected_coverage_exception()
-
     except Exception:
         _ignore_expected_coverage_exception()
 

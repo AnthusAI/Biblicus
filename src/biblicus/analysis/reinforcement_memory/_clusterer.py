@@ -106,7 +106,7 @@ class TopicClusterer:
         ms = min_samples if min_samples is not None else min(2, mt)
         n_neighbors = min(15, max(2, n - 1))
         n_components = min(self.umap_n_components, max(2, n - 2))
-        init_method = "spectral" if n >= 15 else "random"
+        init_method = "spectral"
 
         try:
             from bertopic import BERTopic

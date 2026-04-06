@@ -43,6 +43,7 @@ if os.environ.get("READTHEDOCS"):
     rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
     rtd_project = os.environ.get("READTHEDOCS_PROJECT", "biblicus")
     html_baseurl = f"https://{rtd_project}.readthedocs.io/{rtd_version}/"
+    html_theme_options["canonical_url"] = html_baseurl
 
 source_suffix = {
     ".rst": "restructuredtext",
