@@ -3,7 +3,7 @@
   "title": "Remediate py/unused-import findings with safe autofix workflow",
   "description": "Run Ruff F401 autofix in controlled scope, preserve intentional imports, and validate with tests plus rcql standard-findings report-only counts.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -22,11 +22,17 @@
       "author": "derek.norrbom",
       "text": "Ruff F401 safe autofix completed across repo: 138 automatic fixes plus 3 manual dependency-check cleanups. Validation: ruff check . --select F401 => all checks passed. Rebuilt Python standard-findings scan: total findings reduced 896 -> 777; py/unused-import count now 0 in .codeql/reports/python-code-quality.sarif.",
       "created_at": "2026-04-06T17:41:27.821825Z"
+    },
+    {
+      "id": "6a4fc3e1-032e-4e09-b725-9f2c1457237d",
+      "author": "derek.norrbom",
+      "text": "Completed and pushed in commit 017ec52 on branch fix/codeql-findings. py/unused-import count in Python standard-findings SARIF is now 0, with total Python code-quality findings reduced from 896 to 777.",
+      "created_at": "2026-04-06T17:41:48.131298Z"
     }
   ],
   "created_at": "2026-04-06T17:38:58.364998Z",
-  "updated_at": "2026-04-06T17:41:27.821825Z",
-  "closed_at": null,
+  "updated_at": "2026-04-06T17:41:48.131298Z",
+  "closed_at": "2026-04-06T17:41:48.121838Z",
   "custom": {
     "project_label": "blbs",
     "source": "shared"
