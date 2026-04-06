@@ -3,7 +3,7 @@
   "title": "Define reinforcement-memory extra and align Virtuus install path",
   "description": "Add project optional dependency group reinforcement-memory with virtuus>=0.5.0, add dev dependency for test reliability, and update docs/install guidance to match runtime error messages.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -22,11 +22,17 @@
       "author": "derek.norrbom",
       "text": "Completed long-term dependency fix. Added reinforcement-memory extra with virtuus>=0.5.0 and bertopic>=0.15.0, added both to dev dependencies, updated README extras, and hardened runtime messaging for missing clustering deps. Added Virtuus import shim to create missing VERSION file expected by current Virtuus wheels. Validation: poetry install --with dev succeeded and reinforcement-memory suites passed (44 passed).",
       "created_at": "2026-04-06T18:00:51.138913Z"
+    },
+    {
+      "id": "25b83719-3553-4309-96cc-637979680c11",
+      "author": "derek.norrbom",
+      "text": "Completed and pushed in commit ff27f82 on fix/codeql-findings. Reinforcement-memory dependency path is now explicit and validated; reinforcement-memory test modules pass after poetry install --with dev.",
+      "created_at": "2026-04-06T18:01:07.112882Z"
     }
   ],
   "created_at": "2026-04-06T17:52:18.727640Z",
-  "updated_at": "2026-04-06T18:00:51.138913Z",
-  "closed_at": null,
+  "updated_at": "2026-04-06T18:01:07.112882Z",
+  "closed_at": "2026-04-06T18:01:07.097192Z",
   "custom": {
     "project_label": "blbs",
     "source": "shared"
