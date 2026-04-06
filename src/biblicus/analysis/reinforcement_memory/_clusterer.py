@@ -108,9 +108,16 @@ class TopicClusterer:
         n_components = min(self.umap_n_components, max(2, n - 2))
         init_method = "spectral" if n >= 15 else "random"
 
-        from bertopic import BERTopic
-        from hdbscan import HDBSCAN
-        from umap import UMAP
+        try:
+            from bertopic import BERTopic
+            from hdbscan import HDBSCAN
+            from umap import UMAP
+        except ModuleNotFoundError as exc:
+            raise ImportError(
+                "Reinforcement Memory topic clustering requires BERTopic, "
+                "HDBSCAN, and UMAP. Install them with: "
+                'pip install "biblicus[reinforcement-memory]"'
+            ) from exc
 
         umap_model = UMAP(
             n_neighbors=n_neighbors,

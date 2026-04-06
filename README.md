@@ -177,6 +177,7 @@ Some extractors are optional so the base install stays small.
 - Broad document parsing fallback: `python -m pip install "biblicus[unstructured]"`
 - MarkItDown document conversion (requires Python 3.10 or higher): `python -m pip install "biblicus[markitdown]"`
 - Topic modeling analysis with BERTopic: `python -m pip install "biblicus[topic-modeling]"`
+- Reinforcement memory (Virtuus persistence and topic clustering): `python -m pip install "biblicus[reinforcement-memory]"`
 
 ## Quick start
 

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "5f7e5f9f-2cb3-4ba0-b5a8-9147bee23455",
+  "issue_id": "blbs-87a24371-85ae-468c-989f-f04c6705a65d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-06T17:52:18.727Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Add project optional dependency group reinforcement-memory with virtuus>=0.5.0, add dev dependency for test reliability, and update docs/install guidance to match runtime error messages.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 1,
+    "status": "open",
+    "title": "Define reinforcement-memory extra and align Virtuus install path"
+  }
+}
