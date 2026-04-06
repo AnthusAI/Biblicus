@@ -3,7 +3,7 @@
   "title": "Remediate py/empty-except findings with safe staged fixes",
   "description": "Analyze empty-except patterns from CodeQL SARIF, apply safe mechanical fixes in prioritized batches, and validate with rcql standard-findings counts.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -22,11 +22,17 @@
       "author": "derek.norrbom",
       "text": "Applied safe staged remediation for py/empty-except focused on top-offender files. Converted simple try/except-pass to contextlib.suppress where structurally safe and replaced remaining pass-only handlers in coverage_harness with explicit _ignore_expected_coverage_exception() calls. Validation: py_compile on touched files passes; rcql standard-findings Python SARIF now reports empty_except=0 and total findings reduced to 91.",
       "created_at": "2026-04-06T17:48:32.932693Z"
+    },
+    {
+      "id": "596b2ea6-01a0-42db-8cd1-b706f6e62872",
+      "author": "derek.norrbom",
+      "text": "Completed and pushed in commit 1fc0d44 on fix/codeql-findings. py/empty-except now 0 in standard-findings Python SARIF; total Python code-quality findings now 91.",
+      "created_at": "2026-04-06T17:48:43.614372Z"
     }
   ],
   "created_at": "2026-04-06T17:43:03.557561Z",
-  "updated_at": "2026-04-06T17:48:32.932693Z",
-  "closed_at": null,
+  "updated_at": "2026-04-06T17:48:43.614372Z",
+  "closed_at": "2026-04-06T17:48:43.604064Z",
   "custom": {
     "project_label": "blbs",
     "source": "shared"
