@@ -1,0 +1,31 @@
+{
+  "id": "blbs-d7a339ee-fefb-4f34-800e-1eaa2fd9de3b",
+  "title": "Resolve Python multiple-definition CodeQL findings",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "920623e3-e496-4288-a7d5-8340e0fc1ba8",
+      "author": "derek.norrbom",
+      "text": "Starting py/multiple-definition remediation. I will remove redundant reassignments where the first value is never used, then validate with rcql and focused tests.",
+      "created_at": "2026-04-06T19:07:11.416794Z"
+    },
+    {
+      "id": "e0858d8c-8d3a-48b6-85c2-9fadc1b4febb",
+      "author": "derek.norrbom",
+      "text": "Completed py/multiple-definition remediation. Removed redundant overwritten assignments in coverage harness, sync scripts, and extraction branch test. Validation: rcql no longer reports py/multiple-definition.",
+      "created_at": "2026-04-06T19:14:18.589786Z"
+    }
+  ],
+  "created_at": "2026-04-06T19:06:59.344449Z",
+  "updated_at": "2026-04-06T19:14:18.600467Z",
+  "closed_at": "2026-04-06T19:14:18.600467Z",
+  "custom": {}
+}

@@ -1,0 +1,31 @@
+{
+  "id": "blbs-1187a8b4-b6a0-4914-bec2-eddf4e4c4fde",
+  "title": "Resolve remaining Python standard-findings warnings",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b94ce00a-2075-486d-8b5b-dea168697ade",
+      "author": "derek.norrbom",
+      "text": "Starting final Python standard-findings cleanup (unused-global-variable x2, unreachable-except x1, redundant-comparison x1). Will apply minimal safe edits and verify with rcql + targeted tests.",
+      "created_at": "2026-04-06T19:11:09.699186Z"
+    },
+    {
+      "id": "9c5e2254-e7f7-4c86-82a6-1c8f78956549",
+      "author": "derek.norrbom",
+      "text": "Completed final warning cleanup: removed duplicate unreachable except, fixed always-true redundant comparison path, and addressed unused globals. Validation: rcql --lang=python --mode standard-findings now reports Total: 0.",
+      "created_at": "2026-04-06T19:14:18.590941Z"
+    }
+  ],
+  "created_at": "2026-04-06T19:10:56.878676Z",
+  "updated_at": "2026-04-06T19:14:18.600664Z",
+  "closed_at": "2026-04-06T19:14:18.600664Z",
+  "custom": {}
+}
