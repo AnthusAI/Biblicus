@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "22e68929-519d-42f1-8b20-6240f77fe40c",
+  "issue_id": "blbs-e53a6682-a4a0-4f06-b846-df1e1ac954a8",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-06T20:33:16.518Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate BERTopic transitive vulnerabilities via direct dependency upgrades"
+  }
+}
