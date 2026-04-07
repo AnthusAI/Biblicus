@@ -22,10 +22,34 @@
       "author": "derek.norrbom",
       "text": "Implemented source-level dependency remediation and regenerated lockfile. Updated direct constraints: bertopic>=0.17.4, docling/docling-mlx>=2.84.0, and project Python support to >=3.10,<3.14 (to eliminate vulnerable torch 2.7.1 branch tied to py3.14 lock resolution). Resolved lock now includes transformers 5.5.0, aiohttp 3.13.5, torch 2.11.0, torchvision 0.26.0, litellm 1.83.3. Verified with poetry check and osv-scanner lockfile scan; target findings no longer appear.",
       "created_at": "2026-04-06T20:43:37.927936Z"
+    },
+    {
+      "id": "3ae822c1-b1de-42d7-ac2d-7f8616e9bbbc",
+      "author": "derek.norrbom",
+      "text": "Second pass started for remaining Snyk findings (transformers/torch). Will verify each Snyk ID for fixed versions and attempt source-level upgrades; if no upstream fix is available, will document best-practice triage rationale.",
+      "created_at": "2026-04-07T17:44:39.496061Z"
+    },
+    {
+      "id": "623e7fd6-1c45-4f5b-8995-ca9552e16ec0",
+      "author": "derek.norrbom",
+      "text": "User granted temporary Snyk CLI auth. Running direct snyk test against lockfile to validate fixable versions for remaining transformers/torch findings before any further dependency changes.",
+      "created_at": "2026-04-07T17:46:39.359218Z"
+    },
+    {
+      "id": "5a50d0df-0353-4a8d-b86f-ee7ac7455fd2",
+      "author": "derek.norrbom",
+      "text": "Validated with authenticated Snyk CLI.  reports 0 vulnerabilities for current Python dependency graph, and  also reports 0 vulnerabilities for pyproject/poetry target. Ran  to publish fresh snapshot: project history id 8644b4b9-355b-46f3-8358-ee1fce692a7f. Remaining PR findings are likely stale scan cache/snapshot mismatch; refresh/retest in Snyk should clear. Note:  surfaced unrelated npm lock sync warning in apps/dashboard/package-lock.json.",
+      "created_at": "2026-04-07T17:48:00.789855Z"
+    },
+    {
+      "id": "c63a8da2-0f4a-44a0-a345-098ce5cb3b0a",
+      "author": "derek.norrbom",
+      "text": "Correction: validated with authenticated Snyk CLI using npx. Command npx snyk test --file=poetry.lock --package-manager=poetry --json returned 0 vulnerabilities for current Python graph. Command npx snyk test --all-projects also returned 0 vulnerabilities for pyproject/poetry target. Published fresh snapshot via npx snyk monitor --file=poetry.lock --package-manager=poetry: https://app.snyk.io/org/capacity-aqa/project/1e89547e-272e-46f5-a6b0-dd21b070abde/history/8644b4b9-355b-46f3-8358-ee1fce692a7f. Remaining PR findings likely stale snapshot/cache. Note: npx snyk monitor --all-projects raised unrelated npm lock sync warning in apps/dashboard/package-lock.json.",
+      "created_at": "2026-04-07T17:48:04.573198Z"
     }
   ],
   "created_at": "2026-04-06T20:33:16.518091Z",
-  "updated_at": "2026-04-06T20:43:37.927936Z",
+  "updated_at": "2026-04-07T17:48:04.573198Z",
   "closed_at": null,
   "custom": {}
 }
