@@ -33,7 +33,6 @@ def download_tedlium(download_dir: Path) -> Path:
     :rtype: Path
     """
     import urllib.request
-    import shutil
 
     download_dir.mkdir(parents=True, exist_ok=True)
 

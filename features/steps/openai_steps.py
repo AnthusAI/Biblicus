@@ -745,7 +745,7 @@ def step_no_openai_api_key_configured(context) -> None:
         del os.environ["OPENAI_API_KEY"]
 
     # Mock the config loader to return None for API key
-    import biblicus.user_config as config_module
+    from biblicus import user_config as config_module
     original_load = getattr(config_module, "_original_load_user_config", None)
     if original_load is None:
         config_module._original_load_user_config = config_module.load_user_config

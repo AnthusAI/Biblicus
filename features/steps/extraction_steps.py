@@ -172,8 +172,6 @@ def _build_extractor_stages_from_table(table) -> list[dict[str, object]]:
 
 
 def _build_stage_spec(extractor_id: str, config: dict[str, object]) -> str:
-    import json
-
     if not config:
         return extractor_id
 
@@ -313,7 +311,6 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
 
     corpus = _corpus_path(context, corpus_name)
     configuration_data = yaml.safe_load(context.text)
-    extractor_id = configuration_data["extractor_id"]
     config = configuration_data.get("config", {})
     stages = config.get("stages", [])
     _ensure_fake_tesseract_for_stages(context, stages)

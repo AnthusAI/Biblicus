@@ -7,7 +7,6 @@ import pytest
 from biblicus import cli
 from biblicus.analysis import markov
 from biblicus.analysis.models import (
-    MarkovAnalysisObservation,
     MarkovAnalysisTextSourceConfig,
 )
 from biblicus.corpus import Corpus, _update_biblicus_block

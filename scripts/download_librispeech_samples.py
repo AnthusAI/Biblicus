@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import tarfile
 import tempfile
 from pathlib import Path
@@ -162,7 +161,6 @@ def ingest_librispeech_samples(
     :return: Ingestion statistics.
     :rtype: dict
     """
-    import shutil
 
     # Collect audio files and transcriptions
     samples = collect_audio_files(dataset_dir, sample_count)

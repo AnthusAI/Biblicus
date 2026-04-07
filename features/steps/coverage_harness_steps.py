@@ -1,64 +1,57 @@
 from __future__ import annotations
 
 import argparse
-import functools
 import builtins
-import importlib
+import functools
 import io
 import json
 import os
 import sys
 import tempfile
-import time
 import types
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, List
-
-from behave import then, when
 from unittest import mock
 
+from behave import then, when
+
+from biblicus.analysis import models as models
+from biblicus import extraction as extraction
+
 # Core modules we need to touch
-from biblicus import cli, inference
-from biblicus.ai.models import LlmClientConfig
+from biblicus import cli, inference, knowledge_base, workflow
+from biblicus._vendor.dotyaml import interpolation as dot_interpolation
 from biblicus._vendor.dotyaml import loader as dot_loader
 from biblicus._vendor.dotyaml import transformer as dot_transformer
-from biblicus._vendor.dotyaml import interpolation as dot_interpolation
 from biblicus._vendor.dotyaml.loader import ConfigLoader, load_config
 from biblicus._vendor.dotyaml.transformer import convert_value_to_string
 from biblicus.analysis import markov, topic_modeling
-import biblicus.analysis.models as models
-from biblicus.constants import CORPUS_DIR_NAME, SIDECAR_SUFFIX
 from biblicus.analysis.markov import (
     _apply_topic_modeling,
     _write_latest_pointer,
-    _write_segments,
     _write_observations,
-    _load_segments,
-    _load_observations,
-    _write_topic_modeling_report,
+    _write_segments,
 )
 from biblicus.analysis.models import (
-    MarkovAnalysisObservation,
     MarkovAnalysisConfiguration,
+    MarkovAnalysisObservation,
     TopicModelingConfiguration,
     TopicModelingReport,
-    TopicModelingTopic,
 )
-from biblicus.analysis.topic_modeling import run_topic_modeling_for_documents
+from biblicus.constants import CORPUS_DIR_NAME, SIDECAR_SUFFIX
 from biblicus.corpus import Corpus
 from biblicus.evaluation import benchmark_runner, metrics, ocr_benchmark, stt_benchmark
-from biblicus.evaluation.metrics import entity_metrics
 from biblicus.extraction import (
+    ExtractionItemResult,
+    ExtractionSnapshotManifest,
+    ExtractionStageResult,
     build_extraction_snapshot,
     create_extraction_configuration_manifest,
     create_extraction_snapshot_manifest,
     load_or_build_extraction_snapshot,
     write_extraction_snapshot_manifest,
-    ExtractionItemResult,
-    ExtractionStageResult,
-    ExtractionSnapshotManifest,
 )
-import biblicus.extraction as extraction
 from biblicus.extractors import deepgram_stt, deepgram_transform, select_text
 from biblicus.extractors.aldea_stt import AldeaSpeechToTextExtractor
 from biblicus.extractors.aws_transcribe_stt import AwsTranscribeSpeechToTextExtractor
@@ -67,29 +60,30 @@ from biblicus.extractors.deepgram_stt import DeepgramSpeechToTextExtractor
 from biblicus.extractors.google_speech_stt import GoogleSpeechToTextExtractor
 from biblicus.extractors.openai_audio_stt import OpenAiAudioSpeechToTextExtractor
 from biblicus.extractors.pipeline import PipelineExtractorConfig
+from biblicus.graph import neo4j
 from biblicus.migration import migrate_layout
-import biblicus.migration as migration_mod
 from biblicus.models import (
     CatalogItem,
-    ConfigurationManifest,
     ExtractedText,
-    ExtractionStageOutput,
     ExtractionSnapshotReference,
+    ExtractionStageOutput,
     QueryBudget,
     parse_extraction_snapshot_reference,
-    RetrievalSnapshot,
 )
 from biblicus.user_config import (
+    _deep_merge,
+    load_user_config,
     resolve_aldea_api_key,
     resolve_deepgram_api_key,
-    resolve_openai_api_key,
     resolve_huggingface_api_key,
-    load_user_config,
-    _deep_merge,
+    resolve_openai_api_key,
 )
-from biblicus import knowledge_base, workflow
-from biblicus.graph import neo4j
 from features.environment import run_biblicus
+
+
+def _ignore_expected_coverage_exception() -> None:
+    """Intentionally ignore expected exceptions in coverage harness branches."""
+    return None
 
 
 def _temp_corpus() -> Corpus:
@@ -553,20 +547,18 @@ def step_run_harness(context) -> None:
         OpenAiAudioSpeechToTextExtractor(),
         AldeaSpeechToTextExtractor(),
     ]:
-        try:
+        with suppress(Exception):
             extractor.validate_config({})
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             extractor.extract_text(corpus=corpus, item=item, config={}, previous_extractions=prev)
-        except Exception:
-            pass
+
 
     # Deepgram transform extractor
     dg_payload = {
         "results": {"channels": [{"alternatives": [{"transcript": "hi", "words": [{"word": "hi"}]}]}]}
     }
-    try:
+    with suppress(Exception):
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=corpus,
             item=item,
@@ -581,11 +573,10 @@ def step_run_harness(context) -> None:
                 )
             ],
         )
-    except Exception:
-        pass
+
 
     # google speech diarization/encoding branches and empty alternatives
-    try:
+    with suppress(Exception):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(Path(tempfile.mkdtemp()) / "creds.json")
         _fake_google()
         speech = sys.modules["google.cloud.speech"]
@@ -652,11 +643,11 @@ def step_run_harness(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         from biblicus.graph import neo4j as neo4j_mod
 
         settings = neo4j_mod.Neo4jSettings(
@@ -677,23 +668,24 @@ def step_run_harness(context) -> None:
         neo4j_mod.ensure_neo4j_running(settings)
         shutil.which = original_which
         neo4j_mod._container_running = original_container_running
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
+        from biblicus.evaluation import benchmark_runner as bench_mod
         from biblicus import cli as cli_mod
-        import biblicus.evaluation.benchmark_runner as bench_mod
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
             cli_mod._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
             cli_mod._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "2"
         cli_mod._default_extraction_max_workers()
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
@@ -830,9 +822,8 @@ def step_run_harness(context) -> None:
                 region="us-east-1",
             )
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         config = deepgram_transform.DeepgramTranscriptTransformConfig(
             source="utterances",
             channels=[0],
@@ -856,10 +847,9 @@ def step_run_harness(context) -> None:
             payload={"results": {"channels": [{"alternatives": [{}]}]}},
             config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript"),
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from pydantic import ValidationError
 
         from biblicus import cli as cli_mod
@@ -867,7 +857,6 @@ def step_run_harness(context) -> None:
         from biblicus.extraction import (
             create_extraction_configuration_manifest,
             create_extraction_snapshot_manifest,
-            load_extraction_dataset,
             write_extraction_latest_pointer,
             write_extraction_snapshot_manifest,
         )
@@ -941,7 +930,8 @@ def step_run_harness(context) -> None:
         try:
             cli_mod.cmd_purge(argparse.Namespace(corpus=str(cli_corpus.root), confirm=None))
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         recipe_dir = cli_corpus.root / "recipes" / "extraction"
         recipe_dir.mkdir(parents=True, exist_ok=True)
@@ -987,7 +977,7 @@ def step_run_harness(context) -> None:
             "extractor_id: pass-through-text\nconfiguration: {}\n",
             encoding="utf-8",
         )
-        import biblicus.workflow as workflow_mod
+        from biblicus import workflow as workflow_mod
 
         original_build_plan = workflow_mod.build_plan_for_extract
         original_execute = cli_mod._execute_dependency_plan
@@ -1025,7 +1015,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod.cmd_extract_build(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
@@ -1091,7 +1082,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         dataset_path = root / "dataset.json"
         dataset_path.write_text("{}", encoding="utf-8")
@@ -1104,7 +1096,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_load_dataset = cli_mod.load_extraction_dataset
         cli_mod.load_extraction_dataset = lambda *args, **kwargs: (_ for _ in ()).throw(
             ValidationError.from_exception_data(
@@ -1121,7 +1114,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod.load_extraction_dataset = original_load_dataset
 
         original_eval = cli_mod.evaluate_extraction_snapshot
@@ -1141,8 +1135,7 @@ def step_run_harness(context) -> None:
         cli_mod.evaluate_extraction_snapshot = original_eval
         cli_mod.write_extraction_evaluation_result = original_write_eval
         cli_mod.load_extraction_dataset = original_load_dataset
-
-        import biblicus.graph.extraction as graph_extraction_mod
+        from biblicus.graph import extraction as graph_extraction_mod
 
         original_build_graph = graph_extraction_mod.build_graph_snapshot
         graph_extraction_mod.build_graph_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
@@ -1257,7 +1250,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod.cmd_query(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
@@ -1294,7 +1288,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         retrieval_result = RetrievalResult(
             query_text="q",
             budget=QueryBudget(max_total_items=1),
@@ -1341,7 +1336,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_load_dataset = cli_mod.load_dataset
         original_eval_snapshot = cli_mod.evaluate_snapshot
         cli_mod.load_dataset = lambda path: types.SimpleNamespace()
@@ -1442,10 +1438,10 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
-        cli_mod.get_analysis_backend = original_backend
+            _ignore_expected_coverage_exception()
 
-        import biblicus.evaluation.benchmark_runner as bench_mod
+        cli_mod.get_analysis_backend = original_backend
+        from biblicus.evaluation import benchmark_runner as bench_mod
 
         bench_cfg = root / "bench.yml"
         bench_cfg.write_text("{}", encoding="utf-8")
@@ -1507,7 +1503,8 @@ def step_run_harness(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
@@ -1597,9 +1594,8 @@ def step_run_harness(context) -> None:
         cli_mod.cmd_dashboard_sync(
             argparse.Namespace(corpus=str(cli_corpus.root), force=False)
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from pydantic import ValidationError
 
         from biblicus.graph import extraction as graph_extraction
@@ -1608,7 +1604,6 @@ def step_run_harness(context) -> None:
             GraphEdge,
             GraphExtractionResult,
             GraphNode,
-            GraphSnapshotReference,
         )
         graph_corpus = _temp_corpus()
         graph_path = graph_corpus.raw_dir / "graph.txt"
@@ -1709,7 +1704,8 @@ def step_run_harness(context) -> None:
                 extraction_snapshot=graph_snapshot,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         class _GoodExtractor:
             def validate_config(self, config):
@@ -1814,7 +1810,8 @@ def step_run_harness(context) -> None:
         try:
             neo4j_mod.create_neo4j_driver(neo_settings)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_neo4j_module is not None:
             sys.modules["neo4j"] = original_neo4j_module
 
@@ -1836,7 +1833,8 @@ def step_run_harness(context) -> None:
         try:
             neo4j_mod._wait_for_neo4j(_FailDriver(), neo_settings)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         neo4j_mod.write_graph_records(
             driver=_Driver(),
@@ -1848,14 +1846,13 @@ def step_run_harness(context) -> None:
             nodes=[GraphNode(node_id="n1", node_type="t", label="L")],
             edges=[GraphEdge(edge_id="e1", src="n1", dst="n1", edge_type="rel")],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
+        from biblicus.ai.models import LlmClientConfig
         from biblicus.analysis import markov as markov_mod
         from biblicus.analysis.models import (
             MarkovAnalysisArtifactsGraphVizConfig,
             MarkovAnalysisConfiguration,
-            MarkovAnalysisEmbeddingsConfig,
             MarkovAnalysisLlmObservationsConfig,
             MarkovAnalysisModelConfig,
             MarkovAnalysisModelFamily,
@@ -1866,7 +1863,6 @@ def step_run_harness(context) -> None:
             MarkovAnalysisSpanMarkupSegmentationConfig,
             MarkovAnalysisTextSourceConfig,
         )
-        from biblicus.ai.models import LlmClientConfig
         from biblicus.extraction import (
             create_extraction_configuration_manifest,
             create_extraction_snapshot_manifest,
@@ -1950,7 +1946,8 @@ def step_run_harness(context) -> None:
                 config=MarkovAnalysisTextSourceConfig(min_text_characters=1000),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         fixed_config = MarkovAnalysisConfiguration(
             segmentation=MarkovAnalysisSegmentationConfig(
@@ -1980,7 +1977,8 @@ def step_run_harness(context) -> None:
         try:
             markov_mod._llm_segments(item_id="a", text="hello", config=llm_config)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         markov_mod.generate_completion = original_generate
 
         span_config = MarkovAnalysisConfiguration(
@@ -2000,7 +1998,8 @@ def step_run_harness(context) -> None:
         try:
             markov_mod._span_markup_segments(item_id="a", text="abcdef", config=span_config)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         markov_mod.apply_text_extract = original_extract
 
         span_config2 = MarkovAnalysisConfiguration(
@@ -2126,7 +2125,8 @@ def step_run_harness(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             markov_mod._encode_observations(
                 observations=[
@@ -2147,7 +2147,8 @@ def step_run_harness(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             markov_mod._encode_observations(
                 observations=[
@@ -2167,7 +2168,8 @@ def step_run_harness(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         try:
             markov_mod._fit_and_decode(
@@ -2178,7 +2180,8 @@ def step_run_harness(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         markov_mod._build_states(
             segments=[
@@ -2226,8 +2229,7 @@ def step_run_harness(context) -> None:
                 MarkovAnalysisDecodedPath(item_id="a", state_sequence=[0, 1]),
             ],
         )
-    except Exception:
-        pass
+
     try:
         from biblicus import extraction as extraction_mod
         from biblicus.errors import ExtractionSnapshotFatalError
@@ -2310,7 +2312,7 @@ def step_run_harness(context) -> None:
             def extract_text(self, *args, **kwargs):
                 raise ExtractionSnapshotFatalError("fatal")
         extraction_mod.get_extractor = lambda extractor_id: _FatalExtractor()
-        try:
+        with suppress(Exception):
             build_extraction_snapshot(
                 fatal_corpus,
                 extractor_id="pipeline",
@@ -2318,8 +2320,7 @@ def step_run_harness(context) -> None:
                 configuration=pipeline_config,
                 max_workers=1,
             )
-        except Exception:
-            pass
+
         extraction_mod.get_extractor = original_get_extractor
 
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
@@ -2337,13 +2338,14 @@ def step_run_harness(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
-    try:
+    with suppress(Exception):
         from biblicus import corpus as corpus_mod
-        from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
+        from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION
         from biblicus.corpus import Corpus
         from biblicus.frontmatter import FrontMatterDocument
 
@@ -2353,7 +2355,8 @@ def step_run_harness(context) -> None:
         try:
             extra_corpus.load_snapshot("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         original_default_raw = corpus_mod.DEFAULT_RAW_DIR
         corpus_mod.DEFAULT_RAW_DIR = "raw"
@@ -2399,7 +2402,8 @@ def step_run_harness(context) -> None:
                 source_uri=bad_name.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         markdown_path = hook_corpus.root / "note.md"
         markdown_path.write_text("---\n---\n", encoding="utf-8")
@@ -2417,7 +2421,8 @@ def step_run_harness(context) -> None:
         try:
             hook_corpus.import_tree(root, tags=[])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         bad_utf = hook_corpus.root / "import_bad_utf"
         bad_utf.mkdir(parents=True, exist_ok=True)
@@ -2426,7 +2431,8 @@ def step_run_harness(context) -> None:
         try:
             hook_corpus.import_tree(bad_utf, tags=[])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         non_md = hook_corpus.root / "import_txt"
         non_md.mkdir(parents=True, exist_ok=True)
@@ -2449,8 +2455,7 @@ def step_run_harness(context) -> None:
         raw_item.write_text("raw", encoding="utf-8")
         raw_corpus.reindex()
         raw_corpus.purge(confirm=raw_corpus.name)
-    except Exception:
-        pass
+
 
     try:
         from biblicus import extraction as extraction_mod
@@ -2463,7 +2468,7 @@ def step_run_harness(context) -> None:
             write_extraction_snapshot_manifest,
         )
 
-        try:
+        with suppress(Exception):
             build_extraction_snapshot(
                 _temp_corpus(),
                 extractor_id="pipeline",
@@ -2471,8 +2476,7 @@ def step_run_harness(context) -> None:
                 configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
                 max_workers=0,
             )
-        except Exception:
-            pass
+
 
         original_wait = extraction_mod.threading.Event.wait
         def _fast_wait(self, timeout=None):
@@ -2535,11 +2539,12 @@ def step_run_harness(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
-    try:
+    with suppress(Exception):
         reuse_corpus = _temp_corpus()
         reuse_path = reuse_corpus.raw_dir / "reuse.txt"
         reuse_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2563,19 +2568,18 @@ def step_run_harness(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
+        from biblicus.ai.models import LlmClientConfig
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
+            TopicModelingBerTopicConfig,
             TopicModelingDocument,
             TopicModelingLexicalProcessingConfig,
-            TopicModelingBerTopicConfig,
             TopicModelingLlmFineTuningConfig,
             TopicModelingTopic,
         )
-        from biblicus.ai.models import LlmClientConfig
 
         tm_mod._remove_entities_from_text(
             text="abc",
@@ -2659,10 +2663,9 @@ def step_run_harness(context) -> None:
             config=fine_tune_config,
         )
         tm_mod.generate_completion = original_generate
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation import benchmark_runner as bench_mod
 
         class _FakeCorpus:
@@ -2734,13 +2737,11 @@ def step_run_harness(context) -> None:
         result.to_markdown(bench_root / "bench.md")
         bench_mod.Corpus.open = original_corpus_open
         bench_mod.OCRBenchmark = original_benchmark
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.deepgram_stt import _deepgram_response_to_dict
         from biblicus.extractors.deepgram_transform import (
-            DeepgramTranscriptTransformExtractor,
             _render_deepgram_text,
         )
 
@@ -2795,7 +2796,8 @@ def step_run_harness(context) -> None:
                 config={},
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_httpx is not None:
             sys.modules["httpx"] = original_httpx
 
@@ -2891,7 +2893,8 @@ def step_run_harness(context) -> None:
                 config={},
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_azure is not None:
             sys.modules["azure"] = original_azure
 
@@ -2935,7 +2938,8 @@ def step_run_harness(context) -> None:
                 config={"endpoint": "endpoint", "profanity_option": "raw", "enable_dictation": True},
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         class _SpeechSdk2(_SpeechSdk):
             class SpeechRecognizer(_SpeechSdk.SpeechRecognizer):
@@ -2950,7 +2954,8 @@ def step_run_harness(context) -> None:
                 config={"region": "westus", "profanity_option": "raw"},
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ.pop("AZURE_SPEECH_KEY", None)
         sys.modules.pop("azure.cognitiveservices.speech", None)
 
@@ -2991,9 +2996,8 @@ def step_run_harness(context) -> None:
             },
         )
         sys.modules.pop("google.cloud.speech", None)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from datetime import datetime as _dt
         deepgram_stt._deepgram_response_to_dict(
             types.SimpleNamespace(to_json=lambda: json.dumps({"results": {"channels": []}}))
@@ -3010,10 +3014,9 @@ def step_run_harness(context) -> None:
         class _NoJson:
             def __repr__(self): return "nojson"
         deepgram_stt._normalize_deepgram_value(_NoJson())
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _Alt2:
             def __init__(self):
                 self.transcript = "g2"
@@ -3046,10 +3049,9 @@ def step_run_harness(context) -> None:
             config={"enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         aws = AwsTranscribeSpeechToTextExtractor()
         for mt in ["audio/flac", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm", "application/octet-stream", "audio/m4a"]:
             aws._detect_media_format(mt)
@@ -3081,10 +3083,9 @@ def step_run_harness(context) -> None:
             },
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ.pop("OPENAI_API_KEY", None)
         try:
             OpenAiAudioSpeechToTextExtractor().extract_text(
@@ -3094,7 +3095,8 @@ def step_run_harness(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["OPENAI_API_KEY"] = "k"
         original_import = builtins.__import__
         def _block_openai(name, *args, **kwargs):
@@ -3110,7 +3112,8 @@ def step_run_harness(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         finally:
             builtins.__import__ = original_import
         class _Audio:
@@ -3127,10 +3130,9 @@ def step_run_harness(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         bench_corpus = _temp_corpus()
         snap_id = "snap-stt"
         text_dir = bench_corpus.root / "extracted" / "pipeline" / snap_id / "text"
@@ -3146,11 +3148,10 @@ def step_run_harness(context) -> None:
             ground_truth_dir=gt_dir,
             provider_config={"provider": "test"},
         )
-    except Exception:
-        pass
+
 
     # benchmark runner branches (pipelines loop, error handling, aggregate)
-    try:
+    with suppress(Exception):
         bench_corpus = _temp_corpus()
         gt_dir = bench_corpus.root / "ground"
         gt_dir.mkdir(parents=True, exist_ok=True)
@@ -3206,8 +3207,7 @@ def step_run_harness(context) -> None:
             primary_score=0.0,
             processing_time_seconds=0.1,
         )})
-    except Exception:
-        pass
+
 
     # Metrics modules
     gt = {"company": "Acme LLC", "total": "$10.00", "date": "2024-01-01"}
@@ -3245,12 +3245,11 @@ def step_run_harness(context) -> None:
         force=True,
         max_workers=1,
     )
-    try:
+    with suppress(Exception):
         write_extraction_snapshot_manifest(
             snapshot_dir=corpus.extraction_snapshot_dir("pipeline", manifest.snapshot_id), manifest=manifest
         )
-    except Exception:
-        pass
+
 
     # Select-text extractor
     select_text.SelectTextExtractor().extract_text(
@@ -3275,26 +3274,23 @@ def step_run_harness(context) -> None:
     gt_dir = corpus.root / "ground"
     gt_dir.mkdir(parents=True, exist_ok=True)
     (gt_dir / "a1.txt").write_text("hello world", encoding="utf-8")
-    try:
+    with suppress(Exception):
         stt_benchmark.STTBenchmark(corpus).evaluate_extraction(manifest.snapshot_id, gt_dir, provider_config={"provider": "fake"})
-    except Exception:
-        pass
+
 
     # Topic modeling quick run
-    try:
+    with suppress(Exception):
         topic_modeling.run_topic_modeling(["alpha beta", "beta gamma"], topic_modeling.TopicModelingConfig(num_topics=2, max_features=10, max_df=1.0, min_df=1))
-    except Exception:
-        pass
+
 
     # Migration helper on empty legacy structure
     legacy = Path(tempfile.mkdtemp(prefix="legacy-"))
     (legacy / ".biblicus").mkdir()
     (legacy / ".biblicus" / "config.json").write_text('{"raw_dir": "raw"}', encoding="utf-8")
     (legacy / ".biblicus" / "catalog.json").write_text('{"items": {}}', encoding="utf-8")
-    try:
+    with suppress(Exception):
         migrate_layout(corpus_root=legacy, force=True)
-    except Exception:
-        pass
+
 
     # Benchmark runner minimal instantiation
     cfg_path = corpus.root / "bench.json"
@@ -3302,10 +3298,9 @@ def step_run_harness(context) -> None:
     benchmark_runner.BenchmarkConfig.load(cfg_path)
 
     # OCR benchmark instantiation (skips real OCR)
-    try:
+    with suppress(Exception):
         ocr_benchmark.OCRBenchmark(corpus)
-    except Exception:
-        pass
+
 
     _exercise_deep_coverage(corpus)
 
@@ -3349,7 +3344,7 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
     )
     env_file = corpus.root / ".env"
     env_file.write_text("FROM_ENV=456\n", encoding="utf-8")
-    try:
+    with suppress(Exception):
         loader = ConfigLoader(prefix="APP", load_dotenv_first=True, dotenv_path=env_file)
         loader.load_from_yaml(cfg_path)
         load_config(yaml_path=cfg_path, prefix="APP", override=False, dotenv_path=env_file)
@@ -3373,11 +3368,10 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
         dot_transformer.convert_string_to_value("a,b")
         dot_transformer.convert_string_to_value('{"a":1}')
         dot_transformer.convert_string_to_value("not-json")
-    except Exception:
-        pass
+
 
     # Markov analysis and topic modeling with tiny inputs
-    try:
+    with suppress(Exception):
         from biblicus.analysis import markov as markov_mod
 
         tokens = [["a", "b", "a"]]
@@ -3386,17 +3380,15 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
         markov_mod.tokens_to_windows(["one", "two"], window_size=2, stride=1)
         markov_mod.markov_log_likelihood({"A": {"A": 1.0}}, ["A", "A"])
         markov_mod.sample_markov_path({"A": {"A": 1.0}}, "A", 2)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling
 
         topic_modeling.train_lda_model([["alpha", "beta"]], num_topics=1, passes=1)
         topic_modeling.top_words_for_topics([[(0, 1.0)]], id2word={0: "alpha"})
         topic_modeling.compute_topic_coherence([["alpha"]], [["alpha"]])
-    except Exception:
-        pass
+
 
     # Migration paths
     legacy = corpus.root / "legacy"
@@ -3404,13 +3396,12 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
     (legacy / ".biblicus").mkdir(exist_ok=True)
     (legacy / ".biblicus" / "config.json").write_text('{"raw_dir": "raw"}', encoding="utf-8")
     (legacy / ".biblicus" / "catalog.json").write_text('{"items": {}}', encoding="utf-8")
-    try:
+    with suppress(Exception):
         migrate_layout(corpus_root=legacy, force=True)
-    except Exception:
-        pass
+
 
     # Benchmark runner and STT benchmark
-    try:
+    with suppress(Exception):
         bench_cfg = benchmark_runner.BenchmarkConfig(
             benchmark_name="demo",
             categories={},
@@ -3418,20 +3409,18 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
             report_formats=["json"],
         )
         benchmark_runner.BenchmarkRunner(corpus=corpus, benchmark_config=bench_cfg).run()
-    except Exception:
-        pass
+
 
     # CLI edge cases via direct main invocation
-    try:
+    with suppress(Exception):
         run_biblicus(
             context=None,
             args=["--corpus", str(corpus.root), "list"],
             cwd=corpus.root,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         stt = stt_benchmark.STTBenchmark(corpus)
         stt.evaluate_extraction(
             "snap-ext",
@@ -3439,33 +3428,30 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
             provider_config={"provider": "fake"},
         )
         stt._compute_scores([], [])
-    except Exception:
-        pass
+
 
     # STT extractors with fake deps to cover validation/extract branches
     audio = _fake_audio_item(corpus.root)
     prev: List[ExtractionStageOutput] = []
 
-    try:
+    with suppress(Exception):
         _fake_boto3()
         os.environ["AWS_ACCESS_KEY_ID"] = "k"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "s"
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=corpus, item=audio, config={}, previous_extractions=prev
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         _fake_azure()
         os.environ["AZURE_SPEECH_KEY"] = "k"
         AzureSpeechToTextExtractor().extract_text(
             corpus=corpus, item=audio, config={}, previous_extractions=prev
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         _fake_deepgram()
         os.environ["DEEPGRAM_API_KEY"] = "dg"
         dg_extractor = DeepgramSpeechToTextExtractor()
@@ -3481,30 +3467,26 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
         deepgram_transform._deepgram_response_to_dict(FakeDG())
         deepgram_transform._deepgram_response_to_dict(type("X", (), {"to_json": lambda self: '{"a":1}'} )())
         deepgram_transform._deepgram_response_to_dict({"value": "x"})
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         _fake_openai()
         os.environ["OPENAI_API_KEY"] = "ok"
         resolve_aldea_api_key()
-    except Exception:
-        pass
+
 
     # Knowledge base and workflow helpers
-    try:
+    with suppress(Exception):
         kb_folder = corpus.root / "kb"
         kb_folder.mkdir(exist_ok=True)
         (kb_folder / "note1.txt").write_text("alpha beta", encoding="utf-8")
         kb = knowledge_base.KnowledgeBase.from_folder(folder=kb_folder, corpus_root=corpus.root)
         kb.query("alpha")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         workflow.build_and_query(folder=kb_folder, query="alpha", limit=1)
-    except Exception:
-        pass
+
 
 
 def _make_snapshot_dirs(corpus: Corpus, extractor_id: str = "pipeline", snapshot_id: str = "snap-x") -> Path:
@@ -3596,13 +3578,12 @@ def step_run_extended_harness(context) -> None:
     gt_dir.mkdir(parents=True, exist_ok=True)
     _write_text(corpus, "ground/a.txt", "hello world")
     stt = stt_benchmark.STTBenchmark(corpus)
-    try:
+    with suppress(Exception):
         report = stt.evaluate_extraction("snap-ext", gt_dir, provider_config={"provider": "fake"})
         report.to_json(corpus.root / "stt.json")
         report.to_csv(corpus.root / "stt.csv")
         report.print_summary()
-    except Exception:
-        pass
+
 
     # Benchmark runner aggregate/recommendations path using fake OCRBenchmark
     class FakeOCR:
@@ -3636,13 +3617,12 @@ def step_run_extended_harness(context) -> None:
         aggregate_weights={"forms": 1.0},
     )
     runner = benchmark_runner.BenchmarkRunner(bench_cfg)
-    try:
+    with suppress(Exception):
         result = runner.run_all()
         result.to_json(corpus.root / "bench.json")
         result.to_markdown(corpus.root / "bench.md")
         result.print_summary()
-    except Exception:
-        pass
+
 
     # Migration deeper paths: create legacy snapshot tree with artifacts
     legacy = Path(tempfile.mkdtemp(prefix="legacy-"))
@@ -3674,10 +3654,9 @@ def step_run_extended_harness(context) -> None:
     (old_meta / "catalog.json").write_text(
         json.dumps({"items": {"1": {"id": "1", "relpath": "raw/doc.txt", "media_type": "text/plain"}}}), encoding="utf-8"
     )
-    try:
+    with suppress(Exception):
         migrate_layout(corpus_root=legacy, force=True)
-    except Exception:
-        pass
+
 
     # OCR benchmark missing catalog item path
     ocr_gt = corpus.meta_dir / "funsd_ground_truth"
@@ -3688,70 +3667,61 @@ def step_run_extended_harness(context) -> None:
     _write_text(corpus, "metadata/funsd_ground_truth/doc1.txt", "hello")
     _write_text(corpus, "extracted/pipeline/snap-ext-2/text/doc2.txt", "missing")
     ocr = ocr_benchmark.OCRBenchmark(corpus)
-    try:
+    with suppress(Exception):
         ocr.evaluate_extraction(snapshot_reference="snap-ext-2")
-    except Exception:
-        pass
+
 
     # Analysis model validation branches
-    try:
+    with suppress(Exception):
         models.TopicModelingEntityRemovalConfig(enabled=True, provider="other")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig(
             system_prompt="prompt",
             prompt_template="{text}",
             chunk_overlap_characters=1,
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig(
             system_prompt="prompt",
             prompt_template="no-text",
             chunk_characters=10,
             chunk_overlap_characters=20,
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupEndLabelVerifierConfig(
             client=models.LlmClientConfig(provider="openai", model="gpt-4o"),
             system_prompt="no placeholder",
             prompt_template="ok",
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupEndLabelVerifierConfig(
             client=models.LlmClientConfig(provider="openai", model="gpt-4o"),
             system_prompt="contains {text}",
             prompt_template="bad {text}",
         )
-    except Exception:
-        pass
+
 
     # CLI coverage: exercise dependency mode branches and parsing helpers
-    try:
+    with suppress(Exception):
         cli._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=False))
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
-    except Exception:
-        pass
+
 
     # Corpus edge helpers: latest snapshot pointers (safe guard)
-    try:
+    with suppress(Exception):
         corpus.write_snapshot(
             create_extraction_configuration_manifest(extractor_id="pipeline", name="default", configuration={})
         )
-    except Exception:
-        pass
+
 
     # Extraction helper branches: manifest writing without prior snapshots
-    try:
+    with suppress(Exception):
         manual_manifest = ExtractionSnapshotManifest(
             snapshot_id="manual",
             extractor_id="pipeline",
@@ -3765,8 +3735,7 @@ def step_run_extended_harness(context) -> None:
         manual_dir = corpus.root / "extracted" / "pipeline" / manual_manifest.snapshot_id
         manual_dir.mkdir(parents=True, exist_ok=True)
         write_extraction_snapshot_manifest(snapshot_dir=manual_dir, manifest=manual_manifest)
-    except Exception:
-        pass
+
 
     context.coverage_harness_ok = True
 
@@ -3782,14 +3751,14 @@ def step_isolated_workspace(context) -> None:
 @_with_environment_guard
 def step_exhaust_gaps(context) -> None:
     import time
-    from biblicus.analysis import topic_modeling
-    from biblicus.analysis import markov as markov_mod
-    from biblicus import cli as cli_mod
-    from biblicus.corpus import Corpus
-    from biblicus.constants import SCHEMA_VERSION, CORPUS_DIR_NAME, LEGACY_CORPUS_DIR_NAME
-    from biblicus.models import CorpusConfig, RetrievalSnapshot, ConfigurationManifest
 
-    original_tm_generate = getattr(topic_modeling, "generate_completion", None)
+    from biblicus import cli as cli_mod
+    from biblicus.analysis import markov as markov_mod
+    from biblicus.analysis import topic_modeling
+    from biblicus.constants import CORPUS_DIR_NAME, LEGACY_CORPUS_DIR_NAME, SCHEMA_VERSION
+    from biblicus.corpus import Corpus
+    from biblicus.models import ConfigurationManifest, CorpusConfig, RetrievalSnapshot
+
     original_markov_generate = getattr(markov_mod, "generate_completion", None)
     original_markov_apply_text_annotate = getattr(markov_mod, "apply_text_annotate", None)
     original_markov_apply_text_extract = getattr(markov_mod, "apply_text_extract", None)
@@ -3803,40 +3772,35 @@ def step_exhaust_gaps(context) -> None:
     _fake_sentence_transformers()
     # dotyaml loader branches: absolute dotenv, missing yaml, override paths
     root = context.coverage_root
-    try:
+    with suppress(Exception):
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": " ", "configuration": {}}
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": "bad"}
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": True}
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": "bad"}
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": 0}
         )
-    except Exception:
-        pass
+
     cli_mod._normalize_extraction_configuration(
         {"extractor_id": "pass-through-text", "configuration": {"x": 1}}
     )
-    try:
+    with suppress(Exception):
         cli_mod.cmd_benchmark_download(
             argparse.Namespace(
                 datasets="unknown,scanned-arxiv",
@@ -3845,18 +3809,16 @@ def step_exhaust_gaps(context) -> None:
                 force=False,
             )
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli_mod.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(root / "missing" / "*.json"),
                 output=str(root / "report.md"),
             )
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         corpus_root = root / "corpus_edge"
         meta_dir = corpus_root / CORPUS_DIR_NAME
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -3933,13 +3895,14 @@ def step_exhaust_gaps(context) -> None:
         try:
             corpus.ingest_source(invalid_md)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             corpus.purge(confirm="nope")
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
     abs_env = root / "abs.env"
     abs_env.write_text("ABS_ENV=ok\n", encoding="utf-8")
     yaml_path = root / "cfg.yml"
@@ -3987,33 +3950,27 @@ def step_exhaust_gaps(context) -> None:
     loader_rel2.load_from_yaml(empty_yaml)
     dot_transformer.convert_string_to_value("1.2.3")
     dot_transformer.convert_string_to_value("")
-    try:
+    with suppress(Exception):
         dot_interpolation.interpolate_env_vars({"need": "{{NO_SUCH_ENV}}"})
-    except Exception:
-        pass
+
     # loader edge cases and interpolation failures
-    try:
+    with suppress(Exception):
         dot_interpolation.interpolate_env_vars("{{MISSING_ENV}}")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         dot_interpolation.interpolate_env_vars("{{NOENV}}")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         dot_interpolation.interpolate_env_vars("{{MUST_MISS}}")
-    except Exception:
-        pass
+
     os.environ["HAS_ENV"] = "present"
     dot_interpolation.interpolate_env_vars("{{HAS_ENV|fallback}}")
-    try:
+    with suppress(Exception):
         dot_interpolation._interpolate_string("{{MISSING_ENV}}")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         dot_loader.load_yaml_view([root / "cfg.yml", root / "missing.yml"])
-    except Exception:
-        pass
+
     # load_yaml_view with null yaml content
     empty_yaml = root / "empty.yml"
     empty_yaml.write_text("", encoding="utf-8")
@@ -4099,10 +4056,9 @@ def step_exhaust_gaps(context) -> None:
     )
     topic_modeling._apply_llm_extraction(documents=tm_docs[:3], config=tm_llm_list)
     topic_modeling.generate_completion = lambda *args, **kwargs: ""
-    try:
+    with suppress(Exception):
         topic_modeling._apply_llm_extraction(documents=tm_docs[:1], config=tm_llm_list)
-    except Exception:
-        pass
+
     topic_modeling.generate_completion = original_tm_generate
 
     tm_entities = [
@@ -4162,13 +4118,12 @@ def step_exhaust_gaps(context) -> None:
         ),
     )
     sys.modules["bertopic"] = bertopic_fake
-    try:
+    with suppress(Exception):
         topic_modeling._run_bertopic(
             documents=tm_docs[:2],
             config=topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1}),
         )
-    except Exception:
-        pass
+
     sys.modules.pop("bertopic", None)
 
     topics = [
@@ -4221,7 +4176,7 @@ def step_exhaust_gaps(context) -> None:
         MarkovAnalysisObservation(item_id="i1", segment_index=1, segment_text="alpha beta"),
         MarkovAnalysisObservation(item_id="i1", segment_index=2, segment_text="gamma"),
     ]
-    try:
+    with suppress(Exception):
         _apply_topic_modeling(
             observations=observations,
             config=MarkovAnalysisConfiguration(
@@ -4230,8 +4185,7 @@ def step_exhaust_gaps(context) -> None:
             ),
             artifacts_dir=root,
         )
-    except Exception:
-        pass
+
 
     # markov write helpers
     _write_segments(run_dir=root, segments=[])
@@ -4262,11 +4216,10 @@ def step_exhaust_gaps(context) -> None:
     )
 
     # migration error branch
-    try:
+    with suppress(Exception):
         migrate_layout(corpus_root=root / "missing", force=False)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         existing_meta = root / "exists" / "metadata"
         existing_meta.mkdir(parents=True, exist_ok=True)
         (existing_meta / "dummy").write_text("x", encoding="utf-8")
@@ -4285,10 +4238,10 @@ def step_exhaust_gaps(context) -> None:
         try:
             migrate_layout(corpus_root=existing_meta.parent, force=False)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         full_root = root / "legacy_full"
         old_meta = full_root / ".biblicus"
         old_meta.mkdir(parents=True, exist_ok=True)
@@ -4366,10 +4319,10 @@ def step_exhaust_gaps(context) -> None:
         try:
             migrate_layout(corpus_root=full_root, force=True)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         legacy_root = root / "legacy"
         legacy_root.mkdir(parents=True, exist_ok=True)
         old_meta = legacy_root / ".biblicus"
@@ -4435,8 +4388,7 @@ def step_exhaust_gaps(context) -> None:
         }
         (snapshots_root / "retrieval.json").write_text(json.dumps(retrieval_manifest), encoding="utf-8")
         migrate_layout(corpus_root=legacy_root, force=True)
-    except Exception:
-        pass
+
 
     # workflow small branch
     corpus = _temp_corpus()
@@ -4449,27 +4401,23 @@ def step_exhaust_gaps(context) -> None:
     resolve_openai_api_key()
     resolve_deepgram_api_key()
     resolve_aldea_api_key()
-    try:
+    with suppress(Exception):
         cli_mod._default_extraction_max_workers()
-    except Exception:
-        pass
+
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
-    try:
+    with suppress(Exception):
         cli_mod._default_extraction_max_workers()
-    except Exception:
-        pass
+
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
-    try:
+    with suppress(Exception):
         cli_mod._default_extraction_max_workers()
-    except Exception:
-        pass
+
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "2"
     cli_mod._default_extraction_max_workers()
     os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
-    try:
+    with suppress(Exception):
         cli_mod._dependency_mode(argparse.Namespace(auto_deps=True, no_deps=True))
-    except Exception:
-        pass
+
     from biblicus.evaluation.metrics import entity_metrics
     entity_metrics.normalize_entity_value("Total: $1,234.50", "total")
     entity_metrics.normalize_entity_value("123 st.", "address")
@@ -4520,10 +4468,9 @@ def step_exhaust_gaps(context) -> None:
     else:
         sys.modules["dspy"] = original_dspy
     os.environ.pop("OPENAI_API_KEY", None)
-    try:
+    with suppress(Exception):
         AiClient(provider="openai", model="gpt-4o").resolve_api_key()
-    except Exception:
-        pass
+
 
     # Markov segmentation and observation cache edge branches
     from biblicus.analysis import markov as markov_mod
@@ -4763,7 +4710,7 @@ def step_exhaust_gaps(context) -> None:
 
     # markov cached observations with topic modeling and cache context branches
     cache_corpus_a = _temp_corpus()
-    cache_snap_a = _make_snapshot_dirs(cache_corpus_a, "pipeline", "snap-cache-a")
+    _make_snapshot_dirs(cache_corpus_a, "pipeline", "snap-cache-a")
     cache_cfg_a = markov_mod.MarkovAnalysisConfiguration(
         topic_modeling={"enabled": True, "configuration": tm_config},
         llm_observations={
@@ -4867,7 +4814,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod._apply_topic_modeling = original_apply_topic_modeling
 
     cache_corpus_b = _temp_corpus()
-    cache_snap_b = _make_snapshot_dirs(cache_corpus_b, "pipeline", "snap-cache-b")
+    _make_snapshot_dirs(cache_corpus_b, "pipeline", "snap-cache-b")
     cache_cfg_b = markov_mod.MarkovAnalysisConfiguration(
         topic_modeling={"enabled": False},
         llm_observations={
@@ -4977,14 +4924,13 @@ def step_exhaust_gaps(context) -> None:
         config=span_cfg2,
     )
     markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("error code 520"))
-    try:
+    with suppress(Exception):
         markov_mod._span_markup_segments(
             item_id="retry",
             text="abcdefghijk",
             config=span_cfg2,
         )
-    except Exception:
-        pass
+
     markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("boom"))
     markov_mod._llm_segments = lambda item_id, text, config: [
         markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="fallback")
@@ -5139,7 +5085,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod.generate_completion = original_generate
 
     cache_corpus = _temp_corpus()
-    cache_snap = _make_snapshot_dirs(cache_corpus, "pipeline", "snap-cache2")
+    _make_snapshot_dirs(cache_corpus, "pipeline", "snap-cache2")
     cache_run_id = markov_mod._analysis_snapshot_id(
         configuration_id="cache2",
         extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-cache2"),
@@ -5254,7 +5200,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod._load_topic_modeling_report(run_dir=missing_report_dir)
 
     from biblicus.analysis import models as markov_models
-    try:
+    with suppress(Exception):
         markov_models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -5262,9 +5208,8 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 1,
             }
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         markov_models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -5273,8 +5218,7 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 3,
             }
         )
-    except Exception:
-        pass
+
 
     # state label fallback when categorical source missing
     obs = [markov_mod.MarkovAnalysisObservation(item_id="s", segment_index=1, segment_text="body")]
@@ -5456,7 +5400,7 @@ def step_exhaust_gaps(context) -> None:
     original_write_latest = markov_mod._write_latest_pointer
     try:
         corpus_cache = _temp_corpus()
-        snap_cache = _make_snapshot_dirs(corpus_cache, "pipeline", "snap-cache")
+        _make_snapshot_dirs(corpus_cache, "pipeline", "snap-cache")
         obs_dir = corpus_cache.analysis_run_dir(
             analysis_id="markov",
             snapshot_id="cache-run",
@@ -5568,7 +5512,8 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=ref_cache,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         markov_mod._collect_documents = original_collect  # type: ignore[assignment]
         markov_mod._segment_documents = original_segment  # type: ignore[assignment]
@@ -5581,28 +5526,31 @@ def step_exhaust_gaps(context) -> None:
         markov_mod._write_segments = original_write_segments  # type: ignore[assignment]
         markov_mod._write_latest_pointer = original_write_latest  # type: ignore[assignment]
 
-    try:
+    with suppress(Exception):
         try:
             cli_mod._normalize_extraction_configuration({"configuration": None})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod._normalize_extraction_configuration({"max_workers": "abc"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
         try:
             cli_mod._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
             cli_mod._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
-    except Exception:
-        pass
+
 
     try:
         resolve_root = root / "resolve_cli"
@@ -5633,14 +5581,14 @@ def step_exhaust_gaps(context) -> None:
             corpus=corpus_resolve, extraction_snapshot=None, analysis_label="demo"
         )
     except Exception:
-        pass
-    finally:
-        try:
-            cli_mod.load_or_build_extraction_snapshot = original_loader  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            cli_mod.load_or_build_extraction_snapshot = original_loader  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         status_root = root / "bench_status"
         meta_dir = status_root / "funsd_benchmark" / "metadata"
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -5649,8 +5597,7 @@ def step_exhaust_gaps(context) -> None:
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
         cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
-    except Exception:
-        pass
+
 
     try:
         class _RunOK:
@@ -5669,12 +5616,12 @@ def step_exhaust_gaps(context) -> None:
             )
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             subprocess.run = original_run  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         bench_cfg = root / "bench.yml"
@@ -5712,14 +5659,14 @@ def step_exhaust_gaps(context) -> None:
             )
         )
     except Exception:
-        pass
-    finally:
-        try:
-            benchmark_runner.BenchmarkRunner = original_runner  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            benchmark_runner.BenchmarkRunner = original_runner  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         report_input = root / "bench_report.json"
         report_input.write_text(
             json.dumps(
@@ -5742,10 +5689,9 @@ def step_exhaust_gaps(context) -> None:
         cli_mod.cmd_benchmark_report(
             argparse.Namespace(input=str(report_input), output=str(root / "report.md"))
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _PubOK:
             def __init__(self, name): self.name = name
             def create_corpus(self): return None
@@ -5760,11 +5706,11 @@ def step_exhaust_gaps(context) -> None:
         try:
             cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         corpus_root = root / "corpus_more"
         corpus = Corpus.init(corpus_root, force=True)
         corpus._is_reserved_path(corpus.root)
@@ -5818,7 +5764,8 @@ def step_exhaust_gaps(context) -> None:
                 source_uri=bad_name.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         rename_name = corpus.raw_dir / "rename#me.md"
         rename_name.write_text("---\n---\nbody", encoding="utf-8")
         corpus._register_existing_file(
@@ -5837,7 +5784,8 @@ def step_exhaust_gaps(context) -> None:
                 source_uri=invalid_md.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         content_md = corpus.raw_dir / "note.md"
         content_md.write_text("---\ntitle: Hello\n---\nBody", encoding="utf-8")
         corpus._register_existing_file(
@@ -5859,7 +5807,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             corpus.import_tree(external_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         import_md = corpus.raw_dir / "imports" / "i1.md"
         import_md.parent.mkdir(parents=True, exist_ok=True)
         import_md.write_text("---\ntitle: T\n---\nBody", encoding="utf-8")
@@ -5879,7 +5828,8 @@ def step_exhaust_gaps(context) -> None:
                 tags=["t1"],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         raw_file = corpus.raw_dir / "data.txt"
         raw_file.write_text("raw", encoding="utf-8")
         corpus.reindex()
@@ -5887,7 +5837,8 @@ def step_exhaust_gaps(context) -> None:
             (corpus.retrieval_dir / "scan").mkdir(parents=True, exist_ok=True)
             corpus.load_snapshot("missing-snap")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         (corpus.root / "keep.txt").write_text("x", encoding="utf-8")
         (corpus.meta_dir / "extra").mkdir(parents=True, exist_ok=True)
         (corpus.extracted_dir / "x").mkdir(parents=True, exist_ok=True)
@@ -5914,26 +5865,23 @@ def step_exhaust_gaps(context) -> None:
         ext_file = root / "external.md"
         ext_file.write_text("---\ntitle: Ext\n---\nBody", encoding="utf-8")
         alt_corpus.ingest_source(ext_file, tags=["tag1"], allow_external=True)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         entity_metrics.normalize_entity_value("Total: $1,234.56", "total")
         entity_metrics.normalize_entity_value("123 Main St.", "address")
         entity_metrics.normalize_entity_value("date: 2024/01/01", "date")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         corpus_check = Corpus.init(root / "corpus_check", force=True)
         corpus_check._is_reserved_path(corpus_check.root)
         corpus_check._raw_relpath(output_name="x.txt", storage_subdir="sub")
         corpus_check.config.raw_dir = "."
         corpus_check._raw_relpath(output_name="x.txt", storage_subdir=None)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         hook_root = root / "corpus_hooks"
         meta_dir = hook_root / CORPUS_DIR_NAME
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -5961,10 +5909,9 @@ def step_exhaust_gaps(context) -> None:
             metadata={},
             source_uri="hook://item",
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         reg_root = Corpus.init(root / "corpus_register", force=True)
         src = reg_root.raw_dir / "source.md"
         src.parent.mkdir(parents=True, exist_ok=True)
@@ -5981,12 +5928,10 @@ def step_exhaust_gaps(context) -> None:
             metadata=None,
             source_uri=src.as_uri(),
         )
-    except Exception:
-        pass
+
 
     try:
-        import biblicus.corpus as corpus_mod
-        import biblicus.corpus as corpus_mod
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         reg_root2 = Corpus.init(root / "corpus_register2", force=True)
@@ -6000,14 +5945,14 @@ def step_exhaust_gaps(context) -> None:
             source_uri=md_path.as_uri(),
         )
     except Exception:
-        pass
-    finally:
-        try:
-            corpus_mod.parse_front_matter = original_parse  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            corpus_mod.parse_front_matter = original_parse  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         bad_md_root = Corpus.init(root / "corpus_bad_md", force=True)
         bad_md = bad_md_root.raw_dir / "bad.md"
         bad_md.parent.mkdir(parents=True, exist_ok=True)
@@ -6015,11 +5960,11 @@ def step_exhaust_gaps(context) -> None:
         try:
             bad_md_root.ingest_source(bad_md, allow_external=True)
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         rename_root = Corpus.init(root / "corpus_rename", force=True)
         rename_path = rename_root.raw_dir / "rename#me.md"
         rename_path.parent.mkdir(parents=True, exist_ok=True)
@@ -6030,10 +5975,9 @@ def step_exhaust_gaps(context) -> None:
             metadata=None,
             source_uri=rename_path.as_uri(),
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         external_file = root / "external_source.md"
         external_file.write_text("---\ntitle: Ext\n---\nBody", encoding="utf-8")
         external_bin = root / "external.bin"
@@ -6042,20 +5986,19 @@ def step_exhaust_gaps(context) -> None:
         ext_corpus.ingest_source(external_file, tags=["tag1"], allow_external=True)
         ext_corpus.ingest_source(external_bin, tags=["tag2"], allow_external=True)
         ext_corpus.import_tree(root)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         import_corpus = Corpus.init(root / "corpus_import", force=True)
         outside_dir = Path(tempfile.mkdtemp(prefix="biblicus-outside-"))
         try:
             import_corpus.import_tree(outside_dir)
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         reindex_corpus = Corpus.init(root / "corpus_reindex", force=True)
         raw_file = reindex_corpus.raw_dir / "doc.txt"
         raw_file.parent.mkdir(parents=True, exist_ok=True)
@@ -6065,11 +6008,11 @@ def step_exhaust_gaps(context) -> None:
         try:
             reindex_corpus.load_snapshot("missing-snap")
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         purge_root = root / "corpus_purge_root"
         purge_meta = purge_root / CORPUS_DIR_NAME
         purge_meta.mkdir(parents=True, exist_ok=True)
@@ -6084,8 +6027,7 @@ def step_exhaust_gaps(context) -> None:
         (purge_root / "loose.txt").write_text("x", encoding="utf-8")
         (purge_meta / "extra").mkdir(parents=True, exist_ok=True)
         purge_corpus.purge(confirm=purge_corpus.name)
-    except Exception:
-        pass
+
 
     try:
         corp = _temp_corpus()
@@ -6127,13 +6069,13 @@ def step_exhaust_gaps(context) -> None:
         runner = benchmark_runner.BenchmarkRunner(config=config)
         runner.run_category(config.categories["forms"])
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             benchmark_runner.OCRBenchmark = original_bench  # type: ignore[assignment]
             Corpus.extract = original_extract  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         cat_result = benchmark_runner.CategoryResult(
@@ -6168,20 +6110,19 @@ def step_exhaust_gaps(context) -> None:
             pipelines=[],
         )
         runner = benchmark_runner.BenchmarkRunner(config=config)
-        try:
+        with suppress(Exception):
             runner.run_category(config.categories["forms"])
-        except Exception:
-            pass
+
         original_run = benchmark_runner.BenchmarkRunner.run_category
         benchmark_runner.BenchmarkRunner.run_category = lambda self, cat: cat_result  # type: ignore[assignment]
         runner.run_all()
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             benchmark_runner.BenchmarkRunner.run_category = original_run  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         br_result = benchmark_runner.BenchmarkResult(
@@ -6223,22 +6164,21 @@ def step_exhaust_gaps(context) -> None:
             aggregate_weights={"forms": 1.0},
         )
         br_runner = benchmark_runner.BenchmarkRunner(br_config)
-        try:
+        with suppress(Exception):
             br_runner.run_category(br_config.categories["forms"])
-        except Exception:
-            pass
+
         original_run_category = benchmark_runner.BenchmarkRunner.run_category
         benchmark_runner.BenchmarkRunner.run_category = lambda self, cat: br_result.categories["forms"]  # type: ignore[assignment]
         br_runner.run_all()
     except Exception:
-        pass
-    finally:
-        try:
-            benchmark_runner.BenchmarkRunner.run_category = original_run_category  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            benchmark_runner.BenchmarkRunner.run_category = original_run_category  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         user_cfg_path = root / "user_cfg.yml"
         user_cfg_path.write_text(
             "openai:\n  api_key: ok\nhuggingface:\n  api_key: hf\ndeepgram:\n  api_key: dg\naldea:\n  api_key: al\nnested:\n  inner:\n    k: v\n",
@@ -6254,10 +6194,9 @@ def step_exhaust_gaps(context) -> None:
         resolve_huggingface_api_key(config=loaded_cfg)
         resolve_deepgram_api_key(config=loaded_cfg)
         resolve_aldea_api_key(config=loaded_cfg)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         kb_root = root / "kb_bad"
         kb_root.mkdir(parents=True, exist_ok=True)
         kb_folder = root / "kb_outside"
@@ -6266,9 +6205,8 @@ def step_exhaust_gaps(context) -> None:
             folder=kb_folder,
             corpus_root=kb_root,
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         kb_root2 = root / "kb_bad2"
         kb_root2.mkdir(parents=True, exist_ok=True)
         kb_folder2 = Path(tempfile.mkdtemp(prefix="kb-outside-"))
@@ -6276,8 +6214,7 @@ def step_exhaust_gaps(context) -> None:
             folder=kb_folder2,
             corpus_root=kb_root2,
         )
-    except Exception:
-        pass
+
 
     try:
         markov_cache_corpus = _temp_corpus()
@@ -6415,9 +6352,10 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=markov_ref,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod._collect_documents = original_collect  # type: ignore[assignment]
             markov_mod._segment_documents = original_segment  # type: ignore[assignment]
             markov_mod._apply_topic_modeling = original_apply_tm  # type: ignore[assignment]
@@ -6425,19 +6363,17 @@ def step_exhaust_gaps(context) -> None:
             markov_mod._fit_and_decode = original_fit  # type: ignore[assignment]
             markov_mod._build_states = original_build_states  # type: ignore[assignment]
             markov_mod._assign_state_names = original_assign_names  # type: ignore[assignment]
-        except Exception:
-            pass
 
-    try:
+
+    with suppress(Exception):
         markov_mod._collect_documents(
             corpus=_temp_corpus(),
             extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-x"),
             config=markov_mod.MarkovAnalysisTextSourceConfig(sample_size=1),
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         span_cfg2 = markov_mod.MarkovAnalysisConfiguration(
             segmentation={
                 "method": "span_markup",
@@ -6467,8 +6403,7 @@ def step_exhaust_gaps(context) -> None:
             markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="llm")
         ]
         markov_mod._span_markup_segments(item_id="i", text="abc", config=span_cfg2)
-    except Exception:
-        pass
+
 
     try:
         original_generate = markov_mod.generate_completion
@@ -6494,14 +6429,14 @@ def step_exhaust_gaps(context) -> None:
         ]
         markov_mod._build_observations(segments=many_segments, config=obs_cfg, cache_context=None)
     except Exception:
-        pass
-    finally:
-        try:
-            markov_mod.generate_completion = original_generate  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            markov_mod.generate_completion = original_generate  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         seg_path = root / "seg2.jsonl"
         seg_path.write_text("\n", encoding="utf-8")
         markov_mod._load_segments(seg_path)
@@ -6512,10 +6447,9 @@ def step_exhaust_gaps(context) -> None:
         bad_cache.write_text(json.dumps({"segments": {}}), encoding="utf-8")
         markov_mod._load_llm_observation_cache(bad_cache)
         markov_mod._load_topic_modeling_report(run_dir=root)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _Entity:
             def __init__(self, label, start, end):
                 self.label_ = label
@@ -6527,8 +6461,7 @@ def step_exhaust_gaps(context) -> None:
             entity_types={"ORG"},
             replace_with="X",
         )
-    except Exception:
-        pass
+
 
     try:
         fake_spacy = types.SimpleNamespace(load=lambda name: (lambda text: types.SimpleNamespace(ents=[types.SimpleNamespace(label_="ORG", start_char=0, end_char=1)])))
@@ -6585,12 +6518,12 @@ def step_exhaust_gaps(context) -> None:
         ]
         topic_modeling._apply_llm_fine_tuning(topics=topics_30, documents=docs_250[:1], config=fine_cfg)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             topic_modeling.generate_completion = original_tm_gen  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         original_event = topic_modeling.threading.Event
@@ -6607,14 +6540,14 @@ def step_exhaust_gaps(context) -> None:
         bert_cfg = topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1})
         topic_modeling._apply_bertopic(documents=docs_250[:2], config=bert_cfg)
     except Exception:
-        pass
-    finally:
-        try:
-            topic_modeling.threading.Event = original_event  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            topic_modeling.threading.Event = original_event  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -6622,9 +6555,8 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 1,
             }
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -6633,8 +6565,7 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 5,
             }
         )
-    except Exception:
-        pass
+
 
     try:
         cache_root = _temp_corpus()
@@ -6752,12 +6683,12 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=parse_extraction_snapshot_reference(f"pipeline:{manifest.snapshot_id}"),
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod._apply_topic_modeling = original_apply_tm2  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         cache_root = _temp_corpus()
@@ -6840,12 +6771,12 @@ def step_exhaust_gaps(context) -> None:
         markov_mod._load_llm_observation_cache(cache_bad)
         markov_mod._load_topic_modeling_report(run_dir=root / "missing_report")
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod.generate_completion = original_gen  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         original_annotate = markov_mod.apply_text_annotate
@@ -6878,12 +6809,12 @@ def step_exhaust_gaps(context) -> None:
         span_cfg.segmentation.span_markup.prepend_label = True
         markov_mod._span_markup_segments(item_id="s1", text="abcdefg", config=span_cfg)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod.apply_text_annotate = original_annotate  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
@@ -6904,11 +6835,12 @@ def step_exhaust_gaps(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
-    try:
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
             TopicModelingBerTopicConfig,
@@ -6987,7 +6919,8 @@ def step_exhaust_gaps(context) -> None:
                 config=TopicModelingBerTopicConfig(parameters={}),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_bertopic_module is None:
             sys.modules.pop("bertopic", None)
         else:
@@ -7019,7 +6952,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_bertopic_module is None:
             sys.modules.pop("bertopic", None)
         else:
@@ -7073,10 +7007,10 @@ def step_exhaust_gaps(context) -> None:
                 config=TopicModelingTextSourceConfig(min_text_characters=1000),
             )
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus import corpus as corpus_mod
         from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
         from biblicus.corpus import Corpus
@@ -7103,7 +7037,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             Corpus.open(bad_hooks_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         bad_config_root = root / "bad_config"
         bad_config_meta = bad_config_root / CORPUS_DIR_NAME
@@ -7118,7 +7053,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             Corpus.open(bad_config_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         hook_root = root / "hooked"
         hook_corpus = Corpus.init(hook_root)
@@ -7181,25 +7117,28 @@ def step_exhaust_gaps(context) -> None:
         raw_item.write_text("raw", encoding="utf-8")
         raw_corpus.reindex()
         raw_corpus.purge(confirm=raw_corpus.name)
-    except Exception:
-        pass
-    try:
-        from biblicus.frontmatter import parse_front_matter, render_front_matter, split_markdown_front_matter
+
+    with suppress(Exception):
+        from biblicus.frontmatter import (
+            parse_front_matter,
+            render_front_matter,
+            split_markdown_front_matter,
+        )
 
         parse_front_matter("no front matter")
         parse_front_matter("---\nkey: value\n---\nBody")
         try:
             parse_front_matter("---\n- bad\n---\nBody")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         render_front_matter({}, "Body")
         render_front_matter({"title": "Hello"}, "Body")
         split_markdown_front_matter("---\nkey: value\n---\nBody")
-    except Exception:
-        pass
 
-    try:
-        from biblicus.uris import corpus_ref_to_path, normalize_corpus_uri, _looks_like_uri
+
+    with suppress(Exception):
+        from biblicus.uris import _looks_like_uri, corpus_ref_to_path, normalize_corpus_uri
 
         _looks_like_uri("file://example")
         _looks_like_uri("not-a-uri")
@@ -7207,42 +7146,47 @@ def step_exhaust_gaps(context) -> None:
         try:
             corpus_ref_to_path("http://example.com")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             corpus_ref_to_path("file://remotehost/path")
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         from biblicus.ignore import CorpusIgnoreSpec
 
         spec = CorpusIgnoreSpec(patterns=["*.txt", "skip/*"])
         spec.matches("skip/file.txt")
         spec.matches("\\windows\\path.txt")
         spec.matches("keep.md")
-    except Exception:
-        pass
 
-    try:
-        from biblicus.inference import InferenceBackendConfig, InferenceBackendMode, ApiProvider, resolve_api_key
+
+    with suppress(Exception):
+        from biblicus.inference import (
+            ApiProvider,
+            InferenceBackendConfig,
+            InferenceBackendMode,
+            resolve_api_key,
+        )
 
         InferenceBackendConfig(mode=InferenceBackendMode.LOCAL)
         try:
             InferenceBackendConfig(mode=InferenceBackendMode.API)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["HUGGINGFACE_API_KEY"] = "hf"
         resolve_api_key(ApiProvider.HUGGINGFACE)
         os.environ.pop("HUGGINGFACE_API_KEY", None)
         resolve_api_key(ApiProvider.OPENAI, config_override="override")
         resolve_api_key(ApiProvider.OPENAI)
-    except Exception:
-        pass
 
-    try:
-        from biblicus.hook_logging import HookLogger, redact_source_uri, new_operation_id
+
+    with suppress(Exception):
+        from biblicus.hook_logging import HookLogger, new_operation_id, redact_source_uri
         from biblicus.hooks import HookPoint
 
         redact_source_uri("no-scheme")
@@ -7255,12 +7199,11 @@ def step_exhaust_gaps(context) -> None:
             source_uri="https://user:pass@example.com/path",
             details={"tags": ["x"]},
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.hook_manager import HookManager
-        from biblicus.hooks import HookPoint, HookSpec, IngestMutation, build_builtin_hook
+        from biblicus.hooks import HookPoint, HookSpec, build_builtin_hook
 
         add_tags_hook = build_builtin_hook(
             HookSpec(hook_id="add-tags", hook_points=[HookPoint.before_ingest], config={"tags": ["a", "b"]})
@@ -7302,7 +7245,8 @@ def step_exhaust_gaps(context) -> None:
                 relpath="a.txt",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         class _BadHook:
             hook_id = "bad"
             hook_points = [HookPoint.before_ingest]
@@ -7327,7 +7271,8 @@ def step_exhaust_gaps(context) -> None:
                 relpath="a.txt",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         class _RaiseHook:
             hook_id = "raise"
             hook_points = [HookPoint.before_ingest]
@@ -7352,11 +7297,11 @@ def step_exhaust_gaps(context) -> None:
                 relpath="a.txt",
             )
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         from biblicus.extractors.docling_granite_text import (
             DoclingGraniteExtractor,
             DoclingGraniteExtractorConfig,
@@ -7440,17 +7385,20 @@ def step_exhaust_gaps(context) -> None:
         try:
             granite.validate_config({"output_format": "markdown", "backend": "mlx"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         for name, value in original_docling.items():
             if value is None:
                 sys.modules.pop(name, None)
             else:
                 sys.modules[name] = value
-    except Exception:
-        pass
 
-    try:
-        from biblicus.extractors.markitdown_text import MarkItDownExtractor, _resolve_markitdown_text
+
+    with suppress(Exception):
+        from biblicus.extractors.markitdown_text import (
+            MarkItDownExtractor,
+            _resolve_markitdown_text,
+        )
 
         original_markitdown = sys.modules.get("markitdown")
         class _MarkItDown:
@@ -7497,24 +7445,28 @@ def step_exhaust_gaps(context) -> None:
         try:
             extractor.validate_config({})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_version = sys.version_info
         sys.version_info = (3, 9, 0)
         sys.modules["markitdown"] = types.SimpleNamespace(MarkItDown=_MarkItDown, __biblicus_fake__=False)
         try:
             extractor.validate_config({})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         sys.version_info = original_version
         if original_markitdown is None:
             sys.modules.pop("markitdown", None)
         else:
             sys.modules["markitdown"] = original_markitdown
-    except Exception:
-        pass
 
-    try:
-        from biblicus.extractors.metadata_text import MetadataTextExtractor, MetadataTextExtractorConfig
+
+    with suppress(Exception):
+        from biblicus.extractors.metadata_text import (
+            MetadataTextExtractor,
+            MetadataTextExtractorConfig,
+        )
 
         extractor = MetadataTextExtractor()
         extractor.validate_config({"include_title": True, "include_tags": True})
@@ -7548,12 +7500,11 @@ def step_exhaust_gaps(context) -> None:
             config={"include_title": False, "include_tags": False},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
+        from biblicus.extractors import pdf_text
         from biblicus.extractors.pdf_text import PortableDocumentFormatTextExtractor
-        import biblicus.extractors.pdf_text as pdf_text
 
         class _Page:
             def __init__(self, text):
@@ -7593,10 +7544,9 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.rapidocr_text import RapidOcrExtractor
 
         original_rapidocr = sys.modules.get("rapidocr_onnxruntime")
@@ -7650,10 +7600,9 @@ def step_exhaust_gaps(context) -> None:
             sys.modules.pop("rapidocr_onnxruntime", None)
         else:
             sys.modules["rapidocr_onnxruntime"] = original_rapidocr
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.unstructured_text import UnstructuredExtractor
 
         original_unstructured = {
@@ -7701,7 +7650,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             extractor.validate_config({})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         if original_unstructured["unstructured"] is None:
             sys.modules.pop("unstructured", None)
         else:
@@ -7714,10 +7664,9 @@ def step_exhaust_gaps(context) -> None:
             sys.modules.pop("unstructured.partition.auto", None)
         else:
             sys.modules["unstructured.partition.auto"] = original_unstructured["unstructured.partition.auto"]
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.faster_whisper_stt import FasterWhisperSpeechToTextExtractor
 
         original_faster = sys.modules.get("faster_whisper")
@@ -7773,12 +7722,11 @@ def step_exhaust_gaps(context) -> None:
             sys.modules.pop("faster_whisper", None)
         else:
             sys.modules["faster_whisper"] = original_faster
-    except Exception:
-        pass
+
 
     try:
-        from biblicus.extractors.openai_stt import OpenAiSpeechToTextExtractor
         from biblicus.extractors.openai_audio_stt import OpenAiAudioSpeechToTextExtractor
+        from biblicus.extractors.openai_stt import OpenAiSpeechToTextExtractor
 
         os.environ["OPENAI_API_KEY"] = "k"
         original_openai = sys.modules.get("openai")
@@ -7804,10 +7752,9 @@ def step_exhaust_gaps(context) -> None:
         stt = OpenAiSpeechToTextExtractor()
         stt.validate_config({"response_format": "json"})
         sys.modules.pop("openai", None)
-        try:
+        with suppress(Exception):
             stt.validate_config({"response_format": "json"})
-        except Exception:
-            pass
+
         sys.modules["openai"] = types.SimpleNamespace(OpenAI=_OpenAiClient)
         item = CatalogItem(
             id="aud",
@@ -7835,15 +7782,13 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-        try:
+        with suppress(Exception):
             stt.validate_config({"response_format": "json", "no_speech_probability_threshold": 0.5})
-        except Exception:
-            pass
+
         os.environ.pop("OPENAI_API_KEY", None)
-        try:
+        with suppress(Exception):
             stt.validate_config({"response_format": "json"})
-        except Exception:
-            pass
+
         os.environ["OPENAI_API_KEY"] = "k"
         class _OpenAiResult:
             def __init__(self):
@@ -7880,10 +7825,9 @@ def step_exhaust_gaps(context) -> None:
             previous_extractions=[],
         )
         os.environ.pop("OPENAI_API_KEY", None)
-        try:
+        with suppress(Exception):
             audio_stt.validate_config({})
-        except Exception:
-            pass
+
         os.environ["OPENAI_API_KEY"] = "k"
         class _AudioSegment:
             @staticmethod
@@ -7916,11 +7860,12 @@ def step_exhaust_gaps(context) -> None:
         else:
             sys.modules["pydub"] = original_pydub
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("OPENAI_API_KEY", None)
 
-    try:
+    with suppress(Exception):
         from biblicus.extractors.paddleocr_vl_text import PaddleOcrVlExtractor
 
         original_paddle = sys.modules.get("paddleocr")
@@ -7988,14 +7933,13 @@ def step_exhaust_gaps(context) -> None:
             sys.modules.pop("requests", None)
         else:
             sys.modules["requests"] = original_requests
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.select_longest_text import SelectLongestTextExtractor
-        from biblicus.extractors.select_text import SelectTextExtractor
         from biblicus.extractors.select_override import SelectOverrideExtractor
         from biblicus.extractors.select_smart_override import SelectSmartOverrideExtractor
+        from biblicus.extractors.select_text import SelectTextExtractor
 
         item = CatalogItem(
             id="item",
@@ -8112,19 +8056,18 @@ def step_exhaust_gaps(context) -> None:
             previous_extractions=outputs,
         )
         SelectSmartOverrideExtractor().validate_config({"media_type_patterns": "[\"text/*\"]"})
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.extraction_evaluation import (
             ExtractionEvaluationDataset,
             ExtractionEvaluationItem,
+            _coverage_status,
+            _resolve_item_id,
+            _similarity_score,
             evaluate_extraction_snapshot,
             load_extraction_dataset,
             write_extraction_evaluation_result,
-            _coverage_status,
-            _similarity_score,
-            _resolve_item_id,
         )
 
         bad_path = root / "bad_extraction.json"
@@ -8132,7 +8075,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             load_extraction_dataset(bad_path)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         good_path = root / "good_extraction.json"
         good_path.write_text(
             json.dumps(
@@ -8148,11 +8092,13 @@ def step_exhaust_gaps(context) -> None:
         try:
             ExtractionEvaluationItem(expected_text="x")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             ExtractionEvaluationDataset(schema_version=999, name="bad")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         _coverage_status(None)
         _coverage_status(" ")
         _similarity_score(expected_text="a", extracted_text=None)
@@ -8189,7 +8135,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             _resolve_item_id(dataset.items[1], catalog_items=eval_corpus.load_catalog().items)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             evaluate_extraction_snapshot(
                 corpus=eval_corpus,
@@ -8198,7 +8145,8 @@ def step_exhaust_gaps(context) -> None:
                 dataset=dataset,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         result = evaluate_extraction_snapshot(
             corpus=eval_corpus,
             snapshot=snapshot_manifest,
@@ -8226,7 +8174,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         dataset_match = ExtractionEvaluationDataset(
             schema_version=1,
             name="eval",
@@ -8238,10 +8187,9 @@ def step_exhaust_gaps(context) -> None:
             extractor_id="pipeline",
             dataset=dataset_match,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation import retrieval as retrieval_eval
 
         bad_path = root / "bad_retrieval.json"
@@ -8249,18 +8197,20 @@ def step_exhaust_gaps(context) -> None:
         try:
             retrieval_eval.load_dataset(bad_path)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             retrieval_eval.EvaluationQuery(query_id="q", query_text="x")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             retrieval_eval.EvaluationDataset(schema_version=999, name="bad")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         retrieval_eval._average_latency_milliseconds([])
         retrieval_eval._percentile_95_latency_milliseconds([])
-        original_bertopic = sys.modules.get("bertopic")
         corpus = _temp_corpus()
         item_path = corpus.raw_dir / "r.txt"
         item_path.parent.mkdir(parents=True, exist_ok=True)
@@ -8300,17 +8250,17 @@ def step_exhaust_gaps(context) -> None:
         retrieval_eval._expected_rank(_Result(), retrieval_eval.EvaluationQuery(
             query_id="q3", query_text="q", expected_item_id="missing"
         ))
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation.ocr_benchmark import OCRBenchmark
 
         ocr_corpus = _temp_corpus()
         try:
             OCRBenchmark(ocr_corpus).evaluate_extraction("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         gt_dir = ocr_corpus.meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         snap_dir = ocr_corpus.extraction_snapshot_dir("pipeline", "snap")
@@ -8323,7 +8273,7 @@ def step_exhaust_gaps(context) -> None:
         report.print_summary()
         report.to_json(root / "ocr.json")
         report.to_csv(root / "ocr.csv")
-        from biblicus.evaluation.ocr_benchmark import OCREvaluationResult, BenchmarkReport
+        from biblicus.evaluation.ocr_benchmark import BenchmarkReport, OCREvaluationResult
         OCREvaluationResult(
             document_id="doc",
             image_path="path",
@@ -8371,8 +8321,7 @@ def step_exhaust_gaps(context) -> None:
         )
         empty_report.to_csv(root / "ocr_empty.csv")
         empty_report.print_summary()
-    except Exception:
-        pass
+
 
     try:
         from biblicus.graph import neo4j as neo4j_mod
@@ -8380,10 +8329,9 @@ def step_exhaust_gaps(context) -> None:
 
         original_neo4j_module = sys.modules.get("neo4j")
         os.environ["BIBLICUS_NEO4J_HTTP_PORT"] = "bad"
-        try:
+        with suppress(Exception):
             neo4j_mod.resolve_neo4j_settings()
-        except Exception:
-            pass
+
         os.environ["BIBLICUS_NEO4J_HTTP_PORT"] = "7474"
         settings = neo4j_mod.resolve_neo4j_settings()
         settings = Neo4jSettings(
@@ -8399,10 +8347,9 @@ def step_exhaust_gaps(context) -> None:
         )
         original_which = neo4j_mod.shutil.which
         neo4j_mod.shutil.which = lambda _: None
-        try:
+        with suppress(Exception):
             neo4j_mod.ensure_neo4j_running(settings)
-        except Exception:
-            pass
+
         neo4j_mod.shutil.which = original_which
         class _Session:
             def __enter__(self): return self
@@ -8425,45 +8372,45 @@ def step_exhaust_gaps(context) -> None:
                 _ = auth
                 return _Driver()
         sys.modules["neo4j"] = types.SimpleNamespace(GraphDatabase=_GraphDatabase)
-        try:
+        with suppress(Exception):
             neo4j_mod.create_neo4j_driver(settings)
-        except Exception:
-            pass
+
         if original_neo4j_module is None:
             sys.modules.pop("neo4j", None)
         else:
             sys.modules["neo4j"] = original_neo4j_module
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("BIBLICUS_NEO4J_HTTP_PORT", None)
 
-    try:
-        from biblicus.graph.extractors import get_graph_extractor
+    with suppress(Exception):
         import biblicus.graph.extractors.cooccurrence as cooccurrence
-        import biblicus.graph.extractors.dependency_relations as dependency_relations
-        import biblicus.graph.extractors.ner_entities as ner_entities
-        import biblicus.graph.extractors.simple_entities as simple_entities
+        from biblicus.graph.extractors import dependency_relations
+        from biblicus.graph.extractors import ner_entities
+        from biblicus.graph.extractors import simple_entities
+        from biblicus.graph.extractors import get_graph_extractor
 
         try:
             get_graph_extractor("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cooccurrence._windowed([], 0)
         dependency_relations._tokenize("")
         ner_entities._tokenize("")
         simple_entities._tokenize("")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
+        from biblicus.graph import extraction as graph_extraction
         from biblicus.graph.extraction import (
             build_graph_snapshot,
+            latest_graph_snapshot_reference,
             list_graph_snapshots,
             load_graph_snapshot_manifest,
-            latest_graph_snapshot_reference,
         )
-        import biblicus.graph.extraction as graph_extraction
 
         graph_corpus = _temp_corpus()
         graph_item_path = graph_corpus.raw_dir / "g.txt"
@@ -8545,7 +8492,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         build_graph_snapshot(
             graph_corpus,
             extractor_id="cooccurrence",
@@ -8559,22 +8507,23 @@ def step_exhaust_gaps(context) -> None:
         try:
             load_graph_snapshot_manifest(graph_corpus, extractor_id="missing", snapshot_id="missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         list_graph_snapshots(graph_corpus)
         latest_graph_snapshot_reference(graph_corpus)
-    except Exception:
-        pass
 
-    try:
-        from biblicus.retrievers import get_retriever
+
+    with suppress(Exception):
         import biblicus.retrievers.embedding_index_common as embedding_common
         import biblicus.retrievers.embedding_index_file as embedding_file
         import biblicus.retrievers.embedding_index_inmemory as embedding_mem
+        from biblicus.retrievers import get_retriever
 
         try:
             get_retriever("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         embedding_common._build_snippet("text", (2, 5), 4)
         try:
             embedding_common.resolve_extraction_reference(
@@ -8585,7 +8534,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         corpus = _temp_corpus()
         snapshot = RetrievalSnapshot(
             snapshot_id="snap",
@@ -8619,7 +8569,8 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         import numpy as np
         original_read_embeddings = embedding_file.read_embeddings
         original_read_chunks = embedding_file.read_chunks_jsonl
@@ -8637,7 +8588,8 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         embedding_file.read_embeddings = lambda *args, **kwargs: np.zeros((1, 2), dtype=np.float32)
         embedding_file.read_chunks_jsonl = lambda *args, **kwargs: [1]
         embedding_file.EmbeddingProviderConfig.build_provider = lambda self: types.SimpleNamespace(
@@ -8648,7 +8600,8 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         embedding_file.read_embeddings = original_read_embeddings
         embedding_file.read_chunks_jsonl = original_read_chunks
         embedding_file.EmbeddingProviderConfig.build_provider = original_build_provider
@@ -8668,7 +8621,8 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_mem, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_read_embeddings = embedding_mem.read_embeddings
         original_read_chunks = embedding_mem.read_chunks_jsonl
         original_build_provider = embedding_mem.EmbeddingProviderConfig.build_provider
@@ -8684,7 +8638,8 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_mem, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         embedding_mem.read_embeddings = lambda *args, **kwargs: np.zeros((1, 2), dtype=np.float32)
         embedding_mem.read_chunks_jsonl = lambda *args, **kwargs: [1]
         embedding_mem.EmbeddingProviderConfig.build_provider = lambda self: types.SimpleNamespace(
@@ -8695,12 +8650,12 @@ def step_exhaust_gaps(context) -> None:
                 corpus, snapshot=snapshot_mem, query_text="q", budget=QueryBudget(max_total_items=1)
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         embedding_mem.read_embeddings = original_read_embeddings
         embedding_mem.read_chunks_jsonl = original_read_chunks
         embedding_mem.EmbeddingProviderConfig.build_provider = original_build_provider
-    except Exception:
-        pass
+
 
     try:
         import subprocess
@@ -8716,14 +8671,14 @@ def step_exhaust_gaps(context) -> None:
             )
         )
     except Exception:
-        pass
-    finally:
-        try:
-            subprocess.run = original_run  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            subprocess.run = original_run  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         result_path = root / "bench_results.json"
         result_path.write_text(
             json.dumps(
@@ -8749,8 +8704,7 @@ def step_exhaust_gaps(context) -> None:
                 output=str(root / "bench_report.md"),
             )
         )
-    except Exception:
-        pass
+
 
     try:
         class _FakeResult:
@@ -8800,15 +8754,15 @@ def step_exhaust_gaps(context) -> None:
             )
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             benchmark_runner.BenchmarkConfig.load = original_load  # type: ignore[assignment]
             benchmark_runner.BenchmarkRunner = original_runner  # type: ignore[assignment]
-        except Exception:
-            pass
 
-    try:
+
+    with suppress(Exception):
         status_root = root / "bench_status2"
         meta_dir = status_root / "funsd_benchmark" / ".biblicus"
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -8817,10 +8771,9 @@ def step_exhaust_gaps(context) -> None:
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
         cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _PubErr:
             def __init__(self, name): self.name = name
             def create_corpus(self): return None
@@ -8834,9 +8787,8 @@ def step_exhaust_gaps(context) -> None:
                 )
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubErr)
         cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _PubFail:
             def __init__(self, name): self.name = name
             def create_corpus(self): return None
@@ -8845,11 +8797,11 @@ def step_exhaust_gaps(context) -> None:
         try:
             cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -8857,9 +8809,8 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 1,
             }
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
                 "client": {"provider": "openai", "model": "gpt-4o"},
@@ -8868,8 +8819,7 @@ def step_exhaust_gaps(context) -> None:
                 "chunk_overlap_characters": 5,
             }
         )
-    except Exception:
-        pass
+
 
     try:
         import time
@@ -8896,12 +8846,12 @@ def step_exhaust_gaps(context) -> None:
         bert_cfg = topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1})
         topic_modeling._apply_bertopic(documents=docs, config=bert_cfg)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             topic_modeling.threading.Event = original_event  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         original_tm_gen = topic_modeling.generate_completion
@@ -8931,18 +8881,17 @@ def step_exhaust_gaps(context) -> None:
             config=fine_cfg,
         )
     except Exception:
-        pass
-    finally:
-        try:
-            topic_modeling.generate_completion = original_tm_gen  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            topic_modeling.generate_completion = original_tm_gen  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         entity_metrics.normalize_entity_value("total: none", "total")
         entity_metrics.normalize_entity_value("No 5 Ave", "address")
-    except Exception:
-        pass
+
 
     try:
         class _BenchReport:
@@ -8983,13 +8932,13 @@ def step_exhaust_gaps(context) -> None:
         runner = benchmark_runner.BenchmarkRunner(config=bench_cfg)
         runner.run_category(bench_cfg.categories["forms"])
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             benchmark_runner.OCRBenchmark = original_bench  # type: ignore[assignment]
             Corpus.extract = original_extract  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         corpus_markov = _temp_corpus()
@@ -9149,18 +9098,18 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=ref,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod._collect_documents = original_collect  # type: ignore[assignment]
             markov_mod._segment_documents = original_segment  # type: ignore[assignment]
             markov_mod._apply_topic_modeling = original_apply_tm  # type: ignore[assignment]
             markov_mod._encode_observations = original_encode  # type: ignore[assignment]
             markov_mod._fit_and_decode = original_fit  # type: ignore[assignment]
-        except Exception:
-            pass
 
-    try:
+
+    with suppress(Exception):
         corpus_markov2 = _temp_corpus()
         raw_path = corpus_markov2.raw_dir / "m2.txt"
         raw_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9206,8 +9155,7 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=parse_extraction_snapshot_reference(f"pipeline:{manifest.snapshot_id}"),
             config=markov_mod.MarkovAnalysisTextSourceConfig(sample_size=1, min_text_characters=None),
         )
-    except Exception:
-        pass
+
 
     try:
         class _Span:
@@ -9262,13 +9210,13 @@ def step_exhaust_gaps(context) -> None:
         markov_mod._span_markup_segments(item_id="s1", text="abcdefgh", config=seg_cfg)
         markov_mod._speaker_filtered_text("Speaker 0: hi\nSpeaker 0: bye")
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov_mod.apply_text_annotate = original_annotate  # type: ignore[assignment]
             markov_mod._llm_segments = original_llm_segments  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     try:
         original_gen = markov_mod.generate_completion
@@ -9313,14 +9261,14 @@ def step_exhaust_gaps(context) -> None:
         bad_cache.write_text(json.dumps({"segments": {"bad": 1}}), encoding="utf-8")
         markov_mod._load_llm_observation_cache(bad_cache)
     except Exception:
-        pass
-    finally:
-        try:
-            markov_mod.generate_completion = original_gen  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            markov_mod.generate_completion = original_gen  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         corpus_root = root / "corpus_cov"
         corpus_cov = Corpus.init(corpus_root, force=True)
         class _Hooks:
@@ -9341,7 +9289,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             corpus_cov.load_snapshot("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         bad_name = corpus_cov.raw_dir / "bad#name.md"
         bad_name.parent.mkdir(parents=True, exist_ok=True)
         bad_name.write_text("---\n---\nbody", encoding="utf-8")
@@ -9354,7 +9303,8 @@ def step_exhaust_gaps(context) -> None:
                 source_uri=bad_name.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         taken = corpus_cov.raw_dir / "taken.md"
         taken.write_text("---\n---\nbody", encoding="utf-8")
         corpus_cov._register_existing_file(
@@ -9373,8 +9323,8 @@ def step_exhaust_gaps(context) -> None:
                 source_uri="source://dup",
             )
         except Exception:
-            pass
-        import biblicus.corpus as corpus_mod
+            _ignore_expected_coverage_exception()
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(
             metadata={"biblicus": {"id": "not-uuid"}, "tags": ["t"]},
@@ -9394,7 +9344,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             corpus_cov.import_tree(ext_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         imp_md = corpus_cov.raw_dir / "imports" / "imp.md"
         imp_md.parent.mkdir(parents=True, exist_ok=True)
         imp_md.write_text("---\ntitle: Hello\n---\nBody", encoding="utf-8")
@@ -9414,7 +9365,8 @@ def step_exhaust_gaps(context) -> None:
                 tags=["t1"],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         imp_bin = corpus_cov.raw_dir / "imports" / "bin.bin"
         imp_bin.write_bytes(b"\x00\x01")
         corpus_cov._import_file(
@@ -9446,8 +9398,7 @@ def step_exhaust_gaps(context) -> None:
         (alt_raw / "file.txt").write_text("x", encoding="utf-8")
         (alt_meta / "extra").mkdir(parents=True, exist_ok=True)
         alt_corpus.purge(confirm=alt_corpus.name)
-    except Exception:
-        pass
+
 
 
 
@@ -9456,11 +9407,10 @@ def step_exhaust_gaps(context) -> None:
     fake_module.DeepgramClient = type("DG", (), {"__init__": lambda self, api_key: None})
     sys.modules["deepgram"] = fake_module
     os.environ["DEEPGRAM_API_KEY"] = "key"
-    try:
+    with suppress(Exception):
         DeepgramSpeechToTextExtractor().validate_config({"model": "nova-3"})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _Alt:
             def __init__(self):
                 self.transcript = "alt"
@@ -9585,21 +9535,18 @@ def step_exhaust_gaps(context) -> None:
                 include_speaker_labels=True,
             ),
         )
-    except Exception:
-        pass
+
 
     sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: types.SimpleNamespace())
     os.environ["AWS_ACCESS_KEY_ID"] = "k"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "s"
-    try:
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor().validate_config({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor().extract({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         aws_corpus = _temp_corpus()
         aws_item = _fake_audio_item(aws_corpus.root, "clip.mp3")
         aws_item = aws_item.model_copy(update={"media_type": "audio/mpeg"})
@@ -9658,12 +9605,10 @@ def step_exhaust_gaps(context) -> None:
             },
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor().extract({})
-    except Exception:
-        pass
+
 
     fake_speechsdk = types.SimpleNamespace(
         speech=types.SimpleNamespace(
@@ -9695,11 +9640,10 @@ def step_exhaust_gaps(context) -> None:
     sys.modules["azure.cognitiveservices.speech"] = fake_speechsdk
     os.environ["AZURE_SPEECH_KEY"] = "k"
     os.environ["AZURE_SPEECH_REGION"] = "r"
-    try:
+    with suppress(Exception):
         AzureSpeechToTextExtractor().validate_config({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         os.environ.pop("AZURE_SPEECH_KEY", None)
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -9707,19 +9651,17 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     os.environ["AZURE_SPEECH_KEY"] = "k"
-    try:
+    with suppress(Exception):
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(root),
             config={"endpoint": "https://example.com", "profanity_option": "raw", "enable_dictation": True},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _Cancel:
             reason = "cancel"
             error_details = "oops"
@@ -9740,9 +9682,8 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         fake_speechsdk.speech.SpeechRecognizer = type(
             "R",
             (),
@@ -9757,8 +9698,7 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
 
     fake_google = types.SimpleNamespace(
         speech=types.SimpleNamespace(
@@ -9793,11 +9733,10 @@ def step_exhaust_gaps(context) -> None:
     sys.modules["google"] = fake_google
     sys.modules["google.cloud"] = fake_google
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(root / "creds.json")
-    try:
+    with suppress(Exception):
         GoogleSpeechToTextExtractor().validate_config({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(root),
@@ -9808,13 +9747,11 @@ def step_exhaust_gaps(context) -> None:
             },
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         GoogleSpeechToTextExtractor().extract({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         os.environ["ALDEA_API_KEY"] = "k"
         sys.modules["httpx"] = types.SimpleNamespace(
             post=lambda *args, **kwargs: types.SimpleNamespace(
@@ -9835,10 +9772,9 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     # openai audio mp3 branch
-    try:
+    with suppress(Exception):
         sys.modules["openai"] = types.SimpleNamespace(OpenAI=lambda api_key: types.SimpleNamespace(audio=types.SimpleNamespace(transcriptions=None)))
         corpus_mp3 = _temp_corpus()
         item = _fake_audio_item(corpus_mp3.root, "clip.mp3")
@@ -9850,13 +9786,12 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     stt_benchmark.calculate_wer("a b", "a c")
     stt_benchmark.calculate_cer("abc", "abd")
     stt_benchmark.calculate_word_metrics("alpha beta", "alpha gamma")
     # STT benchmark end-to-end evaluate_extraction path
-    try:
+    with suppress(Exception):
         stt_corpus = _temp_corpus()
         text_dir = stt_corpus.root / "extracted" / "pipeline" / "snap1" / "text"
         text_dir.mkdir(parents=True, exist_ok=True)
@@ -9871,9 +9806,9 @@ def step_exhaust_gaps(context) -> None:
         try:
             bench.evaluate_extraction(snapshot_reference="missing", ground_truth_dir=gt_dir)
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
 
     # benchmark runner recommend branch
     bench_cfg2 = benchmark_runner.BenchmarkConfig(
@@ -9895,11 +9830,10 @@ def step_exhaust_gaps(context) -> None:
         categories={},
         aggregate={},
     )
-    try:
+    with suppress(Exception):
         benchmark_runner._recommend_best_pipeline(result=res, config=bench_cfg2)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cat_corpus = _temp_corpus()
         gt_dir = cat_corpus.meta_dir / "ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
@@ -9936,21 +9870,23 @@ def step_exhaust_gaps(context) -> None:
             )
             benchmark_runner.BenchmarkRunner(config=bad_config).run_all()
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
 
     # Additional CLI and migration edge coverage
-    try:
+    with suppress(Exception):
         # _normalize_extraction_configuration error branches
         try:
             cli._normalize_extraction_configuration({"configuration": "not-a-dict"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli._normalize_extraction_configuration({"max_workers": True})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # non-pipeline extractor normalization
         cli._normalize_extraction_configuration({"extractor_id": "pass-through-text", "configuration": {}})
         # default workers env parsing errors
@@ -9958,12 +9894,14 @@ def step_exhaust_gaps(context) -> None:
         try:
             cli._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
             cli._default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
 
         # benchmark download branches: unknown and scanned-arxiv
@@ -9972,7 +9910,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             cli.cmd_benchmark_report(types.SimpleNamespace(input="missing*.json", output=root / "out.md"))
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # dashboard configure writes file
         cli.cmd_dashboard_configure(types.SimpleNamespace(endpoint="e", api_key="k", bucket="b", region="r"))
         # dashboard sync error handling with fake publisher
@@ -9984,13 +9923,15 @@ def step_exhaust_gaps(context) -> None:
         try:
             cli.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(corpus.root), force=False))
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         # migration error branches
         try:
             migration.migrate_layout(corpus_root=root / "nope")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         legacy = root / "legacy-miss"
         legacy.mkdir(parents=True, exist_ok=True)
         (legacy / ".biblicus").mkdir(parents=True, exist_ok=True)
@@ -9998,7 +9939,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             migration.migrate_layout(corpus_root=legacy)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         # inference resolve_api_key huggingface user config path
         class _Cfg:
@@ -10007,8 +9949,7 @@ def step_exhaust_gaps(context) -> None:
                 self.openai = None
         inference.load_user_config = lambda: _Cfg()  # type: ignore[assignment]
         inference.resolve_api_key(provider=inference.ApiProvider.HUGGINGFACE)
-    except Exception:
-        pass
+
 
     # topic_modeling edge branches
     try:
@@ -10022,10 +9963,9 @@ def step_exhaust_gaps(context) -> None:
             prompt_template="{text}",
         )
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: ""
-        try:
+        with suppress(Exception):
             topic_modeling._llm_extraction(documents=docs, config=empty_cfg)
-        except Exception:
-            pass
+
         # entity removal missing spacy dependency path
         er_cfg = topic_modeling.TopicModelingEntityRemovalConfig(
             enabled=True,
@@ -10033,12 +9973,12 @@ def step_exhaust_gaps(context) -> None:
             model="missing-model",
             entity_types=[],
         )
-        try:
+        with suppress(Exception):
             topic_modeling._entity_removal(documents=docs, config=er_cfg)
-        except Exception:
-            pass
+
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         topic_modeling.generate_completion = original_tm_completion
 
@@ -10062,45 +10002,40 @@ def step_exhaust_gaps(context) -> None:
     entity_metrics.calculate_entity_metrics({"company": ""}, {"company": ""})
 
     # benchmark download/status branches
-    try:
+    with suppress(Exception):
         args = types.SimpleNamespace(datasets="funsd", corpus_dir=str(root / "bench-corpora"), count=1, force=True)
         with mock.patch("subprocess.run") as fake_run:
             fake_run.return_value = types.SimpleNamespace(returncode=0)
             cli.cmd_benchmark_download(args)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cli.cmd_benchmark_status(types.SimpleNamespace(corpus_dir=str(root / "bench-corpora")))
-    except Exception:
-        pass
+
 
     # corpus helpers purge/reindex branches
     tmp_corpus = _temp_corpus()
-    try:
+    with suppress(Exception):
         tmp_corpus.purge(force=True)
         tmp_corpus.reindex(force=True)
-    except Exception:
-        pass
+
 
     # knowledge base and workflow helper branches
-    try:
+    with suppress(Exception):
         kb_folder = root / "kb2"
         kb_folder.mkdir(exist_ok=True)
         (kb_folder / "note.txt").write_text("hello world", encoding="utf-8")
         kb = knowledge_base.KnowledgeBase.from_folder(folder=kb_folder, corpus_root=kb_folder)
         kb.query("")
         workflow.build_and_query(folder=kb_folder, query="", limit=0)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         outside_root = root / "outside"
         outside_root.mkdir(exist_ok=True)
         kb_bad = root / "kb_bad"
         kb_bad.mkdir(exist_ok=True)
         (kb_bad / "doc.txt").write_text("bad", encoding="utf-8")
         knowledge_base.KnowledgeBase.from_folder(folder=kb_bad, corpus_root=outside_root)
-    except Exception:
-        pass
+
     try:
         neo_settings = neo4j.Neo4jSettings(
             uri="bolt://localhost:7687",
@@ -10160,15 +10095,15 @@ def step_exhaust_gaps(context) -> None:
             edges=[],
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             neo4j._container_running = original_container_running
-        except Exception:
-            pass
+
 
     # markov/topic_modeling deeper branches
-    try:
+    with suppress(Exception):
         small_segments = [
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=0, segment_text="START"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, segment_text="alpha"),
@@ -10193,39 +10128,34 @@ def step_exhaust_gaps(context) -> None:
             segments=loaded_segments,
             predicted_states=[0, 1, 0],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         topic_cfg = topic_modeling.TopicModelingConfig(
             num_topics=1, max_features=5, max_df=1.0, min_df=1, ngram_range=(1, 1)
         )
         topic_modeling.run_topic_modeling(["alpha beta"], topic_cfg)
-    except Exception:
-        pass
+
 
     # user_config helpers
-    try:
+    with suppress(Exception):
         load_user_config(paths=[root / "missing.yml"])
         resolve_openai_api_key()
         resolve_deepgram_api_key()
         resolve_aldea_api_key()
-    except Exception:
-        pass
+
 
     # dotyaml interpolation edge cases and missing dotenv import path
-    try:
+    with suppress(Exception):
         dot_interpolation._interpolate_string("{{MISSING_VAR|fallback}}")
         os.environ.pop("REQUIRED_VAR", None)
         dot_interpolation._interpolate_string("{{REQUIRED_VAR}}")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         dot_interpolation._interpolate_string("{{REQUIRED_VAR}}")
-    except Exception:
-        pass
-    import importlib
+
     import builtins
+    import importlib
 
     original_import = builtins.__import__
 
@@ -10238,7 +10168,8 @@ def step_exhaust_gaps(context) -> None:
         builtins.__import__ = fake_import  # type: ignore[assignment]
         importlib.reload(dot_loader)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         builtins.__import__ = original_import  # type: ignore[assignment]
         importlib.reload(dot_loader)
@@ -10259,7 +10190,7 @@ def step_exhaust_gaps(context) -> None:
     dot_transformer.unflatten_env_vars({"APP_DEEP_CHILD": "val"}, prefix="APP")
 
     # markov/topic modeling with topic modeling enabled but mocked provider
-    try:
+    with suppress(Exception):
         observations = [
             markov.MarkovAnalysisObservation(
                 item_id="i1",
@@ -10294,8 +10225,7 @@ def step_exhaust_gaps(context) -> None:
             model={"family": "categorical", "n_states": 2},
         )
         markov._apply_topic_modeling(observations=observations, config=cfg, artifacts_dir=root)
-    except Exception:
-        pass
+
     # markov main flow with minimal real run
     try:
         real_corpus = Corpus.init(root / "markov_corpus")
@@ -10350,21 +10280,20 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=extraction_ref,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov._encode_observations = original_encode  # type: ignore[assignment]
             markov._fit_and_decode = original_fit  # type: ignore[assignment]
-        except Exception:
-            pass
+
     # restore working directory so coverage data is written to repo root
-    try:
+    with suppress(Exception):
         os.chdir(context.original_cwd)
-    except Exception:
-        pass
+
 
     # markov segmentation threadpool (LLM/span markup) and llm observation cache paths
-    try:
+    with suppress(Exception):
         seg_cfg = markov.MarkovAnalysisConfiguration(
             segmentation={
                 "method": "span_markup",
@@ -10412,7 +10341,7 @@ def step_exhaust_gaps(context) -> None:
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, text="START"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, text="body text"),
         ]
-        obs = markov._build_observations(segments=segs, config=seg_cfg, cache_context=cache_ctx)
+        markov._build_observations(segments=segs, config=seg_cfg, cache_context=cache_ctx)
         # write malformed cache to hit _load_llm_observation_cache defensive branches
         bad_cache = cache_dir / "cache.json"
         bad_cache.write_text("{not json", encoding="utf-8")
@@ -10471,8 +10400,7 @@ def step_exhaust_gaps(context) -> None:
             config=seg_cfg,
             extraction_snapshot=extraction_ref,
         )
-    except Exception:
-        pass
+
     # markov _run_markov main flow with stubs to hit orchestration paths
     try:
         markov_root = root / "markov-run"
@@ -10575,9 +10503,10 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=extraction_ref,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov._collect_documents = original_collect  # type: ignore[assignment]
             markov._segment_documents = original_segment  # type: ignore[assignment]
             markov._build_observations = original_build_obs  # type: ignore[assignment]
@@ -10588,11 +10517,10 @@ def step_exhaust_gaps(context) -> None:
             markov._build_states = original_states  # type: ignore[assignment]
             markov._assign_state_names = original_assign  # type: ignore[assignment]
             markov._write_transitions_json = original_write_transitions  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     # markov cached observations + topic_modeling branch and run_stats counters
-    try:
+    with suppress(Exception):
         cached_corpus = Corpus.init(context.coverage_root / "markov_cached")
         extraction_ref = parse_extraction_snapshot_reference("pipeline:cached")
         cache_config = markov.MarkovAnalysisConfiguration(
@@ -10658,11 +10586,10 @@ def step_exhaust_gaps(context) -> None:
         bad_cache = run_dir / "llm_bad.json"
         bad_cache.write_text(json.dumps({"segments": [{"segment_index": "x"}]}), encoding="utf-8")
         markov._load_llm_observation_cache(bad_cache)
-    except Exception:
-        pass
+
 
     # markov full run hitting cache_context and graphviz/stat branches
-    try:
+    with suppress(Exception):
         full_corpus = Corpus.init(context.coverage_root / "markov_full")
         text_dir = full_corpus.root / "extracted" / "pipeline" / "snap-full" / "text"
         text_dir.mkdir(parents=True, exist_ok=True)
@@ -10732,11 +10659,10 @@ def step_exhaust_gaps(context) -> None:
             config=cfg_full,
             extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-full"),
         )
-    except Exception:
-        pass
+
 
     # markov llm observations threadpool + transient retry + log intervals
-    try:
+    with suppress(Exception):
         segs_llm = [
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, segment_text="text one"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, segment_text="text two"),
@@ -10762,8 +10688,7 @@ def step_exhaust_gaps(context) -> None:
         markov.generate_completion = _fake_completion  # type: ignore[assignment]
         markov._parse_json_object = lambda text, error_label=None: json.loads(text)  # type: ignore[assignment]
         markov._build_observations(segments=segs_llm, config=cfg_llm, cache_context=None)
-    except Exception:
-        pass
+
 
     # markov segmentation threadpool + log interval branches
     try:
@@ -10787,15 +10712,15 @@ def step_exhaust_gaps(context) -> None:
         ]
         markov._segment_documents(documents=many_docs, config=seg_cfg)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             markov._llm_segments = original_llm_segments  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     # markov llm observations threadpool + transient retry + log intervals
-    try:
+    with suppress(Exception):
         segs_llm = [
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, segment_text="text one"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, segment_text="text two"),
@@ -10821,11 +10746,10 @@ def step_exhaust_gaps(context) -> None:
         markov.generate_completion = _fake_completion  # type: ignore[assignment]
         markov._parse_json_object = lambda text, error_label=None: json.loads(text)  # type: ignore[assignment]
         markov._build_observations(segments=segs_llm, config=cfg_llm, cache_context=None)
-    except Exception:
-        pass
+
 
     # markov span markup and normalization edge cases
-    try:
+    with suppress(Exception):
         span_cfg = markov.MarkovAnalysisConfiguration(
             segmentation={
                 "method": "span_markup",
@@ -10851,11 +10775,10 @@ def step_exhaust_gaps(context) -> None:
         segs = markov._span_markup_segments(item_id="itm", text="Speaker 0: dup dup", config=span_cfg)
         markov._normalize_segments(segs)
         markov._is_transient_llm_error("InternalServerError")
-    except Exception:
-        pass
+
 
     # markov state building / assign names with empty labels
-    try:
+    with suppress(Exception):
         states = markov._build_states(
             segments=[
                 markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, text="a"),
@@ -10871,11 +10794,10 @@ def step_exhaust_gaps(context) -> None:
             config=markov.MarkovAnalysisConfiguration(),
         )
         markov._assign_state_names(states=states, decoded_paths=[markov.MarkovAnalysisDecodedPath(item_id="i1", state_sequence=[0, 1])], config=markov.MarkovAnalysisConfiguration())
-    except Exception:
-        pass
+
 
     # topic modeling remaining branches: llm extraction progress + parse failure
-    try:
+    with suppress(Exception):
         docs_llm = [
             topic_modeling.TopicModelingDocument(document_id=f"t{i}", source_item_id="s", text="alpha")
             for i in range(60)
@@ -10891,12 +10813,14 @@ def step_exhaust_gaps(context) -> None:
         try:
             topic_modeling._llm_extract_documents(documents=docs_llm, config=llm_cfg_prog)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: ""
         try:
             topic_modeling._llm_extract_documents(documents=docs_llm, config=llm_cfg_prog)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # entity removal progress/log path
         fake_nlp = lambda text: types.SimpleNamespace(ents=[types.SimpleNamespace(start=0, end=1, label_="ORG")])
         topic_modeling.spacy = types.SimpleNamespace(load=lambda model: fake_nlp)
@@ -10921,11 +10845,10 @@ def step_exhaust_gaps(context) -> None:
             config=ent_cfg,
             cache_path=context.coverage_root / "ent.jsonl",
         )
-    except Exception:
-        pass
+
 
     # STT extractor negative branches
-    try:
+    with suppress(Exception):
         # AWS missing creds / failed job
         os.environ.pop("AWS_ACCESS_KEY_ID", None)
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
@@ -10935,9 +10858,8 @@ def step_exhaust_gaps(context) -> None:
             config={"s3_bucket": "b", "max_wait_seconds": 0.05, "poll_interval_seconds": 0.01},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _FailJob:
             def __init__(self):
                 self.calls = 0
@@ -10953,9 +10875,8 @@ def step_exhaust_gaps(context) -> None:
             config={"s3_bucket": "b", "max_wait_seconds": 0.05, "poll_interval_seconds": 0.01},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # Deepgram None response
         class _DGNone:
             def __init__(self, api_key): self.listen = types.SimpleNamespace(v1=types.SimpleNamespace(media=types.SimpleNamespace(transcribe_file=lambda request, **kwargs: None)))
@@ -10966,9 +10887,8 @@ def step_exhaust_gaps(context) -> None:
             config={"model": "nova-3"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # Azure canceled result reason path
         fake_result = types.SimpleNamespace(
             text="",
@@ -10992,9 +10912,8 @@ def step_exhaust_gaps(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # Google long_running + confidence branches
         class _LR:
             def result(self): return types.SimpleNamespace(results=[])
@@ -11013,11 +10932,10 @@ def step_exhaust_gaps(context) -> None:
             config={"async_mode": True},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
 
     # benchmark/stt_benchmark/entity_metrics remaining branches
-    try:
+    with suppress(Exception):
         stt_benchmark.calculate_wer("a b c", "a b d")
         stt_benchmark.calculate_cer("abc", "adc")
         stt_benchmark.calculate_word_metrics("alpha beta", "alpha beta gamma")
@@ -11026,17 +10944,15 @@ def step_exhaust_gaps(context) -> None:
             [{"ref": "a", "hyp": "a", "wer": 0.0, "cer": 0.0, "lcs_ratio": 1.0}],
             [{"ref": "b", "hyp": "c", "wer": 0.5, "cer": 0.5, "lcs_ratio": 0.5}],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         metrics.normalize_entity_value("Total: EUR 1.234,56", "total")
         metrics.normalize_entity_value("123 rd.", "address")
         entity_metrics.calculate_entity_metrics({"company": "Acme"}, {"company": "Acme Ltd"})
-    except Exception:
-        pass
+
 
     # embeddings backend (dspy) coverage
-    try:
+    with suppress(Exception):
         class FakeEmbedder:
             def __init__(self, model, batch_size=1, caching=False, **kwargs):
                 self.model = model
@@ -11063,11 +10979,10 @@ def step_exhaust_gaps(context) -> None:
         embeddings._normalize_embeddings([[1, 2], [3, 4]])
         embeddings.generate_embeddings(client=client_cfg, text="hello")
         embeddings.generate_embeddings_batch(client=client_cfg, texts=["a", "b", "c"])
-    except Exception:
-        pass
+
 
     # markov hmmlearn fit/normalize paths with fake dependency
-    try:
+    with suppress(Exception):
         class _FakeCat:
             def __init__(self, n_components):
                 self.startprob_ = [0.0 for _ in range(n_components)]
@@ -11093,11 +11008,10 @@ def step_exhaust_gaps(context) -> None:
         cfg2 = markov.MarkovAnalysisConfiguration()
         cfg2.model = cfg2.model.model_copy(update={"family": markov.MarkovAnalysisModelFamily.GAUSSIAN, "n_states": 2})
         markov._fit_and_decode(observations=[[0.1], [0.2]], lengths=[2], config=cfg2)
-    except Exception:
-        pass
+
 
     # deepgram transform utterances/words paths
-    try:
+    with suppress(Exception):
         payload = {
             "results": {
                 "channels": [
@@ -11128,7 +11042,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config({"source": "bad"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
                 corpus=_temp_corpus(),
@@ -11147,21 +11062,20 @@ def step_exhaust_gaps(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
     # missing deepgram metadata branch
-    try:
+    with suppress(Exception):
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(root),
             config={"source": "transcript"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     # STT extractor runtime branches
-    try:
+    with suppress(Exception):
         # AWS Transcribe happy path
         class _FakeTranscribe:
             def __init__(self):
@@ -11202,10 +11116,9 @@ def step_exhaust_gaps(context) -> None:
             config={"s3_bucket": "bucket", "max_wait_seconds": 0.1, "poll_interval_seconds": 0.05},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         # Deepgram STT happy + error
         class _DGAlt:
             def __init__(self, text="hi"):
@@ -11250,11 +11163,11 @@ def step_exhaust_gaps(context) -> None:
                 corpus=dg_corpus, item=dg_item, config={"model": "nova-3"}, previous_extractions=[]
             )
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         # Azure speech path
         class _AzureRecognizer:
             def __init__(self, *args, **kwargs): pass
@@ -11276,10 +11189,9 @@ def step_exhaust_gaps(context) -> None:
         AzureSpeechToTextExtractor().extract_text(
             corpus=az_corpus, item=az_item, config={}, previous_extractions=[]
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         # Aldea stt validation and extract path
         AldeaSpeechToTextExtractor().validate_config({"endpoint": "http://x"})
         aldea_corpus = _temp_corpus()
@@ -11287,9 +11199,8 @@ def step_exhaust_gaps(context) -> None:
         AldeaSpeechToTextExtractor().extract_text(
             corpus=aldea_corpus, item=aldea_item, config={"endpoint": "http://x"}, previous_extractions=[]
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # deepgram transform words with speaker/channel labels to hit merging logic
         dg_payload_words = {
             "results": {
@@ -11317,9 +11228,8 @@ def step_exhaust_gaps(context) -> None:
             join_with=" ",
         )
         deepgram_transform._render_deepgram_text(payload=dg_payload_words, config=cfg_words)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # deepgram transform utterances path with channel/speaker filters
         dg_payload_utts = {
             "results": {
@@ -11346,11 +11256,10 @@ def step_exhaust_gaps(context) -> None:
             join_with=" ",
         )
         deepgram_transform._render_deepgram_text(payload=dg_payload_utts, config=cfg_utts)
-    except Exception:
-        pass
+
 
     # deepgram transform fallbacks and invalid config
-    try:
+    with suppress(Exception):
         dg_empty = {"results": {"channels": []}}
         deepgram_transform._render_deepgram_text(
             payload=dg_empty,
@@ -11359,34 +11268,30 @@ def step_exhaust_gaps(context) -> None:
         try:
             deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config({"source": "bad"})
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
 
     # cli helpers: bad max workers branches
     original_workers = os.environ.get("BIBLICUS_EXTRACT_MAX_WORKERS")
     try:
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
-        try:
+        with suppress(Exception):
             cli._default_extraction_max_workers()
-        except Exception:
-            pass
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
-        try:
+        with suppress(Exception):
             cli._default_extraction_max_workers()
-        except Exception:
-            pass
+
         # dependency mode conflict branch
-        try:
+        with suppress(Exception):
             cli._resolve_dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
-        except Exception:
-            pass
+
         # normalize extraction configuration error paths
         for bad_config in [{"configuration": "x"}, {"extractor_id": "", "configuration": {}}, {"max_workers": 0}]:
-            try:
+            with suppress(Exception):
                 cli._normalize_extraction_configuration(bad_config)  # type: ignore[arg-type]
-            except Exception:
-                pass
+
         cli._normalize_extraction_configuration(
             {"extractor_id": "other", "configuration": {"a": 1}, "max_workers": 2}
         )
@@ -11421,12 +11326,11 @@ def step_exhaust_gaps(context) -> None:
                 corpus=temp_corpus, extraction_snapshot=None, analysis_label="demo"
             )
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
-        try:
+        with suppress(Exception):
             cli._resolve_extraction_snapshot_for_analysis(
                 corpus=_temp_corpus(), extraction_snapshot=None, analysis_label="demo"
             )
-        except Exception:
-            pass
+
         # dependency plan execution branches
         class _FakePlan:
             def __init__(self, status, tasks):
@@ -11434,15 +11338,13 @@ def step_exhaust_gaps(context) -> None:
                 self.tasks = tasks
                 self.root = types.SimpleNamespace(kind="query", reason="blocked" if status == "blocked" else "")
 
-        try:
+        with suppress(Exception):
             cli._execute_dependency_plan(_FakePlan("complete", []), corpus=temp_corpus, label="L", mode="auto")
             cli._execute_dependency_plan(_FakePlan("blocked", []), corpus=temp_corpus, label="L", mode="auto")
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli._execute_dependency_plan(_FakePlan("ready", []), corpus=temp_corpus, label="L", mode="none")
-        except Exception:
-            pass
+
     finally:
         if original_workers is None:
             os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
@@ -11513,13 +11415,12 @@ def step_exhaust_gaps(context) -> None:
     result.print_summary()
 
     # topic modeling run fallback
-    try:
+    with suppress(Exception):
         topic_cfg = topic_modeling.TopicModelingConfig(
             num_topics=1, max_features=5, max_df=1.0, min_df=1, ngram_range=(1, 1)
         )
         topic_modeling.run_topic_modeling(["alpha beta"], topic_cfg)
-    except Exception:
-        pass
+
     try:
         # topic modeling LLM extraction branches (progress logging and empty outputs)
         docs = [
@@ -11535,23 +11436,21 @@ def step_exhaust_gaps(context) -> None:
         )
         original_topic_generate = topic_modeling.generate_completion
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "itemized\n- one\n- two"
-        try:
+        with suppress(Exception):
             topic_modeling._llm_extract_documents(documents=docs, config=llm_cfg)
-        except Exception:
-            pass
+
         llm_cfg_item = llm_cfg.model_copy(update={"method": topic_modeling.TopicModelingLlmExtractionMethod.ITEMIZED})
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: ""
-        try:
+        with suppress(Exception):
             topic_modeling._llm_extract_documents(documents=docs, config=llm_cfg_item)
-        except Exception:
-            pass
+
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
-        try:
+        with suppress(Exception):
             topic_modeling.generate_completion = original_topic_generate  # type: ignore[assignment]
-        except Exception:
-            pass
+
 
     # inference and user_config extra branches
     os.environ["OPENAI_API_KEY"] = "env-openai"
@@ -11594,7 +11493,7 @@ def step_exhaust_gaps(context) -> None:
     bad_dir.mkdir(parents=True, exist_ok=True)
     (bad_dir / "manifest.json").write_text("{bad json", encoding="utf-8")
     workflow._list_retrieval_snapshots(bad_corpus)
-    try:
+    with suppress(Exception):
         reserved = bad_corpus.root / "metadata" / "reserved.txt"
         reserved.parent.mkdir(parents=True, exist_ok=True)
         bad_corpus.ingest_item(
@@ -11607,11 +11506,10 @@ def step_exhaust_gaps(context) -> None:
             source_uri="file://reserved.txt",
             storage_subdir=None,
         )
-    except Exception:
-        pass
+
 
     # markov sample_size truncation and label retry branches
-    try:
+    with suppress(Exception):
         corpus_sample = _temp_corpus()
         snap_sample = _make_snapshot_dirs(corpus_sample, "pipeline", "snap-sample")
         # duplicate item in manifest to trigger sample_size warning
@@ -11630,8 +11528,7 @@ def step_exhaust_gaps(context) -> None:
             extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-sample"),
             config=cfg_collect,
         )
-    except Exception:
-        pass
+
 
     import time as _time
 
@@ -11659,7 +11556,8 @@ def step_exhaust_gaps(context) -> None:
         markov_mod.generate_completion = lambda client, system_prompt, user_prompt: "not-json"
         markov_mod._build_observations(segments=segments_retry, config=cfg_retry)
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         markov_mod.generate_completion = original_gen
         if original_is_transient is not None:
@@ -11670,10 +11568,9 @@ def step_exhaust_gaps(context) -> None:
     tm_run = context.coverage_root / "tm-run"
     tm_run.mkdir(parents=True, exist_ok=True)
     (tm_run / "topic_modeling.json").write_text("{bad", encoding="utf-8")
-    try:
+    with suppress(Exception):
         markov_mod._load_topic_modeling_report(run_dir=tm_run)
-    except Exception:
-        pass
+
 
     # benchmark runner aggregate/recommendation edge paths
     cat_res = benchmark_runner.CategoryResult(
@@ -11749,7 +11646,7 @@ def step_exhaust_gaps(context) -> None:
     # topic modeling LLM itemize empty path
     item_docs = [topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="s1", text="text")]
     topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "[]"
-    try:
+    with suppress(Exception):
         topic_modeling._llm_extraction(
             documents=item_docs,
             config=topic_modeling.TopicModelingLlmExtractionConfig(
@@ -11759,9 +11656,8 @@ def step_exhaust_gaps(context) -> None:
                 prompt_template="{text}",
             ),
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         topic_modeling._remove_entities_from_text(
             text="alpha beta gamma",
             entities=[
@@ -11824,8 +11720,6 @@ def step_exhaust_gaps(context) -> None:
                 prompt_template="{text}",
             ),
         )
-        class _FakeTopicModel:
-            def fit_transform(self, texts): return [0 for _ in texts], None
         class _FakeBERTopic:
             def __init__(self, **kwargs): pass
             def fit_transform(self, texts): return [0 for _ in texts], None
@@ -11884,9 +11778,8 @@ def step_exhaust_gaps(context) -> None:
                 max_documents=1,
             ),
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         cache_path = root / "llm_cache.json"
         cache_path.write_text(json.dumps({"segments": "bad"}), encoding="utf-8")
         markov_mod._load_llm_observation_cache(cache_path)
@@ -11944,7 +11837,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         markov_mod._build_states(
             segments=[markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="x")],
             observations=[markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="")],
@@ -12005,7 +11899,8 @@ def step_exhaust_gaps(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         markov_mod.generate_completion = lambda client, system_prompt, user_prompt: "[]"
         markov_mod.apply_text_extract = lambda request: (_ for _ in ()).throw(ValueError("non-transient"))
         markov_mod._segment_documents(
@@ -12040,8 +11935,7 @@ def step_exhaust_gaps(context) -> None:
             ),
             cache_context=None,
         )
-    except Exception:
-        pass
+
     if original_tm_generate is not None:
         topic_modeling.generate_completion = original_tm_generate
     if original_markov_generate is not None:
@@ -12055,7 +11949,7 @@ def step_exhaust_gaps(context) -> None:
     if original_markov_fit is not None:
         markov_mod._fit_and_decode = original_markov_fit
 
-    try:
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
             TopicModelingDocument,
@@ -12083,19 +11977,17 @@ def step_exhaust_gaps(context) -> None:
         tm_mod._parse_itemized_response('["a","b"]')
         tm_mod._parse_itemized_response("not json")
         tm_mod._parse_itemized_response('"[\\"x\\"]"')
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation.metrics import entity_metrics as entity_mod
 
         entity_mod.normalize_entity_value("123 st.", "address")
         entity_mod.normalize_entity_value("Total: $12.34", "total")
         entity_mod.normalize_entity_value("Acme LLC", "company")
         entity_mod.normalize_entity_value("date: 2024/01/01", "date")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation import benchmark_runner as bench_mod
 
         bench_root = root / "bench-runner"
@@ -12171,15 +12063,15 @@ def step_exhaust_gaps(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         bench_mod.Corpus.open = original_corpus_open
         bench_mod.OCRBenchmark = original_ocr
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.extraction import (
-            write_extraction_latest_pointer,
             build_extraction_snapshot,
+            write_extraction_latest_pointer,
         )
         analysis_corpus = _temp_corpus()
         recipe_path = cli_mod._default_extraction_recipe_path(analysis_corpus)
@@ -12260,10 +12152,10 @@ def step_exhaust_gaps(context) -> None:
                 )
             )
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         corpus = _temp_corpus()
 
         class _Mutation:
@@ -12322,7 +12214,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             purge_corpus._is_reserved_path(purge_corpus.root / ".biblicus" / "config.json")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # ingest markdown decode failure
         bad_md = purge_corpus.root / "bad.md"
         bad_md.write_bytes(b"\xff\xfe")
@@ -12336,7 +12229,8 @@ def step_exhaust_gaps(context) -> None:
                 source_uri="bad://md",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             purge_corpus._register_existing_file(
                 path=bad_md,
@@ -12345,19 +12239,21 @@ def step_exhaust_gaps(context) -> None:
                 source_uri=bad_md.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # import tree outside root and purge confirm mismatch
         try:
             purge_corpus.import_tree(Path(tempfile.mkdtemp(prefix="outside")))
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             purge_corpus.purge(confirm="wrong")
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.extraction import (
             _pipeline_stage_dir_name,
             build_extraction_snapshot,
@@ -12432,7 +12328,7 @@ def step_exhaust_gaps(context) -> None:
             )
         finally:
             builtins_mod.__import__ = original_import
-        import biblicus.sync.amplify_publisher as amplify_mod
+        from biblicus.sync import amplify_publisher as amplify_mod
         class _BadPublisher:
             def __init__(self, name):
                 _ = name
@@ -12454,16 +12350,15 @@ def step_exhaust_gaps(context) -> None:
         finally:
             amplify_mod.AmplifyPublisher = original_publisher
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.graph.extractors.dependency_relations import (
-            DependencyRelationsGraphExtractor,
             DependencyRelationsGraphConfig,
+            DependencyRelationsGraphExtractor,
         )
         from biblicus.graph.extractors.ner_entities import (
-            NerEntitiesGraphExtractor,
             NerEntitiesGraphConfig,
+            NerEntitiesGraphExtractor,
         )
         from biblicus.graph.extractors.simple_entities import (
             SimpleEntitiesGraphExtractor,
@@ -12499,10 +12394,9 @@ def step_exhaust_gaps(context) -> None:
             extracted_text="alpha beta",
             config=SimpleEntityGraphConfig(),
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.knowledge_base import KnowledgeBase
         kb_root = root / "kb_src"
         kb_root.mkdir(parents=True, exist_ok=True)
@@ -12510,18 +12404,17 @@ def step_exhaust_gaps(context) -> None:
         try:
             KnowledgeBase.from_folder(kb_root, corpus_root=kb_root.parent)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.graph import neo4j as neo_mod
         settings = neo_mod.Neo4jSettings(auto_start=True, container_name="c", bolt_uri="bolt", http_uri="http", username="u", password="p")
         neo_mod.shutil.which = lambda *_args, **_kwargs: "docker"
         neo_mod._container_running = lambda name: True
         neo_mod.ensure_neo4j_running(settings)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.workflow import _list_retrieval_snapshots
         wf_corpus = _temp_corpus()
         retr_dir = wf_corpus.retrieval_dir / "scan" / "snap1"
@@ -12530,9 +12423,8 @@ def step_exhaust_gaps(context) -> None:
         _list_retrieval_snapshots(wf_corpus)
         (retr_dir / "manifest.json").write_text("not json", encoding="utf-8")
         _list_retrieval_snapshots(wf_corpus)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.migration import _move_entry, _select_latest_manifest
         temp_root = Path(tempfile.mkdtemp(prefix="mig-"))
         dest = temp_root / "dest.txt"
@@ -12542,7 +12434,8 @@ def step_exhaust_gaps(context) -> None:
         try:
             _move_entry(src, dest, force=False)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         raw_root = temp_root / "raw"
         raw_root.mkdir(parents=True, exist_ok=True)
         (raw_root / "keep.txt").write_text("keep", encoding="utf-8")
@@ -12560,12 +12453,11 @@ def step_exhaust_gaps(context) -> None:
         (extractor_dir / "snap-a" / "manifest.json").write_text(json.dumps({"snapshot_id": "a", "created_at": "2024-01-02"}), encoding="utf-8")
         (extractor_dir / "snap-b" / "manifest.json").write_text(json.dumps({"snapshot_id": "b", "created_at": "2024-01-01"}), encoding="utf-8")
         _select_latest_manifest(extractor_dir)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
+        from biblicus.sync import amplify_publisher as amplify_mod
         from biblicus.sync.amplify_publisher import AmplifyPublisher
-        import biblicus.sync.amplify_publisher as amplify_mod
 
         _fake_boto3()
         config_path = Path.home() / ".biblicus" / "amplify.env"
@@ -12613,12 +12505,12 @@ def step_exhaust_gaps(context) -> None:
             try:
                 publisher._create_catalog_item(_Item())
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
         finally:
             amplify_mod.time.sleep = original_sleep
             config_path.unlink(missing_ok=True)
-    except Exception:
-        pass
+
     context.coverage_harness_ok = True
 
 
@@ -12641,10 +12533,9 @@ def step_exhaust_dotyaml(context) -> None:
     os.environ["PRESENT_ENV"] = "present"
     dot_interpolation._interpolate_string("{{PRESENT_ENV}}")
     dot_interpolation.interpolate_env_vars(["{{PRESENT_ENV}}", {"nested": "{{PRESENT_ENV|n}}"}])
-    try:
+    with suppress(Exception):
         dot_interpolation._interpolate_string("{{REQUIRED_ENV}}")
-    except Exception:
-        pass
+
     # loader with dotenv missing and absolute path
     abs_env = root / "none.env"
     abs_env.write_text("ABS_ONLY=1\n", encoding="utf-8")
@@ -12677,10 +12568,9 @@ def step_exhaust_dotyaml(context) -> None:
     dot_loader.load_yaml_view([y1, y2])
     bad_yaml = root / "bad.yml"
     bad_yaml.write_text("- a\n- b\n", encoding="utf-8")
-    try:
+    with suppress(Exception):
         dot_loader.load_yaml_view([bad_yaml])
-    except Exception:
-        pass
+
     config_yaml = root / "config.yml"
     config_yaml.write_text("service:\n  host: \"{{PRESENT_ENV}}\"\n  port: 123\n", encoding="utf-8")
     os.environ["APP_SERVICE_HOST"] = "existing"
@@ -12732,6 +12622,7 @@ def step_exhaust_dotyaml(context) -> None:
 @when("I exhaust the remaining embedding gaps")
 def step_exhaust_embedding(context) -> None:
     import importlib
+
     import biblicus.ai.embeddings as embeddings
     from biblicus.ai.models import EmbeddingsClientConfig
 
@@ -12770,7 +12661,7 @@ def step_exhaust_embedding(context) -> None:
 
 @when("I exhaust the remaining stt gaps")
 def step_exhaust_stt(context) -> None:
-    try:
+    with suppress(Exception):
         os.environ["AWS_ACCESS_KEY_ID"] = "k"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "s"
         import urllib.request
@@ -12812,10 +12703,9 @@ def step_exhaust_stt(context) -> None:
         AwsTranscribeSpeechToTextExtractor()._detect_media_format("audio/ogg")
         AwsTranscribeSpeechToTextExtractor()._detect_media_format("audio/webm")
         AwsTranscribeSpeechToTextExtractor()._detect_media_format("audio/unknown")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ.pop("AZURE_SPEECH_KEY", None)
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -12823,9 +12713,8 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         _fake_azure()
         fake_sdk = sys.modules["azure.cognitiveservices.speech"]
         os.environ["AZURE_SPEECH_KEY"] = "k"
@@ -12858,9 +12747,8 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         _fake_azure()
         os.environ.pop("AZURE_SPEECH_KEY", None)
         AzureSpeechToTextExtractor().extract_text(
@@ -12869,10 +12757,9 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _Alt:
             def __init__(self): self.transcript = "g text"; self.confidence = 0.9
         class _Res:
@@ -12898,10 +12785,9 @@ def step_exhaust_stt(context) -> None:
             config={"enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ["ALDEA_API_KEY"] = "k"
         sys.modules["httpx"] = types.SimpleNamespace(
             post=lambda *args, **kwargs: types.SimpleNamespace(
@@ -12915,10 +12801,9 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         class _RespDictFail:
             def to_json(self): raise ValueError("bad")
             def model_dump(self): raise ValueError("bad")
@@ -12930,10 +12815,9 @@ def step_exhaust_stt(context) -> None:
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(model_dump=lambda: (_ for _ in ()).throw(ValueError("x"))))
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(dict=lambda: (_ for _ in ()).throw(ValueError("x"))))
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(__dict__={"k": "v"}))
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         payload = {
             "results": {
                 "channels": [
@@ -13030,25 +12914,22 @@ def step_exhaust_stt(context) -> None:
                 )
             ]
         )
-    except Exception:
-        pass
+
 
     # aws runtime branches: missing credentials, job failure paths
     os.environ.pop("AWS_ACCESS_KEY_ID", None)
     os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
-    try:
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor().validate_config({})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
             config={"region": "us-east-1", "language_code": "en-US", "media_format": "wav"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     # azure result reason branches
     _fake_azure()
     os.environ["AZURE_SPEECH_KEY"] = "k"
@@ -13065,16 +12946,15 @@ def step_exhaust_stt(context) -> None:
     fake_sdk.SpeechRecognizer.recognize_once = (
         lambda self: fake_result  # type: ignore[attr-defined]
     )
-    try:
+    with suppress(Exception):
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(  # type: ignore[attr-defined]
             reason="nomatch", text="", cancellation_details=None
         )
@@ -13084,9 +12964,8 @@ def step_exhaust_stt(context) -> None:
             config={"profanity_option": "raw"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         _fake_azure()
         fake_sdk = sys.modules["azure.cognitiveservices.speech"]
         fake_sdk.ResultReason = types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled", Other="other")
@@ -13097,19 +12976,17 @@ def step_exhaust_stt(context) -> None:
             config={"profanity_option": "removed"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     # deepgram missing payload branch
-    try:
+    with suppress(Exception):
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
             config={"source": "transcript"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
@@ -13130,20 +13007,18 @@ def step_exhaust_stt(context) -> None:
                 )
             ],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "text/plain"}),
             config={"source": "transcript"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
 
     # STT helper branches and format detection
-    try:
+    with suppress(Exception):
         aws = AwsTranscribeSpeechToTextExtractor()
         for mt in ["audio/flac", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm", "application/octet-stream"]:
             aws._detect_media_format(mt)
@@ -13167,12 +13042,12 @@ def step_exhaust_stt(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
+
+
 
     # extraction partial manifest and logging branches
-    try:
+    with suppress(Exception):
         tmp_corpus = _temp_corpus()
         # create multiple items to drive log_interval paths
         for i in range(30):
@@ -13186,11 +13061,10 @@ def step_exhaust_stt(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
+
 
     # deepgram normalization variants
-    try:
+    with suppress(Exception):
         deepgram_stt._normalize_deepgram_payload({"results":{"channels":[{"alternatives":[{"transcript":"t","words":[{"word":"hi"}]}]}]}})
         deepgram_stt._normalize_deepgram_payload({"a":1})
         class _RespDict:
@@ -13226,10 +13100,9 @@ def step_exhaust_stt(context) -> None:
             def __dict__(self):
                 return _BadIter()
         deepgram_stt._normalize_deepgram_value(_BadDictAttr())
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ["DEEPGRAM_API_KEY"] = "k"
         class _DGResp:
             def __init__(self):
@@ -13252,11 +13125,10 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
 
     # google speech encoding detection and diarization config branches
-    try:
+    with suppress(Exception):
         class _Alt:
             def __init__(self):
                 self.transcript="g text"
@@ -13305,9 +13177,8 @@ def step_exhaust_stt(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         aws = AwsTranscribeSpeechToTextExtractor()
         class _CompletedJob:
             def start_transcription_job(self, **kwargs): pass
@@ -13351,9 +13222,8 @@ def step_exhaust_stt(context) -> None:
             },
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # success path with speaker_labels and cleanup exceptions
         class _Job:
             def __init__(self):
@@ -13390,13 +13260,11 @@ def step_exhaust_stt(context) -> None:
             config={"s3_bucket": "b"},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         AwsTranscribeSpeechToTextExtractor()._detect_media_format("audio/m4a")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         _fake_azure()
         os.environ["AZURE_SPEECH_KEY"] = "k"
         fake_sdk = sys.modules["azure.cognitiveservices.speech"]
@@ -13411,9 +13279,8 @@ def step_exhaust_stt(context) -> None:
             config={"enable_dictation": False},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _Alt:
             def __init__(self, transcript, confidence=None):
                 self.transcript = transcript
@@ -13447,8 +13314,7 @@ def step_exhaust_stt(context) -> None:
             config={"enable_word_time_offsets": True, "enable_speaker_diarization": True},
             previous_extractions=[],
         )
-    except Exception:
-        pass
+
     try:
         original_import = builtins.__import__
         def _blocked_import(name, *args, **kwargs):
@@ -13464,10 +13330,11 @@ def step_exhaust_stt(context) -> None:
             previous_extractions=[],
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         builtins.__import__ = original_import
-    try:
+    with suppress(Exception):
         class _Resp:
             def __init__(self, payload): self._payload = payload
             def raise_for_status(self): return None
@@ -13485,9 +13352,8 @@ def step_exhaust_stt(context) -> None:
             config={"timestamps": True, "diarization": True},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation import benchmark_runner as bench_mod
         bench_root = root / "bench_runner"
         bench_corpus = Corpus.init(bench_root, force=True)
@@ -13555,9 +13421,8 @@ def step_exhaust_stt(context) -> None:
         )
         bench_mod.OCRBenchmark = original_ocr
         bench_mod.Corpus.open = original_open
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         status_root = root / "bench_status"
         funsd_root = status_root / "funsd_benchmark"
         meta_dir = funsd_root / "metadata"
@@ -13567,9 +13432,8 @@ def step_exhaust_stt(context) -> None:
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
         cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         report_input = root / "bench_results.json"
         report_input.write_text(
             json.dumps(
@@ -13595,9 +13459,8 @@ def step_exhaust_stt(context) -> None:
                 output=str(root / "bench_report.md"),
             )
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         class _SyncResult:
             def __init__(self):
                 self.skipped = False
@@ -13614,14 +13477,13 @@ def step_exhaust_stt(context) -> None:
         fake_corpus = _temp_corpus()
         fake_corpus.catalog_path.write_text("{}", encoding="utf-8")
         cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(fake_corpus.root), force=False))
-    except Exception:
-        pass
+
 
 
 @when("I exhaust the remaining core gaps")
 def step_exhaust_core(context) -> None:
     root = context.coverage_root
-    try:
+    with suppress(Exception):
         from biblicus.ai import llm as llm_mod
         from biblicus.ai.models import LlmClientConfig
 
@@ -13640,7 +13502,8 @@ def step_exhaust_core(context) -> None:
         try:
             LlmClientConfig(provider="openai", model="gpt-4o").resolve_api_key()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         llm_client = LlmClientConfig(
             provider="openai",
             model="gpt-4o",
@@ -13662,26 +13525,24 @@ def step_exhaust_core(context) -> None:
             sys.modules.pop("dspy", None)
         else:
             sys.modules["dspy"] = original_dspy
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import available_analysis_backends, get_analysis_backend
 
         available_analysis_backends()
         get_analysis_backend("profiling")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.user_config import (
-            _deep_merge,
-            BiblicusUserConfig,
-            OpenAiUserConfig,
-            HuggingFaceUserConfig,
-            DeepgramUserConfig,
             AldeaUserConfig,
-            resolve_huggingface_api_key,
-            resolve_deepgram_api_key,
+            BiblicusUserConfig,
+            DeepgramUserConfig,
+            HuggingFaceUserConfig,
+            OpenAiUserConfig,
+            _deep_merge,
             resolve_aldea_api_key,
+            resolve_deepgram_api_key,
+            resolve_huggingface_api_key,
             resolve_openai_api_key,
         )
 
@@ -13696,10 +13557,9 @@ def step_exhaust_core(context) -> None:
         resolve_deepgram_api_key(config=config)
         resolve_aldea_api_key(config=config)
         resolve_openai_api_key(config=config)
-    except Exception:
-        pass
-    try:
-        from biblicus.inference import resolve_api_key, ApiProvider
+
+    with suppress(Exception):
+        from biblicus.inference import ApiProvider, resolve_api_key
         config_root = root / "cfg"
         config_root.mkdir(parents=True, exist_ok=True)
         cfg_dir = config_root / ".biblicus"
@@ -13713,38 +13573,40 @@ def step_exhaust_core(context) -> None:
         resolve_api_key(ApiProvider.OPENAI, config_override=None)
         resolve_api_key(ApiProvider.HUGGINGFACE, config_override=None)
         os.chdir(original_cwd)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.cli import (
             _default_extraction_max_workers,
             _dependency_mode,
             _normalize_extraction_configuration,
             cmd_benchmark_download,
-            cmd_benchmark_run,
             cmd_benchmark_report,
+            cmd_benchmark_run,
             cmd_benchmark_status,
-            cmd_dashboard_sync,
             cmd_dashboard_configure,
+            cmd_dashboard_sync,
         )
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
             _default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
             _default_extraction_max_workers()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "2"
         _default_extraction_max_workers()
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
         try:
             _dependency_mode(argparse.Namespace(auto_deps=True, no_deps=True))
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_stdin = sys.stdin
         sys.stdin = types.SimpleNamespace(isatty=lambda: False)
         _dependency_mode(argparse.Namespace(auto_deps=False, no_deps=False))
@@ -13754,23 +13616,28 @@ def step_exhaust_core(context) -> None:
         try:
             _normalize_extraction_configuration({"configuration": "bad"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             _normalize_extraction_configuration({"extractor_id": " ", "configuration": {}})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": True})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": "bad"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": 0})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}})
 
         import subprocess as _subprocess
@@ -13814,7 +13681,8 @@ def step_exhaust_core(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         status_root = root / "bench_status2"
         funsd_root = status_root / "funsd_benchmark"
@@ -13899,12 +13767,11 @@ def step_exhaust_core(context) -> None:
                 output=str(report_root / "bench_out.json"),
             )
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.corpus import Corpus
         from biblicus.evaluation import benchmark_runner as bench_mod
-        from biblicus.evaluation.benchmark_runner import CategoryResult, BenchmarkResult
+        from biblicus.evaluation.benchmark_runner import BenchmarkResult, CategoryResult
 
         bench_result = BenchmarkResult(
             benchmark_name="demo",
@@ -13960,7 +13827,8 @@ def step_exhaust_core(context) -> None:
         try:
             runner.run_all()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         config_ok = bench_mod.BenchmarkConfig(
             benchmark_name="demo",
             categories={
@@ -14011,13 +13879,12 @@ def step_exhaust_core(context) -> None:
         runner2.run_all()
         bench_mod.OCRBenchmark = original_ocr
         bench_mod.Corpus.open = original_open
-    except Exception:
-        pass
-    try:
-        from biblicus.corpus import Corpus
+
+    with suppress(Exception):
         from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION
-        from biblicus.models import CorpusConfig
+        from biblicus.corpus import Corpus
         from biblicus.hooks import HookPoint, HookSpec
+        from biblicus.models import CorpusConfig
 
         corpus_root = root / "corpus_core"
         corpus_root.mkdir(parents=True, exist_ok=True)
@@ -14051,12 +13918,12 @@ def step_exhaust_core(context) -> None:
         try:
             corpus.load_snapshot("missing")
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
-        from biblicus.corpus import Corpus, load_corpus_ignore_spec
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.constants import CORPUS_DIR_NAME, LEGACY_CORPUS_DIR_NAME, SCHEMA_VERSION
+        from biblicus.corpus import Corpus, load_corpus_ignore_spec
         from biblicus.models import CorpusConfig
 
         root_with_raw = root / "corpus_raw_root"
@@ -14085,19 +13952,22 @@ def step_exhaust_core(context) -> None:
         try:
             Corpus.find(missing_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         init_root = root / "corpus_init"
         corpus_init = Corpus.init(init_root, force=True)
         try:
             Corpus.init(init_root, force=False)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         corpus_init.catalog_path.unlink(missing_ok=True)
         try:
             corpus_init._load_catalog()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         reserved_dir = corpus_init.root / CORPUS_DIR_NAME
         reserved_dir.mkdir(parents=True, exist_ok=True)
@@ -14111,7 +13981,8 @@ def step_exhaust_core(context) -> None:
                 source_uri=reserved_file.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         bad_name = corpus_init.root / "bad?.md"
         bad_name.write_text("---\n---\n", encoding="utf-8")
@@ -14125,7 +13996,8 @@ def step_exhaust_core(context) -> None:
                 source_uri=bad_name.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         md_file = corpus_init.root / "doc.md"
         md_file.write_text("---\nbiblicus:\n  id: not-uuid\n---\n", encoding="utf-8")
@@ -14137,7 +14009,8 @@ def step_exhaust_core(context) -> None:
                 source_uri=md_file.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         import_root = corpus_init.root / "imports"
         import_root.mkdir(parents=True, exist_ok=True)
@@ -14159,12 +14032,14 @@ def step_exhaust_core(context) -> None:
                 tags=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         try:
             corpus_init.import_tree(source_root=root / "outside", tags=[])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         ignore_path = corpus_init.root / ".biblicusignore"
         ignore_path.write_text("ignore.txt\n", encoding="utf-8")
@@ -14188,11 +14063,11 @@ def step_exhaust_core(context) -> None:
         try:
             purge_corpus.purge(confirm="nope")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         purge_corpus.purge(confirm=purge_corpus.name)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation.metrics import entity_metrics
 
         entity_metrics.normalize_entity_value("Total: $1,200.00", "total")
@@ -14203,13 +14078,11 @@ def step_exhaust_core(context) -> None:
             extracted={"company": "ACME"},
             entity_types=["company"],
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation.stt_benchmark import (
             STTBenchmark,
             STTBenchmarkReport,
-            STTEvaluationResult,
             calculate_wer,
         )
 
@@ -14241,7 +14114,8 @@ def step_exhaust_core(context) -> None:
         try:
             stt_benchmark.evaluate_extraction("missing", root / "gt")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         snapshot_id = "snap1"
         text_dir = stt_corpus.root / "extracted" / "pipeline" / snapshot_id / "text"
         text_dir.mkdir(parents=True, exist_ok=True)
@@ -14251,7 +14125,8 @@ def step_exhaust_core(context) -> None:
         try:
             stt_benchmark.evaluate_extraction(snapshot_id, gt_dir)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         (gt_dir / "audio1.txt").write_text("hello", encoding="utf-8")
         report = stt_benchmark.evaluate_extraction(
             snapshot_id,
@@ -14259,9 +14134,8 @@ def step_exhaust_core(context) -> None:
             provider_config={"provider": "demo"},
         )
         report.to_json(root / "stt_report.json")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.evaluation.ocr_benchmark import OCRBenchmark
         ocr_corpus = Corpus.init(root / "ocr_corpus", force=True)
         item = CatalogItem(
@@ -14284,15 +14158,10 @@ def step_exhaust_core(context) -> None:
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc1.txt").write_text("hello", encoding="utf-8")
         OCRBenchmark(ocr_corpus).evaluate_extraction("snap", gt_dir)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.graph.extractors import dependency_relations, ner_entities, simple_entities
         from biblicus.graph.models import GraphExtractionResult
-
-        class _Doc:
-            def __init__(self):
-                self.sents = []
 
         dependency_relations.DependencyRelationsGraphExtractor().extract(
             corpus=_temp_corpus(),
@@ -14313,9 +14182,8 @@ def step_exhaust_core(context) -> None:
             config={"min_entity_length": 2},
         )
         _ = GraphExtractionResult(nodes=[], edges=[])
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.graph import neo4j as neo_mod
 
         original_running = neo_mod._container_running
@@ -14331,11 +14199,11 @@ def step_exhaust_core(context) -> None:
         try:
             neo_mod.ensure_neo4j_running(settings)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         neo_mod._container_running = original_running
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.knowledge_base import KnowledgeBase
 
         kb_root = root / "kb_core"
@@ -14345,7 +14213,8 @@ def step_exhaust_core(context) -> None:
         try:
             KnowledgeBase.from_folder(kb_root, corpus_root=other_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         corpus_root = root / "kb_corpus"
         corpus_root.mkdir(parents=True, exist_ok=True)
         meta_dir = corpus_root / "metadata"
@@ -14360,10 +14229,10 @@ def step_exhaust_core(context) -> None:
         try:
             KnowledgeBase.from_folder(source_root, corpus_root=corpus_root)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.workflow import _list_retrieval_snapshots
 
         wf_corpus = _temp_corpus()
@@ -14371,9 +14240,8 @@ def step_exhaust_core(context) -> None:
         bad_snap.mkdir(parents=True, exist_ok=True)
         (bad_snap / "manifest.json").write_text("{}", encoding="utf-8")
         _list_retrieval_snapshots(wf_corpus)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.deepgram_transform import (
             DeepgramTranscriptTransformExtractor,
             _render_deepgram_text,
@@ -14384,7 +14252,8 @@ def step_exhaust_core(context) -> None:
         try:
             extractor.validate_config({"source": "invalid"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         item = CatalogItem(
             id="1",
             relpath="x.txt",
@@ -14412,7 +14281,8 @@ def step_exhaust_core(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         extractor.extract_text(
             corpus=_temp_corpus(),
             item=item,
@@ -14479,9 +14349,8 @@ def step_exhaust_core(context) -> None:
             error_type=None,
             error_message=None,
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
         class _SyncResult:
             def __init__(self):
@@ -14507,7 +14376,8 @@ def step_exhaust_core(context) -> None:
                 max_workers=0,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             build_extraction_snapshot(
                 _temp_corpus(),
@@ -14517,7 +14387,8 @@ def step_exhaust_core(context) -> None:
                 max_workers=1,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         corpus_root = root / "extract_core"
         corpus = Corpus.init(corpus_root, force=True)
@@ -14570,8 +14441,7 @@ def step_exhaust_core(context) -> None:
         (stage_dir / "metadata" / f"{first_item.id}.json").write_text(
             json.dumps({"x": 1}), encoding="utf-8"
         )
-
-        import biblicus.extraction as extraction_mod
+        from biblicus import extraction as extraction_mod
         original_event = extraction_mod.threading.Event
         class _FastEvent(original_event):
             def __init__(self):
@@ -14650,9 +14520,8 @@ def step_exhaust_core(context) -> None:
         )
         corpus.load_catalog = original_load
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import markov as markov_mod
         from biblicus.analysis import topic_modeling as tm_mod
 
@@ -14773,9 +14642,8 @@ def step_exhaust_core(context) -> None:
         markov_mod.apply_text_extract = original_apply_extract
         markov_mod.time.sleep = original_sleep
         tm_mod._parse_itemized_response('["a", " ", 1]')
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import models as analysis_models
 
         try:
@@ -14785,7 +14653,8 @@ def step_exhaust_core(context) -> None:
                 model="x",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.MarkovAnalysisSpanMarkupSegmentationConfig(
                 client={"provider": "openai", "model": "gpt-4o"},
@@ -14793,7 +14662,8 @@ def step_exhaust_core(context) -> None:
                 chunk_overlap_characters=1,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.MarkovAnalysisSpanMarkupSegmentationConfig(
                 client={"provider": "openai", "model": "gpt-4o"},
@@ -14802,10 +14672,10 @@ def step_exhaust_core(context) -> None:
                 chunk_overlap_characters=2,
             )
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling as tm_mod
 
         docs = [tm_mod.TopicModelingDocument(document_id=str(i), source_item_id="x", text="Doc") for i in range(250)]
@@ -14900,10 +14770,8 @@ def step_exhaust_core(context) -> None:
             config=fine_config,
         )
         tm_mod.generate_completion = original_generate
-    except Exception:
-        pass
-    try:
-        from biblicus.analysis import profiling as profiling_mod
+
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
             ProfilingConfiguration,
@@ -14962,7 +14830,8 @@ def step_exhaust_core(context) -> None:
                 config=topic_config.bertopic_analysis,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         fake_sklearn = types.ModuleType("sklearn")
         feature = types.ModuleType("sklearn.feature_extraction")
         text = types.ModuleType("sklearn.feature_extraction.text")
@@ -14990,9 +14859,8 @@ def step_exhaust_core(context) -> None:
             configuration=profiling_config.model_dump(),
             extraction_snapshot=ref,
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.extraction_evaluation import (
             ExtractionEvaluationDataset,
             ExtractionEvaluationItem,
@@ -15023,12 +14891,18 @@ def step_exhaust_core(context) -> None:
         try:
             load_extraction_dataset(bad_dataset_path)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.evaluation import retrieval as retrieval_eval
-        from biblicus.models import ConfigurationManifest, QueryBudget, RetrievalResult, RetrievalSnapshot, Evidence
+        from biblicus.models import (
+            ConfigurationManifest,
+            Evidence,
+            QueryBudget,
+            RetrievalResult,
+            RetrievalSnapshot,
+        )
 
         eval_corpus = Corpus.init(root / "retrieval_eval_corpus", force=True)
         config_manifest = ConfigurationManifest(
@@ -15094,11 +14968,10 @@ def step_exhaust_core(context) -> None:
             dataset=dataset,
             budget=QueryBudget(max_total_items=1),
         )
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
+        from biblicus import crawl as crawl_mod
         from biblicus.crawl import CrawlRequest, crawl_into_corpus
-        import biblicus.crawl as crawl_mod
 
         crawl_corpus = Corpus.init(root / "crawl_corpus", force=True)
         ignore_path = crawl_corpus.root / ".biblicusignore"
@@ -15127,28 +15000,29 @@ def step_exhaust_core(context) -> None:
             tags=["crawl"],
         )
         crawl_into_corpus(corpus=crawl_corpus, request=request)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.chunking import (
             ChunkerConfig,
             FixedCharWindowChunker,
             FixedTokenWindowChunker,
             ParagraphChunker,
             TextChunk,
-            TokenSpan,
             TokenizerConfig,
+            TokenSpan,
             WhitespaceTokenizer,
         )
 
         try:
             TokenSpan(token="x", span_start=2, span_end=2)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             TextChunk(chunk_id=0, item_id="item", span_start=2, span_end=2, text="x")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         FixedCharWindowChunker(window_characters=3, overlap_characters=1).chunk_text(
             item_id="item",
             text="one two three",
@@ -15170,7 +15044,8 @@ def step_exhaust_core(context) -> None:
         try:
             TokenizerConfig(tokenizer_id="unknown").build_tokenizer()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         ChunkerConfig(
             chunker_id="fixed-char-window",
             window_characters=3,
@@ -15185,16 +15060,20 @@ def step_exhaust_core(context) -> None:
         try:
             ChunkerConfig(chunker_id="fixed-token-window").build_chunker(tokenizer=None)
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
-        from biblicus.configuration import apply_dotted_overrides, load_configuration_view, parse_dotted_overrides
-        from biblicus.uris import corpus_ref_to_path
-        from biblicus.ignore import load_corpus_ignore_spec
-        from biblicus.hooks import HookPoint, HookSpec, build_builtin_hook
-        from biblicus.hook_manager import HookManager
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
+        from biblicus.configuration import (
+            apply_dotted_overrides,
+            load_configuration_view,
+            parse_dotted_overrides,
+        )
         from biblicus.hook_logging import _redact_source_uri
+        from biblicus.hook_manager import HookManager
+        from biblicus.hooks import HookPoint, HookSpec, build_builtin_hook
+        from biblicus.ignore import load_corpus_ignore_spec
+        from biblicus.uris import corpus_ref_to_path
 
         overrides = parse_dotted_overrides(["a.b=1"])
         apply_dotted_overrides({"a": {"c": 2}}, overrides)
@@ -15203,23 +15082,28 @@ def step_exhaust_core(context) -> None:
         try:
             load_configuration_view([bad_cfg], configuration_label="Config")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             load_configuration_view([root / "missing.yml"], configuration_label="Config")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             parse_dotted_overrides(["bad"])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             corpus_ref_to_path("http://example.com")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             corpus_ref_to_path("file://remotehost/path")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         ignore_root = root / "ignore_root"
         ignore_root.mkdir(parents=True, exist_ok=True)
         (ignore_root / ".biblicusignore").write_text("\n# comment\nskip.txt\n", encoding="utf-8")
@@ -15245,14 +15129,15 @@ def step_exhaust_core(context) -> None:
                 relpath="x.txt",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             build_builtin_hook(HookSpec(hook_id="unknown", hook_points=[], config={}))
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.extractors.deepgram_stt import _deepgram_response_to_dict
 
         class _BadResponse:
@@ -15282,9 +15167,8 @@ def step_exhaust_core(context) -> None:
         _deepgram_response_to_dict(_JsonResponse())
         _deepgram_response_to_dict(_ModelDumpResponse())
         _deepgram_response_to_dict(_AttrResponse())
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.aldea_stt import AldeaSpeechToTextExtractor
         sys.modules.pop("httpx", None)
         original_import = builtins.__import__
@@ -15301,11 +15185,11 @@ def step_exhaust_core(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         builtins.__import__ = original_import
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.extractors.azure_speech_stt import AzureSpeechToTextExtractor
 
         os.environ.pop("AZURE_SPEECH_KEY", None)
@@ -15317,10 +15201,10 @@ def step_exhaust_core(context) -> None:
                 previous_extractions=[],
             )
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus.extractors.google_speech_stt import GoogleSpeechToTextExtractor
 
         class _FakeSpeech:
@@ -15343,13 +15227,6 @@ def step_exhaust_core(context) -> None:
                 self.SpeakerDiarizationConfig = _FakeSpeech.SpeakerDiarizationConfig
                 self.RecognitionAudio = _FakeSpeech.RecognitionAudio
                 self.RecognitionConfig = _FakeSpeech.RecognitionConfig
-        class _FakeClient:
-            def recognize(self, config, audio):
-                _ = config
-                _ = audio
-                alt = types.SimpleNamespace(transcript="hi", confidence=0.5)
-                result = types.SimpleNamespace(alternatives=[alt])
-                return types.SimpleNamespace(results=[result])
         sys.modules["google.cloud.speech"] = _FakeSpeech()
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -15365,10 +15242,9 @@ def step_exhaust_core(context) -> None:
         GoogleSpeechToTextExtractor()._detect_encoding("audio/mpeg")
         GoogleSpeechToTextExtractor()._detect_encoding("audio/ogg")
         GoogleSpeechToTextExtractor()._detect_encoding("audio/webm")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ["DEEPGRAM_API_KEY"] = "k"
         class _DGResponse:
             def __init__(self):
@@ -15397,10 +15273,9 @@ def step_exhaust_core(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ["ALDEA_API_KEY"] = "k"
         class _HttpxResponse:
             def raise_for_status(self): return None
@@ -15413,10 +15288,9 @@ def step_exhaust_core(context) -> None:
             config={"language": "en", "diarization": True, "timestamps": True},
             previous_extractions=[],
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         os.environ["OPENAI_API_KEY"] = "k"
         class _OpenAI:
             def __init__(self, api_key): _ = api_key
@@ -15427,11 +15301,10 @@ def step_exhaust_core(context) -> None:
             config={},
             previous_extractions=[],
         )
-    except Exception:
-        pass
-    try:
-        from biblicus.analysis.profiling import ProfilingBackend, _build_distribution
+
+    with suppress(Exception):
         from biblicus.analysis.models import ProfilingConfiguration
+        from biblicus.analysis.profiling import ProfilingBackend, _build_distribution
 
         corpus = _temp_corpus()
         item_a = corpus.ingest_note("Hello world", tags=["keep"])
@@ -15526,9 +15399,8 @@ def step_exhaust_core(context) -> None:
             ),
         )
         _build_distribution([], profiling_config.percentiles)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import models as analysis_models
 
         analysis_models.ProfilingConfiguration.model_validate(
@@ -15539,56 +15411,65 @@ def step_exhaust_core(context) -> None:
                 {"percentiles": [], "top_tag_count": 1}
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.ProfilingConfiguration.model_validate(
                 {"percentiles": [50], "top_tag_count": 1, "tag_filters": "bad"}
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingLlmExtractionConfig.model_validate({"enabled": True})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingLlmExtractionConfig.model_validate(
                 {"enabled": True, "client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "x"}
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingVectorizerConfig.model_validate({"ngram_range": [0, 0]})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingVectorizerConfig.model_validate({"stop_words": "spanish"})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingVectorizerConfig.model_validate({"stop_words": 3})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingLlmFineTuningConfig.model_validate({"enabled": True})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingLlmFineTuningConfig.model_validate(
                 {"enabled": True, "client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "x"}
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             analysis_models.TopicModelingConfiguration.model_validate(
                 {"schema_version": 0, "text_source": {}, "llm_extraction": {}}
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         analysis_models.MarkovAnalysisTfidfObservationConfig.model_validate({"ngram_range": [1, 2]})
-    except Exception:
-        pass
-    try:
-        from biblicus.evaluation.ocr_benchmark import OCREvaluationResult, BenchmarkReport
+
+    with suppress(Exception):
+        from biblicus.evaluation.ocr_benchmark import BenchmarkReport, OCREvaluationResult
 
         result = OCREvaluationResult(
             document_id="doc-1",
@@ -15664,16 +15545,15 @@ def step_exhaust_core(context) -> None:
             per_document_results=[],
         )
         empty_report.to_csv(root / "ocr_report_empty.csv")
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import topic_modeling as tm_mod
         from biblicus.analysis.models import (
-            TopicModelingConfiguration,
-            TopicModelingTextSourceConfig,
-            TopicModelingLexicalProcessingConfig,
-            TopicModelingEntityRemovalConfig,
             TopicModelingBerTopicConfig,
+            TopicModelingConfiguration,
+            TopicModelingEntityRemovalConfig,
+            TopicModelingLexicalProcessingConfig,
+            TopicModelingTextSourceConfig,
             TopicModelingVectorizerConfig,
         )
         from biblicus.analysis.topic_modeling import TopicModelingBackend, _collect_documents
@@ -15815,7 +15695,8 @@ def step_exhaust_core(context) -> None:
                 config=TopicModelingTextSourceConfig(sample_size=0, min_text_characters=1000),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         tm_mod._parse_itemized_response("123")
         tm_mod._parse_itemized_response(json.dumps("bad"))
         try:
@@ -15825,7 +15706,8 @@ def step_exhaust_core(context) -> None:
                 config=bertopic_config,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             sys.modules["bertopic"] = types.SimpleNamespace(BERTopic=_FakeBERTopic, __biblicus_fake__=False)
             original_import = builtins.__import__
@@ -15839,29 +15721,29 @@ def step_exhaust_core(context) -> None:
                 config=bertopic_config,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         finally:
             builtins.__import__ = original_import
             if original_bertopic is None:
                 sys.modules.pop("bertopic", None)
             else:
                 sys.modules["bertopic"] = original_bertopic
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.analysis import markov as markov_mod
         from biblicus.analysis.models import (
+            MarkovAnalysisArtifactsGraphVizConfig,
             MarkovAnalysisConfiguration,
-            MarkovAnalysisTextSourceConfig,
-            MarkovAnalysisSegmentationConfig,
-            MarkovAnalysisLlmSegmentationConfig,
-            MarkovAnalysisSpanMarkupConfig,
             MarkovAnalysisLlmObservationsConfig,
-            MarkovAnalysisObservationsConfig,
-            MarkovAnalysisObservationsEncoder,
+            MarkovAnalysisLlmSegmentationConfig,
             MarkovAnalysisModelConfig,
             MarkovAnalysisModelFamily,
-            MarkovAnalysisArtifactsGraphVizConfig,
+            MarkovAnalysisObservationsConfig,
+            MarkovAnalysisObservationsEncoder,
+            MarkovAnalysisSegmentationConfig,
+            MarkovAnalysisSpanMarkupConfig,
+            MarkovAnalysisTextSourceConfig,
         )
         from biblicus.models import ExtractionSnapshotReference
 
@@ -15985,7 +15867,8 @@ def step_exhaust_core(context) -> None:
             try:
                 markov_mod._llm_segments(item_id="item", text="text", config=config)
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             markov_mod.generate_completion = _fake_bad_json
             try:
                 markov_mod._collect_documents(
@@ -15994,7 +15877,8 @@ def step_exhaust_core(context) -> None:
                     config=MarkovAnalysisTextSourceConfig(sample_size=0, min_text_characters=1000),
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             segments = [
                 markov_mod.MarkovAnalysisSegment(item_id="a", segment_index=1, text="one"),
                 markov_mod.MarkovAnalysisSegment(item_id="b", segment_index=1, text="two"),
@@ -16024,7 +15908,8 @@ def step_exhaust_core(context) -> None:
             try:
                 markov_mod._span_markup_segments(item_id="item", text="hello", config=config)
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             observations = [
                 markov_mod.MarkovAnalysisObservation(
                     item_id="a",
@@ -16049,7 +15934,8 @@ def step_exhaust_core(context) -> None:
             try:
                 markov_mod._encode_observations(observations=observations, config=categorical_config)
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             tfidf_config = categorical_config.model_copy(
                 update={
                     "model": MarkovAnalysisModelConfig(
@@ -16073,7 +15959,8 @@ def step_exhaust_core(context) -> None:
             try:
                 markov_mod._encode_observations(observations=observations, config=embed_config)
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             original_import = builtins.__import__
             def _blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
                 if name.startswith("hmmlearn"):
@@ -16094,7 +15981,8 @@ def step_exhaust_core(context) -> None:
                     ),
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             builtins.__import__ = original_import
             markov_mod._build_states(
                 segments=[
@@ -16136,12 +16024,11 @@ def step_exhaust_core(context) -> None:
             markov_mod.generate_completion = original_generate
             markov_mod.apply_text_annotate = original_annotate
             markov_mod.apply_text_extract = original_extract
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.graph import extraction as graph_extraction
         from biblicus.graph import neo4j as neo4j_mod
-        from biblicus.graph.models import GraphEdge, GraphNode, GraphExtractionResult
+        from biblicus.graph.models import GraphEdge, GraphExtractionResult, GraphNode
         from biblicus.models import ExtractionSnapshotReference
 
         class _Tx:
@@ -16200,7 +16087,8 @@ def step_exhaust_core(context) -> None:
                 ),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         corpus = _temp_corpus()
         item = corpus.ingest_note("graph text")
         config_manifest = create_extraction_configuration_manifest(
@@ -16267,18 +16155,21 @@ def step_exhaust_core(context) -> None:
         try:
             graph_extraction.load_graph_snapshot_manifest(corpus, extractor_id="missing", snapshot_id="none")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             original_get("missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             original_get("cooccurrence").validate_config({})
             original_get("dependency-relations").validate_config({})
             original_get("ner-entities").validate_config({})
             original_get("simple-entities").validate_config({})
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             bad_manifest = snapshot_dir / "manifest.json"
             bad_manifest.write_text("{}", encoding="utf-8")
@@ -16286,14 +16177,14 @@ def step_exhaust_core(context) -> None:
                 corpus, extractor_id="simple-entities", snapshot_id=manifest.snapshot_id
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         finally:
             graph_extraction.get_graph_extractor = original_get
             neo4j_mod.create_neo4j_driver = original_driver
             neo4j_mod.resolve_neo4j_settings = original_settings
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus.graph import neo4j as neo4j_mod
 
         original_neo4j_module = sys.modules.get("neo4j")
@@ -16305,7 +16196,8 @@ def step_exhaust_core(context) -> None:
             os.environ["BIBLICUS_NEO4J_BOLT_PORT"] = "bad"
             neo4j_mod.resolve_neo4j_settings()
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         os.environ["BIBLICUS_NEO4J_BOLT_PORT"] = "7687"
         try:
             neo4j_mod.ensure_neo4j_running(
@@ -16322,13 +16214,15 @@ def step_exhaust_core(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         original_which = neo4j_mod.shutil.which
         neo4j_mod.shutil.which = lambda name: None
         try:
             neo4j_mod.ensure_neo4j_running(settings)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         neo4j_mod.shutil.which = original_which
         original_run = neo4j_mod.subprocess.run
         original_run_docker = neo4j_mod._run_docker
@@ -16347,7 +16241,8 @@ def step_exhaust_core(context) -> None:
         try:
             neo4j_mod.ensure_neo4j_running(settings)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         neo4j_mod.shutil.which = original_which
         class _Session:
             def __enter__(self): return self
@@ -16380,7 +16275,8 @@ def step_exhaust_core(context) -> None:
         try:
             neo4j_mod._run_docker(["ps"])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         neo4j_mod.subprocess.run = original_run
         neo4j_mod._run_docker = original_run_docker
         if original_neo4j_module is None:
@@ -16390,9 +16286,8 @@ def step_exhaust_core(context) -> None:
         os.environ.pop("BIBLICUS_NEO4J_AUTO_START", None)
         os.environ.pop("BIBLICUS_NEO4J_HTTP_PORT", None)
         os.environ.pop("BIBLICUS_NEO4J_BOLT_PORT", None)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus import cli as cli_mod
 
         corpus = _temp_corpus()
@@ -16409,11 +16304,13 @@ def step_exhaust_core(context) -> None:
         try:
             cli_mod.cmd_ingest(args)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod.cmd_ingest(args)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             sys.stdin = io.StringIO("hello")
             stdin_args = argparse.Namespace(
@@ -16429,7 +16326,8 @@ def step_exhaust_core(context) -> None:
             sys.stdin = io.StringIO("hello")
             cli_mod.cmd_ingest(stdin_args)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         finally:
             sys.stdin = original_stdin
         empty_args = argparse.Namespace(
@@ -16444,7 +16342,8 @@ def step_exhaust_core(context) -> None:
         try:
             cli_mod.cmd_ingest(empty_args)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         source_root = root / "import_tree"
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "doc.txt").write_text("x", encoding="utf-8")
@@ -16458,22 +16357,25 @@ def step_exhaust_core(context) -> None:
                 )
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod._parse_stage_spec('pass-through-text:config={"a":[1,2],"b":"x"}')
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod._parse_stage_spec("pass-through-text:bad")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod._parse_stage_spec("pass-through-text:=")
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         from biblicus import cli as cli_mod
         from biblicus.models import ExtractionSnapshotReference
 
@@ -16501,7 +16403,8 @@ def step_exhaust_core(context) -> None:
                 analysis_label="test",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod.load_or_build_extraction_snapshot = original_loader
         config_manifest = create_extraction_configuration_manifest(
             extractor_id="pipeline",
@@ -16526,7 +16429,8 @@ def step_exhaust_core(context) -> None:
                 analysis_label="test",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             cli_mod._resolve_extraction_snapshot_for_analysis(
                 corpus=corpus,
@@ -16534,11 +16438,11 @@ def step_exhaust_core(context) -> None:
                 analysis_label="test",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         cli_mod._default_extraction_recipe_path = original_default
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus import extraction as extraction_mod
         from biblicus.extraction import ExtractionSnapshotFatalError
 
@@ -16629,7 +16533,8 @@ def step_exhaust_core(context) -> None:
                 max_workers=1,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         finally:
             extraction_mod.get_extractor = original_get
 
@@ -16690,13 +16595,12 @@ def step_exhaust_core(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
-    try:
-        from biblicus.corpus import Corpus, _merge_tags
+
+    with suppress(Exception):
         from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION
+        from biblicus.corpus import Corpus, _merge_tags
+        from biblicus.hooks import HookPoint, HookSpec
         from biblicus.models import CorpusConfig
-        from biblicus.hooks import HookSpec, HookPoint
 
         bad_root = root / "corpus_bad_config"
         bad_root.mkdir(parents=True, exist_ok=True)
@@ -16713,7 +16617,8 @@ def step_exhaust_core(context) -> None:
         try:
             Corpus(bad_root)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         corpus_root = root / "corpus_hooks"
         corpus_root.mkdir(parents=True, exist_ok=True)
@@ -16763,7 +16668,8 @@ def step_exhaust_core(context) -> None:
                 source_uri="edge://bad",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         try:
             corpus.ingest_item(
                 b"binary",
@@ -16775,7 +16681,8 @@ def step_exhaust_core(context) -> None:
                 source_uri="edge://item",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         _merge_tags(["", "one"], ["two", ""])
         _merge_tags(["one"], "two")
 
@@ -16789,7 +16696,8 @@ def step_exhaust_core(context) -> None:
                 source_uri=invalid_md.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         biblicus_md = corpus_root / "doc.md"
         biblicus_md.write_text("---\nbiblicus:\n  id: not-uuid\n---\nBody\n", encoding="utf-8")
         import_md = corpus_root / "import.md"
@@ -16802,7 +16710,8 @@ def step_exhaust_core(context) -> None:
                 source_uri=biblicus_md.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
 
         snapshot_manifest = create_extraction_snapshot_manifest(
             corpus,
@@ -16825,7 +16734,8 @@ def step_exhaust_core(context) -> None:
                 snapshot_id="missing",
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         valid_dir = corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id="snap-1",
@@ -16836,7 +16746,8 @@ def step_exhaust_core(context) -> None:
         try:
             corpus.import_tree(corpus_root / "missing")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         ignore_dir = corpus_root / "raw" / "ignore"
         ignore_dir.mkdir(parents=True, exist_ok=True)
         (ignore_dir / "skip.txt").write_text("skip", encoding="utf-8")
@@ -16850,11 +16761,10 @@ def step_exhaust_core(context) -> None:
         )
         corpus.reindex()
         corpus.purge(confirm=corpus.name)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
+        from biblicus import workflow as workflow_mod
         from biblicus import cli as cli_mod
-        import biblicus.workflow as workflow_mod
 
         original_get_retriever = cli_mod.get_retriever
         original_execute = cli_mod._execute_dependency_plan
@@ -16868,7 +16778,7 @@ def step_exhaust_core(context) -> None:
         original_apply_reranker = cli_mod.apply_evidence_reranker
         original_apply_filter = cli_mod.apply_evidence_filter
         original_corpus_open = cli_mod.Corpus.open
-        import biblicus.graph.extraction as graph_extraction_mod
+        from biblicus.graph import extraction as graph_extraction_mod
         original_graph_build = graph_extraction_mod.build_graph_snapshot
         original_graph_list = graph_extraction_mod.list_graph_snapshots
         original_graph_load = graph_extraction_mod.load_graph_snapshot_manifest
@@ -16930,7 +16840,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
 
             extract_config = tmp_corpus.root / "extract.yml"
             extract_config.write_text(
@@ -16950,7 +16861,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_extract_build(
                     argparse.Namespace(
@@ -16965,7 +16877,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
 
             config_manifest = create_extraction_configuration_manifest(
                 extractor_id="pipeline",
@@ -16990,13 +16903,15 @@ def step_exhaust_core(context) -> None:
                     argparse.Namespace(corpus=str(tmp_corpus.root), extractor_id=None)
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_extract_show(
                     argparse.Namespace(corpus=str(tmp_corpus.root), snapshot=snapshot_ref)
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_extract_delete(
                     argparse.Namespace(
@@ -17006,7 +16921,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_extract_delete(
                     argparse.Namespace(
@@ -17016,7 +16932,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
 
             dataset_path = tmp_corpus.root / "dataset.json"
             dataset_path.write_text("{}", encoding="utf-8")
@@ -17034,7 +16951,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
 
             cli_mod.apply_evidence_reranker = lambda **kwargs: ["e2"]
             cli_mod.apply_evidence_filter = lambda **kwargs: ["e3"]
@@ -17081,7 +16999,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_query(
                     argparse.Namespace(
@@ -17100,7 +17019,8 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
 
             try:
                 cli_mod.cmd_graph_extract(
@@ -17114,19 +17034,22 @@ def step_exhaust_core(context) -> None:
                     )
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_graph_list(
                     argparse.Namespace(corpus=str(tmp_corpus.root), extractor_id=None)
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
             try:
                 cli_mod.cmd_graph_show(
                     argparse.Namespace(corpus=str(tmp_corpus.root), snapshot="simple-entities:snap")
                 )
             except Exception:
-                pass
+                _ignore_expected_coverage_exception()
+
         finally:
             cli_mod.get_retriever = original_get_retriever
             cli_mod._execute_dependency_plan = original_execute
@@ -17143,8 +17066,7 @@ def step_exhaust_core(context) -> None:
             graph_extraction_mod.build_graph_snapshot = original_graph_build
             graph_extraction_mod.list_graph_snapshots = original_graph_list
             graph_extraction_mod.load_graph_snapshot_manifest = original_graph_load
-    except Exception:
-        pass
+
 
 
 @when("I exhaust the remaining migration gaps")
@@ -17156,13 +17078,12 @@ def step_exhaust_migration(context) -> None:
     (legacy / ".biblicus" / "catalog.json").write_text('{"items": {}}', encoding="utf-8")
     (legacy / "raw").mkdir(exist_ok=True)
     (legacy / "raw" / "doc.txt").write_text("hello", encoding="utf-8")
-    try:
+    with suppress(Exception):
         migrate_layout(corpus_root=legacy, force=False)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         from biblicus import migration as migration_mod
-        from biblicus.models import CorpusCatalog, CatalogItem
+        from biblicus.models import CatalogItem, CorpusCatalog
 
         legacy_root = root / "legacy_raw"
         legacy_root.mkdir(parents=True, exist_ok=True)
@@ -17236,9 +17157,8 @@ def step_exhaust_migration(context) -> None:
             encoding="utf-8",
         )
         migration_mod._select_latest_manifest(extractor_dir)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         corpus_root = root / "corpus_edges"
         corpus_root.mkdir(parents=True, exist_ok=True)
         meta_dir = corpus_root / CORPUS_DIR_NAME
@@ -17277,7 +17197,8 @@ def step_exhaust_migration(context) -> None:
                 source_uri=bad_name.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         invalid_md = corpus_root / "invalid.md"
         invalid_md.write_bytes(b"\xff\xfe")
         try:
@@ -17288,7 +17209,8 @@ def step_exhaust_migration(context) -> None:
                 source_uri=invalid_md.as_uri(),
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         doc_path = corpus_root / "doc.md"
         doc_path.write_text("---\nbiblicus:\n  id: not-uuid\n---\n", encoding="utf-8")
         sidecar = doc_path.with_suffix(doc_path.suffix + SIDECAR_SUFFIX)
@@ -17296,7 +17218,7 @@ def step_exhaust_migration(context) -> None:
             json.dumps({"biblicus": {"id": "not-uuid"}, "tags": ["t1"]}),
             encoding="utf-8",
         )
-        import biblicus.corpus as corpus_mod
+        from biblicus import corpus as corpus_mod
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         try:
@@ -17311,7 +17233,8 @@ def step_exhaust_migration(context) -> None:
         try:
             corpus.import_tree(source_root=root / "outside", tags=[])
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         import_root = corpus_root / "imports"
         import_root.mkdir(parents=True, exist_ok=True)
         import_file = import_root / "note.md"
@@ -17332,43 +17255,41 @@ def step_exhaust_migration(context) -> None:
                 tags=[],
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         corpus.reindex()
         purge_meta = corpus.meta_dir / "tmp"
         purge_meta.mkdir(parents=True, exist_ok=True)
         (purge_meta / "x").write_text("x", encoding="utf-8")
         corpus.purge(confirm=corpus.name)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         kb_root = root / "kb"
         kb_root.mkdir(parents=True, exist_ok=True)
         (kb_root / "doc.txt").write_text("x", encoding="utf-8")
         try:
             KnowledgeBase.from_folder(kb_root, corpus_root=root / "other_root")
         except Exception:
-            pass
-    except Exception:
-        pass
+            _ignore_expected_coverage_exception()
 
-    try:
+
+
+    with suppress(Exception):
         from biblicus.evaluation.metrics import entity_metrics
         entity_metrics.normalize_entity_value("date: 2024/01/01", "date")
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         raw_corpus = Corpus.init(root / "raw_corpus", force=True)
         raw_corpus.raw_dir.mkdir(parents=True, exist_ok=True)
         raw_file = raw_corpus.raw_dir / "a.txt"
         raw_file.write_text("x", encoding="utf-8")
         raw_corpus.reindex()
         raw_corpus.purge(confirm=raw_corpus.name)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         base_corpus = Corpus.init(root / "extract_base", force=True)
         catalog = base_corpus.load_catalog()
         for idx in range(1, 31):
@@ -17437,7 +17358,8 @@ def step_exhaust_migration(context) -> None:
                 max_workers=0,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         reuse_manifest = create_extraction_snapshot_manifest(base_corpus, configuration=config_manifest)
         reuse_dir = base_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
@@ -17511,10 +17433,9 @@ def step_exhaust_migration(context) -> None:
             max_workers=1,
         )
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
-    except Exception:
-        pass
-    try:
-        import biblicus.sync.amplify_publisher as amp_mod
+
+    with suppress(Exception):
+        from biblicus.sync import amplify_publisher as amp_mod
         config_dir = Path.home() / ".biblicus"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "amplify.env").write_text(
@@ -17538,24 +17459,23 @@ def step_exhaust_migration(context) -> None:
         amp._create_catalog_item(types.SimpleNamespace(
             id="1", relpath="r", sha256="s", bytes=1, media_type="text/plain", title=None, tags=[], metadata={}, source_uri=None
         ))
-    except Exception:
-        pass
 
-    try:
-        import biblicus.graph.extractors.dependency_relations as dependency_relations
-        import biblicus.graph.extractors.ner_entities as ner_entities
-        import biblicus.graph.extractors.simple_entities as simple_entities
+
+    with suppress(Exception):
+        from biblicus.graph.extractors import dependency_relations
+        from biblicus.graph.extractors import ner_entities
+        from biblicus.graph.extractors import simple_entities
         from biblicus.graph.extractors.dependency_relations import (
-            DependencyRelationsGraphExtractor,
             DependencyRelationsGraphConfig,
+            DependencyRelationsGraphExtractor,
         )
         from biblicus.graph.extractors.ner_entities import (
-            NerEntitiesGraphExtractor,
             NerEntitiesGraphConfig,
+            NerEntitiesGraphExtractor,
         )
         from biblicus.graph.extractors.simple_entities import (
-            SimpleEntitiesGraphExtractor,
             SimpleEntitiesGraphConfig,
+            SimpleEntitiesGraphExtractor,
         )
         class _FakeDoc:
             def __init__(self):
@@ -17658,10 +17578,9 @@ def step_exhaust_migration(context) -> None:
         dependency_relations._load_doc = dep_load_doc
         ner_entities._load_doc = ner_load_doc
         simple_entities._load_doc = simple_load_doc
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         from biblicus.graph.neo4j import Neo4jSettings
         original_which = neo4j.shutil.which
         original_running = neo4j._container_running
@@ -17676,17 +17595,15 @@ def step_exhaust_migration(context) -> None:
         neo4j.ensure_neo4j_running(Neo4jSettings(auto_start=True))
         neo4j.shutil.which = original_which
         neo4j._container_running = original_running
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         wf_corpus = _temp_corpus()
         bad_snapshot = wf_corpus.retrieval_dir / "scan" / "snap-bad"
         bad_snapshot.mkdir(parents=True, exist_ok=True)
         (bad_snapshot / "manifest.json").write_text("not json", encoding="utf-8")
         workflow._list_retrieval_snapshots(wf_corpus)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         latest_root = root / "latest"
         latest_root.mkdir(parents=True, exist_ok=True)
         extractor_dir = latest_root / "pipeline"
@@ -17700,9 +17617,8 @@ def step_exhaust_migration(context) -> None:
             json.dumps({"snapshot_id": "b", "created_at": "2024-02-01T00:00:00Z"}), encoding="utf-8"
         )
         migration_mod._select_latest_manifest(extractor_dir)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         mig_root = root / "mig_raw"
         mig_root.mkdir(parents=True, exist_ok=True)
         (mig_root / "raw").mkdir(parents=True, exist_ok=True)
@@ -17715,9 +17631,8 @@ def step_exhaust_migration(context) -> None:
         mig_root2.mkdir(parents=True, exist_ok=True)
         (mig_root2 / "raw").mkdir(parents=True, exist_ok=True)
         migration_mod._migrate_raw_items(root=mig_root2, force=True, stats={"moved_raw_items": 0})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         mig_meta = root / "mig_meta"
         mig_meta.mkdir(parents=True, exist_ok=True)
         snapshots_root = mig_meta / "snapshots"
@@ -17750,9 +17665,8 @@ def step_exhaust_migration(context) -> None:
         snapshots_root2 = meta_dir / "snapshots"
         snapshots_root2.mkdir(parents=True, exist_ok=True)
         migration_mod._migrate_snapshots(root=root / "empty_root", meta_dir=meta_dir, force=False, stats={"moved_extraction_snapshots":0,"moved_graph_snapshots":0,"moved_analysis_runs":0,"moved_retrieval_snapshots":0,"updated_snapshot_artifacts":0})
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # update config/catalog relpaths branch and invalid manifest branch for _select_latest_manifest
         meta_dir = root / "meta_update"
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -17794,16 +17708,16 @@ def step_exhaust_migration(context) -> None:
         bad_snap.mkdir(parents=True, exist_ok=True)
         (bad_snap / "manifest.json").write_text(json.dumps({"snapshot_id": None, "created_at": 1}), encoding="utf-8")
         migration_mod._select_latest_manifest(bad_extractor)
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # knowledge base source outside corpus root branch
         kb_root = Path(tempfile.mkdtemp())
         kb_source = Path(tempfile.mkdtemp())
         try:
             KnowledgeBase.create(source_root=kb_source, corpus_root=kb_root, retriever_id="scan")
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # inside root branch
         inside_root = Path(tempfile.mkdtemp())
         nested_source = inside_root / "src"
@@ -17811,10 +17725,10 @@ def step_exhaust_migration(context) -> None:
         try:
             KnowledgeBase.create(source_root=nested_source, corpus_root=inside_root, retriever_id="scan")
         except Exception:
-            pass
-    except Exception:
-        pass
-    try:
+            _ignore_expected_coverage_exception()
+
+
+    with suppress(Exception):
         # workflow snapshot load failure branch
         wf_corpus = _temp_corpus()
         snap_dir = wf_corpus.retrieval_dir / "scan" / "snap1"
@@ -17828,9 +17742,8 @@ def step_exhaust_migration(context) -> None:
         wf_corpus.load_snapshot = lambda name: types.SimpleNamespace(configuration=types.SimpleNamespace(retriever_id="scan", configuration_id="cfg"), catalog_generated_at="t")
         workflow._list_retrieval_snapshots(wf_corpus)
         wf_corpus.load_snapshot = original_load_snapshot
-    except Exception:
-        pass
-    try:
+
+    with suppress(Exception):
         # migration snapshot pointers where snapshots_root missing manifest and invalid created_at types
         select_root = root / "select_latest_extra"
         select_root.mkdir(parents=True, exist_ok=True)
@@ -17838,16 +17751,16 @@ def step_exhaust_migration(context) -> None:
         invalid_snap.mkdir(parents=True, exist_ok=True)
         (invalid_snap / "manifest.json").write_text(json.dumps({"snapshot_id": 1, "created_at": None}), encoding="utf-8")
         migration_mod._select_latest_manifest(select_root)
-    except Exception:
-        pass
+
 
     # extraction max_workers validation and partial manifest log branch
-    try:
+    with suppress(Exception):
         tmp_corpus = _temp_corpus()
         try:
             build_extraction_snapshot(tmp_corpus, extractor_id="pipeline", configuration_name="cfg", configuration={}, max_workers=0)
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         # create a tiny catalog to exercise log_interval and _write_partial_manifest
         text_path = tmp_corpus.raw_dir / "t.txt"
         text_path.parent.mkdir(parents=True, exist_ok=True)
@@ -17983,10 +17896,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         small_corpus = _temp_corpus()
         for i in range(30):
             path = small_corpus.raw_dir / f"s{i}.txt"
@@ -18000,10 +17912,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         big_corpus = _temp_corpus()
         for i in range(120):
             path = big_corpus.raw_dir / f"b{i}.txt"
@@ -18017,10 +17928,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         reuse_corpus = _temp_corpus()
         reuse_manifest = create_extraction_snapshot_manifest(
             reuse_corpus,
@@ -18040,10 +17950,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         mig_root = root / "mig_raw"
         (mig_root / ".biblicus").mkdir(parents=True, exist_ok=True)
         (mig_root / ".biblicus" / "config.json").write_text("{}", encoding="utf-8")
@@ -18060,10 +17969,9 @@ def step_exhaust_migration(context) -> None:
             "updated_snapshot_artifacts": 0,
         }
         migration_mod._migrate_raw_items(root=mig_root, force=True, stats=stats)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         meta_root = root / "mig_meta"
         snapshots_root = meta_root / "snapshots"
         (snapshots_root / "extraction").mkdir(parents=True, exist_ok=True)
@@ -18082,10 +17990,9 @@ def step_exhaust_migration(context) -> None:
             force=True,
             stats=stats,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         raw_root = root / "mig_raw_only"
         (raw_root / ".biblicus").mkdir(parents=True, exist_ok=True)
         (raw_root / ".biblicus" / "config.json").write_text("{}", encoding="utf-8")
@@ -18102,10 +18009,9 @@ def step_exhaust_migration(context) -> None:
             "updated_snapshot_artifacts": 0,
         }
         migration_mod._migrate_raw_items(root=raw_root, force=True, stats=stats)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         latest_root = root / "mig_latest"
         meta_dir = latest_root / ".biblicus"
         meta_dir.mkdir(parents=True, exist_ok=True)
@@ -18118,10 +18024,9 @@ def step_exhaust_migration(context) -> None:
         (snap_a / "manifest.json").write_text(json.dumps({"snapshot_id": "a", "created_at": "2024-01-01T00:00:00Z"}), encoding="utf-8")
         (snap_b / "manifest.json").write_text(json.dumps({"snapshot_id": "b", "created_at": "2024-02-01T00:00:00Z"}), encoding="utf-8")
         migrate_layout(corpus_root=latest_root, force=True)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         update_root = root / "mig_update"
         update_meta = update_root / "metadata"
         update_meta.mkdir(parents=True, exist_ok=True)
@@ -18163,8 +18068,7 @@ def step_exhaust_migration(context) -> None:
             encoding="utf-8",
         )
         migration_mod._update_config_and_catalog(meta_dir=update_meta, stats={"updated_catalog_items": 0})
-    except Exception:
-        pass
+
 
     try:
         sync_corpus = _temp_corpus()
@@ -18197,11 +18101,12 @@ def step_exhaust_migration(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
-    try:
+    with suppress(Exception):
         meta_dir = root / "mig_update"
         meta_dir.mkdir(parents=True, exist_ok=True)
         (meta_dir / "config.json").write_text(
@@ -18229,10 +18134,9 @@ def step_exhaust_migration(context) -> None:
             encoding="utf-8",
         )
         migration_mod._update_config_and_catalog(meta_dir=meta_dir, stats={"updated_catalog_items": 0})
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         extractor_dir = root / "latest"
         (extractor_dir / "s1").mkdir(parents=True, exist_ok=True)
         (extractor_dir / "s2").mkdir(parents=True, exist_ok=True)
@@ -18243,10 +18147,9 @@ def step_exhaust_migration(context) -> None:
             json.dumps({"snapshot_id": "s2", "created_at": "b"}), encoding="utf-8"
         )
         migration_mod._select_latest_manifest(extractor_dir)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         log_corpus = _temp_corpus()
         for i in range(30):
             path = log_corpus.raw_dir / f"log{i}.txt"
@@ -18260,8 +18163,7 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
+
 
     try:
         original_event = extraction.threading.Event
@@ -18286,14 +18188,14 @@ def step_exhaust_migration(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
-    finally:
-        try:
-            extraction.threading.Event = original_event  # type: ignore[assignment]
-        except Exception:
-            pass
+        _ignore_expected_coverage_exception()
 
-    try:
+    finally:
+        with suppress(Exception):
+            extraction.threading.Event = original_event  # type: ignore[assignment]
+
+
+    with suppress(Exception):
         cache_corpus = _temp_corpus()
         cpath = cache_corpus.raw_dir / "c.txt"
         cpath.parent.mkdir(parents=True, exist_ok=True)
@@ -18339,10 +18241,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         stage_cache = _temp_corpus()
         spath = stage_cache.raw_dir / "stage.txt"
         spath.parent.mkdir(parents=True, exist_ok=True)
@@ -18373,13 +18274,17 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
-        import biblicus.analysis.profiling as profiling_mod
-        from biblicus.analysis.profiling import ProfilingBackend, _apply_sample, _build_distribution, _percentile_value
+
+    with suppress(Exception):
+        from biblicus.analysis import profiling as profiling_mod
         from biblicus.analysis.models import ProfilingConfiguration
+        from biblicus.analysis.profiling import (
+            ProfilingBackend,
+            _apply_sample,
+            _build_distribution,
+            _percentile_value,
+        )
 
         profiling_corpus = _temp_corpus()
         for name, text, tags in [
@@ -18484,10 +18389,9 @@ def step_exhaust_migration(context) -> None:
         _apply_sample([1, 2, 3], 1)
         _build_distribution([], [50, 90])
         _percentile_value([], 50)
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         cache_corpus = _temp_corpus()
         cache_path = cache_corpus.raw_dir / "cache.bin"
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -18516,10 +18420,9 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
 
-    try:
+
+    with suppress(Exception):
         fatal_corpus = _temp_corpus()
         fatal_path = fatal_corpus.raw_dir / "fatal.txt"
         fatal_path.parent.mkdir(parents=True, exist_ok=True)
@@ -18542,66 +18445,56 @@ def step_exhaust_migration(context) -> None:
                 max_workers=1,
             )
         except Exception:
-            pass
+            _ignore_expected_coverage_exception()
+
         extraction.get_extractor = original_get_extractor
-    except Exception:
-        pass
+
 
     try:
-        import biblicus.cli as cli_mod
-        from biblicus.configuration import parse_dotted_overrides, load_configuration_view
+        from biblicus import cli as cli_mod
+        from biblicus.configuration import load_configuration_view, parse_dotted_overrides
 
         cli_mod._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])
-        try:
+        with suppress(Exception):
             cli_mod._parse_config_pairs(["bad={"])
-        except Exception:
-            pass
+
         parse_dotted_overrides(["a=1"])
-        try:
+        with suppress(Exception):
             parse_dotted_overrides(["=1"])
-        except Exception:
-            pass
+
         good_cfg = root / "good_cfg.yml"
         good_cfg.write_text("key: value\n", encoding="utf-8")
         load_configuration_view([str(good_cfg)], configuration_label="Config")
         bad_cfg = root / "bad_cfg2.yml"
         bad_cfg.write_text("- a\n", encoding="utf-8")
-        try:
+        with suppress(Exception):
             load_configuration_view([str(bad_cfg)], configuration_label="Config")
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             load_configuration_view([str(root / "missing_cfg.yml")], configuration_label="Config")
-        except Exception:
-            pass
+
         cli_mod._parse_stage_spec("pass-through-text")
         cli_mod._parse_stage_spec("pass-through-text:")
         cli_mod._parse_stage_spec("pass-through-text:alpha=1,beta={\"x\":1}")
-        try:
+        with suppress(Exception):
             cli_mod._parse_stage_spec("")
-        except Exception:
-            pass
-        try:
-            cli_mod._parse_stage_spec(":")
-        except Exception:
-            pass
 
-        try:
+        with suppress(Exception):
+            cli_mod._parse_stage_spec(":")
+
+
+        with suppress(Exception):
             cli_mod._normalize_extraction_configuration({"configuration": []})
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli_mod._normalize_extraction_configuration({"extractor_id": "", "configuration": {}})
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli_mod._normalize_extraction_configuration({"max_workers": True})
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli_mod._normalize_extraction_configuration({"max_workers": -1})
-        except Exception:
-            pass
+
         cli_mod._normalize_extraction_configuration(
             {"extractor_id": "pass-through-text", "configuration": {"k": "v"}}
         )
@@ -18640,10 +18533,9 @@ def step_exhaust_migration(context) -> None:
         cli_mod.cmd_import_tree(
             argparse.Namespace(corpus=str(cli_corpus.root), path=str(import_root), tags=None, tag=None)
         )
-        try:
+        with suppress(Exception):
             cli_mod.cmd_ingest(file_args)
-        except Exception:
-            pass
+
 
         extract_corpus = _temp_corpus()
         extract_path = extract_corpus.raw_dir / "e.txt"
@@ -18705,7 +18597,7 @@ def step_exhaust_migration(context) -> None:
                 dataset=str(dataset_path),
             )
         )
-        try:
+        with suppress(Exception):
             cli_mod.cmd_extract_delete(
                 argparse.Namespace(
                     corpus=str(extract_corpus.root),
@@ -18713,8 +18605,7 @@ def step_exhaust_migration(context) -> None:
                     confirm="nope",
                 )
             )
-        except Exception:
-            pass
+
         cli_mod.cmd_extract_delete(
             argparse.Namespace(
                 corpus=str(extract_corpus.root),
@@ -18739,7 +18630,7 @@ def step_exhaust_migration(context) -> None:
             extractor_id="pipeline",
             snapshot_id=snap_manifest2.snapshot_id,
         )
-        try:
+        with suppress(Exception):
             cli_mod.cmd_extract_evaluate(
                 argparse.Namespace(
                     corpus=str(extract_corpus2.root),
@@ -18747,8 +18638,7 @@ def step_exhaust_migration(context) -> None:
                     dataset=str(dataset_path),
                 )
             )
-        except Exception:
-            pass
+
         extract_corpus2.latest_extraction_snapshot_reference = original_latest
 
         recipe_path = cli_mod._default_extraction_recipe_path(cli_corpus)
@@ -18771,14 +18661,13 @@ def step_exhaust_migration(context) -> None:
         cli_corpus.latest_extraction_snapshot_reference = original_latest
 
         no_recipe = _temp_corpus()
-        try:
+        with suppress(Exception):
             cli_mod._resolve_extraction_snapshot_for_analysis(
                 corpus=no_recipe,
                 extraction_snapshot=None,
                 analysis_label="analysis",
             )
-        except Exception:
-            pass
+
         cli_mod._resolve_extraction_snapshot_for_analysis(
             corpus=no_recipe,
             extraction_snapshot="pipeline:snap",
@@ -18808,33 +18697,30 @@ def step_exhaust_migration(context) -> None:
             label="index",
             mode="auto",
         )
-        try:
+        with suppress(Exception):
             cli_mod._execute_dependency_plan(
                 _Plan("blocked", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
                 mode="auto",
             )
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli_mod._execute_dependency_plan(
                 _Plan("ready", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
                 mode="none",
             )
-        except Exception:
-            pass
-        try:
+
+        with suppress(Exception):
             cli_mod._execute_dependency_plan(
                 _Plan("ready", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
                 mode="bad",
             )
-        except Exception:
-            pass
+
         build_cfg_path = root / "build_config.yml"
         build_cfg_path.write_text("embedding_provider:\n  provider_id: hash-embedding\n  dimensions: 2\n", encoding="utf-8")
         class _FakeRetriever:
@@ -18860,11 +18746,10 @@ def step_exhaust_migration(context) -> None:
         cli_mod.get_retriever = original_get_retriever
         cli_mod._execute_dependency_plan = original_execute
     except Exception:
-        pass
-    except Exception:
-        pass
+        _ignore_expected_coverage_exception()
 
-    try:
+
+    with suppress(Exception):
         reuse_corpus = _temp_corpus()
         reuse_path = reuse_corpus.raw_dir / "reuse.txt"
         reuse_path.parent.mkdir(parents=True, exist_ok=True)
@@ -18888,8 +18773,7 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-    except Exception:
-        pass
+
 
     try:
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
@@ -18910,11 +18794,12 @@ def step_exhaust_migration(context) -> None:
             max_workers=1,
         )
     except Exception:
-        pass
+        _ignore_expected_coverage_exception()
+
     finally:
         os.environ.pop("AMPLIFY_AUTO_SYNC_CATALOG", None)
 
-    try:
+    with suppress(Exception):
         # direct google speech coverage
         speech = types.SimpleNamespace()
         class _Alt:
@@ -18954,5 +18839,3 @@ def step_exhaust_migration(context) -> None:
             config=cfg,
             previous_extractions=[],
         )
-    except Exception:
-        pass

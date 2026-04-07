@@ -1,7 +1,5 @@
 from pathlib import Path
-from types import SimpleNamespace
 
-import pytest
 
 from biblicus.corpus import Corpus, _merge_metadata, _merge_tags
 from biblicus.models import CatalogItem, CorpusCatalog

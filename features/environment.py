@@ -4,13 +4,13 @@ import builtins
 import os
 import sys
 import tempfile
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
 
-_BASELINE_HOME = os.environ.get("HOME")
 _EPHEMERAL_ENV_KEYS = [
     "OPENAI_API_KEY",
     "HUGGINGFACE_API_KEY",
@@ -51,12 +51,11 @@ def before_scenario(context, scenario) -> None:
     repo_src = str(_repo_root() / "src")
     if repo_src not in sys.path:
         sys.path.insert(0, repo_src)
-    try:
+    with suppress(Exception):
         from biblicus.extractors.paddleocr_vl_text import PaddleOcrVlExtractor
 
         PaddleOcrVlExtractor._model_cache = {}
-    except Exception:
-        pass
+
 
     # Clear fake module behaviors at the START of each scenario
     # Delete and recreate to ensure fresh state
@@ -206,15 +205,14 @@ def after_scenario(context, scenario) -> None:
                 sys.modules.pop(name, None)
         context._fake_unstructured_unavailable_installed = False
         context._fake_unstructured_unavailable_original_modules = {}
-    try:
+    with suppress(Exception):
         import biblicus.user_config as _user_config
 
         original_loader = getattr(_user_config, "_original_load_user_config", None)
         if original_loader is not None:
             _user_config.load_user_config = original_loader
             _user_config._original_load_user_config = None
-    except Exception:
-        pass
+
     backup_path = getattr(context, "_repo_config_backup", None)
     original_path = getattr(context, "_repo_config_original", None)
     if backup_path is not None and original_path is not None:
@@ -406,10 +404,9 @@ def after_scenario(context, scenario) -> None:
     if hasattr(context, "fake_rapidocr_behaviors"):
         context.fake_rapidocr_behaviors.clear()
     if getattr(context, "_aldea_post_patcher", None) is not None:
-        try:
+        with suppress(Exception):
             context._aldea_post_patcher.stop()
-        except Exception:
-            pass
+
         context._aldea_post_patcher = None
     if getattr(context, "_fake_aldea_unavailable_installed", False):
         original_modules = getattr(context, "_fake_aldea_unavailable_original_modules", {})

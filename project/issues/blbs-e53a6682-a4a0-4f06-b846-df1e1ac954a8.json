@@ -1,0 +1,31 @@
+{
+  "id": "blbs-e53a6682-a4a0-4f06-b846-df1e1ac954a8",
+  "title": "Remediate BERTopic transitive vulnerabilities via direct dependency upgrades",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "9ff35ec8-fa4d-49ba-b581-618089f221d1",
+      "author": "derek.norrbom",
+      "text": "Start remediation for Snyk findings introduced through bertopic path. Plan: raise direct constraints (bertopic/docling where needed), regenerate lock, run dependency audit, and verify vulnerable packages resolve to fixed versions without transitive pinning.",
+      "created_at": "2026-04-06T20:33:21.751892Z"
+    },
+    {
+      "id": "b03e7bed-a1e4-4a9c-b891-0dc61cb44194",
+      "author": "derek.norrbom",
+      "text": "Implemented source-level dependency remediation and regenerated lockfile. Updated direct constraints: bertopic>=0.17.4, docling/docling-mlx>=2.84.0, and project Python support to >=3.10,<3.14 (to eliminate vulnerable torch 2.7.1 branch tied to py3.14 lock resolution). Resolved lock now includes transformers 5.5.0, aiohttp 3.13.5, torch 2.11.0, torchvision 0.26.0, litellm 1.83.3. Verified with poetry check and osv-scanner lockfile scan; target findings no longer appear.",
+      "created_at": "2026-04-06T20:43:37.927936Z"
+    }
+  ],
+  "created_at": "2026-04-06T20:33:16.518091Z",
+  "updated_at": "2026-04-06T20:43:37.927936Z",
+  "closed_at": null,
+  "custom": {}
+}

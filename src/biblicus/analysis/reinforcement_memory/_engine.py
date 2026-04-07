@@ -157,12 +157,6 @@ class ReinforcementMemory:
         # 3. Cluster
         mt = min_topic_size or self._min_topic_size
 
-        def _gen_label(exemplar_texts: List[str]) -> str:
-            if self._label:
-                kw: List[str] = []
-                return self._label(kw, exemplar_texts)
-            return ""
-
         clusterer = TopicClusterer(
             min_topic_size=min(mt, max(2, len(texts) // 3)),
             label_generator=None,  # Labels generated separately below

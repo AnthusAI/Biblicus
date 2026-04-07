@@ -9,7 +9,6 @@ from biblicus import inference, cli
 from biblicus.analysis import markov, topic_modeling
 from biblicus.analysis.markov import (
     MarkovAnalysisConfiguration,
-    MarkovAnalysisSegment,
     MarkovAnalysisTextSourceConfig,
     _load_topic_modeling_report,
     _span_markup_segments,

@@ -1,0 +1,31 @@
+{
+  "id": "blbs-edc7aadb-3ca2-4f20-8be7-0af15a053f74",
+  "title": "Resolve Python ineffectual-statement CodeQL findings",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "5736b9ca-ae75-41a1-b1eb-99cd8225cf9b",
+      "author": "derek.norrbom",
+      "text": "Starting py/ineffectual-statement remediation. I will remove no-op statements while preserving behavior, validate with rcql standard-findings and targeted pytest, then close.",
+      "created_at": "2026-04-06T19:04:11.062461Z"
+    },
+    {
+      "id": "100ab39d-5e62-463a-86d1-03e3ac8cf850",
+      "author": "derek.norrbom",
+      "text": "Completed py/ineffectual-statement remediation. Replaced protocol ellipsis no-op statements with pass in reinforcement-memory protocol definitions. Validation: rcql standard-findings no longer reports py/ineffectual-statement.",
+      "created_at": "2026-04-06T19:14:18.453475Z"
+    }
+  ],
+  "created_at": "2026-04-06T19:03:59.270184Z",
+  "updated_at": "2026-04-06T19:14:18.591782Z",
+  "closed_at": "2026-04-06T19:14:18.591782Z",
+  "custom": {}
+}

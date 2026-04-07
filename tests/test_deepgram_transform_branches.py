@@ -1,12 +1,9 @@
-from types import SimpleNamespace
 
 from biblicus.extractors.deepgram_transform import (
-    DeepgramTranscriptTransformExtractor,
     DeepgramTranscriptTransformConfig,
     _render_deepgram_text,
 )
-from biblicus.models import CatalogItem, ExtractionStageOutput
-from biblicus.corpus import Corpus
+from biblicus.models import CatalogItem
 
 
 def _audio_item():

@@ -1,12 +1,9 @@
 import json
-import types
-from pathlib import Path
 
 import pytest
 
 from biblicus.analysis import topic_modeling as tm
 from biblicus.analysis.models import (
-    TopicModelingConfiguration,
     TopicModelingEntityRemovalConfig,
     TopicModelingLlmExtractionConfig,
     TopicModelingLlmExtractionMethod,

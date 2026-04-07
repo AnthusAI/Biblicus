@@ -1,11 +1,7 @@
-import types
-import sys
 
-import pytest
 
 from biblicus.evaluation.metrics import entity_metrics
 from biblicus.evaluation.stt_benchmark import calculate_cer
-from biblicus.extractors import aws_transcribe_stt
 
 
 def test_entity_metrics_no_ground_truth():

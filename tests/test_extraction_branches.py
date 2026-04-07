@@ -1,13 +1,11 @@
 import json
 from pathlib import Path
-from types import SimpleNamespace
 
-import pytest
 
 from biblicus import extraction
 from biblicus.models import CatalogItem
 from biblicus import corpus as corpus_mod
-from biblicus.extraction import ExtractionSnapshotManifest, write_extraction_snapshot_manifest
+from biblicus.extraction import ExtractionSnapshotManifest
 
 
 def _build_manifest(tmp_path: Path, items: list[CatalogItem]) -> ExtractionSnapshotManifest:
@@ -37,7 +35,7 @@ def _build_manifest(tmp_path: Path, items: list[CatalogItem]) -> ExtractionSnaps
 
 def test_extraction_heartbeat_and_cache_paths(tmp_path, monkeypatch):
     corpus = corpus_mod.Corpus.init(tmp_path, force=True)
-    ingest_result = corpus.ingest_item(
+    corpus.ingest_item(
         b"hello",
         filename="i1.txt",
         media_type="text/plain",
@@ -47,7 +45,7 @@ def test_extraction_heartbeat_and_cache_paths(tmp_path, monkeypatch):
     )
     snap_dir = corpus.extraction_snapshot_dir(extractor_id="pipeline", snapshot_id="snap1")
     snap_dir.mkdir(parents=True, exist_ok=True)
-    manifest = _build_manifest(tmp_path, [])
+    _build_manifest(tmp_path, [])
 
     # ensure cache load path is hit by writing cached text
     stage_dir = snap_dir / "stages" / "1_select-text" / "text"

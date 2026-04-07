@@ -47,11 +47,11 @@ class EmbeddingCacheProtocol(Protocol):
 
     def get(self, model_id: str, key: str) -> Optional[np.ndarray]:
         """Return cached embedding or None on miss."""
-        ...
+        pass
 
     def put(self, model_id: str, key: str, embedding: np.ndarray) -> None:
         """Store an embedding (non-fatal on failure)."""
-        ...
+        pass
 
 
 def _normalize_text(text: str) -> str:

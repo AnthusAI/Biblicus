@@ -49,8 +49,6 @@ def download_common_voice(
     :return: Path to extracted dataset directory.
     :rtype: Path
     """
-    import urllib.request
-    import shutil
 
     download_dir.mkdir(parents=True, exist_ok=True)
 

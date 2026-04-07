@@ -1,6 +1,5 @@
 from types import SimpleNamespace
 
-import pytest
 
 from biblicus.extractors.aldea_stt import AldeaSpeechToTextExtractor, AldeaSpeechToTextExtractorConfig
 from biblicus.models import CatalogItem

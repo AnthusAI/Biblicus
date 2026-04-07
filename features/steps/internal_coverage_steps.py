@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import builtins
-import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -43,7 +42,6 @@ from biblicus.retrievers.hybrid import (
 )
 from biblicus.retrievers.sqlite_full_text_search import (
     SqliteFullTextSearchConfiguration,
-    SqliteFullTextSearchRetriever,
     _apply_rerank_if_enabled,
     _apply_stop_words,
     _build_full_text_search_index,
@@ -80,7 +78,6 @@ from biblicus.retrievers.scan import (
     _find_first_match as find_scan_match,
     _load_text_from_item as load_scan_text,
     _resolve_extraction_reference as resolve_scan_reference,
-    _score_items as score_scan_items,
 )
 from biblicus.extraction import (
     ExtractionItemResult,
@@ -281,7 +278,7 @@ def step_workflow_dependency_edge_cases(context) -> None:
     query_plan = build_plan_for_query(corpus, "scan", load_handler_available=False)
     assert query_plan.status in {"ready", "blocked"}
 
-    import biblicus.workflow as workflow_module
+    from biblicus import workflow as workflow_module
 
     blocked_task = Task(
         name="extract",
@@ -462,7 +459,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         query_plan_with_deps, corpus=corpus, label="query", mode="auto"
     )
 
-    import biblicus.workflow as workflow_module
+    from biblicus import workflow as workflow_module
 
     original_build_plan = workflow_module.build_plan_for_query
     try:
@@ -666,9 +663,6 @@ def step_pipeline_configuration_edge_cases(context) -> None:
         raise AssertionError("Expected unknown extractor to raise")
     except KeyError:
         pass
-
-    class DummyDoclingConfig:
-        retriever = "mlx"
 
     import sys
     import types

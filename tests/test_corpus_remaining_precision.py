@@ -1,4 +1,4 @@
-from pathlib import Path
+from contextlib import suppress
 
 from biblicus import corpus
 
@@ -22,7 +22,6 @@ def test_corpus_reserved_dir_names_excluded(tmp_path):
 def test_corpus_delete_extraction_snapshot_missing(tmp_path):
     c = corpus.Corpus.init(tmp_path)
     # should simply raise FileNotFoundError when missing
-    try:
+    with suppress(FileNotFoundError):
         c.delete_extraction_snapshot(extractor_id="pipeline", snapshot_id="none")
-    except FileNotFoundError:
-        pass
+

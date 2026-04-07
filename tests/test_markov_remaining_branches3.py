@@ -1,6 +1,5 @@
 from types import SimpleNamespace
 from pathlib import Path
-import json
 
 from biblicus.analysis import markov
 from biblicus.analysis.models import (

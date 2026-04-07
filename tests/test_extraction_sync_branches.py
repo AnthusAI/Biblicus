@@ -1,9 +1,7 @@
-import json
 import sys
 from types import SimpleNamespace
 from pathlib import Path
 
-import pytest
 
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import CorpusCatalog

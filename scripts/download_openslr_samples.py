@@ -34,7 +34,6 @@ from pathlib import Path
 import tarfile
 from typing import List, Tuple, Optional
 import urllib.request
-import re
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

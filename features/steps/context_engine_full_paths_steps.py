@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import dataclass
 from types import SimpleNamespace
 
@@ -327,17 +328,15 @@ def step_exercise_context_assembly_helpers(context) -> None:
         retriever_override=None,
     )
 
-    try:
+    with suppress(NotImplementedError):
         assembler._render_pack("missing", template_context, None, None, policy)
-    except NotImplementedError:
-        pass
 
-    try:
+
+    with suppress(ValueError):
         assembler._resolve_compactor(
             ContextPolicySpec(input_budget=ContextBudgetSpec(max_tokens=10), compactor="missing")
         )
-    except ValueError:
-        pass
+
 
     empty_pack = ContextPack(text="orphan", evidence_count=1, blocks=[])
     assembler._merge_context_packs([empty_pack], join_with=" | ")
@@ -583,7 +582,7 @@ def step_exercise_context_assembly_helpers(context) -> None:
     assembler._compact_pack_text("pack text", SimpleNamespace(), policy, tighten_pack_budget=False)
     assembler._compact_pack_text("pack text", None, policy, tighten_pack_budget=False)
 
-    try:
+    with suppress(ValueError):
         assembler._render_nested_context_pack(
             nested_history,
             template_context,
@@ -592,8 +591,7 @@ def step_exercise_context_assembly_helpers(context) -> None:
             tighten_pack_budget=False,
             retriever_override=None,
         )
-    except ValueError:
-        pass
+
 
     assembler._render_nested_context_pack(
         nested_explicit,

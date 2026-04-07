@@ -1,0 +1,31 @@
+{
+  "id": "blbs-dac97a52-c112-4bab-9615-9af626861f9e",
+  "title": "Resolve Python import-and-import-from and repeated-import findings",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "02b56863-7ed3-423c-b15f-b446947b5cd2",
+      "author": "derek.norrbom",
+      "text": "Starting remediation for py/import-and-import-from and py/repeated-import findings in feature step files. Plan: normalize imports to one style per module, run targeted tests, then run rcql python scan to verify.",
+      "created_at": "2026-04-06T18:30:31.711418Z"
+    },
+    {
+      "id": "9dda26ae-9143-45d8-937c-d91f483b820f",
+      "author": "derek.norrbom",
+      "text": "Implemented import-style normalization across Python step/test files and removed redundant json import in extraction steps. Validation: rcql --lang=python --mode standard-findings dropped from 91 warnings to 35; rule checks for py/import-and-import-from and py/repeated-import now return zero findings. Also ran poetry run pytest -q tests/test_coverage_gaps_extra.py (11 passed). Commit: 99592ab.",
+      "created_at": "2026-04-06T18:34:47.176585Z"
+    }
+  ],
+  "created_at": "2026-04-06T18:30:26.919988Z",
+  "updated_at": "2026-04-06T18:35:07.312486Z",
+  "closed_at": "2026-04-06T18:35:07.312486Z",
+  "custom": {}
+}

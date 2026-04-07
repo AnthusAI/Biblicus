@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 from pathlib import Path
 
 from biblicus.corpus import Corpus, _merge_metadata, _merge_tags

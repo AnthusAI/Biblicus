@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from biblicus.analysis import markov
-from biblicus.analysis.models import MarkovAnalysisConfiguration, MarkovAnalysisTextSourceConfig
+from biblicus.analysis.models import MarkovAnalysisTextSourceConfig
 from biblicus.models import ExtractionSnapshotReference
 
 

@@ -14,6 +14,9 @@ Requires the ``reinforcement-memory`` optional dependency group (``virtuus``).
 from __future__ import annotations
 
 import os
+import sys
+from importlib import metadata
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ._models import TimestampedText
@@ -67,6 +70,7 @@ class ReinforcementMemoryStore:
 
     def __init__(self, data_dir: str) -> None:
         """Initialise the store and load existing data from disk."""
+        _ensure_virtuus_version_file()
         try:
             from virtuus import Database
         except ImportError as exc:
@@ -196,6 +200,7 @@ def _build_range_condition(since: Optional[str], until: Optional[str]):
     """Build a Virtuus sort condition from optional ISO timestamp bounds."""
     if since is None and until is None:
         return None
+    _ensure_virtuus_version_file()
     try:
         from virtuus import Sort
     except ImportError:
@@ -206,3 +211,23 @@ def _build_range_condition(since: Optional[str], until: Optional[str]):
     if since is not None:
         return Sort.gte(since)
     return Sort.lte(until)
+
+
+def _ensure_virtuus_version_file() -> None:
+    """
+    Ensure the version file expected by current Virtuus wheels exists.
+
+    Virtuus 0.5.0 imports by reading ``<sys.prefix>/lib/VERSION``. Some wheel
+    builds omit that file, which causes import-time failure even when the
+    package is installed. This function creates the file from installed package
+    metadata when missing.
+    """
+    try:
+        installed_version = metadata.version("virtuus")
+    except metadata.PackageNotFoundError:
+        return
+    version_file = Path(sys.prefix) / "lib" / "VERSION"
+    if version_file.exists():
+        return
+    version_file.parent.mkdir(parents=True, exist_ok=True)
+    version_file.write_text(f"{installed_version}\n", encoding="utf-8")

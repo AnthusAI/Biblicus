@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone, timedelta
 
-import pytest
 
 from biblicus.analysis.reinforcement_memory._lifecycle import (
     _parse_timestamp,

@@ -15,13 +15,10 @@ Usage:
 """
 
 import argparse
+import importlib.util
 import sys
 from pathlib import Path
-import json
-import tarfile
 from typing import List, Tuple
-import urllib.request
-import os
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -257,9 +254,7 @@ def main():
     print("=" * 80)
 
     # Check for numpy
-    try:
-        import numpy
-    except ImportError:
+    if importlib.util.find_spec("numpy") is None:
         print("✗ Error: numpy is required")
         print("  Install it with: pip3 install --user numpy")
         sys.exit(1)

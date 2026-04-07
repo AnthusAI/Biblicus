@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from behave import then, when
 
-import biblicus.text.slice as slice_module
+from biblicus.text import slice as slice_module
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text.slice import TextSliceRequest, _validate_preserved_text, apply_text_slice
 from biblicus.text.tool_loop import ToolLoopResult

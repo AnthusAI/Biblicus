@@ -1,10 +1,9 @@
 import sys
 from types import SimpleNamespace
 
-import pytest
 
 from biblicus.corpus import Corpus
-from biblicus.graph.extractors.dependency_relations import _extract_relations, _load_doc
+from biblicus.graph.extractors.dependency_relations import _extract_relations
 from biblicus.graph.extractors.ner_entities import _extract_entities
 from biblicus.graph.extractors.simple_entities import (
     SimpleEntitiesGraphExtractor,

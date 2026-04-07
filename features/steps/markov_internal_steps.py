@@ -86,8 +86,7 @@ def step_set_markov_end_label_verifier_response(context) -> None:
 def step_apply_start_end_labels_with_rejected_end(context, item_id: str) -> None:
     payloads = json.loads(str(context.text or "[]"))
     assert isinstance(payloads, list)
-
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
@@ -199,8 +198,7 @@ def step_apply_start_end_labels_without_end_label(context, item_id: str) -> None
 def step_apply_start_end_labels_rejected_end_without_rejection_label(context, item_id: str) -> None:
     payloads = json.loads(str(context.text or "[]"))
     assert isinstance(payloads, list)
-
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
@@ -251,8 +249,7 @@ def step_apply_start_end_labels_rejected_end_without_rejection_label(context, it
 def step_apply_start_end_labels_rejected_end_without_reason(context, item_id: str) -> None:
     payloads = json.loads(str(context.text or "[]"))
     assert isinstance(payloads, list)
-
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     response_text = str(getattr(context, "markov_end_label_verifier_response_text", "")).strip()
@@ -348,7 +345,7 @@ def step_attempt_apply_topic_modeling_only_boundaries(context) -> None:
 
 @when("I attempt to apply topic modeling that returns no assignment for a segment")
 def step_attempt_apply_topic_modeling_missing_assignment(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_run_topic_modeling_for_documents = markov_module.run_topic_modeling_for_documents
 
@@ -685,7 +682,7 @@ def step_attempt_llm_segments_missing_llm_config(context) -> None:
 
 @when("I attempt llm segmentation with json object segments not a list")
 def step_attempt_llm_segments_invalid_json_object(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 
@@ -723,7 +720,7 @@ def step_attempt_llm_segments_invalid_json_object(context) -> None:
 
 @when('I snapshot llm segmentation that returns an empty segment and "Alpha"')
 def step_run_llm_segmentation_filters_empty(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 
@@ -778,7 +775,7 @@ def step_attempt_span_markup_segments_missing_config(context) -> None:
 
 @when('I snapshot span markup segmentation with an empty span and "Alpha"')
 def step_run_span_markup_segments_filters_empty(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_apply_text_extract = markov_module.apply_text_extract
 
@@ -1037,8 +1034,7 @@ def step_fit_and_decode_gaussian_without_numpy(context) -> None:
 def step_build_observations_with_llm_summary_embeddings(context) -> None:
     import sys
     import types
-
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     original_dspy = sys.modules.get("dspy")
@@ -1248,7 +1244,7 @@ def step_state_naming_context_pack_block_count(context, count: int) -> None:
 
 @when("I assign Markov state names with a provider response")
 def step_assign_state_names_with_provider_response(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 
@@ -1292,7 +1288,7 @@ def step_assign_state_names_with_provider_response(context) -> None:
 
 @when("I assign Markov state names with a verb phrase response")
 def step_assign_state_names_with_verb_phrase_response(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 
@@ -1434,7 +1430,7 @@ def step_validate_state_naming_response_case(context, case: str) -> None:
 
 @when("I assign Markov state names with retries")
 def step_assign_state_names_with_retries_and_prefixes(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     responses = iter(
@@ -1522,7 +1518,7 @@ def step_assign_state_names_with_no_states(context) -> None:
 
 @when("I attempt to assign Markov state names with retries exhausted")
 def step_attempt_assign_state_names_retries_exhausted(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 
@@ -1559,7 +1555,7 @@ def step_attempt_assign_state_names_retries_exhausted(context) -> None:
 
 @when("I assign Markov state names with a missing label in validation output")
 def step_assign_state_names_with_missing_label_in_validation_output(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
     original_validate_state_names = markov_module._validate_state_names
@@ -1606,7 +1602,7 @@ def step_assign_state_names_with_missing_label_in_validation_output(context) -> 
 
 @when("I attempt span markup segmentation with prepend label but no label attribute")
 def step_attempt_span_markup_prepend_without_label_attribute(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_apply_text_annotate = markov_module.apply_text_annotate
 
@@ -1649,7 +1645,7 @@ def step_attempt_span_markup_prepend_without_label_attribute(context) -> None:
 
 @when("I attempt span markup segmentation with missing label value")
 def step_attempt_span_markup_missing_label_value(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_apply_text_annotate = markov_module.apply_text_annotate
 
@@ -1692,7 +1688,7 @@ def step_attempt_span_markup_missing_label_value(context) -> None:
 
 @when("I apply start/end labels with an end verifier decision")
 def step_apply_start_end_labels_with_verifier(context) -> None:
-    import biblicus.analysis.markov as markov_module
+    from biblicus.analysis import markov as markov_module
 
     original_generate_completion = markov_module.generate_completion
 

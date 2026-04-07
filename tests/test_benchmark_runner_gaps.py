@@ -1,5 +1,3 @@
-from pathlib import Path
-from types import SimpleNamespace
 
 from biblicus.evaluation import benchmark_runner
 

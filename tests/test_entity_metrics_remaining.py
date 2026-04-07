@@ -1,4 +1,3 @@
-import pytest
 
 from biblicus.evaluation.metrics.entity_metrics import (
     calculate_entity_f1,

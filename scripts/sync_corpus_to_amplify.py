@@ -71,7 +71,7 @@ def main():
     }
 
     try:
-        result = publisher._execute_graphql(mutation, variables)
+        publisher._execute_graphql(mutation, variables)
         print(f'✓ Created corpus record: {corpus_name}')
     except Exception as e:
         if 'already exists' in str(e) or 'DuplicateKey' in str(e):

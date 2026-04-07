@@ -7,13 +7,10 @@ callables to verify the full ingest -> analyze -> get_topics pipeline.
 
 from __future__ import annotations
 
-import time
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import List
 from unittest.mock import MagicMock
 
-import numpy as np
-import pytest
 
 from biblicus.analysis.reinforcement_memory import (
     AnalysisResult,
@@ -269,16 +266,14 @@ def test_analyze_replaces_previous_topics(tmp_path):
     engine = _make_engine(tmp_path)
     engine.ingest(_texts("g1", n=20))
     engine.analyze("g1")
-    first_topics = engine.get_topics("g1")
+    engine.get_topics("g1")
 
     # Add more texts and re-analyze
     engine.ingest(_texts("g1", n=20))
     engine.analyze("g1")
-    second_topics = engine.get_topics("g1")
+    engine.get_topics("g1")
 
     # Topics are replaced, not appended
-    first_ids = {t["topic_id"] for t in first_topics}
-    second_ids = {t["topic_id"] for t in second_topics}
     # They may or may not overlap — what matters is no duplication
     all_ids = [t["topic_id"] for t in engine.get_topics("g1")]
     assert len(all_ids) == len(set(all_ids)), "Duplicate topic IDs after re-analyze"

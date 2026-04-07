@@ -5,6 +5,7 @@ Run a small, deterministic extraction evaluation lab.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -12,10 +13,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-try:
-    import pydantic
-except ModuleNotFoundError:  # pragma: no cover - defensive; covered by harness
-    raise
+if importlib.util.find_spec("pydantic") is None:  # pragma: no cover - defensive
+    raise ModuleNotFoundError("pydantic is required to run extraction_evaluation_lab.py")
 
 from biblicus.corpus import Corpus
 from biblicus.extraction import build_extraction_snapshot
