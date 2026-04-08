@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "ed6336a3-c10c-49a3-87de-386ec8c5eee1",
+  "issue_id": "blbs-a7a77deb-1131-4604-83df-d30b8f59e1ba",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-08T16:38:15.458Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 1,
+    "status": "open",
+    "title": "Track upstream no-fix Snyk findings for torch/transformers"
+  }
+}

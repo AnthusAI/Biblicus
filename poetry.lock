@@ -6743,16 +6743,15 @@ files = [
 
 [[package]]
 name = "pygments"
-version = "2.19.2"
+version = "2.20.0"
 description = "Pygments is a syntax highlighting package written in Python."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b"},
-    {file = "pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887"},
+    {file = "pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"},
+    {file = "pygments-2.20.0.tar.gz", hash = "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f"},
 ]
-markers = {main = "extra == \"datasets\" or extra == \"dspy\" or extra == \"docling\" or extra == \"docling-mlx\" or extra == \"topic-modeling\" or extra == \"reinforcement-memory\" or extra == \"paddleocr\" or extra == \"ner\" or python_version == \"3.11\" and (extra == \"datasets\" or extra == \"dspy\" or extra == \"docling\" or extra == \"docling-mlx\" or extra == \"topic-modeling\" or extra == \"reinforcement-memory\" or extra == \"paddleocr\" or extra == \"ner\" or extra == \"unstructured\") or python_version >= \"3.11\" and (extra == \"datasets\" or extra == \"dspy\" or extra == \"docling\" or extra == \"docling-mlx\" or extra == \"topic-modeling\" or extra == \"reinforcement-memory\" or extra == \"paddleocr\" or extra == \"unstructured\" or extra == \"ner\")"}
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
@@ -11093,4 +11092,4 @@ unstructured = ["python-docx", "unstructured"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "54f17e89fa80a1c2c405d092b5a73b55e75f26d5a7fc7b2e996f8ea1d0093b5f"
+content-hash = "f0d39acbc2773d1745e2074088588d502ec7aedb47ec041453e06fd9f312da04"
