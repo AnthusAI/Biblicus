@@ -1,5 +1,5 @@
 project_directory: project
-external_projects: []
+virtual_projects: []
 ignore_paths: []
 console_port: 4245
 project_key: blbs
