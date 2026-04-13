@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "8e9362c8-58e0-4f8a-9fe1-a01c45255252",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in 80c4d4. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.133545Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.300003Z",
-  "updated_at": "2026-04-13T17:45:49.300003Z",
+  "updated_at": "2026-04-13T17:52:16.133545Z",
   "closed_at": null,
   "custom": {
     "snyk_key": "SNYK-PYTHON-TRANSFORMERS-14560695",

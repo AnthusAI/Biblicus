@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "d63ae973-326b-4817-b92c-16e36c969634",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in a335ad. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.156579Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.301023Z",
-  "updated_at": "2026-04-13T17:45:49.301023Z",
+  "updated_at": "2026-04-13T17:52:16.156579Z",
   "closed_at": null,
   "custom": {
     "snyk_key": "SNYK-PYTHON-TORCH-10337825",

@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "462a595a-388d-45e1-8535-18f39d677779",
+      "author": "derek.norrbom",
+      "text": "Triaged 2026-04-13 after full Snyk sync. Closed: blbs-1b345a (pygments resolved). Open actionable fix: blbs-16a539 (pypdf -> 6.10.0). Open ignore candidates: 14 torch/transformers IDs with no upstream fix; each has a suggested ignore rationale comment and 2026-05-13 review date.",
+      "created_at": "2026-04-13T17:52:20.623421Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.299525Z",
-  "updated_at": "2026-04-13T17:45:49.299525Z",
+  "updated_at": "2026-04-13T17:52:20.623421Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "dependency",

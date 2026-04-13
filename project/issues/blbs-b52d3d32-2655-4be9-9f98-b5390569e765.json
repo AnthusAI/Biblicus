@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "e12efb0d-0db2-4f43-b6bc-055002ac36ff",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in b52d3d. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.195625Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.300413Z",
-  "updated_at": "2026-04-13T17:45:49.300413Z",
+  "updated_at": "2026-04-13T17:52:16.195625Z",
   "closed_at": null,
   "custom": {
     "snyk_key": "SNYK-PYTHON-TRANSFORMERS-14564365",

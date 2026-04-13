@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "a0cc9045-eadc-4a40-b0ae-9c3de9241d72",
+      "author": "derek.norrbom",
+      "text": "Still open and fixable. Latest scan (2026-04-13) reports SNYK-PYTHON-PYPDF-15989793 at pypdf@6.9.2 with fixedIn=[6.10.0] and isUpgradable=true. Recommended action: bump pypdf floor to >=6.10.0, regenerate poetry.lock, rerun Snyk, then close this sub-task when cleared.",
+      "created_at": "2026-04-13T17:52:20.611686Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.301580Z",
-  "updated_at": "2026-04-13T17:45:49.301580Z",
+  "updated_at": "2026-04-13T17:52:20.611686Z",
   "closed_at": null,
   "custom": {
     "snyk_key": "SNYK-PYTHON-PYPDF-15989793",
