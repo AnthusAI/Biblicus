@@ -1,0 +1,30 @@
+{
+  "id": "blbs-a6680e7b-4b5c-4d3b-9a37-bbdb475bb18d",
+  "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
+  "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `features/steps/embeddings_steps.py`\n**Location:** line 81, column 13 to line 81, column 20\n**Classes:** CWE-CWE-547\n### Snippet (features/steps/embeddings_steps.py:79-83)\n```\n  79 |             provider=AiProvider(provider),\n  80 |             model=\"text-embedding-3-small\",\n  81 |             api_key=\"test-key\",\n  82 |         )\n  83 |         _ = generate_embeddings_batch(client=config, texts=[\"alpha\"])\n```\n\n**Issue Key:** 383d4b25-acf1-4099-8374-542266b1c235\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.220188Z",
+  "updated_at": "2026-04-13T17:45:49.220188Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 20,
+    "snyk_end_line": 81,
+    "snyk_file": "features/steps/embeddings_steps.py",
+    "snyk_key": "383d4b25-acf1-4099-8374-542266b1c235",
+    "snyk_line": 81,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

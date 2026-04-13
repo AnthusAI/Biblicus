@@ -1,0 +1,38 @@
+{
+  "id": "blbs-abd7086b-3470-47a5-833e-29d0ab1c1716",
+  "title": "[Snyk] SNYK-PYTHON-TORCH-10337826 in torch@2.11.0",
+  "description": "## Out-of-bounds Write\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 4.8  \n**Snyk Priority Score:** 240/1000\n\n### CVEs\n- [CVE-2025-3000](https://nvd.nist.gov/vuln/detail/CVE-2025-3000)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Out-of-bounds Write when using `@torch.jit.script`. An attacker can corrupt memory by manipulating the function's input. \r\n\r\n**Note:**\r\nThis is only exploitable if the attacker has local access to the system.\n## Remediation\nThere is no fixed version for `torch`.\n## References\n- [GitHub Issue](https://github.com/pytorch/pytorch/issues/149623)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-10337826)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "2aa70486-9645-4604-8295-5ea02d6d1608",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in abd708. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.182572Z"
+    },
+    {
+      "id": "4ead53cd-ec78-4d54-b3f1-b391ec4fd32f",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/auto-expire-until-fix policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen if upstream fix becomes available or policy review requires active remediation.",
+      "created_at": "2026-04-13T18:41:17.915485Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.301143Z",
+  "updated_at": "2026-04-13T18:41:17.929541Z",
+  "closed_at": "2026-04-13T18:41:17.929541Z",
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TORCH-10337826",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

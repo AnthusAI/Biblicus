@@ -14,14 +14,22 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-import tarfile
 from typing import List, Tuple
 import urllib.request
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
+from _security_utils import (
+    resolve_within,
+    resolve_within_repo,
+    safe_extract_tar,
+    validate_https_url,
+)
+
+VOXFORGE_ALLOWED_HOSTS = {"www.repository.voxforge1.org"}
 
 
 def get_voxforge_archive_urls(count: int = 50) -> List[str]:
@@ -33,8 +41,7 @@ def get_voxforge_archive_urls(count: int = 50) -> List[str]:
     :return: List of archive URLs.
     :rtype: list[str]
     """
-    # VoxForge archives are at http://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/
-    base_url = "http://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/"
+    base_url = "https://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/"
 
     # List of known archives (partial - there are hundreds)
     # In practice, you'd scrape the index page for all available archives
@@ -61,7 +68,10 @@ def get_voxforge_archive_urls(count: int = 50) -> List[str]:
         "Ben-20091124-vvq.tgz",
     ]
 
-    return [base_url + archive for archive in archives[:count]]
+    return [
+        validate_https_url(base_url + archive, allowed_hosts=VOXFORGE_ALLOWED_HOSTS)
+        for archive in archives[:count]
+    ]
 
 
 def download_and_extract_archive(url: str, download_dir: Path) -> Path:
@@ -75,9 +85,13 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     :return: Path to extracted directory.
     :rtype: Path
     """
+    safe_download_dir = resolve_within_repo(download_dir, require_exists=False)
+    validated_url = validate_https_url(url, allowed_hosts=VOXFORGE_ALLOWED_HOSTS)
     filename = url.split('/')[-1]
-    tar_file = download_dir / filename
-    extract_dir = download_dir / filename.replace('.tgz', '')
+    tar_file = resolve_within(safe_download_dir, safe_download_dir / filename, require_exists=False)
+    extract_dir = resolve_within(
+        safe_download_dir, safe_download_dir / filename.replace('.tgz', ''), require_exists=False
+    )
 
     if extract_dir.exists():
         return extract_dir
@@ -85,15 +99,16 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     if not tar_file.exists():
         print(f"  Downloading {filename}...")
         try:
-            urllib.request.urlretrieve(url, tar_file)
+            request = urllib.request.Request(validated_url, headers={"User-Agent": "BiblicusDownloader/1.0"})
+            with urllib.request.urlopen(request) as response:
+                tar_file.write_bytes(response.read())
         except Exception as e:
             print(f"    Failed: {e}")
             return None
 
     print(f"  Extracting {filename}...")
     try:
-        with tarfile.open(tar_file, "r:gz") as tar:
-            tar.extractall(download_dir)
+        safe_extract_tar(tar_file, safe_download_dir)
         tar_file.unlink()  # Remove tar file to save space
     except Exception as e:
         print(f"    Failed: {e}")
@@ -143,6 +158,7 @@ def collect_audio_samples(
     :return: List of (audio_path, transcription) tuples.
     :rtype: list[tuple[Path, str]]
     """
+    download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     urls = get_voxforge_archive_urls(count=sample_count)
@@ -276,7 +292,7 @@ def main():
     parser.add_argument(
         "--download-dir",
         type=Path,
-        default=Path("/tmp/voxforge"),
+        default=Path("artifacts/voxforge"),
         help="Directory to download dataset to"
     )
 
@@ -291,8 +307,11 @@ def main():
     print("=" * 80)
 
     # Collect samples
+    safe_corpus_path = resolve_within_repo(args.corpus, require_exists=False)
+    safe_download_dir = resolve_within_repo(args.download_dir, require_exists=False)
+
     samples = collect_audio_samples(
-        download_dir=args.download_dir,
+        download_dir=safe_download_dir,
         sample_count=args.count
     )
 
@@ -301,7 +320,7 @@ def main():
         sys.exit(1)
 
     # Initialize corpus
-    corpus = Corpus(args.corpus)
+    corpus = Corpus(safe_corpus_path)
 
     # Ingest samples
     stats = ingest_samples(corpus=corpus, samples=samples)

@@ -19,6 +19,7 @@ from biblicus.extraction_evaluation import (
     write_extraction_evaluation_result,
 )
 from biblicus.frontmatter import parse_front_matter
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -88,7 +89,9 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = resolve_within_repo(
+        arguments.corpus, require_exists=False, allow_temp_dir=True
+    )
     from scripts.download_ag_news import download_ag_news_corpus
 
     ingestion_stats = download_ag_news_corpus(
@@ -121,7 +124,9 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     )
     dataset_path = _write_dataset_file(
         dataset=dataset,
-        dataset_path=Path(arguments.dataset_path).resolve(),
+        dataset_path=resolve_within_repo(
+            arguments.dataset_path, require_exists=False, allow_temp_dir=True
+        ),
     )
     result = evaluate_extraction_snapshot(
         corpus=corpus,

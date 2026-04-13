@@ -15,12 +15,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Dict, Optional
+import sys
 
 from biblicus.corpus import Corpus
+sys.path.insert(0, str(Path(__file__).parent))
+from _security_utils import resolve_within_repo
 
 # SROIE dataset configuration
 # Using arvindrajan92/sroie_document_understanding which has images + OCR annotations
@@ -134,7 +136,8 @@ def download_sroie_from_local(local_path: Path, temp_dir: Path) -> Path:
     :return: Path to processed dataset directory.
     :rtype: Path
     """
-    print(f"Processing SROIE dataset from local path: {local_path}")
+    safe_local_path = resolve_within_repo(local_path, require_exists=True)
+    print(f"Processing SROIE dataset from local path: {safe_local_path}")
 
     # SROIE official structure varies, handle common formats
     # Task 1: Text Localization (bounding boxes)
@@ -153,7 +156,7 @@ def download_sroie_from_local(local_path: Path, temp_dir: Path) -> Path:
     image_extensions = ["*.jpg", "*.jpeg", "*.png"]
     image_files = []
     for ext in image_extensions:
-        image_files.extend(local_path.rglob(ext))
+        image_files.extend(safe_local_path.rglob(ext))
 
     print(f"Found {len(image_files)} image files")
 
@@ -161,14 +164,16 @@ def download_sroie_from_local(local_path: Path, temp_dir: Path) -> Path:
         stem = image_file.stem
 
         # Copy image
-        shutil.copy(image_file, images_dir / image_file.name)
+        image_destination = images_dir / image_file.name
+        image_destination.write_bytes(image_file.read_bytes())
 
         # Look for corresponding OCR text file
         ocr_file = image_file.with_suffix(".txt")
         if not ocr_file.exists():
             ocr_file = image_file.parent / f"{stem}.txt"
         if ocr_file.exists():
-            shutil.copy(ocr_file, ocr_dir / f"{stem}.txt")
+            ocr_destination = ocr_dir / f"{stem}.txt"
+            ocr_destination.write_bytes(ocr_file.read_bytes())
 
         # Look for entity file (key information)
         entity_patterns = [
@@ -377,10 +382,12 @@ def main() -> int:
     print()
 
     stats = download_sroie_samples(
-        corpus_path=Path(args.corpus).resolve(),
+        corpus_path=resolve_within_repo(args.corpus, require_exists=False),
         sample_count=args.count,
         force=bool(args.force),
-        local_path=args.from_local,
+        local_path=resolve_within_repo(args.from_local, require_exists=True)
+        if args.from_local
+        else None,
         split=args.split,
     )
 

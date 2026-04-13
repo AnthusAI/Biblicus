@@ -1,0 +1,37 @@
+{
+  "id": "blbs-3140ff9f-f8b3-439a-9177-3cdda891abd4",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_tedlium_samples.py`\n**Location:** line 80, column 9 to line 80, column 23\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_tedlium_samples.py:78-82)\n```\n  78 |     print(f\"Extracting {tar_file}...\")\n  79 |     with tarfile.open(tar_file, \"r:gz\") as tar:\n  80 |         tar.extractall(download_dir)\n  81 | \n  82 |     print(f\"✓ Extracted to {extracted_dir}\")\n```\n\n**Issue Key:** c1a358c0-467d-4a2d-9532-1fb7f6157947\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "95eaad39-a9d0-48cb-859d-e2b2848d0ebc",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by introducing validated extraction and path handling in downloader scripts. Changes include member-validated tar extraction (no unsafe extractall), path confinement checks for script IO paths, and HTTPS host allowlist validation for OpenSLR downloads. Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:52:40.797733Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.259733Z",
+  "updated_at": "2026-04-13T20:52:40.814778Z",
+  "closed_at": "2026-04-13T20:52:40.814778Z",
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 23,
+    "snyk_end_line": 80,
+    "snyk_file": "scripts/download_tedlium_samples.py",
+    "snyk_key": "c1a358c0-467d-4a2d-9532-1fb7f6157947",
+    "snyk_line": 80,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

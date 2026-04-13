@@ -61,6 +61,16 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
+def _resolve_within(base_dir: Path, candidate: str) -> Path:
+    base = base_dir.resolve()
+    resolved = Path(candidate).expanduser().resolve()
+    try:
+        resolved.relative_to(base)
+    except ValueError as error:
+        raise ValueError(f"Path must be within {base}") from error
+    return resolved
+
+
 def _parse_list(raw: Optional[Iterable[str]]) -> List[str]:
     """
     Parse a repeatable argument list into a normalized list.
@@ -113,7 +123,7 @@ def _segmentation_signature(*, config: MarkovAnalysisConfiguration) -> str:
 
 def _cache_root(*, corpus_path: Path, override: Optional[str]) -> Path:
     if override:
-        return Path(override).resolve()
+        return _resolve_within(REPO_ROOT, override)
     return corpus_path / ".biblicus" / "demo_cache" / "markov" / "segments"
 
 
@@ -500,7 +510,7 @@ def snapshot_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Demo summary.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = _resolve_within(REPO_ROOT, arguments.corpus)
     corpus_config = corpus_path / ".biblicus" / "config.json"
     if not corpus_config.exists():
         raise SystemExit(

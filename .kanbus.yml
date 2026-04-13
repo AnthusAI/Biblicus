@@ -1,5 +1,5 @@
 project_directory: project
-external_projects: []
+virtual_projects: []
 ignore_paths: []
 console_port: 4245
 project_key: blbs
@@ -113,3 +113,7 @@ type_colors:
   sub-task: bright_cyan
   task: cyan
 beads_compatibility: false
+snyk:
+  org_id: dbec85a8-d7a0-482a-b5c4-eb609a451b53
+  min_severity: low
+  repo: AnthusAI/Biblicus

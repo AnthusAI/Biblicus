@@ -1,0 +1,30 @@
+{
+  "id": "blbs-31ca967e-cfdd-46b6-bc4e-a31faaf1b616",
+  "title": "[Snyk Code] Use of Password Hash With Insufficient Computational Effort",
+  "description": "## Use of Password Hash With Insufficient Computational Effort\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `src/biblicus/analysis/reinforcement_memory/_embedding.py`\n**Location:** line 185, column 24 to line 185, column 67\n**Classes:** CWE-CWE-916\n### Snippet (src/biblicus/analysis/reinforcement_memory/_embedding.py:183-187)\n```\n 183 |         result = []\n 184 |         for text in texts:\n 185 |             seed = int(hashlib.md5(text.encode(\"utf-8\")).hexdigest(), 16) % (2**32)\n 186 |             rng = np.random.default_rng(seed)\n 187 |             vec = rng.standard_normal(dimensions).astype(np.float32)\n```\n\n**Issue Key:** 6fea09bc-eb7e-4333-a59f-1c05ae3542f0\n\n### Details\nUse of Password Hash With Insufficient Computational Effort\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.297798Z",
+  "updated_at": "2026-04-13T17:45:49.297798Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 24,
+    "snyk_end_column": 67,
+    "snyk_end_line": 185,
+    "snyk_file": "src/biblicus/analysis/reinforcement_memory/_embedding.py",
+    "snyk_key": "6fea09bc-eb7e-4333-a59f-1c05ae3542f0",
+    "snyk_line": 185,
+    "snyk_severity": "low",
+    "snyk_type": "code"
+  }
+}

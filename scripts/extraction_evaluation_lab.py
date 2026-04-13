@@ -25,6 +25,7 @@ from biblicus.extraction_evaluation import (
     write_extraction_evaluation_result,
 )
 from biblicus.sources import load_source
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -121,7 +122,9 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = resolve_within_repo(
+        arguments.corpus, require_exists=False, allow_temp_dir=True
+    )
     corpus = _prepare_corpus(corpus_path, force=arguments.force)
     lab_dataset = _load_lab_dataset()
     ingested_ids: List[str] = []
@@ -171,7 +174,9 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         description=lab_dataset.description,
         items=evaluation_items,
     )
-    dataset_path = Path(arguments.dataset_path).resolve()
+    dataset_path = resolve_within_repo(
+        arguments.dataset_path, require_exists=False, allow_temp_dir=True
+    )
     dataset_path.parent.mkdir(parents=True, exist_ok=True)
     dataset_path.write_text(dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
 

@@ -1,0 +1,30 @@
+{
+  "id": "blbs-36147a7e-5d9d-4c69-a1bf-04680a1b96d0",
+  "title": "[Snyk Code] Jinja auto-escape is set to false.",
+  "description": "## Jinja auto-escape is set to false.\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `src/biblicus/text/redact.py`\n**Location:** line 137, column 11 to line 137, column 22\n**Classes:** CWE-CWE-79\n### Snippet (src/biblicus/text/redact.py:135-139)\n```\n 135 | \n 136 | def _render_system_prompt(template: str, *, redaction_types: Sequence[str] | None) -> str:\n 137 |     env = Environment(undefined=StrictUndefined)\n 138 |     rendered = env.from_string(template).render(\n 139 |         redaction_types=list(redaction_types) if redaction_types is not None else [],\n```\n\n**Issue Key:** 8b775b26-017e-4078-ba72-502671c1fbc2\n\n### Details\nJinja auto-escape is set to false.\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.291194Z",
+  "updated_at": "2026-04-13T17:45:49.291194Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 11,
+    "snyk_end_column": 22,
+    "snyk_end_line": 137,
+    "snyk_file": "src/biblicus/text/redact.py",
+    "snyk_key": "8b775b26-017e-4078-ba72-502671c1fbc2",
+    "snyk_line": 137,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

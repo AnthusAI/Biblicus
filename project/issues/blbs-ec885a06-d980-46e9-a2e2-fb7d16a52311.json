@@ -1,0 +1,37 @@
+{
+  "id": "blbs-ec885a06-d980-46e9-a2e2-fb7d16a52311",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_run_report.py`\n**Location:** line 217, column 19 to line 217, column 40\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_run_report.py:215-219)\n```\n 215 |             lines.append(\"- Source path unavailable\")\n 216 | \n 217 |     report_path = run_dir / \"report.md\"\n 218 |     report_path.write_text(\"\\n\".join(lines) + \"\\n\", encoding=\"utf-8\")\n 219 |     return report_path\n```\n\n**Issue Key:** c8441dc9-bb9a-4d0c-8d5e-22f90c777313\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7d44db2f-0088-4465-9373-3bbc9868fc20",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by adding explicit path-boundary validation in scripts/markov_cached_segments_demo.py and scripts/markov_run_report.py. User-provided and metadata-derived paths are now resolved and constrained to expected roots before read/write operations. Local Snyk Code re-scan on 2026-04-13 shows 0 remaining python/PT findings in both files.",
+      "created_at": "2026-04-13T20:45:41.495716Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.253011Z",
+  "updated_at": "2026-04-13T20:45:41.510327Z",
+  "closed_at": "2026-04-13T20:45:41.510327Z",
+  "custom": {
+    "snyk_column": 19,
+    "snyk_end_column": 40,
+    "snyk_end_line": 217,
+    "snyk_file": "scripts/markov_run_report.py",
+    "snyk_key": "c8441dc9-bb9a-4d0c-8d5e-22f90c777313",
+    "snyk_line": 217,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

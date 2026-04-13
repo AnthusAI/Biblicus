@@ -1,0 +1,37 @@
+{
+  "id": "blbs-fa396b81-1604-41fa-81af-b9eb84301767",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/evaluate_ocr_pipeline.py`\n**Location:** line 112, column 18 to line 112, column 29\n**Classes:** CWE-CWE-23\n### Snippet (scripts/evaluate_ocr_pipeline.py:110-114)\n```\n 110 |     configs = []\n 111 |     for config_path in args.compare:\n 112 |         config = load_config(Path(config_path))\n 113 |         config_name = Path(config_path).stem\n 114 |         configs.append({\n```\n\n**Issue Key:** 5111aa1c-9222-4442-a2af-33ee91044eb5\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d5d80cfc-f1dc-4b7d-a180-b02c92b94dce",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:08.978897Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.258634Z",
+  "updated_at": "2026-04-13T20:58:08.990873Z",
+  "closed_at": "2026-04-13T20:58:08.990873Z",
+  "custom": {
+    "snyk_column": 18,
+    "snyk_end_column": 29,
+    "snyk_end_line": 112,
+    "snyk_file": "scripts/evaluate_ocr_pipeline.py",
+    "snyk_key": "5111aa1c-9222-4442-a2af-33ee91044eb5",
+    "snyk_line": 112,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

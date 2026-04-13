@@ -1,0 +1,37 @@
+{
+  "id": "blbs-70402593-84a4-423d-88c5-8c397da61620",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 211, column 47 to line 230, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:209-232)\n```\n 209 | \n 210 | // Get a specific catalog item\n 211 | app.get('/api/corpora/:name/catalog/:itemId', async (req, res) => {\n 212 |   try {\n 213 |     const corpusPath = validateCorpusPath(req.params.name);\n 214 |     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');\n 215 | \n 216 |     const catalogData = await fs.readFile(catalogPath, 'utf8');\n 217 |     const catalog = JSON.parse(catalogData);\n 218 | \n 219 |     const item = catalog.items?.[req.params.itemId];\n 220 | \n 221 |     if (!item) {\n 222 |       return res.status(404).json({ error: 'Item not found' });\n 223 |     }\n 224 | \n 225 |     res.json(item);\n 226 |   } catch (error) {\n 227 |     console.error('Error reading catalog item:', error);\n 228 |     res.status(404).json({ error: 'Item not found' });\n 229 |   }\n 230 | });\n 231 | \n 232 | // Stream raw file content for a catalog item (for local file viewing).\n```\n\n**Issue Key:** 64a6fa0c-ee42-4efb-8835-f87d8babd553\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "afa12d77-d022-4ea7-ae57-217deb4e7fd6",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.422184Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.237419Z",
+  "updated_at": "2026-04-13T20:27:34.434844Z",
+  "closed_at": "2026-04-13T20:27:34.434844Z",
+  "custom": {
+    "snyk_column": 47,
+    "snyk_end_column": 2,
+    "snyk_end_line": 230,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "64a6fa0c-ee42-4efb-8835-f87d8babd553",
+    "snyk_line": 211,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "blbs-6c1da9c9-5280-42fc-a409-dfd60fbc4463",
+  "title": "[Snyk] SNYK-PYTHON-TRANSFORMERS-14564366 in transformers@5.5.0",
+  "description": "## Arbitrary Code Injection\n\n**Severity:** high\n**Package:** transformers@5.5.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 8.5  \n**Snyk Priority Score:** 425/1000\n\n### CVEs\n- [CVE-2025-14927](https://nvd.nist.gov/vuln/detail/CVE-2025-14927)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[transformers](https://pypi.org/project/transformers) is a State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow\n\nAffected versions of this package are vulnerable to Arbitrary Code Injection via the `convert_config` function. An attacker can execute arbitrary code by supplying a malicious checkpoint file that is processed without proper validation.\r\n\r\n**Note:**\r\n\r\nThe report of this vulnerability was rejected by the package's maintainers. See the project's [security policy](https://github.com/huggingface/transformers/security) for more information.\n## Remediation\nThere is no fixed version for `transformers`.\n\n## References\n- [ZeroDayInitiative Report](https://www.zerodayinitiative.com/advisories/ZDI-25-1148/)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TRANSFORMERS-14564366)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "9c436d79-02f8-484d-9681-68626a20cf86",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in 6c1da9. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.121772Z"
+    },
+    {
+      "id": "6d97c819-a513-49bb-ad7b-cbd06d1f17ed",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/auto-expire-until-fix policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen if upstream fix becomes available or policy review requires active remediation.",
+      "created_at": "2026-04-13T18:41:17.783036Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.299878Z",
+  "updated_at": "2026-04-13T18:41:17.796938Z",
+  "closed_at": "2026-04-13T18:41:17.796938Z",
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TRANSFORMERS-14564366",
+    "snyk_severity": "high",
+    "snyk_type": "package_vulnerability"
+  }
+}

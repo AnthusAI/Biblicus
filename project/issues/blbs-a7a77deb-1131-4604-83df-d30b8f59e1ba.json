@@ -1,0 +1,18 @@
+{
+  "id": "blbs-a7a77deb-1131-4604-83df-d30b8f59e1ba",
+  "title": "Track upstream no-fix Snyk findings for torch/transformers",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-08T16:38:15.458204Z",
+  "updated_at": "2026-04-08T16:38:15.458204Z",
+  "closed_at": null,
+  "custom": {}
+}

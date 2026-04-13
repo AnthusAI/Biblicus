@@ -1,0 +1,38 @@
+{
+  "id": "blbs-363da884-9a7e-4fa6-be36-3360fd52a4da",
+  "title": "[Snyk] SNYK-JS-FASTXMLPARSER-15324289 in fast-xml-parser@5.3.4",
+  "description": "## Incorrect Regular Expression\n\n**Severity:** high\n**Package:** fast-xml-parser@5.3.4\n**File:** `apps/dashboard/package.json`\n\n**CVSS Score:** 7.8  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 497/1000\n\n### CVEs\n- [CVE-2026-25896](https://nvd.nist.gov/vuln/detail/CVE-2026-25896)\n\n**Fix:** Pin `fast-xml-parser` to version 4.5.4, 5.3.5 or later.\n\n### Details\n## Overview\n[fast-xml-parser](https://www.npmjs.org/package/fast-xml-parser) is a Validate XML, Parse XML, Build XML without C/C++ based libraries\n\nAffected versions of this package are vulnerable to Incorrect Regular Expression in the entity parsing RegEx in DOCTYPE declarations. An attacker can inject arbitrary values that override built-in XML entities by crafting entity names containing `.`, which is interpreted as a regex wildcard, allowing malicious content to be substituted in place of standard entities when the XML is parsed and subsequently rendered or used in sensitive contexts.\n## Remediation\nUpgrade `fast-xml-parser` to version 4.5.4, 5.3.5 or higher.\n## References\n- [GitHub Commit](https://github.com/NaturalIntelligence/fast-xml-parser/commit/943ef0eb1b2d3284e72dd74f44a042ee9f07026e)\n- [GitHub Commit](https://github.com/NaturalIntelligence/fast-xml-parser/commit/ddcd0acf26ddd682cb0dc15a2bd6aa3b96bb1e69)\n- [GitHub Release](https://github.com/NaturalIntelligence/fast-xml-parser/releases/tag/v5.3.5)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-FASTXMLPARSER-15324289)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-94b8f5a7-9b94-4edc-9fec-649d89aa6c37",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "8713c77a-7e57-43f5-95f2-02ee4203b9e5",
+      "author": "derek.norrbom",
+      "text": "Still present after updating apps/dashboard lockfile and upgrading to latest published aws-amplify stack (aws-amplify 6.16.3, @aws-amplify/storage 6.13.2). Upstream package line currently pins vulnerable transitive versions (lodash 4.17.23 and fast-xml-parser 5.3.4 in analytics path). Recommend Snyk ignore with expiry/review date while tracking upstream releases.",
+      "created_at": "2026-04-13T18:51:47.858790Z"
+    },
+    {
+      "id": "483ce417-5822-4ee6-8f61-37a5d5607f34",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/until-fixed policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen when upstream dependency releases a fixed transitive version.",
+      "created_at": "2026-04-13T20:14:02.542426Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.298351Z",
+  "updated_at": "2026-04-13T20:14:02.559480Z",
+  "closed_at": "2026-04-13T20:14:02.559480Z",
+  "custom": {
+    "snyk_key": "SNYK-JS-FASTXMLPARSER-15324289",
+    "snyk_severity": "high",
+    "snyk_type": "package_vulnerability"
+  }
+}

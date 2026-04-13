@@ -16,6 +16,7 @@ from biblicus.extraction import build_extraction_snapshot
 from biblicus.graph.extraction import build_graph_snapshot
 from biblicus.graph.neo4j import create_neo4j_driver, resolve_neo4j_settings
 from biblicus.models import ExtractionSnapshotReference
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -363,7 +364,9 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = resolve_within_repo(
+        arguments.corpus, require_exists=False, allow_temp_dir=True
+    )
 
     _log_phase(logger, "Phase 1: Download Wikipedia corpus")
     ingestion_stats = _download_wikipedia(
@@ -530,7 +533,12 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
                     ", ".join(summary["sample_entities"]),
                 ]
             )
-        _write_story_report(path=Path(arguments.report_path).resolve(), content="\n".join(report_lines) + "\n")
+        _write_story_report(
+            path=resolve_within_repo(
+                arguments.report_path, require_exists=False, allow_temp_dir=True
+            ),
+            content="\n".join(report_lines) + "\n",
+        )
 
     return summary
 

@@ -1,0 +1,37 @@
+{
+  "id": "blbs-0e64dc18-2442-4c64-b08b-777e91a552b1",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 134, column 31 to line 170, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:132-156)\n```\n 132 | \n 133 | // Get details for a specific corpus\n 134 | app.get('/api/corpora/:name', async (req, res) => {\n 135 |   try {\n 136 |     const corpusPath = validateCorpusPath(req.params.name);\n 137 | \n 138 |     // Check corpus exists\n 139 |     await fs.access(corpusPath);\n 140 | \n 141 |     const corpus = {\n 142 |       name: req.params.name,\n 143 |       path: corpusPath,\n 144 |     };\n 145 | \n 146 |     // Read catalog.json from metadata folder\n 147 |     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');\n 148 |     try {\n 149 |       const catalogData = await fs.readFile(catalogPath, 'utf8');\n 150 |       corpus.catalog = JSON.parse(catalogData);\n 151 |     } catch (err) {\n 152 |       // No catalog - show what we can\n 153 |       corpus.catalog = null;\n 154 |     }\n 155 | \n 156 |     // List extraction snapshots\n```\n\n**Issue Key:** b6db112c-2f8c-4523-91b5-aa3b92ffee58\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "bfcbfe82-b129-4a92-bc45-aab6fd6de6e9",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:33.390596Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.285107Z",
+  "updated_at": "2026-04-13T20:27:33.407446Z",
+  "closed_at": "2026-04-13T20:27:33.407446Z",
+  "custom": {
+    "snyk_column": 31,
+    "snyk_end_column": 2,
+    "snyk_end_line": 170,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "b6db112c-2f8c-4523-91b5-aa3b92ffee58",
+    "snyk_line": 134,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

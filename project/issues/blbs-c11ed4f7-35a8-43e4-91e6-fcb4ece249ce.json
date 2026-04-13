@@ -1,0 +1,37 @@
+{
+  "id": "blbs-c11ed4f7-35a8-43e4-91e6-fcb4ece249ce",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 67, column 25 to line 131, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:65-89)\n```\n  65 | \n  66 | // List all available corpora\n  67 | app.get('/api/corpora', async (req, res) => {\n  68 |   try {\n  69 |     const entries = await fs.readdir(CORPORA_ROOT, { withFileTypes: true });\n  70 | \n  71 |     const corpora = [];\n  72 |     for (const entry of entries) {\n  73 |       if (!entry.isDirectory() || entry.name.startsWith('.')) continue;\n  74 | \n  75 |       const corpusPath = path.join(CORPORA_ROOT, entry.name);\n  76 | \n  77 |       // Check for metadata directory (current standard)\n  78 |       const metadataDir = path.join(corpusPath, 'metadata');\n  79 |       let hasMetadata = false;\n  80 |       try {\n  81 |         await fs.access(metadataDir);\n  82 |         hasMetadata = true;\n  83 |       } catch (err) {\n  84 |         // No metadata directory - will show basic info only\n  85 |       }\n  86 | \n  87 |       // If no metadata, check for legacy .biblicus (for identification only)\n  88 |       if (!hasMetadata) {\n  89 |         const biblicusDir = path.join(corpusPath, '.biblicus');\n```\n\n**Issue Key:** d30cad0d-862b-4ca1-9d2e-3b0f8aceaac1\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7c851cd3-8efa-48b4-a4a1-55d03f2be31c",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.842556Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.261581Z",
+  "updated_at": "2026-04-13T20:27:34.855105Z",
+  "closed_at": "2026-04-13T20:27:34.855105Z",
+  "custom": {
+    "snyk_column": 25,
+    "snyk_end_column": 2,
+    "snyk_end_line": 131,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "d30cad0d-862b-4ca1-9d2e-3b0f8aceaac1",
+    "snyk_line": 67,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

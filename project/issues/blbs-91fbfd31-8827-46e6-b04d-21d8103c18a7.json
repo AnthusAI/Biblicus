@@ -1,0 +1,37 @@
+{
+  "id": "blbs-91fbfd31-8827-46e6-b04d-21d8103c18a7",
+  "title": "[Snyk Code] Improper Type Validation",
+  "description": "## Improper Type Validation\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 196, column 34 to line 196, column 45\n**Classes:** CWE-CWE-1287\n### Snippet (apps/dashboard/server.js:194-198)\n```\n 194 | \n 195 |     if (search) {\n 196 |       const searchLower = search.toLowerCase();\n 197 |       items = items.filter(item =>\n 198 |         (item.title && item.title.toLowerCase().includes(searchLower)) ||\n```\n\n**Issue Key:** cd615e75-e451-46eb-bb5e-5b473d7e1625\n\n### Details\nImproper Type Validation\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ff75ecc0-0295-460a-9844-05ef833e14fa",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.526422Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.296161Z",
+  "updated_at": "2026-04-13T20:27:34.552627Z",
+  "closed_at": "2026-04-13T20:27:34.552627Z",
+  "custom": {
+    "snyk_column": 34,
+    "snyk_end_column": 45,
+    "snyk_end_line": 196,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "cd615e75-e451-46eb-bb5e-5b473d7e1625",
+    "snyk_line": 196,
+    "snyk_severity": "low",
+    "snyk_type": "code"
+  }
+}

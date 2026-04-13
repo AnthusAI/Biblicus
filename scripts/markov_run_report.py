@@ -13,6 +13,18 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _resolve_within(base_dir: Path, candidate: Path) -> Path:
+    base = base_dir.resolve()
+    resolved = candidate.expanduser().resolve()
+    try:
+        resolved.relative_to(base)
+    except ValueError as error:
+        raise ValueError(f"Path must be within {base}") from error
+    return resolved
+
 
 def _load_json(path: Path) -> Dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -77,16 +89,17 @@ def build_report(run_dir: Path) -> Path:
     :rtype: pathlib.Path
     :raises ValueError: If required snapshot artifacts are missing or have unexpected structure.
     """
-    output = _load_json(run_dir / "output.json")
+    safe_run_dir = _resolve_within(REPO_ROOT, run_dir)
+    output = _load_json(safe_run_dir / "output.json")
     report = output["report"]
 
     decoded = {p["item_id"]: p["state_sequence"] for p in report["decoded_paths"]}
-    segments = list(_iter_jsonl(run_dir / "segments.jsonl"))
+    segments = list(_iter_jsonl(safe_run_dir / "segments.jsonl"))
 
     corpus_uri = output["run"]["corpus_uri"]
     if not isinstance(corpus_uri, str) or not corpus_uri.startswith("file://"):
         raise ValueError("Expected file:// corpus_uri in output.json")
-    corpus_path = Path(corpus_uri.replace("file://", "", 1))
+    corpus_path = _resolve_within(REPO_ROOT, Path(corpus_uri.replace("file://", "", 1)))
     catalog = _load_json(corpus_path / ".biblicus" / "catalog.json")
     catalog_items = catalog["items"]
     if not isinstance(catalog_items, dict):
@@ -201,9 +214,10 @@ def build_report(run_dir: Path) -> Path:
         relpath = entry.get("relpath")
         lines.append(f"- Item id: {example_item_id}")
         if relpath:
-            lines.append(f"- Source path: `{corpus_path / relpath}`")
+            source_path = _resolve_within(corpus_path, corpus_path / str(relpath))
+            lines.append(f"- Source path: `{source_path}`")
             try:
-                raw_text = (corpus_path / relpath).read_text(encoding="utf-8").strip()
+                raw_text = source_path.read_text(encoding="utf-8").strip()
             except Exception:
                 raw_text = ""
             if raw_text:
@@ -214,7 +228,7 @@ def build_report(run_dir: Path) -> Path:
         else:
             lines.append("- Source path unavailable")
 
-    report_path = run_dir / "report.md"
+    report_path = safe_run_dir / "report.md"
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report_path
 

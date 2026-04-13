@@ -13,6 +13,19 @@ from pathlib import Path
 from typing import Dict, List
 
 from biblicus.corpus import Corpus
+from _security_utils import resolve_within_repo
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _remove_tree(path: Path) -> None:
+    target = resolve_within_repo(path, require_exists=True, allow_temp_dir=True)
+    for child in sorted(target.rglob("*"), reverse=True):
+        if child.is_file() or child.is_symlink():
+            child.unlink()
+        elif child.is_dir():
+            child.rmdir()
+    target.rmdir()
 
 
 def pdf_to_images(pdf_path: Path, output_dir: Path, dpi: int = 300) -> List[Path]:
@@ -113,6 +126,14 @@ def prepare_scanned_sample(
     :return: Processing statistics.
     :rtype: dict[str, object]
     """
+    input_pdf = resolve_within_repo(input_pdf, require_exists=True, allow_temp_dir=True)
+    output_dir = resolve_within_repo(output_dir, require_exists=False, allow_temp_dir=True)
+    safe_corpus_path = (
+        resolve_within_repo(corpus_path, require_exists=False, allow_temp_dir=True)
+        if corpus_path is not None
+        else None
+    )
+
     print("=" * 70)
     print(f"PREPARING SCANNED SAMPLE: {input_pdf.name}")
     print("=" * 70)
@@ -132,18 +153,20 @@ def prepare_scanned_sample(
 
     # Step 3: Optionally ingest to corpus
     item_id = None
-    if corpus_path:
-        print(f"\nIngesting to corpus: {corpus_path}")
-        corpus = Corpus.open(corpus_path) if corpus_path.exists() else Corpus.init(corpus_path)
+    if safe_corpus_path:
+        print(f"\nIngesting to corpus: {safe_corpus_path}")
+        corpus = (
+            Corpus.open(safe_corpus_path)
+            if safe_corpus_path.exists()
+            else Corpus.init(safe_corpus_path)
+        )
         result = corpus.ingest_source(output_pdf, tags=tags or ["scanned", "multi-column"])
         item_id = result.item_id
         print(f"✓ Ingested as: {item_id}")
 
     # Step 4: Cleanup intermediate files
     if not keep_images:
-        import shutil
-
-        shutil.rmtree(images_dir)
+        _remove_tree(images_dir)
         print("✓ Cleaned up temporary images")
 
     print()
@@ -180,14 +203,12 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    if not args.input_pdf.exists():
-        print(f"ERROR: Input PDF not found: {args.input_pdf}")
-        return 1
-
     result = prepare_scanned_sample(
-        input_pdf=args.input_pdf,
-        output_dir=args.output_dir,
-        corpus_path=args.corpus,
+        input_pdf=resolve_within_repo(args.input_pdf, require_exists=True, allow_temp_dir=True),
+        output_dir=resolve_within_repo(args.output_dir, require_exists=False, allow_temp_dir=True),
+        corpus_path=resolve_within_repo(args.corpus, require_exists=False, allow_temp_dir=True)
+        if args.corpus
+        else None,
         tags=args.tags,
         dpi=args.dpi,
         keep_images=args.keep_images,
