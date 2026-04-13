@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_run_report.py`\n**Location:** line 90, column 26 to line 90, column 51\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_run_report.py:88-92)\n```\n  88 |         raise ValueError(\"Expected file:// corpus_uri in output.json\")\n  89 |     corpus_path = Path(corpus_uri.replace(\"file://\", \"\", 1))\n  90 |     catalog = _load_json(corpus_path / \".biblicus\" / \"catalog.json\")\n  91 |     catalog_items = catalog[\"items\"]\n  92 |     if not isinstance(catalog_items, dict):\n```\n\n**Issue Key:** 67aa27f4-4a56-44cd-a53f-c59e3510475f\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "0d54e5fd-45e2-46df-aa67-06c0c1f239cb",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by adding explicit path-boundary validation in scripts/markov_cached_segments_demo.py and scripts/markov_run_report.py. User-provided and metadata-derived paths are now resolved and constrained to expected roots before read/write operations. Local Snyk Code re-scan on 2026-04-13 shows 0 remaining python/PT findings in both files.",
+      "created_at": "2026-04-13T20:45:41.372927Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.244216Z",
-  "updated_at": "2026-04-13T17:45:49.244216Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:45:41.388046Z",
+  "closed_at": "2026-04-13T20:45:41.388046Z",
   "custom": {
     "snyk_column": 26,
     "snyk_end_column": 51,

@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_run_report.py`\n**Location:** line 206, column 29 to line 206, column 50\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_run_report.py:204-208)\n```\n 204 |             lines.append(f\"- Source path: `{corpus_path / relpath}`\")\n 205 |             try:\n 206 |                 raw_text = (corpus_path / relpath).read_text(encoding=\"utf-8\").strip()\n 207 |             except Exception:\n 208 |                 raw_text = \"\"\n```\n\n**Issue Key:** 7d261565-cde2-4a10-ad9e-7e27023c95d8\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "6eb92b47-f880-4436-84b4-42ea23b330be",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by adding explicit path-boundary validation in scripts/markov_cached_segments_demo.py and scripts/markov_run_report.py. User-provided and metadata-derived paths are now resolved and constrained to expected roots before read/write operations. Local Snyk Code re-scan on 2026-04-13 shows 0 remaining python/PT findings in both files.",
+      "created_at": "2026-04-13T20:45:41.261117Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.290769Z",
-  "updated_at": "2026-04-13T17:45:49.290769Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:45:41.292212Z",
+  "closed_at": "2026-04-13T20:45:41.292212Z",
   "custom": {
     "snyk_column": 29,
     "snyk_end_column": 50,

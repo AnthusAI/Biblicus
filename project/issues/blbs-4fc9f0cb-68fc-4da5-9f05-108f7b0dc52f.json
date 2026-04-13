@@ -37,10 +37,22 @@
       "author": "derek.norrbom",
       "text": "Progress update (2026-04-13): remediated apps/dashboard/server.js findings. Added express-rate-limit middleware on /api routes, disabled x-powered-by, strengthened corpus path sanitization and query parameter handling. Local Snyk Code count is now 91 (down from 112 before this slice), and apps/dashboard/server.js findings are now 0. Closed 21 related subtasks for server.js.",
       "created_at": "2026-04-13T20:27:38.945407Z"
+    },
+    {
+      "id": "9aadc8b6-0639-4eb6-a107-2d370082045b",
+      "author": "derek.norrbom",
+      "text": "Starting Python PT remediation batch on high-volume scripts: markov_cached_segments_demo.py, markov_run_report.py, evaluate_ocr_pipeline.py, and benchmark_all_pipelines.py (17 findings total). Approach: enforce resolved-path validation for user-supplied file arguments and constrain writes/reads to intended roots.",
+      "created_at": "2026-04-13T20:42:22.087510Z"
+    },
+    {
+      "id": "04ac711a-633d-4a6e-954b-9765b8e69d3e",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): completed Python PT remediation batch for markov_cached_segments_demo.py and markov_run_report.py with strict path-root validation. Snyk Code total findings moved from 91 to 80. Closed 9 related PT subtasks (blbs-01f332, blbs-70b51b, blbs-e04e33, blbs-e1e306, blbs-ffd510, blbs-6c48ea, blbs-c6350a, blbs-de848f, blbs-ec885a). Remaining PT cluster is in other scripts, with evaluate_ocr_pipeline.py and benchmark_all_pipelines.py reduced but still open.",
+      "created_at": "2026-04-13T20:45:45.887593Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T20:27:38.945407Z",
+  "updated_at": "2026-04-13T20:45:45.887593Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "code",

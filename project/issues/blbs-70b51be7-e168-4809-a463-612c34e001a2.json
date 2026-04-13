@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_cached_segments_demo.py`\n**Location:** line 249, column 22 to line 249, column 41\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_cached_segments_demo.py:247-251)\n```\n 247 | ) -> Tuple[List[MarkovAnalysisSegment], Dict[str, object]]:\n 248 |     cache_dir.mkdir(parents=True, exist_ok=True)\n 249 |     item_cache_dir = cache_dir / \"items\"\n 250 |     item_cache_dir.mkdir(parents=True, exist_ok=True)\n 251 |     signature = _segmentation_signature(config=config)\n```\n\n**Issue Key:** 88c296fd-6bc7-4e2a-8ca6-c1dcde0103a8\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "d47e17a2-a17a-4218-b7c9-f2383f98a501",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by adding explicit path-boundary validation in scripts/markov_cached_segments_demo.py and scripts/markov_run_report.py. User-provided and metadata-derived paths are now resolved and constrained to expected roots before read/write operations. Local Snyk Code re-scan on 2026-04-13 shows 0 remaining python/PT findings in both files.",
+      "created_at": "2026-04-13T20:45:40.968785Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.246258Z",
-  "updated_at": "2026-04-13T17:45:49.246258Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:45:40.983723Z",
+  "closed_at": "2026-04-13T20:45:40.983723Z",
   "custom": {
     "snyk_column": 22,
     "snyk_end_column": 41,

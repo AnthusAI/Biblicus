@@ -27,14 +27,28 @@ import json
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 from biblicus import Corpus
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.evaluation import OCRBenchmark
 
 
+def resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
+    """Resolve and validate a path that must stay within the repository root."""
+    resolved = Path(path_value).expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    if require_exists and not resolved.exists():
+        raise FileNotFoundError(f"Path does not exist: {resolved}")
+    return resolved
+
+
 def load_config(config_path: Path) -> dict:
     """Load pipeline configuration from YAML file."""
+    config_path = resolve_within_repo(str(config_path), require_exists=True)
     with open(config_path) as f:
         return yaml.safe_load(f)
 
@@ -67,12 +81,13 @@ def run_pipeline(corpus: Corpus, config: dict, config_name: str) -> str:
 
 def evaluate_single(args):
     """Evaluate a single pipeline configuration."""
-    corpus = Corpus.open(Path(args.corpus))
+    corpus = Corpus.open(resolve_within_repo(args.corpus, require_exists=True))
     benchmark = OCRBenchmark(corpus)
 
     # Load configuration
-    config = load_config(Path(args.config))
-    config_name = Path(args.config).stem
+    config_path = resolve_within_repo(args.config, require_exists=True)
+    config = load_config(config_path)
+    config_name = config_path.stem
 
     # Run pipeline
     snapshot_id = run_pipeline(corpus, config, config_name)
@@ -89,7 +104,7 @@ def evaluate_single(args):
     report.print_summary()
 
     # Save outputs
-    output_path = Path(args.output)
+    output_path = resolve_within_repo(args.output, require_exists=False)
     report.to_json(output_path)
 
     # Also save CSV
@@ -103,17 +118,18 @@ def evaluate_single(args):
 
 def compare_configurations(args):
     """Compare multiple pipeline configurations."""
-    corpus = Corpus.open(Path(args.corpus))
+    corpus = Corpus.open(resolve_within_repo(args.corpus, require_exists=True))
     benchmark = OCRBenchmark(corpus)
 
     # Load all configs
     configs = []
     for config_path in args.compare:
-        config = load_config(Path(config_path))
-        config_name = Path(config_path).stem
+        safe_config_path = resolve_within_repo(config_path, require_exists=True)
+        config = load_config(safe_config_path)
+        config_name = safe_config_path.stem
         configs.append({
             'name': config_name,
-            'path': config_path,
+            'path': str(safe_config_path),
             'config': config
         })
 
@@ -200,7 +216,7 @@ def compare_configurations(args):
         print(f"  Documents unchanged: {baseline.total_documents - improved_docs - degraded_docs}")
 
     # Save comparison report
-    output_path = Path(args.output)
+    output_path = resolve_within_repo(args.output, require_exists=False)
     comparison_data = {
         'comparison_timestamp': reports[0]['report'].evaluation_timestamp,
         'corpus_path': reports[0]['report'].corpus_path,
@@ -234,6 +250,7 @@ def compare_configurations(args):
         for item in reports
     ]
 
+    output_path = resolve_within_repo(str(output_path), require_exists=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(comparison_data, f, indent=2)
