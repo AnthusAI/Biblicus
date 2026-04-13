@@ -67,8 +67,7 @@ def resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
 def load_config(config_path: Path) -> Dict:
     """Load pipeline configuration from YAML file."""
     config_path = resolve_within_repo(str(config_path), require_exists=True)
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+    return yaml.safe_load(config_path.read_text(encoding="utf-8"))
 
 
 def run_pipeline(corpus: Corpus, config: Dict, config_name: str) -> str:
@@ -286,8 +285,7 @@ def save_comprehensive_report(results: List[Dict], output_path: Path, corpus_pat
 
     # Save report
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(report, f, indent=2)
+    output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     print(f"\n✓ Comprehensive report saved to: {output_path}")
 

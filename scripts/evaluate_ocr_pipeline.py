@@ -49,8 +49,7 @@ def resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
 def load_config(config_path: Path) -> dict:
     """Load pipeline configuration from YAML file."""
     config_path = resolve_within_repo(str(config_path), require_exists=True)
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+    return yaml.safe_load(config_path.read_text(encoding="utf-8"))
 
 
 def run_pipeline(corpus: Corpus, config: dict, config_name: str) -> str:
@@ -252,8 +251,7 @@ def compare_configurations(args):
 
     output_path = resolve_within_repo(str(output_path), require_exists=False)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(comparison_data, f, indent=2)
+    output_path.write_text(json.dumps(comparison_data, indent=2), encoding="utf-8")
 
     print(f"\n✓ Comparison saved to: {output_path}")
 

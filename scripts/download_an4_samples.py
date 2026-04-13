@@ -14,13 +14,16 @@ import argparse
 import sys
 from pathlib import Path
 from typing import List, Tuple
+import urllib.request
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
-from _security_utils import resolve_within_repo, safe_extract_tar
+from _security_utils import resolve_within_repo, safe_extract_tar, validate_https_url
+
+AN4_ALLOWED_HOSTS = {"www.speech.cs.cmu.edu"}
 
 
 def download_an4(download_dir: Path) -> Path:
@@ -32,13 +35,14 @@ def download_an4(download_dir: Path) -> Path:
     :return: Path to extracted dataset directory.
     :rtype: Path
     """
-    import urllib.request
-
     download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     # AN4 dataset URL
-    url = "http://www.speech.cs.cmu.edu/databases/an4/an4_raw.bigendian.tar.gz"
+    url = validate_https_url(
+        "https://www.speech.cs.cmu.edu/databases/an4/an4_raw.bigendian.tar.gz",
+        allowed_hosts=AN4_ALLOWED_HOSTS,
+    )
     tar_file = download_dir / "an4_raw.bigendian.tar.gz"
     extracted_dir = download_dir / "an4"
 
@@ -51,7 +55,9 @@ def download_an4(download_dir: Path) -> Path:
         print("(Dataset size: ~90 MB)")
 
         try:
-            urllib.request.urlretrieve(url, str(tar_file))
+            request = urllib.request.Request(url, headers={"User-Agent": "BiblicusDownloader/1.0"})
+            with urllib.request.urlopen(request) as response:
+                tar_file.write_bytes(response.read())
             print("✓ Download complete")
         except Exception as e:
             print(f"✗ Download failed: {e}")

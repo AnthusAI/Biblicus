@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/evaluate_ocr_pipeline.py`\n**Location:** line 203, column 19 to line 203, column 23\n**Classes:** CWE-CWE-23\n### Snippet (scripts/evaluate_ocr_pipeline.py:201-205)\n```\n 201 | \n 202 |     # Save comparison report\n 203 |     output_path = Path(args.output)\n 204 |     comparison_data = {\n 205 |         'comparison_timestamp': reports[0]['report'].evaluation_timestamp,\n```\n\n**Issue Key:** f7f2f052-40ab-4290-ba50-93a81f8f901c\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "3912229f-39c7-4f1b-8d28-0826dbc59a50",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:08.920693Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.244974Z",
-  "updated_at": "2026-04-13T17:45:49.244974Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:58:08.933152Z",
+  "closed_at": "2026-04-13T20:58:08.933152Z",
   "custom": {
     "snyk_column": 19,
     "snyk_end_column": 23,

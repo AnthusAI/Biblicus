@@ -318,8 +318,7 @@ def save_comprehensive_report(results: List[Dict], output_path: Path, corpus_pat
 
     # Save report
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(report, f, indent=2)
+    output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     print(f"\n✓ Comprehensive report saved to: {output_path}")
 

@@ -22,7 +22,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
-from _security_utils import resolve_within, resolve_within_repo, safe_extract_tar
+from _security_utils import (
+    resolve_within,
+    resolve_within_repo,
+    safe_extract_tar,
+    validate_https_url,
+)
+
+VOXFORGE_ALLOWED_HOSTS = {"www.repository.voxforge1.org"}
 
 
 def get_voxforge_archive_urls(count: int = 50) -> List[str]:
@@ -34,8 +41,7 @@ def get_voxforge_archive_urls(count: int = 50) -> List[str]:
     :return: List of archive URLs.
     :rtype: list[str]
     """
-    # VoxForge archives are at http://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/
-    base_url = "http://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/"
+    base_url = "https://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit/"
 
     # List of known archives (partial - there are hundreds)
     # In practice, you'd scrape the index page for all available archives
@@ -62,7 +68,10 @@ def get_voxforge_archive_urls(count: int = 50) -> List[str]:
         "Ben-20091124-vvq.tgz",
     ]
 
-    return [base_url + archive for archive in archives[:count]]
+    return [
+        validate_https_url(base_url + archive, allowed_hosts=VOXFORGE_ALLOWED_HOSTS)
+        for archive in archives[:count]
+    ]
 
 
 def download_and_extract_archive(url: str, download_dir: Path) -> Path:
@@ -77,6 +86,7 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     :rtype: Path
     """
     safe_download_dir = resolve_within_repo(download_dir, require_exists=False)
+    validated_url = validate_https_url(url, allowed_hosts=VOXFORGE_ALLOWED_HOSTS)
     filename = url.split('/')[-1]
     tar_file = resolve_within(safe_download_dir, safe_download_dir / filename, require_exists=False)
     extract_dir = resolve_within(
@@ -89,7 +99,9 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     if not tar_file.exists():
         print(f"  Downloading {filename}...")
         try:
-            urllib.request.urlretrieve(url, str(tar_file))
+            request = urllib.request.Request(validated_url, headers={"User-Agent": "BiblicusDownloader/1.0"})
+            with urllib.request.urlopen(request) as response:
+                tar_file.write_bytes(response.read())
         except Exception as e:
             print(f"    Failed: {e}")
             return None

@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Dict, Optional
@@ -165,14 +164,16 @@ def download_sroie_from_local(local_path: Path, temp_dir: Path) -> Path:
         stem = image_file.stem
 
         # Copy image
-        shutil.copy(image_file, images_dir / image_file.name)
+        image_destination = images_dir / image_file.name
+        image_destination.write_bytes(image_file.read_bytes())
 
         # Look for corresponding OCR text file
         ocr_file = image_file.with_suffix(".txt")
         if not ocr_file.exists():
             ocr_file = image_file.parent / f"{stem}.txt"
         if ocr_file.exists():
-            shutil.copy(ocr_file, ocr_dir / f"{stem}.txt")
+            ocr_destination = ocr_dir / f"{stem}.txt"
+            ocr_destination.write_bytes(ocr_file.read_bytes())
 
         # Look for entity file (key information)
         entity_patterns = [

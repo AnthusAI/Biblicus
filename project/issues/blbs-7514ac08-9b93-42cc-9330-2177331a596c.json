@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_an4_samples.py`\n**Location:** line 52, column 13 to line 52, column 39\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_an4_samples.py:50-54)\n```\n  50 | \n  51 |         try:\n  52 |             urllib.request.urlretrieve(url, tar_file)\n  53 |             print(\"✓ Download complete\")\n  54 |         except Exception as e:\n```\n\n**Issue Key:** f2c387df-dd0a-437b-8b3f-d95a94ddb1be\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "877193c0-8568-4893-ab7f-d227562ef9aa",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:09.576406Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.237133Z",
-  "updated_at": "2026-04-13T17:45:49.237133Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:58:09.588036Z",
+  "closed_at": "2026-04-13T20:58:09.588036Z",
   "custom": {
     "snyk_column": 13,
     "snyk_end_column": 39,

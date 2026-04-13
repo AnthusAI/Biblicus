@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/benchmark_all_pipelines.py`\n**Location:** line 275, column 9 to line 275, column 18\n**Classes:** CWE-CWE-23\n### Snippet (scripts/benchmark_all_pipelines.py:273-277)\n```\n 273 |     output_path.parent.mkdir(parents=True, exist_ok=True)\n 274 |     with open(output_path, 'w') as f:\n 275 |         json.dump(report, f, indent=2)\n 276 | \n 277 |     print(f\"\\n✓ Comprehensive report saved to: {output_path}\")\n```\n\n**Issue Key:** d53b3d2a-62f0-40a4-bc4d-fadacf856052\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "64ae00a0-0166-4d2e-ac15-94e3cbeb742e",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:08.747959Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.292386Z",
-  "updated_at": "2026-04-13T17:45:49.292386Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:58:08.760662Z",
+  "closed_at": "2026-04-13T20:58:08.760662Z",
   "custom": {
     "snyk_column": 9,
     "snyk_end_column": 18,

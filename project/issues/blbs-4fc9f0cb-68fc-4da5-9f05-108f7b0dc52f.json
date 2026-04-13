@@ -61,10 +61,16 @@
       "author": "derek.norrbom",
       "text": "Progress update (2026-04-13): downloader security hardening batch completed. Added shared scripts/_security_utils.py helpers, replaced unsafe tar extraction with member-validated extraction, added repo-root path confinement checks for script IO paths, and added OpenSLR HTTPS host allowlist validation. Local Snyk Code findings dropped from 80 to 66; PT from 24 to 18; TarSlip from 6 to 0; SSRF from 1 to 0. Closed 11 related subtasks (blbs-485a6a, blbs-5ac769, blbs-5d265f, blbs-3140ff, blbs-84401a, blbs-8d86c5, blbs-8f1596, blbs-a54c46, blbs-d1f7fb, blbs-d33e83, blbs-da9dc6).",
       "created_at": "2026-04-13T20:52:46.606381Z"
+    },
+    {
+      "id": "13ba8819-6567-4be8-a57e-8b47aeb9f3dd",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): additional PT remediation pass completed for evaluate_ocr_pipeline.py, benchmark_all_pipelines.py, benchmark_all_stt_providers.py, download_voxforge_samples.py, download_sroie_samples.py, and download_an4_samples.py. Local Snyk Code findings dropped from 66 to 54. PT dropped from 18 to 6; all remaining PT findings are now limited to six scripts (extraction_evaluation_demo.py, extraction_evaluation_lab.py, graph_extraction_extractor_demo.py, graph_extraction_integration.py, prepare_scanned_paper_samples.py, retrieval_evaluation_lab.py). Closed 17 related PT subtasks in this pass.",
+      "created_at": "2026-04-13T20:58:15.113319Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T20:52:46.606381Z",
+  "updated_at": "2026-04-13T20:58:15.113319Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "code",
