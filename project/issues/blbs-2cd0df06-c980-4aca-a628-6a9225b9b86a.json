@@ -3,7 +3,7 @@
   "title": "pyproject.toml",
   "description": "Snyk vulnerabilities found in `pyproject.toml`.",
   "type": "task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -25,11 +25,17 @@
       "author": "derek.norrbom",
       "text": "Update 2026-04-13: closed blbs-16a539 after pypdf remediation (6.9.2 -> 6.10.0). Python dependency findings under this task are now 14 remaining IDs, all in torch/transformers with no supported upstream fix currently.",
       "created_at": "2026-04-13T18:17:01.131400Z"
+    },
+    {
+      "id": "6a76920d-5f4c-48ec-8aeb-280deb7ad47b",
+      "author": "derek.norrbom",
+      "text": "All pyproject.toml Snyk dependency sub-tasks are now either remediated and closed (pygments, pypdf) or ignored in Snyk UI by user with expiry/until-fixed policy and closed in Kanbus. Closing parent task.",
+      "created_at": "2026-04-13T18:41:22.928669Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.299525Z",
-  "updated_at": "2026-04-13T18:17:01.131400Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T18:41:22.942468Z",
+  "closed_at": "2026-04-13T18:41:22.942468Z",
   "custom": {
     "snyk_category": "dependency",
     "snyk_target_file": "pyproject.toml"

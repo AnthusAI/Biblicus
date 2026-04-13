@@ -3,7 +3,7 @@
   "title": "[Snyk] SNYK-PYTHON-TORCH-10337825 in torch@2.11.0",
   "description": "## Mismatched Memory Management Routines\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 4.8  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 347/1000\n\n### CVEs\n- [CVE-2025-3136](https://nvd.nist.gov/vuln/detail/CVE-2025-3136)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Mismatched Memory Management Routines through the `torch.cuda.memory.caching_allocator_delete` function. An attacker can corrupt memory by manipulating the function locally.\n## Remediation\nThere is no fixed version for `torch`.\n## References\n- [GitHub Issue](https://github.com/pytorch/pytorch/issues/149821)\n- [Vulnerable Code](https://github.com/pytorch/pytorch/blob/b99e0c5412183c0516420dac123d096f4431909b/c10/cuda/CUDACachingAllocator.cpp#L3406)\n- [Vulnerable Code](https://github.com/pytorch/pytorch/blob/f34ab1628b6798cc62f55260dfad872f5df8fd94/torch/cuda/memory.py#L146)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-10337825)",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -19,11 +19,17 @@
       "author": "derek.norrbom",
       "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in a335ad. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
       "created_at": "2026-04-13T17:52:16.156579Z"
+    },
+    {
+      "id": "36a2916f-be3d-4388-9ae5-4663e8dd90bb",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/auto-expire-until-fix policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen if upstream fix becomes available or policy review requires active remediation.",
+      "created_at": "2026-04-13T18:41:17.862278Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.301023Z",
-  "updated_at": "2026-04-13T17:52:16.156579Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T18:41:17.875383Z",
+  "closed_at": "2026-04-13T18:41:17.875383Z",
   "custom": {
     "snyk_key": "SNYK-PYTHON-TORCH-10337825",
     "snyk_severity": "medium",
