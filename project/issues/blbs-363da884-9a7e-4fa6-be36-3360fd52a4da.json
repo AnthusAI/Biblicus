@@ -13,9 +13,16 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "8713c77a-7e57-43f5-95f2-02ee4203b9e5",
+      "author": "derek.norrbom",
+      "text": "Still present after updating apps/dashboard lockfile and upgrading to latest published aws-amplify stack (aws-amplify 6.16.3, @aws-amplify/storage 6.13.2). Upstream package line currently pins vulnerable transitive versions (lodash 4.17.23 and fast-xml-parser 5.3.4 in analytics path). Recommend Snyk ignore with expiry/review date while tracking upstream releases.",
+      "created_at": "2026-04-13T18:51:47.858790Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.298351Z",
-  "updated_at": "2026-04-13T17:45:49.298351Z",
+  "updated_at": "2026-04-13T18:51:47.858790Z",
   "closed_at": null,
   "custom": {
     "snyk_key": "SNYK-JS-FASTXMLPARSER-15324289",
