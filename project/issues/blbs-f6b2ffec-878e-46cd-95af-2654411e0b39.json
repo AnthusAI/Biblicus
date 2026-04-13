@@ -3,7 +3,7 @@
   "title": "[Snyk] SNYK-JS-FASTXMLPARSER-15699647 in fast-xml-parser@5.3.4",
   "description": "## Improper Validation of Specified Quantity in Input\n\n**Severity:** high\n**Package:** fast-xml-parser@5.3.4\n**File:** `apps/dashboard/package.json`\n\n**CVSS Score:** 8.2  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 517/1000\n\n### CVEs\n- [CVE-2026-33349](https://nvd.nist.gov/vuln/detail/CVE-2026-33349)\n\n**Fix:** Pin `fast-xml-parser` to version 5.5.7 or later.\n\n### Details\n## Overview\n[fast-xml-parser](https://www.npmjs.org/package/fast-xml-parser) is a Validate XML, Parse XML, Build XML without C/C++ based libraries\n\nAffected versions of this package are vulnerable to Improper Validation of Specified Quantity in Input in the `DocTypeReader` component when the `maxEntityCount` or `maxEntitySize` configuration options are explicitly set to 0. Due to JavaScript's falsy evaluation, the intended limits are bypassed. An attacker can cause unbounded entity expansion and exhaust server memory by supplying crafted XML input containing numerous large entities.\r\n\r\n**Note:**\r\n\r\nThis is only exploitable if the application is configured with `processEntities` enabled and either `maxEntityCount` or `maxEntitySize` set to 0.\n## PoC\n```js\r\nconst { XMLParser } = require(\"fast-xml-parser\");\r\n\r\n// Developer intends: \"no entities allowed at all\"\r\nconst parser = new XMLParser({\r\n  processEntities: {\r\n    enabled: true,\r\n    maxEntityCount: 0,    // should mean \"zero entities allowed\"\r\n    maxEntitySize: 0       // should mean \"zero-length entities only\"\r\n  }\r\n});\r\n\r\n// Generate XML with many large entities\r\nlet entities = \"\";\r\nfor (let i = 0; i < 1000; i++) {\r\n  entities += `<!ENTITY e${i} \"${\"A\".repeat(100000)}\">`;\r\n}\r\n\r\nconst xml = `<?xml version=\"1.0\"?>\r\n<!DOCTYPE foo [\r\n  ${entities}\r\n]>\r\n<foo>&e0;</foo>`;\r\n\r\n// This should throw \"Entity count exceeds maximum\" but does not\r\ntry {\r\n  const result = parser.parse(xml);\r\n  console.log(\"VULNERABLE: parsed without error, entities bypassed limits\");\r\n} catch (e) {\r\n  console.log(\"SAFE:\", e.message);\r\n}\r\n\r\n// Control test: setting maxEntityCount to 1 correctly blocks\r\nconst safeParser = new XMLParser({\r\n  processEntities: {\r\n    enabled: true,\r\n    maxEntityCount: 1,\r\n    maxEntitySize: 100\r\n  }\r\n});\r\n\r\ntry {\r\n  safeParser.parse(xml);\r\n  console.log(\"ERROR: should have thrown\");\r\n} catch (e) {\r\n  console.log(\"CONTROL:\", e.message);  // \"Entity count (2) exceeds maximum allowed (1)\"\r\n}\r\n```\n## Remediation\nUpgrade `fast-xml-parser` to version 5.5.7 or higher.\n## References\n- [GitHub Advisory](https://github.com/NaturalIntelligence/fast-xml-parser/security/advisories/GHSA-jp2q-39xq-3w4g)\n- [GitHub Commit](https://github.com/NaturalIntelligence/fast-xml-parser/commit/239b64aa1fc5c5455ddebbbb54a187eb68c9fdb7)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-FASTXMLPARSER-15699647)",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -19,11 +19,17 @@
       "author": "derek.norrbom",
       "text": "Still present after updating apps/dashboard lockfile and upgrading to latest published aws-amplify stack (aws-amplify 6.16.3, @aws-amplify/storage 6.13.2). Upstream package line currently pins vulnerable transitive versions (lodash 4.17.23 and fast-xml-parser 5.3.4 in analytics path). Recommend Snyk ignore with expiry/review date while tracking upstream releases.",
       "created_at": "2026-04-13T18:51:47.896341Z"
+    },
+    {
+      "id": "7ce5a7b8-cc6f-4e7b-85a6-1f2ea4efed32",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/until-fixed policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen when upstream dependency releases a fixed transitive version.",
+      "created_at": "2026-04-13T20:14:02.622684Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.298452Z",
-  "updated_at": "2026-04-13T18:51:47.896341Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:14:02.635915Z",
+  "closed_at": "2026-04-13T20:14:02.635915Z",
   "custom": {
     "snyk_key": "SNYK-JS-FASTXMLPARSER-15699647",
     "snyk_severity": "high",

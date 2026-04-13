@@ -20,10 +20,16 @@
       "author": "derek.norrbom",
       "text": "Node dependency update 2026-04-13: closed blbs-0faf78 and child findings blbs-5c8012/blbs-600b5c after aws-cdk-lib lock upgrade to 2.249.0; targeted Snyk scan for infrastructure/reinforcement-memory now reports no vulnerable paths.",
       "created_at": "2026-04-13T18:44:49.619477Z"
+    },
+    {
+      "id": "63dc5473-d1ed-447a-a5eb-f65766de8912",
+      "author": "derek.norrbom",
+      "text": "Dashboard dependency stream update 2026-04-13: after lock sync and upgrades, resolved 3 IDs directly and remaining 7 IDs were triaged as upstream-blocked and ignored in Snyk UI with expiry policy. Closed blbs-94b8f5 and all child sub-tasks.",
+      "created_at": "2026-04-13T20:14:07.089521Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.196843Z",
-  "updated_at": "2026-04-13T18:44:49.619477Z",
+  "updated_at": "2026-04-13T20:14:07.089521Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "dependency"

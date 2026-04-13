@@ -3,7 +3,7 @@
   "title": "apps/dashboard/package.json",
   "description": "Snyk vulnerabilities found in `apps/dashboard/package.json`.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -19,11 +19,17 @@
       "author": "derek.norrbom",
       "text": "Dashboard remediation update 2026-04-13: lockfile synced and targeted updates applied, reducing findings from 10 IDs to 7 IDs. Closed: blbs-b47d11, blbs-c2855b, blbs-d272ae. Remaining open IDs are lodash/fast-xml-parser introduced via latest published aws-amplify dependency line; recommend temporary ignore with expiry until upstream publishes fixed transitive versions.",
       "created_at": "2026-04-13T18:51:47.819481Z"
+    },
+    {
+      "id": "41d56828-0e7a-455b-bc86-15e3cf2cd642",
+      "author": "derek.norrbom",
+      "text": "All remaining dashboard dependency findings were marked ignored in Snyk UI by user with expiry/until-fixed policy; corresponding sub-tasks are closed. Closing parent task.",
+      "created_at": "2026-04-13T20:14:07.062079Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.297921Z",
-  "updated_at": "2026-04-13T18:51:47.819481Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:14:07.084095Z",
+  "closed_at": "2026-04-13T20:14:07.084095Z",
   "custom": {
     "snyk_category": "dependency",
     "snyk_target_file": "apps/dashboard/package.json"
