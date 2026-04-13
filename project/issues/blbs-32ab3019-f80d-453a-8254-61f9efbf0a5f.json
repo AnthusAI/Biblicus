@@ -1,0 +1,25 @@
+{
+  "id": "blbs-32ab3019-f80d-453a-8254-61f9efbf0a5f",
+  "title": "[Snyk] SNYK-PYTHON-TORCH-13052969 in torch@2.11.0",
+  "description": "## Integer Overflow or Wraparound\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 4.1  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 312/1000\n\n### CVEs\n- [CVE-2025-55554](https://nvd.nist.gov/vuln/detail/CVE-2025-55554)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Integer Overflow or Wraparound via the `torch.nan_to_num()` function when used with `.long()` to convert `float(\"inf\")` in `eager` mode. An attacker can cause unexpected behavior by providing specially crafted input that triggers an integer overflow.\n## Remediation\nThere is no fixed version for `torch`.\n## References\n- [GitHub Gist](https://gist.github.com/shaoyuyoung/0e7d2a586297ae9c8ed14d8706749efc)\n- [GitHub Issue](https://github.com/pytorch/pytorch/issues/151510)\n- [GitHub PR](https://github.com/pytorch/pytorch/pull/169360)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-13052969)",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.301296Z",
+  "updated_at": "2026-04-13T17:45:49.301296Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TORCH-13052969",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "blbs-8d86c51f-0cc8-4ea9-8dbc-d589b56b3ad2",
+  "title": "[Snyk Code] Arbitrary File Write via Archive Extraction (Tar Slip)",
+  "description": "## Arbitrary File Write via Archive Extraction (Tar Slip)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_voxforge_samples.py`\n**Location:** line 96, column 13 to line 96, column 27\n**Classes:** CWE-CWE-22\n### Snippet (scripts/download_voxforge_samples.py:94-98)\n```\n  94 |     try:\n  95 |         with tarfile.open(tar_file, \"r:gz\") as tar:\n  96 |             tar.extractall(download_dir)\n  97 |         tar_file.unlink()  # Remove tar file to save space\n  98 |     except Exception as e:\n```\n\n**Issue Key:** 0137835a-2f55-4869-b597-03443d5c2040\n\n### Details\nArbitrary File Write via Archive Extraction (Tar Slip)\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.250299Z",
+  "updated_at": "2026-04-13T17:45:49.250299Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 27,
+    "snyk_end_line": 96,
+    "snyk_file": "scripts/download_voxforge_samples.py",
+    "snyk_key": "0137835a-2f55-4869-b597-03443d5c2040",
+    "snyk_line": 96,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

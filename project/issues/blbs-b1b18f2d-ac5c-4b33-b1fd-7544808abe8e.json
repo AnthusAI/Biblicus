@@ -1,0 +1,30 @@
+{
+  "id": "blbs-b1b18f2d-ac5c-4b33-b1fd-7544808abe8e",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 178, column 34 to line 178, column 42\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:176-180)\n```\n 176 |     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');\n 177 | \n 178 |     const catalogData = await fs.readFile(catalogPath, 'utf8');\n 179 |     const catalog = JSON.parse(catalogData);\n 180 | \n```\n\n**Issue Key:** cb22e90c-8eb6-4dea-99dd-3d306a2cad91\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.203876Z",
+  "updated_at": "2026-04-13T17:45:49.203876Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 34,
+    "snyk_end_column": 42,
+    "snyk_end_line": 178,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "cb22e90c-8eb6-4dea-99dd-3d306a2cad91",
+    "snyk_line": 178,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

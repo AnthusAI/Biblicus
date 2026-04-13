@@ -1,0 +1,30 @@
+{
+  "id": "blbs-160de1e8-5407-441c-8c4c-a1fcac6389b3",
+  "title": "[Snyk Code] Jinja auto-escape is set to false.",
+  "description": "## Jinja auto-escape is set to false.\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `src/biblicus/text/link.py`\n**Location:** line 144, column 11 to line 144, column 22\n**Classes:** CWE-CWE-79\n### Snippet (src/biblicus/text/link.py:142-146)\n```\n 142 | \n 143 | def _render_system_prompt(template: str, *, id_prefix: str) -> str:\n 144 |     env = Environment(undefined=StrictUndefined)\n 145 |     rendered = env.from_string(template).render(\n 146 |         id_prefix=id_prefix,\n```\n\n**Issue Key:** b7705a3a-28ea-4686-9891-ca326dc9c935\n\n### Details\nJinja auto-escape is set to false.\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.236495Z",
+  "updated_at": "2026-04-13T17:45:49.236495Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 11,
+    "snyk_end_column": 22,
+    "snyk_end_line": 144,
+    "snyk_file": "src/biblicus/text/link.py",
+    "snyk_key": "b7705a3a-28ea-4686-9891-ca326dc9c935",
+    "snyk_line": 144,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "blbs-3c923052-506e-42eb-8faf-9277d120b176",
+  "title": "Snyk Dependency Vulnerabilities",
+  "description": "Security vulnerabilities imported from Snyk.",
+  "type": "epic",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-741018ca-822a-41db-a60c-6f4cc943d749",
+  "labels": [
+    "security",
+    "snyk",
+    "dependency"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.196843Z",
+  "updated_at": "2026-04-13T17:45:49.196843Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_category": "dependency"
+  }
+}

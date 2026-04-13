@@ -1,0 +1,25 @@
+{
+  "id": "blbs-a335ad68-4b17-402f-9eda-830edc2aceb5",
+  "title": "[Snyk] SNYK-PYTHON-TORCH-10337825 in torch@2.11.0",
+  "description": "## Mismatched Memory Management Routines\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 4.8  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 347/1000\n\n### CVEs\n- [CVE-2025-3136](https://nvd.nist.gov/vuln/detail/CVE-2025-3136)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Mismatched Memory Management Routines through the `torch.cuda.memory.caching_allocator_delete` function. An attacker can corrupt memory by manipulating the function locally.\n## Remediation\nThere is no fixed version for `torch`.\n## References\n- [GitHub Issue](https://github.com/pytorch/pytorch/issues/149821)\n- [Vulnerable Code](https://github.com/pytorch/pytorch/blob/b99e0c5412183c0516420dac123d096f4431909b/c10/cuda/CUDACachingAllocator.cpp#L3406)\n- [Vulnerable Code](https://github.com/pytorch/pytorch/blob/f34ab1628b6798cc62f55260dfad872f5df8fd94/torch/cuda/memory.py#L146)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-10337825)",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.301023Z",
+  "updated_at": "2026-04-13T17:45:49.301023Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TORCH-10337825",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

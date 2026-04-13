@@ -1,0 +1,30 @@
+{
+  "id": "blbs-c6350a14-ef1b-47df-9f07-484ec9da614f",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_run_report.py`\n**Location:** line 90, column 26 to line 90, column 51\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_run_report.py:88-92)\n```\n  88 |         raise ValueError(\"Expected file:// corpus_uri in output.json\")\n  89 |     corpus_path = Path(corpus_uri.replace(\"file://\", \"\", 1))\n  90 |     catalog = _load_json(corpus_path / \".biblicus\" / \"catalog.json\")\n  91 |     catalog_items = catalog[\"items\"]\n  92 |     if not isinstance(catalog_items, dict):\n```\n\n**Issue Key:** 67aa27f4-4a56-44cd-a53f-c59e3510475f\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.244216Z",
+  "updated_at": "2026-04-13T17:45:49.244216Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 26,
+    "snyk_end_column": 51,
+    "snyk_end_line": 90,
+    "snyk_file": "scripts/markov_run_report.py",
+    "snyk_key": "67aa27f4-4a56-44cd-a53f-c59e3510475f",
+    "snyk_line": 90,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

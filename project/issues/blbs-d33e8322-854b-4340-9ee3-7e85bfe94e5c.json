@@ -1,0 +1,30 @@
+{
+  "id": "blbs-d33e8322-854b-4340-9ee3-7e85bfe94e5c",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_common_voice_samples.py`\n**Location:** line 82, column 9 to line 82, column 23\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_common_voice_samples.py:80-84)\n```\n  80 |     print(f\"Extracting {tar_file}...\")\n  81 |     with tarfile.open(tar_file, \"r:gz\") as tar:\n  82 |         tar.extractall(download_dir)\n  83 | \n  84 |     print(f\"Extracted to {extracted_dir}\")\n```\n\n**Issue Key:** 624b580f-89cc-4a52-91c2-14c96fa66c46\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.249602Z",
+  "updated_at": "2026-04-13T17:45:49.249602Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 23,
+    "snyk_end_line": 82,
+    "snyk_file": "scripts/download_common_voice_samples.py",
+    "snyk_key": "624b580f-89cc-4a52-91c2-14c96fa66c46",
+    "snyk_line": 82,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

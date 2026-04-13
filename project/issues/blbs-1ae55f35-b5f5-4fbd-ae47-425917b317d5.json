@@ -1,0 +1,30 @@
+{
+  "id": "blbs-1ae55f35-b5f5-4fbd-ae47-425917b317d5",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 173, column 39 to line 208, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:171-195)\n```\n 171 | \n 172 | // Get catalog items for a corpus with optional filters\n 173 | app.get('/api/corpora/:name/catalog', async (req, res) => {\n 174 |   try {\n 175 |     const corpusPath = validateCorpusPath(req.params.name);\n 176 |     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');\n 177 | \n 178 |     const catalogData = await fs.readFile(catalogPath, 'utf8');\n 179 |     const catalog = JSON.parse(catalogData);\n 180 | \n 181 |     // Convert items object to array\n 182 |     let items = Object.values(catalog.items || {});\n 183 | \n 184 |     // Apply filters\n 185 |     const { tag, mediaType, search } = req.query;\n 186 | \n 187 |     if (tag) {\n 188 |       items = items.filter(item => item.tags && item.tags.includes(tag));\n 189 |     }\n 190 | \n 191 |     if (mediaType) {\n 192 |       items = items.filter(item => item.media_type === mediaType);\n 193 |     }\n 194 | \n 195 |     if (search) {\n```\n\n**Issue Key:** e1081249-0da9-45e4-9ed6-26be68994510\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.291784Z",
+  "updated_at": "2026-04-13T17:45:49.291784Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 39,
+    "snyk_end_column": 2,
+    "snyk_end_line": 208,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "e1081249-0da9-45e4-9ed6-26be68994510",
+    "snyk_line": 173,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

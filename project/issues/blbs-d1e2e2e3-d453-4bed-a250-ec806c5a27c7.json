@@ -1,0 +1,30 @@
+{
+  "id": "blbs-d1e2e2e3-d453-4bed-a250-ec806c5a27c7",
+  "title": "[Snyk Code] Information Exposure - X-Powered-By Header",
+  "description": "## Information Exposure - X-Powered-By Header\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 23, column 13 to line 23, column 20\n**Classes:** CWE-CWE-200\n### Snippet (apps/dashboard/server.js:21-25)\n```\n  21 | const __dirname = path.dirname(__filename);\n  22 | \n  23 | const app = express();\n  24 | const PORT = process.env.PORT || 3001;\n  25 | \n```\n\n**Issue Key:** c35c8b83-46c1-4d0a-8e21-d35b967346f8\n\n### Details\nInformation Exposure - X-Powered-By Header\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.247590Z",
+  "updated_at": "2026-04-13T17:45:49.247590Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 20,
+    "snyk_end_line": 23,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "c35c8b83-46c1-4d0a-8e21-d35b967346f8",
+    "snyk_line": 23,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

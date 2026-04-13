@@ -1,0 +1,30 @@
+{
+  "id": "blbs-a0627a66-0dc9-4c27-b15c-6b7bfbfcf6e1",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 348, column 40 to line 393, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:346-370)\n```\n 346 | \n 347 | // List analysis runs for a corpus\n 348 | app.get('/api/corpora/:name/analysis', async (req, res) => {\n 349 |   try {\n 350 |     const corpusPath = validateCorpusPath(req.params.name);\n 351 |     const analysisDir = path.join(corpusPath, 'analysis');\n 352 | \n 353 |     const analysisRuns = [];\n 354 | \n 355 |     try {\n 356 |       const analysisTypes = await fs.readdir(analysisDir);\n 357 | \n 358 |       for (const analysisType of analysisTypes) {\n 359 |         if (analysisType.startsWith('.')) continue;\n 360 | \n 361 |         const typePath = path.join(analysisDir, analysisType);\n 362 |         const typeStat = await fs.stat(typePath);\n 363 | \n 364 |         if (!typeStat.isDirectory()) continue;\n 365 | \n 366 |         const runs = await fs.readdir(typePath);\n 367 | \n 368 |         for (const run of runs) {\n 369 |           if (run.startsWith('.')) continue;\n 370 | \n```\n\n**Issue Key:** 356d8b3f-c174-462f-bb6b-133f13b53792\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.235226Z",
+  "updated_at": "2026-04-13T17:45:49.235226Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 40,
+    "snyk_end_column": 2,
+    "snyk_end_line": 393,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "356d8b3f-c174-462f-bb6b-133f13b53792",
+    "snyk_line": 348,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

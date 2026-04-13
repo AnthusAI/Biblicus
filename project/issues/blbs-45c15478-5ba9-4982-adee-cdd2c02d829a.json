@@ -1,0 +1,30 @@
+{
+  "id": "blbs-45c15478-5ba9-4982-adee-cdd2c02d829a",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_voxforge_samples.py`\n**Location:** line 88, column 13 to line 88, column 39\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_voxforge_samples.py:86-90)\n```\n  86 |         print(f\"  Downloading {filename}...\")\n  87 |         try:\n  88 |             urllib.request.urlretrieve(url, tar_file)\n  89 |         except Exception as e:\n  90 |             print(f\"    Failed: {e}\")\n```\n\n**Issue Key:** 8ad6facc-f65b-491d-b939-9b624541fd7b\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.247998Z",
+  "updated_at": "2026-04-13T17:45:49.247998Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 39,
+    "snyk_end_line": 88,
+    "snyk_file": "scripts/download_voxforge_samples.py",
+    "snyk_key": "8ad6facc-f65b-491d-b939-9b624541fd7b",
+    "snyk_line": 88,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

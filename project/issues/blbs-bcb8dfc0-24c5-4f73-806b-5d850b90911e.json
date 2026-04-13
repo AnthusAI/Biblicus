@@ -1,0 +1,25 @@
+{
+  "id": "blbs-bcb8dfc0-24c5-4f73-806b-5d850b90911e",
+  "title": "[Snyk] SNYK-PYTHON-TORCH-10332643 in torch@2.11.0",
+  "description": "## Improper Resource Shutdown or Release\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 6.8  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 447/1000\n\n### CVEs\n- [CVE-2025-4287](https://nvd.nist.gov/vuln/detail/CVE-2025-4287)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Improper Resource Shutdown or Release through the `torch.cuda.nccl.reduce` function in the file `torch/cuda/nccl.py`. An attacker can cause the application to crash by manipulating the function inputs on a local host.\n## Remediation\nA fix was pushed into the `master` branch but not yet published.\n## References\n- [GitHub Issue](https://github.com/pytorch/pytorch/issues/150836)\n- [GitHub PR](https://github.com/pytorch/pytorch/pull/150923)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-10332643)",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.301468Z",
+  "updated_at": "2026-04-13T17:45:49.301468Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TORCH-10332643",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

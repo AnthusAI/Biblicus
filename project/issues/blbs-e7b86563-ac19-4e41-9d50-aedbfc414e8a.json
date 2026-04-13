@@ -1,0 +1,30 @@
+{
+  "id": "blbs-e7b86563-ac19-4e41-9d50-aedbfc414e8a",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/extraction_evaluation_demo.py`\n**Location:** line 124, column 22 to line 124, column 26\n**Classes:** CWE-CWE-23\n### Snippet (scripts/extraction_evaluation_demo.py:122-126)\n```\n 122 |     dataset_path = _write_dataset_file(\n 123 |         dataset=dataset,\n 124 |         dataset_path=Path(arguments.dataset_path).resolve(),\n 125 |     )\n 126 |     result = evaluate_extraction_snapshot(\n```\n\n**Issue Key:** c97e9da7-32b7-47c6-ae29-97e7bcbcd8d3\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.292119Z",
+  "updated_at": "2026-04-13T17:45:49.292119Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 22,
+    "snyk_end_column": 26,
+    "snyk_end_line": 124,
+    "snyk_file": "scripts/extraction_evaluation_demo.py",
+    "snyk_key": "c97e9da7-32b7-47c6-ae29-97e7bcbcd8d3",
+    "snyk_line": 124,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

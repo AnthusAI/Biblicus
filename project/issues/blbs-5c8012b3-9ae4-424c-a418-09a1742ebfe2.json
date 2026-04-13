@@ -1,0 +1,25 @@
+{
+  "id": "blbs-5c8012b3-9ae4-424c-a418-09a1742ebfe2",
+  "title": "[Snyk] SNYK-JS-YAML-15765520 in yaml@1.10.2",
+  "description": "## Uncontrolled Recursion\n\n**Severity:** medium\n**Package:** yaml@1.10.2\n**File:** `infrastructure/reinforcement-memory/package.json`\n\n**CVSS Score:** 5.3  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 658/1000\n\n### CVEs\n- [CVE-2026-33532](https://nvd.nist.gov/vuln/detail/CVE-2026-33532)\n\n**Fix:** Upgrade `yaml` to version 1.10.3, 2.8.3 or later.\n\n### Details\n## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion in the `compose/resolve` phase due to using recursive function calls without a depth bound. An attacker can cause the application to throw a `RangeError` and potentially terminate the Node.js process by supplying a deeply nested YAML payload that exhausts the call stack.\n## PoC\n```js\r\nconst YAML = require('yaml');\r\n\r\n// ~10 KB payload: 5000 levels of nested flow sequences\r\nconst payload = '['.repeat(5000) + '1' + ']'.repeat(5000);\r\n\r\ntry {\r\n  YAML.parse(payload);\r\n} catch (e) {\r\n  console.log(e.constructor.name); // RangeError (NOT YAMLParseError)\r\n  console.log(e.message);          // Maximum call stack size exceeded\r\n}\r\n```\n## Remediation\nUpgrade `yaml` to version 1.10.3, 2.8.3 or higher.\n## References\n- [GitHub Advisory](https://github.com/eemeli/yaml/security/advisories/GHSA-48c2-rrv3-qjmp)\n- [GitHub Commit](https://github.com/eemeli/yaml/commit/1e84ebbea7ec35011a4c61bbb820a529ee4f359b)\n- [GitHub Release](https://github.com/eemeli/yaml/releases/tag/v1.10.3)\n- [GitHub Release](https://github.com/eemeli/yaml/releases/tag/v2.8.3)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-YAML-15765520)",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-0faf7843-517b-44f3-9cb3-6c7ec6ed6a7b",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.299384Z",
+  "updated_at": "2026-04-13T17:45:49.299384Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_key": "SNYK-JS-YAML-15765520",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

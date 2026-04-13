@@ -1,0 +1,30 @@
+{
+  "id": "blbs-208213f7-766b-444d-b170-4b7465490ca4",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 159, column 34 to line 159, column 41\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:157-161)\n```\n 157 |     const extractedDir = path.join(corpusPath, 'extracted');\n 158 |     try {\n 159 |       const snapshots = await fs.readdir(extractedDir);\n 160 |       corpus.extractionSnapshots = snapshots.filter(s => !s.startsWith('.'));\n 161 |     } catch (err) {\n```\n\n**Issue Key:** c40d3842-f7a3-4284-9d4b-3cf874401c95\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.226637Z",
+  "updated_at": "2026-04-13T17:45:49.226637Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 34,
+    "snyk_end_column": 41,
+    "snyk_end_line": 159,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "c40d3842-f7a3-4284-9d4b-3cf874401c95",
+    "snyk_line": 159,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

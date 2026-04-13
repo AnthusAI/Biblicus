@@ -1,0 +1,30 @@
+{
+  "id": "blbs-209dedbd-e438-493f-bafb-03c6080d17f2",
+  "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 396, column 39 to line 435, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:394-418)\n```\n 394 | \n 395 | // List recipes for a corpus\n 396 | app.get('/api/corpora/:name/recipes', async (req, res) => {\n 397 |   try {\n 398 |     const corpusPath = validateCorpusPath(req.params.name);\n 399 |     const recipesDir = path.join(corpusPath, 'recipes');\n 400 | \n 401 |     const recipes = [];\n 402 | \n 403 |     async function scanRecipes(dir, prefix = '') {\n 404 |       try {\n 405 |         const entries = await fs.readdir(dir, { withFileTypes: true });\n 406 | \n 407 |         for (const entry of entries) {\n 408 |           if (entry.name.startsWith('.')) continue;\n 409 | \n 410 |           const fullPath = path.join(dir, entry.name);\n 411 |           const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;\n 412 | \n 413 |           if (entry.isDirectory()) {\n 414 |             await scanRecipes(fullPath, relativePath);\n 415 |           } else if (entry.name.endsWith('.yml') || entry.name.endsWith('.yaml')) {\n 416 |             recipes.push({\n 417 |               name: entry.name,\n 418 |               path: relativePath,\n```\n\n**Issue Key:** 839c174f-27f6-45f5-9dc4-7efc221a854f\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.231557Z",
+  "updated_at": "2026-04-13T17:45:49.231557Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 39,
+    "snyk_end_column": 2,
+    "snyk_end_line": 435,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "839c174f-27f6-45f5-9dc4-7efc221a854f",
+    "snyk_line": 396,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

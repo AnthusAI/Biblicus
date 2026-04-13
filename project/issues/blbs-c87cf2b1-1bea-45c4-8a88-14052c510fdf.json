@@ -1,0 +1,25 @@
+{
+  "id": "blbs-c87cf2b1-1bea-45c4-8a88-14052c510fdf",
+  "title": "[Snyk] SNYK-PYTHON-TORCH-15746467 in torch@2.11.0",
+  "description": "## Deserialization of Untrusted Data\n\n**Severity:** medium\n**Package:** torch@2.11.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 4.8  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 419/1000\n\n### CVEs\n- [CVE-2026-4538](https://nvd.nist.gov/vuln/detail/CVE-2026-4538)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[torch](https://pypi.org/project/torch) is a Tensors and Dynamic neural networks in Python with strong GPU acceleration\n\nAffected versions of this package are vulnerable to Deserialization of Untrusted Data in the `.pt2` Loading Handler. An attacker can execute arbitrary code or alter application behavior by providing malicious serialized data and deserializing it with `weights_only=True`.\n\n## Details\n\nSerialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like _Remote Method Invocation (RMI)_, _Java Management Extension (JMX)_, _Java Messaging System (JMS)_, _Action Message Format (AMF)_, _Java Server Faces (JSF) ViewState_, etc.\n\n_Deserialization of untrusted data_ ([CWE-502](https://cwe.mitre.org/data/definitions/502.html)) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution.\n  \n## Remediation\nThere is no fixed version for `torch`.\n## References\n- [GitHub PR](https://github.com/pytorch/pytorch/pull/176791)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TORCH-15746467)",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.300667Z",
+  "updated_at": "2026-04-13T17:45:49.300667Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TORCH-15746467",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "blbs-7514ac08-9b93-42cc-9330-2177331a596c",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_an4_samples.py`\n**Location:** line 52, column 13 to line 52, column 39\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_an4_samples.py:50-54)\n```\n  50 | \n  51 |         try:\n  52 |             urllib.request.urlretrieve(url, tar_file)\n  53 |             print(\"✓ Download complete\")\n  54 |         except Exception as e:\n```\n\n**Issue Key:** f2c387df-dd0a-437b-8b3f-d95a94ddb1be\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.237133Z",
+  "updated_at": "2026-04-13T17:45:49.237133Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 39,
+    "snyk_end_line": 52,
+    "snyk_file": "scripts/download_an4_samples.py",
+    "snyk_key": "f2c387df-dd0a-437b-8b3f-d95a94ddb1be",
+    "snyk_line": 52,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

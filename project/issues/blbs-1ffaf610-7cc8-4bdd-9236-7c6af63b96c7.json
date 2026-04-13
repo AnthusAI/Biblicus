@@ -1,0 +1,30 @@
+{
+  "id": "blbs-1ffaf610-7cc8-4bdd-9236-7c6af63b96c7",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/benchmark_all_pipelines.py`\n**Location:** line 56, column 10 to line 56, column 14\n**Classes:** CWE-CWE-23\n### Snippet (scripts/benchmark_all_pipelines.py:54-58)\n```\n  54 | def load_config(config_path: Path) -> Dict:\n  55 |     \"\"\"Load pipeline configuration from YAML file.\"\"\"\n  56 |     with open(config_path) as f:\n  57 |         return yaml.safe_load(f)\n  58 | \n```\n\n**Issue Key:** 1086bdd7-5d93-4bd6-aebf-6ade4e3b0ead\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.268261Z",
+  "updated_at": "2026-04-13T17:45:49.268261Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 10,
+    "snyk_end_column": 14,
+    "snyk_end_line": 56,
+    "snyk_file": "scripts/benchmark_all_pipelines.py",
+    "snyk_key": "1086bdd7-5d93-4bd6-aebf-6ade4e3b0ead",
+    "snyk_line": 56,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "blbs-0faf7843-517b-44f3-9cb3-6c7ec6ed6a7b",
+  "title": "infrastructure/reinforcement-memory/package.json",
+  "description": "Snyk vulnerabilities found in `infrastructure/reinforcement-memory/package.json`.",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-3c923052-506e-42eb-8faf-9277d120b176",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.299201Z",
+  "updated_at": "2026-04-13T17:45:49.299201Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_category": "dependency",
+    "snyk_target_file": "infrastructure/reinforcement-memory/package.json"
+  }
+}

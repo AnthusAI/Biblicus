@@ -1,0 +1,30 @@
+{
+  "id": "blbs-a5ccebd7-43ab-40ad-85b6-268c694f387b",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 366, column 31 to line 366, column 38\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:364-368)\n```\n 364 |         if (!typeStat.isDirectory()) continue;\n 365 | \n 366 |         const runs = await fs.readdir(typePath);\n 367 | \n 368 |         for (const run of runs) {\n```\n\n**Issue Key:** d36e1d02-1c71-45f0-97f6-12e50338c87e\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.219047Z",
+  "updated_at": "2026-04-13T17:45:49.219047Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 31,
+    "snyk_end_column": 38,
+    "snyk_end_line": 366,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "d36e1d02-1c71-45f0-97f6-12e50338c87e",
+    "snyk_line": 366,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

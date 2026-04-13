@@ -1,0 +1,30 @@
+{
+  "id": "blbs-da9dc6f3-ca97-47e8-9df5-17777e30f8c2",
+  "title": "[Snyk Code] Arbitrary File Write via Archive Extraction (Tar Slip)",
+  "description": "## Arbitrary File Write via Archive Extraction (Tar Slip)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_librispeech_samples.py`\n**Location:** line 68, column 9 to line 68, column 27\n**Classes:** CWE-CWE-22\n### Snippet (scripts/download_librispeech_samples.py:66-70)\n```\n  66 |     print(\"Extracting dataset (this may take a minute)...\")\n  67 |     with tarfile.open(tar_path, \"r:gz\") as tar_ref:\n  68 |         tar_ref.extractall(temp_dir)\n  69 | \n  70 |     # LibriSpeech extracts to LibriSpeech/test-clean/\n```\n\n**Issue Key:** cb41c390-148a-4a08-bca3-8c6354e17da6\n\n### Details\nArbitrary File Write via Archive Extraction (Tar Slip)\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.286917Z",
+  "updated_at": "2026-04-13T17:45:49.286917Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 27,
+    "snyk_end_line": 68,
+    "snyk_file": "scripts/download_librispeech_samples.py",
+    "snyk_key": "cb41c390-148a-4a08-bca3-8c6354e17da6",
+    "snyk_line": 68,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

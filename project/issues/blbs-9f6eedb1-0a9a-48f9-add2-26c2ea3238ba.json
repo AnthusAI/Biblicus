@@ -1,0 +1,30 @@
+{
+  "id": "blbs-9f6eedb1-0a9a-48f9-add2-26c2ea3238ba",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/benchmark_all_stt_providers.py`\n**Location:** line 414, column 44 to line 414, column 48\n**Classes:** CWE-CWE-23\n### Snippet (scripts/benchmark_all_stt_providers.py:412-416)\n```\n 412 | \n 413 |         # Save comprehensive report\n 414 |         save_comprehensive_report(results, Path(args.output), args.corpus)\n 415 | \n 416 |         print(f\"\\n✓ Benchmark complete!\")\n```\n\n**Issue Key:** d391f6b8-d9aa-48dd-a9e3-b14ab3bfceb4\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.238407Z",
+  "updated_at": "2026-04-13T17:45:49.238407Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 44,
+    "snyk_end_column": 48,
+    "snyk_end_line": 414,
+    "snyk_file": "scripts/benchmark_all_stt_providers.py",
+    "snyk_key": "d391f6b8-d9aa-48dd-a9e3-b14ab3bfceb4",
+    "snyk_line": 414,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

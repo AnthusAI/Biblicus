@@ -1,0 +1,30 @@
+{
+  "id": "blbs-b066a747-2c5d-4343-ac4a-b3543bb4f047",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/evaluate_ocr_pipeline.py`\n**Location:** line 203, column 19 to line 203, column 23\n**Classes:** CWE-CWE-23\n### Snippet (scripts/evaluate_ocr_pipeline.py:201-205)\n```\n 201 | \n 202 |     # Save comparison report\n 203 |     output_path = Path(args.output)\n 204 |     comparison_data = {\n 205 |         'comparison_timestamp': reports[0]['report'].evaluation_timestamp,\n```\n\n**Issue Key:** f7f2f052-40ab-4290-ba50-93a81f8f901c\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.244974Z",
+  "updated_at": "2026-04-13T17:45:49.244974Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 19,
+    "snyk_end_column": 23,
+    "snyk_end_line": 203,
+    "snyk_file": "scripts/evaluate_ocr_pipeline.py",
+    "snyk_key": "f7f2f052-40ab-4290-ba50-93a81f8f901c",
+    "snyk_line": 203,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

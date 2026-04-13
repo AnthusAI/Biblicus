@@ -1,0 +1,30 @@
+{
+  "id": "blbs-04e9d0b5-71dd-4483-8aae-618561d610aa",
+  "title": "[Snyk Code] Open Redirect",
+  "description": "## Open Redirect\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/.vite/deps/react-router-dom.js`\n**Location:** line 2152, column 33 to line 2152, column 40\n**Classes:** CWE-CWE-601\n### Snippet (apps/dashboard/.vite/deps/react-router-dom.js:2150-2154)\n```\n2150 |       if (isDocumentReload) {\n2151 |         if (replace2) {\n2152 |           routerWindow.location.replace(location);\n2153 |         } else {\n2154 |           routerWindow.location.assign(location);\n```\n\n**Issue Key:** 1c518f89-1730-4e21-a7a0-c10a75a27320\n\n### Details\nOpen Redirect\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.238102Z",
+  "updated_at": "2026-04-13T17:45:49.238102Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 33,
+    "snyk_end_column": 40,
+    "snyk_end_line": 2152,
+    "snyk_file": "apps/dashboard/.vite/deps/react-router-dom.js",
+    "snyk_key": "1c518f89-1730-4e21-a7a0-c10a75a27320",
+    "snyk_line": 2152,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

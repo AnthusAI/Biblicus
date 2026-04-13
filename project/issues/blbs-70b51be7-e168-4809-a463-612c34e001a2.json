@@ -1,0 +1,30 @@
+{
+  "id": "blbs-70b51be7-e168-4809-a463-612c34e001a2",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_cached_segments_demo.py`\n**Location:** line 249, column 22 to line 249, column 41\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_cached_segments_demo.py:247-251)\n```\n 247 | ) -> Tuple[List[MarkovAnalysisSegment], Dict[str, object]]:\n 248 |     cache_dir.mkdir(parents=True, exist_ok=True)\n 249 |     item_cache_dir = cache_dir / \"items\"\n 250 |     item_cache_dir.mkdir(parents=True, exist_ok=True)\n 251 |     signature = _segmentation_signature(config=config)\n```\n\n**Issue Key:** 88c296fd-6bc7-4e2a-8ca6-c1dcde0103a8\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.246258Z",
+  "updated_at": "2026-04-13T17:45:49.246258Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 22,
+    "snyk_end_column": 41,
+    "snyk_end_line": 249,
+    "snyk_file": "scripts/markov_cached_segments_demo.py",
+    "snyk_key": "88c296fd-6bc7-4e2a-8ca6-c1dcde0103a8",
+    "snyk_line": 249,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

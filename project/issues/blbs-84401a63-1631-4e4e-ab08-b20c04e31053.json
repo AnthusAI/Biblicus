@@ -1,0 +1,30 @@
+{
+  "id": "blbs-84401a63-1631-4e4e-ab08-b20c04e31053",
+  "title": "[Snyk Code] Arbitrary File Write via Archive Extraction (Tar Slip)",
+  "description": "## Arbitrary File Write via Archive Extraction (Tar Slip)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_tedlium_samples.py`\n**Location:** line 80, column 9 to line 80, column 23\n**Classes:** CWE-CWE-22\n### Snippet (scripts/download_tedlium_samples.py:78-82)\n```\n  78 |     print(f\"Extracting {tar_file}...\")\n  79 |     with tarfile.open(tar_file, \"r:gz\") as tar:\n  80 |         tar.extractall(download_dir)\n  81 | \n  82 |     print(f\"✓ Extracted to {extracted_dir}\")\n```\n\n**Issue Key:** 6bd6d731-a4e3-424d-9e3c-0d1b337031f8\n\n### Details\nArbitrary File Write via Archive Extraction (Tar Slip)\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.234533Z",
+  "updated_at": "2026-04-13T17:45:49.234533Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 23,
+    "snyk_end_line": 80,
+    "snyk_file": "scripts/download_tedlium_samples.py",
+    "snyk_key": "6bd6d731-a4e3-424d-9e3c-0d1b337031f8",
+    "snyk_line": 80,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}
