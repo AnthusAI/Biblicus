@@ -34,11 +34,12 @@ from datetime import datetime
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.evaluation import OCRBenchmark
+from _security_utils import resolve_within_repo
 
 
 # Default pipeline configurations to test
@@ -50,18 +51,6 @@ DEFAULT_CONFIGS = [
     "configs/docling-granite.yaml",
     "configs/unstructured.yaml",
 ]
-
-
-def resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
-    """Resolve and validate a path that must stay within the repository root."""
-    resolved = Path(path_value).expanduser().resolve()
-    try:
-        resolved.relative_to(REPO_ROOT)
-    except ValueError as error:
-        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
-    if require_exists and not resolved.exists():
-        raise FileNotFoundError(f"Path does not exist: {resolved}")
-    return resolved
 
 
 def load_config(config_path: Path) -> Dict:

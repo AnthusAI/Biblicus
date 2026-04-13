@@ -16,21 +16,11 @@ from biblicus.extraction import build_extraction_snapshot
 from biblicus.graph.extraction import build_graph_snapshot
 from biblicus.graph.neo4j import create_neo4j_driver, resolve_neo4j_settings
 from biblicus.models import ExtractionSnapshotReference
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-
-
-def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
-    resolved = Path(path_value).expanduser().resolve()
-    try:
-        resolved.relative_to(REPO_ROOT)
-    except ValueError as error:
-        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
-    if require_exists and not resolved.exists():
-        raise FileNotFoundError(f"Path does not exist: {resolved}")
-    return resolved
 
 
 def _configure_logger(verbose: bool) -> logging.Logger:
@@ -374,7 +364,9 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
+    corpus_path = resolve_within_repo(
+        arguments.corpus, require_exists=False, allow_temp_dir=True
+    )
 
     _log_phase(logger, "Phase 1: Download Wikipedia corpus")
     ingestion_stats = _download_wikipedia(
@@ -542,7 +534,9 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
                 ]
             )
         _write_story_report(
-            path=_resolve_within_repo(arguments.report_path, require_exists=False),
+            path=resolve_within_repo(
+                arguments.report_path, require_exists=False, allow_temp_dir=True
+            ),
             content="\n".join(report_lines) + "\n",
         )
 

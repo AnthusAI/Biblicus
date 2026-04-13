@@ -13,23 +13,13 @@ from pathlib import Path
 from typing import Dict, List
 
 from biblicus.corpus import Corpus
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _resolve_within_repo(path_value: Path | str, *, require_exists: bool) -> Path:
-    resolved = Path(path_value).expanduser().resolve()
-    try:
-        resolved.relative_to(REPO_ROOT)
-    except ValueError as error:
-        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
-    if require_exists and not resolved.exists():
-        raise FileNotFoundError(f"Path does not exist: {resolved}")
-    return resolved
-
-
 def _remove_tree(path: Path) -> None:
-    target = _resolve_within_repo(path, require_exists=True)
+    target = resolve_within_repo(path, require_exists=True, allow_temp_dir=True)
     for child in sorted(target.rglob("*"), reverse=True):
         if child.is_file() or child.is_symlink():
             child.unlink()
@@ -136,10 +126,12 @@ def prepare_scanned_sample(
     :return: Processing statistics.
     :rtype: dict[str, object]
     """
-    input_pdf = _resolve_within_repo(input_pdf, require_exists=True)
-    output_dir = _resolve_within_repo(output_dir, require_exists=False)
+    input_pdf = resolve_within_repo(input_pdf, require_exists=True, allow_temp_dir=True)
+    output_dir = resolve_within_repo(output_dir, require_exists=False, allow_temp_dir=True)
     safe_corpus_path = (
-        _resolve_within_repo(corpus_path, require_exists=False) if corpus_path is not None else None
+        resolve_within_repo(corpus_path, require_exists=False, allow_temp_dir=True)
+        if corpus_path is not None
+        else None
     )
 
     print("=" * 70)
@@ -212,9 +204,9 @@ def main() -> int:
     args = parser.parse_args()
 
     result = prepare_scanned_sample(
-        input_pdf=_resolve_within_repo(args.input_pdf, require_exists=True),
-        output_dir=_resolve_within_repo(args.output_dir, require_exists=False),
-        corpus_path=_resolve_within_repo(args.corpus, require_exists=False)
+        input_pdf=resolve_within_repo(args.input_pdf, require_exists=True, allow_temp_dir=True),
+        output_dir=resolve_within_repo(args.output_dir, require_exists=False, allow_temp_dir=True),
+        corpus_path=resolve_within_repo(args.corpus, require_exists=False, allow_temp_dir=True)
         if args.corpus
         else None,
         tags=args.tags,

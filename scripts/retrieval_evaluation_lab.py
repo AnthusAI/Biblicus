@@ -21,6 +21,7 @@ from biblicus.evaluation.retrieval import EvaluationDataset, EvaluationQuery, ev
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.models import QueryBudget
 from biblicus.retrievers import get_retriever
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -29,18 +30,6 @@ if str(REPO_ROOT) not in sys.path:
 LAB_DIR = REPO_ROOT / "datasets" / "retrieval_lab"
 LAB_ITEMS_DIR = LAB_DIR / "items"
 LAB_LABELS_PATH = LAB_DIR / "labels.json"
-
-
-def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
-    resolved = Path(path_value).expanduser().resolve()
-    try:
-        resolved.relative_to(REPO_ROOT)
-    except ValueError as error:
-        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
-    if require_exists and not resolved.exists():
-        raise FileNotFoundError(f"Path does not exist: {resolved}")
-    return resolved
-
 
 class RetrievalEvaluationLabQuery(BaseModel):
     """
@@ -187,7 +176,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
+    corpus_path = resolve_within_repo(arguments.corpus, require_exists=False, allow_temp_dir=True)
     corpus = _prepare_corpus(corpus_path, force=arguments.force)
     lab_dataset = _load_lab_dataset()
     filename_map = _ingest_lab_items(corpus)
@@ -212,7 +201,9 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         configuration={"extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}"},
     )
     evaluation_dataset = _build_evaluation_dataset(lab_dataset, filename_map=filename_map)
-    dataset_path = _resolve_within_repo(arguments.dataset_path, require_exists=False)
+    dataset_path = resolve_within_repo(
+        arguments.dataset_path, require_exists=False, allow_temp_dir=True
+    )
     dataset_path.parent.mkdir(parents=True, exist_ok=True)
     dataset_path.write_text(evaluation_dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
 

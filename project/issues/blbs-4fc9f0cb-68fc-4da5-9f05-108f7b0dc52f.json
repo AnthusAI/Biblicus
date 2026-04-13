@@ -79,10 +79,22 @@
       "author": "derek.norrbom",
       "text": "Progress update (2026-04-13): completed final python/PT cleanup. Local Snyk Code findings are now 48 total with PT reduced to 0. Remaining findings are non-PT classes: HardcodedNonCryptoSecret (34), HardcodedNonCryptoSecret/test (10), Jinja2AutoEscapeFalse (3), InsecureHash (1). Closed final PT subtasks: blbs-e7b865, blbs-ede0d3, blbs-370934, blbs-ade5b2, blbs-877888, blbs-ae376e.",
       "created_at": "2026-04-13T21:06:15.659558Z"
+    },
+    {
+      "id": "b831749c-19e7-4472-9490-494d0f1b9dae",
+      "author": "derek.norrbom",
+      "text": "Follow-up fix: CI regression triage from Actions run 24366891200 shows extraction/retrieval lab scripts rejecting temporary /tmp corpus paths used by BDD harness. Applying bounded validator update to allow repository root and system temp root, then re-running scripts/test.py.",
+      "created_at": "2026-04-13T21:33:55.790399Z"
+    },
+    {
+      "id": "cd87fd9f-c99a-4e08-86b1-1ddf8acd368d",
+      "author": "derek.norrbom",
+      "text": "Completed DRY pass for path validation: centralized allow_temp_dir support in scripts/_security_utils.py and removed duplicated local resolver implementations in lab/demo scripts. Local full test driver passed (behave + pytest + coverage).",
+      "created_at": "2026-04-13T21:41:37.217250Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T21:06:15.659558Z",
+  "updated_at": "2026-04-13T21:41:37.217250Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "code",

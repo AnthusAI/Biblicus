@@ -9,11 +9,17 @@ from typing import Iterable
 from urllib.parse import urlparse
 import tarfile
 import shutil
+import tempfile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def resolve_within_repo(path_value: str | Path, *, require_exists: bool) -> Path:
+def resolve_within_repo(
+    path_value: str | Path,
+    *,
+    require_exists: bool,
+    allow_temp_dir: bool = False,
+) -> Path:
     """
     Resolve a path and enforce repository-root confinement.
 
@@ -21,16 +27,21 @@ def resolve_within_repo(path_value: str | Path, *, require_exists: bool) -> Path
     :type path_value: str | Path
     :param require_exists: Whether the resolved path must already exist.
     :type require_exists: bool
+    :param allow_temp_dir: Whether to also allow the system temporary directory root.
+    :type allow_temp_dir: bool
     :return: Resolved, validated path.
     :rtype: Path
-    :raises ValueError: If the path escapes repository root.
+    :raises ValueError: If the path escapes all allowed roots.
     :raises FileNotFoundError: If required path does not exist.
     """
     resolved = Path(path_value).expanduser().resolve()
-    try:
-        resolved.relative_to(REPO_ROOT)
-    except ValueError as error:
-        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    allowed_roots = [REPO_ROOT]
+    if allow_temp_dir:
+        allowed_roots.append(Path(tempfile.gettempdir()).resolve())
+    if not any((resolved == root) or (root in resolved.parents) for root in allowed_roots):
+        raise ValueError(
+            f"Path must be within one of: {', '.join(str(root) for root in allowed_roots)}"
+        )
     if require_exists and not resolved.exists():
         raise FileNotFoundError(f"Path does not exist: {resolved}")
     return resolved
