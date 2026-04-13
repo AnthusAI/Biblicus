@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
   "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 348, column 40 to line 393, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:346-370)\n```\n 346 | \n 347 | // List analysis runs for a corpus\n 348 | app.get('/api/corpora/:name/analysis', async (req, res) => {\n 349 |   try {\n 350 |     const corpusPath = validateCorpusPath(req.params.name);\n 351 |     const analysisDir = path.join(corpusPath, 'analysis');\n 352 | \n 353 |     const analysisRuns = [];\n 354 | \n 355 |     try {\n 356 |       const analysisTypes = await fs.readdir(analysisDir);\n 357 | \n 358 |       for (const analysisType of analysisTypes) {\n 359 |         if (analysisType.startsWith('.')) continue;\n 360 | \n 361 |         const typePath = path.join(analysisDir, analysisType);\n 362 |         const typeStat = await fs.stat(typePath);\n 363 | \n 364 |         if (!typeStat.isDirectory()) continue;\n 365 | \n 366 |         const runs = await fs.readdir(typePath);\n 367 | \n 368 |         for (const run of runs) {\n 369 |           if (run.startsWith('.')) continue;\n 370 | \n```\n\n**Issue Key:** 356d8b3f-c174-462f-bb6b-133f13b53792\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "18eb6c69-7992-4565-bd68-ed6f27efb691",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.599605Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.235226Z",
-  "updated_at": "2026-04-13T17:45:49.235226Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:34.617181Z",
+  "closed_at": "2026-04-13T20:27:34.617181Z",
   "custom": {
     "snyk_column": 40,
     "snyk_end_column": 2,

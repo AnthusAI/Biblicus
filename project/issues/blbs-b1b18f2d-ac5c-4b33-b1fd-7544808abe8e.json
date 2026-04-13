@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 178, column 34 to line 178, column 42\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:176-180)\n```\n 176 |     const catalogPath = path.join(corpusPath, 'metadata', 'catalog.json');\n 177 | \n 178 |     const catalogData = await fs.readFile(catalogPath, 'utf8');\n 179 |     const catalog = JSON.parse(catalogData);\n 180 | \n```\n\n**Issue Key:** cb22e90c-8eb6-4dea-99dd-3d306a2cad91\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "7e38a5d7-9a25-481c-ac1b-15b4c0433f28",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.720172Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.203876Z",
-  "updated_at": "2026-04-13T17:45:49.203876Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:34.734202Z",
+  "closed_at": "2026-04-13T20:27:34.734202Z",
   "custom": {
     "snyk_column": 34,
     "snyk_end_column": 42,

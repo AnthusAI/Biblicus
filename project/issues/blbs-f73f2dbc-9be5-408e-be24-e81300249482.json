@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 356, column 38 to line 356, column 45\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:354-358)\n```\n 354 | \n 355 |     try {\n 356 |       const analysisTypes = await fs.readdir(analysisDir);\n 357 | \n 358 |       for (const analysisType of analysisTypes) {\n```\n\n**Issue Key:** 87fc03a6-7b0f-422d-856a-1741f0b9d007\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "467b0daa-0ece-4a89-aa5c-e0d5f1ee5ee0",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:35.278289Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.222469Z",
-  "updated_at": "2026-04-13T17:45:49.222469Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:35.290930Z",
+  "closed_at": "2026-04-13T20:27:35.290930Z",
   "custom": {
     "snyk_column": 38,
     "snyk_end_column": 45,

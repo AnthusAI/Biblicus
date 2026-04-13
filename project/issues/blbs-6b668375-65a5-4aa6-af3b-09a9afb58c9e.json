@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
   "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 308, column 41 to line 345, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:306-330)\n```\n 306 | \n 307 | // List extraction snapshots for a corpus\n 308 | app.get('/api/corpora/:name/snapshots', async (req, res) => {\n 309 |   try {\n 310 |     const corpusPath = validateCorpusPath(req.params.name);\n 311 |     const extractedDir = path.join(corpusPath, 'extracted');\n 312 | \n 313 |     const snapshots = await fs.readdir(extractedDir);\n 314 |     const snapshotDetails = [];\n 315 | \n 316 |     for (const snapshot of snapshots) {\n 317 |       if (snapshot.startsWith('.')) continue;\n 318 | \n 319 |       const snapshotPath = path.join(extractedDir, snapshot);\n 320 |       const manifestPath = path.join(snapshotPath, 'manifest.json');\n 321 | \n 322 |       try {\n 323 |         const manifestData = await fs.readFile(manifestPath, 'utf8');\n 324 |         const manifest = JSON.parse(manifestData);\n 325 | \n 326 |         snapshotDetails.push({\n 327 |           id: snapshot,\n 328 |           ...manifest\n 329 |         });\n 330 |       } catch (err) {\n```\n\n**Issue Key:** 91db01fe-7473-4f3d-b5dc-ee5650319daa\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "788b2d14-4675-4fea-b306-61fb01f32a28",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:34.274623Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.290445Z",
-  "updated_at": "2026-04-13T17:45:49.290445Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:34.302516Z",
+  "closed_at": "2026-04-13T20:27:34.302516Z",
   "custom": {
     "snyk_column": 41,
     "snyk_end_column": 2,

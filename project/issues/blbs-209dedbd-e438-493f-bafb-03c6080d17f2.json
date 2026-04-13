@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
   "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 396, column 39 to line 435, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:394-418)\n```\n 394 | \n 395 | // List recipes for a corpus\n 396 | app.get('/api/corpora/:name/recipes', async (req, res) => {\n 397 |   try {\n 398 |     const corpusPath = validateCorpusPath(req.params.name);\n 399 |     const recipesDir = path.join(corpusPath, 'recipes');\n 400 | \n 401 |     const recipes = [];\n 402 | \n 403 |     async function scanRecipes(dir, prefix = '') {\n 404 |       try {\n 405 |         const entries = await fs.readdir(dir, { withFileTypes: true });\n 406 | \n 407 |         for (const entry of entries) {\n 408 |           if (entry.name.startsWith('.')) continue;\n 409 | \n 410 |           const fullPath = path.join(dir, entry.name);\n 411 |           const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;\n 412 | \n 413 |           if (entry.isDirectory()) {\n 414 |             await scanRecipes(fullPath, relativePath);\n 415 |           } else if (entry.name.endsWith('.yml') || entry.name.endsWith('.yaml')) {\n 416 |             recipes.push({\n 417 |               name: entry.name,\n 418 |               path: relativePath,\n```\n\n**Issue Key:** 839c174f-27f6-45f5-9dc4-7efc221a854f\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "6ed042d1-f284-4b78-8c6e-5090b79d7485",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:33.743188Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.231557Z",
-  "updated_at": "2026-04-13T17:45:49.231557Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:33.805273Z",
+  "closed_at": "2026-04-13T20:27:33.805273Z",
   "custom": {
     "snyk_column": 39,
     "snyk_end_column": 2,

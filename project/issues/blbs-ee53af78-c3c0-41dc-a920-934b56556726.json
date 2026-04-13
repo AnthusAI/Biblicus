@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Allocation of Resources Without Limits or Throttling",
   "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 445, column 25 to line 465, column 2\n**Classes:** CWE-CWE-770\n### Snippet (apps/dashboard/server.js:443-467)\n```\n 443 | \n 444 | // Update configuration (set corpora root)\n 445 | app.post('/api/config', async (req, res) => {\n 446 |   try {\n 447 |     const { corporaRoot } = req.body;\n 448 | \n 449 |     if (!corporaRoot) {\n 450 |       return res.status(400).json({ error: 'corporaRoot is required' });\n 451 |     }\n 452 | \n 453 |     // Validate the path exists\n 454 |     await fs.access(corporaRoot);\n 455 | \n 456 |     // Save to config file\n 457 |     const configPath = path.join(__dirname, '.corpus-viewer.json');\n 458 |     await fs.writeFile(configPath, JSON.stringify({ corporaRoot }, null, 2));\n 459 | \n 460 |     res.json({ success: true, corporaRoot });\n 461 |   } catch (error) {\n 462 |     console.error('Error updating config:', error);\n 463 |     res.status(400).json({ error: error.message });\n 464 |   }\n 465 | });\n 466 | \n 467 | app.listen(PORT, () => {\n```\n\n**Issue Key:** fe3f170a-2f6c-4c63-a513-1d326c775c16\n\n### Details\nAllocation of Resources Without Limits or Throttling\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "0852ae04-6ee3-4ff1-87ec-5e980dd84c54",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:35.221199Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.245720Z",
-  "updated_at": "2026-04-13T17:45:49.245720Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:27:35.233394Z",
+  "closed_at": "2026-04-13T20:27:35.233394Z",
   "custom": {
     "snyk_column": 25,
     "snyk_end_column": 2,
