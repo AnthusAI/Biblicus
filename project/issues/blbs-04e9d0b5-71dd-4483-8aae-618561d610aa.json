@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Open Redirect",
   "description": "## Open Redirect\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/.vite/deps/react-router-dom.js`\n**Location:** line 2152, column 33 to line 2152, column 40\n**Classes:** CWE-CWE-601\n### Snippet (apps/dashboard/.vite/deps/react-router-dom.js:2150-2154)\n```\n2150 |       if (isDocumentReload) {\n2151 |         if (replace2) {\n2152 |           routerWindow.location.replace(location);\n2153 |         } else {\n2154 |           routerWindow.location.assign(location);\n```\n\n**Issue Key:** 1c518f89-1730-4e21-a7a0-c10a75a27320\n\n### Details\nOpen Redirect\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "f2a2780d-267b-4e88-b287-a6716ed654e0",
+      "author": "derek.norrbom",
+      "text": "Closed: finding originated from committed Vite pre-bundled artifacts under apps/dashboard/.vite, not source code. Remediation applied by untracking apps/dashboard/.vite and adding it to .gitignore. Re-scan on 2026-04-13 shows 0 remaining findings in apps/dashboard/.vite.",
+      "created_at": "2026-04-13T20:23:03.407214Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.238102Z",
-  "updated_at": "2026-04-13T17:45:49.238102Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:23:03.419837Z",
+  "closed_at": "2026-04-13T20:23:03.419837Z",
   "custom": {
     "snyk_column": 33,
     "snyk_end_column": 40,

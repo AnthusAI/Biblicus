@@ -38,4 +38,5 @@ apps/dashboard/amplify_outputs*
 apps/dashboard/amplifyconfiguration*
 apps/dashboard/dist/
 apps/dashboard/dist-ssr/
+apps/dashboard/.vite/
 project/.cache/index.json

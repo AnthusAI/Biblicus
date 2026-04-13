@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Sensitive Cookie in HTTPS Session Without 'Secure' Attribute",
   "description": "## Sensitive Cookie in HTTPS Session Without 'Secure' Attribute\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/.vite/deps/chunk-UFPSZHE6.js`\n**Location:** line 5033, column 21 to line 5033, column 27\n**Classes:** CWE-CWE-614\n### Snippet (apps/dashboard/.vite/deps/chunk-UFPSZHE6.js:5031-5035)\n```\n5031 |       stringifiedAttributes += \"=\" + attributes[attributeName].split(\";\")[0];\n5032 |     }\n5033 |     return document.cookie = name + \"=\" + converter.write(value, name) + stringifiedAttributes;\n5034 |   }\n5035 |   function get(name) {\n```\n\n**Issue Key:** 759132fc-ad53-4e08-adc5-e13281ca2775\n\n### Details\nSensitive Cookie in HTTPS Session Without 'Secure' Attribute\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "8ec13b07-690c-4fe8-b24e-69b0f238509b",
+      "author": "derek.norrbom",
+      "text": "Closed: finding originated from committed Vite pre-bundled artifacts under apps/dashboard/.vite, not source code. Remediation applied by untracking apps/dashboard/.vite and adding it to .gitignore. Re-scan on 2026-04-13 shows 0 remaining findings in apps/dashboard/.vite.",
+      "created_at": "2026-04-13T20:23:03.480608Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.295665Z",
-  "updated_at": "2026-04-13T17:45:49.295665Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:23:03.493961Z",
+  "closed_at": "2026-04-13T20:23:03.493961Z",
   "custom": {
     "snyk_column": 21,
     "snyk_end_column": 27,

@@ -3,7 +3,7 @@
   "title": "AnthusAI/Biblicus",
   "description": "Snyk vulnerabilities found in `AnthusAI/Biblicus`.",
   "type": "task",
-  "status": "open",
+  "status": "in_progress",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -13,9 +13,22 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "d2338ff6-ef73-405a-b033-50eb7083da54",
+      "author": "derek.norrbom",
+      "text": "Applying repository hygiene fix: stop tracking generated apps/dashboard/.vite artifacts, add ignore rule, and rerun Snyk Code to remove findings originating from vendored/generated files.",
+      "created_at": "2026-04-13T20:21:41.317684Z"
+    },
+    {
+      "id": "6af0c39c-bf34-48a4-b72c-5397cf708719",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): removed tracked Vite pre-bundle artifacts from apps/dashboard/.vite and added apps/dashboard/.vite/ to .gitignore. Local Snyk Code SARIF count changed from 116 to 112; findings in apps/dashboard/.vite are now 0. Closed related subtasks: blbs-04e9d0, blbs-975fa7, blbs-c74d0d, blbs-85be8f.",
+      "created_at": "2026-04-13T20:23:09.973380Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T17:45:49.201217Z",
+  "updated_at": "2026-04-13T20:23:09.973380Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "code",
