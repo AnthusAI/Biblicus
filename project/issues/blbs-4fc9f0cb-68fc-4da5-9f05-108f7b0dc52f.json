@@ -67,10 +67,22 @@
       "author": "derek.norrbom",
       "text": "Progress update (2026-04-13): additional PT remediation pass completed for evaluate_ocr_pipeline.py, benchmark_all_pipelines.py, benchmark_all_stt_providers.py, download_voxforge_samples.py, download_sroie_samples.py, and download_an4_samples.py. Local Snyk Code findings dropped from 66 to 54. PT dropped from 18 to 6; all remaining PT findings are now limited to six scripts (extraction_evaluation_demo.py, extraction_evaluation_lab.py, graph_extraction_extractor_demo.py, graph_extraction_integration.py, prepare_scanned_paper_samples.py, retrieval_evaluation_lab.py). Closed 17 related PT subtasks in this pass.",
       "created_at": "2026-04-13T20:58:15.113319Z"
+    },
+    {
+      "id": "03d43d5f-5407-41d0-9a8c-1b69c3abcdff",
+      "author": "derek.norrbom",
+      "text": "Starting final PT cleanup batch for six remaining scripts (extraction/graph/retrieval/prepare demos). Plan: add repo-root path validation at CLI boundary and ensure all path-based writes/deletes are performed only on validated paths.",
+      "created_at": "2026-04-13T21:03:48.758642Z"
+    },
+    {
+      "id": "b51df04f-f6d9-4309-837f-da7b74bbfa20",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): completed final python/PT cleanup. Local Snyk Code findings are now 48 total with PT reduced to 0. Remaining findings are non-PT classes: HardcodedNonCryptoSecret (34), HardcodedNonCryptoSecret/test (10), Jinja2AutoEscapeFalse (3), InsecureHash (1). Closed final PT subtasks: blbs-e7b865, blbs-ede0d3, blbs-370934, blbs-ade5b2, blbs-877888, blbs-ae376e.",
+      "created_at": "2026-04-13T21:06:15.659558Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T20:58:15.113319Z",
+  "updated_at": "2026-04-13T21:06:15.659558Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "code",

@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/graph_extraction_integration.py`\n**Location:** line 533, column 34 to line 533, column 38\n**Classes:** CWE-CWE-23\n### Snippet (scripts/graph_extraction_integration.py:531-535)\n```\n 531 |                 ]\n 532 |             )\n 533 |         _write_story_report(path=Path(arguments.report_path).resolve(), content=\"\\n\".join(report_lines) + \"\\n\")\n 534 | \n 535 |     return summary\n```\n\n**Issue Key:** aa75470f-2eac-442c-bb93-515161d16ba0\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "cc470619-6af9-43c0-b9f1-485d4e226401",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by enforcing repository-root path validation at CLI boundaries and for report/dataset output paths in the affected script, plus safe bounded cleanup logic for temporary directories. Local Snyk Code re-scan on 2026-04-13 shows this PT finding no longer present.",
+      "created_at": "2026-04-13T21:06:12.450409Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.241268Z",
-  "updated_at": "2026-04-13T17:45:49.241268Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T21:06:12.462149Z",
+  "closed_at": "2026-04-13T21:06:12.462149Z",
   "custom": {
     "snyk_column": 34,
     "snyk_end_column": 38,

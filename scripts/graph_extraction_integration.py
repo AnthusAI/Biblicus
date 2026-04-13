@@ -22,6 +22,17 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
+def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
+    resolved = Path(path_value).expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    if require_exists and not resolved.exists():
+        raise FileNotFoundError(f"Path does not exist: {resolved}")
+    return resolved
+
+
 def _configure_logger(verbose: bool) -> logging.Logger:
     """
     Configure the integration logger.
@@ -363,7 +374,7 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
 
     _log_phase(logger, "Phase 1: Download Wikipedia corpus")
     ingestion_stats = _download_wikipedia(
@@ -530,7 +541,10 @@ def run_integration(arguments: argparse.Namespace, logger: logging.Logger) -> Di
                     ", ".join(summary["sample_entities"]),
                 ]
             )
-        _write_story_report(path=Path(arguments.report_path).resolve(), content="\n".join(report_lines) + "\n")
+        _write_story_report(
+            path=_resolve_within_repo(arguments.report_path, require_exists=False),
+            content="\n".join(report_lines) + "\n",
+        )
 
     return summary
 

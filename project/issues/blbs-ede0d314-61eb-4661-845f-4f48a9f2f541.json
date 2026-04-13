@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/extraction_evaluation_lab.py`\n**Location:** line 174, column 20 to line 174, column 24\n**Classes:** CWE-CWE-23\n### Snippet (scripts/extraction_evaluation_lab.py:172-176)\n```\n 172 |         items=evaluation_items,\n 173 |     )\n 174 |     dataset_path = Path(arguments.dataset_path).resolve()\n 175 |     dataset_path.parent.mkdir(parents=True, exist_ok=True)\n 176 |     dataset_path.write_text(dataset.model_dump_json(indent=2) + \"\\n\", encoding=\"utf-8\")\n```\n\n**Issue Key:** 1e398590-7a16-4080-a877-c02d6ee1ea0f\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "6683ba21-2729-4ab1-98da-2047cba90c47",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by enforcing repository-root path validation at CLI boundaries and for report/dataset output paths in the affected script, plus safe bounded cleanup logic for temporary directories. Local Snyk Code re-scan on 2026-04-13 shows this PT finding no longer present.",
+      "created_at": "2026-04-13T21:06:12.320158Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.254189Z",
-  "updated_at": "2026-04-13T17:45:49.254189Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T21:06:12.333662Z",
+  "closed_at": "2026-04-13T21:06:12.333662Z",
   "custom": {
     "snyk_column": 20,
     "snyk_end_column": 24,

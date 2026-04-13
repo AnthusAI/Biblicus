@@ -22,6 +22,17 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
+def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
+    resolved = Path(path_value).expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    if require_exists and not resolved.exists():
+        raise FileNotFoundError(f"Path does not exist: {resolved}")
+    return resolved
+
+
 EXTRACTOR_CONFIGS = {
     "simple-entities": {
         "schema_version": 1,
@@ -254,7 +265,7 @@ def _write_report(path: Path, content: str) -> None:
 
 
 def run_demo(arguments: argparse.Namespace, logger: logging.Logger) -> Dict[str, object]:
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
 
     if arguments.skip_download:
         _log_phase(logger, "Phase 1: Reuse existing corpus")
@@ -394,7 +405,10 @@ def run_demo(arguments: argparse.Namespace, logger: logging.Logger) -> Dict[str,
     }
     if arguments.report_path:
         report_text = json.dumps(report, indent=2)
-        _write_report(Path(arguments.report_path), report_text + "\n")
+        _write_report(
+            _resolve_within_repo(arguments.report_path, require_exists=False),
+            report_text + "\n",
+        )
 
     return report
 

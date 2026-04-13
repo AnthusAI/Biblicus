@@ -25,6 +25,17 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
+def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
+    resolved = Path(path_value).expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    if require_exists and not resolved.exists():
+        raise FileNotFoundError(f"Path does not exist: {resolved}")
+    return resolved
+
+
 def _select_ag_news_items(corpus: Corpus, *, limit: int) -> List[ExtractionEvaluationItem]:
     """
     Select AG News items for evaluation.
@@ -88,7 +99,7 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
     from scripts.download_ag_news import download_ag_news_corpus
 
     ingestion_stats = download_ag_news_corpus(
@@ -121,7 +132,7 @@ def run_demo(arguments: argparse.Namespace) -> Dict[str, object]:
     )
     dataset_path = _write_dataset_file(
         dataset=dataset,
-        dataset_path=Path(arguments.dataset_path).resolve(),
+        dataset_path=_resolve_within_repo(arguments.dataset_path, require_exists=False),
     )
     result = evaluate_extraction_snapshot(
         corpus=corpus,

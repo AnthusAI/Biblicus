@@ -31,6 +31,17 @@ LAB_ITEMS_DIR = LAB_DIR / "items"
 LAB_LABELS_PATH = LAB_DIR / "labels.json"
 
 
+def _resolve_within_repo(path_value: str, *, require_exists: bool) -> Path:
+    resolved = Path(path_value).expanduser().resolve()
+    try:
+        resolved.relative_to(REPO_ROOT)
+    except ValueError as error:
+        raise ValueError(f"Path must be within repository root: {REPO_ROOT}") from error
+    if require_exists and not resolved.exists():
+        raise FileNotFoundError(f"Path does not exist: {resolved}")
+    return resolved
+
+
 class RetrievalEvaluationLabQuery(BaseModel):
     """
     Label entry for the retrieval evaluation lab.
@@ -176,7 +187,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
     :return: Summary of the workflow results.
     :rtype: dict[str, object]
     """
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = _resolve_within_repo(arguments.corpus, require_exists=False)
     corpus = _prepare_corpus(corpus_path, force=arguments.force)
     lab_dataset = _load_lab_dataset()
     filename_map = _ingest_lab_items(corpus)
@@ -201,7 +212,7 @@ def run_lab(arguments: argparse.Namespace) -> Dict[str, object]:
         configuration={"extraction_snapshot": f"pipeline:{extraction_manifest.snapshot_id}"},
     )
     evaluation_dataset = _build_evaluation_dataset(lab_dataset, filename_map=filename_map)
-    dataset_path = Path(arguments.dataset_path).resolve()
+    dataset_path = _resolve_within_repo(arguments.dataset_path, require_exists=False)
     dataset_path.parent.mkdir(parents=True, exist_ok=True)
     dataset_path.write_text(evaluation_dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
