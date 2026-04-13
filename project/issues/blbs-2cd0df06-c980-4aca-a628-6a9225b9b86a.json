@@ -19,10 +19,16 @@
       "author": "derek.norrbom",
       "text": "Triaged 2026-04-13 after full Snyk sync. Closed: blbs-1b345a (pygments resolved). Open actionable fix: blbs-16a539 (pypdf -> 6.10.0). Open ignore candidates: 14 torch/transformers IDs with no upstream fix; each has a suggested ignore rationale comment and 2026-05-13 review date.",
       "created_at": "2026-04-13T17:52:20.623421Z"
+    },
+    {
+      "id": "4e24d8b9-48b6-488f-aed4-1c8d6b33a687",
+      "author": "derek.norrbom",
+      "text": "Update 2026-04-13: closed blbs-16a539 after pypdf remediation (6.9.2 -> 6.10.0). Python dependency findings under this task are now 14 remaining IDs, all in torch/transformers with no supported upstream fix currently.",
+      "created_at": "2026-04-13T18:17:01.131400Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.299525Z",
-  "updated_at": "2026-04-13T17:52:20.623421Z",
+  "updated_at": "2026-04-13T18:17:01.131400Z",
   "closed_at": null,
   "custom": {
     "snyk_category": "dependency",

@@ -19,10 +19,16 @@
       "author": "derek.norrbom",
       "text": "Proposed execution plan (2026-04-13): 1) Python dependencies (blbs-2cd0df): resolve fixable findings first (next is pypdf>=6.10.0), then mark no-fix torch/transformers findings ignored in Snyk with monthly review date and keep Kanbus subtasks open until upstream fix ships. 2) Node dependencies: handle infrastructure/reinforcement-memory/package.json (blbs-0faf78) and apps/dashboard/package.json (blbs-94b8f5) with direct dependency upgrades where possible. 3) Snyk Code bundle (blbs-4fc9f0): triage by rule family, bulk-close false positives with evidence, keep only actionable findings in-progress.",
       "created_at": "2026-04-13T17:52:33.005580Z"
+    },
+    {
+      "id": "f9feca92-a214-42f1-ac90-fcede48d0e9d",
+      "author": "derek.norrbom",
+      "text": "Python dependency stream update: remediated and closed pypdf sub-task (blbs-16a539). Remaining Python dependency findings are the 14 no-fix torch/transformers items pending ignore/review workflow.",
+      "created_at": "2026-04-13T18:17:01.131395Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.192617Z",
-  "updated_at": "2026-04-13T17:52:33.005580Z",
+  "updated_at": "2026-04-13T18:17:01.131395Z",
   "closed_at": null,
   "custom": {}
 }
