@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Server-Side Request Forgery (SSRF)",
   "description": "## Server-Side Request Forgery (SSRF)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_openslr_samples.py`\n**Location:** line 127, column 18 to line 127, column 40\n**Classes:** CWE-CWE-918\n### Snippet (scripts/download_openslr_samples.py:125-129)\n```\n 125 | \n 126 |         try:\n 127 |             with urllib.request.urlopen(url) as response:\n 128 |                 total_size = int(response.headers.get('content-length', 0))\n 129 | \n```\n\n**Issue Key:** 710eb4bc-0f94-4649-8e79-36f927717129\n\n### Details\nServer-Side Request Forgery (SSRF)\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "d922daf7-f383-4fef-b36a-1e4787422d2b",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by introducing validated extraction and path handling in downloader scripts. Changes include member-validated tar extraction (no unsafe extractall), path confinement checks for script IO paths, and HTTPS host allowlist validation for OpenSLR downloads. Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:52:40.586210Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.239305Z",
-  "updated_at": "2026-04-13T17:45:49.239305Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:52:40.599373Z",
+  "closed_at": "2026-04-13T20:52:40.599373Z",
   "custom": {
     "snyk_column": 18,
     "snyk_end_column": 40,

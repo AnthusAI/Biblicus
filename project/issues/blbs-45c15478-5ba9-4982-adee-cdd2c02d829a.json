@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Path Traversal",
   "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_voxforge_samples.py`\n**Location:** line 88, column 13 to line 88, column 39\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_voxforge_samples.py:86-90)\n```\n  86 |         print(f\"  Downloading {filename}...\")\n  87 |         try:\n  88 |             urllib.request.urlretrieve(url, tar_file)\n  89 |         except Exception as e:\n  90 |             print(f\"    Failed: {e}\")\n```\n\n**Issue Key:** 8ad6facc-f65b-491d-b939-9b624541fd7b\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "in_progress",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -15,7 +15,7 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-04-13T17:45:49.247998Z",
-  "updated_at": "2026-04-13T17:45:49.247998Z",
+  "updated_at": "2026-04-13T20:49:06.026057Z",
   "closed_at": null,
   "custom": {
     "snyk_column": 13,

@@ -13,13 +13,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import tarfile
 import tempfile
 from pathlib import Path
 from typing import Dict
 from urllib.request import urlretrieve
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).parent))
+
 from biblicus.corpus import Corpus
+from _security_utils import resolve_within_repo, safe_extract_tar
 
 # LibriSpeech dataset configuration
 LIBRISPEECH_TEST_CLEAN_URL = "https://www.openslr.org/resources/12/test-clean.tar.gz"
@@ -64,8 +68,7 @@ def download_librispeech_dataset(temp_dir: Path) -> Path:
     print(f"✓ Downloaded {tar_path.stat().st_size:,} bytes (~346 MB)")
 
     print("Extracting dataset (this may take a minute)...")
-    with tarfile.open(tar_path, "r:gz") as tar_ref:
-        tar_ref.extractall(temp_dir)
+    safe_extract_tar(tar_path, temp_dir)
 
     # LibriSpeech extracts to LibriSpeech/test-clean/
     extracted_dir = temp_dir / "LibriSpeech" / "test-clean"
@@ -214,7 +217,8 @@ def download_librispeech_samples(
     :return: Download and ingestion statistics.
     :rtype: dict
     """
-    corpus = _prepare_corpus(corpus_path, force=force)
+    safe_corpus_path = resolve_within_repo(corpus_path, require_exists=False)
+    corpus = _prepare_corpus(safe_corpus_path, force=force)
 
     # Use temporary directory for download
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -273,7 +277,7 @@ def main() -> int:
     print()
 
     stats = download_librispeech_samples(
-        corpus_path=Path(args.corpus).resolve(),
+        corpus_path=resolve_within_repo(args.corpus, require_exists=False),
         sample_count=args.count,
         force=bool(args.force),
     )

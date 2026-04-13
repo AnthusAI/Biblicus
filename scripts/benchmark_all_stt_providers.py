@@ -33,10 +33,12 @@ from datetime import datetime
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.evaluation.stt_benchmark import STTBenchmark
+from _security_utils import resolve_within_repo
 
 
 # Default STT provider configurations to test
@@ -254,6 +256,7 @@ def print_comparison_table(results: List[Dict]):
 
 def save_comprehensive_report(results: List[Dict], output_path: Path, corpus_path: str):
     """Save comprehensive comparison report to JSON."""
+    output_path = resolve_within_repo(output_path, require_exists=False)
     successful_results = [r for r in results if r.get('success')]
     failed_results = [r for r in results if not r.get('success')]
 
@@ -380,7 +383,8 @@ def main():
 
     try:
         # Load corpus
-        corpus = Corpus.open(Path(args.corpus))
+        safe_corpus_path = resolve_within_repo(args.corpus, require_exists=True)
+        corpus = Corpus.open(safe_corpus_path)
         benchmark = STTBenchmark(corpus)
 
         # Run all providers
@@ -411,7 +415,11 @@ def main():
         print_comparison_table(results)
 
         # Save comprehensive report
-        save_comprehensive_report(results, Path(args.output), args.corpus)
+        save_comprehensive_report(
+            results,
+            resolve_within_repo(args.output, require_exists=False),
+            str(safe_corpus_path),
+        )
 
         print(f"\n✓ Benchmark complete!")
         print(f"  Tested: {len(results)} providers")

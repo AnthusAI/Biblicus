@@ -14,14 +14,15 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-import tarfile
 from typing import List, Tuple
 import urllib.request
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
+from _security_utils import resolve_within, resolve_within_repo, safe_extract_tar
 
 
 def get_voxforge_archive_urls(count: int = 50) -> List[str]:
@@ -75,9 +76,12 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     :return: Path to extracted directory.
     :rtype: Path
     """
+    safe_download_dir = resolve_within_repo(download_dir, require_exists=False)
     filename = url.split('/')[-1]
-    tar_file = download_dir / filename
-    extract_dir = download_dir / filename.replace('.tgz', '')
+    tar_file = resolve_within(safe_download_dir, safe_download_dir / filename, require_exists=False)
+    extract_dir = resolve_within(
+        safe_download_dir, safe_download_dir / filename.replace('.tgz', ''), require_exists=False
+    )
 
     if extract_dir.exists():
         return extract_dir
@@ -85,15 +89,14 @@ def download_and_extract_archive(url: str, download_dir: Path) -> Path:
     if not tar_file.exists():
         print(f"  Downloading {filename}...")
         try:
-            urllib.request.urlretrieve(url, tar_file)
+            urllib.request.urlretrieve(url, str(tar_file))
         except Exception as e:
             print(f"    Failed: {e}")
             return None
 
     print(f"  Extracting {filename}...")
     try:
-        with tarfile.open(tar_file, "r:gz") as tar:
-            tar.extractall(download_dir)
+        safe_extract_tar(tar_file, safe_download_dir)
         tar_file.unlink()  # Remove tar file to save space
     except Exception as e:
         print(f"    Failed: {e}")
@@ -143,6 +146,7 @@ def collect_audio_samples(
     :return: List of (audio_path, transcription) tuples.
     :rtype: list[tuple[Path, str]]
     """
+    download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     urls = get_voxforge_archive_urls(count=sample_count)
@@ -276,7 +280,7 @@ def main():
     parser.add_argument(
         "--download-dir",
         type=Path,
-        default=Path("/tmp/voxforge"),
+        default=Path("artifacts/voxforge"),
         help="Directory to download dataset to"
     )
 
@@ -291,8 +295,11 @@ def main():
     print("=" * 80)
 
     # Collect samples
+    safe_corpus_path = resolve_within_repo(args.corpus, require_exists=False)
+    safe_download_dir = resolve_within_repo(args.download_dir, require_exists=False)
+
     samples = collect_audio_samples(
-        download_dir=args.download_dir,
+        download_dir=safe_download_dir,
         sample_count=args.count
     )
 
@@ -301,7 +308,7 @@ def main():
         sys.exit(1)
 
     # Initialize corpus
-    corpus = Corpus(args.corpus)
+    corpus = Corpus(safe_corpus_path)
 
     # Ingest samples
     stats = ingest_samples(corpus=corpus, samples=samples)

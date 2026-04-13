@@ -31,14 +31,15 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-import tarfile
 from typing import List, Tuple, Optional
 import urllib.request
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
+from _security_utils import resolve_within_repo, safe_extract_tar, validate_https_url
 
 # OpenSLR dataset configurations
 OPENSLR_DATASETS = {
@@ -78,6 +79,7 @@ OPENSLR_DATASETS = {
         "file": "data_thchs30.tgz"
     }
 }
+OPENSLR_ALLOWED_HOSTS = {"www.openslr.org"}
 
 
 def download_openslr_dataset(
@@ -101,6 +103,7 @@ def download_openslr_dataset(
         raise ValueError(f"Unknown dataset: {dataset_id}")
 
     dataset_config = OPENSLR_DATASETS[dataset_id]
+    download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine file to download
@@ -114,7 +117,9 @@ def download_openslr_dataset(
     else:
         filename = dataset_config["file"]
 
-    url = f"{dataset_config['base_url']}/{filename}"
+    url = validate_https_url(
+        f"{dataset_config['base_url']}/{filename}", allowed_hosts=OPENSLR_ALLOWED_HOSTS
+    )
     tar_file = download_dir / filename
     extract_base = download_dir
 
@@ -155,8 +160,7 @@ def download_openslr_dataset(
 
     # Extract
     print(f"Extracting {tar_file}...")
-    with tarfile.open(tar_file, "r:gz") as tar:
-        tar.extractall(extract_base)
+    safe_extract_tar(tar_file, extract_base)
 
     print(f"✓ Extracted to {extract_base}")
 
@@ -328,12 +332,14 @@ def main():
     parser.add_argument(
         "--download-dir",
         type=Path,
-        default=Path("/tmp/openslr"),
+        default=Path("artifacts/openslr"),
         help="Directory to download dataset to"
     )
 
     args = parser.parse_args()
 
+    safe_corpus_path = resolve_within_repo(args.corpus, require_exists=False)
+    safe_download_dir = resolve_within_repo(args.download_dir, require_exists=False)
     dataset_config = OPENSLR_DATASETS[args.dataset]
 
     print("=" * 80)
@@ -352,7 +358,7 @@ def main():
     dataset_dir = download_openslr_dataset(
         dataset_id=args.dataset,
         subset=args.subset,
-        download_dir=args.download_dir
+        download_dir=safe_download_dir
     )
 
     # Collect samples (currently only supports LibriSpeech format)
@@ -371,7 +377,7 @@ def main():
         sys.exit(1)
 
     # Initialize corpus
-    corpus = Corpus(args.corpus)
+    corpus = Corpus(safe_corpus_path)
 
     # Ingest samples
     stats = ingest_samples(

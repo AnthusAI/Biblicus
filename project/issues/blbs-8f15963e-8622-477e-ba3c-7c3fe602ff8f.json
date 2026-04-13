@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Arbitrary File Write via Archive Extraction (Tar Slip)",
   "description": "## Arbitrary File Write via Archive Extraction (Tar Slip)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_voxforge_samples.py`\n**Location:** line 152, column 23 to line 152, column 51\n**Classes:** CWE-CWE-22\n### Snippet (scripts/download_voxforge_samples.py:150-154)\n```\n 150 | \n 151 |     for url in urls:\n 152 |         extract_dir = download_and_extract_archive(url, download_dir)\n 153 |         if not extract_dir or not extract_dir.exists():\n 154 |             continue\n```\n\n**Issue Key:** fadcd35b-3102-4f93-b8da-2f38be8106d3\n\n### Details\nArbitrary File Write via Archive Extraction (Tar Slip)\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,10 +13,17 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "ea3896e0-1a3e-4dff-8dbf-663c4fb5ddba",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by introducing validated extraction and path handling in downloader scripts. Changes include member-validated tar extraction (no unsafe extractall), path confinement checks for script IO paths, and HTTPS host allowlist validation for OpenSLR downloads. Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:52:40.998702Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.256758Z",
-  "updated_at": "2026-04-13T17:45:49.256758Z",
-  "closed_at": null,
+  "updated_at": "2026-04-13T20:52:41.010826Z",
+  "closed_at": "2026-04-13T20:52:41.010826Z",
   "custom": {
     "snyk_column": 23,
     "snyk_end_column": 51,

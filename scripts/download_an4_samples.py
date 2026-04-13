@@ -13,13 +13,14 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-import tarfile
 from typing import List, Tuple
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
+from _security_utils import resolve_within_repo, safe_extract_tar
 
 
 def download_an4(download_dir: Path) -> Path:
@@ -33,6 +34,7 @@ def download_an4(download_dir: Path) -> Path:
     """
     import urllib.request
 
+    download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     # AN4 dataset URL
@@ -49,7 +51,7 @@ def download_an4(download_dir: Path) -> Path:
         print("(Dataset size: ~90 MB)")
 
         try:
-            urllib.request.urlretrieve(url, tar_file)
+            urllib.request.urlretrieve(url, str(tar_file))
             print("✓ Download complete")
         except Exception as e:
             print(f"✗ Download failed: {e}")
@@ -58,8 +60,7 @@ def download_an4(download_dir: Path) -> Path:
             raise
 
     print(f"Extracting {tar_file}...")
-    with tarfile.open(tar_file, "r:gz") as tar:
-        tar.extractall(download_dir)
+    safe_extract_tar(tar_file, download_dir)
 
     print(f"✓ Extracted to {extracted_dir}")
     return extracted_dir
@@ -204,7 +205,7 @@ def main():
     parser.add_argument(
         "--download-dir",
         type=Path,
-        default=Path("/tmp/an4"),
+        default=Path("artifacts/an4"),
         help="Directory to download dataset to"
     )
 
@@ -218,13 +219,15 @@ def main():
     print("=" * 80)
 
     # Download dataset
-    dataset_dir = download_an4(download_dir=args.download_dir)
+    safe_corpus_path = resolve_within_repo(args.corpus, require_exists=False)
+    safe_download_dir = resolve_within_repo(args.download_dir, require_exists=False)
+    dataset_dir = download_an4(download_dir=safe_download_dir)
 
     # Collect samples
     samples = collect_audio_samples(dataset_dir=dataset_dir)
 
     # Initialize corpus
-    corpus = Corpus(args.corpus)
+    corpus = Corpus(safe_corpus_path)
 
     # Ingest samples
     stats = ingest_samples(corpus=corpus, samples=samples)
