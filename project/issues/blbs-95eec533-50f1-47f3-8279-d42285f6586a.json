@@ -1,0 +1,30 @@
+{
+  "id": "blbs-95eec533-50f1-47f3-8279-d42285f6586a",
+  "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
+  "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `features/steps/text_extract_steps.py`\n**Location:** line 326, column 17 to line 326, column 24\n**Classes:** CWE-CWE-547\n### Snippet (features/steps/text_extract_steps.py:324-328)\n```\n 324 |                 provider=AiProvider.OPENAI,\n 325 |                 model=\"gpt-4o-mini\",\n 326 |                 api_key=\"test-openai-key\",\n 327 |             ),\n 328 |             prompt_template=prompt_template,\n```\n\n**Issue Key:** 94feb4c0-d3ed-4448-9d1f-e491fd98fa56\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.204637Z",
+  "updated_at": "2026-04-13T17:45:49.204637Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 17,
+    "snyk_end_column": 24,
+    "snyk_end_line": 326,
+    "snyk_file": "features/steps/text_extract_steps.py",
+    "snyk_key": "94feb4c0-d3ed-4448-9d1f-e491fd98fa56",
+    "snyk_line": 326,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

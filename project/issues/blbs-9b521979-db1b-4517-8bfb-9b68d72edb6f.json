@@ -1,0 +1,30 @@
+{
+  "id": "blbs-9b521979-db1b-4517-8bfb-9b68d72edb6f",
+  "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
+  "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `tests/test_remote_source_coverage.py`\n**Location:** line 313, column 54 to line 313, column 61\n**Classes:** CWE-CWE-547\n### Snippet (tests/test_remote_source_coverage.py:311-315)\n```\n 311 | def test_resolve_openai_api_key_from_config(monkeypatch):\n 312 |     monkeypatch.delenv(\"OPENAI_API_KEY\", raising=False)\n 313 |     cfg = BiblicusUserConfig(openai=OpenAiUserConfig(api_key=\"cfg-openai\"))\n 314 |     assert resolve_openai_api_key(config=cfg) == \"cfg-openai\"\n 315 | \n```\n\n**Issue Key:** f27d0db2-d0e8-4a3a-8732-2bb07cb42cc6\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.293797Z",
+  "updated_at": "2026-04-13T17:45:49.293797Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 54,
+    "snyk_end_column": 61,
+    "snyk_end_line": 313,
+    "snyk_file": "tests/test_remote_source_coverage.py",
+    "snyk_key": "f27d0db2-d0e8-4a3a-8732-2bb07cb42cc6",
+    "snyk_line": 313,
+    "snyk_severity": "low",
+    "snyk_type": "code"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "blbs-0e080155-1250-406b-a902-0e923789f850",
+  "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
+  "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `tests/test_remote_source_coverage.py`\n**Location:** line 352, column 17 to line 352, column 28\n**Classes:** CWE-CWE-547\n### Snippet (tests/test_remote_source_coverage.py:350-354)\n```\n 350 |                 connection_string=\"cfg-conn\",\n 351 |                 account_name=\"cfg-acct\",\n 352 |                 account_key=\"cfg-key\",\n 353 |             )\n 354 |         ]\n```\n\n**Issue Key:** 2f6ab1a3-5934-4a5a-8a48-5b7b7a65ea00\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-13T17:45:49.294136Z",
+  "updated_at": "2026-04-13T17:45:49.294136Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_column": 17,
+    "snyk_end_column": 28,
+    "snyk_end_line": 352,
+    "snyk_file": "tests/test_remote_source_coverage.py",
+    "snyk_key": "2f6ab1a3-5934-4a5a-8a48-5b7b7a65ea00",
+    "snyk_line": 352,
+    "snyk_severity": "low",
+    "snyk_type": "code"
+  }
+}

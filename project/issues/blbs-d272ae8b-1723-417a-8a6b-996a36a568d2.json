@@ -1,0 +1,32 @@
+{
+  "id": "blbs-d272ae8b-1723-417a-8a6b-996a36a568d2",
+  "title": "[Snyk] SNYK-JS-QS-15268416 in qs@6.14.1",
+  "description": "## Allocation of Resources Without Limits or Throttling\n\n**Severity:** high\n**Package:** qs@6.14.1\n**File:** `apps/dashboard/package.json`\n\n**CVSS Score:** 8.2  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 517/1000\n\n### CVEs\n- [CVE-2026-2391](https://nvd.nist.gov/vuln/detail/CVE-2026-2391)\n\n**Fix:** Pin `qs` to version 6.14.2 or later.\n\n### Details\n## Overview\n[qs](https://www.npmjs.com/package/qs) is a querystring parser that supports nesting and arrays, with a depth limit.\n\nAffected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling via the `parseArrayValue` function when the `comma` option is in use. An attacker can exhaust system memory by submitting a parameter containing a large number of comma-separated values, resulting in the allocation of excessively large arrays.\r\n\r\n**Note:**\r\nThis is only exploitable if the `comma` option is explicitly set to true. `arrayLimit` is properly enforced for index and bracket notation.\n## PoC\n```js\r\nconst qs = require('qs');\r\n\r\nconst payload = 'a=' + ','.repeat(25);  // 26 elements after split (bypasses arrayLimit: 5)\r\nconst options = { comma: true, arrayLimit: 5, throwOnLimitExceeded: true };\r\n\r\ntry {\r\n  const result = qs.parse(payload, options);\r\n  console.log(result.a.length);  // Outputs: 26 (bypass successful)\r\n} catch (e) {\r\n  console.log('Limit enforced:', e.message);  // Not thrown\r\n}\r\n```\n## Remediation\nUpgrade `qs` to version 6.14.2 or higher.\n## References\n- [GitHub Commit](https://github.com/ljharb/qs/commit/f6a7abff1f13d644db9b05fe4f2c98ada6bf8482)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-QS-15268416)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-94b8f5a7-9b94-4edc-9fec-649d89aa6c37",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "4c070797-ddea-4bab-93f6-7077e53e9f10",
+      "author": "derek.norrbom",
+      "text": "Resolved by dashboard lockfile refresh and dependency updates. Verified absent from snyk test --file=apps/dashboard/package-lock.json --package-manager=npm --org=capacity-aqa on 2026-04-13.",
+      "created_at": "2026-04-13T18:51:47.870952Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.298226Z",
+  "updated_at": "2026-04-13T18:51:47.883424Z",
+  "closed_at": "2026-04-13T18:51:47.883424Z",
+  "custom": {
+    "snyk_key": "SNYK-JS-QS-15268416",
+    "snyk_severity": "high",
+    "snyk_type": "package_vulnerability"
+  }
+}

@@ -3,7 +3,7 @@
   "title": "Remediate BERTopic transitive vulnerabilities via direct dependency upgrades",
   "description": "",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -22,10 +22,91 @@
       "author": "derek.norrbom",
       "text": "Implemented source-level dependency remediation and regenerated lockfile. Updated direct constraints: bertopic>=0.17.4, docling/docling-mlx>=2.84.0, and project Python support to >=3.10,<3.14 (to eliminate vulnerable torch 2.7.1 branch tied to py3.14 lock resolution). Resolved lock now includes transformers 5.5.0, aiohttp 3.13.5, torch 2.11.0, torchvision 0.26.0, litellm 1.83.3. Verified with poetry check and osv-scanner lockfile scan; target findings no longer appear.",
       "created_at": "2026-04-06T20:43:37.927936Z"
+    },
+    {
+      "id": "3ae822c1-b1de-42d7-ac2d-7f8616e9bbbc",
+      "author": "derek.norrbom",
+      "text": "Second pass started for remaining Snyk findings (transformers/torch). Will verify each Snyk ID for fixed versions and attempt source-level upgrades; if no upstream fix is available, will document best-practice triage rationale.",
+      "created_at": "2026-04-07T17:44:39.496061Z"
+    },
+    {
+      "id": "623e7fd6-1c45-4f5b-8995-ca9552e16ec0",
+      "author": "derek.norrbom",
+      "text": "User granted temporary Snyk CLI auth. Running direct snyk test against lockfile to validate fixable versions for remaining transformers/torch findings before any further dependency changes.",
+      "created_at": "2026-04-07T17:46:39.359218Z"
+    },
+    {
+      "id": "5a50d0df-0353-4a8d-b86f-ee7ac7455fd2",
+      "author": "derek.norrbom",
+      "text": "Validated with authenticated Snyk CLI.  reports 0 vulnerabilities for current Python dependency graph, and  also reports 0 vulnerabilities for pyproject/poetry target. Ran  to publish fresh snapshot: project history id 8644b4b9-355b-46f3-8358-ee1fce692a7f. Remaining PR findings are likely stale scan cache/snapshot mismatch; refresh/retest in Snyk should clear. Note:  surfaced unrelated npm lock sync warning in apps/dashboard/package-lock.json.",
+      "created_at": "2026-04-07T17:48:00.789855Z"
+    },
+    {
+      "id": "c63a8da2-0f4a-44a0-a345-098ce5cb3b0a",
+      "author": "derek.norrbom",
+      "text": "Correction: validated with authenticated Snyk CLI using npx. Command npx snyk test --file=poetry.lock --package-manager=poetry --json returned 0 vulnerabilities for current Python graph. Command npx snyk test --all-projects also returned 0 vulnerabilities for pyproject/poetry target. Published fresh snapshot via npx snyk monitor --file=poetry.lock --package-manager=poetry: https://app.snyk.io/org/capacity-aqa/project/1e89547e-272e-46f5-a6b0-dd21b070abde/history/8644b4b9-355b-46f3-8358-ee1fce692a7f. Remaining PR findings likely stale snapshot/cache. Note: npx snyk monitor --all-projects raised unrelated npm lock sync warning in apps/dashboard/package-lock.json.",
+      "created_at": "2026-04-07T17:48:04.573198Z"
+    },
+    {
+      "id": "a8711437-387f-4a35-98ed-29a8aa978b8e",
+      "author": "derek.norrbom",
+      "text": "Investigating persistent PATH setup so snyk and similar CLIs are available in Codex non-interactive login shells. Will patch zsh startup files and verify with fresh shell invocation.",
+      "created_at": "2026-04-08T16:13:52.685624Z"
+    },
+    {
+      "id": "292c3d01-aaf6-4d93-adbc-b1fa47564c92",
+      "author": "derek.norrbom",
+      "text": "Installed Homebrew formula snyk-cli (v1.1303.2). Verified in both current and fresh login shells: command -v snyk -> /opt/homebrew/bin/snyk and snyk --version -> 1.1303.2. This removes dependency on npx/nvm path for Codex shells.",
+      "created_at": "2026-04-08T16:15:15.345377Z"
+    },
+    {
+      "id": "42dfe82d-70d2-4fdf-99e0-11b88607165a",
+      "author": "derek.norrbom",
+      "text": "Continuing dependency scan work: running authenticated Snyk CLI scans against poetry.lock/pyproject.toml to replicate console-reported findings and gather exact vulnerability IDs for remediation.",
+      "created_at": "2026-04-08T16:16:05.508415Z"
+    },
+    {
+      "id": "5c50a095-b32d-4144-8743-94df90497de7",
+      "author": "derek.norrbom",
+      "text": "Investigating discrepancy between Snyk web pyproject-only findings and local lockfile scans. Verifying pyproject constraints and lock-resolved versions for pygments/docs stack and bertopic chain to determine if manifest resolution drift is causing findings.",
+      "created_at": "2026-04-08T16:18:16.630775Z"
+    },
+    {
+      "id": "d136da16-53da-42ef-b6c3-cb0be78cc16e",
+      "author": "derek.norrbom",
+      "text": "Reproduced web findings locally by including dev dependency graph: snyk test --file=poetry.lock --package-manager=poetry --org=capacity-aqa --dev. Result: 31 vulnerable paths, 15 unique IDs. Breakdown: pygments@2.19.2 (1 fixable ID repeated across 10 paths) plus torch@2.11.0 (7 IDs, no fix) and transformers@5.5.0 (7 IDs, no fix).",
+      "created_at": "2026-04-08T16:19:33.727069Z"
+    },
+    {
+      "id": "4630584c-d6a5-4ebf-9805-fffff8498db2",
+      "author": "derek.norrbom",
+      "text": "Analyzing pygments transitive source chains and whether parent dependency upgrades can remediate without adding a direct pygments pin.",
+      "created_at": "2026-04-08T16:20:42.440521Z"
+    },
+    {
+      "id": "7fdc4fad-8cfc-4c86-92e9-aeed4ad2e9c7",
+      "author": "derek.norrbom",
+      "text": "Verified pygments parent constraints via poetry dependency trees. Current parents already match Snyk's suggested versions (pytest 9.0.2, sphinx 8.1.3, python-semantic-release 10.5.3, myst-parser 4.0.1, sphinx-rtd-theme 3.1.0) and still allow vulnerable pygments because they declare wide ranges (e.g., sphinx>=2.17, rich>=2.13,<3). Parent upgrades alone are insufficient; remediation requires explicit pygments>=2.20.0 constraint or waiting for upstream parents to tighten lower bounds.",
+      "created_at": "2026-04-08T16:22:13.228098Z"
+    },
+    {
+      "id": "e69f4389-7b97-4aa5-a007-2991cad7313f",
+      "author": "derek.norrbom",
+      "text": "Applied remediatable fix: added direct dependency floor pygments>=2.20.0 to project dependencies and updated lockfile (pygments 2.19.2 -> 2.20.0). Re-ran Snyk with dev graph: findings dropped from 31 paths / 15 unique IDs to 21 paths / 14 unique IDs. Remaining findings are only torch@2.11.0 (7 IDs, no fix) and transformers@5.5.0 (7 IDs, no fix).",
+      "created_at": "2026-04-08T16:28:42.831352Z"
+    },
+    {
+      "id": "1bef25f5-47d9-4e3b-8c78-d85f825b7753",
+      "author": "derek.norrbom",
+      "text": "Completed: installed standalone snyk-cli, reproduced web findings with --dev scan, remediated the fixable finding via pygments>=2.20.0 and lockfile update, and validated reduction from 31 paths/15 IDs to 21 paths/14 IDs. Remaining vulnerabilities are no-fix upstream issues in torch/transformers and are tracked in blbs-a7a77d.",
+      "created_at": "2026-04-08T16:38:19.052900Z"
     }
   ],
   "created_at": "2026-04-06T20:33:16.518091Z",
-  "updated_at": "2026-04-06T20:43:37.927936Z",
-  "closed_at": null,
-  "custom": {}
+  "updated_at": "2026-04-08T16:38:19.058931Z",
+  "closed_at": "2026-04-08T16:38:19.058931Z",
+  "custom": {
+    "project_label": "blbs",
+    "source": "shared"
+  }
 }

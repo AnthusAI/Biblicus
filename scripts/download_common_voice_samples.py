@@ -22,14 +22,15 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-import tarfile
 import csv
 from typing import List, Tuple
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
+from _security_utils import resolve_within_repo, safe_extract_tar
 
 
 def download_common_voice(
@@ -50,6 +51,7 @@ def download_common_voice(
     :rtype: Path
     """
 
+    download_dir = resolve_within_repo(download_dir, require_exists=False)
     download_dir.mkdir(parents=True, exist_ok=True)
 
     # Common Voice download URL pattern
@@ -78,8 +80,7 @@ def download_common_voice(
         sys.exit(1)
 
     print(f"Extracting {tar_file}...")
-    with tarfile.open(tar_file, "r:gz") as tar:
-        tar.extractall(download_dir)
+    safe_extract_tar(tar_file, download_dir)
 
     print(f"Extracted to {extracted_dir}")
     return extracted_dir
@@ -232,7 +233,7 @@ def main():
     parser.add_argument(
         "--download-dir",
         type=Path,
-        default=Path("/tmp/common_voice"),
+        default=Path("artifacts/common_voice"),
         help="Directory to download dataset to"
     )
 
@@ -250,10 +251,13 @@ def main():
     print("=" * 80)
 
     # Download dataset
+    safe_corpus_path = resolve_within_repo(args.corpus, require_exists=False)
+    safe_download_dir = resolve_within_repo(args.download_dir, require_exists=False)
+
     dataset_dir = download_common_voice(
         language=args.language,
         version=args.version,
-        download_dir=args.download_dir
+        download_dir=safe_download_dir
     )
 
     # Collect samples
@@ -264,7 +268,7 @@ def main():
     )
 
     # Initialize corpus
-    corpus = Corpus(args.corpus)
+    corpus = Corpus(safe_corpus_path)
 
     # Ingest samples
     stats = ingest_samples(corpus=corpus, samples=samples)

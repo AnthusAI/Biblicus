@@ -1,0 +1,37 @@
+{
+  "id": "blbs-87788806-7ea2-4ca4-a82e-9853b667b423",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/prepare_scanned_paper_samples.py`\n**Location:** line 146, column 9 to line 146, column 22\n**Classes:** CWE-CWE-23\n### Snippet (scripts/prepare_scanned_paper_samples.py:144-148)\n```\n 144 |         import shutil\n 145 | \n 146 |         shutil.rmtree(images_dir)\n 147 |         print(\"✓ Cleaned up temporary images\")\n 148 | \n```\n\n**Issue Key:** 1f2fbdea-4b7b-462f-b613-d75b6a9abeb5\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b51ca238-8a4b-4cf7-bd3c-1785bfe5c288",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by enforcing repository-root path validation at CLI boundaries and for report/dataset output paths in the affected script, plus safe bounded cleanup logic for temporary directories. Local Snyk Code re-scan on 2026-04-13 shows this PT finding no longer present.",
+      "created_at": "2026-04-13T21:06:12.513799Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.265114Z",
+  "updated_at": "2026-04-13T21:06:12.525673Z",
+  "closed_at": "2026-04-13T21:06:12.525673Z",
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 22,
+    "snyk_end_line": 146,
+    "snyk_file": "scripts/prepare_scanned_paper_samples.py",
+    "snyk_key": "1f2fbdea-4b7b-462f-b613-d75b6a9abeb5",
+    "snyk_line": 146,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

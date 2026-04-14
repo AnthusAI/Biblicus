@@ -12,6 +12,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -31,19 +32,56 @@ const TELEMETRY_LOG_FILE = path.join(TELEMETRY_LOG_DIR, 'telemetry.log');
 
 app.use(cors());
 app.use(express.json());
+app.disable('x-powered-by');
+
+const apiRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
+
+const telemetryRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 240,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
+
+app.use('/api', apiRateLimiter);
+app.use('/api/telemetry/log', telemetryRateLimiter);
 
 // Security helper: validate path is within CORPORA_ROOT
-function validateCorpusPath(corpusName) {
-  const corpusPath = path.join(CORPORA_ROOT, corpusName);
-  const resolvedPath = path.resolve(corpusPath);
-  const resolvedRoot = path.resolve(CORPORA_ROOT);
+function requireString(value, fieldName) {
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} must be a string`);
+  }
+  return value;
+}
 
-  // Ensure path starts with root AND has proper separator (prevents prefix attacks)
-  if (!resolvedPath.startsWith(resolvedRoot + path.sep) && resolvedPath !== resolvedRoot) {
+function validateCorpusName(corpusName) {
+  if (!/^[A-Za-z0-9._-]+$/.test(corpusName)) {
+    throw new Error('Invalid corpus name');
+  }
+  return corpusName;
+}
+
+function validateCorpusPath(corpusNameInput) {
+  const corpusName = validateCorpusName(requireString(corpusNameInput, 'corpus name'));
+  const resolvedPath = path.resolve(CORPORA_ROOT, corpusName);
+  const resolvedRoot = path.resolve(CORPORA_ROOT);
+  const relativePath = path.relative(resolvedRoot, resolvedPath);
+
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     throw new Error('Access denied: path traversal attempt detected');
   }
 
-  return corpusPath;
+  return resolvedPath;
+}
+
+function queryParamString(req, key) {
+  const requestUrl = new URL(req.originalUrl, 'http://localhost');
+  return requestUrl.searchParams.get(key);
 }
 
 // Health check
@@ -182,7 +220,9 @@ app.get('/api/corpora/:name/catalog', async (req, res) => {
     let items = Object.values(catalog.items || {});
 
     // Apply filters
-    const { tag, mediaType, search } = req.query;
+    const tag = queryParamString(req, 'tag');
+    const mediaType = queryParamString(req, 'mediaType');
+    const search = queryParamString(req, 'search');
 
     if (tag) {
       items = items.filter(item => item.tags && item.tags.includes(tag));
@@ -444,7 +484,7 @@ app.get('/api/config', (req, res) => {
 // Update configuration (set corpora root)
 app.post('/api/config', async (req, res) => {
   try {
-    const { corporaRoot } = req.body;
+    const corporaRoot = requireString(req.body?.corporaRoot, 'corporaRoot');
 
     if (!corporaRoot) {
       return res.status(400).json({ error: 'corporaRoot is required' });

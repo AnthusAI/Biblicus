@@ -34,10 +34,12 @@ from datetime import datetime
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from biblicus import Corpus
 from biblicus.extraction import build_extraction_snapshot
 from biblicus.evaluation import OCRBenchmark
+from _security_utils import resolve_within_repo
 
 
 # Default pipeline configurations to test
@@ -53,8 +55,8 @@ DEFAULT_CONFIGS = [
 
 def load_config(config_path: Path) -> Dict:
     """Load pipeline configuration from YAML file."""
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+    config_path = resolve_within_repo(str(config_path), require_exists=True)
+    return yaml.safe_load(config_path.read_text(encoding="utf-8"))
 
 
 def run_pipeline(corpus: Corpus, config: Dict, config_name: str) -> str:
@@ -208,6 +210,7 @@ def print_comparison_table(results: List[Dict]):
 
 def save_comprehensive_report(results: List[Dict], output_path: Path, corpus_path: str):
     """Save comprehensive comparison report to JSON."""
+    output_path = resolve_within_repo(str(output_path), require_exists=False)
     successful_results = [r for r in results if r.get('success')]
     failed_results = [r for r in results if not r.get('success')]
 
@@ -271,8 +274,7 @@ def save_comprehensive_report(results: List[Dict], output_path: Path, corpus_pat
 
     # Save report
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(report, f, indent=2)
+    output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     print(f"\n✓ Comprehensive report saved to: {output_path}")
 
@@ -316,7 +318,7 @@ def main():
     # Filter to only existing configs
     existing_configs = []
     for config_path in config_paths:
-        p = Path(config_path)
+        p = resolve_within_repo(config_path, require_exists=False)
         if p.exists():
             existing_configs.append(p)
         else:
@@ -338,7 +340,8 @@ def main():
 
     try:
         # Load corpus
-        corpus = Corpus.open(Path(args.corpus))
+        safe_corpus_path = resolve_within_repo(args.corpus, require_exists=True)
+        corpus = Corpus.open(safe_corpus_path)
         benchmark = OCRBenchmark(corpus)
 
         # Run all pipelines
@@ -361,7 +364,11 @@ def main():
         print_comparison_table(results)
 
         # Save comprehensive report
-        save_comprehensive_report(results, Path(args.output), args.corpus)
+        save_comprehensive_report(
+            results,
+            resolve_within_repo(args.output, require_exists=False),
+            str(safe_corpus_path),
+        )
 
         print(f"\n✓ Benchmark complete!")
         print(f"  Tested: {len(results)} pipelines")

@@ -1,0 +1,43 @@
+{
+  "id": "blbs-0faf7843-517b-44f3-9cb3-6c7ec6ed6a7b",
+  "title": "infrastructure/reinforcement-memory/package.json",
+  "description": "Snyk vulnerabilities found in `infrastructure/reinforcement-memory/package.json`.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-3c923052-506e-42eb-8faf-9277d120b176",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "78984150-245b-431d-ae50-b26f2122279f",
+      "author": "derek.norrbom",
+      "text": "Remediation complete: updated aws-cdk-lib in infrastructure/reinforcement-memory lockfile to 2.249.0, which also resolved transitive yaml/brace-expansion findings. Verification on 2026-04-13: snyk test --file=infrastructure/reinforcement-memory/package-lock.json --package-manager=npm --org=capacity-aqa reports no vulnerable paths.",
+      "created_at": "2026-04-13T18:44:42.617153Z"
+    },
+    {
+      "id": "ccb046fe-c9d5-4674-8638-e94d9a197747",
+      "author": "derek.norrbom",
+      "text": "Applying follow-up guardrail: tighten aws-cdk-lib version floor in package.json to ^2.245.0 so future lock regenerations cannot select vulnerable 2.243.x line. Will re-verify Snyk and re-close.",
+      "created_at": "2026-04-13T18:46:45.279948Z"
+    },
+    {
+      "id": "d6b2e868-32e5-4012-be96-f7f2a3a54476",
+      "author": "derek.norrbom",
+      "text": "Guardrail applied: tightened aws-cdk-lib pin in infrastructure/reinforcement-memory/package.json from ^2.180.0 to ^2.245.0 while lock remains at 2.249.0. Verified targeted Snyk scan still reports no vulnerable paths on 2026-04-13.",
+      "created_at": "2026-04-13T18:46:59.319328Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.299201Z",
+  "updated_at": "2026-04-13T18:46:59.319328Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_category": "dependency",
+    "snyk_target_file": "infrastructure/reinforcement-memory/package.json"
+  }
+}

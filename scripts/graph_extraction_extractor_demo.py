@@ -16,6 +16,7 @@ from biblicus.extraction import build_extraction_snapshot
 from biblicus.graph.extraction import build_graph_snapshot
 from biblicus.graph.neo4j import create_neo4j_driver, resolve_neo4j_settings
 from biblicus.models import ExtractionSnapshotReference
+from _security_utils import resolve_within_repo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -254,7 +255,9 @@ def _write_report(path: Path, content: str) -> None:
 
 
 def run_demo(arguments: argparse.Namespace, logger: logging.Logger) -> Dict[str, object]:
-    corpus_path = Path(arguments.corpus).resolve()
+    corpus_path = resolve_within_repo(
+        arguments.corpus, require_exists=False, allow_temp_dir=True
+    )
 
     if arguments.skip_download:
         _log_phase(logger, "Phase 1: Reuse existing corpus")
@@ -394,7 +397,12 @@ def run_demo(arguments: argparse.Namespace, logger: logging.Logger) -> Dict[str,
     }
     if arguments.report_path:
         report_text = json.dumps(report, indent=2)
-        _write_report(Path(arguments.report_path), report_text + "\n")
+        _write_report(
+            resolve_within_repo(
+                arguments.report_path, require_exists=False, allow_temp_dir=True
+            ),
+            report_text + "\n",
+        )
 
     return report
 

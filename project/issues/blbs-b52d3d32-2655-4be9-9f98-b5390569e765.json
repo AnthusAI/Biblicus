@@ -1,0 +1,38 @@
+{
+  "id": "blbs-b52d3d32-2655-4be9-9f98-b5390569e765",
+  "title": "[Snyk] SNYK-PYTHON-TRANSFORMERS-14564365 in transformers@5.5.0",
+  "description": "## Deserialization of Untrusted Data\n\n**Severity:** high\n**Package:** transformers@5.5.0\n**File:** `pyproject.toml`\n\n**CVSS Score:** 8.5  \n**Snyk Priority Score:** 425/1000\n\n### CVEs\n- [CVE-2025-14921](https://nvd.nist.gov/vuln/detail/CVE-2025-14921)\n\n**Fix:** No automatic fix available. Review manually.\n\n### Details\n## Overview\n[transformers](https://pypi.org/project/transformers) is a State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow\n\nAffected versions of this package are vulnerable to Deserialization of Untrusted Data via the parsing process of model files. An attacker can execute arbitrary code in the context of the current user by tricking a user into opening a malicious file or visiting a malicious page that triggers deserialization of untrusted data.\r\n\r\n**Note:**\r\n\r\nThe report of this vulnerability was rejected by the package's maintainers. See the project's [security policy](https://github.com/huggingface/transformers/security) for more information.\n\n## Details\n\nSerialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like _Remote Method Invocation (RMI)_, _Java Management Extension (JMX)_, _Java Messaging System (JMS)_, _Action Message Format (AMF)_, _Java Server Faces (JSF) ViewState_, etc.\n\n_Deserialization of untrusted data_ ([CWE-502](https://cwe.mitre.org/data/definitions/502.html)) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution.\n  \n## Remediation\nThere is no fixed version for `transformers`.\n\n## References\n- [ZeroDayInitiative Report](https://www.zerodayinitiative.com/advisories/ZDI-25-1149/)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-TRANSFORMERS-14564365)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "e12efb0d-0db2-4f43-b6bc-055002ac36ff",
+      "author": "derek.norrbom",
+      "text": "No supported upstream fix is currently available for this vulnerability ID in the resolved dependency graph (isUpgradable=false, fixedIn=[] as of 2026-04-13). Keep this task open and apply a Snyk ignore with accepted-risk rationale. Suggested Snyk ignore explanation: 'No upgrade path exists yet for this vulnerability in b52d3d. The package is required by topic-modeling dependencies. We are tracking upstream releases and will remove this ignore immediately when a fixed version is published.' Suggested expiry/review date: 2026-05-13.",
+      "created_at": "2026-04-13T17:52:16.195625Z"
+    },
+    {
+      "id": "35bb4bc2-b0fc-49b7-99e6-96dba4619e84",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/auto-expire-until-fix policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen if upstream fix becomes available or policy review requires active remediation.",
+      "created_at": "2026-04-13T18:41:17.944340Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.300413Z",
+  "updated_at": "2026-04-13T18:41:17.957975Z",
+  "closed_at": "2026-04-13T18:41:17.957975Z",
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-TRANSFORMERS-14564365",
+    "snyk_severity": "high",
+    "snyk_type": "package_vulnerability"
+  }
+}

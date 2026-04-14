@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "event_id": "5319c177-a342-4ed6-aa55-b5842b929e18",
+  "issue_id": "blbs-94b8f5a7-9b94-4edc-9fec-649d89aa6c37",
+  "event_type": "comment_added",
+  "occurred_at": "2026-04-13T18:51:47.819Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "comment_author": "derek.norrbom",
+    "comment_id": "aa669c21-932a-49d6-8f73-f9e615c59e0d"
+  }
+}

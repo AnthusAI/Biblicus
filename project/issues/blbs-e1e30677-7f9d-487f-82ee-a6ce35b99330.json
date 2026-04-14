@@ -1,0 +1,37 @@
+{
+  "id": "blbs-e1e30677-7f9d-487f-82ee-a6ce35b99330",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/markov_cached_segments_demo.py`\n**Location:** line 145, column 6 to line 145, column 41\n**Classes:** CWE-CWE-23\n### Snippet (scripts/markov_cached_segments_demo.py:143-147)\n```\n 143 | def _write_marked_up_texts(*, cache_dir: Path, records: Sequence[Dict[str, str]]) -> None:\n 144 |     lines = [json.dumps(record, ensure_ascii=False) for record in records]\n 145 |     (cache_dir / \"marked_up_texts.jsonl\").write_text(\"\\n\".join(lines) + \"\\n\", encoding=\"utf-8\")\n 146 | \n 147 | \n```\n\n**Issue Key:** 7e6dbdb8-2996-4a6b-baeb-4f164f90d9f8\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "efadb82a-6824-4d97-8d1f-ddcc9ba2161d",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by adding explicit path-boundary validation in scripts/markov_cached_segments_demo.py and scripts/markov_run_report.py. User-provided and metadata-derived paths are now resolved and constrained to expected roots before read/write operations. Local Snyk Code re-scan on 2026-04-13 shows 0 remaining python/PT findings in both files.",
+      "created_at": "2026-04-13T20:45:41.101857Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.260293Z",
+  "updated_at": "2026-04-13T20:45:41.117063Z",
+  "closed_at": "2026-04-13T20:45:41.117063Z",
+  "custom": {
+    "snyk_column": 6,
+    "snyk_end_column": 41,
+    "snyk_end_line": 145,
+    "snyk_file": "scripts/markov_cached_segments_demo.py",
+    "snyk_key": "7e6dbdb8-2996-4a6b-baeb-4f164f90d9f8",
+    "snyk_line": 145,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

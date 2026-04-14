@@ -1,0 +1,37 @@
+{
+  "id": "blbs-3fa18252-3a79-4696-a8ec-78ccfcdd994c",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/benchmark_all_stt_providers.py`\n**Location:** line 319, column 9 to line 319, column 18\n**Classes:** CWE-CWE-23\n### Snippet (scripts/benchmark_all_stt_providers.py:317-321)\n```\n 317 |     output_path.parent.mkdir(parents=True, exist_ok=True)\n 318 |     with open(output_path, 'w') as f:\n 319 |         json.dump(report, f, indent=2)\n 320 | \n 321 |     print(f\"\\n✓ Comprehensive report saved to: {output_path}\")\n```\n\n**Issue Key:** d7a59425-3fd2-45b1-a6bf-3cb6fc7bf2c0\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "6b56b77d-09de-453a-8cde-3dde7b45b8e6",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:09.043928Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.261743Z",
+  "updated_at": "2026-04-13T20:58:09.057417Z",
+  "closed_at": "2026-04-13T20:58:09.057417Z",
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 18,
+    "snyk_end_line": 319,
+    "snyk_file": "scripts/benchmark_all_stt_providers.py",
+    "snyk_key": "d7a59425-3fd2-45b1-a6bf-3cb6fc7bf2c0",
+    "snyk_line": 319,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

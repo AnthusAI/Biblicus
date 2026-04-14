@@ -1,0 +1,37 @@
+{
+  "id": "blbs-d1f7fb89-e319-4616-b4fb-76f69f469980",
+  "title": "[Snyk Code] Arbitrary File Write via Archive Extraction (Tar Slip)",
+  "description": "## Arbitrary File Write via Archive Extraction (Tar Slip)\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_common_voice_samples.py`\n**Location:** line 82, column 9 to line 82, column 23\n**Classes:** CWE-CWE-22\n### Snippet (scripts/download_common_voice_samples.py:80-84)\n```\n  80 |     print(f\"Extracting {tar_file}...\")\n  81 |     with tarfile.open(tar_file, \"r:gz\") as tar:\n  82 |         tar.extractall(download_dir)\n  83 | \n  84 |     print(f\"Extracted to {extracted_dir}\")\n```\n\n**Issue Key:** 2d39d4f2-743e-4a10-a0f1-25d32096eafb\n\n### Details\nArbitrary File Write via Archive Extraction (Tar Slip)\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1ddbb894-7f5f-419f-be7b-c735ec8b9839",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by introducing validated extraction and path handling in downloader scripts. Changes include member-validated tar extraction (no unsafe extractall), path confinement checks for script IO paths, and HTTPS host allowlist validation for OpenSLR downloads. Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:52:41.157978Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.231383Z",
+  "updated_at": "2026-04-13T20:52:41.170444Z",
+  "closed_at": "2026-04-13T20:52:41.170444Z",
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 23,
+    "snyk_end_line": 82,
+    "snyk_file": "scripts/download_common_voice_samples.py",
+    "snyk_key": "2d39d4f2-743e-4a10-a0f1-25d32096eafb",
+    "snyk_line": 82,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

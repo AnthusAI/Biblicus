@@ -1,0 +1,103 @@
+{
+  "id": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "title": "AnthusAI/Biblicus",
+  "description": "Snyk vulnerabilities found in `AnthusAI/Biblicus`.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-f44ebe60-84da-4b65-9882-e0859cc7dbba",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d2338ff6-ef73-405a-b033-50eb7083da54",
+      "author": "derek.norrbom",
+      "text": "Applying repository hygiene fix: stop tracking generated apps/dashboard/.vite artifacts, add ignore rule, and rerun Snyk Code to remove findings originating from vendored/generated files.",
+      "created_at": "2026-04-13T20:21:41.317684Z"
+    },
+    {
+      "id": "6af0c39c-bf34-48a4-b72c-5397cf708719",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): removed tracked Vite pre-bundle artifacts from apps/dashboard/.vite and added apps/dashboard/.vite/ to .gitignore. Local Snyk Code SARIF count changed from 116 to 112; findings in apps/dashboard/.vite are now 0. Closed related subtasks: blbs-04e9d0, blbs-975fa7, blbs-c74d0d, blbs-85be8f.",
+      "created_at": "2026-04-13T20:23:09.973380Z"
+    },
+    {
+      "id": "721b29c0-e5c1-496f-a3d2-a46a36668d91",
+      "author": "derek.norrbom",
+      "text": "Starting next remediation slice: harden apps/dashboard/server.js request boundaries. Planned fixes: disable x-powered-by header, add API rate limiting middleware for filesystem-heavy endpoints, strengthen corpus-name/path sanitization, and enforce query-string type checks to address PT/unchecked-type findings.",
+      "created_at": "2026-04-13T20:25:17.686226Z"
+    },
+    {
+      "id": "4a98bcfb-43d2-44d5-9b08-cb5a95d3d1eb",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): remediated apps/dashboard/server.js findings. Added express-rate-limit middleware on /api routes, disabled x-powered-by, strengthened corpus path sanitization and query parameter handling. Local Snyk Code count is now 91 (down from 112 before this slice), and apps/dashboard/server.js findings are now 0. Closed 21 related subtasks for server.js.",
+      "created_at": "2026-04-13T20:27:38.945407Z"
+    },
+    {
+      "id": "9aadc8b6-0639-4eb6-a107-2d370082045b",
+      "author": "derek.norrbom",
+      "text": "Starting Python PT remediation batch on high-volume scripts: markov_cached_segments_demo.py, markov_run_report.py, evaluate_ocr_pipeline.py, and benchmark_all_pipelines.py (17 findings total). Approach: enforce resolved-path validation for user-supplied file arguments and constrain writes/reads to intended roots.",
+      "created_at": "2026-04-13T20:42:22.087510Z"
+    },
+    {
+      "id": "04ac711a-633d-4a6e-954b-9765b8e69d3e",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): completed Python PT remediation batch for markov_cached_segments_demo.py and markov_run_report.py with strict path-root validation. Snyk Code total findings moved from 91 to 80. Closed 9 related PT subtasks (blbs-01f332, blbs-70b51b, blbs-e04e33, blbs-e1e306, blbs-ffd510, blbs-6c48ea, blbs-c6350a, blbs-de848f, blbs-ec885a). Remaining PT cluster is in other scripts, with evaluate_ocr_pipeline.py and benchmark_all_pipelines.py reduced but still open.",
+      "created_at": "2026-04-13T20:45:45.887593Z"
+    },
+    {
+      "id": "0d041bd1-63ae-49c4-bd94-db92866cfa04",
+      "author": "derek.norrbom",
+      "text": "Starting downloader hardening batch: address remaining python/PT and python/TarSlip in download_* scripts and benchmark_all_stt_providers.py by enforcing repo-root path constraints, validating URL host/scheme where applicable, and replacing unsafe tar extractall usage with member-validated extraction.",
+      "created_at": "2026-04-13T20:49:06.038943Z"
+    },
+    {
+      "id": "f483ee5b-86e5-41f9-9428-1fead986c784",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): downloader security hardening batch completed. Added shared scripts/_security_utils.py helpers, replaced unsafe tar extraction with member-validated extraction, added repo-root path confinement checks for script IO paths, and added OpenSLR HTTPS host allowlist validation. Local Snyk Code findings dropped from 80 to 66; PT from 24 to 18; TarSlip from 6 to 0; SSRF from 1 to 0. Closed 11 related subtasks (blbs-485a6a, blbs-5ac769, blbs-5d265f, blbs-3140ff, blbs-84401a, blbs-8d86c5, blbs-8f1596, blbs-a54c46, blbs-d1f7fb, blbs-d33e83, blbs-da9dc6).",
+      "created_at": "2026-04-13T20:52:46.606381Z"
+    },
+    {
+      "id": "13ba8819-6567-4be8-a57e-8b47aeb9f3dd",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): additional PT remediation pass completed for evaluate_ocr_pipeline.py, benchmark_all_pipelines.py, benchmark_all_stt_providers.py, download_voxforge_samples.py, download_sroie_samples.py, and download_an4_samples.py. Local Snyk Code findings dropped from 66 to 54. PT dropped from 18 to 6; all remaining PT findings are now limited to six scripts (extraction_evaluation_demo.py, extraction_evaluation_lab.py, graph_extraction_extractor_demo.py, graph_extraction_integration.py, prepare_scanned_paper_samples.py, retrieval_evaluation_lab.py). Closed 17 related PT subtasks in this pass.",
+      "created_at": "2026-04-13T20:58:15.113319Z"
+    },
+    {
+      "id": "03d43d5f-5407-41d0-9a8c-1b69c3abcdff",
+      "author": "derek.norrbom",
+      "text": "Starting final PT cleanup batch for six remaining scripts (extraction/graph/retrieval/prepare demos). Plan: add repo-root path validation at CLI boundary and ensure all path-based writes/deletes are performed only on validated paths.",
+      "created_at": "2026-04-13T21:03:48.758642Z"
+    },
+    {
+      "id": "b51df04f-f6d9-4309-837f-da7b74bbfa20",
+      "author": "derek.norrbom",
+      "text": "Progress update (2026-04-13): completed final python/PT cleanup. Local Snyk Code findings are now 48 total with PT reduced to 0. Remaining findings are non-PT classes: HardcodedNonCryptoSecret (34), HardcodedNonCryptoSecret/test (10), Jinja2AutoEscapeFalse (3), InsecureHash (1). Closed final PT subtasks: blbs-e7b865, blbs-ede0d3, blbs-370934, blbs-ade5b2, blbs-877888, blbs-ae376e.",
+      "created_at": "2026-04-13T21:06:15.659558Z"
+    },
+    {
+      "id": "b831749c-19e7-4472-9490-494d0f1b9dae",
+      "author": "derek.norrbom",
+      "text": "Follow-up fix: CI regression triage from Actions run 24366891200 shows extraction/retrieval lab scripts rejecting temporary /tmp corpus paths used by BDD harness. Applying bounded validator update to allow repository root and system temp root, then re-running scripts/test.py.",
+      "created_at": "2026-04-13T21:33:55.790399Z"
+    },
+    {
+      "id": "cd87fd9f-c99a-4e08-86b1-1ddf8acd368d",
+      "author": "derek.norrbom",
+      "text": "Completed DRY pass for path validation: centralized allow_temp_dir support in scripts/_security_utils.py and removed duplicated local resolver implementations in lab/demo scripts. Local full test driver passed (behave + pytest + coverage).",
+      "created_at": "2026-04-13T21:41:37.217250Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.201217Z",
+  "updated_at": "2026-04-13T21:41:37.217250Z",
+  "closed_at": null,
+  "custom": {
+    "snyk_category": "code",
+    "snyk_target_file": "AnthusAI/Biblicus"
+  }
+}

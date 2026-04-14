@@ -1,0 +1,37 @@
+{
+  "id": "blbs-d6b71d02-c1f4-4a55-8990-4bb7e78eff87",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/server.js`\n**Location:** line 405, column 34 to line 405, column 41\n**Classes:** CWE-CWE-23\n### Snippet (apps/dashboard/server.js:403-407)\n```\n 403 |     async function scanRecipes(dir, prefix = '') {\n 404 |       try {\n 405 |         const entries = await fs.readdir(dir, { withFileTypes: true });\n 406 | \n 407 |         for (const entry of entries) {\n```\n\n**Issue Key:** f340dc45-a9cf-480e-bb95-bc963cc74dd5\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7b73bacd-051c-466e-befb-2465eeed3ee5",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in apps/dashboard/server.js by adding Express rate limiting middleware on /api routes, disabling x-powered-by, tightening corpus path sanitization (strict corpus-name validation + rooted path checks), and hardening query parameter handling. Local Snyk Code re-scan on 2026-04-13 shows no remaining findings in apps/dashboard/server.js.",
+      "created_at": "2026-04-13T20:27:35.049318Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.224557Z",
+  "updated_at": "2026-04-13T20:27:35.063178Z",
+  "closed_at": "2026-04-13T20:27:35.063178Z",
+  "custom": {
+    "snyk_column": 34,
+    "snyk_end_column": 41,
+    "snyk_end_line": 405,
+    "snyk_file": "apps/dashboard/server.js",
+    "snyk_key": "f340dc45-a9cf-480e-bb95-bc963cc74dd5",
+    "snyk_line": 405,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

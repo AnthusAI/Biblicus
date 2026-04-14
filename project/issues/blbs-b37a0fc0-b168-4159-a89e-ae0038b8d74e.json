@@ -1,0 +1,38 @@
+{
+  "id": "blbs-b37a0fc0-b168-4159-a89e-ae0038b8d74e",
+  "title": "[Snyk] SNYK-JS-FASTXMLPARSER-15353391 in fast-xml-parser@5.3.4",
+  "description": "## Buffer Overflow\n\n**Severity:** medium\n**Package:** fast-xml-parser@5.3.4\n**File:** `apps/dashboard/package.json`\n\n**CVSS Score:** 6.9  \n**Snyk Priority Score:** 345/1000\n\n### CVEs\n- [CVE-2026-27942](https://nvd.nist.gov/vuln/detail/CVE-2026-27942)\n\n**Fix:** Pin `fast-xml-parser` to version 4.5.4, 5.3.8 or later.\n\n### Details\n## Overview\n[fast-xml-parser](https://www.npmjs.org/package/fast-xml-parser) is a Validate XML, Parse XML, Build XML without C/C++ based libraries\n\nAffected versions of this package are vulnerable to Buffer Overflow via the `XMLBuilder` when `preserveOrder:true` is set. An attacker can cause the application to crash by providing specially crafted input data. \r\n\r\n## Workaround\r\n\r\nThis vulnerability can be mitigated by using `preserveOrder:false` or by validating input data before passing it to the builder.\n## Remediation\nUpgrade `fast-xml-parser` to version 4.5.4, 5.3.8 or higher.\n## References\n- [GitHub Commit](https://github.com/NaturalIntelligence/fast-xml-parser/commit/c13a961910f14986295dd28484eee830fa1a0e8a)\n- [GitHub PR](https://github.com/NaturalIntelligence/fast-xml-parser/pull/791)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-JS-FASTXMLPARSER-15353391)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-94b8f5a7-9b94-4edc-9fec-649d89aa6c37",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d00b637b-a90f-48e4-9339-907a845a92fe",
+      "author": "derek.norrbom",
+      "text": "Still present after updating apps/dashboard lockfile and upgrading to latest published aws-amplify stack (aws-amplify 6.16.3, @aws-amplify/storage 6.13.2). Upstream package line currently pins vulnerable transitive versions (lodash 4.17.23 and fast-xml-parser 5.3.4 in analytics path). Recommend Snyk ignore with expiry/review date while tracking upstream releases.",
+      "created_at": "2026-04-13T18:51:47.883199Z"
+    },
+    {
+      "id": "384fd2c8-0ce4-484d-97b1-a70667be91b1",
+      "author": "derek.norrbom",
+      "text": "User applied Snyk UI ignore for this finding with expiry/until-fixed policy. Closing Kanbus sub-task as triaged and managed in Snyk. Reopen when upstream dependency releases a fixed transitive version.",
+      "created_at": "2026-04-13T20:14:02.597656Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.298999Z",
+  "updated_at": "2026-04-13T20:14:02.610788Z",
+  "closed_at": "2026-04-13T20:14:02.610788Z",
+  "custom": {
+    "snyk_key": "SNYK-JS-FASTXMLPARSER-15353391",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}

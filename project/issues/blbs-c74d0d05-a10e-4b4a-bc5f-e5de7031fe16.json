@@ -1,0 +1,37 @@
+{
+  "id": "blbs-c74d0d05-a10e-4b4a-bc5f-e5de7031fe16",
+  "title": "[Snyk Code] Code Injection",
+  "description": "## Code Injection\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `apps/dashboard/.vite/deps/react-router-dom.js`\n**Location:** line 5931, column 9 to line 5931, column 19\n**Classes:** CWE-CWE-94\n### Snippet (apps/dashboard/.vite/deps/react-router-dom.js:5929-5933)\n```\n5929 |       let proceed = window.confirm(message);\n5930 |       if (proceed) {\n5931 |         setTimeout(blocker.proceed, 0);\n5932 |       } else {\n5933 |         blocker.reset();\n```\n\n**Issue Key:** 47066eed-9c67-46cd-bf61-88fcf80b117e\n\n### Details\nCode Injection\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1aeb9b08-1849-4e17-8d58-60aa514c3143",
+      "author": "derek.norrbom",
+      "text": "Closed: finding originated from committed Vite pre-bundled artifacts under apps/dashboard/.vite, not source code. Remediation applied by untracking apps/dashboard/.vite and adding it to .gitignore. Re-scan on 2026-04-13 shows 0 remaining findings in apps/dashboard/.vite.",
+      "created_at": "2026-04-13T20:23:03.456720Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.225535Z",
+  "updated_at": "2026-04-13T20:23:03.468703Z",
+  "closed_at": "2026-04-13T20:23:03.468703Z",
+  "custom": {
+    "snyk_column": 9,
+    "snyk_end_column": 19,
+    "snyk_end_line": 5931,
+    "snyk_file": "apps/dashboard/.vite/deps/react-router-dom.js",
+    "snyk_key": "47066eed-9c67-46cd-bf61-88fcf80b117e",
+    "snyk_line": 5931,
+    "snyk_severity": "high",
+    "snyk_type": "code"
+  }
+}

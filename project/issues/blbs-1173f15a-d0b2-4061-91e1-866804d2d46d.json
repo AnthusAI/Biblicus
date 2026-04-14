@@ -1,0 +1,37 @@
+{
+  "id": "blbs-1173f15a-d0b2-4061-91e1-866804d2d46d",
+  "title": "[Snyk Code] Path Traversal",
+  "description": "## Path Traversal\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `scripts/download_sroie_samples.py`\n**Location:** line 171, column 13 to line 171, column 24\n**Classes:** CWE-CWE-23\n### Snippet (scripts/download_sroie_samples.py:169-173)\n```\n 169 |             ocr_file = image_file.parent / f\"{stem}.txt\"\n 170 |         if ocr_file.exists():\n 171 |             shutil.copy(ocr_file, ocr_dir / f\"{stem}.txt\")\n 172 | \n 173 |         # Look for entity file (key information)\n```\n\n**Issue Key:** 89928674-9968-49d4-9f4e-99b229f2de53\n\n### Details\nPath Traversal\n\n**Fix:** Review and remediate in code.",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4fc9f0cb-68fc-4da5-9f05-108f7b0dc52f",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "83321375-9c3b-4190-8d01-c9373b022020",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated by hardening script file-path sinks and IO handling (repo-root confinement checks, direct Path read/write methods for report/config IO, and constrained downloader file handling). Local Snyk Code re-scan on 2026-04-13 shows this finding no longer present.",
+      "created_at": "2026-04-13T20:58:09.374520Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.241785Z",
+  "updated_at": "2026-04-13T20:58:09.389373Z",
+  "closed_at": "2026-04-13T20:58:09.389373Z",
+  "custom": {
+    "snyk_column": 13,
+    "snyk_end_column": 24,
+    "snyk_end_line": 171,
+    "snyk_file": "scripts/download_sroie_samples.py",
+    "snyk_key": "89928674-9968-49d4-9f4e-99b229f2de53",
+    "snyk_line": 171,
+    "snyk_severity": "medium",
+    "snyk_type": "code"
+  }
+}

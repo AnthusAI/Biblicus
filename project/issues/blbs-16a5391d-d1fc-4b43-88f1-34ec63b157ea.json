@@ -1,0 +1,38 @@
+{
+  "id": "blbs-16a5391d-d1fc-4b43-88f1-34ec63b157ea",
+  "title": "[Snyk] SNYK-PYTHON-PYPDF-15989793 in pypdf@6.9.2",
+  "description": "## XML Entity Expansion\n\n**Severity:** medium\n**Package:** pypdf@6.9.2\n**File:** `pyproject.toml`\n\n**CVSS Score:** 6.9  \n**Exploit Maturity:** proof-of-concept  \n**Snyk Priority Score:** 738/1000\n\n### CVEs\n- [CVE-2026-40260](https://nvd.nist.gov/vuln/detail/CVE-2026-40260)\n\n**Fix:** Upgrade `pypdf` to version 6.10.0 or later.\n\n### Details\n## Overview\n[pypdf](https://pypi.org/project/pypdf) is an A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files\n\nAffected versions of this package are vulnerable to XML Entity Expansion when parsing XMP metadata. An attacker can cause excessive memory consumption with excessive DOCTYPE entity declarations.\n## Remediation\nUpgrade `pypdf` to version 6.10.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/py-pdf/pypdf/security/advisories/GHSA-3crg-w4f6-42mx)\n- [GitHub Commit](https://github.com/py-pdf/pypdf/commit/b15a374e5ca648d4878e57c3b2c0551e7f8cc7f8)\n- [GitHub PR](https://github.com/py-pdf/pypdf/pull/3724)\n- [GitHub Release](https://github.com/py-pdf/pypdf/releases/tag/6.10.0)\n\n\n### Reference\n- [Snyk advisory](https://security.snyk.io/vuln/SNYK-PYTHON-PYPDF-15989793)",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-2cd0df06-c980-4aca-a628-6a9225b9b86a",
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "a0cc9045-eadc-4a40-b0ae-9c3de9241d72",
+      "author": "derek.norrbom",
+      "text": "Still open and fixable. Latest scan (2026-04-13) reports SNYK-PYTHON-PYPDF-15989793 at pypdf@6.9.2 with fixedIn=[6.10.0] and isUpgradable=true. Recommended action: bump pypdf floor to >=6.10.0, regenerate poetry.lock, rerun Snyk, then close this sub-task when cleared.",
+      "created_at": "2026-04-13T17:52:20.611686Z"
+    },
+    {
+      "id": "69e5a3bc-6823-4145-a6c3-dbb63b091159",
+      "author": "derek.norrbom",
+      "text": "Remediated. Updated project dependency floor to pypdf>=6.10.0 and regenerated lockfile; resolved version is pypdf 6.10.0. Verified with snyk test --file=poetry.lock --package-manager=poetry --org=capacity-aqa --dev on 2026-04-13: SNYK-PYTHON-PYPDF-15989793 no longer appears.",
+      "created_at": "2026-04-13T18:17:01.131573Z"
+    }
+  ],
+  "created_at": "2026-04-13T17:45:49.301580Z",
+  "updated_at": "2026-04-13T18:17:01.144619Z",
+  "closed_at": "2026-04-13T18:17:01.144619Z",
+  "custom": {
+    "snyk_key": "SNYK-PYTHON-PYPDF-15989793",
+    "snyk_severity": "medium",
+    "snyk_type": "package_vulnerability"
+  }
+}
