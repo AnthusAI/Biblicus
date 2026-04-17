@@ -16,6 +16,8 @@ from .models import (
 )
 from .time import utc_now_iso
 
+Corpus = Any
+
 
 def create_configuration_manifest(
     *,
@@ -52,7 +54,7 @@ def create_configuration_manifest(
 
 
 def create_snapshot_manifest(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     configuration: ConfigurationManifest,
     stats: Dict[str, Any],

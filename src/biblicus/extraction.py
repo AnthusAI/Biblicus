@@ -9,8 +9,8 @@ import os
 import sys
 import threading
 import time
-from hashlib import sha256
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -20,6 +20,8 @@ from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
 from .models import CatalogItem, ExtractionStageOutput
 from .time import utc_now_iso
+
+Corpus = Any
 
 
 def _hash_text(text: str) -> str:
@@ -206,7 +208,7 @@ def create_extraction_configuration_manifest(
 
 
 def create_extraction_snapshot_manifest(
-    corpus: Corpus, *, configuration: ExtractionConfigurationManifest
+    corpus: "Corpus", *, configuration: ExtractionConfigurationManifest
 ) -> ExtractionSnapshotManifest:
     """
     Create a new extraction snapshot manifest for a corpus.
@@ -274,7 +276,7 @@ def write_extraction_latest_pointer(
 
 def _ensure_extraction_alias_snapshot_dir(
     *,
-    corpus: Corpus,
+    corpus: "Corpus",
     stage_extractor_id: str,
     manifest: ExtractionSnapshotManifest,
 ) -> Path:
@@ -466,7 +468,7 @@ def _final_output_from_stages(
 
 
 def build_extraction_snapshot(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     extractor_id: str,
     configuration_name: str,
@@ -870,11 +872,11 @@ def build_extraction_snapshot(
             )
             text_characters = len(extracted_text.text)
             stage_results.append(
-                    ExtractionStageResult(
-                        stage_index=stage_index,
-                        extractor_id=stage_extractor_id,
-                        status="extracted",
-                        text_relpath=relpath,
+                ExtractionStageResult(
+                    stage_index=stage_index,
+                    extractor_id=stage_extractor_id,
+                    status="extracted",
+                    text_relpath=relpath,
                     text_characters=text_characters,
                     producer_extractor_id=extracted_text.producer_extractor_id,
                     source_stage_index=extracted_text.source_stage_index,
@@ -887,7 +889,7 @@ def build_extraction_snapshot(
             stage_outputs.append(
                 ExtractionStageOutput(
                     stage_index=stage_index,
-                    extractor_id=stage.extractor_id,
+                    extractor_id=stage_extractor_id,
                     status="extracted",
                     text=extracted_text.text,
                     text_characters=text_characters,
@@ -1071,7 +1073,7 @@ def build_extraction_snapshot(
 
 
 def load_or_build_extraction_snapshot(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     extractor_id: str,
     configuration_name: str,
