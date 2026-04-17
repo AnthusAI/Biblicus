@@ -3,7 +3,7 @@
   "title": "AnthusAI/Biblicus:poetry.lock",
   "description": "Dependabot alerts for `poetry.lock`.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -38,11 +38,17 @@
       "author": "derek.norrbom",
       "text": "Post-main-merge reconciliation: closed resolved package tasks (pillow, cryptography, pytest, Mako, pypdf advisories). Only remaining open poetry.lock Dependabot alert is diskcache GHSA-w8v5-vhqr-4h9v with no patched version currently available.",
       "created_at": "2026-04-17T23:02:24.736156Z"
+    },
+    {
+      "id": "67848f7f-40e7-437b-aff4-52cc0d4e6256",
+      "author": "derek.norrbom",
+      "text": "poetry.lock remediation complete for current alert set: patched advisories closed and diskcache alert #56 dismissed as tolerable_risk (no upstream fix available).",
+      "created_at": "2026-04-17T23:04:47.628346Z"
     }
   ],
   "created_at": "2026-04-17T19:54:00.950111Z",
-  "updated_at": "2026-04-17T23:02:24.736156Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T23:04:47.628346Z",
+  "closed_at": "2026-04-17T23:04:47.623275Z",
   "custom": {
     "github_manifest_path": "poetry.lock",
     "github_provider": "dependabot",
