@@ -1,0 +1,32 @@
+{
+  "id": "blbs-e8598c1a-f753-4371-b48f-6e7802142c1a",
+  "title": "[Dependabot] GHSA-7gw9-cf7v-778f in pypdf",
+  "description": "## pypdf: Manipulated FlateDecode predictor parameters can exhaust RAM\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 86\n**Severity:** medium\n**State:** open\n**Package:** `pypdf`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\nAn attacker who uses this vulnerability can craft a PDF which leads to the RAM being exhausted. This requires accessing a stream compressed using `/FlateDecode` with a `/Predictor` unequal 1 and large predictor parameters.\n\n### Patches\nThis has been fixed in [pypdf==6.10.2](https://github.com/py-pdf/pypdf/releases/tag/6.10.2).\n\n### Workarounds\nIf you cannot upgrade yet, consider applying the changes from PR [#3734](https://github.com/py-pdf/pypdf/pull/3734).\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/86",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.950363Z",
+  "updated_at": "2026-04-17T23:01:55.248791Z",
+  "closed_at": "2026-04-17T23:01:55.248791Z",
+  "custom": {
+    "github_alert_number": 86,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/86",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pypdf",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

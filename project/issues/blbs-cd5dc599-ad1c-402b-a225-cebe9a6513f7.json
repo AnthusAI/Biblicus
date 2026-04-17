@@ -1,0 +1,39 @@
+{
+  "id": "blbs-cd5dc599-ad1c-402b-a225-cebe9a6513f7",
+  "title": "[Dependabot] GHSA-w8v5-vhqr-4h9v in diskcache",
+  "description": "## DiskCache has unsafe pickle deserialization\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 56\n**Severity:** medium\n**State:** open\n**Package:** `diskcache`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\nDiskCache (python-diskcache) through 5.6.3 uses Python pickle for serialization by default. An attacker with write access to the cache directory can achieve arbitrary code execution when a victim application reads from the cache.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/56",
+  "type": "sub-task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "67bbd9a3-4fb0-4244-a48a-21da3bb0147c",
+      "author": "derek.norrbom",
+      "text": "Investigation: diskcache does not come from a direct pyproject dependency. In poetry.lock, diskcache is introduced transitively by dspy (optional extra group in pyproject: [project.optional-dependencies].dspy). PyPI metadata for latest dspy (3.1.3) still requires diskcache>=5.6.0. Dependabot alert GHSA-w8v5-vhqr-4h9v currently has no patched diskcache version listed, so there is no direct upgrade path yet.",
+      "created_at": "2026-04-17T23:02:24.720514Z"
+    }
+  ],
+  "created_at": "2026-04-17T19:54:00.951435Z",
+  "updated_at": "2026-04-17T23:02:24.720514Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 56,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/56",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "diskcache",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

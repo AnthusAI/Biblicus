@@ -3,7 +3,7 @@
   "title": "[Dependabot] GHSA-whj4-6x5x-4v2j in pillow",
   "description": "## FITS GZIP decompression bomb in Pillow\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 81\n**Severity:** high\n**State:** open\n**Package:** `pillow`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\nPillow did not limit the amount of GZIP-compressed data read when decoding a FITS image, making it vulnerable to decompression bomb attacks. A specially crafted FITS file could cause unbounded memory consumption, leading to denial of service (OOM crash or severe performance degradation).\n\n### Patches\nThe amount of data read is now limited to the necessary amount.\nFixed in Pillow 12.2.0 (PR #9521).\n\n### Workarounds\nAvoid Pillow >= 10.3.0, < 12.2.0\nOnly open [specific image formats](https://pillow.readthedocs.io/en/stable/releasenotes/8.0.0.html#image-open-add-formats-parameter), excluding FITS.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/81",
   "type": "sub-task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -20,11 +20,17 @@
       "author": "derek.norrbom",
       "text": "Remediation implemented in poetry.lock: pillow updated to 12.2.0 (first patched version for GHSA-whj4-6x5x-4v2j).",
       "created_at": "2026-04-17T20:00:20.763796Z"
+    },
+    {
+      "id": "741494c6-823f-47bd-a8fd-0a49b61ad486",
+      "author": "derek.norrbom",
+      "text": "PR #37 opened with pillow remediation to 12.2.0: https://github.com/AnthusAI/Biblicus/pull/37",
+      "created_at": "2026-04-17T20:03:32.822436Z"
     }
   ],
   "created_at": "2026-04-17T19:54:00.951241Z",
-  "updated_at": "2026-04-17T20:00:20.763796Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T23:01:55.108552Z",
+  "closed_at": "2026-04-17T23:01:55.108552Z",
   "custom": {
     "github_alert_number": 81,
     "github_alert_state": "open",
