@@ -26,10 +26,16 @@
       "author": "derek.norrbom",
       "text": "Pushed remediation branch fix/codeql-cyclic-imports and opened PR #33 to develop: https://github.com/AnthusAI/Biblicus/pull/33. Commit: 6ff95b2. Validation in PR: rcql python scan reports Total 0; targeted pytest subset passes (7 passed).",
       "created_at": "2026-04-17T17:39:05.085234Z"
+    },
+    {
+      "id": "0c78872f-14fa-494d-b468-66467f3eed4c",
+      "author": "derek.norrbom",
+      "text": "Follow-up lint fix pushed in commit 2fec4f2 and PR #34 opened to develop: https://github.com/AnthusAI/Biblicus/pull/34. Addresses CI Ruff failures (F821/I001) in extraction modules. Validation: poetry run ruff check src/biblicus/ => All checks passed.",
+      "created_at": "2026-04-17T17:43:47.776418Z"
     }
   ],
   "created_at": "2026-04-17T17:34:22.635159Z",
-  "updated_at": "2026-04-17T17:39:05.085234Z",
+  "updated_at": "2026-04-17T17:43:47.776418Z",
   "closed_at": null,
   "custom": {}
 }
