@@ -1,0 +1,34 @@
+{
+  "id": "blbs-e040024b-bfd9-4b9a-8e12-110b0f10aea8",
+  "title": "Upgrade pypdf to 6.10.2 to resolve remaining Snyk vulnerabilities",
+  "description": "Resolve remaining Snyk dependency findings SNYK-PYTHON-PYPDF-16097903, SNYK-PYTHON-PYPDF-16097899, and SNYK-PYTHON-PYPDF-16097901 by upgrading pypdf from 6.10.0 to 6.10.2 and validating lint/tests/snyk scan output.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "ae61594d-799d-4066-8340-cb292b4ccb96",
+      "author": "derek.norrbom",
+      "text": "Updated dependency floor to pypdf>=6.10.2 and regenerated poetry.lock. Verification: poetry check passes. Snyk scan (snyk test --all-projects) shows Python/poetry project has no vulnerable paths; remaining findings are in apps/dashboard npm dependency tree (lodash via aws-amplify notifications).",
+      "created_at": "2026-04-17T18:46:43.303866Z"
+    },
+    {
+      "id": "cdfb67b8-bb42-4fa8-82a9-312f0d226ac9",
+      "author": "derek.norrbom",
+      "text": "Cross-check after dashboard remediation: snyk test --all-projects now reports no vulnerable paths in all scanned projects (poetry + dashboard + amplify + reinforcement-memory). pypdf upgrade remains in this change set and validates clean.",
+      "created_at": "2026-04-17T18:58:06.704657Z"
+    }
+  ],
+  "created_at": "2026-04-17T18:36:51.343983Z",
+  "updated_at": "2026-04-17T18:58:06.704657Z",
+  "closed_at": null,
+  "custom": {}
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "event_id": "320e4f8f-8b16-4491-94f1-61cd5952fa25",
+  "issue_id": "blbs-e067c722-ab02-4340-bd59-8eb11d4441d4",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-17T18:56:45.496Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "Fix remaining Snyk dashboard npm findings SNYK-JS-LODASH-15869619 and SNYK-JS-LODASH-15869625 (aws-amplify -> @aws-amplify/notifications -> lodash) with a safe dependency update and validate via snyk test on apps/dashboard/package-lock.json.",
+    "issue_type": "task",
+    "labels": [
+      "security",
+      "snyk"
+    ],
+    "parent": null,
+    "priority": 1,
+    "status": "open",
+    "title": "Resolve dashboard lodash Snyk findings via dependency update"
+  }
+}
