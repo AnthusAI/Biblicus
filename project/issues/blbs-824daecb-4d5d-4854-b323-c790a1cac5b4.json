@@ -1,0 +1,39 @@
+{
+  "id": "blbs-824daecb-4d5d-4854-b323-c790a1cac5b4",
+  "title": "[Dependabot] GHSA-p423-j2cm-9vmq in cryptography",
+  "description": "## Cryptography vulnerable to buffer overflow if non-contiguous buffers were passed to APIs\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 76\n**Severity:** medium\n**State:** open\n**Package:** `cryptography`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\nIf a non-contiguous buffer was passed to APIs which accepted Python buffers (e.g. `Hash.update()`), this could lead to buffer overflows. For example:\n\n```python\nh = Hash(SHA256())\nb.update(buf[::-1])\n```\n\nwould read past the end of the buffer on Python >3.11\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/76",
+  "type": "sub-task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7a01e71e-1b10-4329-963c-62746a73c803",
+      "author": "derek.norrbom",
+      "text": "Remediation implemented in poetry.lock: cryptography updated to 46.0.7 (first patched version for GHSA-p423-j2cm-9vmq).",
+      "created_at": "2026-04-17T20:00:20.788858Z"
+    }
+  ],
+  "created_at": "2026-04-17T19:54:00.951345Z",
+  "updated_at": "2026-04-17T20:00:20.788858Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 76,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/76",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "cryptography",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}
