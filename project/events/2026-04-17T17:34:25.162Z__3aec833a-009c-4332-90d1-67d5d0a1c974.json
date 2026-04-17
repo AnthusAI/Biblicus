@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "3aec833a-009c-4332-90d1-67d5d0a1c974",
+  "issue_id": "blbs-37ba4176-a7b8-40a9-a919-6c81af72cad5",
+  "event_type": "field_updated",
+  "occurred_at": "2026-04-17T17:34:25.162Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "changes": {
+      "description": {
+        "from": "",
+        "to": "Remediate rcql python findings: py/cyclic-import in corpus/extraction/extractors/retrieval and py/uninitialized-local-variable in analysis/markov.py; verify with fresh rcql scan."
+      }
+    }
+  }
+}

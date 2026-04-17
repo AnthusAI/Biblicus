@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "507d0254-6c90-4bae-ba78-3e9977520582",
+  "issue_id": "blbs-37ba4176-a7b8-40a9-a919-6c81af72cad5",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-17T17:34:22.635Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [
+      "security",
+      "codeql",
+      "python"
+    ],
+    "parent": null,
+    "priority": 1,
+    "status": "open",
+    "title": "Resolve CodeQL cyclic imports and markov uninitialized local"
+  }
+}

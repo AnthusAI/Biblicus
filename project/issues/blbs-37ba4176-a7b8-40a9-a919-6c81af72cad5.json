@@ -1,0 +1,35 @@
+{
+  "id": "blbs-37ba4176-a7b8-40a9-a919-6c81af72cad5",
+  "title": "Resolve CodeQL cyclic imports and markov uninitialized local",
+  "description": "Remediate rcql python findings: py/cyclic-import in corpus/extraction/extractors/retrieval and py/uninitialized-local-variable in analysis/markov.py; verify with fresh rcql scan.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "security",
+    "codeql",
+    "python"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d6a20778-d356-4146-91d6-97f06ae527c7",
+      "author": "derek.norrbom",
+      "text": "Implemented remediation on branch fix/codeql-cyclic-imports. Removed Python import-cycle edges by eliminating runtime and type-checking imports between corpus/extraction/extractors/retrieval modules, and fixed py/uninitialized-local-variable in analysis/markov.py by default-initializing label/confidence/summary values before retry loop. Verification: rcql -q --lang=python --no-fail --keep-db => Total: 0. Targeted checks: PYTHONPATH=src pytest -q tests/test_extraction_branches.py tests/test_extraction_remaining.py tests/test_markov_branches_more.py tests/test_markov_remaining.py => 7 passed.",
+      "created_at": "2026-04-17T17:37:42.558263Z"
+    },
+    {
+      "id": "7d1fa38f-fdb4-4904-888f-b0248b3d3b16",
+      "author": "derek.norrbom",
+      "text": "Pushed remediation branch fix/codeql-cyclic-imports and opened PR #33 to develop: https://github.com/AnthusAI/Biblicus/pull/33. Commit: 6ff95b2. Validation in PR: rcql python scan reports Total 0; targeted pytest subset passes (7 passed).",
+      "created_at": "2026-04-17T17:39:05.085234Z"
+    }
+  ],
+  "created_at": "2026-04-17T17:34:22.635159Z",
+  "updated_at": "2026-04-17T17:39:05.085234Z",
+  "closed_at": null,
+  "custom": {}
+}
