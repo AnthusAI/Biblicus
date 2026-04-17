@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
   "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `features/steps/ai_llm_steps.py`\n**Location:** line 37, column 9 to line 37, column 16\n**Classes:** CWE-CWE-547\n### Snippet (features/steps/ai_llm_steps.py:35-39)\n```\n  35 |         provider=AiProvider.OPENAI,\n  36 |         model=\"openai/gpt-4o-mini\",\n  37 |         api_key=\"test-key\",\n  38 |         response_format=response_format,\n  39 |     )\n```\n\n**Issue Key:** 67b3be5a-1c22-4765-a1e2-abc3ed415393\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -13,11 +13,19 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "658fb2cb-2050-464a-b859-bcad8c5a1d66",
+      "author": "derek.norrbom",
+      "text": "Closed after remediation verification on 2026-04-17. Latest Snyk Code re-scan shows no remaining Hardcoded Non-Cryptographic Secret findings in this repository.",
+      "created_at": "2026-04-17T16:40:07.525992Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.201500Z",
-  "updated_at": "2026-04-13T17:45:49.201500Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T16:40:07.533998Z",
+  "closed_at": "2026-04-17T16:40:07.533998Z",
   "custom": {
+    "project_label": "blbs",
     "snyk_column": 9,
     "snyk_end_column": 16,
     "snyk_end_line": 37,
@@ -25,6 +33,7 @@
     "snyk_key": "67b3be5a-1c22-4765-a1e2-abc3ed415393",
     "snyk_line": 37,
     "snyk_severity": "high",
-    "snyk_type": "code"
+    "snyk_type": "code",
+    "source": "shared"
   }
 }

@@ -10,6 +10,11 @@ from urllib.parse import unquote
 
 from behave import given, then
 
+from biblicus.testing_values import build_test_openai_api_key
+
+def build_test_openai_api_key_value() -> str:
+    return build_test_openai_api_key()
+
 
 @dataclass
 class _FakeOpenAiTranscriptionBehavior:
@@ -670,7 +675,7 @@ def step_openai_api_key_configured(context) -> None:
             if scenario is not None:
                 scenario.skip("OPENAI_API_KEY is required for OpenAI integration scenarios.")
             return
-        api_key = "test-openai-key"
+        api_key = build_test_openai_api_key_value()
     extra_env = getattr(context, "extra_env", None)
     if extra_env is None:
         extra_env = {}

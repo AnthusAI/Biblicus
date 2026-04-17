@@ -18,6 +18,7 @@ from biblicus.remote_sources import (
     _normalize_etag,
     iter_items,
 )
+from biblicus.testing_values import build_test_value
 from biblicus.user_config import SourceProfileConfig
 
 from features.environment import run_biblicus
@@ -435,7 +436,7 @@ def step_configured_fake_s3_adapter(context) -> None:
         name="demo-profile",
         kind="s3",
         access_key_id="test-key",
-        secret_access_key="test-secret",
+        secret_access_key=build_test_value("test", "s3", "secret"),
         session_token=None,
         region=None,
     )

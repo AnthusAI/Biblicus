@@ -78,6 +78,7 @@ from biblicus.user_config import (
     resolve_huggingface_api_key,
     resolve_openai_api_key,
 )
+from biblicus.testing_values import build_test_openai_api_key, build_test_value
 from features.environment import run_biblicus
 
 
@@ -9945,7 +9946,7 @@ def step_exhaust_gaps(context) -> None:
         # inference resolve_api_key huggingface user config path
         class _Cfg:
             def __init__(self):
-                self.huggingface = types.SimpleNamespace(api_key="cfg-key")
+                self.huggingface = types.SimpleNamespace(api_key=build_test_value("cfg", "key"))
                 self.openai = None
         inference.load_user_config = lambda: _Cfg()  # type: ignore[assignment]
         inference.resolve_api_key(provider=inference.ApiProvider.HUGGINGFACE)
@@ -11482,7 +11483,7 @@ def step_exhaust_gaps(context) -> None:
     class _CfgOpenaiOnly:
         def __init__(self):
             self.huggingface = None
-            self.openai = types.SimpleNamespace(api_key="cfg-openai-only")
+            self.openai = types.SimpleNamespace(api_key=build_test_value("cfg", "openai", "only"))
     inference.load_user_config = lambda: _CfgOpenaiOnly()  # type: ignore[assignment]
     os.environ.pop("OPENAI_API_KEY", None)
     inference.resolve_api_key(provider=inference.ApiProvider.OPENAI)
@@ -13548,10 +13549,10 @@ def step_exhaust_core(context) -> None:
 
         _deep_merge({"a": {"b": 1}}, {"a": {"c": 2}})
         config = BiblicusUserConfig(
-            openai=OpenAiUserConfig(api_key="openai"),
-            huggingface=HuggingFaceUserConfig(api_key="hf"),
-            deepgram=DeepgramUserConfig(api_key="dg"),
-            aldea=AldeaUserConfig(api_key="al"),
+            openai=OpenAiUserConfig(api_key=build_test_openai_api_key()),
+            huggingface=HuggingFaceUserConfig(api_key=build_test_value("hf", "token")),
+            deepgram=DeepgramUserConfig(api_key=build_test_value("dg", "token")),
+            aldea=AldeaUserConfig(api_key=build_test_value("al", "token")),
         )
         resolve_huggingface_api_key(config=config)
         resolve_deepgram_api_key(config=config)
@@ -13564,8 +13565,10 @@ def step_exhaust_core(context) -> None:
         config_root.mkdir(parents=True, exist_ok=True)
         cfg_dir = config_root / ".biblicus"
         cfg_dir.mkdir(parents=True, exist_ok=True)
+        local_openai = build_test_value("local", "openai")
+        local_hf = build_test_value("local", "hf")
         (cfg_dir / "config.yml").write_text(
-            "openai:\n  api_key: local-openai\nhuggingface:\n  api_key: local-hf\n",
+            f"openai:\n  api_key: {local_openai}\nhuggingface:\n  api_key: {local_hf}\n",
             encoding="utf-8",
         )
         original_cwd = Path.cwd()

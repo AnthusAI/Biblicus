@@ -3,7 +3,7 @@
   "title": "Snyk Dependency Vulnerabilities",
   "description": "Security vulnerabilities imported from Snyk.",
   "type": "epic",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -26,12 +26,20 @@
       "author": "derek.norrbom",
       "text": "Dashboard dependency stream update 2026-04-13: after lock sync and upgrades, resolved 3 IDs directly and remaining 7 IDs were triaged as upstream-blocked and ignored in Snyk UI with expiry policy. Closed blbs-94b8f5 and all child sub-tasks.",
       "created_at": "2026-04-13T20:14:07.089521Z"
+    },
+    {
+      "id": "ebf21772-e192-4ead-9e20-de9c493c8f01",
+      "author": "derek.norrbom",
+      "text": "All tracked dependency remediation children are now closed as of 2026-04-17, including reinforcement-memory follow-up verification. Closing dependency umbrella.",
+      "created_at": "2026-04-17T17:16:25.112275Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.196843Z",
-  "updated_at": "2026-04-13T20:14:07.089521Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T17:16:27.223689Z",
+  "closed_at": "2026-04-17T17:16:27.223689Z",
   "custom": {
-    "snyk_category": "dependency"
+    "project_label": "blbs",
+    "snyk_category": "dependency",
+    "source": "shared"
   }
 }

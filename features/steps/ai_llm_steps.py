@@ -6,6 +6,7 @@ from behave import when
 
 from biblicus.ai.llm import generate_completion
 from biblicus.ai.models import AiProvider, LlmClientConfig
+from features.steps import openai_steps
 
 
 @dataclass
@@ -21,7 +22,7 @@ def step_attempt_generate_completion_with_provider(context, provider: str) -> No
         client = LlmClientConfig(
             provider=AiProvider(provider),
             model="gpt-4o-mini",
-            api_key="test-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
         )
         _ = generate_completion(client=client, system_prompt=None, user_prompt="Hello")
         context.last_result = _Result(returncode=0, stdout="", stderr="")
@@ -34,7 +35,7 @@ def step_generate_completion_with_response_format(context, response_format: str)
     client = LlmClientConfig(
         provider=AiProvider.OPENAI,
         model="openai/gpt-4o-mini",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         response_format=response_format,
     )
     context.last_completion = generate_completion(

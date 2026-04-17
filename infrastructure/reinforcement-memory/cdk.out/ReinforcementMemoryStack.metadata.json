@@ -59,10 +59,10 @@
       "data": "CheckBootstrapVersion"
     }
   ],
-  "/ReinforcementMemoryStack/EmbeddingsBucket/Resource": [
+  "/ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/Resource": [
     {
       "type": "aws:cdk:logicalId",
-      "data": "EmbeddingsBucket71985974"
+      "data": "EmbeddingsAccessLogsBucketEACF93CA"
     },
     {
       "type": "aws:cdk:analytics:mixin",
@@ -83,10 +83,40 @@
       "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
     }
   ],
+  "/ReinforcementMemoryStack/EmbeddingsBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsBucket71985974"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketAutoDeleteObjects"
+      }
+    }
+  ],
   "/ReinforcementMemoryStack/CDKMetadata/Default": [
     {
       "type": "aws:cdk:logicalId",
       "data": "CDKMetadata"
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsAccessLogsBucketPolicy4ACB3E9D"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketPolicyStatements"
+      }
+    }
+  ],
+  "/ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/AutoDeleteObjectsCustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EmbeddingsAccessLogsBucketAutoDeleteObjectsCustomResourceA59B1023"
     }
   ],
   "/ReinforcementMemoryStack/EmbeddingsBucket/Policy/Resource": [

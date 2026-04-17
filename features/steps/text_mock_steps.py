@@ -8,13 +8,14 @@ from biblicus.text.extract import TextExtractRequest, apply_text_extract
 from biblicus.text.link import TextLinkRequest, apply_text_link
 from biblicus.text.redact import TextRedactRequest, apply_text_redact
 from biblicus.text.slice import TextSliceRequest, apply_text_slice
+from features.steps import openai_steps
 
 
 def _build_client() -> LlmClientConfig:
     return LlmClientConfig(
         provider=AiProvider.OPENAI,
         model="gpt-4o-mini",
-        api_key="test-openai-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         response_format="json_object",
     )
 
