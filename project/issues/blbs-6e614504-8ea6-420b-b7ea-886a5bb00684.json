@@ -1,0 +1,39 @@
+{
+  "id": "blbs-6e614504-8ea6-420b-b7ea-886a5bb00684",
+  "title": "[Dependabot] GHSA-6w46-j5rx-g56g in pytest",
+  "description": "## pytest has vulnerable tmpdir handling\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 82\n**Severity:** medium\n**State:** open\n**Package:** `pytest`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\npytest through 9.0.2 on UNIX relies on directories with the `/tmp/pytest-of-{user}` name pattern, which allows local users to cause a denial of service or possibly gain privileges.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/82",
+  "type": "sub-task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "3d6e2890-c470-4c72-9960-b78deb964764",
+      "author": "derek.norrbom",
+      "text": "Remediation implemented in poetry.lock: pytest updated to 9.0.3 (first patched version for GHSA-6w46-j5rx-g56g).",
+      "created_at": "2026-04-17T20:00:20.787029Z"
+    }
+  ],
+  "created_at": "2026-04-17T19:54:00.951133Z",
+  "updated_at": "2026-04-17T20:00:20.787029Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 82,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/82",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pytest",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}
