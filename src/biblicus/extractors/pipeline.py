@@ -12,6 +12,8 @@ from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
+Corpus = Any
+
 
 class PipelineStageSpec(BaseModel):
     """
@@ -75,7 +77,7 @@ class PipelineExtractor(TextExtractor):
     def extract_text(
         self,
         *,
-        corpus: Corpus,
+        corpus: "Corpus",
         item: CatalogItem,
         config: BaseModel,
         previous_extractions: List[ExtractionStageOutput],
