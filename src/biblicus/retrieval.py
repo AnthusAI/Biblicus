@@ -8,7 +8,6 @@ import hashlib
 import json
 from typing import Any, Dict, Iterable, List, Optional
 
-from .corpus import Corpus
 from .models import (
     ConfigurationManifest,
     Evidence,
@@ -16,6 +15,8 @@ from .models import (
     RetrievalSnapshot,
 )
 from .time import utc_now_iso
+
+Corpus = Any
 
 
 def create_configuration_manifest(
@@ -53,7 +54,7 @@ def create_configuration_manifest(
 
 
 def create_snapshot_manifest(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     configuration: ConfigurationManifest,
     stats: Dict[str, Any],

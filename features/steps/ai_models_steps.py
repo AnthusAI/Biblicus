@@ -7,6 +7,7 @@ from behave import then, when
 from pydantic import ValidationError
 
 from biblicus.ai.models import AiProvider, EmbeddingsClientConfig, LlmClientConfig
+from features.steps import openai_steps
 
 
 def _parse_literal(value: str) -> object:
@@ -123,7 +124,7 @@ def step_build_llm_kwargs_with_extra_params(context) -> None:
     config = LlmClientConfig(
         provider=AiProvider.OPENAI,
         model="gpt-4o-mini",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         extra_params={"openai_reasoning_effort": "high"},
     )
     context.last_llm_kwargs = config.build_litellm_kwargs()
@@ -168,7 +169,7 @@ def step_build_embeddings_kwargs_with_extra_params(context) -> None:
     config = EmbeddingsClientConfig(
         provider=AiProvider.OPENAI,
         model="text-embedding-3-small",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         extra_params={"dimensions": 3},
     )
     context.last_embeddings_kwargs = config.build_litellm_kwargs()

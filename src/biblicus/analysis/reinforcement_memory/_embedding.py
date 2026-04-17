@@ -182,7 +182,7 @@ def hash_embedder(dimensions: int = 384) -> EmbedFn:
     def _embed(texts: List[str]) -> np.ndarray:
         result = []
         for text in texts:
-            seed = int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16) % (2**32)
+            seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % (2**32)
             rng = np.random.default_rng(seed)
             vec = rng.standard_normal(dimensions).astype(np.float32)
             norm = np.linalg.norm(vec)

@@ -3,7 +3,7 @@
   "title": "AnthusAI/Biblicus",
   "description": "Snyk vulnerabilities found in `AnthusAI/Biblicus`.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -91,13 +91,39 @@
       "author": "derek.norrbom",
       "text": "Completed DRY pass for path validation: centralized allow_temp_dir support in scripts/_security_utils.py and removed duplicated local resolver implementations in lab/demo scripts. Local full test driver passed (behave + pytest + coverage).",
       "created_at": "2026-04-13T21:41:37.217250Z"
+    },
+    {
+      "id": "4de8e546-d08c-4c62-980e-2cd99ef94e2d",
+      "author": "derek.norrbom",
+      "text": "Starting Hardcoded Non-Cryptographic Secret remediation batch 2: replace remaining hardcoded test credentials/tokens in features/steps and tests with shared generated test-value helpers where feasible, then rerun Snyk Code and targeted test suites.",
+      "created_at": "2026-04-17T16:34:12.114392Z"
+    },
+    {
+      "id": "78faf666-f8e3-4347-915a-a8cd0121f976",
+      "author": "derek.norrbom",
+      "text": "Hardcoded secret remediation batch complete (2026-04-17): introduced src/biblicus/testing_values.py helper, replaced hardcoded secret-like literals across features/steps and tests, and validated with Behave + pytest. Latest Snyk Code summary: 4 total findings remaining, none are Hardcoded Non-Cryptographic Secret (remaining classes: Jinja2AutoEscapeFalse x3, InsecureHash x1).",
+      "created_at": "2026-04-17T16:38:46.477213Z"
+    },
+    {
+      "id": "8a5c374a-3d67-42b2-a656-4c6314c7785a",
+      "author": "derek.norrbom",
+      "text": "Starting final Snyk remediation slice for remaining 4 findings: set explicit Jinja autoescape in text prompt renderers (annotate/link/redact) and replace md5 with stronger hash in deterministic test embedder, then validate with tests and Snyk Code.",
+      "created_at": "2026-04-17T16:42:44.964559Z"
+    },
+    {
+      "id": "69614d8c-acce-4850-bcf1-a04c5196478d",
+      "author": "derek.norrbom",
+      "text": "Final remediation slice complete (2026-04-17): fixed 3 Jinja autoescape findings and 1 insecure hash finding. Verification: Snyk Code re-scan now reports 0 total issues. All child Snyk subtasks are closed.",
+      "created_at": "2026-04-17T16:44:50.061871Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.201217Z",
-  "updated_at": "2026-04-13T21:41:37.217250Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T16:44:56.542563Z",
+  "closed_at": "2026-04-17T16:44:56.542563Z",
   "custom": {
+    "project_label": "blbs",
     "snyk_category": "code",
-    "snyk_target_file": "AnthusAI/Biblicus"
+    "snyk_target_file": "AnthusAI/Biblicus",
+    "source": "shared"
   }
 }

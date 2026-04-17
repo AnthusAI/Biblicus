@@ -22,18 +22,19 @@ from biblicus.extraction import (
     create_extraction_configuration_manifest,
 )
 from biblicus.models import ExtractionSnapshotReference
+from biblicus.testing_values import build_test_value
 
 
 def test_inference_openai_user_config(monkeypatch):
     class _Cfg:
         def __init__(self):
             self.huggingface = None
-            self.openai = types.SimpleNamespace(api_key="cfg-openai-branch")
+            self.openai = types.SimpleNamespace(api_key=build_test_value("cfg", "openai", "branch"))
 
     monkeypatch.setattr("biblicus.user_config.load_user_config", lambda: _Cfg())
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     resolved = inference.resolve_api_key(provider=inference.ApiProvider.OPENAI)
-    assert resolved == "cfg-openai-branch"
+    assert resolved == build_test_value("cfg", "openai", "branch")
 
 
 def test_markov_load_topic_modeling_report_invalid_json(tmp_path: Path):

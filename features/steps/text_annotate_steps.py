@@ -15,6 +15,7 @@ from biblicus.text.annotate import (
 from biblicus.text.markup import _parse_span_attributes, build_span_context_section
 from biblicus.text.models import TextAnnotateRequest
 from biblicus.text.tool_loop import ToolLoopResult
+from features.steps import openai_steps
 
 
 def _annotate_system_prompt_template() -> str:
@@ -56,7 +57,7 @@ def _build_annotate_request(
     allowed_attributes: Optional[List[str]] = None,
     max_rounds: int = 6,
     max_edits_per_round: int = 10,
-    api_key: Optional[str] = "test-openai-key",
+    api_key: Optional[str] = openai_steps.build_test_openai_api_key_value(),
     timeout_seconds: Optional[float] = None,
 ) -> TextAnnotateRequest:
     return TextAnnotateRequest(
@@ -121,7 +122,7 @@ def step_apply_text_annotate_with_allowed_attributes(context, text: str, allowed
     prompt_template = str(getattr(context, "text", "") or "")
     allowed_attributes = _parse_allowed_attributes(allowed)
     extra_env = getattr(context, "extra_env", {}) or {}
-    api_key = None if extra_env.get("OPENAI_API_KEY") else "test-openai-key"
+    api_key = None if extra_env.get("OPENAI_API_KEY") else openai_steps.build_test_openai_api_key_value()
     timeout_seconds = 300.0 if api_key is None else None
     request = _build_annotate_request(
         text=text,

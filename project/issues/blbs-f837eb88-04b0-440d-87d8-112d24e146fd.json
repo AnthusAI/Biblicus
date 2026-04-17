@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Hardcoded Non-Cryptographic Secret",
   "description": "## Hardcoded Non-Cryptographic Secret\n\n**Severity:** high\n**Project:** `AnthusAI/Biblicus`\n**File:** `features/steps/text_slice_steps.py`\n**Location:** line 99, column 13 to line 99, column 20\n**Classes:** CWE-CWE-547\n### Snippet (features/steps/text_slice_steps.py:97-101)\n```\n  97 |             provider=AiProvider.OPENAI,\n  98 |             model=\"gpt-4o-mini\",\n  99 |             api_key=\"test-openai-key\",\n 100 |             response_format=\"json_object\",\n 101 |         ),\n```\n\n**Issue Key:** 77c900c7-b324-435e-ad67-3958ee380190\n\n### Details\nHardcoded Non-Cryptographic Secret\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -13,11 +13,37 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "4583159d-0170-4805-b3d5-96315b5490c9",
+      "author": "derek.norrbom",
+      "text": "Starting remediation for Hardcoded Non-Cryptographic Secret in BDD step files. Goal: remove secret-like literals while preserving test behavior, then re-scan with Snyk Code.",
+      "created_at": "2026-04-17T16:29:15.331457Z"
+    },
+    {
+      "id": "72f36ac5-f1ff-4631-a196-5afd1b4444ad",
+      "author": "derek.norrbom",
+      "text": "Updated features/steps/text_slice_steps.py to replace literal api_key assignments with a generated non-secret test token helper across all affected step builders. Networked Snyk Code scan executed; this file/path-specific finding is no longer present. Global scan still reports other hardcoded-non-cryptographic-secret findings in additional test/step files.",
+      "created_at": "2026-04-17T16:31:31.299666Z"
+    },
+    {
+      "id": "5660faa6-3f3b-46e1-aa7d-99dc6c8f9043",
+      "author": "derek.norrbom",
+      "text": "Refactored to DRY: switched text_slice_steps.py to use shared openai_steps.build_test_openai_api_key_value() helper. Re-ran targeted Behave suite; all scenarios still pass.",
+      "created_at": "2026-04-17T16:33:25.673812Z"
+    },
+    {
+      "id": "c2e3925a-5dd1-46a8-bacd-a55459172a6d",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated. Replaced hardcoded API-key test literals with generated shared helper values and completed DRY consolidation. Verified with networked Snyk Code scan on 2026-04-17: no remaining Hardcoded Non-Cryptographic Secret findings.",
+      "created_at": "2026-04-17T16:38:54.189958Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.209582Z",
-  "updated_at": "2026-04-13T17:45:49.209582Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T16:38:58.679338Z",
+  "closed_at": "2026-04-17T16:38:58.679338Z",
   "custom": {
+    "project_label": "blbs",
     "snyk_column": 13,
     "snyk_end_column": 20,
     "snyk_end_line": 99,
@@ -25,6 +51,7 @@
     "snyk_key": "77c900c7-b324-435e-ad67-3958ee380190",
     "snyk_line": 99,
     "snyk_severity": "high",
-    "snyk_type": "code"
+    "snyk_type": "code",
+    "source": "shared"
   }
 }

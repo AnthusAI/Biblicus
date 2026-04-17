@@ -10,18 +10,30 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .corpus import Corpus
 from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
-from .extractors.pipeline import PipelineExtractorConfig, PipelineStageSpec
 from .models import CatalogItem, ExtractionStageOutput
-from .retrieval import hash_text
 from .time import utc_now_iso
+
+Corpus = Any
+
+
+def _hash_text(text: str) -> str:
+    """
+    Hash text for deterministic extraction identifiers.
+
+    :param text: Text payload.
+    :type text: str
+    :return: Secure Hash Algorithm 256 hex digest.
+    :rtype: str
+    """
+    return sha256(text.encode("utf-8")).hexdigest()
 
 
 class ExtractionConfigurationManifest(BaseModel):
@@ -185,7 +197,7 @@ def create_extraction_configuration_manifest(
         {"extractor_id": extractor_id, "name": name, "configuration": configuration},
         sort_keys=True,
     )
-    configuration_id = hash_text(configuration_payload)
+    configuration_id = _hash_text(configuration_payload)
     return ExtractionConfigurationManifest(
         configuration_id=configuration_id,
         extractor_id=extractor_id,
@@ -196,7 +208,7 @@ def create_extraction_configuration_manifest(
 
 
 def create_extraction_snapshot_manifest(
-    corpus: Corpus, *, configuration: ExtractionConfigurationManifest
+    corpus: "Corpus", *, configuration: ExtractionConfigurationManifest
 ) -> ExtractionSnapshotManifest:
     """
     Create a new extraction snapshot manifest for a corpus.
@@ -209,7 +221,7 @@ def create_extraction_snapshot_manifest(
     :rtype: ExtractionSnapshotManifest
     """
     catalog = corpus.load_catalog()
-    snapshot_id = hash_text(f"{configuration.configuration_id}:{catalog.generated_at}")
+    snapshot_id = _hash_text(f"{configuration.configuration_id}:{catalog.generated_at}")
     return ExtractionSnapshotManifest(
         snapshot_id=snapshot_id,
         configuration=configuration,
@@ -264,7 +276,7 @@ def write_extraction_latest_pointer(
 
 def _ensure_extraction_alias_snapshot_dir(
     *,
-    corpus: Corpus,
+    corpus: "Corpus",
     stage_extractor_id: str,
     manifest: ExtractionSnapshotManifest,
 ) -> Path:
@@ -456,7 +468,7 @@ def _final_output_from_stages(
 
 
 def build_extraction_snapshot(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     extractor_id: str,
     configuration_name: str,
@@ -516,17 +528,24 @@ def build_extraction_snapshot(
     if extractor_id != "pipeline":
         raise ExtractionSnapshotFatalError("Extraction snapshots must use the pipeline extractor")
 
-    pipeline_config = (
-        parsed_config
-        if isinstance(parsed_config, PipelineExtractorConfig)
-        else PipelineExtractorConfig.model_validate(parsed_config)
-    )
+    parsed_config_data = parsed_config.model_dump()
+    pipeline_stages = parsed_config_data.get("stages")
+    if not isinstance(pipeline_stages, list) or not pipeline_stages:
+        raise ValueError("Pipeline configuration must contain at least one stage")
 
-    validated_stages: List[Tuple[PipelineStageSpec, BaseModel]] = []
-    for stage in pipeline_config.stages:
-        stage_extractor = get_extractor(stage.extractor_id)
-        parsed_stage_config = stage_extractor.validate_config(stage.configuration)
-        validated_stages.append((stage, parsed_stage_config))
+    validated_stages: List[Tuple[str, BaseModel]] = []
+    for stage_data in pipeline_stages:
+        if not isinstance(stage_data, dict):
+            raise ValueError("Pipeline stage entries must be objects")
+        stage_extractor_id = str(stage_data.get("extractor_id", "")).strip()
+        if not stage_extractor_id:
+            raise ValueError("Pipeline stage missing extractor_id")
+        stage_configuration = stage_data.get("configuration", {})
+        if not isinstance(stage_configuration, dict):
+            raise ValueError("Pipeline stage configuration must be an object")
+        stage_extractor = get_extractor(stage_extractor_id)
+        parsed_stage_config = stage_extractor.validate_config(stage_configuration)
+        validated_stages.append((stage_extractor_id, parsed_stage_config))
 
     previous_items = {item.item_id: item for item in (manifest.items or [])}
     extracted_items: List[ExtractionItemResult] = []
@@ -775,24 +794,26 @@ def build_extraction_snapshot(
         last_error_type: Optional[str] = None
         last_error_message: Optional[str] = None
 
-        for stage_index, (stage, parsed_stage_config) in enumerate(validated_stages, start=1):
+        for stage_index, (stage_extractor_id, parsed_stage_config) in enumerate(
+            validated_stages, start=1
+        ):
             with progress_lock:
-                current_stage_label = f"{stage.extractor_id}:{stage_index}"
+                current_stage_label = f"{stage_extractor_id}:{stage_index}"
             if not force:
                 cached = _load_stage_cache(
                     stage_index=stage_index,
-                    extractor_id=stage.extractor_id,
+                    extractor_id=stage_extractor_id,
                     item=item,
                 )
                 if cached:
                     with progress_lock:
-                        current_stage_label = f"{stage.extractor_id}:{stage_index}:cache"
+                        current_stage_label = f"{stage_extractor_id}:{stage_index}:cache"
                     cached_result, cached_output = cached
                     stage_results.append(cached_result)
                     stage_outputs.append(cached_output)
                     continue
             try:
-                stage_extractor = get_extractor(stage.extractor_id)
+                stage_extractor = get_extractor(stage_extractor_id)
                 extracted_text = stage_extractor.extract_text(
                     corpus=corpus,
                     item=item,
@@ -807,7 +828,7 @@ def build_extraction_snapshot(
                 stage_results.append(
                     ExtractionStageResult(
                         stage_index=stage_index,
-                        extractor_id=stage.extractor_id,
+                        extractor_id=stage_extractor_id,
                         status="errored",
                         text_relpath=None,
                         text_characters=0,
@@ -823,7 +844,7 @@ def build_extraction_snapshot(
                 stage_results.append(
                     ExtractionStageResult(
                         stage_index=stage_index,
-                        extractor_id=stage.extractor_id,
+                        extractor_id=stage_extractor_id,
                         status="skipped",
                         text_relpath=None,
                         text_characters=0,
@@ -838,14 +859,14 @@ def build_extraction_snapshot(
             relpath = write_pipeline_stage_text_artifact(
                 snapshot_dir=snapshot_dir,
                 stage_index=stage_index,
-                extractor_id=stage.extractor_id,
+                extractor_id=stage_extractor_id,
                 item=item,
                 text=extracted_text.text,
             )
             metadata_relpath = write_pipeline_stage_metadata_artifact(
                 snapshot_dir=snapshot_dir,
                 stage_index=stage_index,
-                extractor_id=stage.extractor_id,
+                extractor_id=stage_extractor_id,
                 item=item,
                 metadata=extracted_text.metadata,
             )
@@ -853,7 +874,7 @@ def build_extraction_snapshot(
             stage_results.append(
                 ExtractionStageResult(
                     stage_index=stage_index,
-                    extractor_id=stage.extractor_id,
+                    extractor_id=stage_extractor_id,
                     status="extracted",
                     text_relpath=relpath,
                     text_characters=text_characters,
@@ -868,7 +889,7 @@ def build_extraction_snapshot(
             stage_outputs.append(
                 ExtractionStageOutput(
                     stage_index=stage_index,
-                    extractor_id=stage.extractor_id,
+                    extractor_id=stage_extractor_id,
                     status="extracted",
                     text=extracted_text.text,
                     text_characters=text_characters,
@@ -1052,7 +1073,7 @@ def build_extraction_snapshot(
 
 
 def load_or_build_extraction_snapshot(
-    corpus: Corpus,
+    corpus: "Corpus",
     *,
     extractor_id: str,
     configuration_name: str,

@@ -29,16 +29,290 @@
     "aws:cdk:path": "ReinforcementMemoryStack/ReinforcementMemoryVectorIndex"
    }
   },
-  "EmbeddingsBucket71985974": {
+  "EmbeddingsAccessLogsBucketEACF93CA": {
    "Type": "AWS::S3::Bucket",
    "Properties": {
-    "BucketName": "myapp-embeddings-development",
+    "BucketName": "myapp-embeddings-access-logs-development",
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "ExpirationInDays": 90,
+       "Status": "Enabled"
+      }
+     ]
+    },
+    "LoggingConfiguration": {
+     "DestinationBucketName": {
+      "Ref": "EmbeddingsAccessLogsBucketEACF93CA"
+     },
+     "LogFilePrefix": "embeddings-access-logs-bucket/"
+    },
+    "OwnershipControls": {
+     "Rules": [
+      {
+       "ObjectOwnership": "BucketOwnerEnforced"
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
     "Tags": [
      {
       "Key": "aws-cdk:auto-delete-objects",
       "Value": "true"
      }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/Resource"
+   }
+  },
+  "EmbeddingsAccessLogsBucketPolicy4ACB3E9D": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "EmbeddingsAccessLogsBucketEACF93CA"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EmbeddingsAccessLogsBucketEACF93CA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EmbeddingsAccessLogsBucketEACF93CA",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EmbeddingsAccessLogsBucketEACF93CA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EmbeddingsAccessLogsBucketEACF93CA",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:PutObject",
+       "Condition": {
+        "ArnLike": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "EmbeddingsBucket71985974",
+           "Arn"
+          ]
+         }
+        },
+        "StringEquals": {
+         "aws:SourceAccount": "695039645615"
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "logging.s3.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "EmbeddingsAccessLogsBucketEACF93CA",
+            "Arn"
+           ]
+          },
+          "/embeddings-access-logs/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/Policy/Resource"
+   }
+  },
+  "EmbeddingsAccessLogsBucketAutoDeleteObjectsCustomResourceA59B1023": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "EmbeddingsAccessLogsBucketEACF93CA"
+    }
+   },
+   "DependsOn": [
+    "EmbeddingsAccessLogsBucketPolicy4ACB3E9D"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "ReinforcementMemoryStack/EmbeddingsAccessLogsBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
     ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-695039645615-us-west-2",
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "EmbeddingsAccessLogsBucketEACF93CA"
+       },
+       " S3 bucket."
+      ]
+     ]
+    },
+    "TracingConfig": {
+     "Mode": "Active"
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "EmbeddingsBucket71985974": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "myapp-embeddings-development",
+    "LoggingConfiguration": {
+     "DestinationBucketName": {
+      "Ref": "EmbeddingsAccessLogsBucketEACF93CA"
+     },
+     "LogFilePrefix": "embeddings-access-logs/"
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
    },
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
@@ -54,6 +328,40 @@
     },
     "PolicyDocument": {
      "Statement": [
+      {
+       "Action": "s3:*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EmbeddingsBucket71985974",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EmbeddingsBucket71985974",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
       {
        "Action": [
         "s3:DeleteObject*",
@@ -123,74 +431,10 @@
     "aws:cdk:path": "ReinforcementMemoryStack/EmbeddingsBucket/AutoDeleteObjectsCustomResource/Default"
    }
   },
-  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Version": "2012-10-17",
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "lambda.amazonaws.com"
-       }
-      }
-     ]
-    },
-    "ManagedPolicyArns": [
-     {
-      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-     }
-    ]
-   },
-   "Metadata": {
-    "aws:cdk:path": "ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
-   }
-  },
-  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
-   "Type": "AWS::Lambda::Function",
-   "Properties": {
-    "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-695039645615-us-east-1",
-     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
-    },
-    "Timeout": 900,
-    "MemorySize": 128,
-    "Handler": "index.handler",
-    "Role": {
-     "Fn::GetAtt": [
-      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
-      "Arn"
-     ]
-    },
-    "Runtime": "nodejs22.x",
-    "Description": {
-     "Fn::Join": [
-      "",
-      [
-       "Lambda function for auto-deleting objects in ",
-       {
-        "Ref": "EmbeddingsBucket71985974"
-       },
-       " S3 bucket."
-      ]
-     ]
-    }
-   },
-   "DependsOn": [
-    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "ReinforcementMemoryStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
-    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
-    "aws:asset:property": "Code"
-   }
-  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/5WPuQ7CQAxEv4XUG4MSREHH0YOSEiG0bAxyjl0UezkU5d8RLOIoqezRjJ/GCSTjFEYDfeHYFFVc0x66XLSp1OJgM2TnW4NKX3jHKXRzbyqUhxW2TRc1dCUbTaNvwiv+tBhCdObFLbFGwdW+RCMc9VsVrLWrydw+1KD/YIeDXLRgg/aJ7tXCs7jm/cKvXLfuTAW2c82oZswouegj2eOjxcrLyUuvrCsQSh6ekwQmMBqUTBS33go1CFmYd5NYZ8pBAQAA"
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/6VRuw7CMAz8FjqnARUYYIOyg8qIECqpQe4jQbVTQFX/nZYgHmJCTPbpfNadHchgNJGDXnwmXyWZn+Ne1muOVSbCg46AjC0ViJbe0VDWc6sy4I5y3ab2Cryg9qbe+4bH+J0i6UZnls0CcmBY7lNQTF4j/lJvhaNWJkd1fXly+AdnTtCGZihA/2jsW7xtRGiJTfG83idclabCBMp5TCBmRMCt+oj62EVYWj5ZboQ2CciU+lUwlt1/UkL0S6sZC5CRqzeUhJe4vAEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "ReinforcementMemoryStack/CDKMetadata/Default"

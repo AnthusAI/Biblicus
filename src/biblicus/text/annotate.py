@@ -134,7 +134,7 @@ def _resolve_allowed_attributes(allowed: Sequence[str] | None) -> List[str]:
 
 
 def _render_system_prompt(template: str, *, allowed_attributes: Sequence[str]) -> str:
-    env = Environment(undefined=StrictUndefined)
+    env = Environment(undefined=StrictUndefined, autoescape=True)
     rendered = env.from_string(template).render(
         allowed_attributes=list(allowed_attributes),
     )

@@ -30,7 +30,7 @@ def _build_slice_request(text: str) -> TextSliceRequest:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",
@@ -62,7 +62,7 @@ def step_apply_text_slice(context, text: str) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",
@@ -96,7 +96,7 @@ def step_apply_text_slice_multiline(context) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",
@@ -183,7 +183,7 @@ def step_attempt_apply_text_slice(context, text: str) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",
@@ -225,7 +225,7 @@ def step_attempt_text_slice_with_limits(
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",
@@ -248,7 +248,7 @@ def step_validate_text_slice_system_prompt(context, system_prompt: str) -> None:
             client=LlmClientConfig(
                 provider=AiProvider.OPENAI,
                 model="gpt-4o-mini",
-                api_key="test-openai-key",
+                api_key=openai_steps.build_test_openai_api_key_value(),
             ),
             prompt_template="Return the requested slices.",
             system_prompt=system_prompt,
@@ -268,7 +268,7 @@ def step_validate_text_slice_prompt_template(context, prompt_template: str) -> N
             client=LlmClientConfig(
                 provider=AiProvider.OPENAI,
                 model="gpt-4o-mini",
-                api_key="test-openai-key",
+                api_key=openai_steps.build_test_openai_api_key_value(),
             ),
             prompt_template=prompt_template,
             system_prompt="System {text}",
@@ -311,7 +311,7 @@ def step_attempt_text_slice_forced_empty(context) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested slices.",

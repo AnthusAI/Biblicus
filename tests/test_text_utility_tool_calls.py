@@ -9,6 +9,7 @@ import unittest
 
 from biblicus.ai.llm import ChatCompletionResult
 from biblicus.ai.models import AiProvider, LlmClientConfig
+from biblicus.testing_values import build_test_openai_api_key
 from biblicus.text import annotate as annotate_module
 from biblicus.text import link as link_module
 from biblicus.text import redact as redact_module
@@ -195,7 +196,7 @@ class TestTextUtilityToolCalls(unittest.TestCase):
                 client=LlmClientConfig(
                     provider=AiProvider.OPENAI,
                     model="gpt-4o-mini",
-                    api_key="test-openai-key",
+                    api_key=build_test_openai_api_key(),
                     response_format="json_object",
                 ),
                 system_prompt=system_prompt,
@@ -240,7 +241,7 @@ class TestTextUtilityToolCalls(unittest.TestCase):
                 client=LlmClientConfig(
                     provider=AiProvider.OPENAI,
                     model="gpt-4o-mini",
-                    api_key="test-openai-key",
+                    api_key=build_test_openai_api_key(),
                     response_format="json_object",
                 ),
                 system_prompt=system_prompt,
@@ -283,7 +284,7 @@ class TestTextUtilityToolCalls(unittest.TestCase):
                 client=LlmClientConfig(
                     provider=AiProvider.OPENAI,
                     model="gpt-4o-mini",
-                    api_key="test-openai-key",
+                    api_key=build_test_openai_api_key(),
                     response_format="json_object",
                 ),
                 system_prompt=system_prompt,

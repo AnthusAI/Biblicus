@@ -134,7 +134,7 @@ def _resolve_redaction_types(redaction_types: Sequence[str] | None) -> List[str]
 
 
 def _render_system_prompt(template: str, *, redaction_types: Sequence[str] | None) -> str:
-    env = Environment(undefined=StrictUndefined)
+    env = Environment(undefined=StrictUndefined, autoescape=True)
     rendered = env.from_string(template).render(
         redaction_types=list(redaction_types) if redaction_types is not None else [],
     )

@@ -9,6 +9,7 @@ import unittest
 
 from biblicus.ai.llm import ChatCompletionResult
 from biblicus.ai.models import AiProvider, LlmClientConfig
+from biblicus.testing_values import build_test_openai_api_key
 from biblicus.text import tool_loop as tool_loop_module
 from biblicus.text.tool_loop import apply_unique_str_replace, run_tool_loop
 
@@ -122,7 +123,7 @@ class TestToolLoopSafeguards(unittest.TestCase):
                 client=LlmClientConfig(
                     provider=AiProvider.OPENAI,
                     model="gpt-4o-mini",
-                    api_key="test-openai-key",
+                    api_key=build_test_openai_api_key(),
                     response_format="json_object",
                 ),
                 system_prompt="You are a virtual file editor.\nCurrent text:\n---\n{text}\n---",

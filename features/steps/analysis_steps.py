@@ -29,6 +29,7 @@ from features.steps.openai_steps import (
     _ensure_fake_openai_chat_behaviors,
     _FakeOpenAiChatBehavior,
     _install_fake_openai_module,
+    build_test_openai_api_key_value,
 )
 
 
@@ -151,7 +152,11 @@ def step_run_llm_fine_tuning_missing_documents(context) -> None:
     _install_fake_openai_module(context)
     behaviors = _ensure_fake_openai_chat_behaviors(context)
     behaviors.append(_FakeOpenAiChatBehavior(response="Label"))
-    client = LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini", api_key="test-key")
+    client = LlmClientConfig(
+        provider=AiProvider.OPENAI,
+        model="gpt-4o-mini",
+        api_key=build_test_openai_api_key_value(),
+    )
     config = TopicModelingLlmFineTuningConfig(
         enabled=True,
         client=client,

@@ -3,9 +3,10 @@ from types import SimpleNamespace
 from pathlib import Path
 
 from biblicus.extraction import (
-    load_or_build_extraction_snapshot,
     create_extraction_configuration_manifest,
+    create_extraction_snapshot_manifest,
     ExtractionSnapshotManifest,
+    load_or_build_extraction_snapshot,
 )
 
 
@@ -52,7 +53,7 @@ def test_load_or_build_uses_existing_manifest(tmp_path: Path):
 
 
 def test_extraction_uses_cached_final_text(tmp_path: Path):
-    from biblicus.extraction import build_extraction_snapshot, hash_text
+    from biblicus.extraction import build_extraction_snapshot
     from biblicus.models import CatalogItem, CorpusCatalog
     from biblicus.corpus import Corpus
 
@@ -83,7 +84,8 @@ def test_extraction_uses_cached_final_text(tmp_path: Path):
     config_manifest = create_extraction_configuration_manifest(
         extractor_id="pipeline", name="cfg", configuration={"stages": []}
     )
-    snapshot_id = hash_text(f"{config_manifest.configuration_id}:{catalog.generated_at}")
+    snapshot_manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
+    snapshot_id = snapshot_manifest.snapshot_id
     snapshot_dir = corpus.extraction_snapshot_dir(extractor_id="pipeline", snapshot_id=snapshot_id)
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     text_dir = snapshot_dir / "text"
@@ -103,7 +105,7 @@ def test_extraction_uses_cached_final_text(tmp_path: Path):
 
 
 def test_extraction_reuses_stage_cache(tmp_path: Path):
-    from biblicus.extraction import build_extraction_snapshot, hash_text, _pipeline_stage_dir_name
+    from biblicus.extraction import build_extraction_snapshot, _pipeline_stage_dir_name
     from biblicus.models import CatalogItem, CorpusCatalog
     from biblicus.corpus import Corpus
 
@@ -134,7 +136,8 @@ def test_extraction_reuses_stage_cache(tmp_path: Path):
     config_manifest = create_extraction_configuration_manifest(
         extractor_id="pipeline", name="cfg2", configuration={"stages": [{"extractor_id": "pass-through-text"}]}
     )
-    snapshot_id = hash_text(f"{config_manifest.configuration_id}:{catalog.generated_at}")
+    snapshot_manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
+    snapshot_id = snapshot_manifest.snapshot_id
     snapshot_dir = corpus.extraction_snapshot_dir(extractor_id="pipeline", snapshot_id=snapshot_id)
     stage_dir_name = _pipeline_stage_dir_name(stage_index=1, extractor_id="pass-through-text")
     stage_dir = snapshot_dir / "stages" / stage_dir_name
@@ -155,7 +158,7 @@ def test_extraction_reuses_stage_cache(tmp_path: Path):
 
 
 def test_extraction_stage_cache_loads_metadata(tmp_path: Path):
-    from biblicus.extraction import build_extraction_snapshot, hash_text, _pipeline_stage_dir_name
+    from biblicus.extraction import build_extraction_snapshot, _pipeline_stage_dir_name
     from biblicus.models import CatalogItem, CorpusCatalog
     from biblicus.corpus import Corpus
 
@@ -186,7 +189,8 @@ def test_extraction_stage_cache_loads_metadata(tmp_path: Path):
     config_manifest = create_extraction_configuration_manifest(
         extractor_id="pipeline", name="cfg3", configuration={"stages": [{"extractor_id": "pass-through-text"}]}
     )
-    snapshot_id = hash_text(f"{config_manifest.configuration_id}:{catalog.generated_at}")
+    snapshot_manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
+    snapshot_id = snapshot_manifest.snapshot_id
     snapshot_dir = corpus.extraction_snapshot_dir(extractor_id="pipeline", snapshot_id=snapshot_id)
     stage_dir_name = _pipeline_stage_dir_name(stage_index=1, extractor_id="pass-through-text")
     stage_dir = snapshot_dir / "stages" / stage_dir_name

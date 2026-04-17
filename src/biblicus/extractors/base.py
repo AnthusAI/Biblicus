@@ -9,8 +9,9 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from ..corpus import Corpus
 from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
+
+Corpus = Any
 
 
 class TextExtractor(ABC):
@@ -44,7 +45,7 @@ class TextExtractor(ABC):
     def extract_text(
         self,
         *,
-        corpus: Corpus,
+        corpus: "Corpus",
         item: CatalogItem,
         config: BaseModel,
         previous_extractions: List[ExtractionStageOutput],
