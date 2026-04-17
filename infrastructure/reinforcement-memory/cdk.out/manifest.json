@@ -1,5 +1,5 @@
 {
-  "version": "52.0.0",
+  "version": "53.0.0",
   "artifacts": {
     "ReinforcementMemoryStack.assets": {
       "type": "cdk:asset-manifest",
@@ -11,21 +11,21 @@
     },
     "ReinforcementMemoryStack": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://695039645615/us-east-1",
+      "environment": "aws://695039645615/us-west-2",
       "properties": {
         "templateFile": "ReinforcementMemoryStack.template.json",
         "terminationProtection": false,
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-deploy-role-695039645615-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-cfn-exec-role-695039645615-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-695039645615-us-east-1/7846a8c3a09ff5e0eb3710c0ba55ade97d23d6da914186e94608f533b30405c5.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-deploy-role-695039645615-us-west-2",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-cfn-exec-role-695039645615-us-west-2",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-695039645615-us-west-2/d90ca3cd3ecf1352c0e1ab34977dc193e94e926a3fa39995d44825375698bfdc.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "ReinforcementMemoryStack.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-lookup-role-695039645615-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::695039645615:role/cdk-hnb659fds-lookup-role-695039645615-us-west-2",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -488,16 +488,28 @@
             "recommendedValue": true,
             "explanation": "Use the `Distribution` resource instead of `CloudFrontWebDistribution`"
           },
+          "@aws-cdk/aws-cloudfront:defaultFunctionRuntimeV2_0": {
+            "recommendedValue": true,
+            "explanation": "Use cloudfront-js-2.0 as the default runtime for CloudFront Functions"
+          },
+          "@aws-cdk/aws-elasticloadbalancingv2:usePostQuantumTlsPolicy": {
+            "recommendedValue": true,
+            "explanation": "When enabled, HTTPS/TLS listeners use post-quantum TLS policy by default"
+          },
           "@aws-cdk/core:automaticL1Traits": {
             "recommendedValue": true,
             "explanation": "Automatically use the default L1 traits for L1 constructs`",
             "unconfiguredBehavesLike": {
               "v2": true
             }
+          },
+          "@aws-cdk/aws-batch:defaultToAL2023": {
+            "recommendedValue": true,
+            "explanation": "Use AL2023 as the default imageType for EC2 Batch compute environments instead of the deprecated AL2"
           }
         }
       }
     }
   },
-  "minimumCliVersion": "2.1107.0"
+  "minimumCliVersion": "2.1118.0"
 }

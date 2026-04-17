@@ -63,6 +63,7 @@ from biblicus.user_config import (
     _parse_account_name_from_connection_string,
     resolve_source_profile,
 )
+from biblicus.testing_values import build_test_value
 
 
 class _FakePlan:
@@ -510,7 +511,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         name="profile",
         kind="s3",
         access_key_id="id",
-        secret_access_key="secret",
+        secret_access_key=build_test_value("test", "s3", "secret"),
     )
     try:
         pull_collection(s3_collection_root)

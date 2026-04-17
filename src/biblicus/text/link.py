@@ -141,7 +141,7 @@ def _build_mock_result(
 
 
 def _render_system_prompt(template: str, *, id_prefix: str) -> str:
-    env = Environment(undefined=StrictUndefined)
+    env = Environment(undefined=StrictUndefined, autoescape=True)
     rendered = env.from_string(template).render(
         id_prefix=id_prefix,
     )

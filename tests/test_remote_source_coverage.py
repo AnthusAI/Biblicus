@@ -20,6 +20,7 @@ from biblicus.user_config import (
     resolve_openai_api_key,
     resolve_source_profile,
 )
+from biblicus.testing_values import build_test_value
 
 
 def _install_fake_boto3(monkeypatch, *, objects):
@@ -158,7 +159,7 @@ def test_s3_remote_source_list_and_fetch(monkeypatch):
         name="profile",
         kind="s3",
         access_key_id="id",
-        secret_access_key="secret",
+        secret_access_key=build_test_value("cfg", "s3", "secret"),
         session_token=None,
         region="us-east-1",
     )
@@ -310,14 +311,17 @@ def test_remote_corpus_source_config_validation():
 
 def test_resolve_openai_api_key_from_config(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    cfg = BiblicusUserConfig(openai=OpenAiUserConfig(api_key="cfg-openai"))
-    assert resolve_openai_api_key(config=cfg) == "cfg-openai"
+    configured_key = build_test_value("cfg", "openai")
+    cfg = BiblicusUserConfig(openai=OpenAiUserConfig(api_key=configured_key))
+    assert resolve_openai_api_key(config=cfg) == configured_key
 
 
 def test_resolve_s3_profile_env_override(monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "env-id")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "env-secret")
-    monkeypatch.setenv("AWS_SESSION_TOKEN", "env-token")
+    env_secret = build_test_value("env", "secret")
+    env_session = build_test_value("env", "session")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", env_secret)
+    monkeypatch.setenv("AWS_SESSION_TOKEN", env_session)
     monkeypatch.setenv("AWS_REGION", "us-west-2")
     cfg = BiblicusUserConfig(
         sources=[
@@ -325,7 +329,7 @@ def test_resolve_s3_profile_env_override(monkeypatch):
                 name="prod",
                 kind="s3",
                 access_key_id="cfg-id",
-                secret_access_key="cfg-secret",
+                secret_access_key=build_test_value("cfg", "secret"),
                 session_token=None,
                 region="us-east-1",
             )
@@ -333,8 +337,8 @@ def test_resolve_s3_profile_env_override(monkeypatch):
     )
     resolved = resolve_source_profile("prod", config=cfg)
     assert resolved.access_key_id == "env-id"
-    assert resolved.secret_access_key == "env-secret"
-    assert resolved.session_token == "env-token"
+    assert resolved.secret_access_key == env_secret
+    assert resolved.session_token == env_session
     assert resolved.region == "us-west-2"
 
 
@@ -349,7 +353,7 @@ def test_resolve_azure_profile_env_override(monkeypatch):
                 kind="azure-blob",
                 connection_string="cfg-conn",
                 account_name="cfg-acct",
-                account_key="cfg-key",
+                account_key=build_test_value("cfg", "key"),
             )
         ]
     )

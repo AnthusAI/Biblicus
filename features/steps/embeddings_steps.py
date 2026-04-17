@@ -7,6 +7,7 @@ from behave import then, when
 
 from biblicus.ai.embeddings import generate_embeddings, generate_embeddings_batch
 from biblicus.ai.models import AiProvider, EmbeddingsClientConfig
+from features.steps import openai_steps
 
 
 @when('I generate embeddings for texts "{texts}"')
@@ -14,7 +15,7 @@ def step_generate_embeddings_for_texts(context, texts: str) -> None:
     client = EmbeddingsClientConfig(
         provider=AiProvider.OPENAI,
         model="openai/text-embedding-3-small",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         batch_size=16,
         parallelism=4,
     )
@@ -27,7 +28,7 @@ def step_generate_embeddings_for_no_texts(context) -> None:
     client = EmbeddingsClientConfig(
         provider=AiProvider.OPENAI,
         model="text-embedding-3-small",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         batch_size=16,
         parallelism=4,
     )
@@ -78,7 +79,7 @@ def step_attempt_generate_embeddings_with_provider(context, provider: str) -> No
         config = EmbeddingsClientConfig(
             provider=AiProvider(provider),
             model="text-embedding-3-small",
-            api_key="test-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
         )
         _ = generate_embeddings_batch(client=config, texts=["alpha"])
         context.last_result = _Result(returncode=0, stdout="", stderr="")
@@ -91,7 +92,7 @@ def step_generate_embedding_for_text(context, text: str) -> None:
     client = EmbeddingsClientConfig(
         provider=AiProvider.OPENAI,
         model="text-embedding-3-small",
-        api_key="test-key",
+        api_key=openai_steps.build_test_openai_api_key_value(),
         batch_size=16,
         parallelism=4,
     )
@@ -111,7 +112,7 @@ def step_attempt_generate_embeddings_for_texts(context, texts: str) -> None:
         client = EmbeddingsClientConfig(
             provider=AiProvider.OPENAI,
             model="text-embedding-3-small",
-            api_key="test-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             batch_size=16,
             parallelism=4,
         )

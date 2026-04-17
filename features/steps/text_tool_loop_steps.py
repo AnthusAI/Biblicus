@@ -7,6 +7,7 @@ from behave import then, when
 from biblicus.ai.llm import ChatCompletionResult
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text import tool_loop
+from features.steps import openai_steps
 
 
 @when("I build a tool loop retry message with a custom builder")
@@ -69,7 +70,7 @@ def step_run_tool_loop_no_op(context) -> None:
             client=LlmClientConfig(
                 provider=AiProvider.OPENAI,
                 model="gpt-4o-mini",
-                api_key="test-openai-key",
+                api_key=openai_steps.build_test_openai_api_key_value(),
                 response_format="json_object",
             ),
             system_prompt="You are a virtual file editor.\nCurrent text:\n---\n{text}\n---",

@@ -5,6 +5,7 @@ from behave import then, when
 from biblicus.ai.models import AiProvider, LlmClientConfig
 from biblicus.text.extract import TextExtractRequest, _validate_preserved_text, apply_text_extract
 from biblicus.text.tool_loop import ToolLoopResult
+from features.steps import openai_steps
 
 
 def _build_extract_request(text: str) -> TextExtractRequest:
@@ -13,7 +14,7 @@ def _build_extract_request(text: str) -> TextExtractRequest:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return spans.",
@@ -50,7 +51,7 @@ def step_apply_text_extract(context, text: str) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested text.",
@@ -90,7 +91,7 @@ def step_apply_text_extract_multiline(context) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested text.",
@@ -191,7 +192,7 @@ def step_attempt_apply_text_extract(context, text: str) -> None:
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested text.",
@@ -233,7 +234,7 @@ def step_attempt_apply_text_extract_with_provider(context, provider: str, text: 
         client=LlmClientConfig(
             provider=AiProvider(provider),
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested text.",
@@ -280,7 +281,7 @@ def step_attempt_text_extract_with_limits(
         client=LlmClientConfig(
             provider=AiProvider.OPENAI,
             model="gpt-4o-mini",
-            api_key="test-openai-key",
+            api_key=openai_steps.build_test_openai_api_key_value(),
             response_format="json_object",
         ),
         prompt_template="Return the requested text.",
@@ -303,7 +304,7 @@ def step_validate_text_extract_system_prompt(context, system_prompt: str) -> Non
             client=LlmClientConfig(
                 provider=AiProvider.OPENAI,
                 model="gpt-4o-mini",
-                api_key="test-openai-key",
+                api_key=openai_steps.build_test_openai_api_key_value(),
             ),
             prompt_template="Return the requested text.",
             system_prompt=system_prompt,
@@ -323,7 +324,7 @@ def step_validate_text_extract_prompt_template(context, prompt_template: str) ->
             client=LlmClientConfig(
                 provider=AiProvider.OPENAI,
                 model="gpt-4o-mini",
-                api_key="test-openai-key",
+                api_key=openai_steps.build_test_openai_api_key_value(),
             ),
             prompt_template=prompt_template,
             system_prompt="System {text}",

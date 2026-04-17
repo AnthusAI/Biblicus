@@ -1,6 +1,15 @@
-import { CfnOutput, CfnResource, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import {
+  Aspects,
+  CfnOutput,
+  CfnResource,
+  Duration,
+  IAspect,
+  RemovalPolicy,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
+import { Construct, IConstruct } from 'constructs';
 
 export interface ReinforcementMemoryStackProps extends StackProps {
   /**
@@ -17,6 +26,14 @@ export interface ReinforcementMemoryStackProps extends StackProps {
    * @default 384
    */
   embeddingDimension?: number;
+}
+
+class LambdaTracingAspect implements IAspect {
+  public visit(node: IConstruct): void {
+    if (node instanceof CfnResource && node.cfnResourceType === 'AWS::Lambda::Function') {
+      node.addPropertyOverride('TracingConfig.Mode', 'Active');
+    }
+  }
 }
 
 function normalizeSlug(value: string, fallback: string): string {
@@ -58,6 +75,7 @@ export class ReinforcementMemoryStack extends Stack {
 
   constructor(scope: Construct, id: string, props: ReinforcementMemoryStackProps) {
     super(scope, id, props);
+    Aspects.of(this).add(new LambdaTracingAspect());
 
     const prefix = normalizeSlug(props.projectPrefix, 'app');
     const env = normalizeSlug(props.environmentName, 'development');
@@ -97,8 +115,34 @@ export class ReinforcementMemoryStack extends Stack {
     );
 
     // Embeddings cache bucket
+    const embeddingsAccessLogsBucket = new s3.Bucket(this, 'EmbeddingsAccessLogsBucket', {
+      bucketName: `${prefix}-embeddings-access-logs-${env}`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      versioned: true,
+      lifecycleRules: [
+        {
+          expiration: Duration.days(90),
+        },
+      ],
+      removalPolicy: isDevelopment ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN,
+      autoDeleteObjects: isDevelopment,
+    });
+    const embeddingsAccessLogsCfnBucket = embeddingsAccessLogsBucket.node
+      .defaultChild as s3.CfnBucket;
+    embeddingsAccessLogsCfnBucket.loggingConfiguration = {
+      destinationBucketName: embeddingsAccessLogsBucket.bucketName,
+      logFilePrefix: 'embeddings-access-logs-bucket/',
+    };
+
     const embeddingsBucket = new s3.Bucket(this, 'EmbeddingsBucket', {
       bucketName: this.embeddingsBucketName,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      versioned: true,
+      serverAccessLogsBucket: embeddingsAccessLogsBucket,
+      serverAccessLogsPrefix: 'embeddings-access-logs/',
       removalPolicy: isDevelopment ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN,
       autoDeleteObjects: isDevelopment,
     });

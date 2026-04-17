@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Use of Password Hash With Insufficient Computational Effort",
   "description": "## Use of Password Hash With Insufficient Computational Effort\n\n**Severity:** low\n**Project:** `AnthusAI/Biblicus`\n**File:** `src/biblicus/analysis/reinforcement_memory/_embedding.py`\n**Location:** line 185, column 24 to line 185, column 67\n**Classes:** CWE-CWE-916\n### Snippet (src/biblicus/analysis/reinforcement_memory/_embedding.py:183-187)\n```\n 183 |         result = []\n 184 |         for text in texts:\n 185 |             seed = int(hashlib.md5(text.encode(\"utf-8\")).hexdigest(), 16) % (2**32)\n 186 |             rng = np.random.default_rng(seed)\n 187 |             vec = rng.standard_normal(dimensions).astype(np.float32)\n```\n\n**Issue Key:** 6fea09bc-eb7e-4333-a59f-1c05ae3542f0\n\n### Details\nUse of Password Hash With Insufficient Computational Effort\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "assignee": null,
   "creator": null,
@@ -13,11 +13,19 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "4493f08f-dfa6-4d56-ad73-5b5c99d64b41",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in src/biblicus/analysis/reinforcement_memory/_embedding.py by replacing md5 with sha256 in the deterministic hash embedder seed. Verified in Snyk Code scan on 2026-04-17 (0 total findings).",
+      "created_at": "2026-04-17T16:44:33.796963Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.297798Z",
-  "updated_at": "2026-04-13T17:45:49.297798Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T16:44:36.881480Z",
+  "closed_at": "2026-04-17T16:44:36.881480Z",
   "custom": {
+    "project_label": "blbs",
     "snyk_column": 24,
     "snyk_end_column": 67,
     "snyk_end_line": 185,
@@ -25,6 +33,7 @@
     "snyk_key": "6fea09bc-eb7e-4333-a59f-1c05ae3542f0",
     "snyk_line": 185,
     "snyk_severity": "low",
-    "snyk_type": "code"
+    "snyk_type": "code",
+    "source": "shared"
   }
 }

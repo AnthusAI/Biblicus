@@ -3,7 +3,7 @@
   "title": "[Snyk Code] Jinja auto-escape is set to false.",
   "description": "## Jinja auto-escape is set to false.\n\n**Severity:** medium\n**Project:** `AnthusAI/Biblicus`\n**File:** `src/biblicus/text/link.py`\n**Location:** line 144, column 11 to line 144, column 22\n**Classes:** CWE-CWE-79\n### Snippet (src/biblicus/text/link.py:142-146)\n```\n 142 | \n 143 | def _render_system_prompt(template: str, *, id_prefix: str) -> str:\n 144 |     env = Environment(undefined=StrictUndefined)\n 145 |     rendered = env.from_string(template).render(\n 146 |         id_prefix=id_prefix,\n```\n\n**Issue Key:** b7705a3a-28ea-4686-9891-ca326dc9c935\n\n### Details\nJinja auto-escape is set to false.\n\n**Fix:** Review and remediate in code.",
   "type": "sub-task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -13,11 +13,19 @@
     "snyk"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "de37eb65-2586-469b-8bc4-ace01861c7ef",
+      "author": "derek.norrbom",
+      "text": "Closed: remediated in src/biblicus/text/link.py by setting explicit Jinja Environment autoescape. Verified in Snyk Code scan on 2026-04-17 (0 total findings).",
+      "created_at": "2026-04-17T16:44:33.782708Z"
+    }
+  ],
   "created_at": "2026-04-13T17:45:49.236495Z",
-  "updated_at": "2026-04-13T17:45:49.236495Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T16:44:36.833236Z",
+  "closed_at": "2026-04-17T16:44:36.833236Z",
   "custom": {
+    "project_label": "blbs",
     "snyk_column": 11,
     "snyk_end_column": 22,
     "snyk_end_line": 144,
@@ -25,6 +33,7 @@
     "snyk_key": "b7705a3a-28ea-4686-9891-ca326dc9c935",
     "snyk_line": 144,
     "snyk_severity": "medium",
-    "snyk_type": "code"
+    "snyk_type": "code",
+    "source": "shared"
   }
 }

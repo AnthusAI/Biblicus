@@ -15,6 +15,7 @@ from biblicus.text.redact import (
     apply_text_redact,
 )
 from biblicus.text.tool_loop import ToolLoopResult
+from features.steps import openai_steps
 
 
 def _redact_system_prompt_template() -> str:
@@ -60,7 +61,7 @@ def _build_redact_request(
     redaction_types: Optional[List[str]] = None,
     max_rounds: int = 6,
     max_edits_per_round: int = 10,
-    api_key: Optional[str] = "test-openai-key",
+    api_key: Optional[str] = openai_steps.build_test_openai_api_key_value(),
     timeout_seconds: Optional[float] = None,
 ) -> TextRedactRequest:
     return TextRedactRequest(

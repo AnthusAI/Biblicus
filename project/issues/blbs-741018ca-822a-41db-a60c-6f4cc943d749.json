@@ -3,7 +3,7 @@
   "title": "Snyk Vulnerability Remediation",
   "description": "Track remediation of Snyk vulnerabilities.",
   "type": "initiative",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -25,10 +25,19 @@
       "author": "derek.norrbom",
       "text": "Python dependency stream update: remediated and closed pypdf sub-task (blbs-16a539). Remaining Python dependency findings are the 14 no-fix torch/transformers items pending ignore/review workflow.",
       "created_at": "2026-04-13T18:17:01.131395Z"
+    },
+    {
+      "id": "a3e23ca5-44ae-4bf3-8c27-79cfc23f6a97",
+      "author": "derek.norrbom",
+      "text": "As of 2026-04-17, child umbrellas for Snyk Code and Snyk Dependency vulnerabilities are closed after remediation and verification (including reinforcement-memory IaC template now reporting 0 issues). Closing this parent remediation task.",
+      "created_at": "2026-04-17T17:16:33.802534Z"
     }
   ],
   "created_at": "2026-04-13T17:45:49.192617Z",
-  "updated_at": "2026-04-13T18:17:01.131395Z",
-  "closed_at": null,
-  "custom": {}
+  "updated_at": "2026-04-17T17:16:33.810934Z",
+  "closed_at": "2026-04-17T17:16:33.810934Z",
+  "custom": {
+    "project_label": "blbs",
+    "source": "shared"
+  }
 }

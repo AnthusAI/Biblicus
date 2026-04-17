@@ -8,7 +8,11 @@
   "assignee": null,
   "creator": "Ryan Alyn Porter",
   "parent": null,
-  "labels": [],
+  "labels": [
+    "benchmarking",
+    "biblicus-stt",
+    "dataset"
+  ],
   "dependencies": [],
   "comments": [],
   "created_at": "2026-02-14T01:38:54.046521Z",
