@@ -3,7 +3,7 @@
   "title": "Upgrade pypdf to 6.10.2 to resolve remaining Snyk vulnerabilities",
   "description": "Resolve remaining Snyk dependency findings SNYK-PYTHON-PYPDF-16097903, SNYK-PYTHON-PYPDF-16097899, and SNYK-PYTHON-PYPDF-16097901 by upgrading pypdf from 6.10.0 to 6.10.2 and validating lint/tests/snyk scan output.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -28,7 +28,7 @@
     }
   ],
   "created_at": "2026-04-17T18:36:51.343983Z",
-  "updated_at": "2026-04-17T18:58:06.704657Z",
-  "closed_at": null,
+  "updated_at": "2026-04-17T19:52:30.435223Z",
+  "closed_at": "2026-04-17T19:52:30.435223Z",
   "custom": {}
 }
