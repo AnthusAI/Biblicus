@@ -32,10 +32,16 @@
       "author": "derek.norrbom",
       "text": "Follow-up lint fix pushed in commit 2fec4f2 and PR #34 opened to develop: https://github.com/AnthusAI/Biblicus/pull/34. Addresses CI Ruff failures (F821/I001) in extraction modules. Validation: poetry run ruff check src/biblicus/ => All checks passed.",
       "created_at": "2026-04-17T17:43:47.776418Z"
+    },
+    {
+      "id": "3dcd5d95-2dcd-458c-9436-ef0c60db635c",
+      "author": "derek.norrbom",
+      "text": "Applied senior-level fix for CI extraction regressions without compatibility shims: updated extraction tests to use canonical APIs/module ownership (create_extraction_snapshot_manifest for snapshot IDs, PipelineExtractorConfig from biblicus.extractors.pipeline). Validation: poetry run ruff check src/biblicus/ and poetry run python scripts/test.py both pass locally.",
+      "created_at": "2026-04-17T17:58:56.884973Z"
     }
   ],
   "created_at": "2026-04-17T17:34:22.635159Z",
-  "updated_at": "2026-04-17T17:43:47.776418Z",
+  "updated_at": "2026-04-17T17:58:56.884973Z",
   "closed_at": null,
   "custom": {}
 }
