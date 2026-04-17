@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from biblicus import extraction
 from biblicus.corpus import Corpus
+from biblicus.extractors.pipeline import PipelineExtractorConfig
 
 
 def test_extraction_log_interval_and_heartbeat(monkeypatch, tmp_path, capsys):
@@ -18,7 +19,7 @@ def test_extraction_log_interval_and_heartbeat(monkeypatch, tmp_path, capsys):
                 extractor_id = "pipeline"
 
                 def validate_config(self, config):  # noqa: D401
-                    return extraction.PipelineExtractorConfig.model_validate(config)
+                    return PipelineExtractorConfig.model_validate(config)
 
             return DummyPipelineExtractor()
 
