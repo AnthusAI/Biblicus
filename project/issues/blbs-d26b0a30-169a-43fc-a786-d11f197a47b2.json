@@ -1,0 +1,39 @@
+{
+  "id": "blbs-d26b0a30-169a-43fc-a786-d11f197a47b2",
+  "title": "[Dependabot] GHSA-v92g-xgxw-vvmm in Mako",
+  "description": "## Mako: Path traversal via double-slash URI prefix in TemplateLookup\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 88\n**Severity:** medium\n**State:** open\n**Package:** `Mako`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Summary\n\n`TemplateLookup.get_template()` is vulnerable to path traversal when a URI starts with `//` (e.g., `//../../../secret.txt`). The root cause is an inconsistency between two slash-stripping implementations:\n\n- `Template.__init__` strips **one** leading `/` using `if`/slice\n- `TemplateLookup.get_template()` strips **all** leading `/` using `re.sub(r\"^\\/+\", \"\")`\n\nWhen a URI like `//../../../../etc/passwd` is passed:\n1. `get_template()` strips all `/` → `../../../../etc/passwd` → file found via `posixpath.join(dir_, u)`\n2. `Template.__init__` strips one `/` → `/../../../../etc/passwd` → `normpath` → `/etc/passwd`\n3. `/etc/passwd`.startswith(`..`) → `False` → **check bypassed**\n\n### Impact\n\nArbitrary file read: any file readable by the process can be returned as rendered template content when an application passes untrusted input directly to `TemplateLookup.get_template()`.\n\nNote: this is exploitable at the library API level. HTTP-based exploitation is mitigated by Python's `BaseHTTPRequestHandler` which normalizes double-slash prefixes since CPython gh-87389. Applications using other HTTP servers that do not normalize paths may be affected.\n\n### Fix\n\nChanged `Template.__init__` to use `lstrip(\"/\")` instead of stripping only a single leading slash, so both code paths handle leading slashes consistently.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/88",
+  "type": "sub-task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "c4bdc439-17ab-44f1-b652-2c1075086c97",
+      "author": "derek.norrbom",
+      "text": "Remediation implemented in poetry.lock: Mako updated to 1.3.11 (first patched version for GHSA-v92g-xgxw-vvmm).",
+      "created_at": "2026-04-17T20:00:20.782222Z"
+    }
+  ],
+  "created_at": "2026-04-17T19:54:00.950187Z",
+  "updated_at": "2026-04-17T20:00:20.782222Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 88,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/88",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "Mako",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "blbs-e067c722-ab02-4340-bd59-8eb11d4441d4",
+  "title": "Resolve dashboard lodash Snyk findings via dependency update",
+  "description": "Fix remaining Snyk dashboard npm findings SNYK-JS-LODASH-15869619 and SNYK-JS-LODASH-15869625 (aws-amplify -> @aws-amplify/notifications -> lodash) with a safe dependency update and validate via snyk test on apps/dashboard/package-lock.json.",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "security",
+    "snyk"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "e1c36a07-7ae0-44cd-94b3-a4bab83828a8",
+      "author": "derek.norrbom",
+      "text": "Implemented dashboard fix path: bumped aws-amplify to ^6.16.4 and refreshed apps/dashboard lockfile, which pulls @aws-amplify/notifications 2.0.94 and lodash 4.18.1 on the vulnerable path. Validation: snyk test --file=apps/dashboard/package-lock.json --package-manager=npm => no known vulnerabilities; snyk test --all-projects => no vulnerable paths found.",
+      "created_at": "2026-04-17T18:58:06.704696Z"
+    }
+  ],
+  "created_at": "2026-04-17T18:56:45.496133Z",
+  "updated_at": "2026-04-17T19:52:30.448859Z",
+  "closed_at": "2026-04-17T19:52:30.448859Z",
+  "custom": {}
+}

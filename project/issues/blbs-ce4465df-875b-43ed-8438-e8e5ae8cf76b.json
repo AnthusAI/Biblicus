@@ -1,0 +1,39 @@
+{
+  "id": "blbs-ce4465df-875b-43ed-8438-e8e5ae8cf76b",
+  "title": "[Dependabot] GHSA-whj4-6x5x-4v2j in pillow",
+  "description": "## FITS GZIP decompression bomb in Pillow\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 81\n**Severity:** high\n**State:** open\n**Package:** `pillow`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\nPillow did not limit the amount of GZIP-compressed data read when decoding a FITS image, making it vulnerable to decompression bomb attacks. A specially crafted FITS file could cause unbounded memory consumption, leading to denial of service (OOM crash or severe performance degradation).\n\n### Patches\nThe amount of data read is now limited to the necessary amount.\nFixed in Pillow 12.2.0 (PR #9521).\n\n### Workarounds\nAvoid Pillow >= 10.3.0, < 12.2.0\nOnly open [specific image formats](https://pillow.readthedocs.io/en/stable/releasenotes/8.0.0.html#image-open-add-formats-parameter), excluding FITS.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/81",
+  "type": "sub-task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b1c1b24a-cbff-405f-88b7-a73249e0fad0",
+      "author": "derek.norrbom",
+      "text": "Remediation implemented in poetry.lock: pillow updated to 12.2.0 (first patched version for GHSA-whj4-6x5x-4v2j).",
+      "created_at": "2026-04-17T20:00:20.763796Z"
+    }
+  ],
+  "created_at": "2026-04-17T19:54:00.951241Z",
+  "updated_at": "2026-04-17T20:00:20.763796Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 81,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/81",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pillow",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}
