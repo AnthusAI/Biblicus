@@ -1039,6 +1039,9 @@ def _build_observations(
             prompt = llm.prompt_template.format(segment=observation.segment_text)
             max_attempts = 4
             last_error: Optional[str] = None
+            label_value = "unknown"
+            confidence_value = 0.0
+            summary_value = "unknown"
             for attempt in range(1, max_attempts + 1):
                 try:
                     response_text = generate_completion(

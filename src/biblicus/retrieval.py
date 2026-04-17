@@ -8,7 +8,6 @@ import hashlib
 import json
 from typing import Any, Dict, Iterable, List, Optional
 
-from .corpus import Corpus
 from .models import (
     ConfigurationManifest,
     Evidence,
