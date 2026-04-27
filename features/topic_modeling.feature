@@ -403,6 +403,46 @@ Feature: Topic modeling analysis
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output llm extraction output documents equals 2
+    And the analysis manifest includes artifact path "llm_extraction.jsonl"
+    And the analysis artifact "llm_extraction.jsonl" contains text "First item"
+    And the analysis artifact "llm_extraction.jsonl" contains text "Second item"
+
+  Scenario: Topic analysis runs LLM extraction with configured parallel workers
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0,0,0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    And a fake OpenAI library is available that returns chat completion "Parallel intent" for any prompt
+    And an OpenAI API key is configured for this scenario
+    When I ingest the text "One note" with title "One" and tags "t" into corpus "corpus"
+    And I ingest the text "Two note" with title "Two" and tags "t" into corpus "corpus"
+    And I ingest the text "Three note" with title "Three" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: true
+        method: single
+        max_workers: 3
+        client:
+          provider: openai
+          model: gpt-4o-mini
+        prompt_template: "Summarize: {text}"
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+      llm_fine_tuning:
+        enabled: false
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the topic analysis output llm extraction output documents equals 3
+    And standard error includes "workers=3"
 
   Scenario: Topic analysis fails when LLM extraction returns empty output
     Given I initialized a corpus at "corpus"

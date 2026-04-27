@@ -10,6 +10,7 @@ import string
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -166,10 +167,22 @@ def _run_topic_modeling(
         config=config.text_source,
     )
 
+    llm_extraction_cache_path = _llm_extraction_cache_path(corpus=corpus, config=config)
+    if llm_extraction_cache_path is not None:
+        _seed_llm_extraction_cache(
+            analysis_root=corpus.analysis_dir / TopicModelingBackend.analysis_id,
+            cache_path=llm_extraction_cache_path,
+            config=config.llm_extraction,
+            documents=documents,
+        )
     llm_extraction_report, extracted_documents = _apply_llm_extraction(
         documents=documents,
         config=config.llm_extraction,
+        cache_path=llm_extraction_cache_path,
     )
+    llm_extraction_path = run_dir / "llm_extraction.jsonl"
+    if config.llm_extraction.enabled:
+        _write_documents_jsonl(llm_extraction_path, extracted_documents)
 
     entity_removal_path = run_dir / "entity_removal.jsonl"
     entity_removal_report, entity_documents = _apply_entity_removal(
@@ -221,6 +234,8 @@ def _run_topic_modeling(
         "topics": bertopic_report.topic_count,
     }
     artifact_paths = ["output.json"]
+    if config.llm_extraction.enabled:
+        artifact_paths.append("llm_extraction.jsonl")
     if config.entity_removal.enabled:
         artifact_paths.append("entity_removal.jsonl")
 
@@ -276,6 +291,9 @@ def run_topic_modeling_for_documents(
         documents=documents,
         config=config.llm_extraction,
     )
+    if artifacts_dir is not None and config.llm_extraction.enabled:
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        _write_documents_jsonl(artifacts_dir / "llm_extraction.jsonl", extracted_documents)
 
     entity_removal_path = (
         artifacts_dir / "entity_removal.jsonl" if artifacts_dir is not None else None
@@ -343,6 +361,30 @@ def _create_configuration_manifest(
         name=name,
         created_at=utc_now_iso(),
         config=config.model_dump(),
+    )
+
+
+def _llm_extraction_cache_identity(config: TopicModelingLlmExtractionConfig) -> str:
+    payload = config.model_dump()
+    payload.pop("max_workers", None)
+    client_payload = payload.get("client")
+    if isinstance(client_payload, dict):
+        client_payload.pop("api_key", None)
+    return hash_text(json.dumps(payload, sort_keys=True))
+
+
+def _llm_extraction_cache_path(
+    *, corpus: Corpus, config: TopicModelingConfiguration
+) -> Optional[Path]:
+    if not config.llm_extraction.enabled:
+        return None
+    cache_id = _llm_extraction_cache_identity(config.llm_extraction)
+    return (
+        corpus.analysis_dir
+        / TopicModelingBackend.analysis_id
+        / "cache"
+        / "llm-extraction"
+        / f"{cache_id}.jsonl"
     )
 
 
@@ -422,6 +464,7 @@ def _apply_llm_extraction(
     *,
     documents: List[TopicModelingDocument],
     config: TopicModelingLlmExtractionConfig,
+    cache_path: Optional[Path] = None,
 ) -> Tuple[TopicModelingLlmExtractionReport, List[TopicModelingDocument]]:
     if not config.enabled:
         report = TopicModelingLlmExtractionReport(
@@ -436,6 +479,10 @@ def _apply_llm_extraction(
 
     extracted_documents: List[TopicModelingDocument] = []
     errors: List[str] = []
+    fatal_errors: List[str] = []
+    cached_outputs = _read_llm_extraction_cache(cache_path)
+    generated_outputs: Dict[str, List[TopicModelingDocument]] = {}
+    cache_lock = threading.Lock()
     total = len(documents)
     if total <= 50:
         log_interval = 10
@@ -448,6 +495,13 @@ def _apply_llm_extraction(
     start_time = time.perf_counter()
     last_log_time = start_time
     completed = 0
+
+    print(
+        f"[topic-modeling] llm extraction starting documents={total} "
+        f"workers={config.max_workers}",
+        flush=True,
+        file=sys.stderr,
+    )
 
     def log_progress() -> None:
         nonlocal last_log_time
@@ -463,7 +517,9 @@ def _apply_llm_extraction(
             )
             last_log_time = now
 
-    for document in documents:
+    def extract_document(
+        document: TopicModelingDocument,
+    ) -> Tuple[List[TopicModelingDocument], List[str]]:
         prompt = config.prompt_template.format(text=document.text)
         response_text = generate_completion(
             client=config.client,
@@ -472,46 +528,220 @@ def _apply_llm_extraction(
         ).strip()
         if config.method == TopicModelingLlmExtractionMethod.SINGLE:
             if not response_text:
-                errors.append(f"LLM extraction returned empty output for {document.document_id}")
-                continue
-            extracted_documents.append(
+                return [], [
+                    f"LLM extraction returned empty output for {document.document_id}"
+                ]
+            return [
                 TopicModelingDocument(
                     document_id=document.document_id,
                     source_item_id=document.source_item_id,
                     text=response_text,
                 )
-            )
-            completed += 1
-            log_progress()
-            continue
+            ], []
         items = _parse_itemized_response(response_text)
         if not items:
-            errors.append(f"LLM itemization returned no items for {document.document_id}")
+            return [], [f"LLM itemization returned no items for {document.document_id}"]
+        return [
+            TopicModelingDocument(
+                document_id=f"{document.document_id}:{index}",
+                source_item_id=document.source_item_id,
+                text=item_text,
+            )
+            for index, item_text in enumerate(items, start=1)
+        ], []
+
+    def record_generated(
+        document: TopicModelingDocument, output_documents: List[TopicModelingDocument]
+    ) -> None:
+        if cache_path is None or not output_documents:
+            return
+        cache_key = _llm_extraction_document_cache_key(document)
+        with cache_lock:
+            if cache_key in cached_outputs or cache_key in generated_outputs:
+                return
+            generated_outputs[cache_key] = list(output_documents)
+            _append_llm_extraction_cache_entry(
+                path=cache_path,
+                cache_key=cache_key,
+                documents=output_documents,
+            )
+
+    ordered_outputs: List[List[TopicModelingDocument]] = [[] for _ in documents]
+    to_generate: List[tuple[int, TopicModelingDocument]] = []
+    for index, document in enumerate(documents):
+        cached = cached_outputs.get(_llm_extraction_document_cache_key(document))
+        if cached is not None:
+            ordered_outputs[index] = cached
             completed += 1
             log_progress()
-            continue
-        for index, item_text in enumerate(items, start=1):
-            extracted_documents.append(
-                TopicModelingDocument(
-                    document_id=f"{document.document_id}:{index}",
-                    source_item_id=document.source_item_id,
-                    text=item_text,
-                )
-            )
+        else:
+            to_generate.append((index, document))
+
+    def record_result(index: int, document: TopicModelingDocument) -> None:
+        nonlocal completed
+        try:
+            output_documents, result_errors = extract_document(document)
+        except Exception as exc:  # noqa: BLE001
+            output_documents = []
+            result_errors = []
+            fatal_errors.append(f"LLM extraction failed for {document.document_id}: {exc}")
+        ordered_outputs[index] = output_documents
+        if result_errors:
+            errors.extend(result_errors)
+        else:
+            record_generated(document, output_documents)
         completed += 1
         log_progress()
+
+    if config.max_workers == 1 or len(to_generate) <= 1:
+        for index, document in to_generate:
+            record_result(index, document)
+    else:
+        with ThreadPoolExecutor(max_workers=config.max_workers) as executor:
+            futures = {
+                executor.submit(extract_document, document): (index, document)
+                for index, document in to_generate
+            }
+            for future in as_completed(futures):
+                index, document = futures[future]
+                try:
+                    output_documents, result_errors = future.result()
+                except Exception as exc:  # noqa: BLE001
+                    output_documents = []
+                    result_errors = []
+                    fatal_errors.append(
+                        f"LLM extraction failed for {document.document_id}: {exc}"
+                    )
+                ordered_outputs[index] = output_documents
+                if result_errors:
+                    errors.extend(result_errors)
+                else:
+                    record_generated(document, output_documents)
+                completed += 1
+                log_progress()
+
+    for output_documents in ordered_outputs:
+        for output_document in output_documents:
+            extracted_documents.append(output_document)
+
+    report_warnings: List[str] = []
+    cached_count = total - len(to_generate)
+    if cached_count:
+        report_warnings.append(f"Reused cached LLM extraction documents for {cached_count} inputs")
 
     report = TopicModelingLlmExtractionReport(
         status=TopicModelingStageStatus.COMPLETE,
         method=config.method,
         input_documents=len(documents),
         output_documents=len(extracted_documents),
-        warnings=[],
-        errors=errors,
+        warnings=report_warnings,
+        errors=fatal_errors + errors,
     )
     if not extracted_documents:
+        if fatal_errors:
+            raise ValueError("; ".join(fatal_errors))
         raise ValueError("LLM extraction produced no usable documents")
     return report, extracted_documents
+
+
+def _llm_extraction_document_cache_key(document: TopicModelingDocument) -> str:
+    return hash_text(f"{document.document_id}:{document.source_item_id}:{document.text}")
+
+
+def _append_llm_extraction_cache_entry(
+    *, path: Path, cache_key: str, documents: List[TopicModelingDocument]
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cache_key": cache_key,
+        "documents": [
+            {
+                "document_id": document.document_id,
+                "source_item_id": document.source_item_id,
+                "text": document.text,
+            }
+            for document in documents
+        ],
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+
+
+def _read_llm_extraction_cache(
+    path: Optional[Path],
+) -> Dict[str, List[TopicModelingDocument]]:
+    if path is None or not path.exists():
+        return {}
+    cached: Dict[str, List[TopicModelingDocument]] = {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            payload = json.loads(line)
+            cache_key = str(payload.get("cache_key") or "")
+            documents_payload = payload.get("documents")
+            if not cache_key or not isinstance(documents_payload, list):
+                continue
+            cached[cache_key] = [
+                TopicModelingDocument(
+                    document_id=str(document_payload.get("document_id", "")),
+                    source_item_id=str(document_payload.get("source_item_id", "")),
+                    text=str(document_payload.get("text", "")),
+                )
+                for document_payload in documents_payload
+                if isinstance(document_payload, dict)
+            ]
+    return cached
+
+
+def _seed_llm_extraction_cache(
+    *,
+    analysis_root: Path,
+    cache_path: Path,
+    config: TopicModelingLlmExtractionConfig,
+    documents: List[TopicModelingDocument],
+) -> None:
+    existing_cache = _read_llm_extraction_cache(cache_path)
+    source_documents = {document.document_id: document for document in documents}
+    target_identity = _llm_extraction_cache_identity(config)
+    seeded = 0
+    for output_path in analysis_root.glob("*/output.json"):
+        llm_path = output_path.parent / "llm_extraction.jsonl"
+        if not llm_path.exists():
+            continue
+        try:
+            output_payload = json.loads(output_path.read_text(encoding="utf-8"))
+            output_config = TopicModelingConfiguration.model_validate(
+                output_payload["snapshot"]["configuration"]["config"]
+            )
+        except (KeyError, OSError, json.JSONDecodeError, ValueError):
+            continue
+        if _llm_extraction_cache_identity(output_config.llm_extraction) != target_identity:
+            continue
+        grouped: Dict[str, List[TopicModelingDocument]] = {}
+        for output_document in _read_documents_jsonl(llm_path):
+            source_document_id = output_document.document_id.split(":", 1)[0]
+            if source_document_id not in source_documents:
+                continue
+            grouped.setdefault(source_document_id, []).append(output_document)
+        for source_document_id, output_documents in grouped.items():
+            cache_key = _llm_extraction_document_cache_key(source_documents[source_document_id])
+            if cache_key in existing_cache:
+                continue
+            _append_llm_extraction_cache_entry(
+                path=cache_path,
+                cache_key=cache_key,
+                documents=output_documents,
+            )
+            existing_cache[cache_key] = output_documents
+            seeded += 1
+    if seeded:
+        print(
+            f"[topic-modeling] seeded {seeded} LLM extraction cache entries",
+            flush=True,
+            file=sys.stderr,
+        )
 
 
 def _remove_entities_from_text(
