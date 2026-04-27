@@ -177,6 +177,39 @@ boilerplate_prefix_count == 0
 
 Inspect at least three positive intents and three remaining `Not Applicable` transcripts before moving from pilot to full run.
 
+## Provider-Generated Summaries
+
+Provider summary fields are a valid alternate representation for topic modeling, but treat them as a separate analysis surface from custom key-intent summaries.
+
+Before modeling provider summaries:
+
+1. Verify the provider summary fields are actually populated. Some provider responses include summary-related keys that are empty because summarization was not enabled.
+2. If summaries must be generated after transcription, keep them as a separate cached artifact keyed by corpus item id, then merge them back into provider JSON only for delivery/export.
+3. Preserve the original provider JSON and produce an updated provider JSON export separately. Do not overwrite raw provider responses unless the workflow explicitly calls for a derived artifact.
+4. Run topic modeling over the summary text only, not over full provider JSON or transcript text.
+5. Apply the same document eligibility set used by the primary analysis. If the primary customer-intent model excludes `Not Applicable`, internal, empty, or errored calls, exclude the same item ids from provider-summary topic modeling. Otherwise the provider-summary model will include calls that the primary customer-intent analysis intentionally removed.
+6. Keep a summary-only JSONL or CSV with `document_id`, `source_item_id`, summary text, topic id, topic label, and topic keywords.
+
+Provider summaries often include boilerplate such as `customer`, `agent`, `speaker`, `representative`, `call`, `asks`, and `says`. If these dominate topic keywords, rerun with a content-focused stop-word list before interpreting the categories. Keep both outputs if useful:
+
+- **Raw provider-summary topics** show how the provider summaries cluster with minimal transformation.
+- **Content-focused provider-summary topics** are usually better for business interpretation after removing summary-format boilerplate.
+
+Use provider-summary topic modeling as corroboration unless its summaries were explicitly designed for the target question. For call corpora, custom key customer intent strings are usually more interpretable because they encode the business question directly.
+
+## Comparing Representations
+
+When comparing topic models built from different text representations, make them as apples-to-apples as possible:
+
+- Use the same corpus snapshot.
+- Use the same item ids and exclusion policy.
+- Use the same BERTopic parameters when possible.
+- Report the document count for each model.
+- Call out when one representation includes calls excluded from another.
+- Compare only stable high-level themes unless both representations have comparable text quality.
+
+If two representations produce the same major themes but one has noisy or artifact-heavy clusters, present the cleaner representation as the primary result and the noisier representation as directional validation.
+
 ## Topic Modeling Guidance
 
 Run the topic model over the chosen representation, such as key customer intent strings, not accidentally over full transcripts if the goal is customer-intent clustering.

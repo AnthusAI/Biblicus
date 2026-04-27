@@ -1,0 +1,25 @@
+{
+  "id": "blbs-d0c452c2-10ca-4a65-9fb2-3c0f2f061c4d",
+  "title": "Update topic modeling skill with provider-summary lessons",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "fd162a2b-dfcc-4951-9c60-b132cb217045",
+      "author": "ryan",
+      "text": "Updated the topic modeling skill with generic lessons about provider-generated summaries, checking that summary fields are populated, keeping derived provider JSON separate from raw provider responses, applying the same item eligibility filters across representations, and treating provider-summary topic models as corroboration when they are noisier than custom intent summaries.",
+      "created_at": "2026-04-27T23:38:30.254026Z"
+    }
+  ],
+  "created_at": "2026-04-27T23:38:01.367715Z",
+  "updated_at": "2026-04-27T23:38:30.665292Z",
+  "closed_at": "2026-04-27T23:38:30.665292Z",
+  "custom": {}
+}
