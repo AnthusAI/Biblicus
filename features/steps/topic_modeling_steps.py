@@ -438,6 +438,27 @@ def step_analysis_manifest_includes_artifact_path(context, artifact_path: str) -
     assert artifact_path in artifact_paths
 
 
+@then('the analysis artifact "{artifact_path}" contains text "{expected_text}"')
+def step_analysis_artifact_contains_text(
+    context, artifact_path: str, expected_text: str
+) -> None:
+    output = context.last_analysis_output
+    snapshot = output["snapshot"]
+    corpus_uri = str(snapshot["corpus_uri"])
+    assert corpus_uri.startswith("file://")
+    corpus_path = Path(corpus_uri.removeprefix("file://"))
+    snapshot_id = str(snapshot["snapshot_id"])
+    path = (
+        corpus_path
+        / "analysis"
+        / "topic-modeling"
+        / snapshot_id
+        / artifact_path
+    )
+    assert path.exists(), path
+    assert expected_text in path.read_text(encoding="utf-8")
+
+
 @then('the topic analysis output includes topic label "{label}"')
 def step_topic_analysis_output_includes_label(context, label: str) -> None:
     output = context.last_analysis_output

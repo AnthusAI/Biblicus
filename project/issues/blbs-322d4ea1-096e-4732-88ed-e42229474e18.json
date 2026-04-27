@@ -1,0 +1,25 @@
+{
+  "id": "blbs-322d4ea1-096e-4732-88ed-e42229474e18",
+  "title": "Sanitize branch changes before delivery",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "bbd7b475-51a4-45a2-be76-b3e8f04995ca",
+      "author": "ryan",
+      "text": "Sanitized branch content by moving implementation/docs to a generic branch, removing concrete example quotes from the skill, and checking staged non-project diffs for client names, local source paths, recording identifiers, and key patterns.",
+      "created_at": "2026-04-27T20:29:52.492893Z"
+    }
+  ],
+  "created_at": "2026-04-27T20:28:16.807386Z",
+  "updated_at": "2026-04-27T20:29:54.818388Z",
+  "closed_at": "2026-04-27T20:29:54.818388Z",
+  "custom": {}
+}
