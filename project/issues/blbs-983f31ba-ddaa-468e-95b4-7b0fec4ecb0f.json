@@ -1,0 +1,32 @@
+{
+  "id": "blbs-983f31ba-ddaa-468e-95b4-7b0fec4ecb0f",
+  "title": "[Dependabot] GHSA-xxjr-mmjv-4gpg in lodash",
+  "description": "## Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 3\n**Severity:** medium\n**State:** open\n**Package:** `lodash`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n### Impact\n\nLodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes. \n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.  \n\n### Patches\n\nThis issue is patched on 4.17.23.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/3",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.949840Z",
+  "updated_at": "2026-04-17T19:54:00.949840Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 3,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/3",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "lodash",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

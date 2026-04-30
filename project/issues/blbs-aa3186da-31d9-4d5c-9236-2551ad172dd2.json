@@ -1,0 +1,32 @@
+{
+  "id": "blbs-aa3186da-31d9-4d5c-9236-2551ad172dd2",
+  "title": "[Dependabot] GHSA-3mfm-83xf-c92r in handlebars",
+  "description": "## Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 47\n**Severity:** high\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nThe `@partial-block` special variable is stored in the template data context and is reachable and mutable from within a template via helpers that accept arbitrary objects. When a helper overwrites `@partial-block` with a crafted Handlebars AST, a subsequent invocation of `{{> @partial-block}}` compiles and executes that AST, enabling arbitrary JavaScript execution on the server.\n\n## Description\n\nHandlebars stores `@partial-block` in the `data` frame that is accessible to templates. In nested contexts, a parent frame's `@partial-block` is reachable as `@_parent.partial-block`. Because the data frame is a mutable object, any registered helper that accepts an object reference and assigns properties to it can overwrite `@partial-block` with an attacker-controlled value.\n\nWhen `{{> @partial-block}}` is subsequently evaluated, `invokePartial` receives the crafted object. The runtime, finding an object that is not a compiled function, falls back to **dynamically compiling** the value via `env.compile()`. If that value is a well-formed Handlebars AST containing injected code, the injected JavaScript runs in the server process.\n\nThe `handlebars-helpers` npm package (commonly used with Handlebars) includes several helpers such as `merge` that can be used as the mutation primitive.\n\n## Proof of Concept\n\nTested with Handlebars 4.7.8 and `handlebars-helpers`:\n\n```javascript\nconst Handlebars = require('handlebars');\nconst merge = require('handlebars-helpers').object().merge;\nHandlebars.registerHelper('merge', merge);\n\nconst vulnerableTemplate = `\n{{#*inline \"myPartial\"}}\n    {{>@partial-block}}\n    {{>@partial-block}}\n{{/inline}}\n{{#>myPartial}}\n    {{merge @_parent partial-block=1}}\n    {{merge @_parent partial-block=payload}}\n{{/myPartial}}\n`;\n\nconst maliciousContext = {\n  payload: {\n    type: \"Program\",\n    body: [\n      {\n        type: \"MustacheStatement\",\n        depth: 0,\n        path: {\n          type: \"PathExpression\",\n          parts: [\"pop\"],\n          original: \"this.pop\",\n          // Code injected via depth field — breaks out of generated function call\n          depth: \"0])),function () {console.error('VULNERABLE: RCE via @partial-block');}()));//\",\n        },\n      },\n    ],\n  },\n};\n\nHandlebars.compile(vulnerableTemplate)(maliciousContext);\n// Prints: VULNERABLE: RCE via @partial-block\n```\n\n## Workarounds\n\n- **Use the runtime-only build** (`require('handlebars/runtime')`). The `compile()` method is  absent, eliminating the vulnerable fallback path.\n- **Audit registered helpers** for any that write arbitrary values to context objects. Helpers  should treat context data as read-only.\n- **Avoid registering helpers** from third-party packages (such as `handlebars-helpers`) in  contexts where templates or context data can be influenced by untrusted input.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/47",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.947872Z",
+  "updated_at": "2026-04-17T19:54:00.947872Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 47,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/47",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}
