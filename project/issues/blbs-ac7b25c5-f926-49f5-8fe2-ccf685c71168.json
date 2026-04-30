@@ -1,0 +1,32 @@
+{
+  "id": "blbs-ac7b25c5-f926-49f5-8fe2-ccf685c71168",
+  "title": "[Dependabot] GHSA-5rq4-664w-9x2c in basic-ftp",
+  "description": "## Basic FTP has Path Traversal Vulnerability in its downloadToDir() method\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 10\n**Severity:** critical\n**State:** open\n**Package:** `basic-ftp`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\nThe `basic-ftp` library contains a path traversal vulnerability in the `downloadToDir()` method. A malicious FTP server can send directory listings with filenames containing path traversal sequences (`../`) that cause files to be written outside the intended download directory.\n\n\n## Source-to-Sink Flow\n\n```\n1. SOURCE: FTP server sends LIST response\n└─> \"-rw-r--r-- 1 user group 1024 Jan 20 12:00 ../../../etc/passwd\"\n\n2. PARSER: parseListUnix.ts:100 extracts filename\n└─> file.name = \"../../../etc/passwd\"\n\n3. VALIDATION: parseListUnix.ts:101 checks\n└─> if (name === \".\" || name === \"..\") ❌ (only filters exact matches)\n└─> \"../../../etc/passwd\" !== \".\" && !== \"..\" ✅ PASSES\n\n4. SINK: Client.ts:707 uses filename directly\n└─> const localPath = join(localDirPath, file.name)\n└─> join(\"/safe/download\", \"../../../etc/passwd\")\n└─> Result: \"/safe/download/../../../etc/passwd\" → resolves to \"/etc/passwd\"\n\n5. FILE WRITE: Client.ts:512 opens file\n└─> fsOpen(localPath, \"w\") → writes to /etc/passwd (outside intended directory)\n```\n\n## Vulnerable Code\n\n**File**: `src/Client.ts:707`\n\n```typescript\nprotected async _downloadFromWorkingDir(localDirPath: string): Promise<void> {\nawait ensureLocalDirectory(localDirPath)\nfor (const file of await this.list()) {\nconst localPath = join(localDirPath, file.name) // ⚠️ VULNERABLE\n// file.name comes from untrusted FTP server, no sanitization\nawait this.downloadTo(localPath, file.name)\n}\n}\n```\n\n**Root Cause**:\n- Parser validation (`parseListUnix.ts:101`) only filters exact `.` or `..` entries\n- No sanitization of `../` sequences in filenames\n- `path.join()` doesn't prevent traversal, `fs.open()` resolves paths\n\n\n# Impact\n\nA malicious FTP server can:\n- Write files to arbitrary locations on the client filesystem\n- Overwrite critical system files (if user has write access)\n- Potentially achieve remote code execution\n\n## Affected Versions\n\n- **Tested**: v5.1.0\n- **Likely**: All versions (code pattern exists since initial implementation)\n\n## Mitigation\n\n**Workaround**: Do not use `downloadToDir()` with untrusted FTP servers.\n\n**Fix**: Sanitize filenames before use:\n\n```typescript\nimport { basename } from 'path'\n\n// In _downloadFromWorkingDir:\nconst sanitizedName = basename(file.name) // Strip path components\nconst localPath = join(localDirPath, sanitizedName)\n```\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/10",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.949749Z",
+  "updated_at": "2026-04-17T19:54:00.949749Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 10,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/10",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "basic-ftp",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "critical"
+  }
+}

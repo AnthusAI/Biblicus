@@ -1,0 +1,32 @@
+{
+  "id": "blbs-502e0ad4-3dc0-42f6-9212-a95adc462d44",
+  "title": "[Dependabot] GHSA-3v7f-55p6-f55p in picomatch",
+  "description": "## Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 35\n**Severity:** medium\n**State:** open\n**Package:** `picomatch`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n### Impact\npicomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\nThis leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\nAll users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\n### Patches\n\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\nPossible mitigations include:\n- Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n- Avoiding the use of POSIX bracket expressions if user input is involved.\n- Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\n  ```js\n  const POSIX_REGEX_SOURCE = {\n    __proto__: null,\n    alnum: 'a-zA-Z0-9',\n    alpha: 'a-zA-Z',\n    // ... rest unchanged\n  };\n  \n### Resources\n\n- fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n- picomatch repository https://github.com/micromatch/picomatch\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/35",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948400Z",
+  "updated_at": "2026-04-17T19:54:00.948400Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 35,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/35",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "picomatch",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

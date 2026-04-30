@@ -1,0 +1,32 @@
+{
+  "id": "blbs-2893a368-3c3e-4c71-a688-15424dc13f47",
+  "title": "[Dependabot] GHSA-x284-j5p8-9c5p in pypdf",
+  "description": "## pypdf: Manipulated FlateDecode image dimensions can exhaust RAM\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 87\n**Severity:** medium\n**State:** open\n**Package:** `pypdf`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\nAn attacker who uses this vulnerability can craft a PDF which leads to the RAM being exhausted. This requires accessing an image using `/FlateDecode` with large size values.\n\n### Patches\nThis has been fixed in [pypdf==6.10.2](https://github.com/py-pdf/pypdf/releases/tag/6.10.2).\n\n### Workarounds\nIf you cannot upgrade yet, consider applying the changes from PR [#3734](https://github.com/py-pdf/pypdf/pull/3734).\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/87",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.950269Z",
+  "updated_at": "2026-04-17T23:01:55.244868Z",
+  "closed_at": "2026-04-17T23:01:55.244868Z",
+  "custom": {
+    "github_alert_number": 87,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/87",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pypdf",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

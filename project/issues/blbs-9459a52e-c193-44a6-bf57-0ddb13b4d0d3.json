@@ -1,0 +1,26 @@
+{
+  "id": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "title": "AnthusAI/Biblicus:apps/dashboard/package-lock.json",
+  "description": "Dependabot alerts for `apps/dashboard/package-lock.json`.",
+  "type": "task",
+  "status": "open",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.946595Z",
+  "updated_at": "2026-04-17T19:54:00.946595Z",
+  "closed_at": null,
+  "custom": {
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus"
+  }
+}

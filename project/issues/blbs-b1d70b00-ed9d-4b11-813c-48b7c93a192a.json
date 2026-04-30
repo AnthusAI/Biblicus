@@ -1,0 +1,32 @@
+{
+  "id": "blbs-b1d70b00-ed9d-4b11-813c-48b7c93a192a",
+  "title": "[Dependabot] GHSA-2qvq-rjwj-gvw9 in handlebars",
+  "description": "## Handlebars.js has Prototype Pollution Leading to XSS through Partial Template Injection\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 39\n**Severity:** medium\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\n`resolvePartial()` in the Handlebars runtime resolves partial names via a plain property lookup on `options.partials` without guarding against prototype-chain traversal. When `Object.prototype` has been polluted with a string value whose key matches a partial reference in a template, the polluted string is used as the partial body and rendered **without HTML escaping**, resulting in reflected or stored XSS.\n\n## Description\n\nThe root cause is in `lib/handlebars/runtime.js` inside `resolvePartial()` and `invokePartial()`:\n\n```javascript\n// Vulnerable: plain bracket access traverses Object.prototype\npartial = options.partials[options.name];\n```\n\n`hasOwnProperty` is never checked, so if `Object.prototype` has been seeded with a key whose name matches a partial reference in the template (e.g. `widget`), the lookup succeeds and the polluted string is returned. The runtime emits a prototype-access warning, but the partial is still resolved and its content is inserted into the rendered output unescaped. This contradicts the documented security model and is distinct from CVE-2021-23369 and CVE-2021-23383, which addressed data property access rather than partial template resolution.\n\n**Prerequisites for exploitation:**\n1. The target application must be vulnerable to prototype pollution (e.g. via `qs`, `minimist`, or\n   any querystring/JSON merge sink).\n2. The attacker must know or guess the name of a partial reference used in a template.\n\n## Proof of Concept\n\n```javascript\nconst Handlebars = require('handlebars');\n\n// Step 1: Prototype pollution (via qs, minimist, or another vector)\nObject.prototype.widget = '<img src=x onerror=\"alert(document.domain)\">';\n\n// Step 2: Normal template that references a partial\nconst template = Handlebars.compile('<div>Welcome! {{> widget}}</div>');\n\n// Step 3: Render — XSS payload injected unescaped\nconst output = template({});\n// Output: <div>Welcome! <img src=x onerror=\"alert(document.domain)\"></div>\n```\n\n> The runtime prints a prototype access warning claiming \"access has been denied,\" but the partial still resolves and returns the polluted value.\n\n## Workarounds\n\n- Apply `Object.freeze(Object.prototype)` early in application startup to prevent prototype  pollution. Note: this may break other libraries.\n- Use the Handlebars runtime-only build (`handlebars/runtime`), which does not compile templates  and reduces the attack surface.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/39",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948316Z",
+  "updated_at": "2026-04-17T19:54:00.948316Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 39,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/39",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

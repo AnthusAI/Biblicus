@@ -1,0 +1,21 @@
+{
+  "id": "blbs-029eb6a6-80ac-4703-a4d5-5206f420bd05",
+  "title": "GitHub Security Remediation",
+  "description": "Track remediation of GitHub security findings.",
+  "type": "initiative",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [
+    "security",
+    "github"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.937511Z",
+  "updated_at": "2026-04-17T19:54:00.937511Z",
+  "closed_at": null,
+  "custom": {}
+}

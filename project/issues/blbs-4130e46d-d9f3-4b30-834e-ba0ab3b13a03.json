@@ -1,0 +1,22 @@
+{
+  "id": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+  "title": "GitHub Dependabot Alerts",
+  "description": "Dependabot alerts imported from GitHub Security.",
+  "type": "epic",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-029eb6a6-80ac-4703-a4d5-5206f420bd05",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.946186Z",
+  "updated_at": "2026-04-17T19:54:00.946186Z",
+  "closed_at": null,
+  "custom": {}
+}

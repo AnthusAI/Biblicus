@@ -1,0 +1,32 @@
+{
+  "id": "blbs-39ef2fb8-c114-4ff4-b44a-3a59282ea5fa",
+  "title": "[Dependabot] GHSA-fj3w-jwp8-x2g3 in fast-xml-parser",
+  "description": "## fast-xml-parser has stack overflow in XMLBuilder with preserveOrder\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 29\n**Severity:** low\n**State:** open\n**Package:** `fast-xml-parser`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n### Impact\nApplication crashes with stack overflow when user use XML builder with `prserveOrder:true` for following or similar input \n\n```\n[{\n    'foo': [\n        { 'bar': [{ '@_V': 'baz' }] }\n    ]\n}]\n```\n\nCause: `arrToStr` was not validating if the input is an array or a string and treating all non-array values as text content.\n_What kind of vulnerability is it? Who is impacted?_\n\n### Patches\nYes in 5.3.8\n\n### Workarounds\nUse XML builder with `preserveOrder:false` or check the input data before passing to builder.\n\n### References\n[_Are there any links users can visit to find out more?_](https://github.com/NaturalIntelligence/fast-xml-parser/pull/791)\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/29",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948658Z",
+  "updated_at": "2026-04-17T19:54:00.948658Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 29,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/29",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "fast-xml-parser",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "low"
+  }
+}

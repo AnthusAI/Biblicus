@@ -1,0 +1,32 @@
+{
+  "id": "blbs-264f8de9-2cdd-4396-8d24-51f6e9698952",
+  "title": "[Dependabot] GHSA-f23m-r3pf-42rh in lodash-es",
+  "description": "## lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 68\n**Severity:** medium\n**State:** open\n**Package:** `lodash-es`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n### Impact\n\nLodash versions 4.17.23 and earlier are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. The fix for [CVE-2025-13465](https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg) only guards against string key members, so an attacker can bypass the check by passing array-wrapped path segments. This allows deletion of properties from built-in prototypes such as `Object.prototype`, `Number.prototype`, and `String.prototype`.\n\nThe issue permits deletion of prototype properties but does not allow overwriting their original behavior.\n\n### Patches\n\nThis issue is patched in 4.18.0.\n\n### Workarounds\n\nNone. Upgrade to the patched version.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/68",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.947564Z",
+  "updated_at": "2026-04-17T19:54:00.947564Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 68,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/68",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "lodash-es",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}
