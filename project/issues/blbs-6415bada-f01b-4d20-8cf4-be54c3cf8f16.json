@@ -1,0 +1,25 @@
+{
+  "id": "blbs-6415bada-f01b-4d20-8cf4-be54c3cf8f16",
+  "title": "Remediate archive extraction path traversal in FUNSD sample downloader",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "58830f62-f87b-4f32-be2d-b90d67daf7b0",
+      "author": "derek.norrbom",
+      "text": "Replaced direct ZipFile.extractall usage with guarded extraction that validates every zip member resolves under destination before extraction; this blocks path traversal (zip slip) writes outside temp_dir.",
+      "created_at": "2026-05-05T22:15:45.240706Z"
+    }
+  ],
+  "created_at": "2026-05-05T22:15:25.767764Z",
+  "updated_at": "2026-05-05T22:15:45.240706Z",
+  "closed_at": null,
+  "custom": {}
+}

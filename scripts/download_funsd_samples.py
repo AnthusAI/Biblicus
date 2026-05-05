@@ -26,6 +26,27 @@ FUNSD_DATASET_URL = "https://guillaumejaume.github.io/FUNSD/dataset.zip"
 FUNSD_SAMPLE_COUNT = 5  # Number of samples to ingest for testing
 
 
+def _extract_zip_safely(zip_path: Path, destination: Path) -> None:
+    """
+    Extract a zip archive only when all members resolve within destination.
+
+    :param zip_path: Path to the zip archive.
+    :type zip_path: Path
+    :param destination: Extraction destination directory.
+    :type destination: Path
+    :return: None.
+    :rtype: None
+    :raises ValueError: If any archive member escapes the destination directory.
+    """
+    destination_root = destination.resolve()
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        for member in archive.infolist():
+            member_target = (destination / member.filename).resolve()
+            if destination_root not in member_target.parents and member_target != destination_root:
+                raise ValueError(f"Unsafe archive member path: {member.filename}")
+        archive.extractall(destination)
+
+
 def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
     """
     Initialize or open a corpus for FUNSD sample downloads.
@@ -64,8 +85,7 @@ def download_funsd_dataset(temp_dir: Path) -> Path:
     print(f"✓ Downloaded {zip_path.stat().st_size:,} bytes")
 
     print("Extracting dataset...")
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(temp_dir)
+    _extract_zip_safely(zip_path, temp_dir)
 
     # Find the extracted dataset directory
     extracted_dir = temp_dir / "dataset"
