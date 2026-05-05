@@ -1,0 +1,25 @@
+{
+  "id": "blbs-c9760103-82c2-4934-8559-eed28a8e8744",
+  "title": "Remediate LiteLLM proxy SQL injection advisory in dspy optional dependency chain",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "fe52f1bc-4c0a-47aa-bfa6-ff04363b067f",
+      "author": "derek.norrbom",
+      "text": "Implemented LiteLLM advisory remediation for dspy optional dependency chain: set litellm>=1.83.7 in pyproject and regenerated lockfile to litellm 1.83.14. Validation: snyk test (default and --dev) reports no vulnerable paths; pytest -q passes (442).",
+      "created_at": "2026-05-05T21:13:37.622581Z"
+    }
+  ],
+  "created_at": "2026-05-05T21:10:41.871622Z",
+  "updated_at": "2026-05-05T21:13:37.633996Z",
+  "closed_at": "2026-05-05T21:13:37.633996Z",
+  "custom": {}
+}

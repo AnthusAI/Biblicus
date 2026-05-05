@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "2dc8444f-d5c5-4c73-b9e4-e671a7c112f7",
+  "issue_id": "blbs-c9760103-82c2-4934-8559-eed28a8e8744",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-05T21:10:41.871Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 0,
+    "status": "open",
+    "title": "Remediate LiteLLM proxy SQL injection advisory in dspy optional dependency chain"
+  }
+}
