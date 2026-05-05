@@ -3,7 +3,7 @@
   "title": "AnthusAI/Biblicus:apps/dashboard/package-lock.json",
   "description": "Dependabot alerts for `apps/dashboard/package-lock.json`.",
   "type": "task",
-  "status": "open",
+  "status": "blocked",
   "priority": 0,
   "assignee": null,
   "creator": null,
@@ -14,9 +14,28 @@
     "dependabot"
   ],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "a9312351-1149-45ad-8d0b-c84b5d0a012e",
+      "author": "derek.norrbom",
+      "text": "Starting remediation pass for dashboard npm audit/dependabot findings after local npm audit fix. I will triage remaining advisories into: fixable via dependency upgrades, fixable via lockfile-only updates, and no-fix/defer with rationale.",
+      "created_at": "2026-05-05T22:25:44.184872Z"
+    },
+    {
+      "id": "5c990d68-0e58-4282-8d08-ac10ea6946bb",
+      "author": "derek.norrbom",
+      "text": "Remediation pass complete for fixable npm audit items after user-applied npm audit fix:\n- Added package.json overrides for handlebars/lodash/fast-xml-parser/minimatch/immutable/@smithy/config-resolver.\n- Regenerated lockfile with npm install.\nResults:\n- Before this pass: 48 total (1 critical, 30 high).\n- After this pass: 29 total (0 critical, 10 high).\nRemaining highs are bundled dependencies inside @aws-amplify/data-construct and @aws-amplify/graphql-api-construct; npm cannot auto-fix or override bundled packages.\n confirms unresolved highs require major/breaking change path (including @aws-amplify/backend downgrade suggestion) or upstream patched releases from Amplify packages.",
+      "created_at": "2026-05-05T22:27:26.343912Z"
+    },
+    {
+      "id": "29d35d3e-f8c4-4913-809f-58004c3ad78b",
+      "author": "derek.norrbom",
+      "text": "Correction: previous comment had shell interpolation noise. Clean summary: Added package.json overrides for handlebars, lodash, fast-xml-parser, minimatch, immutable, and @smithy/config-resolver; regenerated lockfile with npm install. Audit delta: 48 total (1 critical, 30 high) down to 29 total (0 critical, 10 high). Remaining highs are bundled inside @aws-amplify/data-construct and @aws-amplify/graphql-api-construct; npm cannot override bundled internals, and npm audit fix force indicates breaking-change path or upstream Amplify release is required for further remediation.",
+      "created_at": "2026-05-05T22:27:30.655738Z"
+    }
+  ],
   "created_at": "2026-04-17T19:54:00.946595Z",
-  "updated_at": "2026-04-17T19:54:00.946595Z",
+  "updated_at": "2026-05-05T22:27:30.655738Z",
   "closed_at": null,
   "custom": {
     "github_manifest_path": "apps/dashboard/package-lock.json",
