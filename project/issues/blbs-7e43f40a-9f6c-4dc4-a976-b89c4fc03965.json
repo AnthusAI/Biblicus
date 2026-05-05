@@ -1,0 +1,67 @@
+{
+  "id": "blbs-7e43f40a-9f6c-4dc4-a976-b89c4fc03965",
+  "title": "Remediate Snyk gitpython transitive vulnerability from python-semantic-release",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1a939a09-c771-4269-b62f-45905b256a21",
+      "author": "derek.norrbom",
+      "text": "Started triage for Snyk report: python-semantic-release transitive GitPython vulnerability (argument/command injection). Investigating pyproject constraints vs lockfile resolution and applying minimal dependency fix.",
+      "created_at": "2026-05-05T19:20:14.491784Z"
+    },
+    {
+      "id": "f42d0756-9fca-4a1c-bba8-d638d5d1ae30",
+      "author": "derek.norrbom",
+      "text": "Applied fix path preferred by user: tightened dev dependency to python-semantic-release>=10.5.3 and regenerated lockfile. Resulting resolution now pins gitpython to 3.1.49. Verified with snyk test --all-projects --dev --severity-threshold=high: GitPython critical/high findings are gone; remaining findings are unrelated no-fix torch/transformers advisories.",
+      "created_at": "2026-05-05T19:25:19.929180Z"
+    },
+    {
+      "id": "0533a757-f645-4412-afaa-82ea8ac246c0",
+      "author": "derek.norrbom",
+      "text": "Follow-up triage: pyproject already resolves dotyaml==1.1.1. Current Snyk finding is transitive python-dotenv@1.0.1 introduced by dotyaml. Implementing minimal fix by constraining python-dotenv>=1.2.2 and re-locking, then validating with Snyk and smoke tests.",
+      "created_at": "2026-05-05T19:27:17.252180Z"
+    },
+    {
+      "id": "26e72735-0571-4147-9211-c06838f92504",
+      "author": "derek.norrbom",
+      "text": "Investigated litellm concern. Current Poetry index reports litellm 1.83.3 as latest and lockfile has litellm 1.83.3 (optional dspy extra). Current Snyk CLI output does not report litellm-specific vulnerabilities; active fixable findings remain gitpython and python-dotenv. python-dotenv is also pinned by litellm 1.83.3.",
+      "created_at": "2026-05-05T19:36:48.788397Z"
+    },
+    {
+      "id": "451262b0-bad2-4265-850e-b9d0cb7d5d6f",
+      "author": "derek.norrbom",
+      "text": "Implemented dependency hardening in pyproject + lockfile:\n- pyproject: dotyaml>=1.1.1 (was >=0.1.3), python-dotenv>=1.2.2, python-semantic-release>=10.5.3.\n- lockfile: gitpython 3.1.46 -> 3.1.49, python-dotenv 1.0.1 -> 1.2.2.\n- lockfile also resolved optional dspy dependency litellm 1.83.3 -> 1.83.0 to satisfy python-dotenv constraint.\nValidation:\n- snyk test --all-projects --severity-threshold=low => 0 vulnerable paths in default dependency set.\n- snyk test --all-projects --dev --severity-threshold=high => remaining no-fix torch/transformers findings only; gitpython/python-dotenv findings removed.\n- pytest -q => 442 passed.",
+      "created_at": "2026-05-05T19:44:33.012280Z"
+    },
+    {
+      "id": "e8283e8d-e600-4233-8d00-298aa6e2010c",
+      "author": "derek.norrbom",
+      "text": "Completed and pushed to feature branch feature/blbs-7e43f4-snyk-deps.\nCommit: 6743eba\nPR URL seed: https://github.com/AnthusAI/Biblicus/pull/new/feature/blbs-7e43f4-snyk-deps\nTask outcome: resolved fixable Snyk findings for gitpython/python-dotenv while preserving test pass status.",
+      "created_at": "2026-05-05T19:44:49.913003Z"
+    },
+    {
+      "id": "078f89df-eab0-4d13-b096-af1cacb2ab57",
+      "author": "derek.norrbom",
+      "text": "Follow-up housekeeping: committing Kanbus-generated project/events and project/issues artifacts that were produced during task execution and were unintentionally left uncommitted in the prior PR.",
+      "created_at": "2026-05-05T20:27:44.579219Z"
+    },
+    {
+      "id": "e55bb4d4-58fc-44df-a888-9e9455de9ef3",
+      "author": "derek.norrbom",
+      "text": "Committed and pushed Kanbus artifact follow-up.\nBranch: feature/blbs-7e43f4-kanbus-artifacts\nCommit: effdba1\nPR: https://github.com/AnthusAI/Biblicus/pull/40",
+      "created_at": "2026-05-05T20:28:06.799042Z"
+    }
+  ],
+  "created_at": "2026-05-05T19:20:11.977089Z",
+  "updated_at": "2026-05-05T20:28:06.799042Z",
+  "closed_at": "2026-05-05T19:44:49.918046Z",
+  "custom": {}
+}
