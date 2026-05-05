@@ -64,5 +64,13 @@
     "springstack": "file:/Users/ryan.porter/Projects/Springstack/packages/springstack",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7"
+  },
+  "overrides": {
+    "handlebars": "^4.7.9",
+    "lodash": "^4.17.24",
+    "fast-xml-parser": "^5.7.0",
+    "minimatch": "^10.2.3",
+    "immutable": "^3.8.3",
+    "@smithy/config-resolver": "^4.4.0"
   }
 }
