@@ -52,10 +52,16 @@
       "author": "derek.norrbom",
       "text": "Follow-up housekeeping: committing Kanbus-generated project/events and project/issues artifacts that were produced during task execution and were unintentionally left uncommitted in the prior PR.",
       "created_at": "2026-05-05T20:27:44.579219Z"
+    },
+    {
+      "id": "e55bb4d4-58fc-44df-a888-9e9455de9ef3",
+      "author": "derek.norrbom",
+      "text": "Committed and pushed Kanbus artifact follow-up.\nBranch: feature/blbs-7e43f4-kanbus-artifacts\nCommit: effdba1\nPR: https://github.com/AnthusAI/Biblicus/pull/40",
+      "created_at": "2026-05-05T20:28:06.799042Z"
     }
   ],
   "created_at": "2026-05-05T19:20:11.977089Z",
-  "updated_at": "2026-05-05T20:27:44.579219Z",
+  "updated_at": "2026-05-05T20:28:06.799042Z",
   "closed_at": "2026-05-05T19:44:49.918046Z",
   "custom": {}
 }
