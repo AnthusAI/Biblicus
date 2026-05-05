@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "e17cd1b7-4ec9-46bb-b0c9-d5bc8bda489f",
+  "issue_id": "blbs-7e43f40a-9f6c-4dc4-a976-b89c4fc03965",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-05T19:20:11.977Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 0,
+    "status": "open",
+    "title": "Remediate Snyk gitpython transitive vulnerability from python-semantic-release"
+  }
+}
