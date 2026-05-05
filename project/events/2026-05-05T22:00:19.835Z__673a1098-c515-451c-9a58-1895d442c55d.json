@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "673a1098-c515-451c-9a58-1895d442c55d",
+  "issue_id": "blbs-46506608-5f86-4e07-a6c5-dc9ec795eadb",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-05T22:00:19.835Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "priority": 0,
+    "status": "open",
+    "title": "Remediate lxml XXE advisory by constraining lxml to patched range"
+  }
+}
