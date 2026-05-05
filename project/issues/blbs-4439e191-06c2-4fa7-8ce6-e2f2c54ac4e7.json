@@ -1,0 +1,32 @@
+{
+  "id": "blbs-4439e191-06c2-4fa7-8ce6-e2f2c54ac4e7",
+  "title": "[Dependabot] GHSA-4pxv-j86v-mhcw in pypdf",
+  "description": "## pypdf: Possible long runtimes for wrong size values in incremental mode\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 85\n**Severity:** medium\n**State:** open\n**Package:** `pypdf`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\nAn attacker who uses this vulnerability can craft a PDF which leads to long runtimes. This requires loading a PDF with a large trailer `/Size` value in incremental mode.\n\n### Patches\nThis has been fixed in [pypdf==6.10.2](https://github.com/py-pdf/pypdf/releases/tag/6.10.2).\n\n### Workarounds\nIf you cannot upgrade yet, consider applying the changes from PR [#3735](https://github.com/py-pdf/pypdf/pull/3735).\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/85",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.950455Z",
+  "updated_at": "2026-04-17T23:01:55.241652Z",
+  "closed_at": "2026-04-17T23:01:55.241652Z",
+  "custom": {
+    "github_alert_number": 85,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/85",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pypdf",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

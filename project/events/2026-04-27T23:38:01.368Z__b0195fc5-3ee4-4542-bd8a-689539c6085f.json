@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "b0195fc5-3ee4-4542-bd8a-689539c6085f",
+  "issue_id": "blbs-d0c452c2-10ca-4a65-9fb2-3c0f2f061c4d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-04-27T23:38:01.368Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Update topic modeling skill with provider-summary lessons",
+    "description": "",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

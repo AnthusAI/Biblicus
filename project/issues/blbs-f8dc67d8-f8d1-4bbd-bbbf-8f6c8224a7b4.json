@@ -1,0 +1,32 @@
+{
+  "id": "blbs-f8dc67d8-f8d1-4bbd-bbbf-8f6c8224a7b4",
+  "title": "[Dependabot] GHSA-7rx3-28cr-v5wh in handlebars",
+  "description": "## Handlebars.js has a Prototype Method Access Control Gap via Missing __lookupSetter__ Blocklist Entry\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 52\n**Severity:** medium\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nThe prototype method blocklist in `lib/handlebars/internal/proto-access.js` blocks `constructor`, `__defineGetter__`, `__defineSetter__`, and `__lookupGetter__`, but omits the symmetric `__lookupSetter__`. This omission is only exploitable when the non-default runtime option `allowProtoMethodsByDefault: true` is explicitly set — in that configuration `__lookupSetter__` becomes accessible while its counterparts remain blocked, creating an inconsistent security boundary.\n\n`4.6.0` is the version that introduced `protoAccessControl` and the `allowProtoMethodsByDefault` runtime option.\n\n## Description\n\nIn `lib/handlebars/internal/proto-access.js`:\n\n```javascript\nconst methodWhiteList = Object.create(null);\nmethodWhiteList['constructor']      = false;\nmethodWhiteList['__defineGetter__'] = false;\nmethodWhiteList['__defineSetter__'] = false;\nmethodWhiteList['__lookupGetter__'] = false;\n// __lookupSetter__ intentionally blocked in CVE-2021-23383,\n// but omitted here — creating an asymmetric blocklist\n```\n\nAll four legacy accessor helpers (`__defineGetter__`, `__defineSetter__`, `__lookupGetter__`, `__lookupSetter__`) were involved in the exploit chain addressed by CVE-2021-23383. Three of the four were explicitly blocked; `__lookupSetter__` was left out.\n\nWhen `allowProtoMethodsByDefault: true` is set, any prototype method **not present** in `methodWhiteList` is permitted by default. Because `__lookupSetter__` is absent from the list, it passes the `checkWhiteList` check and is accessible in templates, while `__lookupGetter__` (its sibling) is correctly denied.\n\n## Workarounds\n\n- Do **not** set `allowProtoMethodsByDefault: true`. The default configuration is not affected.\n- If `allowProtoMethodsByDefault` must be enabled, ensure templates do not reference  `__lookupSetter__` through untrusted input.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/52",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.947711Z",
+  "updated_at": "2026-04-17T19:54:00.947711Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 52,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/52",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

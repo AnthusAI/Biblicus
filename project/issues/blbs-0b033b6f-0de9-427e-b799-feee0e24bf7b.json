@@ -1,0 +1,32 @@
+{
+  "id": "blbs-0b033b6f-0de9-427e-b799-feee0e24bf7b",
+  "title": "[Dependabot] GHSA-jj6c-8h6c-hppx in pypdf",
+  "description": "## pypdf has long runtimes for wrong size values in cross-reference and object streams\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 84\n**Severity:** medium\n**State:** open\n**Package:** `pypdf`\n**Ecosystem:** `pip`\n**Manifest:** `poetry.lock`\n\n### Advisory\n### Impact\n\nAn attacker who uses this vulnerability can craft a PDF which leads to long runtimes. This requires cross-reference streams with wrong large `/Size` values or object streams with wrong large `/N` values.\n\n### Patches\n\nThis has been fixed in [pypdf==6.10.1](https://github.com/py-pdf/pypdf/releases/tag/6.10.1).\n\n### Workarounds\n\nIf you cannot upgrade yet, consider applying the changes from PR [#3733](https://github.com/py-pdf/pypdf/pull/3733).\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/84",
+  "type": "sub-task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ed93edba-9de6-43d1-8df1-cae0e581c1ab",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.951011Z",
+  "updated_at": "2026-04-17T23:01:55.236109Z",
+  "closed_at": "2026-04-17T23:01:55.236109Z",
+  "custom": {
+    "github_alert_number": 84,
+    "github_alert_state": "open",
+    "github_ecosystem": "pip",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/84",
+    "github_manifest_path": "poetry.lock",
+    "github_package": "pypdf",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "medium"
+  }
+}

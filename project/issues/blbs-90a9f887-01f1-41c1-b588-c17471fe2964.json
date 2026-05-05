@@ -1,0 +1,32 @@
+{
+  "id": "blbs-90a9f887-01f1-41c1-b588-c17471fe2964",
+  "title": "[Dependabot] GHSA-6475-r3vj-m8vf in @smithy/config-resolver",
+  "description": "## AWS SDK for JavaScript v3 adopted defense in depth enhancement for region parameter value\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 2\n**Severity:** low\n**State:** open\n**Package:** `@smithy/config-resolver`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\nCVSSv3.1 Rating: 3.7 (LOW)\n\nSummary\n\nThis notification is related to the use of specific values for the region input field when calling AWS services. An actor with access to the environment in which the SDK is used could set the region input field to an invalid value.\n\nA defense-in-depth enhancement has been implemented in the AWS SDK for JavaScript v3 (versions 3.723.0 and later). This enhancement validates that a region used to construct an endpoint URL is a valid host label. The change was released on November 15, 2025. This advisory is informational to help customers understand their responsibilities regarding configuration security.\n\nImpact\nCustomer applications could be configured to improperly route AWS API calls to non-existent or non-AWS hosts. While the SDK was functioning as designed, additional safeguards have been added to support secure customer implementations.\n\nImpacted versions: @smithy/config-resolver <4.4.0\n\nPatches\n\nOn November 15, 2025, an enhancement was made to the AWS SDK for JavaScript v3 (versions 3.723.0 and later) release, which validates the formatting of a region, providing additional safeguards. A feature enhancement was implemented in @smithy/config-resolver v4.4.0. This enhancement provides additional configuration validation safeguards but does not address a security vulnerability.\n\nWorkarounds\nNo workarounds are needed, but as always you should ensure that your application is following security best practices:\n- Implement proper input validation in your application code\n- Update to the latest AWS SDK for Javascript v3 release on a regular basis\n- Follow AWS security best practices [1] for SDK configuration\n\nResources\nContact AWS Security via the vulnerability reporting page or email [aws-security@amazon.com](mailto:aws-security@amazon.com).\n\nAcknowledgement\nAWS Security thanks Guy Arazi for bringing these customer security considerations to our attention through the coordinated disclosure process.\n\n[1] https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/security.html\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/2",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.949949Z",
+  "updated_at": "2026-04-17T19:54:00.949949Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 2,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/2",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "@smithy/config-resolver",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "low"
+  }
+}

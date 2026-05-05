@@ -1,0 +1,32 @@
+{
+  "id": "blbs-28b0efd1-9de3-448b-96fc-46e14015e702",
+  "title": "[Dependabot] GHSA-8gc5-j5rx-235r in fast-xml-parser",
+  "description": "## fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278)\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 33\n**Severity:** high\n**State:** open\n**Package:** `fast-xml-parser`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nThe fix for CVE-2026-26278 added entity expansion limits (`maxTotalExpansions`, `maxExpandedLength`, `maxEntityCount`, `maxEntitySize`) to prevent XML entity expansion Denial of Service. However, these limits are only enforced for DOCTYPE-defined entities. **Numeric character references** (`&#NNN;` and `&#xHH;`) and standard XML entities (`&lt;`, `&gt;`, etc.) are processed through a separate code path that does NOT enforce any expansion limits.\n\nAn attacker can use massive numbers of numeric entity references to completely bypass all configured limits, causing excessive memory allocation and CPU consumption.\n\n## Affected Versions\n\nfast-xml-parser v5.x through v5.5.3 (and likely v5.5.5 on npm)\n\n## Root Cause\n\nIn `src/xmlparser/OrderedObjParser.js`, the `replaceEntitiesValue()` function has two separate entity replacement loops:\n\n1. **Lines 638-670**: DOCTYPE entities — expansion counting with `entityExpansionCount` and `currentExpandedLength` tracking. This was the CVE-2026-26278 fix.\n2. **Lines 674-677**: `lastEntities` loop — replaces standard entities including `num_dec` (`/&#([0-9]{1,7});/g`) and `num_hex` (`/&#x([0-9a-fA-F]{1,6});/g`). **This loop has NO expansion counting at all.**\n\nThe numeric entity regex replacements at lines 97-98 are part of `lastEntities` and go through the uncounted loop, completely bypassing the CVE-2026-26278 fix.\n\n## Proof of Concept\n\n```javascript\nconst { XMLParser } = require('fast-xml-parser');\n\n// Even with strict explicit limits, numeric entities bypass them\nconst parser = new XMLParser({\n  processEntities: {\n    enabled: true,\n    maxTotalExpansions: 10,\n    maxExpandedLength: 100,\n    maxEntityCount: 1,\n    maxEntitySize: 10\n  }\n});\n\n// 100K numeric entity references — should be blocked by maxTotalExpansions=10\nconst xml = `<root>${'&#65;'.repeat(100000)}</root>`;\nconst result = parser.parse(xml);\n\n// Output: 500,000 chars — bypasses maxExpandedLength=100 completely\nconsole.log('Output length:', result.root.length);  // 500000\nconsole.log('Expected max:', 100);  // limit was 100\n```\n\n**Results:**\n- 100K `&#65;` references → 500,000 char output (5x default maxExpandedLength of 100,000)\n- 1M references → 5,000,000 char output, ~147MB memory consumed\n- Even with `maxTotalExpansions=10` and `maxExpandedLength=100`, 10K references produce 50,000 chars\n- Hex entities (`&#x41;`) exhibit the same bypass\n\n## Impact\n\n**Denial of Service** — An attacker who can provide XML input to applications using fast-xml-parser can cause:\n- Excessive memory allocation (147MB+ for 1M entity references)\n- CPU consumption during regex replacement\n- Potential process crash via OOM\n\nThis is particularly dangerous because the application developer may have explicitly configured strict entity expansion limits believing they are protected, while numeric entities silently bypass all of them.\n\n## Suggested Fix\n\nApply the same `entityExpansionCount` and `currentExpandedLength` tracking to the `lastEntities` loop (lines 674-677) and the HTML entities loop (lines 680-686), similar to how DOCTYPE entities are tracked at lines 638-670.\n\n## Workaround\n\nSet `htmlEntities:false`\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/33",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948569Z",
+  "updated_at": "2026-04-17T19:54:00.948569Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 33,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/33",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "fast-xml-parser",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}

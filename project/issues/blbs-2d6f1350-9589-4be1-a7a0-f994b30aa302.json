@@ -1,0 +1,25 @@
+{
+  "id": "blbs-2d6f1350-9589-4be1-a7a0-f994b30aa302",
+  "title": "Merge sanitized topic intent extraction branch into develop",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7a74f8ae-c829-4005-bda4-a5e0503eeb08",
+      "author": "ryan",
+      "text": "Merged sanitized topic intent extraction branch into develop. Verified focused py_compile, behave scenarios for LLM extraction including parallel workers and error paths, ruff on touched analysis modules, and sensitive-string scan over develop diff.",
+      "created_at": "2026-04-27T20:36:01.754117Z"
+    }
+  ],
+  "created_at": "2026-04-27T20:34:16.950242Z",
+  "updated_at": "2026-04-27T20:36:02.742991Z",
+  "closed_at": "2026-04-27T20:36:02.742991Z",
+  "custom": {}
+}

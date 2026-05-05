@@ -336,6 +336,8 @@ class TopicModelingLlmExtractionConfig(AnalysisSchemaModel):
     :vartype prompt_template: str or None
     :ivar system_prompt: Optional system prompt.
     :vartype system_prompt: str or None
+    :ivar max_workers: Maximum concurrent LLM extraction workers.
+    :vartype max_workers: int
     """
 
     enabled: bool = Field(default=False)
@@ -345,6 +347,7 @@ class TopicModelingLlmExtractionConfig(AnalysisSchemaModel):
     client: Optional[LlmClientConfig] = None
     prompt_template: Optional[str] = None
     system_prompt: Optional[str] = None
+    max_workers: int = Field(default=1, ge=1)
 
     @field_validator("method", mode="before")
     @classmethod

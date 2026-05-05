@@ -1,0 +1,32 @@
+{
+  "id": "blbs-7559840b-9f8a-45bb-9abe-a15e86937a93",
+  "title": "[Dependabot] GHSA-xhpv-hc6g-r9c6 in handlebars",
+  "description": "## Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 45\n**Severity:** high\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nA crafted object placed in the template context can bypass all conditional guards in `resolvePartial()` and cause `invokePartial()` to return `undefined`. The Handlebars runtime then treats the unresolved partial as a source that needs to be compiled, passing the crafted object to `env.compile()`. Because the object is a valid Handlebars AST containing injected code, the generated JavaScript executes arbitrary commands on the server. The attack requires the adversary to control a value that can be returned by a dynamic partial lookup.\n\n## Description\n\nThe vulnerable code path spans two functions in `lib/handlebars/runtime.js`:\n\n**`resolvePartial()`:** A crafted object with `call: true` satisfies the first branch condition (`partial.call`) and causes an early return of the original object itself, because none of the remaining conditionals (string check, `options.partials` lookup, etc.) match a plain object. The function returns the crafted object as-is.\n\n**`invokePartial()`:** When `resolvePartial` returns a non-function object, `invokePartial` produces `undefined`. The runtime interprets `undefined` as \"partial not yet compiled\" and calls `env.compile(partial, ...)` where `partial` is the crafted AST object. The JavaScript code generator processes the AST and emits JavaScript containing the injected payload, which is then evaluated.\n\n**Minimum prerequisites:**\n1. The template uses a dynamic partial lookup: `{{> (lookup . \"key\")}}` or equivalent.\n2. The adversary can set the value of the looked-up context property to a crafted object.\n\nIn server-side rendering scenarios where templates process user-supplied context data, this enables full Remote Code Execution.\n\n## Proof of Concept\n\n```javascript\nconst Handlebars = require('handlebars');\n\nconst vulnerableTemplate = `{{> (lookup . \"payload\")}}`;\n\nconst maliciousContext = {\n  payload: {\n    call: true, // bypasses the primary resolvePartial branch\n    type: \"Program\",\n    body: [\n      {\n        type: \"MustacheStatement\",\n        depth: 0,\n        path: {\n          type: \"PathExpression\",\n          parts: [\"pop\"],\n          original: \"this.pop\",\n          // Injected code breaks out of the generated function's argument list\n          depth: \"0])),function () {console.error('VULNERABLE: object -> dynamic partial -> RCE');}()));//\",\n        },\n      },\n    ],\n  },\n};\n\nHandlebars.compile(vulnerableTemplate)(maliciousContext);\n// Prints: VULNERABLE: object -> dynamic partial -> RCE\n```\n\n## Workarounds\n\n- **Use the runtime-only build** (`require('handlebars/runtime')`). Without `compile()`,  the fallback compilation path in `invokePartial` is unreachable.\n- **Sanitize context data** before rendering: ensure no value in the context is a non-primitive  object that could be passed to a dynamic partial.\n- **Avoid dynamic partial lookups** (`{{> (lookup ...)}}`) when context data is user-controlled.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/45",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948027Z",
+  "updated_at": "2026-04-17T19:54:00.948027Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 45,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/45",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}

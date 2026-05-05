@@ -1,0 +1,32 @@
+{
+  "id": "blbs-68f448f7-27fc-47db-bd0f-53974911561c",
+  "title": "[Dependabot] GHSA-jmr7-xgp7-cmfj in fast-xml-parser",
+  "description": "## fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit)\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 21\n**Severity:** high\n**State:** open\n**Package:** `fast-xml-parser`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n### Summary\nThe XML parser can be forced to do an unlimited amount of entity expansion. With a very small XML input, it’s possible to make the parser spend seconds or even minutes processing a single request, effectively freezing the application.\n\n### Details\nThere is a check in `DocTypeReader.js` that tries to prevent entity expansion attacks by rejecting entities that reference other entities (it looks for & inside entity values). This does stop classic “Billion Laughs” payloads.\n\nHowever, it doesn’t stop a much simpler variant.\n\nIf you define one large entity that contains only raw text (no & characters) and then reference it many times, the parser will happily expand it every time. There is no limit on how large the expanded result can become, or how many replacements are allowed.\n\nThe problem is in `replaceEntitiesValue()` inside `OrderedObjParser.js`. It repeatedly runs `val.replace()` in a loop, without any checks on total output size or execution cost. As the entity grows or the number of references increases, parsing time explodes.\n\nRelevant code:\n\n`DocTypeReader.js` (lines 28–33): entity registration only checks for &\n\n`OrderedObjParser.js` (lines 439–458): entity replacement loop with no limits\n\n### PoC\n\n```js\nconst { XMLParser } = require('fast-xml-parser');\n\nconst entity = 'A'.repeat(1000);\nconst refs = '&big;'.repeat(100);\nconst xml = `<!DOCTYPE foo [<!ENTITY big \"${entity}\">]><root>${refs}</root>`;\n\nconsole.time('parse');\nnew XMLParser().parse(xml); // ~4–8 seconds for ~1.3 KB of XML\nconsole.timeEnd('parse');\n\n// 5,000 chars × 100 refs takes 200+ seconds\n// 50,000 chars × 1,000 refs will hang indefinitely\n```\n\n### Impact\nThis is a straightforward denial-of-service issue.\n\nAny service that parses user-supplied XML using the default configuration is vulnerable. Since Node.js runs on a single thread, the moment the parser starts expanding entities, the event loop is blocked. While this is happening, the server can’t handle any other requests.\n\nIn testing, a payload of only a few kilobytes was enough to make a simple HTTP server completely unresponsive for several minutes, with all other requests timing out.\n\n### Workaround\n\nAvoid using DOCTYPE parsing by `processEntities: false` option.\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/21",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.948917Z",
+  "updated_at": "2026-04-17T19:54:00.948917Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 21,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/21",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "fast-xml-parser",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "high"
+  }
+}

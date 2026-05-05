@@ -1,0 +1,32 @@
+{
+  "id": "blbs-71155af0-645f-4e53-8e62-12b1b809172c",
+  "title": "[Dependabot] GHSA-442j-39wm-28r2 in handlebars",
+  "description": "## Handlebars.js has a Property Access Validation Bypass in container.lookup\n\n**Provider:** GitHub Dependabot\n**Repository:** `AnthusAI/Biblicus`\n**Alert Number:** 53\n**Severity:** low\n**State:** open\n**Package:** `handlebars`\n**Ecosystem:** `npm`\n**Manifest:** `apps/dashboard/package-lock.json`\n\n### Advisory\n## Summary\n\nIn `lib/handlebars/runtime.js`, the `container.lookup()` function uses `container.lookupProperty()` as a gate check to enforce prototype-access controls, but then discards the validated result and performs a second, unguarded property access (`depths[i][name]`). This Time-of-Check Time-of-Use (TOCTOU) pattern means the security check and the actual read are decoupled, and the raw access bypasses any sanitization that `lookupProperty` may perform.\n\nOnly relevant when the **compat** compile option is enabled (`{compat: true}`), which activates `depthedLookup` in `lib/handlebars/compiler/javascript-compiler.js`.\n\n## Description\n\nThe vulnerable code in `lib/handlebars/runtime.js` (lines 137–144):\n\n```javascript\nlookup: function (depths, name) {\n  const len = depths.length;\n  for (let i = 0; i < len; i++) {\n    let result = depths[i] && container.lookupProperty(depths[i], name);\n    if (result != null) {\n      return depths[i][name];  // BUG: should be `return result;`\n    }\n  }\n},\n```\n\n`container.lookupProperty()` (lines 119–136) enforces `hasOwnProperty` checks and `resultIsAllowed()` prototype-access controls. However, `container.lookup()` only uses `lookupProperty` as a boolean gate — if the gate passes (`result != null`), it then performs an independent, raw `depths[i][name]` access that circumvents any transformation or wrapped value that `lookupProperty` may have returned.\n\n## Workarounds\n\n- Avoid enabling `{ compat: true }` when rendering templates that include untrusted data.\n- Ensure context data objects are plain JSON (no Proxies, no getter-based accessor properties).\n\n### Reference\n- https://github.com/AnthusAI/Biblicus/security/dependabot/53",
+  "type": "sub-task",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9459a52e-c193-44a6-bf57-0ddb13b4d0d3",
+  "labels": [
+    "security",
+    "github",
+    "dependabot"
+  ],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-04-17T19:54:00.947637Z",
+  "updated_at": "2026-04-17T19:54:00.947637Z",
+  "closed_at": null,
+  "custom": {
+    "github_alert_number": 53,
+    "github_alert_state": "open",
+    "github_ecosystem": "npm",
+    "github_html_url": "https://github.com/AnthusAI/Biblicus/security/dependabot/53",
+    "github_manifest_path": "apps/dashboard/package-lock.json",
+    "github_package": "handlebars",
+    "github_provider": "dependabot",
+    "github_repository": "AnthusAI/Biblicus",
+    "github_severity": "low"
+  }
+}
