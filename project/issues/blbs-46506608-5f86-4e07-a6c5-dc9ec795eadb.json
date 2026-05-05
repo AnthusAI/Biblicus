@@ -1,0 +1,31 @@
+{
+  "id": "blbs-46506608-5f86-4e07-a6c5-dc9ec795eadb",
+  "title": "Remediate lxml XXE advisory by constraining lxml to patched range",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "5c96b085-f362-4d29-b746-ba7762cde22d",
+      "author": "derek.norrbom",
+      "text": "Implementing direct lxml>=6.1.0 constraint and lock refresh because parent upgrades currently do not force patched lxml in this resolver graph.",
+      "created_at": "2026-05-05T22:00:22.409521Z"
+    },
+    {
+      "id": "ea7ac4f0-b8ee-46f7-975b-034597fd48b8",
+      "author": "derek.norrbom",
+      "text": "Implemented lxml remediation: added direct dependency constraint lxml>=6.1.0, updated lockfile to lxml 6.1.0, validated with snyk test (no vulnerable paths) and pytest (442 passed).",
+      "created_at": "2026-05-05T22:02:55.452678Z"
+    }
+  ],
+  "created_at": "2026-05-05T22:00:19.834921Z",
+  "updated_at": "2026-05-05T22:02:55.464610Z",
+  "closed_at": "2026-05-05T22:02:55.464610Z",
+  "custom": {}
+}
