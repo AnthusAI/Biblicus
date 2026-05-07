@@ -1,0 +1,18 @@
+{
+  "id": "blbs-ffc3e74d-48e2-4e73-b260-f32b00fee385",
+  "title": "First Alert speech-to-text extraction",
+  "description": "Materialize First Alert WAV recordings as corpus items and run Biblicus text extraction. Definition of Done: WAVs are imported, catalog counts are verified, extraction is attempted with an available STT backend, and outcomes are recorded.",
+  "type": "epic",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-05-07T18:15:29.848761Z",
+  "updated_at": "2026-05-07T18:15:33.526321Z",
+  "closed_at": null,
+  "custom": {}
+}

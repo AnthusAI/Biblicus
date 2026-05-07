@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "05995295-8d6b-4452-868c-b3241c4521e3",
+  "issue_id": "blbs-ffc3e74d-48e2-4e73-b260-f32b00fee385",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T18:15:29.849Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "First Alert speech-to-text extraction",
+    "description": "Materialize First Alert WAV recordings as corpus items and run Biblicus text extraction. Definition of Done: WAVs are imported, catalog counts are verified, extraction is attempted with an available STT backend, and outcomes are recorded.",
+    "issue_type": "epic",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

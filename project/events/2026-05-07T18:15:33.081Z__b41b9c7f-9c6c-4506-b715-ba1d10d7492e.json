@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "b41b9c7f-9c6c-4506-b715-ba1d10d7492e",
+  "issue_id": "blbs-89aabda1-8594-4d00-862e-81ab71e7982f",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T18:15:33.081Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Materialize and transcribe First Alert WAVs",
+    "description": "Extract the 2,000 WAV files from First Alert ZIP batches into the corpus, import them as Biblicus audio items, reindex, and run STT extraction when a configured backend is available.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-ffc3e74d-48e2-4e73-b260-f32b00fee385",
+    "labels": []
+  }
+}

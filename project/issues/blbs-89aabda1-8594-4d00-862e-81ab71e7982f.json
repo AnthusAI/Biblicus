@@ -1,0 +1,37 @@
+{
+  "id": "blbs-89aabda1-8594-4d00-862e-81ab71e7982f",
+  "title": "Materialize and transcribe First Alert WAVs",
+  "description": "Extract the 2,000 WAV files from First Alert ZIP batches into the corpus, import them as Biblicus audio items, reindex, and run STT extraction when a configured backend is available.",
+  "type": "task",
+  "status": "blocked",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ffc3e74d-48e2-4e73-b260-f32b00fee385",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "dddfb1ee-0b44-4703-b12a-57f11a13ba2d",
+      "author": "ryan",
+      "text": "Started STT extraction work. Local environment has Deepgram and OpenAI client packages installed, but no DEEPGRAM_API_KEY or OPENAI_API_KEY in the shell; faster-whisper is not installed. Proceeding first with WAV materialization and corpus import, then extraction will be attempted only if a configured backend is available.",
+      "created_at": "2026-05-07T18:15:38.557656Z"
+    },
+    {
+      "id": "675fae2f-b04b-4ac9-ba8c-610f32b8d1a8",
+      "author": "ryan",
+      "text": "WAV materialization and import completed: 2,000 WAV files imported; first-alert catalog now has 2,080 entries (40 ZIP, 40 CSV, 2,000 audio/x-wav). STT backend check: OpenAI is configured, Deepgram has no key, faster-whisper is unavailable. Duration probe found 271.43 hours of audio; full hosted transcription is a paid API run, so preparing an OpenAI-ready compressed corpus before starting API calls.",
+      "created_at": "2026-05-07T18:22:00.535008Z"
+    },
+    {
+      "id": "691f25e6-45a7-4172-a0d4-44b665d4b44d",
+      "author": "ryan",
+      "text": "Prepared OpenAI-ready corpus. Converted 2,000 WAV files to 16 kHz mono MP3 under corpora/first-alert-openai-stt/imports/first-alert-mp3, imported them into corpora/first-alert-openai-stt, and reindexed. Verification: first-alert catalog has 2,080 entries; first-alert-openai-stt catalog has 2,000 audio/mpeg entries; largest MP3 is 13.65 MB; no MP3 files exceed 25 MB. Full STT run is blocked pending explicit approval for about 271.43 hours of paid OpenAI transcription.",
+      "created_at": "2026-05-07T18:30:50.813752Z"
+    }
+  ],
+  "created_at": "2026-05-07T18:15:33.081665Z",
+  "updated_at": "2026-05-07T18:30:51.254120Z",
+  "closed_at": null,
+  "custom": {}
+}
