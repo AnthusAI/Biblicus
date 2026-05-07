@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "3cd0567e-5f6e-4624-a4f3-3b4a7b2cada2",
+  "issue_id": "blbs-76310fe4-6752-4742-ba13-b1e3e365f44a",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T18:04:01.825Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "First Alert corpus import",
+    "description": "Import the local First Alert audio export folder into a new Biblicus corpus. Definition of Done: source folder is ingested into a new corpus, catalog is built, counts are verified, and Git/Kanbus state is recorded.",
+    "issue_type": "epic",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

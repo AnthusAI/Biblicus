@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "641c6059-cd75-44c1-ae9c-53cfc61d1fe5",
+  "issue_id": "blbs-9f10acb3-ed99-4167-b884-d70cf0c5952d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T18:04:04.899Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Ingest First Alert audio export folder",
+    "description": "Copy or ingest ~/Downloads/CG - 2000 FA Audio Files into a new First Alert corpus under corpora/. Verify item counts and preserve source provenance.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-76310fe4-6752-4742-ba13-b1e3e365f44a",
+    "labels": []
+  }
+}

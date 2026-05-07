@@ -1,0 +1,25 @@
+{
+  "id": "blbs-76310fe4-6752-4742-ba13-b1e3e365f44a",
+  "title": "First Alert corpus import",
+  "description": "Import the local First Alert audio export folder into a new Biblicus corpus. Definition of Done: source folder is ingested into a new corpus, catalog is built, counts are verified, and Git/Kanbus state is recorded.",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b9c29d2a-8a7c-465b-9a20-df6683613c1c",
+      "author": "ryan",
+      "text": "First Alert corpus import is complete and verified. The corpus data lives under corpora/first-alert, which is ignored by Git according to corpora/.gitignore; Kanbus tracking files will be committed.",
+      "created_at": "2026-05-07T18:06:51.027609Z"
+    }
+  ],
+  "created_at": "2026-05-07T18:04:01.824848Z",
+  "updated_at": "2026-05-07T18:06:51.415082Z",
+  "closed_at": "2026-05-07T18:06:51.415082Z",
+  "custom": {}
+}

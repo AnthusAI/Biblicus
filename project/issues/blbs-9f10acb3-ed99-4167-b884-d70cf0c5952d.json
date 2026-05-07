@@ -1,0 +1,31 @@
+{
+  "id": "blbs-9f10acb3-ed99-4167-b884-d70cf0c5952d",
+  "title": "Ingest First Alert audio export folder",
+  "description": "Copy or ingest ~/Downloads/CG - 2000 FA Audio Files into a new First Alert corpus under corpora/. Verify item counts and preserve source provenance.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-76310fe4-6752-4742-ba13-b1e3e365f44a",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "5a2c6ef4-403b-4e27-9917-c49f10005d13",
+      "author": "ryan",
+      "text": "Started import. Source folder exists at ~/Downloads/CG - 2000 FA Audio Files and contains paired CSV metadata exports and recordings zip files. Next step: use Biblicus corpus commands to initialize a First Alert corpus and ingest the folder.",
+      "created_at": "2026-05-07T18:04:16.356722Z"
+    },
+    {
+      "id": "f9870c18-a7de-4479-8407-a547b7bee263",
+      "author": "ryan",
+      "text": "Completed import. Initialized corpora/first-alert, copied ~/Downloads/CG - 2000 FA Audio Files into corpora/first-alert/imports/CG - 2000 FA Audio Files, imported the copied tree with tags first-alert and imported, and reindexed. Verification: 80 source files copied, 80 Biblicus sidecars written, catalog has 80 entries, 40 zip files contain 2,000 wav entries, and 40 CSV files are present.",
+      "created_at": "2026-05-07T18:06:50.229617Z"
+    }
+  ],
+  "created_at": "2026-05-07T18:04:04.899194Z",
+  "updated_at": "2026-05-07T18:06:50.625559Z",
+  "closed_at": "2026-05-07T18:06:50.625559Z",
+  "custom": {}
+}
