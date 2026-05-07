@@ -1,0 +1,25 @@
+{
+  "id": "blbs-75bbebfe-77d6-4a0e-97b5-75dd57362434",
+  "title": "Normalize First Alert product mention labels",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "2fdd1932-5fc2-476f-922d-e978e1d93afb",
+      "author": "ryan",
+      "text": "Implemented First Alert product normalization artifacts under corpora/first-alert-openai-stt/analysis/product-normalization/first-alert-product-normalization-v1/. Validation passed: 1,974 input rows, 1,974 normalized rows, 1,872 topic-document rows, 11 unmatched rows (0.56%), and no taxonomy integrity errors. Method counts: rule 1,785; exact_alias 91; llm 87; unmatched 11.",
+      "created_at": "2026-05-07T20:56:04.407453Z"
+    }
+  ],
+  "created_at": "2026-05-07T20:11:47.558667Z",
+  "updated_at": "2026-05-07T20:56:04.412772Z",
+  "closed_at": "2026-05-07T20:56:04.412772Z",
+  "custom": {}
+}

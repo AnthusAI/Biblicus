@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "b257dd15-ba6d-427e-a44d-88aa4775237d",
+  "issue_id": "blbs-75bbebfe-77d6-4a0e-97b5-75dd57362434",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T20:11:47.558Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Normalize First Alert product mention labels",
+    "description": "",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}
