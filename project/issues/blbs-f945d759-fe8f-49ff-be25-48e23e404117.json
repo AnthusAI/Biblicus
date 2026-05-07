@@ -1,0 +1,18 @@
+{
+  "id": "blbs-f945d759-fe8f-49ff-be25-48e23e404117",
+  "title": "First Alert product mention summarization",
+  "description": "Summarize each First Alert Deepgram transcript with an LLM to identify the main product mentioned by the customer, producing one normalized product summary per transcript for later BERTopic clustering and LLM cluster description.",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-05-07T19:30:03.041323Z",
+  "updated_at": "2026-05-07T19:36:42.092324Z",
+  "closed_at": "2026-05-07T19:36:42.092324Z",
+  "custom": {}
+}

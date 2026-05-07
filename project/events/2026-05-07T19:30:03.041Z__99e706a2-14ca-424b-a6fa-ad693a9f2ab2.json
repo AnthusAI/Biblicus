@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "99e706a2-14ca-424b-a6fa-ad693a9f2ab2",
+  "issue_id": "blbs-f945d759-fe8f-49ff-be25-48e23e404117",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T19:30:03.041Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "First Alert product mention summarization",
+    "description": "Summarize each First Alert Deepgram transcript with an LLM to identify the main product mentioned by the customer, producing one normalized product summary per transcript for later BERTopic clustering and LLM cluster description.",
+    "issue_type": "epic",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

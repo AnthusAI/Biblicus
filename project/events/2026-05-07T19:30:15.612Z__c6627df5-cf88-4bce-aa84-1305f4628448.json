@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "c6627df5-cf88-4bce-aa84-1305f4628448",
+  "issue_id": "blbs-9b0c30ea-7f1f-4ad0-95de-4650152745fe",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T19:30:15.612Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Generate product mention summaries for First Alert transcripts",
+    "description": "Use an LLM to produce one product mention summary per non-empty First Alert transcript. Required output: the main product mentioned by the customer, or exactly 'no product' when none is mentioned. Store reusable artifacts for later BERTopic clustering.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-f945d759-fe8f-49ff-be25-48e23e404117",
+    "labels": []
+  }
+}
