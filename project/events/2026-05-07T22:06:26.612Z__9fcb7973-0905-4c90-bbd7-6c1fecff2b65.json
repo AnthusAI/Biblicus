@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "9fcb7973-0905-4c90-bbd7-6c1fecff2b65",
+  "issue_id": "blbs-611e5bc0-c7e8-4da7-be90-2becd4a340c8",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-07T22:06:26.612Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Review First Alert top scenarios for voice-agent KB build",
+    "description": "",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "blbs-ce14a51d-e177-47ff-8e13-af1e029f66c1",
+  "title": "Generate First Alert voice agent scenario analysis",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "44756411-3528-4144-8350-ce442c0da512",
+      "author": "ryan",
+      "text": "Started First Alert voice-agent scenario analysis. Confirmed inputs: 1,974 normalized product rows and BERTopic dependencies are available locally. Running a 50-call structured extraction pilot before the full batch.",
+      "created_at": "2026-05-07T21:44:37.493912Z"
+    },
+    {
+      "id": "b9de08e4-8090-49f9-a2ad-24812dea853a",
+      "author": "ryan",
+      "text": "Completed First Alert voice-agent scenario analysis. Artifacts are under corpora/first-alert-openai-stt/analysis/voice-agent-scenarios/first-alert-voice-agent-scenarios-v1/. Final stats: 1,974 scenario rows, 84 needs-review rows (4.26%), top reasons are chirping/beeping 513 (25.99%), false alarms 454 (23.0%), and replacement/warranty/refund 317 (16.06%). BERTopic drilldowns and LLM topic labels completed for all calls, smoke-alarm calls, chirping/beeping, false alarms, and replacement/warranty/refund. Final validation passed with no artifact integrity errors.",
+      "created_at": "2026-05-07T22:06:26.605248Z"
+    }
+  ],
+  "created_at": "2026-05-07T21:44:24.154297Z",
+  "updated_at": "2026-05-07T22:06:26.611187Z",
+  "closed_at": "2026-05-07T22:06:26.611187Z",
+  "custom": {}
+}

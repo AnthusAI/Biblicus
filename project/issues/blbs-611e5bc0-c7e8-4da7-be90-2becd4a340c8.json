@@ -1,0 +1,25 @@
+{
+  "id": "blbs-611e5bc0-c7e8-4da7-be90-2becd4a340c8",
+  "title": "Review First Alert top scenarios for voice-agent KB build",
+  "description": "",
+  "type": "task",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "af2b3945-49da-40fc-8b07-6ce072bb2ac2",
+      "author": "ryan",
+      "text": "Follow-up after scenario analysis: review handoff_report.md and deflection_candidates.csv with stakeholder, select the first voice-agent scenarios to implement, and define the KB articles/flows needed for chirping/beeping, false alarms, and warranty/replacement.",
+      "created_at": "2026-05-07T22:06:30.570317Z"
+    }
+  ],
+  "created_at": "2026-05-07T22:06:26.612665Z",
+  "updated_at": "2026-05-07T22:06:30.570317Z",
+  "closed_at": null,
+  "custom": {}
+}
