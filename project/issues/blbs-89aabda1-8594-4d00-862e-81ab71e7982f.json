@@ -28,10 +28,22 @@
       "author": "ryan",
       "text": "Prepared OpenAI-ready corpus. Converted 2,000 WAV files to 16 kHz mono MP3 under corpora/first-alert-openai-stt/imports/first-alert-mp3, imported them into corpora/first-alert-openai-stt, and reindexed. Verification: first-alert catalog has 2,080 entries; first-alert-openai-stt catalog has 2,000 audio/mpeg entries; largest MP3 is 13.65 MB; no MP3 files exceed 25 MB. Full STT run is blocked pending explicit approval for about 271.43 hours of paid OpenAI transcription.",
       "created_at": "2026-05-07T18:30:50.813752Z"
+    },
+    {
+      "id": "778c6c50-af50-4ef0-8bc4-8d2ddb853848",
+      "author": "ryan",
+      "text": "Checking ../Biblicus-old for Deepgram configuration without printing secret values.",
+      "created_at": "2026-05-07T18:39:22.228650Z"
+    },
+    {
+      "id": "9102beb6-60c8-444c-8869-edffd9a55df5",
+      "author": "ryan",
+      "text": "Found Deepgram configuration in ../Biblicus-old/.biblicus/config.yml. Secret value was not printed. Current project remains unconfigured until that config is copied or the key is exported for the extraction process.",
+      "created_at": "2026-05-07T18:41:36.683223Z"
     }
   ],
   "created_at": "2026-05-07T18:15:33.081665Z",
-  "updated_at": "2026-05-07T18:30:51.254120Z",
+  "updated_at": "2026-05-07T18:41:36.683223Z",
   "closed_at": null,
   "custom": {}
 }
