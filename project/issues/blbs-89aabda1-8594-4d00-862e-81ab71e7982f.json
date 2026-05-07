@@ -3,7 +3,7 @@
   "title": "Materialize and transcribe First Alert WAVs",
   "description": "Extract the 2,000 WAV files from First Alert ZIP batches into the corpus, import them as Biblicus audio items, reindex, and run STT extraction when a configured backend is available.",
   "type": "task",
-  "status": "blocked",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -40,10 +40,28 @@
       "author": "ryan",
       "text": "Found Deepgram configuration in ../Biblicus-old/.biblicus/config.yml. Secret value was not printed. Current project remains unconfigured until that config is copied or the key is exported for the extraction process.",
       "created_at": "2026-05-07T18:41:36.683223Z"
+    },
+    {
+      "id": "be4c6473-ed9c-404f-b8e9-a1ae23335a22",
+      "author": "ryan",
+      "text": "User approved copying the Deepgram key from ../Biblicus-old into the current project config and running Deepgram STT extraction. Proceeding without printing the secret value.",
+      "created_at": "2026-05-07T18:42:39.923411Z"
+    },
+    {
+      "id": "faa37dd2-946c-4c73-b295-c4a21539ddeb",
+      "author": "ryan",
+      "text": "User confirmed that one, two, or a few failed STT items are acceptable. Continue the Deepgram batch to completion and do not block on a small failed-item count.",
+      "created_at": "2026-05-07T19:07:10.904942Z"
+    },
+    {
+      "id": "4d197a19-21e1-475b-91b3-c0e6d414129b",
+      "author": "ryan",
+      "text": "Deepgram STT extraction completed for corpora/first-alert-openai-stt. Snapshot c8afe7bbe4c7458571a1495a1033af6ac6005eab44cc60dff2cd378fa69d5d3e completed with stats: total_items=2000, extracted_items=1999, extracted_nonempty_items=1974, extracted_empty_items=25, skipped_items=0, errored_items=1. User accepted a small failed-item count, so this task is complete.",
+      "created_at": "2026-05-07T19:22:26.199973Z"
     }
   ],
   "created_at": "2026-05-07T18:15:33.081665Z",
-  "updated_at": "2026-05-07T18:41:36.683223Z",
-  "closed_at": null,
+  "updated_at": "2026-05-07T19:22:26.667413Z",
+  "closed_at": "2026-05-07T19:22:26.667413Z",
   "custom": {}
 }

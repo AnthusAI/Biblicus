@@ -3,16 +3,23 @@
   "title": "First Alert speech-to-text extraction",
   "description": "Materialize First Alert WAV recordings as corpus items and run Biblicus text extraction. Definition of Done: WAVs are imported, catalog counts are verified, extraction is attempted with an available STT backend, and outcomes are recorded.",
   "type": "epic",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
   "parent": null,
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "20c83948-2cc9-41a0-88dd-e8dd0a5a4e44",
+      "author": "ryan",
+      "text": "First Alert STT extraction is complete. WAVs were materialized, MP3 extraction-ready corpus was prepared, Deepgram key was configured locally, and Deepgram extraction completed with 1999/2000 items extracted.",
+      "created_at": "2026-05-07T19:22:27.121980Z"
+    }
+  ],
   "created_at": "2026-05-07T18:15:29.848761Z",
-  "updated_at": "2026-05-07T18:15:33.526321Z",
-  "closed_at": null,
+  "updated_at": "2026-05-07T19:22:27.578968Z",
+  "closed_at": "2026-05-07T19:22:27.578968Z",
   "custom": {}
 }
