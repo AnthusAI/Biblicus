@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "19ac99dc-6f61-432e-8bcc-c6cbb3472765",
+  "issue_id": "blbs-d930204f-6b77-4bc8-afd9-74e24fffb236",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-08T14:57:33.248Z",
+  "actor_id": "ryan",
+  "payload": {
+    "title": "Export First Alert extracted transcripts zip",
+    "description": "",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

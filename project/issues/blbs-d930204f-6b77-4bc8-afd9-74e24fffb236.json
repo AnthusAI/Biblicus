@@ -1,0 +1,25 @@
+{
+  "id": "blbs-d930204f-6b77-4bc8-afd9-74e24fffb236",
+  "title": "Export First Alert extracted transcripts zip",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "816f7bf9-7f9a-43ed-b061-d5b56c2f9cdf",
+      "author": "ryan",
+      "text": "Created transcript-only zip export at corpora/first-alert-openai-stt/exports/first-alert-extracted-transcripts.zip. Validation: 1,999 top-level .txt entries, 0 non-text entries, 0 directory entries, SHA-256 a34c7c13cba0f871acaacf4933e98731eb28192d8abe927e365d5443a320d024.",
+      "created_at": "2026-05-08T14:58:32.372882Z"
+    }
+  ],
+  "created_at": "2026-05-08T14:57:33.247983Z",
+  "updated_at": "2026-05-08T14:58:32.376760Z",
+  "closed_at": "2026-05-08T14:58:32.376760Z",
+  "custom": {}
+}
