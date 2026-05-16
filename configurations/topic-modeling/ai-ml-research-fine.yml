@@ -1,0 +1,43 @@
+schema_version: 1
+text_source:
+  min_text_characters: 20
+llm_extraction:
+  enabled: false
+lexical_processing:
+  enabled: true
+  lowercase: true
+  strip_punctuation: true
+  collapse_whitespace: true
+bertopic_analysis:
+  parameters:
+    nr_topics: null
+    min_topic_size: 2
+  vectorizer:
+    ngram_range: [1, 2]
+    stop_words: english
+  umap_model:
+    parameters:
+      n_neighbors: 5
+      n_components: 5
+      min_dist: 0.0
+      metric: cosine
+      random_state: 42
+  hdbscan_model:
+    parameters:
+      min_cluster_size: 2
+      min_samples: 1
+      cluster_selection_method: leaf
+      prediction_data: true
+  representation_model:
+    provider: openai
+    model: gpt-5.4-mini
+    prompt_template: |
+      I have a topic that contains the following documents:
+      [DOCUMENTS]
+
+      The topic is described by these keywords:
+      [KEYWORDS]
+
+      Return a short, specific AI/ML topic label.
+    nr_docs: 4
+    delay_in_seconds: 0.0

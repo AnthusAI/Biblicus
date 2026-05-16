@@ -34,9 +34,9 @@ class MarkItDownExtractor(TextExtractor):
     """
     Extractor plugin backed by the `markitdown` library.
 
-    This extractor converts non-text items into Markdown-like text. It skips text items so
-    the pass-through extractor remains the canonical choice for text inputs and Markdown
-    front matter handling.
+    This extractor converts document items into Markdown-like text. It skips plain text,
+    Markdown, and non-Hypertext Markup Language items that an earlier pipeline stage has
+    already extracted.
 
     :ivar extractor_id: Extractor identifier.
     :vartype extractor_id: str
@@ -78,7 +78,7 @@ class MarkItDownExtractor(TextExtractor):
         previous_extractions: List[ExtractionStageOutput],
     ) -> Optional[ExtractedText]:
         """
-        Extract text for a non-text item using MarkItDown.
+        Extract text for a document item using MarkItDown.
 
         :param corpus: Corpus containing the item bytes.
         :type corpus: Corpus
@@ -88,7 +88,7 @@ class MarkItDownExtractor(TextExtractor):
         :type config: MarkItDownExtractorConfig
         :param previous_extractions: Prior stage outputs for this item within the pipeline.
         :type previous_extractions: list[biblicus.models.ExtractionStageOutput]
-        :return: Extracted text payload, or None when the item is already text.
+        :return: Extracted text payload, or None when a prior stage already handled it.
         :rtype: ExtractedText or None
         """
         parsed_config = (
@@ -97,8 +97,10 @@ class MarkItDownExtractor(TextExtractor):
             else MarkItDownExtractorConfig.model_validate(config)
         )
         _ = previous_extractions
-        media_type = item.media_type
-        if media_type == "text/markdown" or media_type.startswith("text/"):
+        media_type = item.media_type.lower()
+        if media_type in {"text/plain", "text/markdown"}:
+            return None
+        if media_type not in {"text/html", "application/xhtml+xml"} and previous_extractions:
             return None
 
         from markitdown import MarkItDown

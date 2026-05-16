@@ -14,5 +14,3 @@ bertopic_analysis:
   vectorizer:
     ngram_range: [1, 1]
     stop_words: english
-llm_fine_tuning:
-  enabled: false

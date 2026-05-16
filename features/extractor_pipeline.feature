@@ -43,6 +43,25 @@ Feature: Extraction pipeline
     Then the extracted text for the last ingested item equals "body"
     And the extraction snapshot item provenance uses extractor "pass-through-text"
 
+  Scenario: Pipeline routes Hypertext Markup Language through MarkItDown while preserving text and Portable Document Format paths
+    Given I initialized a corpus at "corpus"
+    And a fake MarkItDown library is available that returns text "Clean history article text" for filename "history.html"
+    And a text file "notes.txt" exists with contents "Plain notes"
+    And a Portable Document Format file "paper.pdf" exists with text "PDF paper text"
+    And a text file "history.html" exists with contents "<html><script>noise</script><body>History article</body></html>"
+    When I ingest the file "notes.txt" with tags "plain" into corpus "corpus"
+    And I ingest the file "paper.pdf" with tags "pdf" into corpus "corpus"
+    And I ingest the file "history.html" with tags "html" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json                                                                            |
+      | pass-through-text | {}                                                                                     |
+      | pdf-text          | {}                                                                                     |
+      | markitdown        | {}                                                                                     |
+      | select-override   | {"media_type_patterns":["text/html","application/xhtml+xml"],"fallback_to_first":true} |
+    Then the extracted text for the item tagged "plain" equals "Plain notes"
+    And the extracted text for the item tagged "pdf" equals "PDF paper text"
+    And the extracted text for the item tagged "html" equals "Clean history article text"
+
   Scenario: Pipeline rejects stages that include the pipeline extractor
     Given I initialized a corpus at "corpus"
     When I attempt to build an extraction snapshot in corpus "corpus" using extractor "pipeline" with stage spec "pipeline"

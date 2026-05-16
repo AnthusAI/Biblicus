@@ -321,18 +321,20 @@ def after_scenario(context, scenario) -> None:
         context._fake_hmmlearn_unavailable_original_modules = {}
     if getattr(context, "_fake_bertopic_installed", False):
         original_modules = getattr(context, "_fake_bertopic_original_modules", {})
-        if "bertopic" in original_modules:
-            sys.modules["bertopic"] = original_modules["bertopic"]
-        else:
-            sys.modules.pop("bertopic", None)
+        for name in ["bertopic.representation", "bertopic"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
         context._fake_bertopic_installed = False
         context._fake_bertopic_original_modules = {}
     if getattr(context, "_fake_bertopic_unavailable_installed", False):
         original_modules = getattr(context, "_fake_bertopic_unavailable_original_modules", {})
-        if "bertopic" in original_modules:
-            sys.modules["bertopic"] = original_modules["bertopic"]
-        else:
-            sys.modules.pop("bertopic", None)
+        for name in ["bertopic.representation", "bertopic"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
         context._fake_bertopic_unavailable_installed = False
         context._fake_bertopic_unavailable_original_modules = {}
     if getattr(context, "_fake_neo4j_installed", False):

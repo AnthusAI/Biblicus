@@ -1,0 +1,17 @@
+schema_version: 1
+text_source:
+  min_text_characters: 200
+llm_extraction:
+  enabled: false
+lexical_processing:
+  enabled: true
+  lowercase: true
+  strip_punctuation: true
+  collapse_whitespace: true
+bertopic_analysis:
+  parameters:
+    nr_topics: 12
+    min_topic_size: 2
+  vectorizer:
+    ngram_range: [1, 2]
+    stop_words: english

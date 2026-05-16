@@ -161,6 +161,40 @@ tags:
   - reports
 ```
 
+## Standard single-item ingest
+
+Use `biblicus ingest` when another tool has already retrieved the item and prepared curated metadata.
+
+```
+python -m biblicus ingest --corpus corpora/example paper.pdf \
+  --metadata-file paper.metadata.yml \
+  --source-uri https://example.test/paper \
+  --published-at 2026-05-15 \
+  --tag paper
+```
+
+The metadata file must be a YAML or JSON object.
+
+```
+title: Example PDF
+abstract: A short summary.
+authors:
+  - Ada Lovelace
+dates:
+  published_at: "2026-05-15"
+date_provenance:
+  published_at: "source-metadata"
+```
+
+Biblicus stores the raw item, writes the `.biblicus.yml` sidecar, records the `biblicus.id` and `biblicus.source` provenance block, and updates the catalog. Retrieval, download, and metadata enrichment happen before this command.
+Trend analysis should use `dates.published_at`, not ingest `created_at`, retrieval time, or legacy top-level publication metadata.
+
+Verify the stored item with:
+
+```
+python -m biblicus show --corpus corpora/example ITEM_ID
+```
+
 ## Ignore rules
 
 If you are importing a folder tree, ignore rules can prevent accidental ingestion of build artifacts, caches, or other irrelevant files.

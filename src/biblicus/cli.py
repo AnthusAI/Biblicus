@@ -6,11 +6,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import mimetypes
 import os
 import sys
+from datetime import date, datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
+import yaml
 from pydantic import ValidationError
 
 from .analysis import get_analysis_backend
@@ -24,6 +27,7 @@ from .context import (
     fit_context_pack_to_token_budget,
 )
 from .corpus import Corpus
+from .corpus_audit import build_corpus_audit, corpus_audit_markdown
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
 from .evaluation.retrieval import evaluate_snapshot, load_dataset
@@ -45,6 +49,16 @@ from .models import (
 )
 from .pipelines import run_pipeline_recipe
 from .retrievers import get_retriever
+from .steering import (
+    build_steering_artifact_inventory,
+    build_steering_export,
+    render_steering_seed_manifest,
+)
+from .steering_proposals import (
+    build_steering_graph_signal_bundle,
+    load_steering_proposal_bundle,
+    record_steering_proposal_bundle,
+)
 from .uris import corpus_ref_to_path
 
 
@@ -157,6 +171,175 @@ def _parse_tags(raw: Optional[str], raw_list: Optional[List[str]]) -> List[str]:
     return deduplicated_tags
 
 
+def _load_ingest_metadata_file(path: Path) -> Dict[str, Any]:
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise FileNotFoundError(f"Ingest metadata file not found: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid ingest metadata file: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"Ingest metadata file must be a mapping/object: {path}")
+    return dict(payload)
+
+
+def _metadata_tags(metadata: Dict[str, Any]) -> List[str]:
+    raw_tags = metadata.get("tags")
+    if raw_tags is None:
+        return []
+    if isinstance(raw_tags, str):
+        return [raw_tags] if raw_tags.strip() else []
+    if isinstance(raw_tags, list):
+        return [entry for entry in raw_tags if isinstance(entry, str) and entry.strip()]
+    raise ValueError("Ingest metadata tags must be a string or list of strings")
+
+
+def _validate_ingest_date_value(value: str, field_name: str) -> str:
+    """
+    Validate a canonical ingest date or timestamp value.
+
+    :param value: User-supplied date value.
+    :type value: str
+    :param field_name: Canonical dates field name.
+    :type field_name: str
+    :return: The original stripped date value.
+    :rtype: str
+    :raises ValueError: If the value is not a date or International Organization for Standardization timestamp.
+    """
+    candidate = value.strip()
+    if not candidate:
+        raise ValueError(f"{field_name} must not be blank")
+    try:
+        date.fromisoformat(candidate)
+        return candidate
+    except ValueError:
+        pass
+    try:
+        datetime.fromisoformat(candidate.replace("Z", "+00:00"))
+        return candidate
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be YYYY-MM-DD or a full ISO 8601 timestamp") from exc
+
+
+def _apply_ingest_date_overrides(
+    *,
+    metadata: Dict[str, Any],
+    published_at: Optional[str],
+    updated_at: Optional[str],
+    retrieved_at: Optional[str],
+) -> Dict[str, Any]:
+    """
+    Apply command-line date overrides to canonical ingest metadata.
+
+    :param metadata: Metadata loaded from the ingest metadata file.
+    :type metadata: dict[str, Any]
+    :param published_at: Optional publication date override.
+    :type published_at: str or None
+    :param updated_at: Optional update date override.
+    :type updated_at: str or None
+    :param retrieved_at: Optional retrieval timestamp override.
+    :type retrieved_at: str or None
+    :return: Metadata with canonical nested date fields.
+    :rtype: dict[str, Any]
+    :raises ValueError: If date metadata is malformed.
+    """
+    metadata_for_ingest = dict(metadata)
+    legacy_date_fields = [
+        field for field in ("published", "updated") if field in metadata_for_ingest
+    ]
+    if legacy_date_fields:
+        joined_fields = ", ".join(legacy_date_fields)
+        raise ValueError(
+            f"Use dates.published_at or dates.updated_at instead of top-level {joined_fields}"
+        )
+
+    raw_dates = metadata_for_ingest.get("dates")
+    if raw_dates is None:
+        dates: Dict[str, Any] = {}
+    elif isinstance(raw_dates, dict):
+        dates = dict(raw_dates)
+    else:
+        raise ValueError("Ingest metadata dates must be a mapping/object")
+
+    raw_date_provenance = metadata_for_ingest.get("date_provenance")
+    if raw_date_provenance is None:
+        date_provenance: Dict[str, Any] = {}
+    elif isinstance(raw_date_provenance, dict):
+        date_provenance = dict(raw_date_provenance)
+    else:
+        raise ValueError("Ingest metadata date_provenance must be a mapping/object")
+
+    overrides = {
+        "published_at": published_at,
+        "updated_at": updated_at,
+        "retrieved_at": retrieved_at,
+    }
+    for field_name, value in overrides.items():
+        if value is None:
+            continue
+        dates[field_name] = _validate_ingest_date_value(value, field_name)
+        date_provenance[field_name] = "cli-argument"
+
+    if dates:
+        metadata_for_ingest["dates"] = dates
+    elif "dates" in metadata_for_ingest:
+        metadata_for_ingest.pop("dates")
+    if date_provenance:
+        metadata_for_ingest["date_provenance"] = date_provenance
+    elif "date_provenance" in metadata_for_ingest:
+        metadata_for_ingest.pop("date_provenance")
+    return metadata_for_ingest
+
+
+def _standard_ingest_local_item(
+    *,
+    corpus: Corpus,
+    source_path: str,
+    tags: List[str],
+    metadata: Dict[str, Any],
+    title: Optional[str],
+    source_uri: Optional[str],
+    media_type: Optional[str],
+    published_at: Optional[str],
+    updated_at: Optional[str],
+    retrieved_at: Optional[str],
+) -> object:
+    if "://" in source_path:
+        raise ValueError("Standard metadata ingest requires a local file path")
+    path = Path(source_path).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Ingest source file not found: {path}")
+    metadata_for_ingest = _apply_ingest_date_overrides(
+        metadata=metadata,
+        published_at=published_at,
+        updated_at=updated_at,
+        retrieved_at=retrieved_at,
+    )
+    metadata_for_ingest.pop("tags", None)
+    metadata_title = metadata_for_ingest.pop("title", None)
+    metadata_media_type = metadata_for_ingest.pop("media_type", None)
+    resolved_title = title
+    if resolved_title is None and isinstance(metadata_title, str) and metadata_title.strip():
+        resolved_title = metadata_title.strip()
+    resolved_media_type = media_type
+    if resolved_media_type is None and isinstance(metadata_media_type, str):
+        resolved_media_type = metadata_media_type.strip() or None
+    if resolved_media_type is None:
+        guessed_media_type, _ = mimetypes.guess_type(path.name)
+        resolved_media_type = guessed_media_type or "application/octet-stream"
+    resolved_tags = _parse_tags(None, [*tags, *_metadata_tags(metadata)])
+    resolved_source_uri = source_uri or path.as_uri()
+    return corpus.ingest_item(
+        path.read_bytes(),
+        filename=path.name,
+        media_type=resolved_media_type,
+        title=resolved_title,
+        tags=resolved_tags,
+        metadata=metadata_for_ingest,
+        source_uri=resolved_source_uri,
+    )
+
+
 def cmd_ingest(arguments: argparse.Namespace) -> int:
     """
     Ingest items into a corpus from command-line interface arguments.
@@ -172,23 +355,64 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
         else Corpus.find(Path.cwd())
     )
     tags = _parse_tags(arguments.tags, arguments.tag)
+    metadata_path = getattr(arguments, "metadata_file", None)
+    source_uri = getattr(arguments, "source_uri", None)
+    media_type = getattr(arguments, "media_type", None)
+    published_at = getattr(arguments, "published_at", None)
+    updated_at = getattr(arguments, "updated_at", None)
+    retrieved_at = getattr(arguments, "retrieved_at", None)
+    standard_item_ingest = bool(
+        metadata_path or source_uri or media_type or published_at or updated_at or retrieved_at
+    )
 
     results = []
 
     try:
-        if arguments.note is not None or arguments.stdin:
-            text = arguments.note if arguments.note is not None else sys.stdin.read()
-            ingest_result = corpus.ingest_note(
-                text,
-                title=arguments.title,
-                tags=tags,
-                source_uri=None if arguments.stdin else None,
+        if standard_item_ingest:
+            if arguments.note is not None or arguments.stdin:
+                raise ValueError("Standard metadata ingest requires a local file path")
+            files = list(arguments.files or [])
+            if len(files) != 1:
+                raise ValueError("Standard metadata ingest requires exactly one local file path")
+            metadata = _load_ingest_metadata_file(Path(metadata_path)) if metadata_path else {}
+            results.append(
+                _standard_ingest_local_item(
+                    corpus=corpus,
+                    source_path=files[0],
+                    tags=tags,
+                    metadata=metadata,
+                    title=arguments.title,
+                    source_uri=source_uri,
+                    media_type=media_type,
+                    published_at=published_at,
+                    updated_at=updated_at,
+                    retrieved_at=retrieved_at,
+                )
             )
-            results.append(ingest_result)
+        else:
+            if arguments.note is not None or arguments.stdin:
+                text = arguments.note if arguments.note is not None else sys.stdin.read()
+                ingest_result = corpus.ingest_note(
+                    text,
+                    title=arguments.title,
+                    tags=tags,
+                    source_uri=None if arguments.stdin else None,
+                )
+                results.append(ingest_result)
 
-        for source_path in arguments.files or []:
-            results.append(corpus.ingest_source(source_path, tags=tags))
+            for source_path in arguments.files or []:
+                results.append(corpus.ingest_source(source_path, tags=tags))
     except IngestCollisionError as error:
+        if error.collision_key is not None:
+            print(
+                "Ingest failed: item already ingested\n"
+                f"source_uri: {error.source_uri}\n"
+                f"matching_key: {error.collision_key}\n"
+                f"existing_item_id: {error.existing_item_id}\n"
+                f"existing_relpath: {error.existing_relpath}",
+                file=sys.stderr,
+            )
+            return 3
         print(
             "Ingest failed: source already ingested\n"
             f"source_uri: {error.source_uri}\n"
@@ -263,6 +487,37 @@ def cmd_reindex(arguments: argparse.Namespace) -> int:
     )
     stats = corpus.reindex()
     print(json.dumps(stats, indent=2, sort_keys=False))
+    return 0
+
+
+def cmd_corpus_audit(arguments: argparse.Namespace) -> int:
+    """
+    Build a read-only curation audit for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    try:
+        output = build_corpus_audit(
+            corpus=corpus,
+            required_tags=arguments.required_tag,
+            forbidden_tags=arguments.forbid_tag,
+            extraction_snapshot=arguments.extraction_snapshot,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Corpus audit failed: {exc}", file=sys.stderr)
+        return 2
+    if arguments.format == "markdown":
+        print(corpus_audit_markdown(output, top=arguments.top), end="")
+    else:
+        print(output.model_dump_json(indent=2))
     return 0
 
 
@@ -672,7 +927,7 @@ def _resolve_extraction_snapshot_for_analysis(
     analysis_label: str,
 ) -> "ExtractionSnapshotReference":
     from .configuration import load_configuration_view
-    from .models import ExtractionSnapshotReference
+    from .models import parse_extraction_snapshot_reference
 
     if extraction_snapshot:
         return parse_extraction_snapshot_reference(extraction_snapshot)
@@ -1092,9 +1347,46 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
         configuration_name=arguments.configuration_name,
         configuration=configuration,
         extraction_snapshot=extraction_snapshot,
+        progress_callback=_graph_extract_progress,
     )
     print(manifest.model_dump_json(indent=2))
     return 0
+
+
+def _graph_extract_progress(event: str, payload: Dict[str, Any]) -> None:
+    if event == "starting":
+        print(
+            "[graph] starting snapshot "
+            f"{payload['snapshot_id']} with {payload['items_total']} extraction items",
+            file=sys.stderr,
+            flush=True,
+        )
+    elif event == "processing":
+        print(
+            "[graph] processing "
+            f"{payload['item_index']}/{payload['items_total']} item {payload['item_id']}",
+            file=sys.stderr,
+            flush=True,
+        )
+    elif event == "processed":
+        message = (
+            "[graph] processed "
+            f"{payload['item_index']}/{payload['items_total']} "
+            f"item {payload['item_id']} status={payload['status']} "
+            f"nodes={payload['nodes']} edges={payload['edges']}"
+        )
+        if payload.get("error_message"):
+            message = f"{message} error={payload['error_message']}"
+        print(message, file=sys.stderr, flush=True)
+    elif event == "completed":
+        print(
+            "[graph] completed snapshot "
+            f"{payload['snapshot_id']} processed={payload['items_processed']} "
+            f"skipped={payload['items_skipped']} errored={payload['items_errored']} "
+            f"nodes={payload['nodes']} edges={payload['edges']}",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 def cmd_graph_list(arguments: argparse.Namespace) -> int:
@@ -1142,6 +1434,134 @@ def cmd_graph_show(arguments: argparse.Namespace) -> int:
         snapshot_id=reference.snapshot_id,
     )
     print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_taxonomy_record(arguments: argparse.Namespace) -> int:
+    """
+    Record an accepted taxonomy manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .taxonomy import record_taxonomy_manifest
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = record_taxonomy_manifest(corpus=corpus, input_path=Path(arguments.input))
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_taxonomy_discover(arguments: argparse.Namespace) -> int:
+    """
+    Discover candidate child taxonomy nodes under accepted root topics.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .taxonomy import discover_taxonomy_children, taxonomy_discovery_markdown
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Taxonomy discovery",
+    )
+    output = discover_taxonomy_children(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        extraction_snapshot=extraction_snapshot,
+    )
+    if arguments.format == "markdown":
+        print(taxonomy_discovery_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_ontology_record(arguments: argparse.Namespace) -> int:
+    """
+    Record an accepted ontology manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .ontology import record_ontology_manifest
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = record_ontology_manifest(corpus=corpus, input_path=Path(arguments.input))
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_ontology_apply(arguments: argparse.Namespace) -> int:
+    """
+    Apply accepted taxonomy and ontology assertions to a graph snapshot.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .ontology import apply_ontology_to_graph
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = apply_ontology_to_graph(
+        corpus=corpus,
+        taxonomy_snapshot_id=arguments.taxonomy,
+        ontology_snapshot_id=arguments.relationships,
+        graph_snapshot=arguments.graph_snapshot,
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_ontology_query(arguments: argparse.Namespace) -> int:
+    """
+    Query accepted ontology assertions.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .ontology import query_ontology_assertions
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = query_ontology_assertions(
+        corpus=corpus,
+        ontology_snapshot_id=arguments.relationships,
+        source_ref=arguments.source_ref,
+        relationship_uid=arguments.relationship,
+        direction=arguments.direction,
+    )
+    print(output.model_dump_json(indent=2))
     return 0
 
 
@@ -1314,6 +1734,124 @@ def cmd_crawl(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_steering_export(arguments: argparse.Namespace) -> int:
+    """
+    Export a stable steering bundle for an external application.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    bundle = build_steering_export(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        topic_governance_snapshot_id=arguments.topic_governance_snapshot,
+    )
+    print(bundle.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_steering_artifacts(arguments: argparse.Namespace) -> int:
+    """
+    List stable artifact references for an external steering worker.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    inventory = build_steering_artifact_inventory(corpus)
+    print(inventory.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_steering_render_seed_manifest(arguments: argparse.Namespace) -> int:
+    """
+    Render an accepted steering topic set as a Biblicus seed manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    output = render_steering_seed_manifest(
+        input_path=Path(arguments.input),
+        output_path=Path(arguments.output),
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_steering_graph_signals(arguments: argparse.Namespace) -> int:
+    """
+    Emit topic-informed graph steering signals.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    bundle = build_steering_graph_signal_bundle(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        graph_snapshot=arguments.graph_snapshot,
+    )
+    print(bundle.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_steering_proposals_validate(arguments: argparse.Namespace) -> int:
+    """
+    Validate an externally authored steering proposal bundle.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    bundle = load_steering_proposal_bundle(Path(arguments.input))
+    print(bundle.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_steering_proposals_record(arguments: argparse.Namespace) -> int:
+    """
+    Record an externally authored steering proposal bundle.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = record_steering_proposal_bundle(
+        corpus=corpus,
+        input_path=Path(arguments.input),
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
 def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
     """
     Run topic modeling analysis for a corpus.
@@ -1360,6 +1898,598 @@ def cmd_analyze_topics(arguments: argparse.Namespace) -> int:
         raise ValueError(f"Invalid topic modeling configuration: {exc}") from exc
     print(output.model_dump_json(indent=2))
     return 0
+
+
+def cmd_analyze_topic_trends(arguments: argparse.Namespace) -> int:
+    """
+    Run temporal topic intelligence for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_trends import build_topic_trends, topic_trends_markdown
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    windows = [token.strip() for token in arguments.windows.split(",") if token.strip()]
+    output = build_topic_trends(
+        corpus=corpus,
+        topic_modeling_snapshot_id=arguments.topic_modeling_snapshot,
+        classifier_id=arguments.classifier,
+        windows=windows,
+        as_of=arguments.as_of,
+        rank_window=arguments.rank_window,
+    )
+    if arguments.format == "markdown":
+        print(topic_trends_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_analyze_topic_granularity_sweep(arguments: argparse.Namespace) -> int:
+    """
+    Run a topic granularity sweep for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
+    from .topic_granularity import (
+        run_topic_granularity_sweep,
+        topic_granularity_sweep_markdown,
+    )
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    configuration_data = load_configuration_view(
+        arguments.configuration,
+        configuration_label="Configuration file",
+        mapping_error_message="Topic modeling configuration must be a mapping/object",
+    )
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration_data = apply_dotted_overrides(configuration_data, overrides)
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Topic granularity sweep",
+    )
+    output = run_topic_granularity_sweep(
+        corpus=corpus,
+        configuration_name=arguments.configuration_name,
+        configuration=configuration_data,
+        extraction_snapshot=extraction_snapshot,
+        target_topic_range=arguments.target_topic_range,
+    )
+    if arguments.format == "markdown":
+        print(topic_granularity_sweep_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_analyze_topic_context(arguments: argparse.Namespace) -> int:
+    """
+    Generate a research-agent topic context report for a corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_context import build_topic_context, topic_context_markdown
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = build_topic_context(
+        corpus=corpus,
+        topic_modeling_snapshot_id=arguments.topic_modeling_snapshot,
+        max_topics=arguments.max_topics,
+        examples_per_topic=arguments.examples_per_topic,
+        summary_model=arguments.summary_model,
+        include_outlier=arguments.include_outlier,
+    )
+    if arguments.format == "markdown":
+        print(topic_context_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_migrate_publication_dates(arguments: argparse.Namespace) -> int:
+    """
+    Migrate legacy publication date metadata into the canonical dates block.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_trends import migrate_publication_dates
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = migrate_publication_dates(corpus=corpus)
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_train(arguments: argparse.Namespace) -> int:
+    """
+    Train a topic classifier model version.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .configuration import (
+        apply_dotted_overrides,
+        load_configuration_view,
+        parse_dotted_overrides,
+    )
+    from .topic_classifier import train_topic_classifier
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    configuration_data = load_configuration_view(
+        arguments.configuration,
+        configuration_label="Topic classifier configuration",
+        mapping_error_message="Topic classifier configuration must be a mapping/object",
+    )
+    overrides = parse_dotted_overrides(arguments.override)
+    configuration_data = apply_dotted_overrides(configuration_data, overrides)
+    extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
+        corpus=corpus,
+        extraction_snapshot=arguments.extraction_snapshot,
+        analysis_label="Topic classifier training",
+    )
+    output = train_topic_classifier(
+        corpus=corpus,
+        manifest_path=Path(arguments.manifest).resolve(),
+        configuration_name=arguments.configuration_name,
+        configuration=configuration_data,
+        extraction_snapshot=extraction_snapshot,
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_classify(arguments: argparse.Namespace) -> int:
+    """
+    Classify an existing corpus item with a topic classifier.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_classifier import classify_topic_classifier_item
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = classify_topic_classifier_item(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        item_id=arguments.item_id,
+        review_threshold=arguments.review_threshold,
+        top_k=arguments.top_k,
+        record=False,
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_project(arguments: argparse.Namespace) -> int:
+    """
+    Project a topic classifier from an authority corpus onto a target corpus.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .models import parse_extraction_snapshot_reference
+    from .topic_classifier import project_topic_classifier_items
+
+    classifier_corpus = Corpus.open(arguments.classifier_corpus)
+    target_corpus = Corpus.open(arguments.target_corpus)
+    output = project_topic_classifier_items(
+        classifier_corpus=classifier_corpus,
+        target_corpus=target_corpus,
+        classifier_id=arguments.classifier,
+        extraction_snapshot=parse_extraction_snapshot_reference(arguments.extraction_snapshot),
+        project_all=arguments.project_all,
+        item_ids=arguments.item_id or [],
+        review_threshold=arguments.review_threshold,
+        top_k=arguments.top_k,
+        record=arguments.record,
+    )
+    payload = output.model_dump(mode="json")
+    if arguments.format == "markdown":
+        print(_topic_classifier_projection_markdown(payload))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_ingest_classify(arguments: argparse.Namespace) -> int:
+    """
+    Ingest one source and classify it with a topic classifier.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_classifier import ingest_and_classify_topic_classifier_item
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    tags = _parse_tags(arguments.tags, arguments.tag)
+    output = ingest_and_classify_topic_classifier_item(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        source=arguments.source,
+        tags=tags,
+        review_threshold=arguments.review_threshold,
+        top_k=arguments.top_k,
+        record=arguments.record,
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_review_batch(arguments: argparse.Namespace) -> int:
+    """
+    Build a blind batch review table for candidate topic classifier items.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .models import parse_extraction_snapshot_reference
+    from .topic_classifier import build_topic_classifier_batch_review
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    output = build_topic_classifier_batch_review(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        extraction_snapshot=parse_extraction_snapshot_reference(arguments.extraction_snapshot),
+        topic_modeling_snapshot_id=arguments.topic_modeling_snapshot,
+        candidate_tag=arguments.candidate_tag,
+        proposed_topic_uid=arguments.proposed_topic_uid,
+        review_threshold=arguments.review_threshold,
+        record=arguments.record,
+    )
+    if arguments.format == "markdown":
+        print(_topic_classifier_batch_review_markdown(output.model_dump(mode="json")))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_topic_classifier_draft_manifest(arguments: argparse.Namespace) -> int:
+    """
+    Draft a reviewed seed manifest without mutating the baseline manifest.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .topic_classifier import draft_topic_classifier_manifest
+
+    output = draft_topic_classifier_manifest(
+        base_manifest_path=Path(arguments.base_manifest),
+        output_path=Path(arguments.output),
+        classifier_id=arguments.classifier_id,
+        display_name=arguments.display_name,
+        description=arguments.description,
+        topic_uid=arguments.topic_uid,
+        topic_display_name=arguments.topic_display_name,
+        topic_description=arguments.topic_description,
+        seed_item_ids=arguments.seed_item_id or [],
+        holdout_item_ids=arguments.holdout_item_id or [],
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def _load_research_intake_configuration(paths: List[str]) -> object:
+    from .configuration import load_configuration_view
+    from .research_intake import ResearchIntakeConfiguration
+
+    payload = load_configuration_view(
+        paths,
+        configuration_label="Research intake configuration",
+        mapping_error_message="Research intake configuration must be a mapping/object",
+    )
+    return ResearchIntakeConfiguration.model_validate(payload)
+
+
+def cmd_research_intake_assess(arguments: argparse.Namespace) -> int:
+    """
+    Assess a research-agent candidate without ingesting it.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .research_intake import assess_research_intake_candidate
+
+    corpus = Corpus.open(arguments.corpus) if arguments.corpus else Corpus.find(Path.cwd())
+    metadata = _load_ingest_metadata_file(Path(arguments.metadata_file))
+    configuration = _load_research_intake_configuration(arguments.configuration)
+    output = assess_research_intake_candidate(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        source_path=Path(arguments.source),
+        metadata=metadata,
+        configuration=configuration,
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_research_intake_ingest(arguments: argparse.Namespace) -> int:
+    """
+    Assess and conditionally ingest a research-agent candidate.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .research_intake import ingest_research_intake_candidate
+
+    corpus = Corpus.open(arguments.corpus) if arguments.corpus else Corpus.find(Path.cwd())
+    metadata = _load_ingest_metadata_file(Path(arguments.metadata_file))
+    configuration = _load_research_intake_configuration(arguments.configuration)
+    output = ingest_research_intake_candidate(
+        corpus=corpus,
+        classifier_id=arguments.classifier,
+        source_path=Path(arguments.source),
+        metadata=metadata,
+        configuration=configuration,
+        source_uri=arguments.source_uri,
+        media_type=arguments.media_type,
+        tags=_parse_tags(arguments.tags, arguments.tag),
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_research_intake_pending(arguments: argparse.Namespace) -> int:
+    """
+    List research-agent intake items awaiting review.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .research_intake import (
+        list_pending_research_intake_items,
+        research_intake_pending_markdown,
+    )
+
+    corpus = Corpus.open(arguments.corpus) if arguments.corpus else Corpus.find(Path.cwd())
+    output = list_pending_research_intake_items(corpus=corpus)
+    if arguments.format == "markdown":
+        print(research_intake_pending_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_research_intake_decide(arguments: argparse.Namespace) -> int:
+    """
+    Apply a human decision to an existing research intake item.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .research_intake import decide_research_intake_item
+
+    corpus = Corpus.open(arguments.corpus) if arguments.corpus else Corpus.find(Path.cwd())
+    output = decide_research_intake_item(
+        corpus=corpus,
+        item_id=arguments.item_id,
+        decision=arguments.decision,
+        topic_uid=arguments.topic_uid,
+        tags_add=getattr(arguments, "tags_add", None) or [],
+        tags_remove=getattr(arguments, "tags_remove", None) or [],
+        delete=bool(getattr(arguments, "delete", False)),
+    )
+    print(output.model_dump_json(indent=2))
+    return 0
+
+
+def _topic_classifier_batch_review_markdown(payload: Dict[str, Any]) -> str:
+    """
+    Render a topic classifier batch review payload as a Markdown table.
+
+    :param payload: Batch review payload.
+    :type payload: dict[str, Any]
+    :return: Markdown report.
+    :rtype: str
+    """
+    lines = [
+        f"# Topic Classifier Batch Review: {payload['classifier_id']}",
+        "",
+        f"- Model version: `{payload['model_version']}`",
+        f"- Candidate items: {payload['summary']['candidate_items']}",
+        f"- Review recommended: {payload['summary']['review_recommended_items']}",
+        "",
+        "| Item ID | Title | Proposed | Classifier Topic | Score | Review | Discovery Topic | Keywords | Decision |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for item in payload["items"]:
+        keywords = ", ".join(
+            str(keyword.get("keyword", "")) for keyword in item.get("unsupervised_keywords", [])[:5]
+        )
+        score = item.get("classifier_score")
+        score_text = "" if score is None else f"{float(score):.3f}"
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(item["item_id"]),
+                    _markdown_table_cell(item.get("title") or ""),
+                    _markdown_table_cell(item.get("proposed_topic_uid") or ""),
+                    _markdown_table_cell(item.get("classifier_topic_uid") or "discovered"),
+                    score_text,
+                    str(item["review_recommended"]).lower(),
+                    (
+                        ""
+                        if item.get("unsupervised_topic_id") is None
+                        else str(item["unsupervised_topic_id"])
+                    ),
+                    _markdown_table_cell(keywords),
+                    _markdown_table_cell(item.get("reviewer_decision") or "pending"),
+                ]
+            )
+            + " |"
+        )
+    return "\n".join(lines)
+
+
+def _topic_classifier_projection_markdown(payload: Dict[str, Any]) -> str:
+    """
+    Render a topic classifier projection payload as a Markdown table.
+
+    :param payload: Projection payload.
+    :type payload: dict[str, Any]
+    :return: Markdown report.
+    :rtype: str
+    """
+    lines = [
+        f"# Topic Classifier Projection: {payload['classifier_id']}",
+        "",
+        f"- Model version: `{payload['model_version']}`",
+        f"- Classifier corpus: `{payload['classifier_corpus_uri']}`",
+        f"- Target corpus: `{payload['target_corpus_uri']}`",
+        f"- Projected items: {payload['summary']['projected_items']}",
+        f"- Skipped items: {payload['summary']['skipped_items']}",
+        f"- Review recommended: {payload['summary']['review_recommended_items']}",
+        "",
+        "| Item ID | Title | Topic | Score | Review | Candidates | Source |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for item in payload["items"]:
+        score = item.get("score")
+        score_text = "" if score is None else f"{float(score):.3f}"
+        candidates = _topic_classifier_candidates_markdown(item.get("topic_candidates") or [])
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(item["item_id"]),
+                    _markdown_table_cell(item.get("title") or ""),
+                    _markdown_table_cell(item.get("topic_uid") or "review"),
+                    score_text,
+                    str(item["review_recommended"]).lower(),
+                    _markdown_table_cell(candidates),
+                    _markdown_table_cell(item.get("source_uri") or ""),
+                ]
+            )
+            + " |"
+        )
+    if payload.get("skipped_items"):
+        lines.extend(
+            [
+                "",
+                "## Skipped Items",
+                "",
+                "| Item ID | Title | Reason |",
+                "| --- | --- | --- |",
+            ]
+        )
+        for item in payload["skipped_items"]:
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        str(item["item_id"]),
+                        _markdown_table_cell(item.get("title") or ""),
+                        _markdown_table_cell(item["reason"]),
+                    ]
+                )
+                + " |"
+            )
+    return "\n".join(lines)
+
+
+def _topic_classifier_candidates_markdown(candidates: object) -> str:
+    """
+    Render ranked topic candidates for a compact Markdown table cell.
+
+    :param candidates: Candidate payloads.
+    :type candidates: object
+    :return: Compact ranked candidate text.
+    :rtype: str
+    """
+    if not isinstance(candidates, list):
+        return ""
+    values: List[str] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        label = str(candidate.get("topic_uid") or "discovered")
+        score = candidate.get("score")
+        score_text = "" if score is None else f" {float(score):.3f}"
+        values.append(f"{label}{score_text}")
+    return "; ".join(values)
+
+
+def _markdown_table_cell(value: str) -> str:
+    """
+    Escape text for a Markdown table cell.
+
+    :param value: Cell value.
+    :type value: str
+    :return: Escaped cell value.
+    :rtype: str
+    """
+    return value.replace("|", "\\|").replace("\n", " ")
 
 
 def cmd_analyze_profile(arguments: argparse.Namespace) -> int:
@@ -1822,6 +2952,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_migrate.set_defaults(func=cmd_migrate_layout)
 
+    p_migrate_dates = sub.add_parser(
+        "migrate-publication-dates",
+        help="Move legacy publication metadata into dates.published_at and dates.updated_at.",
+    )
+    _add_common_corpus_arg(p_migrate_dates)
+    p_migrate_dates.set_defaults(func=cmd_migrate_publication_dates)
+
     p_ingest = sub.add_parser("ingest", help="Ingest file(s) and/or text into the corpus.")
     _add_common_corpus_arg(p_ingest)
     p_ingest.add_argument("files", nargs="*", help="File paths to ingest.")
@@ -1832,6 +2969,36 @@ def build_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument("--title", default=None, help="Optional title (for --note/--stdin).")
     p_ingest.add_argument("--tags", default=None, help="Comma-separated tags.")
     p_ingest.add_argument("--tag", action="append", help="Repeatable tag.")
+    p_ingest.add_argument(
+        "--metadata-file",
+        default=None,
+        help="YAML or JSON metadata object for standard single-item ingest.",
+    )
+    p_ingest.add_argument(
+        "--source-uri",
+        default=None,
+        help="Explicit source uniform resource identifier for standard single-item ingest.",
+    )
+    p_ingest.add_argument(
+        "--media-type",
+        default=None,
+        help="Explicit media type for standard single-item ingest.",
+    )
+    p_ingest.add_argument(
+        "--published-at",
+        default=None,
+        help="Publication date for canonical metadata dates.published_at.",
+    )
+    p_ingest.add_argument(
+        "--updated-at",
+        default=None,
+        help="Update date for canonical metadata dates.updated_at.",
+    )
+    p_ingest.add_argument(
+        "--retrieved-at",
+        default=None,
+        help="Retrieval timestamp for canonical metadata dates.retrieved_at.",
+    )
     p_ingest.set_defaults(func=cmd_ingest)
 
     p_list = sub.add_parser("list", help="List recently ingested items.")
@@ -1849,6 +3016,43 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_corpus_arg(p_reindex)
     p_reindex.set_defaults(func=cmd_reindex)
+
+    p_corpus = sub.add_parser("corpus", help="Inspect and audit corpora.")
+    corpus_sub = p_corpus.add_subparsers(dest="corpus_command", required=True)
+    p_corpus_audit = corpus_sub.add_parser(
+        "audit", help="Run a read-only curation audit for a corpus."
+    )
+    _add_common_corpus_arg(p_corpus_audit)
+    p_corpus_audit.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="markdown",
+        help="Output format.",
+    )
+    p_corpus_audit.add_argument(
+        "--required-tag",
+        action="append",
+        default=[],
+        help="Tag expected on every item. Repeatable.",
+    )
+    p_corpus_audit.add_argument(
+        "--forbid-tag",
+        action="append",
+        default=[],
+        help="Tag expected on no item. Repeatable.",
+    )
+    p_corpus_audit.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Optional extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_corpus_audit.add_argument(
+        "--top",
+        type=int,
+        default=20,
+        help="Maximum facet rows to show in Markdown output.",
+    )
+    p_corpus_audit.set_defaults(func=cmd_corpus_audit)
 
     p_import_tree = sub.add_parser("import-tree", help="Import a folder tree into the corpus.")
     _add_common_corpus_arg(p_import_tree)
@@ -2078,6 +3282,100 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_graph_show.set_defaults(func=cmd_graph_show)
 
+    p_taxonomy = sub.add_parser("taxonomy", help="Validate and discover accepted topic taxonomy.")
+    taxonomy_sub = p_taxonomy.add_subparsers(dest="taxonomy_command", required=True)
+
+    p_taxonomy_record = taxonomy_sub.add_parser(
+        "record", help="Record an accepted taxonomy JSON manifest."
+    )
+    _add_common_corpus_arg(p_taxonomy_record)
+    p_taxonomy_record.add_argument(
+        "--input",
+        required=True,
+        help="Accepted taxonomy JSON input.",
+    )
+    p_taxonomy_record.set_defaults(func=cmd_taxonomy_record)
+
+    p_taxonomy_discover = taxonomy_sub.add_parser(
+        "discover", help="Discover candidate child taxonomy nodes."
+    )
+    _add_common_corpus_arg(p_taxonomy_discover)
+    p_taxonomy_discover.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier used to collect root topic members.",
+    )
+    p_taxonomy_discover.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_taxonomy_discover.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_taxonomy_discover.set_defaults(func=cmd_taxonomy_discover)
+
+    p_ontology = sub.add_parser("ontology", help="Validate and materialize accepted ontology.")
+    ontology_sub = p_ontology.add_subparsers(dest="ontology_command", required=True)
+
+    p_ontology_record = ontology_sub.add_parser(
+        "record", help="Record an accepted ontology JSON manifest."
+    )
+    _add_common_corpus_arg(p_ontology_record)
+    p_ontology_record.add_argument(
+        "--input",
+        required=True,
+        help="Accepted ontology JSON input.",
+    )
+    p_ontology_record.set_defaults(func=cmd_ontology_record)
+
+    p_ontology_apply = ontology_sub.add_parser(
+        "apply", help="Materialize accepted taxonomy and ontology into a graph snapshot."
+    )
+    _add_common_corpus_arg(p_ontology_apply)
+    p_ontology_apply.add_argument(
+        "--taxonomy",
+        required=True,
+        help="Taxonomy snapshot id or latest.",
+    )
+    p_ontology_apply.add_argument(
+        "--relationships",
+        required=True,
+        help="Ontology relationship snapshot id or latest.",
+    )
+    p_ontology_apply.add_argument(
+        "--graph-snapshot",
+        required=True,
+        help="Graph snapshot reference in extractor_id:snapshot_id form.",
+    )
+    p_ontology_apply.set_defaults(func=cmd_ontology_apply)
+
+    p_ontology_query = ontology_sub.add_parser(
+        "query", help="Query accepted ontology relationship assertions."
+    )
+    _add_common_corpus_arg(p_ontology_query)
+    p_ontology_query.add_argument(
+        "--relationships",
+        required=True,
+        help="Ontology relationship snapshot id or latest.",
+    )
+    p_ontology_query.add_argument("--source-ref", default=None, help="Source reference filter.")
+    p_ontology_query.add_argument(
+        "--relationship",
+        default=None,
+        help="Relationship type filter.",
+    )
+    p_ontology_query.add_argument(
+        "--direction",
+        choices=["outbound", "inbound", "both"],
+        default="outbound",
+        help="Relationship direction filter.",
+    )
+    p_ontology_query.set_defaults(func=cmd_ontology_query)
+
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
     _add_dependency_flags(p_query)
@@ -2178,6 +3476,487 @@ def build_parser() -> argparse.ArgumentParser:
     p_crawl.add_argument("--tag", action="append", help="Repeatable tag to apply to stored items.")
     p_crawl.set_defaults(func=cmd_crawl)
 
+    p_steering = sub.add_parser("steering", help="Export Biblicus steering integration contracts.")
+    steering_sub = p_steering.add_subparsers(dest="steering_command", required=True)
+
+    p_steering_export = steering_sub.add_parser(
+        "export", help="Emit a stable JSON bundle for external application import."
+    )
+    _add_common_corpus_arg(p_steering_export)
+    p_steering_export.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier used to load the accepted topic set.",
+    )
+    p_steering_export.add_argument(
+        "--topic-governance-snapshot",
+        default=None,
+        help="Topic governance snapshot identifier. Defaults to the latest pointer when omitted.",
+    )
+    p_steering_export.set_defaults(func=cmd_steering_export)
+
+    p_steering_artifacts = steering_sub.add_parser(
+        "artifacts", help="List stable Biblicus artifact references."
+    )
+    _add_common_corpus_arg(p_steering_artifacts)
+    p_steering_artifacts.set_defaults(func=cmd_steering_artifacts)
+
+    p_steering_graph_signals = steering_sub.add_parser(
+        "graph-signals",
+        help="Emit topic-informed graph steering signals.",
+    )
+    _add_common_corpus_arg(p_steering_graph_signals)
+    p_steering_graph_signals.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier used to load accepted topics.",
+    )
+    p_steering_graph_signals.add_argument(
+        "--graph-snapshot",
+        required=True,
+        help="Graph snapshot reference in extractor_id:snapshot_id form.",
+    )
+    p_steering_graph_signals.add_argument(
+        "--format",
+        choices=["json"],
+        default="json",
+        help="Output format.",
+    )
+    p_steering_graph_signals.set_defaults(func=cmd_steering_graph_signals)
+
+    p_steering_proposals = steering_sub.add_parser(
+        "proposals",
+        help="Validate and record steering proposal bundles.",
+    )
+    steering_proposals_sub = p_steering_proposals.add_subparsers(
+        dest="steering_proposals_command",
+        required=True,
+    )
+
+    p_steering_proposals_validate = steering_proposals_sub.add_parser(
+        "validate",
+        help="Validate an externally authored steering proposal bundle.",
+    )
+    p_steering_proposals_validate.add_argument(
+        "--input",
+        required=True,
+        help="Steering proposal bundle JSON input.",
+    )
+    p_steering_proposals_validate.set_defaults(func=cmd_steering_proposals_validate)
+
+    p_steering_proposals_record = steering_proposals_sub.add_parser(
+        "record",
+        help="Record an externally authored steering proposal bundle.",
+    )
+    _add_common_corpus_arg(p_steering_proposals_record)
+    p_steering_proposals_record.add_argument(
+        "--input",
+        required=True,
+        help="Steering proposal bundle JSON input.",
+    )
+    p_steering_proposals_record.set_defaults(func=cmd_steering_proposals_record)
+
+    p_steering_render = steering_sub.add_parser(
+        "render-seed-manifest",
+        help="Render an accepted steering topic set into a Biblicus seed manifest.",
+    )
+    p_steering_render.add_argument(
+        "--input",
+        required=True,
+        help="Accepted steering topic-set JSON input.",
+    )
+    p_steering_render.add_argument(
+        "--output",
+        required=True,
+        help="Destination Biblicus seed-manifest.json path.",
+    )
+    p_steering_render.set_defaults(func=cmd_steering_render_seed_manifest)
+
+    p_research_intake = sub.add_parser(
+        "research-intake", help="Assess and manage research-agent intake candidates."
+    )
+    research_intake_sub = p_research_intake.add_subparsers(
+        dest="research_intake_command", required=True
+    )
+
+    p_research_intake_assess = research_intake_sub.add_parser(
+        "assess", help="Assess a local candidate without ingesting it."
+    )
+    _add_common_corpus_arg(p_research_intake_assess)
+    p_research_intake_assess.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_research_intake_assess.add_argument(
+        "--configuration",
+        required=True,
+        action="append",
+        help="Path to research intake configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_research_intake_assess.add_argument(
+        "--metadata-file",
+        required=True,
+        help="YAML or JSON candidate metadata object.",
+    )
+    p_research_intake_assess.add_argument("source", help="Local candidate file path.")
+    p_research_intake_assess.set_defaults(func=cmd_research_intake_assess)
+
+    p_research_intake_ingest = research_intake_sub.add_parser(
+        "ingest", help="Assess a local candidate and ingest it when accepted or pending."
+    )
+    _add_common_corpus_arg(p_research_intake_ingest)
+    p_research_intake_ingest.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_research_intake_ingest.add_argument(
+        "--configuration",
+        required=True,
+        action="append",
+        help="Path to research intake configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_research_intake_ingest.add_argument(
+        "--metadata-file",
+        required=True,
+        help="YAML or JSON candidate metadata object.",
+    )
+    p_research_intake_ingest.add_argument(
+        "--source-uri",
+        default=None,
+        help="Explicit source uniform resource identifier for accepted or pending ingest.",
+    )
+    p_research_intake_ingest.add_argument(
+        "--media-type",
+        default=None,
+        help="Explicit media type for accepted or pending ingest.",
+    )
+    p_research_intake_ingest.add_argument("--tags", default=None, help="Comma-separated tags.")
+    p_research_intake_ingest.add_argument(
+        "--tag", action="append", help="Repeatable tag to apply to accepted or pending ingest."
+    )
+    p_research_intake_ingest.add_argument("source", help="Local candidate file path.")
+    p_research_intake_ingest.set_defaults(func=cmd_research_intake_ingest)
+
+    p_research_intake_pending = research_intake_sub.add_parser(
+        "pending", help="List research intake items awaiting review."
+    )
+    _add_common_corpus_arg(p_research_intake_pending)
+    p_research_intake_pending.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_research_intake_pending.set_defaults(func=cmd_research_intake_pending)
+
+    p_research_intake_decide = research_intake_sub.add_parser(
+        "decide", help="Apply a human decision to an existing intake item."
+    )
+    _add_common_corpus_arg(p_research_intake_decide)
+    p_research_intake_decide.add_argument(
+        "--item-id",
+        required=True,
+        help="Pending item identifier.",
+    )
+    p_research_intake_decide.add_argument(
+        "--decision",
+        required=True,
+        choices=["accept", "reject"],
+        help="Human intake decision.",
+    )
+    p_research_intake_decide.add_argument(
+        "--topic-uid",
+        default=None,
+        help="Reviewed topic identity for accepted items.",
+    )
+    p_research_intake_decide.add_argument(
+        "--tags-add",
+        action="append",
+        default=None,
+        help="Repeatable tag to add during the decision.",
+    )
+    p_research_intake_decide.add_argument(
+        "--tags-remove",
+        action="append",
+        default=None,
+        help="Repeatable tag to remove during the decision.",
+    )
+    p_research_intake_decide.add_argument(
+        "--delete",
+        action="store_true",
+        help="Delete the item files when rejecting (reject-only).",
+    )
+    p_research_intake_decide.set_defaults(func=cmd_research_intake_decide)
+
+    p_topic_classifier = sub.add_parser(
+        "topic-classifier", help="Train and use semi-supervised topic classifiers."
+    )
+    topic_classifier_sub = p_topic_classifier.add_subparsers(
+        dest="topic_classifier_command", required=True
+    )
+
+    p_topic_classifier_train = topic_classifier_sub.add_parser(
+        "train", help="Train a topic classifier model version."
+    )
+    _add_common_corpus_arg(p_topic_classifier_train)
+    p_topic_classifier_train.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to topic classifier seed-manifest.json.",
+    )
+    p_topic_classifier_train.add_argument(
+        "--configuration",
+        required=True,
+        action="append",
+        help="Path to topic classifier configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_topic_classifier_train.add_argument(
+        "--override",
+        "--config",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
+    )
+    p_topic_classifier_train.add_argument(
+        "--configuration-name",
+        default="default",
+        help="Human-readable configuration name.",
+    )
+    p_topic_classifier_train.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_topic_classifier_train.set_defaults(func=cmd_topic_classifier_train)
+
+    p_topic_classifier_classify = topic_classifier_sub.add_parser(
+        "classify", help="Classify an existing corpus item."
+    )
+    _add_common_corpus_arg(p_topic_classifier_classify)
+    p_topic_classifier_classify.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_topic_classifier_classify.add_argument(
+        "--item-id",
+        required=True,
+        help="Corpus item identifier to classify.",
+    )
+    p_topic_classifier_classify.add_argument(
+        "--review-threshold",
+        type=float,
+        default=0.35,
+        help="Minimum confidence score before review is recommended.",
+    )
+    p_topic_classifier_classify.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Maximum ranked topic candidates to include.",
+    )
+    p_topic_classifier_classify.set_defaults(func=cmd_topic_classifier_classify)
+
+    p_topic_classifier_project = topic_classifier_sub.add_parser(
+        "project",
+        help="Project a classifier from an authority corpus onto a target corpus.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--classifier-corpus",
+        required=True,
+        help="Corpus path or uniform resource identifier containing classifier artifacts.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--target-corpus",
+        required=True,
+        help="Corpus path or uniform resource identifier containing target items.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--extraction-snapshot",
+        required=True,
+        help="Target corpus extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--all",
+        action="store_true",
+        dest="project_all",
+        help="Project the classifier onto every target corpus item.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--item-id",
+        action="append",
+        default=[],
+        help="Repeatable target item identifier to project.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--review-threshold",
+        type=float,
+        default=0.35,
+        help="Minimum confidence score before review is recommended.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Maximum ranked topic candidates to include.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--record",
+        action="store_true",
+        help="Persist projection predictions as audit records in the target corpus.",
+    )
+    p_topic_classifier_project.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_topic_classifier_project.set_defaults(func=cmd_topic_classifier_project)
+
+    p_topic_classifier_ingest = topic_classifier_sub.add_parser(
+        "ingest-classify", help="Ingest one source and classify it immediately."
+    )
+    _add_common_corpus_arg(p_topic_classifier_ingest)
+    p_topic_classifier_ingest.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_topic_classifier_ingest.add_argument(
+        "--review-threshold",
+        type=float,
+        default=0.35,
+        help="Minimum confidence score before review is recommended.",
+    )
+    p_topic_classifier_ingest.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Maximum ranked topic candidates to include.",
+    )
+    p_topic_classifier_ingest.add_argument(
+        "--record",
+        action="store_true",
+        help="Persist the prediction as an audit record.",
+    )
+    p_topic_classifier_ingest.add_argument("--tags", default=None, help="Comma-separated tags.")
+    p_topic_classifier_ingest.add_argument(
+        "--tag", action="append", help="Repeatable tag to apply to the ingested item."
+    )
+    p_topic_classifier_ingest.add_argument("source", help="Path or URL to ingest and classify.")
+    p_topic_classifier_ingest.set_defaults(func=cmd_topic_classifier_ingest_classify)
+
+    p_topic_classifier_review = topic_classifier_sub.add_parser(
+        "review-batch",
+        help="Review blind candidate items against classifier and discovery outputs.",
+    )
+    _add_common_corpus_arg(p_topic_classifier_review)
+    p_topic_classifier_review.add_argument(
+        "--classifier",
+        required=True,
+        help="Topic classifier identifier.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--extraction-snapshot",
+        required=True,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--topic-modeling-snapshot",
+        required=True,
+        help="Exploratory topic modeling snapshot identifier.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--candidate-tag",
+        default=None,
+        help="Candidate tag required for included items.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--proposed-topic-uid",
+        default=None,
+        help="Candidate proposed topic identity required for included items.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--review-threshold",
+        type=float,
+        default=0.35,
+        help="Minimum confidence score before review is recommended.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--record",
+        action="store_true",
+        help="Persist classifier predictions as audit records.",
+    )
+    p_topic_classifier_review.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_topic_classifier_review.set_defaults(func=cmd_topic_classifier_review_batch)
+
+    p_topic_classifier_draft = topic_classifier_sub.add_parser(
+        "draft-manifest", help="Draft a reviewed seed manifest without changing the baseline."
+    )
+    p_topic_classifier_draft.add_argument(
+        "--base-manifest",
+        required=True,
+        help="Existing seed manifest to copy.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--output",
+        required=True,
+        help="Destination path for the drafted seed manifest.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--classifier-id",
+        default=None,
+        help="Optional classifier identifier override. Omit to preserve the base classifier identity.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--display-name",
+        default=None,
+        help="Optional display name override. Omit to preserve the base display name.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--description",
+        default=None,
+        help="Optional description override. Omit to preserve the base description.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--topic-uid", required=True, help="Topic identity to add."
+    )
+    p_topic_classifier_draft.add_argument(
+        "--topic-display-name",
+        required=True,
+        help="Human-readable topic label.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--topic-description",
+        required=True,
+        help="Reviewed topic definition.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--seed-item-id",
+        action="append",
+        required=True,
+        help="Reviewed seed item identifier. Repeat for multiple seeds.",
+    )
+    p_topic_classifier_draft.add_argument(
+        "--holdout-item-id",
+        action="append",
+        default=[],
+        help="Reviewed holdout item identifier. Repeat for multiple holdouts.",
+    )
+    p_topic_classifier_draft.set_defaults(func=cmd_topic_classifier_draft_manifest)
+
     p_analyze = sub.add_parser("analyze", help="Run analysis pipelines for the corpus.")
     analyze_sub = p_analyze.add_subparsers(dest="analyze_command", required=True)
 
@@ -2207,6 +3986,123 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_analyze_topics.set_defaults(func=cmd_analyze_topics)
+
+    p_analyze_topic_granularity = analyze_sub.add_parser(
+        "topic-granularity-sweep",
+        help="Compare topic modeling granularity profiles and label the selected profile.",
+    )
+    _add_common_corpus_arg(p_analyze_topic_granularity)
+    p_analyze_topic_granularity.add_argument(
+        "--configuration",
+        required=True,
+        action="append",
+        help="Path to topic modeling configuration YAML. Repeatable; later files override earlier ones.",
+    )
+    p_analyze_topic_granularity.add_argument(
+        "--override",
+        "--config",
+        action="append",
+        default=[],
+        help="Override key=value pairs applied after composing configurations (supports dotted keys).",
+    )
+    p_analyze_topic_granularity.add_argument(
+        "--configuration-name",
+        default="granularity-sweep",
+        help="Human-readable configuration name.",
+    )
+    p_analyze_topic_granularity.add_argument(
+        "--extraction-snapshot",
+        required=True,
+        help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_analyze_topic_granularity.add_argument(
+        "--target-topic-range",
+        default="10:20",
+        help="Target non-outlier topic count range in min:max form.",
+    )
+    p_analyze_topic_granularity.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_analyze_topic_granularity.set_defaults(func=cmd_analyze_topic_granularity_sweep)
+
+    p_analyze_topic_context = analyze_sub.add_parser(
+        "topic-context", help="Generate Markdown or JSON topic context for research agents."
+    )
+    _add_common_corpus_arg(p_analyze_topic_context)
+    p_analyze_topic_context.add_argument(
+        "--topic-modeling-snapshot",
+        required=True,
+        help="Topic modeling snapshot identifier to summarize.",
+    )
+    p_analyze_topic_context.add_argument(
+        "--max-topics",
+        type=int,
+        default=20,
+        help="Maximum non-outlier topic buckets to include.",
+    )
+    p_analyze_topic_context.add_argument(
+        "--examples-per-topic",
+        type=int,
+        default=3,
+        help="Maximum representative examples per topic.",
+    )
+    p_analyze_topic_context.add_argument(
+        "--summary-model",
+        default=None,
+        help="Optional OpenAI model for topic guidance and missing example summaries.",
+    )
+    p_analyze_topic_context.add_argument(
+        "--include-outlier",
+        action="store_true",
+        help="Include BERTopic outlier topic -1 in the report.",
+    )
+    p_analyze_topic_context.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="markdown",
+        help="Output format.",
+    )
+    p_analyze_topic_context.set_defaults(func=cmd_analyze_topic_context)
+
+    p_analyze_topic_trends = analyze_sub.add_parser(
+        "topic-trends", help="Run publication-date topic trend analysis."
+    )
+    _add_common_corpus_arg(p_analyze_topic_trends)
+    p_analyze_topic_trends.add_argument(
+        "--topic-modeling-snapshot",
+        required=True,
+        help="Topic modeling snapshot identifier to analyze.",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--classifier",
+        default=None,
+        help="Optional topic classifier identifier for canonical topic coverage.",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--windows",
+        default="30d,90d,1y,all",
+        help="Comma-separated publication windows such as 30d,90d,1y,all.",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--as-of",
+        default=None,
+        help="Publication date anchor for trend windows. Defaults to latest dates.published_at.",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--rank-window",
+        default="90d",
+        help="Window used to rank topics. Must be included in --windows.",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_analyze_topic_trends.set_defaults(func=cmd_analyze_topic_trends)
 
     p_analyze_profile = analyze_sub.add_parser("profile", help="Run profiling analysis.")
     _add_common_corpus_arg(p_analyze_profile)

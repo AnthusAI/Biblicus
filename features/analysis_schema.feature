@@ -27,10 +27,6 @@ Feature: Analysis schema validation
     Then a model validation error is raised
     And the validation error mentions "llm_extraction.method must be a string or TopicModelingLlmExtractionMethod"
 
-  Scenario: LLM fine-tuning handles missing document references
-    When I snapshot LLM fine-tuning with missing document references
-    Then the fine-tuning topics labeled equals 1
-
   Scenario: Itemized response parses JSON string
     When I parse an itemized response JSON string
     Then the itemized response contains 2 items

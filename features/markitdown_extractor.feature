@@ -19,12 +19,22 @@ Feature: MarkItDown extractor plugin
     Then the command fails with exit code 2
     And standard error includes "Python 3.10"
 
-  Scenario: MarkItDown extractor skips text items
+  Scenario: MarkItDown extractor skips ordinary text items
     Given I initialized a corpus at "corpus"
     And a fake MarkItDown library is available
     When I ingest the text "alpha" with title "Alpha" and tags "a" into corpus "corpus"
     And I build a "markitdown" extraction snapshot in corpus "corpus"
     Then the extraction snapshot does not include extracted text for the last ingested item
+
+  Scenario: MarkItDown extractor converts Hypertext Markup Language text items
+    Given I initialized a corpus at "corpus"
+    And a fake MarkItDown library is available that returns text "Clean history article text" for filename "history.html"
+    And a text file "history.html" exists with contents "<html><script>noise</script><body>History article</body></html>"
+    When I ingest the file "history.html" into corpus "corpus"
+    And I build a "markitdown" extraction snapshot in corpus "corpus"
+    Then the extraction snapshot includes extracted text for the last ingested item
+    And the extracted text for the last ingested item equals "Clean history article text"
+    And the extracted text for the last ingested item does not contain "<script>"
 
   Scenario: MarkItDown extractor produces extracted text for a non-text item
     Given I initialized a corpus at "corpus"
@@ -87,9 +97,15 @@ Feature: MarkItDown extractor plugin
   Scenario: MarkItDown extractor records per-item errors and continues
     Given I initialized a corpus at "corpus"
     And a fake MarkItDown library is available that raises a RuntimeError for filename "boom.pdf"
-    And a binary file "boom.pdf" exists
+    And a file "boom.pdf" exists with bytes:
+      """
+      %PDF-1.4\nboom
+      """
     And a fake MarkItDown library is available that returns text "ok" for filename "ok.pdf"
-    And a binary file "ok.pdf" exists
+    And a file "ok.pdf" exists with bytes:
+      """
+      %PDF-1.4\nok
+      """
     When I ingest the file "boom.pdf" into corpus "corpus"
     And I ingest the file "ok.pdf" into corpus "corpus"
     And I build a "markitdown" extraction snapshot in corpus "corpus"

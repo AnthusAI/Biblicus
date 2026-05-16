@@ -6,7 +6,7 @@ import types
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from behave import given, then, when
 
@@ -18,6 +18,14 @@ class _FakeBerTopicBehavior:
     topic_assignments: List[int]
     topic_keywords: Dict[int, List[tuple[str, float]]]
     last_documents: List[str]
+    last_y: List[int]
+    last_transform_documents: List[str]
+    last_kwargs: Dict[str, object]
+    last_representation_model: Optional[object]
+    classification_topic_id: int
+    classification_score: Optional[float]
+    classification_probabilities: Optional[Dict[int, float]]
+    topic_assignment_rules: List[tuple[str, int]]
 
 
 @dataclass
@@ -33,7 +41,6 @@ def _parse_json_output(standard_output: str) -> dict[str, object]:
     return json.loads(standard_output)
 
 
-
 def _ensure_fake_bertopic_behavior(context) -> _FakeBerTopicBehavior:
     behavior = getattr(context, "fake_bertopic_behavior", None)
     if behavior is None:
@@ -41,6 +48,14 @@ def _ensure_fake_bertopic_behavior(context) -> _FakeBerTopicBehavior:
             topic_assignments=[],
             topic_keywords={},
             last_documents=[],
+            last_y=[],
+            last_transform_documents=[],
+            last_kwargs={},
+            last_representation_model=None,
+            classification_topic_id=0,
+            classification_score=None,
+            classification_probabilities=None,
+            topic_assignment_rules=[],
         )
         context.fake_bertopic_behavior = behavior
     return behavior
@@ -60,21 +75,36 @@ def _install_fake_bertopic_module(context, *, use_fake_marker: bool) -> None:
         return
 
     original_modules: Dict[str, object] = {}
-    if "bertopic" in sys.modules:
-        original_modules["bertopic"] = sys.modules["bertopic"]
+    for name in ["bertopic", "bertopic.representation"]:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
 
     behavior = _ensure_fake_bertopic_behavior(context)
 
     class BERTopic:  # noqa: N801 - external dependency uses PascalCase
         def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
             self._kwargs = dict(kwargs)
+            behavior.last_kwargs = dict(kwargs)
+            behavior.last_representation_model = kwargs.get("representation_model")
+            self._representation_model = kwargs.get("representation_model")
             self._assignments: List[int] = []
             self._documents: List[str] = []
 
-        def fit_transform(self, documents):  # type: ignore[no-untyped-def]
+        def fit_transform(self, documents, y=None):  # type: ignore[no-untyped-def]
             self._documents = [str(doc) for doc in documents]
             behavior.last_documents = list(self._documents)
-            assignments = list(behavior.topic_assignments)
+            behavior.last_y = list(y) if y is not None else []
+            assignments = []
+            if behavior.topic_assignment_rules:
+                for document in self._documents:
+                    matched_topic_id = None
+                    for phrase, topic_id in behavior.topic_assignment_rules:
+                        if phrase in document:
+                            matched_topic_id = topic_id
+                            break
+                    assignments.append(0 if matched_topic_id is None else matched_topic_id)
+            else:
+                assignments = list(behavior.topic_assignments)
             if not assignments:
                 assignments = [0 for _ in self._documents]
             if len(assignments) < len(self._documents):
@@ -95,14 +125,107 @@ def _install_fake_bertopic_module(context, *, use_fake_marker: bool) -> None:
             return records
 
         def get_topic(self, topic_id: int):  # type: ignore[no-untyped-def]
+            if self._representation_model is not None:
+                label = self._representation_model.label_for_topic(  # type: ignore[attr-defined]
+                    topic_id=topic_id,
+                    keywords=behavior.topic_keywords.get(topic_id, []),
+                    documents=self._documents,
+                )
+                if label:
+                    return [(label, 1.0)]
             return behavior.topic_keywords.get(topic_id, [])
 
+        def transform(self, documents):  # type: ignore[no-untyped-def]
+            behavior.last_transform_documents = [str(doc) for doc in documents]
+            assignments = [
+                behavior.classification_topic_id for _ in behavior.last_transform_documents
+            ]
+            if behavior.classification_probabilities is not None:
+                max_topic_id = max(behavior.classification_probabilities.keys(), default=0)
+                row = [
+                    float(behavior.classification_probabilities.get(topic_id, 0.0))
+                    for topic_id in range(max_topic_id + 1)
+                ]
+                return assignments, [row for _ in behavior.last_transform_documents]
+            if behavior.classification_score is None:
+                return assignments, None
+            return assignments, [
+                [behavior.classification_score] for _ in behavior.last_transform_documents
+            ]
+
+        def approximate_distribution(self, documents):  # type: ignore[no-untyped-def]
+            behavior.last_transform_documents = [str(doc) for doc in documents]
+            if behavior.classification_probabilities is not None:
+                max_topic_id = max(behavior.classification_probabilities.keys(), default=0)
+                row = [
+                    float(behavior.classification_probabilities.get(topic_id, 0.0))
+                    for topic_id in range(max_topic_id + 1)
+                ]
+                return [row for _ in behavior.last_transform_documents], None
+            if behavior.classification_score is None:
+                return None, None
+            return [
+                [behavior.classification_score] for _ in behavior.last_transform_documents
+            ], None
+
+        def save(self, path):  # type: ignore[no-untyped-def]
+            model_path = Path(path)
+            model_path.mkdir(parents=True, exist_ok=True)
+            (model_path / "fake-bertopic.json").write_text(
+                json.dumps({"assignments": self._assignments}),
+                encoding="utf-8",
+            )
+
+        @classmethod
+        def load(cls, path):  # type: ignore[no-untyped-def]
+            _ = path
+            instance = cls()
+            instance._assignments = list(behavior.topic_assignments)
+            return instance
+
+    class OpenAI:  # noqa: N801 - external dependency uses PascalCase
+        def __init__(
+            self,
+            client,
+            model="gpt-4o-mini",
+            prompt=None,
+            nr_docs=4,
+            delay_in_seconds=None,
+            **kwargs,
+        ):  # type: ignore[no-untyped-def]
+            self.client = client
+            self.model = model
+            self.prompt = prompt
+            self.nr_docs = nr_docs
+            self.delay_in_seconds = delay_in_seconds
+            self.kwargs = dict(kwargs)
+            self.generator_kwargs = dict(kwargs.get("generator_kwargs", {}))
+            if not self.generator_kwargs.get("stop"):
+                self.generator_kwargs["stop"] = "\n"
+
+        def label_for_topic(self, *, topic_id, keywords, documents):  # type: ignore[no-untyped-def]
+            keyword_text = ", ".join(str(keyword[0]) for keyword in keywords)
+            prompt = self.prompt or "[KEYWORDS]\n[DOCUMENTS]"
+            prompt = prompt.replace("[KEYWORDS]", keyword_text)
+            prompt = prompt.replace("[DOCUMENTS]", "\n".join(documents[: self.nr_docs]))
+            result = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                **self.generator_kwargs,
+            )
+            content = result.choices[0].message.content
+            return str(content or "").strip() or f"Topic {topic_id}"
+
     bertopic_module = types.ModuleType("bertopic")
+    representation_module = types.ModuleType("bertopic.representation")
+    representation_module.OpenAI = OpenAI
     bertopic_module.BERTopic = BERTopic
+    bertopic_module.representation = representation_module
     if use_fake_marker:
         bertopic_module.__biblicus_fake__ = True
 
     sys.modules["bertopic"] = bertopic_module
+    sys.modules["bertopic.representation"] = representation_module
 
     context._fake_bertopic_installed = True
     context._fake_bertopic_original_modules = original_modules
@@ -179,8 +302,10 @@ def _install_bertopic_unavailable_module(context) -> None:
         return
 
     original_modules: Dict[str, object] = {}
-    if "bertopic" in sys.modules:
-        original_modules["bertopic"] = sys.modules["bertopic"]
+    for name in ["bertopic", "bertopic.representation"]:
+        if name in sys.modules:
+            original_modules[name] = sys.modules[name]
+            sys.modules.pop(name, None)
 
     bertopic_module = types.ModuleType("bertopic")
     sys.modules["bertopic"] = bertopic_module
@@ -200,12 +325,20 @@ def _snapshot_reference_from_context(context) -> str:
 @given("a fake BERTopic library is available")
 def step_fake_bertopic_available(context) -> None:
     _install_fake_bertopic_module(context, use_fake_marker=True)
+    behavior = _ensure_fake_bertopic_behavior(context)
+    behavior.topic_assignments = []
+    behavior.topic_assignment_rules = []
+    behavior.classification_probabilities = None
+    behavior.classification_score = None
 
 
 @given('a fake BERTopic library is available with topic assignments "{assignments}" and keywords:')
 def step_fake_bertopic_with_assignments(context, assignments: str) -> None:
     _install_fake_bertopic_module(context, use_fake_marker=True)
     behavior = _ensure_fake_bertopic_behavior(context)
+    behavior.topic_assignment_rules = []
+    behavior.classification_probabilities = None
+    behavior.classification_score = None
     parsed_assignments: List[int] = []
     for token in assignments.split(","):
         token = token.strip()
@@ -473,6 +606,20 @@ def step_topic_analysis_output_label_source(context, source: str) -> None:
     assert topics
     sources = {topic["label_source"] for topic in topics}
     assert sources == {source}
+
+
+@then("the BERTopic constructor received a representation model")
+def step_bertopic_constructor_received_representation_model(context) -> None:
+    behavior = _ensure_fake_bertopic_behavior(context)
+    assert behavior.last_representation_model is not None, behavior.last_kwargs
+
+
+@then('the BERTopic representation model used OpenAI model "{model}"')
+def step_bertopic_representation_model_used_openai_model(context, model: str) -> None:
+    behavior = _ensure_fake_bertopic_behavior(context)
+    representation_model = behavior.last_representation_model
+    assert representation_model is not None, behavior.last_kwargs
+    assert getattr(representation_model, "model", None) == model
 
 
 @then("the topic analysis output llm extraction output documents equals {count:d}")

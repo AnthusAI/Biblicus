@@ -1,0 +1,15 @@
+extractor_id: pipeline
+configuration:
+  stages:
+    - extractor_id: pass-through-text
+      config: {}
+    - extractor_id: pdf-text
+      config: {}
+    - extractor_id: markitdown
+      config: {}
+    - extractor_id: select-override
+      config:
+        media_type_patterns:
+          - text/html
+          - application/xhtml+xml
+        fallback_to_first: true

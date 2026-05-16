@@ -1,0 +1,12 @@
+schema_version: 1
+required_fields:
+  - title
+  - abstract
+metadata_text_fields:
+  - title
+  - abstract
+accept_classifier_score: 0.6
+accept_corpus_similarity: 0.08
+reject_classifier_score: 0.2
+reject_corpus_similarity: 0.08
+nearest_evidence_count: 3

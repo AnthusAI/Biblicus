@@ -1,19 +1,19 @@
 from types import SimpleNamespace
-from pathlib import Path
 
 import pytest
 
-from biblicus.graph.extraction import build_graph_snapshot
-from biblicus.graph.models import GraphExtractionResult
 from biblicus.extraction import (
     ExtractionConfigurationManifest,
     ExtractionItemResult,
     ExtractionSnapshotManifest,
 )
+from biblicus.graph.extraction import build_graph_snapshot
+from biblicus.graph.models import GraphExtractionResult
 
 
 def test_graph_extraction_requires_result_type(monkeypatch, tmp_path):
-    # Stub corpus with minimal interface
+    """Graph extraction rejects extractors that return the wrong result type."""
+
     class DummyCorpus:
         def __init__(self, root):
             self.uri = "file://corpus"
@@ -48,7 +48,6 @@ def test_graph_extraction_requires_result_type(monkeypatch, tmp_path):
 
     corpus = DummyCorpus(tmp_path)
 
-    # extraction snapshot reference
     snapshot_ref = SimpleNamespace(
         extractor_id="extractor",
         snapshot_id="snap",
@@ -69,10 +68,13 @@ def test_graph_extraction_requires_result_type(monkeypatch, tmp_path):
         def close(self):
             pass
 
-    # Patch extractor and supporting functions to avoid network/database work
     monkeypatch.setattr("biblicus.graph.extraction.get_graph_extractor", lambda _: DummyExtractor())
-    monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
-    monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver())  # noqa: ARG002
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo")
+    )
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver()
+    )  # noqa: ARG002
     monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
     monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
 
@@ -87,6 +89,7 @@ def test_graph_extraction_requires_result_type(monkeypatch, tmp_path):
 
 
 def test_write_graph_records_skips_empty_payload(monkeypatch):
+    """Neo4j writes are skipped when an item has no nodes or edges."""
     calls = []
 
     class DummySession:
@@ -118,11 +121,11 @@ def test_write_graph_records_skips_empty_payload(monkeypatch):
         nodes=[],
         edges=[],
     )
-    # With no nodes or edges, nothing should be written
     assert calls == []
 
 
 def test_graph_extraction_closes_driver(monkeypatch, tmp_path):
+    """Graph extraction closes the Neo4j driver after processing."""
     closed = {"called": False}
 
     class DummyDriver:
@@ -182,8 +185,12 @@ def test_graph_extraction_closes_driver(monkeypatch, tmp_path):
     )
 
     monkeypatch.setattr("biblicus.graph.extraction.get_graph_extractor", lambda _: DummyExtractor())
-    monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
-    monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver())  # noqa: ARG002
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo")
+    )
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver()
+    )  # noqa: ARG002
     monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
     monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
 
@@ -195,3 +202,92 @@ def test_graph_extraction_closes_driver(monkeypatch, tmp_path):
         extraction_snapshot=snapshot_ref,
     )
     assert closed["called"] is True
+
+
+def test_graph_extraction_records_item_errors_and_progress(monkeypatch, tmp_path):
+    """Graph extraction records per-item errors and emits progress events."""
+    progress_events = []
+
+    class DummyDriver:
+        def session(self, database=None):  # noqa: ARG002
+            return SimpleNamespace()
+
+        def close(self):
+            pass
+
+    class DummyExtractor:
+        def validate_config(self, config):  # noqa: ARG002
+            return {}
+
+        def extract_graph(self, *, item, **kwargs):  # noqa: ARG002
+            if item.id == "item2":
+                raise RuntimeError("item boom")
+            return GraphExtractionResult(item_id=item.id, nodes=[], edges=[])
+
+    class DummyCorpus:
+        def __init__(self, root):
+            self.uri = "file://corpus"
+            self.root = root
+            self.meta_dir = root
+
+        def graph_snapshot_dir(self, extractor_id, snapshot_id):  # noqa: ARG002
+            return self.root / "graph" / snapshot_id
+
+        def load_extraction_snapshot_manifest(self, extractor_id, snapshot_id):  # noqa: ARG002
+            config_manifest = ExtractionConfigurationManifest(
+                configuration_id="c1",
+                extractor_id=extractor_id,
+                name="cfg",
+                created_at="now",
+                configuration={},
+            )
+            return ExtractionSnapshotManifest(
+                snapshot_id=snapshot_id,
+                configuration=config_manifest,
+                corpus_uri="file://corpus",
+                catalog_generated_at="now",
+                created_at="now",
+                items=[
+                    ExtractionItemResult(item_id="item1", status="complete", stage_results=[]),
+                    ExtractionItemResult(item_id="item2", status="complete", stage_results=[]),
+                ],
+            )
+
+        def get_item(self, item_id):
+            return SimpleNamespace(id=item_id)
+
+        def load_catalog(self):
+            return SimpleNamespace(generated_at="now")
+
+    corpus = DummyCorpus(tmp_path)
+    snapshot_ref = SimpleNamespace(
+        extractor_id="extractor",
+        snapshot_id="snap",
+        as_string=lambda: "extractor:snap",
+    )
+
+    monkeypatch.setattr("biblicus.graph.extraction.get_graph_extractor", lambda _: DummyExtractor())
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.resolve_neo4j_settings",
+        lambda: SimpleNamespace(database="neo"),
+    )
+    monkeypatch.setattr(
+        "biblicus.graph.extraction.create_neo4j_driver",
+        lambda _settings: DummyDriver(),
+    )
+    monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
+
+    manifest = build_graph_snapshot(
+        corpus=corpus,
+        extractor_id="dummy",
+        configuration_name="cfg",
+        configuration={},
+        extraction_snapshot=snapshot_ref,
+        progress_callback=lambda event, payload: progress_events.append((event, payload)),
+    )
+
+    assert manifest.stats["items_processed"] == 2
+    assert manifest.stats["items_errored"] == 1
+    assert [event for event, _payload in progress_events].count("processed") == 2
+    assert progress_events[-1][0] == "completed"

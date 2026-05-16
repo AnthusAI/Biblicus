@@ -4,8 +4,8 @@ import hashlib
 import json
 import re
 import runpy
-import shutil
 import shlex
+import shutil
 import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -15,7 +15,6 @@ from urllib.parse import quote
 
 import yaml
 from behave import given, then, when
-from pathlib import Path
 
 from biblicus.models import RetrievalResult
 from features.environment import RunResult, run_biblicus
@@ -359,9 +358,7 @@ def step_ingest_file(context, filename: str, tags: str, corpus_name: str) -> Non
 
 @given('I ingested the file "{filename}" with tags ["{tag}"] into corpus "{corpus_name}"')
 @when('I ingest the file "{filename}" with tags ["{tag}"] into corpus "{corpus_name}"')
-def step_ingest_file_with_single_tag(
-    context, filename: str, tag: str, corpus_name: str
-) -> None:
+def step_ingest_file_with_single_tag(context, filename: str, tag: str, corpus_name: str) -> None:
     _ensure_workdir_file(context, filename)
     step_ingest_file(context, filename, tag, corpus_name)
 
@@ -384,6 +381,108 @@ def step_ingest_plaintext_file_with_single_tag(
 @when('I ingest the file "{filename}" into corpus "{corpus_name}"')
 def step_ingest_file_no_tags(context, filename: str, corpus_name: str) -> None:
     step_ingest_file(context, filename, "", corpus_name)
+
+
+@given('a metadata file "{filename}" exists with:')
+def step_metadata_file_exists(context, filename: str) -> None:
+    path = _resolve_fixture_path(context, filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(context.text.strip() + "\n", encoding="utf-8")
+
+
+@when(
+    'I standard-ingest the file "{filename}" into corpus "{corpus_name}" with metadata file "{metadata_file}" and source uniform resource identifier "{source_uri}"'
+)
+def step_ingest_file_with_metadata(
+    context, filename: str, corpus_name: str, metadata_file: str, source_uri: str
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    context.last_corpus_root = corpus
+    source_path = _resolve_fixture_path(context, filename)
+    metadata_path = _resolve_fixture_path(context, metadata_file)
+    context.last_source = source_uri
+    args = [
+        "--corpus",
+        str(corpus),
+        "ingest",
+        str(source_path),
+        "--metadata-file",
+        str(metadata_path),
+        "--source-uri",
+        source_uri,
+    ]
+    result = run_biblicus(context, args)
+    _record_ingest(context, result)
+
+
+@when(
+    'I standard-ingest the file "{filename}" into corpus "{corpus_name}" with metadata file "{metadata_file}" source uniform resource identifier "{source_uri}" and media type "{media_type}"'
+)
+def step_ingest_file_with_metadata_and_media_type(
+    context,
+    filename: str,
+    corpus_name: str,
+    metadata_file: str,
+    source_uri: str,
+    media_type: str,
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    context.last_corpus_root = corpus
+    source_path = _resolve_fixture_path(context, filename)
+    metadata_path = _resolve_fixture_path(context, metadata_file)
+    context.last_source = source_uri
+    args = [
+        "--corpus",
+        str(corpus),
+        "ingest",
+        str(source_path),
+        "--metadata-file",
+        str(metadata_path),
+        "--source-uri",
+        source_uri,
+        "--media-type",
+        media_type,
+    ]
+    result = run_biblicus(context, args)
+    _record_ingest(context, result)
+
+
+@when(
+    'I standard-ingest the file "{filename}" into corpus "{corpus_name}" with metadata file "{metadata_file}" source uniform resource identifier "{source_uri}" published at "{published_at}" updated at "{updated_at}" and retrieved at "{retrieved_at}"'
+)
+def step_ingest_file_with_metadata_and_dates(
+    context,
+    filename: str,
+    corpus_name: str,
+    metadata_file: str,
+    source_uri: str,
+    published_at: str,
+    updated_at: str,
+    retrieved_at: str,
+) -> None:
+    corpus = _corpus_path(context, corpus_name)
+    context.last_corpus_root = corpus
+    source_path = _resolve_fixture_path(context, filename)
+    metadata_path = _resolve_fixture_path(context, metadata_file)
+    context.last_source = source_uri
+    args = [
+        "--corpus",
+        str(corpus),
+        "ingest",
+        str(source_path),
+        "--metadata-file",
+        str(metadata_path),
+        "--source-uri",
+        source_uri,
+        "--published-at",
+        published_at,
+        "--updated-at",
+        updated_at,
+        "--retrieved-at",
+        retrieved_at,
+    ]
+    result = run_biblicus(context, args)
+    _record_ingest(context, result)
 
 
 @when('I ingest the uniform resource locator "{url}" into corpus "{corpus_name}"')
@@ -619,6 +718,65 @@ def step_sidecar_includes_media_type(context, media_type: str) -> None:
     data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
     assert isinstance(data, dict)
     assert data.get("media_type") == media_type
+
+
+@then('the last ingested item\'s sidecar includes title "{title}"')
+def step_sidecar_includes_title(context, title: str) -> None:
+    assert context.last_ingest is not None
+    relpath = Path(context.last_ingest["relpath"])
+    sidecar = (context.last_corpus_root / relpath).with_name(relpath.name + ".biblicus.yml")
+    assert sidecar.is_file()
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+    assert isinstance(data, dict)
+    assert data.get("title") == title
+
+
+@then('the last ingested item\'s sidecar includes abstract "{abstract}"')
+def step_sidecar_includes_abstract(context, abstract: str) -> None:
+    assert context.last_ingest is not None
+    relpath = Path(context.last_ingest["relpath"])
+    sidecar = (context.last_corpus_root / relpath).with_name(relpath.name + ".biblicus.yml")
+    assert sidecar.is_file()
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+    assert isinstance(data, dict)
+    assert data.get("abstract") == abstract
+
+
+@then('the last ingested item\'s sidecar dates include "{field}" "{value}"')
+def step_sidecar_dates_include(context, field: str, value: str) -> None:
+    assert context.last_ingest is not None
+    relpath = Path(context.last_ingest["relpath"])
+    sidecar = (context.last_corpus_root / relpath).with_name(relpath.name + ".biblicus.yml")
+    assert sidecar.is_file()
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+    assert isinstance(data, dict)
+    dates = data.get("dates")
+    assert isinstance(dates, dict)
+    assert dates.get(field) == value
+
+
+@then('the last ingested item\'s sidecar date provenance includes "{field}" "{value}"')
+def step_sidecar_date_provenance_include(context, field: str, value: str) -> None:
+    assert context.last_ingest is not None
+    relpath = Path(context.last_ingest["relpath"])
+    sidecar = (context.last_corpus_root / relpath).with_name(relpath.name + ".biblicus.yml")
+    assert sidecar.is_file()
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+    assert isinstance(data, dict)
+    date_provenance = data.get("date_provenance")
+    assert isinstance(date_provenance, dict)
+    assert date_provenance.get(field) == value
+
+
+@then('the last ingested item\'s sidecar omits top-level metadata key "{key}"')
+def step_sidecar_omits_top_level_key(context, key: str) -> None:
+    assert context.last_ingest is not None
+    relpath = Path(context.last_ingest["relpath"])
+    sidecar = (context.last_corpus_root / relpath).with_name(relpath.name + ".biblicus.yml")
+    assert sidecar.is_file()
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+    assert isinstance(data, dict)
+    assert key not in data
 
 
 @then('the last ingested item relpath ends with "{suffix}"')

@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel
 
 from ..ai.llm import generate_completion
+from ..ai.models import LlmClientConfig
 from ..corpus import Corpus
 from ..models import ExtractionSnapshotReference
 from ..retrieval import hash_text
@@ -42,6 +43,8 @@ from .models import (
     TopicModelingLlmFineTuningReport,
     TopicModelingOutput,
     TopicModelingReport,
+    TopicModelingRepresentationModelConfig,
+    TopicModelingRepresentationModelReport,
     TopicModelingStageStatus,
     TopicModelingTextCollectionReport,
     TopicModelingTextSourceConfig,
@@ -183,15 +186,9 @@ def _run_topic_modeling(
         config=config.lexical_processing,
     )
 
-    bertopic_report, topics = _run_bertopic(
+    bertopic_report, representation_report, topics = _run_bertopic(
         documents=lexical_documents,
         config=config.bertopic_analysis,
-    )
-
-    fine_tuning_report, labeled_topics = _apply_llm_fine_tuning(
-        topics=topics,
-        documents=lexical_documents,
-        config=config.llm_fine_tuning,
     )
 
     report = TopicModelingReport(
@@ -200,20 +197,20 @@ def _run_topic_modeling(
         entity_removal=entity_removal_report,
         lexical_processing=lexical_report,
         bertopic_analysis=bertopic_report,
-        llm_fine_tuning=fine_tuning_report,
-        topics=labeled_topics,
+        representation_model=representation_report,
+        topics=topics,
         warnings=(
             text_report.warnings
             + llm_extraction_report.warnings
             + entity_removal_report.warnings
             + bertopic_report.warnings
-            + fine_tuning_report.warnings
+            + representation_report.warnings
         ),
         errors=text_report.errors
         + llm_extraction_report.errors
         + entity_removal_report.errors
         + bertopic_report.errors
-        + fine_tuning_report.errors,
+        + representation_report.errors,
     )
 
     run_stats = {
@@ -224,7 +221,9 @@ def _run_topic_modeling(
     if config.entity_removal.enabled:
         artifact_paths.append("entity_removal.jsonl")
 
-    run_manifest = run_manifest.model_copy(update={"artifact_paths": artifact_paths, "stats": run_stats})
+    run_manifest = run_manifest.model_copy(
+        update={"artifact_paths": artifact_paths, "stats": run_stats}
+    )
     _write_analysis_run_manifest(run_dir=run_dir, manifest=run_manifest)
     _write_latest_pointer(
         corpus=corpus,
@@ -289,15 +288,9 @@ def run_topic_modeling_for_documents(
         config=config.lexical_processing,
     )
 
-    bertopic_report, topics = _run_bertopic(
+    bertopic_report, representation_report, topics = _run_bertopic(
         documents=lexical_documents,
         config=config.bertopic_analysis,
-    )
-
-    fine_tuning_report, labeled_topics = _apply_llm_fine_tuning(
-        topics=topics,
-        documents=lexical_documents,
-        config=config.llm_fine_tuning,
     )
 
     return TopicModelingReport(
@@ -306,20 +299,20 @@ def run_topic_modeling_for_documents(
         entity_removal=entity_removal_report,
         lexical_processing=lexical_report,
         bertopic_analysis=bertopic_report,
-        llm_fine_tuning=fine_tuning_report,
-        topics=labeled_topics,
+        representation_model=representation_report,
+        topics=topics,
         warnings=(
             text_report.warnings
             + llm_extraction_report.warnings
             + entity_removal_report.warnings
             + bertopic_report.warnings
-            + fine_tuning_report.warnings
+            + representation_report.warnings
         ),
         errors=text_report.errors
         + llm_extraction_report.errors
         + entity_removal_report.errors
         + bertopic_report.errors
-        + fine_tuning_report.errors,
+        + representation_report.errors,
     )
 
 
@@ -364,13 +357,21 @@ def _collect_documents(
         extractor_id=extraction_snapshot.extractor_id,
         snapshot_id=extraction_snapshot.snapshot_id,
     )
+    catalog = corpus.load_catalog()
     warnings: List[str] = []
     errors: List[str] = []
     documents: List[TopicModelingDocument] = []
     skipped_items = 0
     empty_texts = 0
+    excluded_intake_status_items = 0
+    excluded_statuses = set(config.exclude_intake_statuses)
 
     for item_result in manifest.items:
+        item = catalog.items.get(item_result.item_id)
+        if item is not None and _intake_status(item.metadata) in excluded_statuses:
+            skipped_items += 1
+            excluded_intake_status_items += 1
+            continue
         if item_result.status != "extracted" or item_result.final_text_relpath is None:
             skipped_items += 1
             continue
@@ -406,6 +407,8 @@ def _collect_documents(
         documents=len(documents),
         sample_size=config.sample_size,
         min_text_characters=config.min_text_characters,
+        exclude_intake_statuses=config.exclude_intake_statuses,
+        excluded_intake_status_items=excluded_intake_status_items,
         empty_texts=empty_texts,
         skipped_items=skipped_items,
         warnings=warnings,
@@ -415,6 +418,16 @@ def _collect_documents(
         report = report.model_copy(update={"status": TopicModelingStageStatus.FAILED})
         raise ValueError("Topic modeling requires at least one extracted text document")
     return documents, report
+
+
+def _intake_status(metadata: Dict[str, Any]) -> Optional[str]:
+    curation = metadata.get("curation")
+    if not isinstance(curation, dict):
+        return None
+    status = curation.get("intake_status")
+    if isinstance(status, str) and status.strip():
+        return status.strip()
+    return None
 
 
 def _apply_llm_extraction(
@@ -589,7 +602,7 @@ def _apply_entity_removal(
         import spacy
     except ImportError as import_error:
         raise ValueError(
-            "Entity removal requires spaCy. Install it with pip install \"biblicus[ner]\"."
+            'Entity removal requires spaCy. Install it with pip install "biblicus[ner]".'
         ) from import_error
 
     try:
@@ -786,6 +799,7 @@ def _apply_lexical_processing(
                 file=sys.stderr,
             )
             last_log_time = now
+
     for document in documents:
         text_value = document.text
         if config.lowercase:
@@ -819,7 +833,9 @@ def _run_bertopic(
     *,
     documents: List[TopicModelingDocument],
     config: TopicModelingBerTopicConfig,
-) -> Tuple[TopicModelingBerTopicReport, List[TopicModelingTopic]]:
+) -> Tuple[
+    TopicModelingBerTopicReport, TopicModelingRepresentationModelReport, List[TopicModelingTopic]
+]:
     try:
         import importlib
 
@@ -850,6 +866,35 @@ def _run_bertopic(
                 ngram_range=tuple(config.vectorizer.ngram_range),
                 stop_words=config.vectorizer.stop_words,
             )
+    if config.umap_model is not None and "umap_model" not in bertopic_kwargs:
+        if is_fake:
+            bertopic_kwargs["umap_model"] = {"parameters": dict(config.umap_model.parameters)}
+        else:
+            try:
+                from umap import UMAP
+            except ImportError as import_error:
+                raise ValueError(
+                    "UMAP configuration requires umap-learn. "
+                    'Install with pip install "biblicus[topic-modeling]".'
+                ) from import_error
+            bertopic_kwargs["umap_model"] = UMAP(**config.umap_model.parameters)
+    if config.hdbscan_model is not None and "hdbscan_model" not in bertopic_kwargs:
+        if is_fake:
+            bertopic_kwargs["hdbscan_model"] = {"parameters": dict(config.hdbscan_model.parameters)}
+        else:
+            try:
+                import hdbscan
+            except ImportError as import_error:
+                raise ValueError(
+                    "HDBSCAN configuration requires hdbscan. "
+                    'Install with pip install "biblicus[topic-modeling]".'
+                ) from import_error
+            bertopic_kwargs["hdbscan_model"] = hdbscan.HDBSCAN(**config.hdbscan_model.parameters)
+    representation_report = _representation_model_report(config.representation_model)
+    if config.representation_model is not None and "representation_model" not in bertopic_kwargs:
+        bertopic_kwargs["representation_model"] = _build_bertopic_representation_model(
+            config=config.representation_model,
+        )
 
     topic_model = BERTopic(**bertopic_kwargs)
     texts = [document.text for document in documents]
@@ -891,12 +936,17 @@ def _run_bertopic(
     for topic_id in topic_ids:
         keywords = _resolve_topic_keywords(topic_model=topic_model, topic_id=topic_id)
         label = keywords[0].keyword if keywords else f"Topic {topic_id}"
+        label_source = (
+            TopicModelingLabelSource.LLM
+            if config.representation_model is not None and keywords
+            else TopicModelingLabelSource.BERTOPIC
+        )
         doc_entries = topic_documents.get(topic_id, [])
         topics.append(
             TopicModelingTopic(
                 topic_id=topic_id,
                 label=label,
-                label_source=TopicModelingLabelSource.BERTOPIC,
+                label_source=label_source,
                 keywords=keywords,
                 document_count=len(doc_entries),
                 document_examples=[doc.text for doc in doc_entries[:3]],
@@ -910,10 +960,86 @@ def _run_bertopic(
         document_count=len(documents),
         parameters=dict(config.parameters),
         vectorizer=config.vectorizer,
+        umap_model=config.umap_model,
+        hdbscan_model=config.hdbscan_model,
+        representation_model=config.representation_model,
         warnings=[],
         errors=[],
     )
-    return report, topics
+    if config.representation_model is not None:
+        representation_report = representation_report.model_copy(
+            update={
+                "status": TopicModelingStageStatus.COMPLETE,
+                "topics_labeled": len(
+                    [
+                        topic
+                        for topic in topics
+                        if topic.topic_id != -1
+                        and topic.label_source == TopicModelingLabelSource.LLM
+                    ]
+                ),
+            }
+        )
+    return report, representation_report, topics
+
+
+def _representation_model_report(
+    config: Optional[TopicModelingRepresentationModelConfig],
+) -> TopicModelingRepresentationModelReport:
+    if config is None:
+        return TopicModelingRepresentationModelReport(
+            status=TopicModelingStageStatus.SKIPPED,
+            provider=None,
+            model=None,
+            topics_labeled=0,
+            warnings=[],
+            errors=[],
+        )
+    return TopicModelingRepresentationModelReport(
+        status=TopicModelingStageStatus.COMPLETE,
+        provider=config.provider.value,
+        model=config.model,
+        topics_labeled=0,
+        warnings=[],
+        errors=[],
+    )
+
+
+def _build_bertopic_representation_model(*, config: TopicModelingRepresentationModelConfig) -> Any:
+    if config.provider.value != "openai":
+        raise ValueError("representation_model.provider must be 'openai'")
+    try:
+        import openai
+    except ImportError as import_error:
+        raise ValueError(
+            "OpenAI representation model requires the openai package. "
+            'Install it with pip install "biblicus[openai]".'
+        ) from import_error
+    if not hasattr(openai, "OpenAI"):
+        raise ValueError(
+            "OpenAI representation model requires the openai package. "
+            'Install it with pip install "biblicus[openai]".'
+        )
+    api_key = LlmClientConfig(provider="openai", model=config.model).resolve_api_key()
+    client = openai.OpenAI(api_key=api_key)
+    try:
+        from bertopic.representation import OpenAI as BerTopicOpenAI
+    except ImportError as import_error:
+        raise ValueError(
+            "BERTopic OpenAI representation model is unavailable. "
+            'Install with pip install "biblicus[topic-modeling]".'
+        ) from import_error
+    representation_model = BerTopicOpenAI(
+        client,
+        model=config.model,
+        prompt=config.prompt_template,
+        nr_docs=config.nr_docs,
+        delay_in_seconds=config.delay_in_seconds,
+    )
+    generator_kwargs = getattr(representation_model, "generator_kwargs", None)
+    if isinstance(generator_kwargs, dict):
+        generator_kwargs.pop("stop", None)
+    return representation_model
 
 
 def _group_documents_by_topic(

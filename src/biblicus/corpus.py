@@ -32,8 +32,10 @@ from .frontmatter import parse_front_matter, render_front_matter
 from .hook_manager import HookManager
 from .hooks import HookPoint
 from .ignore import load_corpus_ignore_spec
+from .ingest_identity import canonical_ingest_identity_keys
 from .models import (
     CatalogItem,
+    CatalogItemDates,
     CorpusCatalog,
     CorpusConfig,
     ExtractionSnapshotListEntry,
@@ -397,6 +399,20 @@ def _merge_metadata(front: Dict[str, Any], side: Dict[str, Any]) -> Dict[str, An
     return merged_metadata
 
 
+def _catalog_item_dates(metadata: Dict[str, Any]) -> Optional[CatalogItemDates]:
+    dates = metadata.get("dates")
+    if not isinstance(dates, dict):
+        return None
+    payload = {
+        key: value
+        for key, value in dates.items()
+        if key in {"published_at", "updated_at", "retrieved_at"} and value is not None
+    }
+    if not payload:
+        return None
+    return CatalogItemDates.model_validate(payload)
+
+
 class Corpus:
     """
     Local corpus manager for Biblicus.
@@ -756,6 +772,87 @@ class Corpus:
             if item.source_uri == source_uri:
                 return item
         return None
+
+    def _find_item_by_identity_key(self, identity_key: str) -> Optional[CatalogItem]:
+        """
+        Locate an existing catalog item by canonical ingest identity key.
+
+        :param identity_key: Canonical ingest identity key.
+        :type identity_key: str
+        :return: Matching catalog item or None.
+        :rtype: CatalogItem or None
+        """
+        if not identity_key:
+            return None
+        self._init_catalog()
+        catalog = self._load_catalog()
+        for item in catalog.items.values():
+            item_keys = canonical_ingest_identity_keys(
+                source_uri=item.source_uri, metadata=item.metadata
+            )
+            if identity_key in item_keys:
+                return item
+        return None
+
+    def _find_item_by_sha256(self, sha256_digest: str) -> Optional[CatalogItem]:
+        """
+        Locate an existing catalog item by stored byte digest.
+
+        :param sha256_digest: Secure Hash Algorithm 256 digest.
+        :type sha256_digest: str
+        :return: Matching catalog item or None.
+        :rtype: CatalogItem or None
+        """
+        if not sha256_digest:
+            return None
+        self._init_catalog()
+        catalog = self._load_catalog()
+        for item in catalog.items.values():
+            if item.sha256 == sha256_digest:
+                return item
+        return None
+
+    def _raise_if_canonical_ingest_duplicate(
+        self,
+        *,
+        source_uri: str,
+        metadata: Dict[str, Any],
+        sha256_digest: Optional[str],
+    ) -> None:
+        """
+        Raise when an ingest request matches an existing canonical identity.
+
+        :param source_uri: Source uniform resource identifier for the ingest request.
+        :type source_uri: str
+        :param metadata: Metadata prepared for the stored item.
+        :type metadata: dict[str, Any]
+        :param sha256_digest: Optional stored byte digest.
+        :type sha256_digest: str or None
+        :return: None.
+        :rtype: None
+        :raises IngestCollisionError: If an existing item has the same identity.
+        """
+        for identity_key in canonical_ingest_identity_keys(
+            source_uri=source_uri, metadata=metadata
+        ):
+            existing_item = self._find_item_by_identity_key(identity_key)
+            if existing_item is not None:
+                raise IngestCollisionError(
+                    source_uri=source_uri,
+                    existing_item_id=existing_item.id,
+                    existing_relpath=existing_item.relpath,
+                    collision_key=identity_key,
+                )
+        if sha256_digest is None:
+            return
+        existing_item = self._find_item_by_sha256(sha256_digest)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+                collision_key=f"sha256:{sha256_digest}",
+            )
 
     @property
     def snapshots_dir(self) -> Path:
@@ -1196,6 +1293,12 @@ class Corpus:
             data_to_write = data
 
         sha256_digest = _sha256_bytes(data_to_write)
+        duplicate_metadata = frontmatter if media_type == "text/markdown" else metadata_input
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata=dict(duplicate_metadata or {}),
+            sha256_digest=sha256_digest,
+        )
         output_path.write_bytes(data_to_write)
 
         if media_type != "text/markdown":
@@ -1250,6 +1353,7 @@ class Corpus:
             title=resolved_title,
             tags=list(resolved_tags),
             metadata=dict(frontmatter or {}),
+            dates=_catalog_item_dates(dict(frontmatter or {})),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1339,9 +1443,20 @@ class Corpus:
                     if tag not in resolved_tags:
                         resolved_tags.append(tag)
 
-        write_result = _write_stream_and_hash(stream, output_path)
+        temporary_output_path = output_path.with_name(f"{output_path.name}.tmp")
+        write_result = _write_stream_and_hash(stream, temporary_output_path)
         sha256_digest = str(write_result["sha256"])
         bytes_written = int(write_result["bytes_written"])
+        try:
+            self._raise_if_canonical_ingest_duplicate(
+                source_uri=source_uri,
+                metadata=dict(metadata_input or {}),
+                sha256_digest=sha256_digest,
+            )
+        except IngestCollisionError:
+            temporary_output_path.unlink(missing_ok=True)
+            raise
+        temporary_output_path.replace(output_path)
 
         sidecar: Dict[str, Any] = {}
         sidecar["media_type"] = media_type
@@ -1386,6 +1501,7 @@ class Corpus:
             title=None,
             tags=list(resolved_tags),
             metadata=dict(sidecar or {}),
+            dates=_catalog_item_dates(dict(sidecar or {})),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1502,6 +1618,8 @@ class Corpus:
         if item_id is None:
             item_id = str(uuid.uuid4())
 
+        rendered_markdown: Optional[str] = None
+        sidecar_to_write: Optional[Dict[str, Any]] = None
         if media_type == "text/markdown":
             updated_metadata: Dict[str, Any] = dict(merged_metadata)
             if resolved_tags:
@@ -1512,7 +1630,7 @@ class Corpus:
             if markdown_body is None:
                 markdown_body = ""
             rendered_document = render_front_matter(updated_metadata, markdown_body)
-            path.write_text(rendered_document, encoding="utf-8")
+            rendered_markdown = rendered_document
             data = rendered_document.encode("utf-8")
             merged_metadata = updated_metadata
         else:
@@ -1521,10 +1639,19 @@ class Corpus:
             if resolved_tags:
                 sidecar_metadata["tags"] = resolved_tags
             sidecar_metadata["media_type"] = media_type
-            _write_sidecar(path, sidecar_metadata)
+            sidecar_to_write = sidecar_metadata
             merged_metadata = sidecar_metadata
 
         sha256_digest = _sha256_bytes(data)
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata=dict(merged_metadata or {}),
+            sha256_digest=sha256_digest,
+        )
+        if rendered_markdown is not None:
+            path.write_text(rendered_markdown, encoding="utf-8")
+        if sidecar_to_write is not None:
+            _write_sidecar(path, sidecar_to_write)
         created_at = utc_now_iso()
         item_record = CatalogItem(
             id=item_id,
@@ -1539,6 +1666,7 @@ class Corpus:
             ),
             tags=list(resolved_tags),
             metadata=dict(merged_metadata),
+            dates=_catalog_item_dates(dict(merged_metadata)),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1733,6 +1861,7 @@ class Corpus:
             title=title,
             tags=list(resolved_tags),
             metadata=dict(merged_metadata or {}),
+            dates=_catalog_item_dates(dict(merged_metadata or {})),
             created_at=utc_now_iso(),
             source_uri=source_path.as_uri(),
         )
@@ -1814,6 +1943,19 @@ class Corpus:
         """
         self._ensure_local_ingest_allowed()
         _ = filename
+        existing_item = self._find_item_by_source_uri(source_uri)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+            )
+        sha256_digest = _sha256_bytes(data)
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata={},
+            sha256_digest=sha256_digest,
+        )
         item_id = str(uuid.uuid4())
         destination_relpath = self._raw_relpath(
             output_name=relative_path,
@@ -1822,8 +1964,6 @@ class Corpus:
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         destination_path.write_bytes(data)
-
-        sha256_digest = _sha256_bytes(data)
 
         sidecar: Dict[str, Any] = {}
         sidecar["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
@@ -1843,6 +1983,7 @@ class Corpus:
             title=None,
             tags=list(resolved_tags),
             metadata=dict(merged_metadata or {}),
+            dates=_catalog_item_dates(dict(merged_metadata or {})),
             created_at=utc_now_iso(),
             source_uri=source_uri,
         )
@@ -2053,6 +2194,7 @@ class Corpus:
             title=title,
             tags=list(tags),
             metadata=dict(metadata or {}),
+            dates=_catalog_item_dates(dict(metadata or {})),
             created_at=created_at or utc_now_iso(),
             source_uri=source_uri,
         )
@@ -2200,6 +2342,7 @@ class Corpus:
                 title=title,
                 tags=list(resolved_tags),
                 metadata=dict(merged_metadata or {}),
+                dates=_catalog_item_dates(dict(merged_metadata or {})),
                 created_at=created_at,
                 source_uri=source_uri,
             )
@@ -2289,3 +2432,19 @@ class Corpus:
                 order=[],
             )
         )
+
+    def delete_item(self, item_id: str) -> None:
+        """
+        Delete an item payload and its sidecar metadata from the corpus.
+
+        :param item_id: Item identifier to delete.
+        :type item_id: str
+        :return: None.
+        :rtype: None
+        :raises KeyError: If the item identifier is not present in the catalog.
+        """
+        catalog = self._load_catalog()
+        item = catalog.items.get(item_id)
+        if item is None:
+            raise KeyError(f"Unknown item id: {item_id}")
+        self._delete_item_files(item.relpath)

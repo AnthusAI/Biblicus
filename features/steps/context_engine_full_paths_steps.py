@@ -87,7 +87,7 @@ def step_exercise_context_assembly_helpers(context) -> None:
                 "maximum_total_characters": 50,
                 "maximum_items_per_source": 2,
                 "include_metadata": True,
-                "metadata_fields": ["published"],
+                "metadata_fields": ["dates.published_at"],
                 "retriever_id": "retriever-one",
                 "snapshot_id": "snapshot-1",
                 "configuration_name": "configuration",

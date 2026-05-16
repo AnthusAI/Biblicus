@@ -8,7 +8,7 @@
 
 The MarkItDown extractor uses Microsoft's MarkItDown library to convert various document formats into Markdown-formatted text. It provides broad format coverage for Office documents, PDFs, images, and other file types.
 
-MarkItDown is designed to produce clean, readable Markdown output from diverse sources. It automatically skips text items to preserve the role of the pass-through extractor for canonical text handling.
+MarkItDown is designed to produce clean, readable Markdown output from diverse sources. It skips `text/plain` and `text/markdown` items to preserve the role of the pass-through extractor for canonical ordinary text handling, while still converting Hypertext Markup Language items such as `text/html` and `application/xhtml+xml`. In a pipeline, it also skips non-Hypertext Markup Language items that an earlier stage already extracted, so a `pdf-text` stage remains the canonical path for Portable Document Format items when it succeeds.
 
 ## Installation
 
@@ -52,7 +52,7 @@ MarkItDown supports a wide range of formats:
 ### Archives
 - `application/zip` - ZIP archives (lists contents)
 
-The extractor automatically skips text items (`text/plain`, `text/markdown`) to avoid interfering with the pass-through extractor.
+The extractor automatically skips ordinary text items (`text/plain`, `text/markdown`) to avoid interfering with the pass-through extractor. Hypertext Markup Language items are converted by MarkItDown. In a pipeline, non-Hypertext Markup Language items with prior extracted text are left to the earlier extractor.
 
 ## Configuration
 

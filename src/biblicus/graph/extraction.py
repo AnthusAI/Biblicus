@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import ValidationError
 
@@ -153,6 +153,7 @@ def build_graph_snapshot(
     configuration_name: str,
     configuration: Dict[str, Any],
     extraction_snapshot: ExtractionSnapshotReference,
+    progress_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> GraphSnapshotManifest:
     """
     Build a graph extraction snapshot for a corpus.
@@ -167,6 +168,8 @@ def build_graph_snapshot(
     :type configuration: dict[str, Any]
     :param extraction_snapshot: Extraction snapshot reference.
     :type extraction_snapshot: ExtractionSnapshotReference
+    :param progress_callback: Optional callback for progress events.
+    :type progress_callback: collections.abc.Callable or None
     :return: Graph snapshot manifest.
     :rtype: GraphSnapshotManifest
     """
@@ -200,71 +203,184 @@ def build_graph_snapshot(
     snapshot_dir.mkdir(parents=True, exist_ok=True)
 
     settings = resolve_neo4j_settings()
+    _emit_graph_progress(
+        progress_callback,
+        "starting",
+        snapshot_id=manifest.snapshot_id,
+        extractor_id=extractor_id,
+        items_total=len(extraction_manifest.items),
+    )
     driver = create_neo4j_driver(settings)
 
     node_total = 0
     edge_total = 0
+    errored_total = 0
+    skipped_total = 0
     item_summaries: List[GraphExtractionItemSummary] = []
 
     try:
-        for item_result in extraction_manifest.items:
+        for index, item_result in enumerate(extraction_manifest.items, start=1):
             item = corpus.get_item(item_result.item_id)
-            extracted_text = _load_extracted_text(
-                corpus,
-                extraction_snapshot=extraction_snapshot,
-                item_result=item_result,
+            _emit_graph_progress(
+                progress_callback,
+                "processing",
+                snapshot_id=manifest.snapshot_id,
+                item_id=item.id,
+                item_index=index,
+                items_total=len(extraction_manifest.items),
             )
-            if extracted_text is None:
+            try:
+                extracted_text = _load_extracted_text(
+                    corpus,
+                    extraction_snapshot=extraction_snapshot,
+                    item_result=item_result,
+                )
+                if extracted_text is None:
+                    skipped_total += 1
+                    item_summaries.append(
+                        GraphExtractionItemSummary(
+                            item_id=item.id,
+                            status="skipped",
+                            node_count=0,
+                            edge_count=0,
+                            error_message="No extracted text",
+                        )
+                    )
+                    _emit_graph_progress(
+                        progress_callback,
+                        "processed",
+                        snapshot_id=manifest.snapshot_id,
+                        item_id=item.id,
+                        item_index=index,
+                        items_total=len(extraction_manifest.items),
+                        status="skipped",
+                        nodes=node_total,
+                        edges=edge_total,
+                    )
+                    continue
+                result = extractor.extract_graph(
+                    corpus=corpus,
+                    item=item,
+                    extracted_text=extracted_text,
+                    config=parsed_config,
+                )
+                if not isinstance(result, GraphExtractionResult):
+                    raise ValueError("Graph extractor must return GraphExtractionResult")
+                write_graph_records(
+                    driver=driver,
+                    settings=settings,
+                    corpus_id=corpus.uri,
+                    graph_id=graph_id,
+                    extraction_snapshot=extraction_snapshot.as_string(),
+                    item_id=item.id,
+                    nodes=result.nodes,
+                    edges=result.edges,
+                )
+                node_total += len(result.nodes)
+                edge_total += len(result.edges)
                 item_summaries.append(
                     GraphExtractionItemSummary(
                         item_id=item.id,
-                        status="skipped",
-                        node_count=0,
-                        edge_count=0,
-                        error_message="No extracted text",
+                        status="complete",
+                        node_count=len(result.nodes),
+                        edge_count=len(result.edges),
                     )
                 )
-                continue
-            result = extractor.extract_graph(
-                corpus=corpus,
-                item=item,
-                extracted_text=extracted_text,
-                config=parsed_config,
-            )
-            if not isinstance(result, GraphExtractionResult):
-                raise ValueError("Graph extractor must return GraphExtractionResult")
-            write_graph_records(
-                driver=driver,
-                settings=settings,
-                corpus_id=corpus.uri,
-                graph_id=graph_id,
-                extraction_snapshot=extraction_snapshot.as_string(),
-                item_id=item.id,
-                nodes=result.nodes,
-                edges=result.edges,
-            )
-            node_total += len(result.nodes)
-            edge_total += len(result.edges)
-            item_summaries.append(
-                GraphExtractionItemSummary(
+                _emit_graph_progress(
+                    progress_callback,
+                    "processed",
+                    snapshot_id=manifest.snapshot_id,
                     item_id=item.id,
+                    item_index=index,
+                    items_total=len(extraction_manifest.items),
                     status="complete",
-                    node_count=len(result.nodes),
-                    edge_count=len(result.edges),
+                    nodes=node_total,
+                    edges=edge_total,
                 )
-            )
+            except ValueError as exc:
+                if "Graph extractor must return GraphExtractionResult" in str(exc):
+                    raise
+                errored_total += 1
+                item_summaries.append(
+                    GraphExtractionItemSummary(
+                        item_id=item.id,
+                        status="error",
+                        node_count=0,
+                        edge_count=0,
+                        error_message=str(exc),
+                    )
+                )
+                _emit_graph_progress(
+                    progress_callback,
+                    "processed",
+                    snapshot_id=manifest.snapshot_id,
+                    item_id=item.id,
+                    item_index=index,
+                    items_total=len(extraction_manifest.items),
+                    status="error",
+                    error_message=str(exc),
+                    nodes=node_total,
+                    edges=edge_total,
+                )
+            except Exception as exc:
+                errored_total += 1
+                item_summaries.append(
+                    GraphExtractionItemSummary(
+                        item_id=item.id,
+                        status="error",
+                        node_count=0,
+                        edge_count=0,
+                        error_message=str(exc),
+                    )
+                )
+                _emit_graph_progress(
+                    progress_callback,
+                    "processed",
+                    snapshot_id=manifest.snapshot_id,
+                    item_id=item.id,
+                    item_index=index,
+                    items_total=len(extraction_manifest.items),
+                    status="error",
+                    error_message=str(exc),
+                    nodes=node_total,
+                    edges=edge_total,
+                )
     finally:
         driver.close()
 
     manifest.stats = {
         "items_total": len(extraction_manifest.items),
         "items_processed": len(item_summaries),
+        "items_skipped": skipped_total,
+        "items_errored": errored_total,
         "nodes": node_total,
         "edges": edge_total,
     }
+    _emit_graph_progress(
+        progress_callback,
+        "completed",
+        snapshot_id=manifest.snapshot_id,
+        extractor_id=extractor_id,
+        items_total=len(extraction_manifest.items),
+        items_processed=len(item_summaries),
+        items_skipped=skipped_total,
+        items_errored=errored_total,
+        nodes=node_total,
+        edges=edge_total,
+    )
     write_graph_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
     write_graph_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
     return manifest
+
+
+def _emit_graph_progress(
+    progress_callback: Optional[Callable[[str, Dict[str, Any]], None]],
+    event: str,
+    **payload: Any,
+) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(event, payload)
 
 
 def _load_extracted_text(
@@ -392,9 +508,7 @@ def latest_graph_snapshot_reference(
     return GraphSnapshotReference(extractor_id=latest.extractor_id, snapshot_id=latest.snapshot_id)
 
 
-def resolve_graph_snapshot_reference(
-    corpus: Corpus, *, raw: str
-) -> GraphSnapshotReference:
+def resolve_graph_snapshot_reference(corpus: Corpus, *, raw: str) -> GraphSnapshotReference:
     """
     Resolve a graph snapshot reference from a raw string.
 

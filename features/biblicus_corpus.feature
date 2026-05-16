@@ -64,6 +64,91 @@ Feature: Biblicus corpus (command-line interface first raw ingestion)
     And the last ingested item's sidecar includes media type "application/pdf"
     And the last ingested item has biblicus provenance with a file source uniform resource identifier
 
+  Scenario: Ingest a local item with curated metadata
+    Given I initialized a corpus at "corpus"
+    And a binary file "paper.pdf" exists
+    And a metadata file "paper.metadata.yml" exists with:
+      """
+      title: Curated Paper
+      abstract: A curated abstract.
+      authors:
+        - Ada Lovelace
+      tags:
+        - metadata-tag
+      """
+    When I standard-ingest the file "paper.pdf" into corpus "corpus" with metadata file "paper.metadata.yml" and source uniform resource identifier "https://example.test/paper"
+    Then the last ingest succeeds
+    And the last ingested item has a sidecar metadata file
+    And the last ingested item's sidecar includes title "Curated Paper"
+    And the last ingested item's sidecar includes abstract "A curated abstract."
+    And the last ingested item's sidecar includes media type "application/pdf"
+    When I show the last ingested item in corpus "corpus"
+    Then the shown JavaScript Object Notation includes title "Curated Paper"
+    And the shown JavaScript Object Notation includes tag "metadata-tag"
+    And the shown JavaScript Object Notation includes source uniform resource identifier "https://example.test/paper"
+
+  Scenario: Ingest publication dates as canonical nested metadata
+    Given I initialized a corpus at "corpus"
+    And a binary file "dated-paper.pdf" exists
+    And a metadata file "dated-paper.metadata.yml" exists with:
+      """
+      title: Dated Paper
+      dates:
+        published_at: "2025-01-01"
+        updated_at: "2025-01-02"
+      date_provenance:
+        published_at: source-metadata
+        updated_at: source-metadata
+      """
+    When I standard-ingest the file "dated-paper.pdf" into corpus "corpus" with metadata file "dated-paper.metadata.yml" source uniform resource identifier "https://example.test/dated-paper" published at "2025-06-10" updated at "2025-06-11" and retrieved at "2026-05-15T20:30:00Z"
+    Then the last ingest succeeds
+    And the last ingested item's sidecar dates include "published_at" "2025-06-10"
+    And the last ingested item's sidecar dates include "updated_at" "2025-06-11"
+    And the last ingested item's sidecar dates include "retrieved_at" "2026-05-15T20:30:00Z"
+    And the last ingested item's sidecar date provenance includes "published_at" "cli-argument"
+    And the last ingested item's sidecar date provenance includes "updated_at" "cli-argument"
+    And the last ingested item's sidecar date provenance includes "retrieved_at" "cli-argument"
+    And the last ingested item's sidecar omits top-level metadata key "published"
+    And the last ingested item's sidecar omits top-level metadata key "updated"
+
+  Scenario: Ingest media type override with curated metadata
+    Given I initialized a corpus at "corpus"
+    And a binary file "paper.bin" exists
+    And a metadata file "paper.metadata.json" exists with:
+      """
+      {"title": "Typed Paper"}
+      """
+    When I standard-ingest the file "paper.bin" into corpus "corpus" with metadata file "paper.metadata.json" source uniform resource identifier "urn:test:typed-paper" and media type "application/pdf"
+    Then the last ingest succeeds
+    When I show the last ingested item in corpus "corpus"
+    Then the shown JavaScript Object Notation includes title "Typed Paper"
+    And the shown JavaScript Object Notation includes media type "application/pdf"
+    And the shown JavaScript Object Notation includes source uniform resource identifier "urn:test:typed-paper"
+
+  Scenario: Metadata file must be valid
+    Given I initialized a corpus at "corpus"
+    And a binary file "paper.pdf" exists
+    And a metadata file "bad.metadata.yml" exists with:
+      """
+      title: [unterminated
+      """
+    When I standard-ingest the file "paper.pdf" into corpus "corpus" with metadata file "bad.metadata.yml" and source uniform resource identifier "urn:test:bad"
+    Then the command fails with exit code 2
+    And standard error includes "Invalid ingest metadata file"
+
+  Scenario: Metadata file must be a mapping
+    Given I initialized a corpus at "corpus"
+    And a binary file "paper.pdf" exists
+    And a metadata file "list.metadata.yml" exists with:
+      """
+      - not
+      - a
+      - mapping
+      """
+    When I standard-ingest the file "paper.pdf" into corpus "corpus" with metadata file "list.metadata.yml" and source uniform resource identifier "urn:test:list"
+    Then the command fails with exit code 2
+    And standard error includes "Ingest metadata file must be a mapping/object"
+
   Scenario: List and show items
     Given I initialized a corpus at "corpus"
     When I ingest the text "hello" with title "First" and tags "t1" into corpus "corpus"

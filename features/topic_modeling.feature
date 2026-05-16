@@ -30,8 +30,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 2
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output includes 2 topics
@@ -70,8 +68,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic input documents do not include "Alice"
@@ -106,8 +102,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     And the spaCy dependency is unavailable
@@ -137,8 +131,6 @@ Feature: Topic modeling analysis
           nr_topics: 1
         vectorizer:
           ngram_range: [1, 2]
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic analysis report includes ngram range 1 and 2
@@ -166,11 +158,108 @@ Feature: Topic modeling analysis
         vectorizer:
           ngram_range: [1, 2]
           stop_words: english
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic analysis report includes stop words "english"
+
+  Scenario: Topic analysis passes an OpenAI representation model into BERTopic
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords       |
+      | 0        | alpha,beta     |
+    And a fake OpenAI library is available that returns chat completion "Specific Label" for any prompt
+    And an OpenAI API key is configured for this scenario
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        representation_model:
+          provider: openai
+          model: gpt-5.4-mini
+          prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
+          nr_docs: 3
+          delay_in_seconds: 0
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the BERTopic constructor received a representation model
+    And the OpenAI client was configured with API key "test-openai-key"
+    And the BERTopic representation model used OpenAI model "gpt-5.4-mini"
+    And the topic analysis output includes topic label "Specific Label"
+    And the topic analysis output label source is "llm"
+    And the OpenAI chat request omitted parameter "stop"
+
+  Scenario: Topic analysis rejects OpenAI representation model without the OpenAI dependency
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    And the OpenAI dependency is unavailable
+    And an OpenAI API key is configured for this scenario
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        representation_model:
+          provider: openai
+          model: gpt-5.4-mini
+          prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the command fails with exit code 2
+    And standard error includes "OpenAI representation model requires the openai package"
+
+  Scenario: Topic analysis rejects OpenAI representation model without an API key
+    Given I initialized a corpus at "corpus"
+    And a fake BERTopic library is available with topic assignments "0" and keywords:
+      | topic_id | keywords |
+      | 0        | alpha    |
+    And a fake OpenAI library is available
+    And no OpenAI API key is configured
+    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And a configuration file "topic.yml" exists with content:
+      """
+      schema_version: 1
+      text_source: {}
+      llm_extraction:
+        enabled: false
+      lexical_processing:
+        enabled: false
+      bertopic_analysis:
+        parameters:
+          nr_topics: 1
+        representation_model:
+          provider: openai
+          model: gpt-5.4-mini
+          prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
+      """
+    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
+    Then the command fails with exit code 2
+    And standard error includes "OpenAI API key"
 
   Scenario: Topic analysis uses vectorizer model when available
     Given I initialized a corpus at "corpus"
@@ -192,8 +281,6 @@ Feature: Topic modeling analysis
           nr_topics: 1
         vectorizer:
           ngram_range: [1, 2]
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic analysis report includes ngram range 1 and 2
@@ -219,8 +306,6 @@ Feature: Topic modeling analysis
           nr_topics: 1
         vectorizer:
           ngram_range: [1, 2]
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -248,8 +333,6 @@ Feature: Topic modeling analysis
           nr_topics: 1
         vectorizer:
           ngram_range: [0, 2]
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -278,8 +361,6 @@ Feature: Topic modeling analysis
         vectorizer:
           ngram_range: [1, 2]
           stop_words: 7
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -307,8 +388,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output includes 1 topics
@@ -334,8 +413,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -362,8 +439,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -398,8 +473,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 2
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output llm extraction output documents equals 2
@@ -431,8 +504,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -465,77 +536,10 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "LLM extraction produced no usable documents"
-
-  Scenario: Topic analysis labels topics with LLM fine-tuning
-    Given I initialized a corpus at "corpus"
-    And a fake BERTopic library is available with topic assignments "0" and keywords:
-      | topic_id | keywords         |
-      | 0        | billing,invoice  |
-    And a fake OpenAI library is available that returns chat completion "Billing questions" for any prompt
-    And an OpenAI API key is configured for this scenario
-    When I ingest the text "Billing note" with title "Billing" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id      | config_json |
-      | pass-through-text | {}          |
-    And a configuration file "topic.yml" exists with content:
-      """
-      schema_version: 1
-      text_source: {}
-      llm_extraction:
-        enabled: false
-      lexical_processing:
-        enabled: false
-      bertopic_analysis:
-        parameters:
-          nr_topics: 1
-      llm_fine_tuning:
-        enabled: true
-        client:
-          provider: openai
-          model: gpt-4o-mini
-        prompt_template: "Keywords: {keywords}\nDocuments:\n{documents}"
-      """
-    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
-    Then the topic analysis output includes topic label "Billing questions"
-    And the topic analysis output label source is "llm"
-
-  Scenario: Topic analysis keeps default labels when fine-tuning returns empty output
-    Given I initialized a corpus at "corpus"
-    And a fake BERTopic library is available with topic assignments "0" and keywords:
-      | topic_id | keywords         |
-      | 0        | billing,invoice  |
-    And a fake OpenAI library is available that returns chat completion "" for any prompt
-    And an OpenAI API key is configured for this scenario
-    When I ingest the text "Billing note" with title "Billing" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id      | config_json |
-      | pass-through-text | {}          |
-    And a configuration file "topic.yml" exists with content:
-      """
-      schema_version: 1
-      text_source: {}
-      llm_extraction:
-        enabled: false
-      lexical_processing:
-        enabled: false
-      bertopic_analysis:
-        parameters:
-          nr_topics: 1
-      llm_fine_tuning:
-        enabled: true
-        client:
-          provider: openai
-          model: gpt-4o-mini
-        prompt_template: "Keywords: {keywords}\nDocuments:\n{documents}"
-      """
-    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
-    Then the topic analysis output label source is "bertopic"
 
   Scenario: Topic analysis warns when using the latest extraction snapshot
     Given I initialized a corpus at "corpus"
@@ -561,8 +565,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     When I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml"
     Then standard error includes "latest extraction snapshot"
@@ -585,8 +587,6 @@ Feature: Topic modeling analysis
         enabled: false
       bertopic_analysis:
         parameters: {}
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -618,8 +618,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -651,8 +649,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -684,44 +680,10 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "llm_extraction.prompt_template"
-
-  Scenario: Topic analysis rejects missing LLM fine-tuning prompt
-    Given I initialized a corpus at "corpus"
-    And a fake BERTopic library is available with topic assignments "0" and keywords:
-      | topic_id | keywords |
-      | 0        | alpha    |
-    And a fake OpenAI library is available
-    And an OpenAI API key is configured for this scenario
-    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id      | config_json |
-      | pass-through-text | {}          |
-    And a configuration file "topic.yml" exists with content:
-      """
-      schema_version: 1
-      text_source: {}
-      llm_extraction:
-        enabled: false
-      lexical_processing:
-        enabled: false
-      bertopic_analysis:
-        parameters:
-          nr_topics: 1
-      llm_fine_tuning:
-        enabled: true
-        client:
-          provider: openai
-          model: gpt-4o-mini
-      """
-    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
-    Then the command fails with exit code 2
-    And standard error includes "llm_fine_tuning.prompt_template"
 
   Scenario: Topic analysis rejects invalid LLM extraction prompt
     Given I initialized a corpus at "corpus"
@@ -750,8 +712,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -779,8 +739,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output includes 1 topics
@@ -808,8 +766,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output includes 1 topics
@@ -841,8 +797,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output llm extraction output documents equals 1
@@ -874,8 +828,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -908,8 +860,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -942,8 +892,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the topic analysis output llm extraction output documents equals 1
@@ -970,40 +918,10 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "llm_extraction.client"
-
-  Scenario: Topic analysis rejects missing LLM fine-tuning client
-    Given I initialized a corpus at "corpus"
-    And a fake BERTopic library is available with topic assignments "0" and keywords:
-      | topic_id | keywords |
-      | 0        | alpha    |
-    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id      | config_json |
-      | pass-through-text | {}          |
-    And a configuration file "topic.yml" exists with content:
-      """
-      schema_version: 1
-      text_source: {}
-      llm_extraction:
-        enabled: false
-      lexical_processing:
-        enabled: false
-      bertopic_analysis:
-        parameters:
-          nr_topics: 1
-      llm_fine_tuning:
-        enabled: true
-        prompt_template: "Keywords: {keywords}\nDocuments:\n{documents}"
-      """
-    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
-    Then the command fails with exit code 2
-    And standard error includes "llm_fine_tuning.client"
 
   Scenario: Topic analysis rejects unsupported schema version
     Given I initialized a corpus at "corpus"
@@ -1025,43 +943,10 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
     And standard error includes "Unsupported analysis schema version"
-
-  Scenario: Topic analysis rejects invalid LLM fine-tuning prompt template
-    Given I initialized a corpus at "corpus"
-    And a fake BERTopic library is available with topic assignments "0" and keywords:
-      | topic_id | keywords |
-      | 0        | alpha    |
-    When I ingest the text "Alpha note" with title "Alpha" and tags "t" into corpus "corpus"
-    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
-      | extractor_id      | config_json |
-      | pass-through-text | {}          |
-    And a configuration file "topic.yml" exists with content:
-      """
-      schema_version: 1
-      text_source: {}
-      llm_extraction:
-        enabled: false
-      lexical_processing:
-        enabled: false
-      bertopic_analysis:
-        parameters:
-          nr_topics: 1
-      llm_fine_tuning:
-        enabled: true
-        client:
-          provider: openai
-          model: gpt-4o-mini
-        prompt_template: "Keywords: {keywords}"
-      """
-    And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
-    Then the command fails with exit code 2
-    And standard error includes "llm_fine_tuning.prompt_template must include {keywords} and {documents}"
 
   Scenario: Topic analysis fails when itemized JSON string is invalid
     Given I initialized a corpus at "corpus"
@@ -1090,8 +975,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the command fails with exit code 2
@@ -1145,8 +1028,6 @@ Feature: Topic modeling analysis
       bertopic_analysis:
         parameters:
           nr_topics: 1
-      llm_fine_tuning:
-        enabled: false
       """
     When I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml"
     Then the command fails with exit code 2

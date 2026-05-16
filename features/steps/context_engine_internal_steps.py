@@ -151,7 +151,7 @@ def step_retriever_registry_pipeline_query(context) -> None:
                     "maximum_total_characters": 120,
                     "max_items_per_source": 3,
                     "include_metadata": True,
-                    "metadata_fields": ["published"],
+                    "metadata_fields": ["dates.published_at"],
                     "join_with": "\n\n",
                 },
                 "index": {"snapshot_id": "snapshot-pipeline"},
@@ -290,7 +290,7 @@ def step_assert_retriever_request_pipeline_query(context) -> None:
     assert request.maximum_total_characters == 40
     assert request.metadata["maximum_items_per_source"] == 3
     assert request.metadata["include_metadata"] is True
-    assert request.metadata["metadata_fields"] == ["published"]
+    assert request.metadata["metadata_fields"] == ["dates.published_at"]
 
 
 @then("the retriever request should include pipeline index configuration")

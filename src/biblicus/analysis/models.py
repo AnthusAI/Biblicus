@@ -307,10 +307,28 @@ class TopicModelingTextSourceConfig(AnalysisSchemaModel):
     :vartype sample_size: int or None
     :ivar min_text_characters: Optional minimum character count for text inclusion.
     :vartype min_text_characters: int or None
+    :ivar exclude_intake_statuses: Curation intake statuses excluded from topic modeling.
+    :vartype exclude_intake_statuses: list[str]
     """
 
     sample_size: Optional[int] = Field(default=None, ge=1)
     min_text_characters: Optional[int] = Field(default=None, ge=1)
+    exclude_intake_statuses: List[str] = Field(
+        default_factory=lambda: ["pending_review", "rejected"]
+    )
+
+    @field_validator("exclude_intake_statuses")
+    @classmethod
+    def _validate_exclude_intake_statuses(cls, value: List[str]) -> List[str]:
+        cleaned = [entry.strip() for entry in value if entry.strip()]
+        if len(cleaned) != len(value):
+            raise ValueError("exclude_intake_statuses must contain non-empty values")
+        duplicates = sorted({entry for entry in cleaned if cleaned.count(entry) > 1})
+        if duplicates:
+            raise ValueError(
+                "exclude_intake_statuses contains duplicate values: " + ", ".join(duplicates)
+            )
+        return cleaned
 
 
 class TopicModelingLlmExtractionMethod(str, Enum):
@@ -468,6 +486,78 @@ class TopicModelingVectorizerConfig(AnalysisSchemaModel):
         raise ValueError("vectorizer.stop_words must be 'english' or a list of strings")
 
 
+class TopicModelingComponentConfig(AnalysisSchemaModel):
+    """
+    Constructor parameters for a BERTopic component.
+
+    :ivar parameters: Parameters forwarded to the component constructor.
+    :vartype parameters: dict[str, Any]
+    """
+
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+
+
+class TopicModelingRepresentationProvider(str, Enum):
+    """
+    BERTopic representation model provider identifiers.
+    """
+
+    OPENAI = "openai"
+
+
+class TopicModelingRepresentationModelConfig(AnalysisSchemaModel):
+    """
+    Configuration for BERTopic representation-model labeling.
+
+    :ivar provider: Representation provider identifier.
+    :vartype provider: TopicModelingRepresentationProvider
+    :ivar model: Provider model name.
+    :vartype model: str
+    :ivar prompt_template: BERTopic prompt template.
+    :vartype prompt_template: str or None
+    :ivar nr_docs: Number of representative documents sent to BERTopic's representation model.
+    :vartype nr_docs: int
+    :ivar delay_in_seconds: Optional delay between representation model calls.
+    :vartype delay_in_seconds: float or None
+    """
+
+    provider: TopicModelingRepresentationProvider = Field(
+        default=TopicModelingRepresentationProvider.OPENAI
+    )
+    model: str = Field(default="gpt-5.4-mini", min_length=1)
+    prompt_template: Optional[str] = None
+    nr_docs: int = Field(default=4, ge=1)
+    delay_in_seconds: Optional[float] = Field(default=None, ge=0)
+
+    @field_validator("provider", mode="before")
+    @classmethod
+    def _parse_provider(cls, value: object) -> TopicModelingRepresentationProvider:
+        if isinstance(value, TopicModelingRepresentationProvider):
+            return value
+        if isinstance(value, str):
+            return TopicModelingRepresentationProvider(value)
+        raise ValueError("representation_model.provider must be a string")
+
+    @field_validator("delay_in_seconds", mode="before")
+    @classmethod
+    def _parse_delay(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        raise ValueError("representation_model.delay_in_seconds must be a number")
+
+    @model_validator(mode="after")
+    def _validate_prompt_template(self) -> "TopicModelingRepresentationModelConfig":
+        if self.prompt_template is None:
+            return self
+        if "[KEYWORDS]" not in self.prompt_template or "[DOCUMENTS]" not in self.prompt_template:
+            raise ValueError(
+                "representation_model.prompt_template must include [KEYWORDS] and [DOCUMENTS]"
+            )
+        return self
+
+
 class TopicModelingBerTopicConfig(AnalysisSchemaModel):
     """
     Configuration for BERTopic analysis.
@@ -476,10 +566,19 @@ class TopicModelingBerTopicConfig(AnalysisSchemaModel):
     :vartype parameters: dict[str, Any]
     :ivar vectorizer: Vectorizer configuration for tokenization.
     :vartype vectorizer: TopicModelingVectorizerConfig or None
+    :ivar umap_model: UMAP model constructor parameters.
+    :vartype umap_model: TopicModelingComponentConfig or None
+    :ivar hdbscan_model: HDBSCAN model constructor parameters.
+    :vartype hdbscan_model: TopicModelingComponentConfig or None
+    :ivar representation_model: BERTopic representation model configuration.
+    :vartype representation_model: TopicModelingRepresentationModelConfig or None
     """
 
     parameters: Dict[str, Any] = Field(default_factory=dict)
     vectorizer: Optional[TopicModelingVectorizerConfig] = None
+    umap_model: Optional[TopicModelingComponentConfig] = None
+    hdbscan_model: Optional[TopicModelingComponentConfig] = None
+    representation_model: Optional[TopicModelingRepresentationModelConfig] = None
 
 
 class TopicModelingLlmFineTuningConfig(AnalysisSchemaModel):
@@ -532,14 +631,14 @@ class TopicModelingConfiguration(AnalysisSchemaModel):
     :vartype text_source: TopicModelingTextSourceConfig
     :ivar llm_extraction: LLM extraction configuration.
     :vartype llm_extraction: TopicModelingLlmExtractionConfig
+    :ivar llm_fine_tuning: Optional LLM topic labeling configuration.
+    :vartype llm_fine_tuning: TopicModelingLlmFineTuningConfig
     :ivar entity_removal: Entity removal preprocessing configuration.
     :vartype entity_removal: TopicModelingEntityRemovalConfig
     :ivar lexical_processing: Lexical processing configuration.
     :vartype lexical_processing: TopicModelingLexicalProcessingConfig
     :ivar bertopic_analysis: BERTopic configuration.
     :vartype bertopic_analysis: TopicModelingBerTopicConfig
-    :ivar llm_fine_tuning: LLM fine-tuning configuration.
-    :vartype llm_fine_tuning: TopicModelingLlmFineTuningConfig
     """
 
     schema_version: int = Field(default=ANALYSIS_SCHEMA_VERSION, ge=1)
@@ -549,6 +648,9 @@ class TopicModelingConfiguration(AnalysisSchemaModel):
     llm_extraction: TopicModelingLlmExtractionConfig = Field(
         default_factory=TopicModelingLlmExtractionConfig
     )
+    llm_fine_tuning: TopicModelingLlmFineTuningConfig = Field(
+        default_factory=TopicModelingLlmFineTuningConfig
+    )
     entity_removal: TopicModelingEntityRemovalConfig = Field(
         default_factory=TopicModelingEntityRemovalConfig
     )
@@ -557,9 +659,6 @@ class TopicModelingConfiguration(AnalysisSchemaModel):
     )
     bertopic_analysis: TopicModelingBerTopicConfig = Field(
         default_factory=TopicModelingBerTopicConfig
-    )
-    llm_fine_tuning: TopicModelingLlmFineTuningConfig = Field(
-        default_factory=TopicModelingLlmFineTuningConfig
     )
 
     @model_validator(mode="after")
@@ -593,6 +692,10 @@ class TopicModelingTextCollectionReport(AnalysisSchemaModel):
     :vartype sample_size: int or None
     :ivar min_text_characters: Optional minimum character threshold.
     :vartype min_text_characters: int or None
+    :ivar exclude_intake_statuses: Intake statuses excluded from this collection.
+    :vartype exclude_intake_statuses: list[str]
+    :ivar excluded_intake_status_items: Count of items skipped by intake status.
+    :vartype excluded_intake_status_items: int
     :ivar empty_texts: Count of empty text inputs.
     :vartype empty_texts: int
     :ivar skipped_items: Count of skipped items.
@@ -608,6 +711,8 @@ class TopicModelingTextCollectionReport(AnalysisSchemaModel):
     documents: int = Field(ge=0)
     sample_size: Optional[int] = None
     min_text_characters: Optional[int] = None
+    exclude_intake_statuses: List[str] = Field(default_factory=list)
+    excluded_intake_status_items: int = Field(default=0, ge=0)
     empty_texts: int = Field(ge=0)
     skipped_items: int = Field(ge=0)
     warnings: List[str] = Field(default_factory=list)
@@ -715,6 +820,12 @@ class TopicModelingBerTopicReport(AnalysisSchemaModel):
     :vartype parameters: dict[str, Any]
     :ivar vectorizer: Vectorizer configuration applied to BERTopic.
     :vartype vectorizer: TopicModelingVectorizerConfig or None
+    :ivar umap_model: UMAP component configuration applied to BERTopic.
+    :vartype umap_model: TopicModelingComponentConfig or None
+    :ivar hdbscan_model: HDBSCAN component configuration applied to BERTopic.
+    :vartype hdbscan_model: TopicModelingComponentConfig or None
+    :ivar representation_model: Representation model configuration applied to BERTopic.
+    :vartype representation_model: TopicModelingRepresentationModelConfig or None
     :ivar warnings: Warning messages.
     :vartype warnings: list[str]
     :ivar errors: Error messages.
@@ -726,6 +837,35 @@ class TopicModelingBerTopicReport(AnalysisSchemaModel):
     document_count: int = Field(ge=0)
     parameters: Dict[str, Any] = Field(default_factory=dict)
     vectorizer: Optional[TopicModelingVectorizerConfig] = None
+    umap_model: Optional[TopicModelingComponentConfig] = None
+    hdbscan_model: Optional[TopicModelingComponentConfig] = None
+    representation_model: Optional[TopicModelingRepresentationModelConfig] = None
+    warnings: List[str] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
+class TopicModelingRepresentationModelReport(AnalysisSchemaModel):
+    """
+    Report for BERTopic representation-model labeling.
+
+    :ivar status: Stage status.
+    :vartype status: TopicModelingStageStatus
+    :ivar provider: Representation provider identifier.
+    :vartype provider: str or None
+    :ivar model: Provider model name.
+    :vartype model: str or None
+    :ivar topics_labeled: Count of topics labeled by the representation model.
+    :vartype topics_labeled: int
+    :ivar warnings: Warning messages.
+    :vartype warnings: list[str]
+    :ivar errors: Error messages.
+    :vartype errors: list[str]
+    """
+
+    status: TopicModelingStageStatus
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    topics_labeled: int = Field(ge=0)
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
 
@@ -816,8 +956,8 @@ class TopicModelingReport(AnalysisSchemaModel):
     :vartype lexical_processing: TopicModelingLexicalProcessingReport
     :ivar bertopic_analysis: BERTopic analysis report.
     :vartype bertopic_analysis: TopicModelingBerTopicReport
-    :ivar llm_fine_tuning: LLM fine-tuning report.
-    :vartype llm_fine_tuning: TopicModelingLlmFineTuningReport
+    :ivar representation_model: BERTopic representation-model report.
+    :vartype representation_model: TopicModelingRepresentationModelReport
     :ivar topics: Topic output list.
     :vartype topics: list[TopicModelingTopic]
     :ivar warnings: Warning messages.
@@ -831,7 +971,7 @@ class TopicModelingReport(AnalysisSchemaModel):
     entity_removal: TopicModelingEntityRemovalReport
     lexical_processing: TopicModelingLexicalProcessingReport
     bertopic_analysis: TopicModelingBerTopicReport
-    llm_fine_tuning: TopicModelingLlmFineTuningReport
+    representation_model: TopicModelingRepresentationModelReport
     topics: List[TopicModelingTopic] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)

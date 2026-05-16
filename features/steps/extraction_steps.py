@@ -223,7 +223,9 @@ def step_build_extraction_snapshot_with_config(
     context.last_extractor_id = "pipeline"
 
 
-@when('I attempt to build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}" with config:')
+@when(
+    'I attempt to build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}" with config:'
+)
 def step_attempt_build_extraction_snapshot_with_config(
     context, extractor_id: str, corpus_name: str
 ) -> None:
@@ -313,7 +315,6 @@ def step_build_pipeline_extraction_snapshot_with_configuration(context, corpus_n
 
     corpus = _corpus_path(context, corpus_name)
     configuration_data = yaml.safe_load(context.text)
-    extractor_id = configuration_data["extractor_id"]
     config = configuration_data.get("config", {})
     stages = config.get("stages", [])
     _ensure_fake_tesseract_for_stages(context, stages)
@@ -357,7 +358,9 @@ def step_build_non_pipeline_extraction_snapshot_with_configuration(
 def step_build_non_pipeline_extraction_snapshot_with_configuration_an(
     context, extractor_id: str, corpus_name: str
 ) -> None:
-    step_build_non_pipeline_extraction_snapshot_with_configuration(context, extractor_id, corpus_name)
+    step_build_non_pipeline_extraction_snapshot_with_configuration(
+        context, extractor_id, corpus_name
+    )
 
 
 @when('I build a "{extractor_id}" extraction snapshot in corpus "{corpus_name}"')
@@ -408,7 +411,15 @@ def step_build_extraction_snapshot_with_stage_spec(
     _ = extractor_id
     _ensure_fake_tesseract_for_extractor(context, extractor_id)
     stage_spec_unescaped = stage_spec.replace('\\"', '"')
-    args = ["--corpus", str(corpus), "extract", "build", "--auto-deps", "--stage", stage_spec_unescaped]
+    args = [
+        "--corpus",
+        str(corpus),
+        "extract",
+        "build",
+        "--auto-deps",
+        "--stage",
+        stage_spec_unescaped,
+    ]
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
     assert result.returncode == 0, result.stderr
     context.last_extraction_snapshot = _parse_json_output(result.stdout)
@@ -547,6 +558,21 @@ def step_extracted_text_equals(context, expected_text: str) -> None:
     assert text == expected_text, f"Expected: {expected_text!r}, Got: {text!r}"
 
 
+@then('the extracted text for the last ingested item does not contain "{unexpected_text}"')
+def step_extracted_text_does_not_contain(context, unexpected_text: str) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert context.last_ingest is not None
+    item_id = context.last_ingest["id"]
+    corpus = _corpus_path(context, "corpus")
+    extractor_id = context.last_extractor_id
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    text = text_path.read_text(encoding="utf-8")
+    assert unexpected_text not in text, text
+
+
 @then("the extracted text for the last ingested item equals:")
 def step_extracted_text_equals_multiline(context) -> None:
     snapshot_id = context.last_extraction_snapshot_id
@@ -564,9 +590,7 @@ def step_extracted_text_equals_multiline(context) -> None:
 
 
 @then('the extraction stage metadata for stage {stage_index:d} includes key "{key}"')
-def step_extraction_stage_metadata_includes_key(
-    context, stage_index: int, key: str
-) -> None:
+def step_extraction_stage_metadata_includes_key(context, stage_index: int, key: str) -> None:
     snapshot_id = context.last_extraction_snapshot_id
     assert isinstance(snapshot_id, str) and snapshot_id
     assert context.last_ingest is not None
@@ -639,6 +663,21 @@ def step_extracted_text_for_tagged_item_is_not_empty(context, tag: str) -> None:
     assert text.strip(), f'Extracted text for item tagged "{tag}" is empty'
 
 
+@then('the extracted text for the item tagged "{tag}" equals "{expected_text}"')
+def step_extracted_text_for_tagged_item_equals(context, tag: str, expected_text: str) -> None:
+    snapshot_id = context.last_extraction_snapshot_id
+    extractor_id = context.last_extractor_id
+    assert isinstance(snapshot_id, str) and snapshot_id
+    assert isinstance(extractor_id, str) and extractor_id
+    item_id = _first_item_id_tagged(context, tag)
+    corpus = _corpus_path(context, "corpus")
+    snapshot_dir = corpus / "extracted" / extractor_id / snapshot_id
+    text_path = snapshot_dir / "text" / f"{item_id}.txt"
+    assert text_path.is_file(), text_path
+    text = text_path.read_text(encoding="utf-8").strip()
+    assert text == expected_text, f"Expected: {expected_text!r}, Got: {text!r}"
+
+
 @then('the extraction snapshot does not include extracted text for the item tagged "{tag}"')
 def step_extraction_snapshot_does_not_include_tagged_item(context, tag: str) -> None:
     snapshot_id = context.last_extraction_snapshot_id
@@ -653,9 +692,7 @@ def step_extraction_snapshot_does_not_include_tagged_item(context, tag: str) -> 
 
 
 @then('the extraction snapshot does not include any text for the item tagged "{tag}"')
-def step_extraction_snapshot_does_not_include_any_text_for_tagged_item(
-    context, tag: str
-) -> None:
+def step_extraction_snapshot_does_not_include_any_text_for_tagged_item(context, tag: str) -> None:
     snapshot_id = context.last_extraction_snapshot_id
     extractor_id = context.last_extractor_id
     assert isinstance(snapshot_id, str) and snapshot_id

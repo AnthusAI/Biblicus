@@ -680,6 +680,10 @@ python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --for
 
 See `docs/topic-modeling.md` for parameter examples and per-topic output behavior.
 
+Topic classifiers are a separate workflow for reviewed seed manifests. They train semi-supervised BERTopic model
+versions and classify existing or newly ingested items without changing the raw corpus layout. See
+`docs/topic-classifier.md` for the manifest schema and command examples.
+
 ## Integration corpus and evaluation dataset
 
 Use `scripts/download_ag_news.py` to download the AG News dataset when running topic modeling demos. The repository does not include that content.

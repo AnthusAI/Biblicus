@@ -137,6 +137,15 @@ python -m biblicus graph extract \
 
 If you omit `--extraction-snapshot`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
+`graph extract` writes the snapshot manifest to standard output as JSON. Progress is emitted to standard error while the
+run starts, processes each item, and completes, so long-running Neo4j-backed extraction jobs can be monitored without
+mixing progress text into the JSON payload. The snapshot manifest includes `items_total`, `items_processed`,
+`items_skipped`, `items_errored`, `nodes`, and `edges` in its stats block.
+
+Missing extracted text skips only that item. Per-item extraction or write failures are recorded as item errors and the
+snapshot continues; an invalid extractor implementation still fails the run because it violates the graph extractor
+contract.
+
 ## Example configurations
 
 Minimal co-occurrence configuration:

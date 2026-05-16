@@ -1,4 +1,9 @@
 *
 !.gitignore
 !README.md
-
+!AI-ML-research/
+!AI-ML-research/AGENTS.md
+!AI-ML-research/metadata/
+!AI-ML-research/metadata/topic-classifiers/
+!AI-ML-research/metadata/topic-classifiers/ai-ml-research-v1.1/
+!AI-ML-research/metadata/topic-classifiers/ai-ml-research-v1.1/seed-manifest.json
