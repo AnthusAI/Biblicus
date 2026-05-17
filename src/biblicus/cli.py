@@ -1467,6 +1467,7 @@ def cmd_taxonomy_discover(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    from .steering_feedback import load_steering_feedback
     from .taxonomy import discover_taxonomy_children, taxonomy_discovery_markdown
 
     corpus = (
@@ -1479,10 +1480,16 @@ def cmd_taxonomy_discover(arguments: argparse.Namespace) -> int:
         extraction_snapshot=arguments.extraction_snapshot,
         analysis_label="Taxonomy discovery",
     )
+    steering_feedback = (
+        load_steering_feedback(Path(arguments.steering_feedback))
+        if arguments.steering_feedback
+        else None
+    )
     output = discover_taxonomy_children(
         corpus=corpus,
         classifier_id=arguments.classifier,
         extraction_snapshot=extraction_snapshot,
+        steering_feedback=steering_feedback,
     )
     if arguments.format == "markdown":
         print(taxonomy_discovery_markdown(output))
@@ -1802,15 +1809,23 @@ def cmd_steering_graph_signals(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    from .steering_feedback import load_steering_feedback
+
     corpus = (
         Corpus.open(arguments.corpus)
         if getattr(arguments, "corpus", None)
         else Corpus.find(Path.cwd())
     )
+    steering_feedback = (
+        load_steering_feedback(Path(arguments.steering_feedback))
+        if arguments.steering_feedback
+        else None
+    )
     bundle = build_steering_graph_signal_bundle(
         corpus=corpus,
         classifier_id=arguments.classifier,
         graph_snapshot=arguments.graph_snapshot,
+        steering_feedback=steering_feedback,
     )
     print(bundle.model_dump_json(indent=2))
     return 0
@@ -3311,6 +3326,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_taxonomy_discover.add_argument(
+        "--steering-feedback",
+        default=None,
+        help="Papyrus steering feedback JSON with reviewed suppressions.",
+    )
+    p_taxonomy_discover.add_argument(
         "--format",
         choices=["json", "markdown"],
         default="json",
@@ -3515,6 +3535,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--graph-snapshot",
         required=True,
         help="Graph snapshot reference in extractor_id:snapshot_id form.",
+    )
+    p_steering_graph_signals.add_argument(
+        "--steering-feedback",
+        default=None,
+        help="Papyrus steering feedback JSON with reviewed suppressions.",
     )
     p_steering_graph_signals.add_argument(
         "--format",

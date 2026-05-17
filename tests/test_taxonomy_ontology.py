@@ -925,7 +925,7 @@ def test_taxonomy_discover_cli_renders_markdown(
     monkeypatch.setattr(
         taxonomy_module,
         "discover_taxonomy_children",
-        lambda *, corpus, classifier_id, extraction_snapshot: output,
+        lambda *, corpus, classifier_id, extraction_snapshot, steering_feedback=None: output,
     )
 
     exit_code = cli_module.cmd_taxonomy_discover(
@@ -933,6 +933,7 @@ def test_taxonomy_discover_cli_renders_markdown(
             corpus=str(corpus.root),
             classifier="classifier-one",
             extraction_snapshot="pipeline:extract-one",
+            steering_feedback=None,
             format="markdown",
         )
     )

@@ -19,6 +19,7 @@ from .corpus import Corpus
 from .graph.extraction import load_graph_snapshot_manifest
 from .graph.models import GraphSnapshotManifest, parse_graph_snapshot_reference
 from .retrieval import hash_text
+from .steering_feedback import SteeringFeedback, graph_signal_suppression, steering_feedback_ref
 from .topic_classifier import _load_model_bundle, load_topic_classifier_seed_manifest
 
 STEERING_PROPOSALS_ANALYSIS_ID = "steering-proposals"
@@ -267,6 +268,7 @@ def build_steering_graph_signal_bundle(
     corpus: Corpus,
     classifier_id: str,
     graph_snapshot: str,
+    steering_feedback: Optional[SteeringFeedback] = None,
 ) -> SteeringProposalBundle:
     """
     Build computational topic-informed graph steering signals.
@@ -277,6 +279,8 @@ def build_steering_graph_signal_bundle(
     :type classifier_id: str
     :param graph_snapshot: Graph snapshot reference in extractor:snapshot form.
     :type graph_snapshot: str
+    :param steering_feedback: Optional reviewed steering feedback suppressions.
+    :type steering_feedback: biblicus.steering_feedback.SteeringFeedback or None
     :return: Steering proposal bundle containing signals and no proposals.
     :rtype: SteeringProposalBundle
     """
@@ -299,6 +303,8 @@ def build_steering_graph_signal_bundle(
     ]
     if taxonomy_ref is not None:
         source_artifact_refs.append(taxonomy_ref)
+    if steering_feedback is not None:
+        source_artifact_refs.append(steering_feedback_ref(steering_feedback))
     signals: List[SteeringSignal] = []
     signals.extend(
         _topic_entity_signals(
@@ -325,6 +331,13 @@ def build_steering_graph_signal_bundle(
                 source_artifact_refs=source_artifact_refs,
             )
         )
+    if steering_feedback is not None:
+        signals = _suppress_graph_signals_with_feedback(
+            signals=signals,
+            classifier_id=classifier_id,
+            steering_feedback=steering_feedback,
+            warnings=warnings,
+        )
     bundle = SteeringProposalBundle(
         generated_at=catalog.generated_at,
         source_artifact_refs=source_artifact_refs,
@@ -333,6 +346,30 @@ def build_steering_graph_signal_bundle(
         warnings=warnings,
     )
     return _with_deterministic_snapshot_id(bundle)
+
+
+def _suppress_graph_signals_with_feedback(
+    *,
+    signals: Sequence[SteeringSignal],
+    classifier_id: str,
+    steering_feedback: SteeringFeedback,
+    warnings: List[str],
+) -> List[SteeringSignal]:
+    retained: List[SteeringSignal] = []
+    for signal in signals:
+        suppression = graph_signal_suppression(
+            feedback=steering_feedback,
+            classifier_id=classifier_id,
+            signal=signal,
+        )
+        if suppression is None:
+            retained.append(signal)
+            continue
+        warnings.append(
+            "Suppressed graph signal "
+            f"{signal.signal_id} from steering feedback {suppression.suppression_id}."
+        )
+    return retained
 
 
 def load_steering_proposal_bundle(path: Path) -> SteeringProposalBundle:

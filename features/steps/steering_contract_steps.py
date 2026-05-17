@@ -453,6 +453,34 @@ def step_build_steering_graph_signals(
         context.last_steering_signal_bundle = json.loads(result.stdout)
 
 
+@when(
+    'I build steering graph signals with steering feedback "{feedback_file}" for corpus "{corpus_name}" with classifier "{classifier_id}" and graph snapshot "{graph_snapshot}"'
+)
+def step_build_steering_graph_signals_with_feedback(
+    context, feedback_file: str, corpus_name: str, classifier_id: str, graph_snapshot: str
+) -> None:
+    result = run_biblicus(
+        context,
+        [
+            "--corpus",
+            str(_corpus_path(context, corpus_name)),
+            "steering",
+            "graph-signals",
+            "--classifier",
+            classifier_id,
+            "--graph-snapshot",
+            graph_snapshot,
+            "--steering-feedback",
+            str(context.workdir / feedback_file),
+            "--format",
+            "json",
+        ],
+    )
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_steering_signal_bundle = json.loads(result.stdout)
+
+
 @when('I validate steering proposal bundle "{input_file}"')
 def step_validate_steering_proposal_bundle(context, input_file: str) -> None:
     result = run_biblicus(
@@ -610,6 +638,19 @@ def step_steering_signal_bundle_includes_kind(context, signal_kind: str) -> None
     payload = context.last_steering_signal_bundle
     signal_kinds = {signal["signal_kind"] for signal in payload["signals"]}
     assert signal_kind in signal_kinds, payload
+
+
+@then('the steering signal bundle omits signal kind "{signal_kind}"')
+def step_steering_signal_bundle_omits_kind(context, signal_kind: str) -> None:
+    payload = context.last_steering_signal_bundle
+    signal_kinds = {signal["signal_kind"] for signal in payload["signals"]}
+    assert signal_kind not in signal_kinds, payload
+
+
+@then('the steering signal bundle includes warning "{expected}"')
+def step_steering_signal_bundle_includes_warning(context, expected: str) -> None:
+    payload = context.last_steering_signal_bundle
+    assert any(expected in warning for warning in payload["warnings"]), payload
 
 
 @then('the steering proposal bundle includes recommendations "{recommendations}"')

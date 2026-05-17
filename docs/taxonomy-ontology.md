@@ -68,11 +68,15 @@ biblicus taxonomy discover \
   --corpus corpora/example \
   --classifier example-classifier \
   --extraction-snapshot pipeline:<snapshot_id> \
+  --steering-feedback papyrus-steering-feedback.json \
   --format markdown
 ```
 
 Discovery uses classifier topic membership to collect documents under each accepted root, runs scoped topic modeling for
 that root, and emits steering proposals such as `create-taxonomy-node`. It does not mutate the accepted taxonomy.
+When `--steering-feedback` is provided, Biblicus validates the Papyrus feedback export and suppresses rejected child-topic
+patterns that match the same classifier and root topic. Suppressed candidates are reported as warnings rather than
+written as new proposal records.
 
 ## Accepted ontology input
 

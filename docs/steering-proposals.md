@@ -20,6 +20,7 @@ biblicus steering graph-signals \
   --corpus corpora/AI-ML-research \
   --classifier ai-ml-research \
   --graph-snapshot simple-entities:<snapshot_id> \
+  --steering-feedback papyrus-steering-feedback.json \
   --format json
 ```
 
@@ -31,6 +32,62 @@ the deterministic node id `topic:<topic_uid>`. Classifier topic maps can also pr
 `Item -> Topic` membership edge signals. When an accepted taxonomy artifact exists, graph signals use every
 accepted taxonomy node, including child nodes. When no accepted taxonomy artifact exists, graph signals use
 the classifier seed manifest as the root-topic source.
+
+When the steering application exports review memory with
+`export_kind: "papyrus-steering-feedback"`, pass it with `--steering-feedback`. Biblicus uses the normalized
+`suppressions` list to avoid re-emitting rejected graph signals under the same classifier and root topic. This is
+negative steering only; accepted taxonomy and ontology manifests remain the positive source of truth.
+
+Suppression input shape:
+
+```json
+{
+  "schema_version": 1,
+  "export_kind": "papyrus-steering-feedback",
+  "generated_at": "2026-05-16T00:00:00+00:00",
+  "source": {
+    "system": "papyrus",
+    "topic_set_id": "curation-topic-set-example",
+    "corpus_id": "curation-corpus-example",
+    "classifier_id": "example-classifier"
+  },
+  "topic_set": {
+    "topic_set_id": "curation-topic-set-example",
+    "corpus_id": "curation-corpus-example",
+    "classifier_id": "example-classifier",
+    "display_name": "Example Topics",
+    "description": "Reviewed topic set."
+  },
+  "decisions": [],
+  "accepted_proposals": [],
+  "rejected_proposals": [],
+  "suppressions": [
+    {
+      "suppression_id": "suppression-create-taxonomy-node-example",
+      "proposal_id": "create-taxonomy-node:example",
+      "proposal_kind": "create-taxonomy-node",
+      "steering_domain": "topic",
+      "reason": "Rejected during editor review.",
+      "decided_at": "2026-05-16T00:00:00+00:00",
+      "decided_by": "editor@example.com",
+      "scope": {
+        "topic_set_id": "curation-topic-set-example",
+        "corpus_id": "curation-corpus-example",
+        "classifier_id": "example-classifier",
+        "root_topic_uid": "root-topic"
+      },
+      "match": {
+        "topic_uid": "root-topic-child",
+        "display_name": "Rejected child label",
+        "normalized_display_name": "rejected child label",
+        "relationship_type": null,
+        "graph_entity_id": null
+      },
+      "evidence_item_ids": []
+    }
+  ]
+}
+```
 
 ## Taxonomy and ontology proposal kinds
 

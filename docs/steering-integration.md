@@ -110,6 +110,9 @@ Useful human inputs include:
 Topic-informed graph proposal generation starts with `biblicus steering graph-signals`. Those signals are computational
 candidates only. Agents or other workers can turn them into proposal bundles, validate them with
 `biblicus steering proposals validate`, and record them with `biblicus steering proposals record`.
+If the steering application exports Papyrus feedback, pass that JSON to `biblicus steering graph-signals` or
+`biblicus taxonomy discover` with `--steering-feedback`. The feedback file carries reviewed suppressions for rejected
+proposals, so Biblicus avoids re-emitting the same candidate signals and child-topic proposals in the next cycle.
 
 Accepted taxonomy and ontology state is materialized explicitly:
 

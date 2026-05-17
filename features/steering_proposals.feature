@@ -13,6 +13,18 @@ Feature: Unified steering proposal artifacts
     And the steering signal bundle includes signal kind "topic-membership-edge-candidate"
     And the steering signal bundle includes signal kind "topic-entity-name-collision"
 
+  Scenario: Graph signals suppress rejected Papyrus graph feedback
+    Given I initialized a corpus at "graph-feedback-lab"
+    When I ingest the text "agent memory retrieval planning" with title "Agent Memory" and tags "agent" into corpus "graph-feedback-lab"
+    Given a steering topic classifier seed manifest exists in corpus "graph-feedback-lab" for classifier "steering-classifier"
+    And a steering classifier topic map exists in corpus "graph-feedback-lab" for classifier "steering-classifier"
+    And a steering graph snapshot "graph-one" exists in corpus "graph-feedback-lab" with entity labels "AI"
+    And a Papyrus steering feedback file "steering-feedback.json" suppresses proposal kind "create-topic-entity" under root topic "agent-systems" with display name "Agent Systems" for classifier "steering-classifier"
+    When I build steering graph signals with steering feedback "steering-feedback.json" for corpus "graph-feedback-lab" with classifier "steering-classifier" and graph snapshot "simple-entities:graph-one"
+    Then the command succeeds
+    And the steering signal bundle omits signal kind "accepted-topic-missing-graph-entity"
+    And the steering signal bundle includes warning "Suppressed graph signal"
+
   Scenario: Proposal bundles validate all recommendation decisions
     Given a steering proposal bundle "proposal-bundle.json" exists with recommendation decisions
     When I validate steering proposal bundle "proposal-bundle.json"

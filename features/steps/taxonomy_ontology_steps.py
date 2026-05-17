@@ -167,6 +167,131 @@ def step_discover_taxonomy_children(context, corpus_name: str, classifier_id: st
         context.last_taxonomy_discovery = json.loads(result.stdout)
 
 
+@when(
+    'I discover taxonomy children with steering feedback "{feedback_file}" in corpus "{corpus_name}" with classifier "{classifier_id}"'
+)
+def step_discover_taxonomy_children_with_feedback(
+    context, feedback_file: str, corpus_name: str, classifier_id: str
+) -> None:
+    snapshot_ref = f"{context.last_extractor_id}:{context.last_extraction_snapshot_id}"
+    result = run_biblicus(
+        context,
+        [
+            "--corpus",
+            str(_corpus_path(context, corpus_name)),
+            "taxonomy",
+            "discover",
+            "--classifier",
+            classifier_id,
+            "--extraction-snapshot",
+            snapshot_ref,
+            "--steering-feedback",
+            str(context.workdir / feedback_file),
+        ],
+        extra_env=getattr(context, "extra_env", None),
+    )
+    context.last_result = result
+    if result.returncode == 0:
+        context.last_taxonomy_discovery = json.loads(result.stdout)
+
+
+@given(
+    'a Papyrus steering feedback file "{feedback_file}" suppresses proposal kind "{proposal_kind}" under root topic "{root_topic_uid}" with display name "{display_name}" for classifier "{classifier_id}"'
+)
+def step_papyrus_steering_feedback_suppresses_display_name(
+    context,
+    feedback_file: str,
+    proposal_kind: str,
+    root_topic_uid: str,
+    display_name: str,
+    classifier_id: str,
+) -> None:
+    payload = {
+        "schema_version": 1,
+        "export_kind": "papyrus-steering-feedback",
+        "generated_at": "2026-05-16T00:00:00+00:00",
+        "source": {
+            "system": "papyrus",
+            "topic_set_id": "bdd-topic-set",
+            "corpus_id": "bdd-corpus",
+            "classifier_id": classifier_id,
+        },
+        "topic_set": {
+            "topic_set_id": "bdd-topic-set",
+            "corpus_id": "bdd-corpus",
+            "classifier_id": classifier_id,
+            "display_name": "BDD Topic Set",
+            "description": "BDD feedback.",
+        },
+        "decisions": [
+            {
+                "decision_id": "decision-reject",
+                "proposal_id": f"{proposal_kind}:rejected",
+                "topic_set_id": "bdd-topic-set",
+                "action": "reject",
+                "selected_topic_uid": root_topic_uid,
+                "note": "Rejected during BDD review.",
+                "actor_label": "editor@example.com",
+                "actor_sub": "editor-sub",
+                "created_at": "2026-05-16T00:00:00+00:00",
+            }
+        ],
+        "accepted_proposals": [],
+        "rejected_proposals": [
+            {
+                "proposal_id": f"{proposal_kind}:rejected",
+                "proposal_kind": proposal_kind,
+                "steering_domain": "topic" if "taxonomy" in proposal_kind else "graph",
+                "status": "rejected",
+                "human_action": "reject",
+                "decided_at": "2026-05-16T00:00:00+00:00",
+                "decided_by": "editor@example.com",
+                "decision_id": "decision-reject",
+                "topic_set_id": "bdd-topic-set",
+                "corpus_id": "bdd-corpus",
+                "topic_uid": root_topic_uid,
+                "target_topic_uid": root_topic_uid,
+                "graph_entity_id": None,
+                "relationship_type": None,
+                "display_name": display_name,
+                "subtitle": None,
+                "description": None,
+                "summary": "Rejected during BDD review.",
+                "evidence_item_ids": [],
+                "suggested_seed_item_ids": [],
+                "suggested_holdout_item_ids": [],
+                "source_snapshot_id": None,
+            }
+        ],
+        "suppressions": [
+            {
+                "suppression_id": "suppression-rejected",
+                "proposal_id": f"{proposal_kind}:rejected",
+                "proposal_kind": proposal_kind,
+                "steering_domain": "topic" if "taxonomy" in proposal_kind else "graph",
+                "reason": "Rejected during BDD review.",
+                "decided_at": "2026-05-16T00:00:00+00:00",
+                "decided_by": "editor@example.com",
+                "scope": {
+                    "topic_set_id": "bdd-topic-set",
+                    "corpus_id": "bdd-corpus",
+                    "classifier_id": classifier_id,
+                    "root_topic_uid": root_topic_uid,
+                },
+                "match": {
+                    "topic_uid": root_topic_uid,
+                    "display_name": display_name,
+                    "normalized_display_name": display_name.lower(),
+                    "relationship_type": None,
+                    "graph_entity_id": None,
+                },
+                "evidence_item_ids": [],
+            }
+        ],
+    }
+    _write_json(context.workdir / feedback_file, payload)
+
+
 @given(
     'steering classifier "{classifier_id}" in corpus "{corpus_name}" uses UMAP n_components {n_components:d}'
 )
@@ -402,6 +527,24 @@ def step_taxonomy_discovery_includes_proposal_kind(context, proposal_kind: str) 
 def step_taxonomy_discovery_output_includes_warning(context, expected: str) -> None:
     warnings = context.last_taxonomy_discovery["warnings"]
     assert any(expected in warning for warning in warnings), context.last_taxonomy_discovery
+
+
+@then('the taxonomy discovery output omits proposal display name "{display_name}"')
+def step_taxonomy_discovery_omits_display_name(context, display_name: str) -> None:
+    actual = {
+        str(proposal["payload"].get("display_name", "")).lower()
+        for proposal in context.last_taxonomy_discovery["proposals"]
+    }
+    assert display_name.lower() not in actual, context.last_taxonomy_discovery
+
+
+@then('the taxonomy discovery output includes proposal display name "{display_name}"')
+def step_taxonomy_discovery_includes_display_name(context, display_name: str) -> None:
+    actual = {
+        str(proposal["payload"].get("display_name", "")).lower()
+        for proposal in context.last_taxonomy_discovery["proposals"]
+    }
+    assert display_name.lower() in actual, context.last_taxonomy_discovery
 
 
 @then('the steering proposal bundle includes proposal kinds "{proposal_kinds}"')

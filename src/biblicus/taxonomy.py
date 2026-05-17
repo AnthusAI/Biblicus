@@ -19,6 +19,11 @@ from .constants import ANALYSIS_SCHEMA_VERSION
 from .corpus import Corpus
 from .models import ExtractionSnapshotReference
 from .retrieval import hash_text
+from .steering_feedback import (
+    SteeringFeedback,
+    steering_feedback_ref,
+    taxonomy_candidate_suppression,
+)
 from .steering_proposals import SteeringProposal, SteeringSignal
 from .time import utc_now_iso
 from .topic_classifier import _load_model_bundle, load_topic_classifier_seed_manifest
@@ -307,6 +312,7 @@ def discover_taxonomy_children(
     corpus: Corpus,
     classifier_id: str,
     extraction_snapshot: ExtractionSnapshotReference,
+    steering_feedback: Optional[SteeringFeedback] = None,
 ) -> TaxonomyDiscoveryOutput:
     """
     Discover candidate child taxonomy nodes under accepted root topics.
@@ -317,6 +323,8 @@ def discover_taxonomy_children(
     :type classifier_id: str
     :param extraction_snapshot: Extraction snapshot used for topic text.
     :type extraction_snapshot: biblicus.models.ExtractionSnapshotReference
+    :param steering_feedback: Optional reviewed steering feedback suppressions.
+    :type steering_feedback: biblicus.steering_feedback.SteeringFeedback or None
     :return: Taxonomy discovery output.
     :rtype: TaxonomyDiscoveryOutput
     """
@@ -340,6 +348,8 @@ def discover_taxonomy_children(
     ]
     if taxonomy_snapshot_id is not None:
         source_artifact_refs.append(f"taxonomy:{taxonomy_snapshot_id}")
+    if steering_feedback is not None:
+        source_artifact_refs.append(steering_feedback_ref(steering_feedback))
 
     for root in roots:
         member_ids = sorted(
@@ -388,6 +398,20 @@ def discover_taxonomy_children(
                 "keywords": keywords,
                 "topic_id": topic.topic_id,
             }
+            suppression = taxonomy_candidate_suppression(
+                feedback=steering_feedback,
+                classifier_id=classifier_id,
+                root_topic_uid=root.topic_uid,
+                topic_uid=child_uid,
+                display_name=topic.label,
+            )
+            if suppression is not None:
+                warnings.append(
+                    "Suppressed taxonomy proposal "
+                    f"create-taxonomy-node:{child_uid} from steering feedback "
+                    f"{suppression.suppression_id}."
+                )
+                continue
             signal_id = f"taxonomy-child-topic-candidate:{root.topic_uid}:{topic.topic_id}"
             signals.append(
                 SteeringSignal(

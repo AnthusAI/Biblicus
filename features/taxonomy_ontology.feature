@@ -43,6 +43,30 @@ Feature: Taxonomy and ontology graph steering
     And the taxonomy discovery output includes proposal kind "create-taxonomy-node"
     And taxonomy input "accepted-taxonomy.json" still includes 2 nodes
 
+  Scenario: Taxonomy discovery suppresses rejected Papyrus child-topic feedback
+    Given I initialized a corpus at "taxonomy-feedback-lab"
+    When I ingest the text "agent memory retrieval planning" with title "Agent Memory" and tags "agent" into corpus "taxonomy-feedback-lab"
+    And I ingest the text "agent persistent memory stores" with title "Memory Stores" and tags "agent" into corpus "taxonomy-feedback-lab"
+    And I ingest the text "tool use planning and function calls" with title "Tool Planning" and tags "agent" into corpus "taxonomy-feedback-lab"
+    And I build a "pipeline" extraction snapshot in corpus "taxonomy-feedback-lab" with stages:
+      | extractor_id      |
+      | pass-through-text |
+    Given an accepted taxonomy input "accepted-taxonomy.json" exists for corpus "taxonomy-feedback-lab" with root "agent-systems" and child "agent-memory"
+    When I record taxonomy input "accepted-taxonomy.json" in corpus "taxonomy-feedback-lab"
+    Given a steering topic classifier seed manifest exists in corpus "taxonomy-feedback-lab" for classifier "steering-classifier"
+    And a steering classifier topic map exists in corpus "taxonomy-feedback-lab" for classifier "steering-classifier"
+    And steering classifier "steering-classifier" in corpus "taxonomy-feedback-lab" uses UMAP n_components 1
+    And a fake BERTopic library assigns topics by document text with keywords:
+      | text     | topic_id | keywords      |
+      | memory   | 0        | memory,stores |
+      | tool use | 1        | tools,planning |
+    And a Papyrus steering feedback file "steering-feedback.json" suppresses proposal kind "create-taxonomy-node" under root topic "agent-systems" with display name "memory" for classifier "steering-classifier"
+    When I discover taxonomy children with steering feedback "steering-feedback.json" in corpus "taxonomy-feedback-lab" with classifier "steering-classifier"
+    Then the command succeeds
+    And the taxonomy discovery output omits proposal display name "memory"
+    And the taxonomy discovery output includes proposal display name "tools"
+    And the taxonomy discovery output includes warning "Suppressed taxonomy proposal"
+
   Scenario: Taxonomy discovery skips scoped roots that are too small for configured UMAP
     Given I initialized a corpus at "taxonomy-small-bucket-lab"
     When I ingest the text "agent memory retrieval planning" with title "Agent Memory" and tags "agent" into corpus "taxonomy-small-bucket-lab"
