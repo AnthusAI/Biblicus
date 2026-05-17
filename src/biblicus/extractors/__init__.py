@@ -33,6 +33,7 @@ from .select_longest_text import SelectLongestTextExtractor
 from .select_override import SelectOverrideExtractor
 from .select_smart_override import SelectSmartOverrideExtractor
 from .select_text import SelectTextExtractor
+from .source_provided_text import SourceProvidedTextExtractor
 from .tesseract_text import TesseractExtractor
 from .unstructured_text import UnstructuredExtractor
 
@@ -61,6 +62,7 @@ EXTRACTOR_CLASSES: Dict[str, Type[TextExtractor]] = {
     PaddleOcrVlExtractor.extractor_id: PaddleOcrVlExtractor,
     TesseractExtractor.extractor_id: TesseractExtractor,
     SelectTextExtractor.extractor_id: SelectTextExtractor,
+    SourceProvidedTextExtractor.extractor_id: SourceProvidedTextExtractor,
     SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor,
     SelectSmartOverrideExtractor.extractor_id: SelectSmartOverrideExtractor,
     SelectOverrideExtractor.extractor_id: SelectOverrideExtractor,

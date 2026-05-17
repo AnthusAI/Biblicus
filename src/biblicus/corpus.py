@@ -1210,10 +1210,14 @@ class Corpus:
         self._ensure_local_ingest_allowed()
         existing_item = self._find_item_by_source_uri(source_uri)
         if existing_item is not None:
+            identity_keys = canonical_ingest_identity_keys(
+                source_uri=source_uri, metadata=metadata or {}
+            )
             raise IngestCollisionError(
                 source_uri=source_uri,
                 existing_item_id=existing_item.id,
                 existing_relpath=existing_item.relpath,
+                collision_key=identity_keys[0] if identity_keys else None,
             )
 
         item_id = str(uuid.uuid4())
@@ -1269,6 +1273,11 @@ class Corpus:
 
             parsed_document = parse_front_matter(markdown_text)
             frontmatter = dict(parsed_document.metadata)
+            if metadata_input:
+                for metadata_key, metadata_value in metadata_input.items():
+                    if metadata_key in {"tags", "biblicus", "title"}:
+                        continue
+                    frontmatter[metadata_key] = metadata_value
 
             merged_tags = _merge_tags(resolved_tags, frontmatter.get("tags"))
             if merged_tags:
@@ -1516,6 +1525,7 @@ class Corpus:
         title: Optional[str] = None,
         tags: Sequence[str] = (),
         source_uri: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> IngestResult:
         """
         Ingest a text note as Markdown.
@@ -1528,6 +1538,8 @@ class Corpus:
         :type tags: Sequence[str]
         :param source_uri: Optional source uniform resource identifier for provenance.
         :type source_uri: str or None
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
@@ -1542,7 +1554,7 @@ class Corpus:
             media_type="text/markdown",
             title=title,
             tags=tags,
-            metadata=None,
+            metadata=metadata,
             source_uri=source_uri,
             storage_subdir="notes",
         )
@@ -1679,6 +1691,7 @@ class Corpus:
         *,
         tags: Sequence[str] = (),
         source_uri: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         allow_external: bool = False,
     ) -> IngestResult:
         """
@@ -1690,6 +1703,8 @@ class Corpus:
         :type tags: Sequence[str]
         :param source_uri: Optional override for the source uniform resource identifier.
         :type source_uri: str or None
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
         :param allow_external: Whether to ingest files outside the corpus root by copying them into imports.
         :type allow_external: bool
         :return: Ingestion result summary.
@@ -1717,19 +1732,22 @@ class Corpus:
                 media_type=media_type,
                 title=None,
                 tags=tags,
-                metadata=None,
+                metadata=metadata,
                 source_uri=resolved_source_uri,
                 storage_subdir="imports",
             )
 
         payload = load_source(source, source_uri=source_uri)
+        payload_metadata = dict(payload.metadata)
+        if metadata:
+            payload_metadata.update(metadata)
         return self.ingest_item(
             payload.data,
             filename=payload.filename,
             media_type=payload.media_type,
-            title=None,
+            title=payload.title,
             tags=tags,
-            metadata=None,
+            metadata=payload_metadata,
             source_uri=payload.source_uri,
             storage_subdir="imports",
         )

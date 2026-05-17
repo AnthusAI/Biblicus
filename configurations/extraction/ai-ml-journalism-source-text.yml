@@ -1,0 +1,11 @@
+extractor_id: pipeline
+configuration:
+  stages:
+    - extractor_id: source-provided-text
+      config: {}
+    - extractor_id: pass-through-text
+      config: {}
+    - extractor_id: pdf-text
+      config: {}
+    - extractor_id: select-text
+      config: {}

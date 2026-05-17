@@ -213,6 +213,17 @@ biblicus ingest https://example.com/article.html --tags "article"
 biblicus ingest --corpus corpora/example https://docs.example.com/guide.md --tags "documentation"
 ```
 
+Source-specific resolvers can turn a public landing page into the canonical raw item before storage. DocumentCloud URLs are resolved through DocumentCloud metadata, stored as the original PDF, and annotated with the canonical DocumentCloud identity, metadata endpoint, raw asset URI, and source-provided text URI. The same identity is used to catch duplicate ingests across DocumentCloud viewer, API, PDF, and text asset links.
+
+Use `--import-rationale` to record why an item belongs in the corpus:
+
+```bash
+biblicus ingest \
+  --corpus corpora/AI-ML-journalism \
+  --import-rationale "Primary-source court filing relevant to AI and machine learning journalism." \
+  https://www.documentcloud.org/documents/27013007-govuscourtsnysd6422871181/
+```
+
 ### Crawl Websites
 
 Crawl entire website sections with automatic link discovery. The crawler follows links within the allowed prefix and stores discovered content:
@@ -573,6 +584,7 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 ### Text and document extraction
 
 - [`pass-through-text`](docs/extractors/text-document/pass-through.md) reads text items and strips Markdown front matter.
+- `source-provided-text` reads text artifacts advertised by source-specific ingestion metadata.
 - [`metadata-text`](docs/extractors/text-document/metadata.md) turns catalog metadata into a small text artifact.
 - [`pdf-text`](docs/extractors/text-document/pdf.md) extracts text from Portable Document Format items with `pypdf`.
 - [`unstructured`](docs/extractors/text-document/unstructured.md) provides broad document parsing (optional).

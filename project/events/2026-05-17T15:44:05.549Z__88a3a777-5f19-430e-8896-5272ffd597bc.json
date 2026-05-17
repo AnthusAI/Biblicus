@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "88a3a777-5f19-430e-8896-5272ffd597bc",
+  "issue_id": "blbs-15a1e1c6-9f91-4d01-a9d2-cd9803119386",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-17T15:44:05.549Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Allow ingest callers to supply an explanation of why an item is relevant to the knowledge base. Store it in canonical item metadata so corpus audits and retrieval evaluation can inspect rationale later.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+    "priority": 2,
+    "status": "open",
+    "title": "Add import rationale metadata support"
+  }
+}

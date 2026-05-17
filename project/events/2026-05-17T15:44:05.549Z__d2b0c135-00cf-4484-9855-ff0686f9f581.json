@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "d2b0c135-00cf-4484-9855-ff0686f9f581",
+  "issue_id": "blbs-2acff978-1d64-4cf2-ab79-2a068131f6d4",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-17T15:44:05.549Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Create corpora/AI-ML-journalism, import the requested DocumentCloud court filing through the resolver path with an import rationale, reindex, and verify the item metadata and duplicate identity behavior.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+    "priority": 2,
+    "status": "open",
+    "title": "Create AI-ML-journalism corpus and smoke ingest DocumentCloud item"
+  }
+}

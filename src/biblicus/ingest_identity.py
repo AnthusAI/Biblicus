@@ -14,10 +14,16 @@ _ARXIV_ID_PATTERN = re.compile(
 )
 _ARXIV_VERSION_SUFFIX_PATTERN = re.compile(r"v\d+$", re.IGNORECASE)
 _DOI_PATTERN = re.compile(r"10\.\d{4,9}/[^\s\"<>]+", re.IGNORECASE)
+_DOCUMENTCLOUD_IDENTITY_PATTERN = re.compile(r"documentcloud:(?P<id>\d+)", re.IGNORECASE)
 _IDENTITY_METADATA_FIELDS = {
     "arxiv_id",
+    "canonical_uri",
     "doi",
+    "full_text_uri",
+    "identity_key",
+    "metadata_uri",
     "pdf_url",
+    "raw_asset_uri",
     "source",
     "source_uri",
     "source_url",
@@ -52,6 +58,9 @@ def canonical_ingest_identity_keys(
         doi_key = _doi_identity_key(value)
         if doi_key:
             keys.append(doi_key)
+        documentcloud_key = _documentcloud_identity_key(value)
+        if documentcloud_key:
+            keys.append(documentcloud_key)
     return _deduplicate(keys)
 
 
@@ -95,13 +104,24 @@ def _string_values(value: Any) -> List[str]:
 
 
 def _arxiv_identity_key(value: str) -> Optional[str]:
-    match = _ARXIV_ID_PATTERN.search(unquote(value.strip()))
+    candidate = _arxiv_candidate(value)
+    if candidate is None:
+        return None
+    match = _ARXIV_ID_PATTERN.search(candidate)
     if match is None:
         return None
     arxiv_id = match.group("id").rstrip("/")
     arxiv_id = re.sub(r"\.pdf$", "", arxiv_id, flags=re.IGNORECASE)
     arxiv_id = _ARXIV_VERSION_SUFFIX_PATTERN.sub("", arxiv_id)
     return f"arxiv:{arxiv_id.lower()}"
+
+
+def _arxiv_candidate(value: str) -> Optional[str]:
+    candidate = unquote(value.strip())
+    parsed = urlparse(candidate)
+    if parsed.scheme in {"http", "https"} and "arxiv.org" not in parsed.netloc.lower():
+        return None
+    return candidate
 
 
 def _doi_identity_key(value: str) -> Optional[str]:
@@ -126,6 +146,33 @@ def _doi_candidate(value: str) -> str:
             candidate = f"10.1038/{article_id}"
     candidate = re.sub(r"^doi:\s*", "", candidate, flags=re.IGNORECASE)
     return candidate
+
+
+def _documentcloud_identity_key(value: str) -> Optional[str]:
+    candidate = unquote(value.strip())
+    explicit_match = _DOCUMENTCLOUD_IDENTITY_PATTERN.search(candidate)
+    if explicit_match:
+        return f"documentcloud:{explicit_match.group('id')}"
+    parsed = urlparse(candidate)
+    if parsed.scheme not in {"http", "https"}:
+        return None
+    host = parsed.netloc.lower()
+    path_parts = [part for part in parsed.path.split("/") if part]
+    if host == "www.documentcloud.org" and len(path_parts) >= 2 and path_parts[0] == "documents":
+        document_prefix = path_parts[1].split("-", 1)[0]
+        if document_prefix.isdigit():
+            return f"documentcloud:{document_prefix}"
+    if (
+        host == "api.www.documentcloud.org"
+        and len(path_parts) >= 3
+        and path_parts[:2] == ["api", "documents"]
+        and path_parts[2].isdigit()
+    ):
+        return f"documentcloud:{path_parts[2]}"
+    if host.endswith("documentcloud.org") and len(path_parts) >= 2 and path_parts[0] == "documents":
+        if path_parts[1].isdigit():
+            return f"documentcloud:{path_parts[1]}"
+    return None
 
 
 def _deduplicate(values: Iterable[str]) -> List[str]:

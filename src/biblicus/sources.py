@@ -5,11 +5,13 @@ Source loading helpers for Biblicus ingestion.
 from __future__ import annotations
 
 import mimetypes
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 from urllib.parse import quote, unquote, urlparse
 from urllib.request import Request, urlopen
+
+from .source_resolvers import resolve_source
 
 
 def _looks_like_uri(value: str) -> bool:
@@ -168,12 +170,18 @@ class SourcePayload:
     :vartype media_type: str
     :ivar source_uri: Source uniform resource identifier used to load the payload.
     :vartype source_uri: str
+    :ivar title: Optional title from the source.
+    :vartype title: str or None
+    :ivar metadata: Structured metadata from source resolution.
+    :vartype metadata: dict[str, Any]
     """
 
     data: bytes
     filename: str
     media_type: str
     source_uri: str
+    title: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> SourcePayload:
@@ -214,6 +222,16 @@ def load_source(source: str | Path, *, source_uri: Optional[str] = None) -> Sour
 
     if _looks_like_uri(source):
         parsed = urlparse(source)
+        resolved = resolve_source(source)
+        if resolved is not None:
+            return SourcePayload(
+                data=resolved.data,
+                filename=resolved.filename,
+                media_type=resolved.media_type,
+                source_uri=source_uri or resolved.source_uri,
+                title=resolved.title,
+                metadata=resolved.metadata,
+            )
         if parsed.scheme == "file":
             if parsed.netloc not in ("", "localhost"):
                 raise ValueError(

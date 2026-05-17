@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "deb78fef-2139-498b-be07-f0c430b4b398",
+  "issue_id": "blbs-a08c3f0e-cc31-40c0-b41b-2260fd5b3cac",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-17T15:44:05.549Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Add a source-resolution utility with a registry contract and a first DocumentCloud resolver. The resolver should parse viewer URLs, fetch the DocumentCloud API record, resolve the original PDF, expose derived text asset references, and emit strict provenance metadata without fallback code paths.",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+    "priority": 2,
+    "status": "open",
+    "title": "Implement resolver registry and DocumentCloud resolver"
+  }
+}

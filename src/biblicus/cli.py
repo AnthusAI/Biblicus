@@ -194,6 +194,38 @@ def _metadata_tags(metadata: Dict[str, Any]) -> List[str]:
     raise ValueError("Ingest metadata tags must be a string or list of strings")
 
 
+def _metadata_with_import_rationale(
+    metadata: Dict[str, Any], import_rationale: Optional[str]
+) -> Dict[str, Any]:
+    """
+    Add optional import rationale metadata.
+
+    :param metadata: Existing metadata mapping.
+    :type metadata: dict[str, Any]
+    :param import_rationale: Optional rationale explaining why the item belongs in the corpus.
+    :type import_rationale: str or None
+    :return: Metadata with curation.import_rationale when provided.
+    :rtype: dict[str, Any]
+    :raises ValueError: If curation metadata is malformed.
+    """
+    if import_rationale is None:
+        return dict(metadata)
+    rationale = import_rationale.strip()
+    if not rationale:
+        raise ValueError("Import rationale must not be blank")
+    updated_metadata = dict(metadata)
+    raw_curation = updated_metadata.get("curation")
+    if raw_curation is None:
+        curation: Dict[str, Any] = {}
+    elif isinstance(raw_curation, dict):
+        curation = dict(raw_curation)
+    else:
+        raise ValueError("Ingest metadata curation must be a mapping/object")
+    curation["import_rationale"] = rationale
+    updated_metadata["curation"] = curation
+    return updated_metadata
+
+
 def _validate_ingest_date_value(value: str, field_name: str) -> str:
     """
     Validate a canonical ingest date or timestamp value.
@@ -358,6 +390,7 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
     metadata_path = getattr(arguments, "metadata_file", None)
     source_uri = getattr(arguments, "source_uri", None)
     media_type = getattr(arguments, "media_type", None)
+    import_rationale = getattr(arguments, "import_rationale", None)
     published_at = getattr(arguments, "published_at", None)
     updated_at = getattr(arguments, "updated_at", None)
     retrieved_at = getattr(arguments, "retrieved_at", None)
@@ -374,7 +407,10 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
             files = list(arguments.files or [])
             if len(files) != 1:
                 raise ValueError("Standard metadata ingest requires exactly one local file path")
-            metadata = _load_ingest_metadata_file(Path(metadata_path)) if metadata_path else {}
+            loaded_metadata = (
+                _load_ingest_metadata_file(Path(metadata_path)) if metadata_path else {}
+            )
+            metadata = _metadata_with_import_rationale(loaded_metadata, import_rationale)
             results.append(
                 _standard_ingest_local_item(
                     corpus=corpus,
@@ -396,12 +432,19 @@ def cmd_ingest(arguments: argparse.Namespace) -> int:
                     text,
                     title=arguments.title,
                     tags=tags,
+                    metadata=_metadata_with_import_rationale({}, import_rationale),
                     source_uri=None if arguments.stdin else None,
                 )
                 results.append(ingest_result)
 
             for source_path in arguments.files or []:
-                results.append(corpus.ingest_source(source_path, tags=tags))
+                results.append(
+                    corpus.ingest_source(
+                        source_path,
+                        tags=tags,
+                        metadata=_metadata_with_import_rationale({}, import_rationale),
+                    )
+                )
     except IngestCollisionError as error:
         if error.collision_key is not None:
             print(
@@ -2988,6 +3031,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--metadata-file",
         default=None,
         help="YAML or JSON metadata object for standard single-item ingest.",
+    )
+    p_ingest.add_argument(
+        "--import-rationale",
+        default=None,
+        help="Optional explanation of why the item belongs in the corpus.",
     )
     p_ingest.add_argument(
         "--source-uri",
