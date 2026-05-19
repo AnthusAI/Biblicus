@@ -208,6 +208,52 @@ class GraphSnapshotListEntry(BaseModel):
     stats: Dict[str, object] = Field(default_factory=dict)
 
 
+class GraphExportNode(GraphSchemaModel):
+    """
+    Exported graph node enriched with snapshot provenance.
+    """
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    node_id: str = Field(min_length=1)
+    node_type: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphExportEdge(GraphSchemaModel):
+    """
+    Exported graph edge enriched with snapshot provenance.
+    """
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    edge_id: str = Field(min_length=1)
+    src: str = Field(min_length=1)
+    dst: str = Field(min_length=1)
+    edge_type: str = Field(min_length=1)
+    weight: float = Field(default=1.0)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphSnapshotExport(GraphSchemaModel):
+    """
+    Portable graph snapshot export for downstream application imports.
+    """
+
+    snapshot: GraphSnapshotReference
+    manifest: GraphSnapshotManifest
+    nodes: List[GraphExportNode] = Field(default_factory=list)
+    edges: List[GraphExportEdge] = Field(default_factory=list)
+    stats: Dict[str, object] = Field(default_factory=dict)
+
+
 def parse_graph_snapshot_reference(value: str) -> GraphSnapshotReference:
     """
     Parse a graph snapshot reference in the form extractor_id:snapshot_id.

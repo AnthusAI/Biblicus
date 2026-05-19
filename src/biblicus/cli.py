@@ -1390,6 +1390,7 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
         configuration_name=arguments.configuration_name,
         configuration=configuration,
         extraction_snapshot=extraction_snapshot,
+        max_items=arguments.max_items,
         progress_callback=_graph_extract_progress,
     )
     print(manifest.model_dump_json(indent=2))
@@ -1477,6 +1478,35 @@ def cmd_graph_show(arguments: argparse.Namespace) -> int:
         snapshot_id=reference.snapshot_id,
     )
     print(manifest.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_graph_export(arguments: argparse.Namespace) -> int:
+    """
+    Export a graph snapshot's Neo4j records as portable JSON.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import export_graph_snapshot
+    from .graph.models import parse_graph_snapshot_reference
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    snapshot = parse_graph_snapshot_reference(arguments.snapshot)
+    exported = export_graph_snapshot(corpus, snapshot=snapshot)
+    payload = exported.model_dump(mode="json")
+    if arguments.output:
+        output_path = Path(arguments.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
 
@@ -3325,6 +3355,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Override key=value pairs applied after composing configurations (supports dotted keys).",
     )
+    p_graph_extract.add_argument(
+        "--max-items",
+        type=int,
+        default=None,
+        help="Maximum number of extraction items to process for bounded validation runs.",
+    )
     p_graph_extract.set_defaults(func=cmd_graph_extract)
 
     p_graph_list = graph_sub.add_parser("list", help="List graph extraction snapshots.")
@@ -3344,6 +3380,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Graph snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_graph_show.set_defaults(func=cmd_graph_show)
+
+    p_graph_export = graph_sub.add_parser(
+        "export",
+        help="Export graph snapshot nodes and edges as portable JSON.",
+    )
+    _add_common_corpus_arg(p_graph_export)
+    p_graph_export.add_argument(
+        "--snapshot",
+        required=True,
+        help="Graph snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_graph_export.add_argument(
+        "--output",
+        default=None,
+        help="Path to write the graph export JSON. Defaults to standard output.",
+    )
+    p_graph_export.set_defaults(func=cmd_graph_export)
 
     p_taxonomy = sub.add_parser("taxonomy", help="Validate and discover accepted topic taxonomy.")
     taxonomy_sub = p_taxonomy.add_subparsers(dest="taxonomy_command", required=True)

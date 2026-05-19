@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ..user_config import BiblicusUserConfig, load_user_config
 
@@ -304,6 +304,50 @@ def write_graph_records(
             )
 
 
+def clear_graph_records(
+    *,
+    driver,
+    settings: Neo4jSettings,
+    corpus_id: str,
+    graph_id: str,
+    extraction_snapshot: str,
+) -> None:
+    """
+    Delete previously persisted graph rows for a snapshot before rebuilding it.
+
+    :param driver: Neo4j driver instance.
+    :type driver: neo4j.Driver
+    :param settings: Resolved Neo4j settings.
+    :type settings: Neo4jSettings
+    :param corpus_id: Corpus identifier.
+    :type corpus_id: str
+    :param graph_id: Graph identifier.
+    :type graph_id: str
+    :param extraction_snapshot: Extraction snapshot reference.
+    :type extraction_snapshot: str
+    :return: None.
+    :rtype: None
+    """
+    with driver.session(database=settings.database) as session:
+        session.execute_write(_clear_graph_records, corpus_id, graph_id, extraction_snapshot)
+
+
+def _clear_graph_records(tx, corpus_id: str, graph_id: str, extraction_snapshot: str):
+    tx.run(
+        """
+        MATCH (n:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })
+        DETACH DELETE n
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+
+
 def _write_nodes(tx, corpus_id: str, graph_id: str, extraction_snapshot: str, item_id: str, nodes):
     tx.run(
         """
@@ -364,3 +408,129 @@ def _write_edges(
         item_id=item_id,
         edges=edges,
     )
+
+
+def read_graph_records(
+    *,
+    driver,
+    settings: Neo4jSettings,
+    corpus_id: str,
+    graph_id: str,
+    extraction_snapshot: str,
+) -> Dict[str, List[dict]]:
+    """
+    Read graph nodes and edges for a snapshot from Neo4j.
+
+    :param driver: Neo4j driver instance.
+    :type driver: neo4j.Driver
+    :param settings: Resolved Neo4j settings.
+    :type settings: Neo4jSettings
+    :param corpus_id: Corpus identifier.
+    :type corpus_id: str
+    :param graph_id: Graph identifier.
+    :type graph_id: str
+    :param extraction_snapshot: Extraction snapshot reference.
+    :type extraction_snapshot: str
+    :return: Mapping with sorted ``nodes`` and ``edges`` lists.
+    :rtype: dict[str, list[dict]]
+    """
+    with driver.session(database=settings.database) as session:
+        nodes = session.execute_read(
+            _read_nodes,
+            corpus_id,
+            graph_id,
+            extraction_snapshot,
+        )
+        edges = session.execute_read(
+            _read_edges,
+            corpus_id,
+            graph_id,
+            extraction_snapshot,
+        )
+    return {"nodes": nodes, "edges": edges}
+
+
+def _read_nodes(tx, corpus_id: str, graph_id: str, extraction_snapshot: str):
+    result = tx.run(
+        """
+        MATCH (n:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })
+        RETURN n.item_id AS item_id,
+               n.node_id AS node_id,
+               n.node_type AS node_type,
+               n.label AS label,
+               n.properties_json AS properties_json
+        ORDER BY item_id, node_id
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+    return [
+        {
+            "item_id": record["item_id"],
+            "node_id": record["node_id"],
+            "node_type": record["node_type"],
+            "label": record["label"],
+            "properties": _parse_properties(record["properties_json"]),
+        }
+        for record in result
+    ]
+
+
+def _read_edges(tx, corpus_id: str, graph_id: str, extraction_snapshot: str):
+    result = tx.run(
+        """
+        MATCH (src:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })-[r:RELATED {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        }]->(dst:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })
+        RETURN r.item_id AS item_id,
+               r.edge_id AS edge_id,
+               src.node_id AS src,
+               dst.node_id AS dst,
+               r.edge_type AS edge_type,
+               r.weight AS weight,
+               r.properties_json AS properties_json
+        ORDER BY item_id, edge_id
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+    return [
+        {
+            "item_id": record["item_id"],
+            "edge_id": record["edge_id"],
+            "src": record["src"],
+            "dst": record["dst"],
+            "edge_type": record["edge_type"],
+            "weight": record["weight"],
+            "properties": _parse_properties(record["properties_json"]),
+        }
+        for record in result
+    ]
+
+
+def _parse_properties(value) -> dict:
+    if not value:
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        parsed = json.loads(value)
+    except (TypeError, json.JSONDecodeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}

@@ -17,14 +17,23 @@ from ..time import utc_now_iso
 from .extractors import get_graph_extractor
 from .models import (
     GraphConfigurationManifest,
+    GraphExportEdge,
+    GraphExportNode,
     GraphExtractionItemSummary,
     GraphExtractionResult,
+    GraphSnapshotExport,
     GraphSnapshotListEntry,
     GraphSnapshotManifest,
     GraphSnapshotReference,
     parse_graph_snapshot_reference,
 )
-from .neo4j import create_neo4j_driver, resolve_neo4j_settings, write_graph_records
+from .neo4j import (
+    clear_graph_records,
+    create_neo4j_driver,
+    read_graph_records,
+    resolve_neo4j_settings,
+    write_graph_records,
+)
 
 
 def create_graph_configuration_manifest(
@@ -153,6 +162,7 @@ def build_graph_snapshot(
     configuration_name: str,
     configuration: Dict[str, Any],
     extraction_snapshot: ExtractionSnapshotReference,
+    max_items: Optional[int] = None,
     progress_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> GraphSnapshotManifest:
     """
@@ -168,6 +178,8 @@ def build_graph_snapshot(
     :type configuration: dict[str, Any]
     :param extraction_snapshot: Extraction snapshot reference.
     :type extraction_snapshot: ExtractionSnapshotReference
+    :param max_items: Optional maximum number of extraction items to process.
+    :type max_items: int or None
     :param progress_callback: Optional callback for progress events.
     :type progress_callback: collections.abc.Callable or None
     :return: Graph snapshot manifest.
@@ -179,11 +191,14 @@ def build_graph_snapshot(
     except ValidationError as exc:
         raise ValueError(f"Invalid graph extraction configuration: {exc}") from exc
 
-    graph_id = create_graph_id(extractor_id=extractor_id, configuration=configuration)
+    snapshot_configuration = dict(configuration)
+    if max_items is not None:
+        snapshot_configuration["_execution"] = {"max_items": max_items}
+    graph_id = create_graph_id(extractor_id=extractor_id, configuration=snapshot_configuration)
     configuration_manifest = create_graph_configuration_manifest(
         extractor_id=extractor_id,
         name=configuration_name,
-        configuration=configuration,
+        configuration=snapshot_configuration,
     )
     manifest = create_graph_snapshot_manifest(
         corpus,
@@ -195,6 +210,11 @@ def build_graph_snapshot(
         extractor_id=extraction_snapshot.extractor_id,
         snapshot_id=extraction_snapshot.snapshot_id,
     )
+    extraction_items = list(extraction_manifest.items)
+    if max_items is not None:
+        if max_items <= 0:
+            raise ValueError("max_items must be a positive integer")
+        extraction_items = extraction_items[:max_items]
 
     snapshot_dir = corpus.graph_snapshot_dir(
         extractor_id=extractor_id,
@@ -208,7 +228,8 @@ def build_graph_snapshot(
         "starting",
         snapshot_id=manifest.snapshot_id,
         extractor_id=extractor_id,
-        items_total=len(extraction_manifest.items),
+        items_total=len(extraction_items),
+        items_available=len(extraction_manifest.items),
     )
     driver = create_neo4j_driver(settings)
 
@@ -219,7 +240,14 @@ def build_graph_snapshot(
     item_summaries: List[GraphExtractionItemSummary] = []
 
     try:
-        for index, item_result in enumerate(extraction_manifest.items, start=1):
+        clear_graph_records(
+            driver=driver,
+            settings=settings,
+            corpus_id=corpus.uri,
+            graph_id=graph_id,
+            extraction_snapshot=extraction_snapshot.as_string(),
+        )
+        for index, item_result in enumerate(extraction_items, start=1):
             item = corpus.get_item(item_result.item_id)
             _emit_graph_progress(
                 progress_callback,
@@ -227,7 +255,7 @@ def build_graph_snapshot(
                 snapshot_id=manifest.snapshot_id,
                 item_id=item.id,
                 item_index=index,
-                items_total=len(extraction_manifest.items),
+                items_total=len(extraction_items),
             )
             try:
                 extracted_text = _load_extracted_text(
@@ -252,7 +280,7 @@ def build_graph_snapshot(
                         snapshot_id=manifest.snapshot_id,
                         item_id=item.id,
                         item_index=index,
-                        items_total=len(extraction_manifest.items),
+                        items_total=len(extraction_items),
                         status="skipped",
                         nodes=node_total,
                         edges=edge_total,
@@ -292,7 +320,7 @@ def build_graph_snapshot(
                     snapshot_id=manifest.snapshot_id,
                     item_id=item.id,
                     item_index=index,
-                    items_total=len(extraction_manifest.items),
+                    items_total=len(extraction_items),
                     status="complete",
                     nodes=node_total,
                     edges=edge_total,
@@ -316,7 +344,7 @@ def build_graph_snapshot(
                     snapshot_id=manifest.snapshot_id,
                     item_id=item.id,
                     item_index=index,
-                    items_total=len(extraction_manifest.items),
+                    items_total=len(extraction_items),
                     status="error",
                     error_message=str(exc),
                     nodes=node_total,
@@ -339,7 +367,7 @@ def build_graph_snapshot(
                     snapshot_id=manifest.snapshot_id,
                     item_id=item.id,
                     item_index=index,
-                    items_total=len(extraction_manifest.items),
+                    items_total=len(extraction_items),
                     status="error",
                     error_message=str(exc),
                     nodes=node_total,
@@ -349,7 +377,8 @@ def build_graph_snapshot(
         driver.close()
 
     manifest.stats = {
-        "items_total": len(extraction_manifest.items),
+        "items_total": len(extraction_items),
+        "items_available": len(extraction_manifest.items),
         "items_processed": len(item_summaries),
         "items_skipped": skipped_total,
         "items_errored": errored_total,
@@ -361,7 +390,8 @@ def build_graph_snapshot(
         "completed",
         snapshot_id=manifest.snapshot_id,
         extractor_id=extractor_id,
-        items_total=len(extraction_manifest.items),
+        items_total=len(extraction_items),
+        items_available=len(extraction_manifest.items),
         items_processed=len(item_summaries),
         items_skipped=skipped_total,
         items_errored=errored_total,
@@ -426,6 +456,86 @@ def load_graph_snapshot_manifest(
         raise FileNotFoundError(f"Missing graph snapshot manifest: {manifest_path}")
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     return GraphSnapshotManifest.model_validate(data)
+
+
+def export_graph_snapshot(
+    corpus: Corpus, *, snapshot: GraphSnapshotReference
+) -> GraphSnapshotExport:
+    """
+    Export graph snapshot contents from Neo4j as portable JSON records.
+
+    :param corpus: Corpus containing the snapshot manifest.
+    :type corpus: Corpus
+    :param snapshot: Graph snapshot reference.
+    :type snapshot: GraphSnapshotReference
+    :return: Portable graph snapshot export.
+    :rtype: GraphSnapshotExport
+    """
+    manifest = load_graph_snapshot_manifest(
+        corpus,
+        extractor_id=snapshot.extractor_id,
+        snapshot_id=snapshot.snapshot_id,
+    )
+    settings = resolve_neo4j_settings()
+    driver = create_neo4j_driver(settings)
+    try:
+        records = read_graph_records(
+            driver=driver,
+            settings=settings,
+            corpus_id=corpus.uri,
+            graph_id=manifest.graph_id,
+            extraction_snapshot=manifest.extraction_snapshot,
+        )
+    finally:
+        driver.close()
+
+    nodes = [
+        GraphExportNode(
+            extractor_id=snapshot.extractor_id,
+            snapshot_id=snapshot.snapshot_id,
+            graph_id=manifest.graph_id,
+            extraction_snapshot=manifest.extraction_snapshot,
+            item_id=str(entry["item_id"]),
+            node_id=str(entry["node_id"]),
+            node_type=str(entry["node_type"]),
+            label=str(entry["label"]),
+            properties=dict(entry.get("properties") or {}),
+        )
+        for entry in sorted(
+            records["nodes"],
+            key=lambda item: (str(item.get("item_id", "")), str(item.get("node_id", ""))),
+        )
+    ]
+    edges = [
+        GraphExportEdge(
+            extractor_id=snapshot.extractor_id,
+            snapshot_id=snapshot.snapshot_id,
+            graph_id=manifest.graph_id,
+            extraction_snapshot=manifest.extraction_snapshot,
+            item_id=str(entry["item_id"]),
+            edge_id=str(entry["edge_id"]),
+            src=str(entry["src"]),
+            dst=str(entry["dst"]),
+            edge_type=str(entry["edge_type"]),
+            weight=float(entry.get("weight", 1.0)),
+            properties=dict(entry.get("properties") or {}),
+        )
+        for entry in sorted(
+            records["edges"],
+            key=lambda item: (str(item.get("item_id", "")), str(item.get("edge_id", ""))),
+        )
+    ]
+    return GraphSnapshotExport(
+        snapshot=snapshot,
+        manifest=manifest,
+        nodes=nodes,
+        edges=edges,
+        stats={
+            **manifest.stats,
+            "exported_nodes": len(nodes),
+            "exported_edges": len(edges),
+        },
+    )
 
 
 def list_graph_snapshots(
