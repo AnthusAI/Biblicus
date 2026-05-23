@@ -16,6 +16,7 @@ from urllib.parse import quote, unquote, urlparse
 import yaml
 from pydantic import ValidationError
 
+from .catalog_compat import load_corpus_catalog
 from .constants import (
     ANALYSIS_DIR_NAME,
     CORPUS_DIR_NAME,
@@ -689,7 +690,7 @@ class Corpus:
         if not self.catalog_path.is_file():
             raise FileNotFoundError(f"Missing corpus catalog: {self.catalog_path}")
         catalog_data = json.loads(self.catalog_path.read_text(encoding="utf-8"))
-        return CorpusCatalog.model_validate(catalog_data)
+        return load_corpus_catalog(catalog_data)
 
     def load_catalog(self) -> CorpusCatalog:
         """
