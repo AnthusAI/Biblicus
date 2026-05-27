@@ -564,7 +564,9 @@ def step_run_harness(context) -> None:
 
     # Deepgram transform extractor
     dg_payload = {
-        "results": {"channels": [{"alternatives": [{"transcript": "hi", "words": [{"word": "hi"}]}]}]}
+        "results": {
+            "channels": [{"alternatives": [{"transcript": "hi", "words": [{"word": "hi"}]}]}]
+        }
     }
     try:
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
@@ -589,6 +591,7 @@ def step_run_harness(context) -> None:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(Path(tempfile.mkdtemp()) / "creds.json")
         _fake_google()
         speech = sys.modules["google.cloud.speech"]
+
         # expand audio encodings to exercise detection branches
         class _Enc:
             FLAC = 2
@@ -596,6 +599,7 @@ def step_run_harness(context) -> None:
             MP3 = 3
             OGG_OPUS = 4
             WEBM_OPUS = 5
+
         speech.RecognitionConfig.AudioEncoding = _Enc
 
         class _Alt:
@@ -704,32 +708,42 @@ def step_run_harness(context) -> None:
 
         bench_cfg = root / "bench2.yml"
         bench_cfg.write_text("{}", encoding="utf-8")
+
         class _BenchConfig2:
             benchmark_name = "bench"
             categories = {"a": types.SimpleNamespace()}
             pipelines = []
+
             @classmethod
             def load(cls, path):
                 _ = path
                 return cls()
+
         class _BenchResult2:
             best_pipeline = "p"
             best_score = 0.1
             primary_metric = "acc"
+
             def print_summary(self):
                 return None
+
             def to_json(self, path):
                 path.write_text("{}", encoding="utf-8")
+
             def to_markdown(self, path):
                 path.write_text("md", encoding="utf-8")
+
         class _BenchRunner2:
             def __init__(self, config):
                 self.config = config
+
             def run_category(self, config):
                 _ = config
                 return _BenchResult2()
+
             def run_all(self):
                 return _BenchResult2()
+
         original_bench_config = bench_mod.BenchmarkConfig
         original_bench_runner = bench_mod.BenchmarkRunner
         bench_mod.BenchmarkConfig = _BenchConfig2
@@ -791,8 +805,10 @@ def step_run_harness(context) -> None:
         class _PublisherOk:
             def __init__(self, name):
                 self.name = name
+
             def create_corpus(self):
                 return None
+
             def sync_catalog(self, *args, **kwargs):
                 return types.SimpleNamespace(
                     skipped=False,
@@ -802,25 +818,25 @@ def step_run_harness(context) -> None:
                     errors=["e1", "e2", "e3", "e4", "e5", "e6"],
                     hash="abcd",
                 )
+
         class _PublisherRaise:
             def __init__(self, name):
                 self.name = name
+
             def create_corpus(self):
                 return None
+
             def sync_catalog(self, *args, **kwargs):
                 raise RuntimeError("boom")
+
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PublisherOk
         )
-        cli_mod.cmd_dashboard_sync(
-            argparse.Namespace(corpus=str(_temp_corpus().root), force=False)
-        )
+        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PublisherRaise
         )
-        cli_mod.cmd_dashboard_sync(
-            argparse.Namespace(corpus=str(_temp_corpus().root), force=False)
-        )
+        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
 
         cli_mod.cmd_dashboard_configure(
             argparse.Namespace(
@@ -844,14 +860,22 @@ def step_run_harness(context) -> None:
         payload = {
             "results": {
                 "channels": [
-                    {"alternatives": [{"utterances": [{"speaker": 1, "channel": 0, "text": "hello"}]}]}
+                    {
+                        "alternatives": [
+                            {"utterances": [{"speaker": 1, "channel": 0, "text": "hello"}]}
+                        ]
+                    }
                 ]
             }
         }
         deepgram_transform._render_deepgram_text(payload=payload, config=config)
-        deepgram_transform._find_deepgram_payload(previous_extractions=[
-            ExtractionStageOutput(stage_index=1, extractor_id="x", status="extracted", text=None, metadata={})
-        ])
+        deepgram_transform._find_deepgram_payload(
+            previous_extractions=[
+                ExtractionStageOutput(
+                    stage_index=1, extractor_id="x", status="extracted", text=None, metadata={}
+                )
+            ]
+        )
         deepgram_transform._render_deepgram_text(
             payload={"results": {"channels": [{"alternatives": [{}]}]}},
             config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript"),
@@ -958,9 +982,7 @@ def step_run_harness(context) -> None:
         recipe_manifest = create_extraction_snapshot_manifest(
             cli_corpus, configuration=config_manifest
         )
-        snapshot_dir = cli_corpus.extraction_snapshot_dir(
-            "pipeline", recipe_manifest.snapshot_id
-        )
+        snapshot_dir = cli_corpus.extraction_snapshot_dir("pipeline", recipe_manifest.snapshot_id)
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=recipe_manifest)
         write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=recipe_manifest)
@@ -1073,9 +1095,7 @@ def step_run_harness(context) -> None:
             snapshot_dir=extraction_dir, manifest=extraction_manifest
         )
 
-        cli_mod.cmd_extract_list(
-            argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None)
-        )
+        cli_mod.cmd_extract_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
         cli_mod.cmd_extract_show(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
@@ -1163,12 +1183,10 @@ def step_run_harness(context) -> None:
         original_list_graph = graph_extraction_mod.list_graph_snapshots
         original_load_graph = graph_extraction_mod.load_graph_snapshot_manifest
         graph_extraction_mod.list_graph_snapshots = lambda *args, **kwargs: []
-        graph_extraction_mod.load_graph_snapshot_manifest = lambda *args, **kwargs: types.SimpleNamespace(
-            model_dump_json=lambda indent=2: "{}"
+        graph_extraction_mod.load_graph_snapshot_manifest = (
+            lambda *args, **kwargs: types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
         )
-        cli_mod.cmd_graph_list(
-            argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None)
-        )
+        cli_mod.cmd_graph_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
         cli_mod.cmd_graph_show(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
@@ -1588,15 +1606,11 @@ def step_run_harness(context) -> None:
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_FailPublisher
         )
-        cli_mod.cmd_dashboard_sync(
-            argparse.Namespace(corpus=str(cli_corpus.root), force=False)
-        )
+        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(cli_corpus.root), force=False))
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_SkipPublisher
         )
-        cli_mod.cmd_dashboard_sync(
-            argparse.Namespace(corpus=str(cli_corpus.root), force=False)
-        )
+        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(cli_corpus.root), force=False))
     except Exception:
         pass
     try:
@@ -1610,6 +1624,7 @@ def step_run_harness(context) -> None:
             GraphNode,
             GraphSnapshotReference,
         )
+
         graph_corpus = _temp_corpus()
         graph_path = graph_corpus.raw_dir / "graph.txt"
         graph_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1752,9 +1767,7 @@ def step_run_harness(context) -> None:
         _ = list_entries
         graph_extraction.list_graph_snapshots(graph_corpus, extractor_id="missing")
         graph_extraction.latest_graph_snapshot_reference(graph_corpus, extractor_id="simple")
-        graph_extraction.resolve_graph_snapshot_reference(
-            graph_corpus, raw="simple:abcdef"
-        )
+        graph_extraction.resolve_graph_snapshot_reference(graph_corpus, raw="simple:abcdef")
 
         graph_config_manifest = graph_extraction.create_graph_configuration_manifest(
             extractor_id="simple",
@@ -1919,9 +1932,7 @@ def step_run_harness(context) -> None:
         markov_dir = markov_corpus.extraction_snapshot_dir("pipeline", markov_manifest.snapshot_id)
         markov_dir.mkdir(parents=True, exist_ok=True)
         (markov_dir / "text").mkdir(parents=True, exist_ok=True)
-        (markov_dir / "text" / f"{markov_item.id}.txt").write_text(
-            "alpha beta", encoding="utf-8"
-        )
+        (markov_dir / "text" / f"{markov_item.id}.txt").write_text("alpha beta", encoding="utf-8")
         write_extraction_snapshot_manifest(snapshot_dir=markov_dir, manifest=markov_manifest)
         markov_snapshot = ExtractionSnapshotReference(
             extractor_id="pipeline", snapshot_id=markov_manifest.snapshot_id
@@ -2201,9 +2212,7 @@ def step_run_harness(context) -> None:
 
         graphviz_dir = root / "markov_graphviz"
         graphviz_dir.mkdir(parents=True, exist_ok=True)
-        graphviz_config = MarkovAnalysisArtifactsGraphVizConfig(
-            enabled=True, min_edge_weight=1.1
-        )
+        graphviz_config = MarkovAnalysisArtifactsGraphVizConfig(enabled=True, min_edge_weight=1.1)
         markov_mod._write_graphviz(
             run_dir=graphviz_dir,
             transitions=[
@@ -2271,7 +2280,9 @@ def step_run_harness(context) -> None:
             name="stage",
             configuration=pipeline_config,
         )
-        base_manifest = create_extraction_snapshot_manifest(stage_corpus, configuration=config_manifest)
+        base_manifest = create_extraction_snapshot_manifest(
+            stage_corpus, configuration=config_manifest
+        )
         cached_item = ExtractionItemResult(
             item_id=item_id,
             status="extracted",
@@ -2306,9 +2317,11 @@ def step_run_harness(context) -> None:
         fatal_path.write_text("fatal", encoding="utf-8")
         fatal_corpus.ingest_file(fatal_path)
         original_get_extractor = extraction_mod.get_extractor
+
         class _FatalExtractor:
             def extract_text(self, *args, **kwargs):
                 raise ExtractionSnapshotFatalError("fatal")
+
         extraction_mod.get_extractor = lambda extractor_id: _FatalExtractor()
         try:
             build_extraction_snapshot(
@@ -2475,12 +2488,14 @@ def step_run_harness(context) -> None:
             pass
 
         original_wait = extraction_mod.threading.Event.wait
+
         def _fast_wait(self, timeout=None):
             if timeout is None:
                 return original_wait(self, timeout)
             count = getattr(self, "_fast_wait_count", 0) + 1
             setattr(self, "_fast_wait_count", count)
             return count > 1
+
         extraction_mod.threading.Event.wait = _fast_wait
 
         many_corpus = _temp_corpus()
@@ -2514,11 +2529,14 @@ def step_run_harness(context) -> None:
         extraction_mod.threading.Event.wait = original_wait
 
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
+
         class _FailPublisher:
             def __init__(self, name):
                 self.name = name
+
             def sync_catalog(self, *args, **kwargs):
                 raise RuntimeError("fail")
+
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_FailPublisher
         )
@@ -2602,12 +2620,14 @@ def step_run_harness(context) -> None:
         )
 
         original_wait = tm_mod.threading.Event.wait
+
         def _fast_wait(self, timeout=None):
             if timeout is None:
                 return original_wait(self, timeout)
             count = getattr(self, "_fast_wait_count", 0) + 1
             setattr(self, "_fast_wait_count", count)
             return count > 1
+
         tm_mod.threading.Event.wait = _fast_wait
         fake_bertopic = types.SimpleNamespace(
             BERTopic=type(
@@ -2805,8 +2825,10 @@ def step_run_harness(context) -> None:
                 class _Resp:
                     def raise_for_status(self):
                         return None
+
                     def json(self):
                         return {"results": {"channels": [{"alternatives": [{"transcript": "hi"}]}]}}
+
                 return _Resp()
 
         sys.modules["httpx"] = _FakeHttpx
@@ -2828,9 +2850,11 @@ def step_run_harness(context) -> None:
             sys.modules["httpx"] = original_httpx
 
         aws_extractor = AwsTranscribeSpeechToTextExtractor()
+
         class _FakeTranscribe:
             def start_transcription_job(self, **kwargs):
                 return None
+
             def get_transcription_job(self, **kwargs):
                 return {
                     "TranscriptionJob": {
@@ -2838,14 +2862,19 @@ def step_run_harness(context) -> None:
                         "Transcript": {"TranscriptFileUri": "file://fake"},
                     }
                 }
+
             def delete_transcription_job(self, **kwargs):
                 raise RuntimeError("x")
+
         class _FakeS3:
             def upload_file(self, *args, **kwargs):
                 return None
+
             def delete_object(self, *args, **kwargs):
                 raise RuntimeError("x")
+
         import urllib.request as urlreq
+
         original_urlopen = urlreq.urlopen
         urlreq.urlopen = lambda *args, **kwargs: io.BytesIO(
             json.dumps(
@@ -2900,39 +2929,51 @@ def step_run_harness(context) -> None:
                 Masked = "masked"
                 Removed = "removed"
                 Raw = "raw"
+
             class ResultReason:
                 RecognizedSpeech = "recognized"
                 NoMatch = "no_match"
                 Canceled = "canceled"
+
             class SpeechConfig:
                 def __init__(self, subscription=None, endpoint=None, region=None):
                     self.subscription = subscription
                     self.endpoint = endpoint
                     self.region = region
+
                 def set_profanity(self, option):
                     self.option = option
+
                 def enable_dictation(self):
                     self.dictation = True
+
             class audio:
                 class AudioConfig:
                     def __init__(self, filename):
                         self.filename = filename
+
             class SpeechRecognizer:
                 def __init__(self, speech_config=None, audio_config=None):
                     self.speech_config = speech_config
                     self.audio_config = audio_config
+
                 def recognize_once(self):
                     return types.SimpleNamespace(
                         reason=_SpeechSdk.ResultReason.Canceled,
                         cancellation_details=types.SimpleNamespace(reason="r", error_details="e"),
                     )
+
         sys.modules["azure.cognitiveservices.speech"] = _SpeechSdk
         os.environ["AZURE_SPEECH_KEY"] = "k"
         try:
             azure_extractor.extract_text(
                 corpus=_temp_corpus(),
                 item=types.SimpleNamespace(relpath="x", media_type="audio/wav"),
-                config={"endpoint": "endpoint", "profanity_option": "raw", "enable_dictation": True},
+                config={
+                    "endpoint": "endpoint",
+                    "profanity_option": "raw",
+                    "enable_dictation": True,
+                },
             )
         except Exception:
             pass
@@ -2941,6 +2982,7 @@ def step_run_harness(context) -> None:
             class SpeechRecognizer(_SpeechSdk.SpeechRecognizer):
                 def recognize_once(self):
                     return types.SimpleNamespace(reason="other")
+
         sys.modules["azure.cognitiveservices.speech"] = _SpeechSdk2
         os.environ["AZURE_SPEECH_KEY"] = "k"
         try:
@@ -2955,6 +2997,7 @@ def step_run_harness(context) -> None:
         sys.modules.pop("azure.cognitiveservices.speech", None)
 
         google_extractor = GoogleSpeechToTextExtractor()
+
         class _Speech:
             class RecognitionConfig:
                 class AudioEncoding:
@@ -2963,15 +3006,19 @@ def step_run_harness(context) -> None:
                     MP3 = 3
                     OGG_OPUS = 4
                     WEBM_OPUS = 5
+
                 def __init__(self, **kwargs):
                     for k, v in kwargs.items():
                         setattr(self, k, v)
+
             class SpeakerDiarizationConfig:
                 def __init__(self, enable_speaker_diarization=False):
                     self.enable_speaker_diarization = enable_speaker_diarization
+
             class RecognitionAudio:
                 def __init__(self, content=None):
                     self.content = content
+
             class SpeechClient:
                 def recognize(self, config=None, audio=None):
                     _ = config
@@ -2979,6 +3026,7 @@ def step_run_harness(context) -> None:
                     alt = types.SimpleNamespace(transcript="hello", confidence=0.9)
                     result = types.SimpleNamespace(alternatives=[alt])
                     return types.SimpleNamespace(results=[result])
+
         sys.modules["google.cloud.speech"] = _Speech
         google_extractor._detect_encoding("audio/mp3")
         google_extractor.extract_text(
@@ -2995,6 +3043,7 @@ def step_run_harness(context) -> None:
         pass
     try:
         from datetime import datetime as _dt
+
         deepgram_stt._deepgram_response_to_dict(
             types.SimpleNamespace(to_json=lambda: json.dumps({"results": {"channels": []}}))
         )
@@ -3007,34 +3056,55 @@ def step_run_harness(context) -> None:
         deepgram_stt._normalize_deepgram_value(_dt.utcnow())
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(dict=lambda: {"k": "v"}))
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(__dict__={"k": "v"}))
+
         class _NoJson:
-            def __repr__(self): return "nojson"
+            def __repr__(self):
+                return "nojson"
+
         deepgram_stt._normalize_deepgram_value(_NoJson())
     except Exception:
         pass
 
     try:
+
         class _Alt2:
             def __init__(self):
                 self.transcript = "g2"
                 self.confidence = 0.8
+
         class _Res2:
             def __init__(self):
                 self.alternatives = [_Alt2()]
+
         class _Resp2:
             def __init__(self):
                 self.results = [_Res2()]
+
         class _SpeechConfig2:
             class RecognitionConfig:
                 class AudioEncoding:
-                    FLAC=1; LINEAR16=2; MP3=3; OGG_OPUS=4; WEBM_OPUS=5
-                def __init__(self, **kwargs): pass
+                    FLAC = 1
+                    LINEAR16 = 2
+                    MP3 = 3
+                    OGG_OPUS = 4
+                    WEBM_OPUS = 5
+
+                def __init__(self, **kwargs):
+                    pass
+
         sys.modules["google"] = types.SimpleNamespace()
         sys.modules["google.cloud"] = types.SimpleNamespace(speech=_SpeechConfig2)
-        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = lambda enable_speaker_diarization=True: types.SimpleNamespace()
-        sys.modules["google.cloud"].speech.RecognitionAudio = type("A",(object,),{"__init__":lambda self, content=None:None})
+        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = (
+            lambda enable_speaker_diarization=True: types.SimpleNamespace()
+        )
+        sys.modules["google.cloud"].speech.RecognitionAudio = type(
+            "A", (object,), {"__init__": lambda self, content=None: None}
+        )
+
         class _Client2:
-            def recognize(self, config, audio): return _Resp2()
+            def recognize(self, config, audio):
+                return _Resp2()
+
         sys.modules["google.cloud"].speech.SpeechClient = _Client2
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(context.coverage_root / "creds2.json")
         gs2 = GoogleSpeechToTextExtractor()
@@ -3042,8 +3112,14 @@ def step_run_harness(context) -> None:
             gs2._detect_encoding(mt)
         gs2.extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/mp3"}),
-            config={"enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2},
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/mp3"}
+            ),
+            config={
+                "enable_word_time_offsets": True,
+                "enable_speaker_diarization": True,
+                "diarization_speaker_count": 2,
+            },
             previous_extractions=[],
         )
     except Exception:
@@ -3051,28 +3127,62 @@ def step_run_harness(context) -> None:
 
     try:
         aws = AwsTranscribeSpeechToTextExtractor()
-        for mt in ["audio/flac", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm", "application/octet-stream", "audio/m4a"]:
+        for mt in [
+            "audio/flac",
+            "audio/wav",
+            "audio/mp3",
+            "audio/ogg",
+            "audio/webm",
+            "application/octet-stream",
+            "audio/m4a",
+        ]:
             aws._detect_media_format(mt)
         import urllib.request
+
         class _OkTranscribe2:
-            def start_transcription_job(self, **kwargs): pass
+            def start_transcription_job(self, **kwargs):
+                pass
+
             def get_transcription_job(self, TranscriptionJobName):
-                return {"TranscriptionJob": {"TranscriptionJobStatus": "COMPLETED", "Transcript": {"TranscriptFileUri": "http://example"}}}
-            def delete_transcription_job(self, TranscriptionJobName): raise Exception("del")
+                return {
+                    "TranscriptionJob": {
+                        "TranscriptionJobStatus": "COMPLETED",
+                        "Transcript": {"TranscriptFileUri": "http://example"},
+                    }
+                }
+
+            def delete_transcription_job(self, TranscriptionJobName):
+                raise Exception("del")
+
         class _OkS3b:
-            def upload_fileobj(self, fh, bucket, key): pass
-            def delete_object(self, Bucket, Key): raise Exception("del")
-        sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: _OkS3b() if name=="s3" else _OkTranscribe2())
+            def upload_fileobj(self, fh, bucket, key):
+                pass
+
+            def delete_object(self, Bucket, Key):
+                raise Exception("del")
+
+        sys.modules["boto3"] = types.SimpleNamespace(
+            client=lambda name: _OkS3b() if name == "s3" else _OkTranscribe2()
+        )
         urllib.request.urlopen = lambda url: types.SimpleNamespace(
             __enter__=lambda self: self,
             __exit__=lambda *args: False,
-            read=lambda: json.dumps({"results":{"transcripts":[{"transcript":"x"}], "speaker_labels":{"speakers":2}}}).encode(),
+            read=lambda: json.dumps(
+                {
+                    "results": {
+                        "transcripts": [{"transcript": "x"}],
+                        "speaker_labels": {"speakers": 2},
+                    }
+                }
+            ).encode(),
         )
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/mp3"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/mp3"}
+            ),
             config={
-                "s3_bucket":"b",
+                "s3_bucket": "b",
                 "identify_speakers": True,
                 "max_speakers": 2,
                 "show_alternatives": True,
@@ -3097,10 +3207,12 @@ def step_run_harness(context) -> None:
             pass
         os.environ["OPENAI_API_KEY"] = "k"
         original_import = builtins.__import__
+
         def _block_openai(name, *args, **kwargs):
             if name == "openai":
                 raise ImportError("blocked")
             return original_import(name, *args, **kwargs)
+
         builtins.__import__ = _block_openai
         try:
             OpenAiAudioSpeechToTextExtractor().extract_text(
@@ -3113,17 +3225,24 @@ def step_run_harness(context) -> None:
             pass
         finally:
             builtins.__import__ = original_import
+
         class _Audio:
             class Transcriptions:
                 def create(self, *args, **kwargs):
                     return types.SimpleNamespace(text="ok")
+
             transcriptions = Transcriptions()
+
         class _OpenAI:
-            def __init__(self, api_key): self.audio = _Audio()
+            def __init__(self, api_key):
+                self.audio = _Audio()
+
         sys.modules["openai"] = types.SimpleNamespace(OpenAI=_OpenAI)
         OpenAiAudioSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "audio/mp3"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/mp3"}
+            ),
             config={},
             previous_extractions=[],
         )
@@ -3160,10 +3279,15 @@ def step_run_harness(context) -> None:
         pipeline_dir.mkdir(parents=True, exist_ok=True)
         pipeline_path = pipeline_dir / "p.yaml"
         pipeline_path.write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
+
         # patch OCRBenchmark to raise once to hit error branch
         class _FakeOCR:
-            def __init__(self, corpus): pass
-            def evaluate_extraction(self, snapshot_reference, ground_truth_dir, provider_config=None):
+            def __init__(self, corpus):
+                pass
+
+            def evaluate_extraction(
+                self, snapshot_reference, ground_truth_dir, provider_config=None
+            ):
                 return types.SimpleNamespace(
                     avg_f1=1.0,
                     avg_recall=1.0,
@@ -3174,6 +3298,7 @@ def step_run_harness(context) -> None:
                     avg_sequence_accuracy=1.0,
                     total_documents=1,
                 )
+
         benchmark_runner.OCRBenchmark = _FakeOCR  # type: ignore
         bench_cfg = benchmark_runner.BenchmarkConfig(
             benchmark_name="demo",
@@ -3195,16 +3320,21 @@ def step_run_harness(context) -> None:
             cat_config=bench_cfg.categories["cat"],
             gt_dir=gt_dir,
         )
-        runner._calculate_aggregate({"cat": benchmark_runner.CategoryResult(
-            category_name="cat",
-            dataset="demo",
-            documents_evaluated=1,
-            pipelines=[],
-            best_pipeline="",
-            best_score=0.0,
-            primary_metric="f1",
-            processing_time_seconds=0.1,
-        )})
+        runner._calculate_aggregate(
+            {
+                "cat": benchmark_runner.CategoryResult(
+                    category_name="cat",
+                    dataset="demo",
+                    documents_evaluated=1,
+                    pipelines=[],
+                    best_pipeline="",
+                    best_score=0.0,
+                    primary_metric="f1",
+                    primary_score=0.0,
+                    processing_time_seconds=0.1,
+                )
+            }
+        )
     except Exception:
         pass
 
@@ -3221,7 +3351,9 @@ def step_run_harness(context) -> None:
     dot_transformer.unflatten_env_vars({"APP_A__B": "1"})
     temp_yaml = corpus.root / "cfg.yml"
     temp_yaml.write_text("a: 1\n", encoding="utf-8")
-    dot_loader.load_config(yaml_path=temp_yaml, prefix="APP", override=True, dotenv_path=None, load_dotenv_first=False)
+    dot_loader.load_config(
+        yaml_path=temp_yaml, prefix="APP", override=True, dotenv_path=None, load_dotenv_first=False
+    )
     dot_loader.load_yaml_view([temp_yaml])
 
     # CLI helpers
@@ -3246,7 +3378,8 @@ def step_run_harness(context) -> None:
     )
     try:
         write_extraction_snapshot_manifest(
-            snapshot_dir=corpus.extraction_snapshot_dir("pipeline", manifest.snapshot_id), manifest=manifest
+            snapshot_dir=corpus.extraction_snapshot_dir("pipeline", manifest.snapshot_id),
+            manifest=manifest,
         )
     except Exception:
         pass
@@ -3275,13 +3408,18 @@ def step_run_harness(context) -> None:
     gt_dir.mkdir(parents=True, exist_ok=True)
     (gt_dir / "a1.txt").write_text("hello world", encoding="utf-8")
     try:
-        stt_benchmark.STTBenchmark(corpus).evaluate_extraction(manifest.snapshot_id, gt_dir, provider_config={"provider": "fake"})
+        stt_benchmark.STTBenchmark(corpus).evaluate_extraction(
+            manifest.snapshot_id, gt_dir, provider_config={"provider": "fake"}
+        )
     except Exception:
         pass
 
     # Topic modeling quick run
     try:
-        topic_modeling.run_topic_modeling(["alpha beta", "beta gamma"], topic_modeling.TopicModelingConfig(num_topics=2, max_features=10, max_df=1.0, min_df=1))
+        topic_modeling.run_topic_modeling(
+            ["alpha beta", "beta gamma"],
+            topic_modeling.TopicModelingConfig(num_topics=2, max_features=10, max_df=1.0, min_df=1),
+        )
     except Exception:
         pass
 
@@ -3297,7 +3435,9 @@ def step_run_harness(context) -> None:
 
     # Benchmark runner minimal instantiation
     cfg_path = corpus.root / "bench.json"
-    cfg_path.write_text(json.dumps({"benchmark_name": "demo", "categories": {}, "pipelines": []}), encoding="utf-8")
+    cfg_path.write_text(
+        json.dumps({"benchmark_name": "demo", "categories": {}, "pipelines": []}), encoding="utf-8"
+    )
     benchmark_runner.BenchmarkConfig.load(cfg_path)
 
     # OCR benchmark instantiation (skips real OCR)
@@ -3469,16 +3609,23 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
         os.environ["DEEPGRAM_API_KEY"] = "dg"
         dg_extractor = DeepgramSpeechToTextExtractor()
         dg_extractor.extract_text(corpus=corpus, item=audio, config={}, previous_extractions=prev)
+
         # deepgram response normalization paths
         class FakeDG:
             def __init__(self):
-                self.results = type("R", (), {"channels": [type("C", (), {"alternatives": [{"transcript": "t"}]})()]})
+                self.results = type(
+                    "R",
+                    (),
+                    {"channels": [type("C", (), {"alternatives": [{"transcript": "t"}]})()]},
+                )
 
             def to_dict(self):
                 return {"results": {"channels": [{"alternatives": [{"transcript": "t"}]}]}}
 
         deepgram_transform._deepgram_response_to_dict(FakeDG())
-        deepgram_transform._deepgram_response_to_dict(type("X", (), {"to_json": lambda self: '{"a":1}'} )())
+        deepgram_transform._deepgram_response_to_dict(
+            type("X", (), {"to_json": lambda self: '{"a":1}'})()
+        )
         deepgram_transform._deepgram_response_to_dict({"value": "x"})
     except Exception:
         pass
@@ -3506,7 +3653,9 @@ def _exercise_deep_coverage(corpus: Corpus) -> None:
         pass
 
 
-def _make_snapshot_dirs(corpus: Corpus, extractor_id: str = "pipeline", snapshot_id: str = "snap-x") -> Path:
+def _make_snapshot_dirs(
+    corpus: Corpus, extractor_id: str = "pipeline", snapshot_id: str = "snap-x"
+) -> Path:
     snap_dir = corpus.root / "extracted" / extractor_id / snapshot_id
     snap_dir.mkdir(parents=True, exist_ok=True)
     catalog = corpus.load_catalog()
@@ -3671,7 +3820,10 @@ def step_run_extended_harness(context) -> None:
     (legacy / "raw" / "doc.txt").write_text("hello", encoding="utf-8")
     (old_meta / "config.json").write_text(json.dumps({"raw_dir": "raw"}), encoding="utf-8")
     (old_meta / "catalog.json").write_text(
-        json.dumps({"items": {"1": {"id": "1", "relpath": "raw/doc.txt", "media_type": "text/plain"}}}), encoding="utf-8"
+        json.dumps(
+            {"items": {"1": {"id": "1", "relpath": "raw/doc.txt", "media_type": "text/plain"}}}
+        ),
+        encoding="utf-8",
     )
     try:
         migrate_layout(corpus_root=legacy, force=True)
@@ -3744,7 +3896,9 @@ def step_run_extended_harness(context) -> None:
     # Corpus edge helpers: latest snapshot pointers (safe guard)
     try:
         corpus.write_snapshot(
-            create_extraction_configuration_manifest(extractor_id="pipeline", name="default", configuration={})
+            create_extraction_configuration_manifest(
+                extractor_id="pipeline", name="default", configuration={}
+            )
         )
     except Exception:
         pass
@@ -3803,9 +3957,7 @@ def step_exhaust_gaps(context) -> None:
     # dotyaml loader branches: absolute dotenv, missing yaml, override paths
     root = context.coverage_root
     try:
-        cli_mod._normalize_extraction_configuration(
-            {"extractor_id": " ", "configuration": {}}
-        )
+        cli_mod._normalize_extraction_configuration({"extractor_id": " ", "configuration": {}})
     except Exception:
         pass
     try:
@@ -3872,9 +4024,7 @@ def step_exhaust_gaps(context) -> None:
                 }
             ],
         ).model_dump()
-        (meta_dir / "config.json").write_text(
-            json.dumps(config_payload), encoding="utf-8"
-        )
+        (meta_dir / "config.json").write_text(json.dumps(config_payload), encoding="utf-8")
         corpus = Corpus(corpus_root)
         corpus._is_reserved_path(corpus.root)
         corpus._is_reserved_path(corpus.root / CORPUS_DIR_NAME / "x.txt")
@@ -3944,7 +4094,9 @@ def step_exhaust_gaps(context) -> None:
     yaml_path = root / "cfg.yml"
     yaml_path.write_text("k: v\nnested:\n  key: 1\n", encoding="utf-8")
     os.environ.pop("ABS_ENV", None)
-    dot_loader.load_config(yaml_path=yaml_path, prefix="APP", dotenv_path=abs_env, load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=yaml_path, prefix="APP", dotenv_path=abs_env, load_dotenv_first=True
+    )
     # loader dotenv search with relative path and yaml co-located .env
     rel_env = ".env"
     rel_yaml = root / "rel" / "rel.yml"
@@ -3952,33 +4104,57 @@ def step_exhaust_gaps(context) -> None:
     rel_yaml.write_text("val: ${REL_ENV}\n", encoding="utf-8")
     (rel_yaml.parent / rel_env).write_text("REL_ENV=abc\n", encoding="utf-8")
     # cwd .env missing, yaml_dir .env present -> walks both env_locations
-    dot_loader.load_config(yaml_path=rel_yaml, prefix="REL", dotenv_path=rel_env, load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=rel_yaml, prefix="REL", dotenv_path=rel_env, load_dotenv_first=True
+    )
     # loader paths where cwd env exists and overrides second location
     cwd_env = root / ".env"
     cwd_env.write_text("ABS_ONLY=from_cwd\n", encoding="utf-8")
-    dot_loader.load_config(yaml_path=rel_yaml, prefix="REL", dotenv_path=".env", load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=rel_yaml, prefix="REL", dotenv_path=".env", load_dotenv_first=True
+    )
     # load_config when no dotenv files exist (loop completes)
     missing_env_yaml = root / "nodot.yml"
     missing_env_yaml.write_text("a: 1\n", encoding="utf-8")
-    dot_loader.load_config(yaml_path=missing_env_yaml, prefix="NODO", dotenv_path="absent.env", load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=missing_env_yaml, prefix="NODO", dotenv_path="absent.env", load_dotenv_first=True
+    )
     os.environ["NODO_A"] = "keep"
-    dot_loader.load_config(yaml_path=missing_env_yaml, prefix="NODO", dotenv_path="absent.env", load_dotenv_first=True, override=False)
-    dot_loader.load_config(yaml_path=missing_env_yaml, prefix="NODO", dotenv_path="absent.env", load_dotenv_first=True, override=True)
+    dot_loader.load_config(
+        yaml_path=missing_env_yaml,
+        prefix="NODO",
+        dotenv_path="absent.env",
+        load_dotenv_first=True,
+        override=False,
+    )
+    dot_loader.load_config(
+        yaml_path=missing_env_yaml,
+        prefix="NODO",
+        dotenv_path="absent.env",
+        load_dotenv_first=True,
+        override=True,
+    )
     # ConfigLoader absolute env search + load_from_yaml branches
-    loader = dot_loader.ConfigLoader(prefix="APP", dotenv_path="/absent/.env", load_dotenv_first=True)
+    loader = dot_loader.ConfigLoader(
+        prefix="APP", dotenv_path="/absent/.env", load_dotenv_first=True
+    )
     loader.load_from_yaml(root / "missing.yml")
     loader_alt = dot_loader.ConfigLoader(prefix="APP", dotenv_path=abs_env, load_dotenv_first=True)
     loader_alt.load_from_yaml(yaml_path)
     loader_alt.load_from_env()
     loader_alt.set_env_vars({"outer": {"inner": True}}, override=True)
-    loader_rel = dot_loader.ConfigLoader(prefix="RELX", dotenv_path="relx.env", load_dotenv_first=True)
+    loader_rel = dot_loader.ConfigLoader(
+        prefix="RELX", dotenv_path="relx.env", load_dotenv_first=True
+    )
     loader_rel.load_from_yaml(root / "missing-relx.yml")
     # load_from_yaml with relative dotenv falling back to yaml dir
     yaml_env_dir = root / "yaml_env"
     yaml_env_dir.mkdir(parents=True, exist_ok=True)
     (yaml_env_dir / "withenv.yml").write_text("k: ${YAML_ENV_VAL}\n", encoding="utf-8")
     (yaml_env_dir / "relx.env").write_text("YAML_ENV_VAL=from_yaml_env\n", encoding="utf-8")
-    loader_rel2 = dot_loader.ConfigLoader(prefix="RELX", dotenv_path="relx.env", load_dotenv_first=True)
+    loader_rel2 = dot_loader.ConfigLoader(
+        prefix="RELX", dotenv_path="relx.env", load_dotenv_first=True
+    )
     loader_rel2.load_from_yaml(yaml_env_dir / "withenv.yml")
     # load_from_yaml with missing file and empty yaml content
     empty_yaml = root / "empty2.yml"
@@ -4021,48 +4197,52 @@ def step_exhaust_gaps(context) -> None:
     empty_cfg = root / "empty_cfg.yml"
     empty_cfg.write_text("", encoding="utf-8")
     dot_loader.DOTENV_AVAILABLE = True
-    dot_loader.load_config(yaml_path=empty_cfg, prefix="EMPTY", dotenv_path=None, load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=empty_cfg, prefix="EMPTY", dotenv_path=None, load_dotenv_first=True
+    )
     # load_config with missing env file so loop runs without break
-    dot_loader.load_config(yaml_path=None, prefix="NONE", dotenv_path="absent.env", load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=None, prefix="NONE", dotenv_path="absent.env", load_dotenv_first=True
+    )
     # ensure branch with relative env not found (no break) followed by yaml processing
-    dot_loader.load_config(yaml_path=yaml_path, prefix="MISS", dotenv_path="missing.env", load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=yaml_path, prefix="MISS", dotenv_path="missing.env", load_dotenv_first=True
+    )
     # loader branch where first env location missing but second exists
     env_yaml = root / "env_yaml" / "env.yml"
     env_yaml.parent.mkdir(parents=True, exist_ok=True)
     env_yaml.write_text("val: ${REL_ENV}\n", encoding="utf-8")
     (env_yaml.parent / ".env").write_text("REL_ENV=from_yaml_dir\n", encoding="utf-8")
     os.environ.pop("REL_ENV", None)
-    dot_loader.load_config(yaml_path=env_yaml, prefix="REL", dotenv_path=".env", load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=env_yaml, prefix="REL", dotenv_path=".env", load_dotenv_first=True
+    )
 
     # topic_modeling minimal apply path
-    topic_modeling.run_topic_modeling_for_documents = (
-        lambda documents, config, artifacts_dir=None: topic_modeling.TopicModelingReport(  # type: ignore[assignment]
-            topics=[
-                topic_modeling.TopicModelingTopic(
-                    topic_id=1,
-                    label="alpha",
-                    label_source=topic_modeling.TopicModelingLabelSource.BERTOPIC,
-                    keywords=[
-                        topic_modeling.TopicModelingKeyword(keyword="alpha", score=0.5)
-                    ],
-                    document_count=len(documents) if documents else 0,
-                    document_examples=[doc.text for doc in documents] if documents else [],
-                    document_ids=[doc.document_id for doc in documents] if documents else [],
-                )
-            ],
-            document_topics={doc.document_id: ["t1"] for doc in documents},
-            parameters={},
-            status=topic_modeling.TopicModelingStageStatus.COMPLETE,
-            warnings=[],
-            errors=[],
-            entity_removal=None,
-            text_collection=None,
-            llm_extraction=None,
-            lexical_processing=None,
-            bertopic_analysis=None,
-            llm_fine_tuning=None,
-            text_source=None,
-        )
+    topic_modeling.run_topic_modeling_for_documents = lambda documents, config, artifacts_dir=None: topic_modeling.TopicModelingReport(  # type: ignore[assignment]
+        topics=[
+            topic_modeling.TopicModelingTopic(
+                topic_id=1,
+                label="alpha",
+                label_source=topic_modeling.TopicModelingLabelSource.BERTOPIC,
+                keywords=[topic_modeling.TopicModelingKeyword(keyword="alpha", score=0.5)],
+                document_count=len(documents) if documents else 0,
+                document_examples=[doc.text for doc in documents] if documents else [],
+                document_ids=[doc.document_id for doc in documents] if documents else [],
+            )
+        ],
+        document_topics={doc.document_id: ["t1"] for doc in documents},
+        parameters={},
+        status=topic_modeling.TopicModelingStageStatus.COMPLETE,
+        warnings=[],
+        errors=[],
+        entity_removal=None,
+        text_collection=None,
+        llm_extraction=None,
+        lexical_processing=None,
+        bertopic_analysis=None,
+        llm_fine_tuning=None,
+        text_source=None,
     )
     tm_docs = [
         topic_modeling.TopicModelingDocument(
@@ -4090,9 +4270,7 @@ def step_exhaust_gaps(context) -> None:
         for idx in range(1001)
     ]
     topic_modeling._apply_llm_extraction(documents=tm_docs_large, config=tm_llm_config)
-    topic_modeling.generate_completion = lambda *args, **kwargs: json.dumps(
-        ["item 1", "item 2"]
-    )
+    topic_modeling.generate_completion = lambda *args, **kwargs: json.dumps(["item 1", "item 2"])
     tm_llm_list = tm_llm_config.model_copy(
         update={"method": topic_modeling.TopicModelingLlmExtractionMethod.ITEMIZE}
     )
@@ -4135,15 +4313,14 @@ def step_exhaust_gaps(context) -> None:
     )
     tm_docs_path = root / "tm_docs.jsonl"
     tm_docs_path.write_text(
-        json.dumps({"document_id": "x", "source_item_id": "s", "text": "t"})
-        + "\n\n",
+        json.dumps({"document_id": "x", "source_item_id": "s", "text": "t"}) + "\n\n",
         encoding="utf-8",
     )
     topic_modeling._read_documents_jsonl(tm_docs_path)
-    topic_modeling._parse_itemized_response("[1, \"ok\"]")
-    topic_modeling._parse_itemized_response("\"[\\\"item\\\"]\"")
+    topic_modeling._parse_itemized_response('[1, "ok"]')
+    topic_modeling._parse_itemized_response('"[\\"item\\"]"')
     topic_modeling._parse_itemized_response("invalid")
-    topic_modeling._parse_itemized_response("[\"keep\", \"  \"]")
+    topic_modeling._parse_itemized_response('["keep", "  "]')
     topic_modeling._apply_lexical_processing(
         documents=tm_docs,
         config=topic_modeling.TopicModelingLexicalProcessingConfig(
@@ -4185,7 +4362,9 @@ def step_exhaust_gaps(context) -> None:
     topic_modeling.generate_completion = lambda *args, **kwargs: "Label"
     topic_modeling._apply_llm_fine_tuning(
         topics=topics,
-        documents=[topic_modeling.TopicModelingDocument(document_id="doc-1", source_item_id="s", text="t")],
+        documents=[
+            topic_modeling.TopicModelingDocument(document_id="doc-1", source_item_id="s", text="t")
+        ],
         config=topic_modeling.TopicModelingLlmFineTuningConfig(
             enabled=True,
             client={"provider": "openai", "model": "gpt-4o"},
@@ -4197,7 +4376,9 @@ def step_exhaust_gaps(context) -> None:
     topic_modeling.generate_completion = lambda *args, **kwargs: ""
     topic_modeling._apply_llm_fine_tuning(
         topics=topics[:1],
-        documents=[topic_modeling.TopicModelingDocument(document_id="doc-1", source_item_id="s", text="t")],
+        documents=[
+            topic_modeling.TopicModelingDocument(document_id="doc-1", source_item_id="s", text="t")
+        ],
         config=topic_modeling.TopicModelingLlmFineTuningConfig(
             enabled=True,
             client={"provider": "openai", "model": "gpt-4o"},
@@ -4329,15 +4510,21 @@ def step_exhaust_gaps(context) -> None:
         # extraction
         ex_dir = snap_root / "extraction" / "pipeline" / "s1"
         ex_dir.mkdir(parents=True, exist_ok=True)
-        (ex_dir / "manifest.json").write_text(json.dumps({"snapshot_id": "s1", "created_at": "t"}), encoding="utf-8")
+        (ex_dir / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "s1", "created_at": "t"}), encoding="utf-8"
+        )
         # graph
         gr_dir = snap_root / "graph" / "g" / "s2"
         gr_dir.mkdir(parents=True, exist_ok=True)
-        (gr_dir / "manifest.json").write_text(json.dumps({"snapshot_id": "s2", "created_at": "u"}), encoding="utf-8")
+        (gr_dir / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "s2", "created_at": "u"}), encoding="utf-8"
+        )
         # analysis
         an_dir = snap_root / "analysis" / "m" / "s3"
         an_dir.mkdir(parents=True, exist_ok=True)
-        (an_dir / "manifest.json").write_text(json.dumps({"snapshot_id": "s3", "created_at": "v"}), encoding="utf-8")
+        (an_dir / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "s3", "created_at": "v"}), encoding="utf-8"
+        )
         # evaluation
         ev_dir = snap_root / "evaluation"
         ev_dir.mkdir(parents=True, exist_ok=True)
@@ -4358,7 +4545,10 @@ def step_exhaust_gaps(context) -> None:
             "corpus_uri": "file://" + str(full_root),
             "catalog_generated_at": "2024-01-01T00:00:00Z",
             "created_at": "2024-01-01T00:00:00Z",
-            "snapshot_artifacts": [".biblicus/snapshots/artifact.bin", ".biblicus/snapshots/missing.bin"],
+            "snapshot_artifacts": [
+                ".biblicus/snapshots/artifact.bin",
+                ".biblicus/snapshots/missing.bin",
+            ],
             "stats": {},
         }
         (snap_root / "retrieval.json").write_text(json.dumps(retrieval_manifest), encoding="utf-8")
@@ -4410,7 +4600,8 @@ def step_exhaust_gaps(context) -> None:
         snap_dir = old_meta / "snapshots" / "extraction" / "pipeline" / "snap1"
         snap_dir.mkdir(parents=True, exist_ok=True)
         (snap_dir / "manifest.json").write_text(
-            json.dumps({"snapshot_id": "snap1", "created_at": "2024-01-01T00:00:00Z"}), encoding="utf-8"
+            json.dumps({"snapshot_id": "snap1", "created_at": "2024-01-01T00:00:00Z"}),
+            encoding="utf-8",
         )
         # retrieval snapshot manifest and artifact
         snapshots_root = old_meta / "snapshots"
@@ -4432,7 +4623,9 @@ def step_exhaust_gaps(context) -> None:
             "snapshot_artifacts": [".biblicus/snapshots/artifact.bin"],
             "stats": {},
         }
-        (snapshots_root / "retrieval.json").write_text(json.dumps(retrieval_manifest), encoding="utf-8")
+        (snapshots_root / "retrieval.json").write_text(
+            json.dumps(retrieval_manifest), encoding="utf-8"
+        )
         migrate_layout(corpus_root=legacy_root, force=True)
     except Exception:
         pass
@@ -4470,9 +4663,11 @@ def step_exhaust_gaps(context) -> None:
     except Exception:
         pass
     from biblicus.evaluation.metrics import entity_metrics
+
     entity_metrics.normalize_entity_value("Total: $1,234.50", "total")
     entity_metrics.normalize_entity_value("123 st.", "address")
     from biblicus import user_config as user_config_mod
+
     user_config_mod._deep_merge({"a": {"b": 1}}, {"a": {"c": 2}})
     config_path = root / "user_config.yml"
     config_path.write_text(
@@ -4499,14 +4694,17 @@ def step_exhaust_gaps(context) -> None:
     resolve_aldea_api_key(config=direct_config)
     from biblicus.ai.llm import generate_completion as ai_generate
     from biblicus.ai.models import LlmClientConfig as AiClient
+
     class _FakeLM:
         def __init__(self, *args, **kwargs):
             _ = args
             _ = kwargs
+
         def __call__(self, *args, **kwargs):
             _ = args
             _ = kwargs
             return [{"text": "ok"}]
+
     original_dspy = sys.modules.get("dspy")
     sys.modules["dspy"] = types.SimpleNamespace(LM=_FakeLM)
     ai_generate(
@@ -4541,9 +4739,13 @@ def step_exhaust_gaps(context) -> None:
 
     # segmentation log interval branches (<=25, <=100, >100) and threadpool path
     small_docs = [markov_mod._Document(item_id="d1", text="one")]
-    markov_mod._segment_documents(documents=small_docs, config=markov_mod.MarkovAnalysisConfiguration())
+    markov_mod._segment_documents(
+        documents=small_docs, config=markov_mod.MarkovAnalysisConfiguration()
+    )
 
-    medium_docs = [markov_mod._Document(item_id=f"d{idx}", text="Speaker 0: alpha beta") for idx in range(30)]
+    medium_docs = [
+        markov_mod._Document(item_id=f"d{idx}", text="Speaker 0: alpha beta") for idx in range(30)
+    ]
     span_cfg = markov_mod.MarkovAnalysisConfiguration(
         segmentation={
             "method": "span_markup",
@@ -4572,12 +4774,18 @@ def step_exhaust_gaps(context) -> None:
             self.text = text
             self.attributes = {"label": label}
 
-    markov_mod.apply_text_annotate = lambda request: type("R", (), {"spans": [_Span("alpha"), _Span("alpha")]})()
-    markov_mod.apply_text_extract = lambda request: type("R", (), {"spans": [_Span("beta", label="B")]})()
+    markov_mod.apply_text_annotate = lambda request: type(
+        "R", (), {"spans": [_Span("alpha"), _Span("alpha")]}
+    )()
+    markov_mod.apply_text_extract = lambda request: type(
+        "R", (), {"spans": [_Span("beta", label="B")]}
+    )()
     markov_mod._segment_documents(documents=medium_docs, config=span_cfg)
 
     # span_markup fallback to llm segmentation after transient error
-    markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("error code 520"))
+    markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(
+        ValueError("error code 520")
+    )
     markov_mod._llm_segments = lambda item_id, text, config: [
         markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="llm")
     ]
@@ -4587,11 +4795,15 @@ def step_exhaust_gaps(context) -> None:
         markov_mod._span_markup_segments(item_id="s1", text="abcdefghijk", config=span_cfg)
     except ValueError:
         # first call triggers transient error fallback path; retry with normal behavior
-        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(spans=[_Span("label body", "LBL")])
+        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(
+            spans=[_Span("label body", "LBL")]
+        )
         markov_mod._span_markup_segments(item_id="s1", text="abcdefghijk", config=span_cfg)
 
     large_docs = [markov_mod._Document(item_id=f"x{idx}", text="text") for idx in range(110)]
-    markov_mod._segment_documents(documents=large_docs, config=markov_mod.MarkovAnalysisConfiguration())
+    markov_mod._segment_documents(
+        documents=large_docs, config=markov_mod.MarkovAnalysisConfiguration()
+    )
 
     markov_mod.apply_text_annotate = lambda request: type(
         "R", (), {"spans": [_Span("alpha"), _Span("alpha beta")]}
@@ -4738,8 +4950,11 @@ def step_exhaust_gaps(context) -> None:
     )
 
     import time as _time
+
     markov_mod.time.sleep = lambda *_: None
-    markov_mod.generate_completion = lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("error code 520"))
+    markov_mod.generate_completion = lambda *args, **kwargs: (_ for _ in ()).throw(
+        ValueError("error code 520")
+    )
     llm_fail_cfg = markov_mod.MarkovAnalysisConfiguration(
         llm_observations={
             "enabled": True,
@@ -4784,7 +4999,9 @@ def step_exhaust_gaps(context) -> None:
     )
     cache_run_dir_a.mkdir(parents=True, exist_ok=True)
     cache_run_dir_a.joinpath("observations.jsonl").write_text(
-        markov_mod.MarkovAnalysisObservation(item_id="item-1", segment_index=1, segment_text="body").model_dump_json()
+        markov_mod.MarkovAnalysisObservation(
+            item_id="item-1", segment_index=1, segment_text="body"
+        ).model_dump_json()
         + "\n",
         encoding="utf-8",
     )
@@ -4839,8 +5056,10 @@ def step_exhaust_gaps(context) -> None:
                 warnings=[],
                 errors=[],
             ),
-            llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+            representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                 status=topic_modeling.TopicModelingStageStatus.COMPLETE,
+                provider=None,
+                model=None,
                 topics_labeled=0,
                 warnings=[],
                 errors=[],
@@ -4918,16 +5137,25 @@ def step_exhaust_gaps(context) -> None:
 
     # markov segment documents threadpool + empty list branch
     original_llm_segments = markov_mod._llm_segments
-    markov_mod._llm_segments = lambda item_id, text, config: [] if item_id.endswith("1") else [
-        markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="x")
-    ]
+    markov_mod._llm_segments = lambda item_id, text, config: (
+        []
+        if item_id.endswith("1")
+        else [markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="x")]
+    )
     markov_mod._segment_documents(
         documents=[
             markov_mod._Document(item_id="d1", text="alpha"),
             markov_mod._Document(item_id="d2", text="beta"),
         ],
         config=markov_mod.MarkovAnalysisConfiguration(
-            segmentation={"method": "llm", "max_workers": 2, "llm": {"client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "{text}"}},
+            segmentation={
+                "method": "llm",
+                "max_workers": 2,
+                "llm": {
+                    "client": {"provider": "openai", "model": "gpt-4o"},
+                    "prompt_template": "{text}",
+                },
+            },
         ),
     )
     markov_mod._llm_segments = original_llm_segments
@@ -4938,13 +5166,22 @@ def step_exhaust_gaps(context) -> None:
     )
 
     original_llm_segments = markov_mod._llm_segments
-    markov_mod._llm_segments = lambda item_id, text, config: [] if item_id.endswith("0") else [
-        markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="x")
-    ]
+    markov_mod._llm_segments = lambda item_id, text, config: (
+        []
+        if item_id.endswith("0")
+        else [markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="x")]
+    )
     markov_mod._segment_documents(
         documents=[markov_mod._Document(item_id=f"t{idx}", text="alpha") for idx in range(30)],
         config=markov_mod.MarkovAnalysisConfiguration(
-            segmentation={"method": "llm", "max_workers": 2, "llm": {"client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "{text}"}},
+            segmentation={
+                "method": "llm",
+                "max_workers": 2,
+                "llm": {
+                    "client": {"provider": "openai", "model": "gpt-4o"},
+                    "prompt_template": "{text}",
+                },
+            },
         ),
     )
     markov_mod._llm_segments = original_llm_segments
@@ -4963,10 +5200,12 @@ def step_exhaust_gaps(context) -> None:
             },
         }
     )
+
     class _SpanText:
         def __init__(self, text: str, attrs: dict | None = None):
             self.text = text
             self.attributes = attrs or {}
+
     markov_mod.apply_text_extract = lambda request: types.SimpleNamespace(
         spans=[_SpanText("alpha"), _SpanText("alpha beta"), _SpanText(" "), _SpanText("alpha")]
     )
@@ -4975,7 +5214,9 @@ def step_exhaust_gaps(context) -> None:
         text="Speaker 0: alpha\nSpeaker 1: beta",
         config=span_cfg2,
     )
-    markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("error code 520"))
+    markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(
+        ValueError("error code 520")
+    )
     try:
         markov_mod._span_markup_segments(
             item_id="retry",
@@ -4995,7 +5236,10 @@ def step_exhaust_gaps(context) -> None:
             segmentation={
                 "method": "span_markup",
                 "max_workers": 1,
-                "llm": {"client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "{text}"},
+                "llm": {
+                    "client": {"provider": "openai", "model": "gpt-4o"},
+                    "prompt_template": "{text}",
+                },
                 "span_markup": {
                     "client": {"provider": "openai", "model": "gpt-4o"},
                     "prompt_template": "labels only",
@@ -5012,6 +5256,7 @@ def step_exhaust_gaps(context) -> None:
     markov_mod.apply_text_extract = original_extract
 
     original_observation_class = markov_mod.MarkovAnalysisObservation
+
     class _ToggleObservation:
         def __init__(self, *, item_id: str, segment_index: int, segment_text: str):
             self.item_id = item_id
@@ -5021,14 +5266,17 @@ def step_exhaust_gaps(context) -> None:
             self.llm_label = None
             self.llm_label_confidence = None
             self.llm_summary = None
+
         @property
         def segment_text(self):
             self._reads += 1
             return "body" if self._reads == 1 else "START"
+
         def model_copy(self, update):
             for key, value in update.items():
                 setattr(self, key, value)
             return self
+
     markov_mod.MarkovAnalysisObservation = _ToggleObservation  # type: ignore[assignment]
     original_generate = getattr(markov_mod, "generate_completion")
     markov_mod.generate_completion = lambda *args, **kwargs: "{}"
@@ -5119,7 +5367,9 @@ def step_exhaust_gaps(context) -> None:
     )
     markov_mod._parse_json_object = original_parse_json
     markov_mod.time.sleep = lambda *_: None
-    markov_mod.generate_completion = lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("error code 520"))
+    markov_mod.generate_completion = lambda *args, **kwargs: (_ for _ in ()).throw(
+        ValueError("error code 520")
+    )
     markov_mod._build_observations(
         segments=[markov_mod.MarkovAnalysisSegment(item_id="err", segment_index=1, text="x")],
         config=markov_mod.MarkovAnalysisConfiguration(
@@ -5150,7 +5400,9 @@ def step_exhaust_gaps(context) -> None:
     )
     cache_run_dir.mkdir(parents=True, exist_ok=True)
     cache_run_dir.joinpath("observations.jsonl").write_text(
-        markov_mod.MarkovAnalysisObservation(item_id="item-1", segment_index=1, segment_text="body").model_dump_json()
+        markov_mod.MarkovAnalysisObservation(
+            item_id="item-1", segment_index=1, segment_text="body"
+        ).model_dump_json()
         + "\n",
         encoding="utf-8",
     )
@@ -5205,8 +5457,10 @@ def step_exhaust_gaps(context) -> None:
                 warnings=[],
                 errors=[],
             ),
-            llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+            representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                 status=topic_modeling.TopicModelingStageStatus.COMPLETE,
+                provider=None,
+                model=None,
                 topics_labeled=0,
                 warnings=[],
                 errors=[],
@@ -5231,28 +5485,33 @@ def step_exhaust_gaps(context) -> None:
     seg_path = root / "seg.jsonl"
     seg_path.write_text(
         "\n"
-        + markov_mod.MarkovAnalysisSegment(item_id="a", segment_index=1, text="t").model_dump_json(),
+        + markov_mod.MarkovAnalysisSegment(
+            item_id="a", segment_index=1, text="t"
+        ).model_dump_json(),
         encoding="utf-8",
     )
     obs_path = root / "obs.jsonl"
     obs_path.write_text(
         "\n"
-        + markov_mod.MarkovAnalysisObservation(item_id="a", segment_index=1, segment_text="t").model_dump_json(),
+        + markov_mod.MarkovAnalysisObservation(
+            item_id="a", segment_index=1, segment_text="t"
+        ).model_dump_json(),
         encoding="utf-8",
     )
     markov_mod._load_segments(seg_path)
     markov_mod._load_observations(obs_path)
     bad_cache = root / "bad_cache.json"
-    bad_cache.write_text("{\"segments\": [1, 2]}", encoding="utf-8")
+    bad_cache.write_text('{"segments": [1, 2]}', encoding="utf-8")
     markov_mod._load_llm_observation_cache(bad_cache)
     bad_cache_type = root / "bad_cache_type.json"
-    bad_cache_type.write_text("{\"segments\": {\"bad\": 1}}", encoding="utf-8")
+    bad_cache_type.write_text('{"segments": {"bad": 1}}', encoding="utf-8")
     markov_mod._load_llm_observation_cache(bad_cache_type)
     missing_report_dir = root / "missing_report"
     missing_report_dir.mkdir(parents=True, exist_ok=True)
     markov_mod._load_topic_modeling_report(run_dir=missing_report_dir)
 
     from biblicus.analysis import models as markov_models
+
     try:
         markov_models.MarkovAnalysisSpanMarkupSegmentationConfig.model_validate(
             {
@@ -5318,7 +5577,10 @@ def step_exhaust_gaps(context) -> None:
         bertopic_analysis=topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1}),
         entity_removal={"enabled": True, "provider": "spacy"},
     )
-    def _tm_report_for_docs(documents: List[topic_modeling.TopicModelingDocument]) -> topic_modeling.TopicModelingReport:
+
+    def _tm_report_for_docs(
+        documents: List[topic_modeling.TopicModelingDocument],
+    ) -> topic_modeling.TopicModelingReport:
         doc_ids = [doc.document_id for doc in documents]
         doc_examples = doc_ids[:1] or ["example"]
         topic = topic_modeling.TopicModelingTopic(
@@ -5377,8 +5639,10 @@ def step_exhaust_gaps(context) -> None:
                 warnings=[],
                 errors=[],
             ),
-            llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+            representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                 status=topic_modeling.TopicModelingStageStatus.SKIPPED,
+                provider=None,
+                model=None,
                 topics_labeled=0,
                 warnings=[],
                 errors=[],
@@ -5387,13 +5651,16 @@ def step_exhaust_gaps(context) -> None:
             warnings=[],
             errors=[],
         )
+
     original_markov_tm = markov_mod.run_topic_modeling_for_documents
     original_fit_and_decode = markov_mod._fit_and_decode
     markov_mod.run_topic_modeling_for_documents = (
         lambda documents, config, artifacts_dir=None: _tm_report_for_docs(documents)
     )
-    markov_mod._fit_and_decode = (
-        lambda observations, lengths, config: (list(range(len(observations))), [], 1)
+    markov_mod._fit_and_decode = lambda observations, lengths, config: (
+        list(range(len(observations))),
+        [],
+        1,
     )
 
     try:
@@ -5461,7 +5728,9 @@ def step_exhaust_gaps(context) -> None:
             snapshot_id="cache-run",
         )
         obs_dir.mkdir(parents=True, exist_ok=True)
-        obs_payload = markov_mod.MarkovAnalysisObservation(item_id="item-1", segment_index=1, segment_text="body").model_dump_json()
+        obs_payload = markov_mod.MarkovAnalysisObservation(
+            item_id="item-1", segment_index=1, segment_text="body"
+        ).model_dump_json()
         (obs_dir / "observations.jsonl").write_text(obs_payload + "\n", encoding="utf-8")
         ref_cache = parse_extraction_snapshot_reference("pipeline:snap-cache")
         markov_mod._collect_documents = lambda corpus, extraction_snapshot, config: (
@@ -5530,8 +5799,10 @@ def step_exhaust_gaps(context) -> None:
                     warnings=[],
                     errors=[],
                 ),
-                llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+                representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                     status=topic_modeling.TopicModelingStageStatus.SKIPPED,
+                    provider=None,
+                    model=None,
                     topics_labeled=0,
                     warnings=[],
                     errors=[],
@@ -5543,7 +5814,10 @@ def step_exhaust_gaps(context) -> None:
         )
         markov_mod._write_observations = lambda *args, **kwargs: None
         markov_mod._write_topic_modeling_report = lambda *args, **kwargs: None
-        markov_mod._encode_observations = lambda observations, config: ([0 for _ in observations], [len(observations)])
+        markov_mod._encode_observations = lambda observations, config: (
+            [0 for _ in observations],
+            [len(observations)],
+        )
         markov_mod._fit_and_decode = lambda observations, lengths, config: (
             [0 for _ in observations],
             [],
@@ -5614,7 +5888,9 @@ def step_exhaust_gaps(context) -> None:
             name="default",
             configuration={},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(corpus_resolve, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            corpus_resolve, configuration=config_manifest
+        )
         snapshot_dir = corpus_resolve.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -5622,12 +5898,17 @@ def step_exhaust_gaps(context) -> None:
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=snapshot_manifest)
         from biblicus.extraction import write_extraction_latest_pointer
-        write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest)
+
+        write_extraction_latest_pointer(
+            extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest
+        )
         cli_mod._resolve_extraction_snapshot_for_analysis(
             corpus=corpus_resolve, extraction_snapshot=None, analysis_label="demo"
         )
         original_loader = cli_mod.load_or_build_extraction_snapshot
-        cli_mod.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(snapshot_id="s1")
+        cli_mod.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+            snapshot_id="s1"
+        )
         cli_mod._resolve_extraction_snapshot_for_analysis(
             corpus=corpus_resolve, extraction_snapshot=None, analysis_label="demo"
         )
@@ -5652,10 +5933,13 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _RunOK:
             def __init__(self, code=0):
                 self.returncode = code
+
         import subprocess
+
         original_run = subprocess.run
         subprocess.run = lambda *args, **kwargs: _RunOK(0)
         bench_root = root / "bench_download"
@@ -5682,9 +5966,14 @@ def step_exhaust_gaps(context) -> None:
             encoding="utf-8",
         )
         (root / "pipe.yml").write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
+
         class _FakeRunner:
-            def __init__(self, cfg): self.cfg = cfg
-            def run_category(self, cfg): return types.SimpleNamespace(best_pipeline="p", best_score=1.0, primary_metric="f1")
+            def __init__(self, cfg):
+                self.cfg = cfg
+
+            def run_category(self, cfg):
+                return types.SimpleNamespace(best_pipeline="p", best_score=1.0, primary_metric="f1")
+
             def run_all(self):
                 result = types.SimpleNamespace(
                     print_summary=lambda: None,
@@ -5692,6 +5981,7 @@ def step_exhaust_gaps(context) -> None:
                     to_markdown=lambda path: None,
                 )
                 return result
+
         original_runner = benchmark_runner.BenchmarkRunner
         benchmark_runner.BenchmarkRunner = _FakeRunner  # type: ignore[assignment]
         cli_mod.cmd_benchmark_run(
@@ -5745,19 +6035,47 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _PubOK:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): return None
-            def sync_catalog(self, *args, **kwargs): return types.SimpleNamespace(skipped=True, hash="abcd", errors=[])
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubOK)
-        cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                return None
+
+            def sync_catalog(self, *args, **kwargs):
+                return types.SimpleNamespace(skipped=True, hash="abcd", errors=[])
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_PubOK
+        )
+        cli_mod.cmd_dashboard_sync(
+            types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
+        )
+
         class _PubBad:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): raise Exception("boom")
-            def sync_catalog(self, *args, **kwargs): return types.SimpleNamespace(skipped=False, created=0, updated=0, deleted=0, errors=["e1", "e2", "e3", "e4", "e5", "e6"])
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubBad)
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                raise Exception("boom")
+
+            def sync_catalog(self, *args, **kwargs):
+                return types.SimpleNamespace(
+                    skipped=False,
+                    created=0,
+                    updated=0,
+                    deleted=0,
+                    errors=["e1", "e2", "e3", "e4", "e5", "e6"],
+                )
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_PubBad
+        )
         try:
-            cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
+            cli_mod.cmd_dashboard_sync(
+                types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
+            )
         except Exception:
             pass
     except Exception:
@@ -5803,7 +6121,9 @@ def step_exhaust_gaps(context) -> None:
             snapshot_artifacts=[],
             stats={},
         ).model_dump()
-        (legacy_snapshots / "legacy2.json").write_text(json.dumps(snapshot_payload), encoding="utf-8")
+        (legacy_snapshots / "legacy2.json").write_text(
+            json.dumps(snapshot_payload), encoding="utf-8"
+        )
         corpus.load_snapshot("legacy2")
         bad_name = corpus.raw_dir / "bad#name.md"
         bad_name.parent.mkdir(parents=True, exist_ok=True)
@@ -5986,6 +6306,7 @@ def step_exhaust_gaps(context) -> None:
     try:
         import biblicus.corpus as corpus_mod
         import biblicus.corpus as corpus_mod
+
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         reg_root2 = Corpus.init(root / "corpus_register2", force=True)
@@ -6094,6 +6415,7 @@ def step_exhaust_gaps(context) -> None:
         pipeline2 = root / "pipe2.yml"
         pipeline1.write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
         pipeline2.write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
+
         class _BenchReport:
             avg_f1 = 0.6
             avg_recall = 0.0
@@ -6103,9 +6425,14 @@ def step_exhaust_gaps(context) -> None:
             avg_bigram_overlap = 0.0
             avg_sequence_accuracy = 0.0
             total_documents = 1
+
         class _FakeBench:
-            def __init__(self, corpus): pass
-            def evaluate_extraction(self, snapshot_reference, ground_truth_dir): return _BenchReport()
+            def __init__(self, corpus):
+                pass
+
+            def evaluate_extraction(self, snapshot_reference, ground_truth_dir):
+                return _BenchReport()
+
         original_bench = benchmark_runner.OCRBenchmark
         original_extract = Corpus.extract
         benchmark_runner.OCRBenchmark = _FakeBench  # type: ignore[assignment]
@@ -6140,12 +6467,19 @@ def step_exhaust_gaps(context) -> None:
             dataset="x",
             documents_evaluated=2,
             pipelines=[
-                {"name": "p1", "metrics": {"f1": 0.8, "recall": 0.6, "precision": 0.7, "lcs_ratio": 0.4}},
-                {"name": "p2", "metrics": {"f1": 0.5, "recall": 0.4, "precision": 0.3, "lcs_ratio": 0.6}},
+                {
+                    "name": "p1",
+                    "metrics": {"f1": 0.8, "recall": 0.6, "precision": 0.7, "lcs_ratio": 0.4},
+                },
+                {
+                    "name": "p2",
+                    "metrics": {"f1": 0.5, "recall": 0.4, "precision": 0.3, "lcs_ratio": 0.6},
+                },
             ],
             best_pipeline="p1",
             best_score=0.8,
             primary_metric="f1",
+            primary_score=0.8,
             processing_time_seconds=1.0,
         )
         bench_result = benchmark_runner.BenchmarkResult(
@@ -6162,7 +6496,14 @@ def step_exhaust_gaps(context) -> None:
         bench_result.print_summary()
         config = benchmark_runner.BenchmarkConfig(
             benchmark_name="demo",
-            categories={"forms": benchmark_runner.CategoryConfig(name="forms", dataset="x", corpus_path=root / "missing", ground_truth_subdir="gt")},
+            categories={
+                "forms": benchmark_runner.CategoryConfig(
+                    name="forms",
+                    dataset="x",
+                    corpus_path=root / "missing",
+                    ground_truth_subdir="gt",
+                )
+            },
             pipelines=[],
         )
         runner = benchmark_runner.BenchmarkRunner(config=config)
@@ -6190,15 +6531,31 @@ def step_exhaust_gaps(context) -> None:
                     category_name="forms",
                     dataset="x",
                     documents_evaluated=1,
-                    pipelines=[{"name": "p1", "metrics": {"f1": 0.9, "recall": 0.8, "precision": 0.7, "lcs_ratio": 0.6}}],
+                    pipelines=[
+                        {
+                            "name": "p1",
+                            "metrics": {
+                                "f1": 0.9,
+                                "recall": 0.8,
+                                "precision": 0.7,
+                                "lcs_ratio": 0.6,
+                            },
+                        }
+                    ],
                     best_pipeline="p1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=0.1,
                 )
             },
             aggregate={"weighted_score": 0.9, "weights": {"forms": 1.0}},
-            recommendations={"best_overall": "p1", "best_for_layout": "p1", "best_for_completeness": "p1", "best_for_accuracy": "p1"},
+            recommendations={
+                "best_overall": "p1",
+                "best_for_layout": "p1",
+                "best_for_completeness": "p1",
+                "best_for_accuracy": "p1",
+            },
             total_documents=1,
             total_processing_time_seconds=0.1,
         )
@@ -6291,11 +6648,19 @@ def step_exhaust_gaps(context) -> None:
         )
         run_dir.mkdir(parents=True, exist_ok=True)
         run_dir.joinpath("segments.jsonl").write_text(
-            "\n" + markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="seg").model_dump_json() + "\n",
+            "\n"
+            + markov_mod.MarkovAnalysisSegment(
+                item_id="i", segment_index=1, text="seg"
+            ).model_dump_json()
+            + "\n",
             encoding="utf-8",
         )
         run_dir.joinpath("observations.jsonl").write_text(
-            "\n" + markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="seg").model_dump_json() + "\n",
+            "\n"
+            + markov_mod.MarkovAnalysisObservation(
+                item_id="i", segment_index=1, segment_text="seg"
+            ).model_dump_json()
+            + "\n",
             encoding="utf-8",
         )
         original_collect = markov_mod._collect_documents
@@ -6371,8 +6736,10 @@ def step_exhaust_gaps(context) -> None:
                     warnings=[],
                     errors=[],
                 ),
-                llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+                representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                     status=topic_modeling.TopicModelingStageStatus.SKIPPED,
+                    provider=None,
+                    model=None,
                     topics_labeled=0,
                     warnings=[],
                     errors=[],
@@ -6402,10 +6769,18 @@ def step_exhaust_gaps(context) -> None:
                     "enabled": True,
                     "configuration": topic_modeling.TopicModelingConfiguration(
                         text_source={},
-                        llm_extraction=topic_modeling.TopicModelingLlmExtractionConfig(enabled=False),
-                        lexical_processing=topic_modeling.TopicModelingLexicalProcessingConfig(enabled=False),
-                        bertopic_analysis=topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1}),
-                        entity_removal=topic_modeling.TopicModelingEntityRemovalConfig(enabled=True, provider="spacy"),
+                        llm_extraction=topic_modeling.TopicModelingLlmExtractionConfig(
+                            enabled=False
+                        ),
+                        lexical_processing=topic_modeling.TopicModelingLexicalProcessingConfig(
+                            enabled=False
+                        ),
+                        bertopic_analysis=topic_modeling.TopicModelingBerTopicConfig(
+                            parameters={"nr_topics": 1}
+                        ),
+                        entity_removal=topic_modeling.TopicModelingEntityRemovalConfig(
+                            enabled=True, provider="spacy"
+                        ),
                     ),
                 },
             ),
@@ -6453,13 +6828,19 @@ def step_exhaust_gaps(context) -> None:
                 },
             }
         )
+
         class _Span2:
             def __init__(self, text: str, label: str = "L"):
                 self.text = text
                 self.attributes = {"label": label}
-        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(spans=[_Span2("alpha"), _Span2("alpha beta")])
+
+        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(
+            spans=[_Span2("alpha"), _Span2("alpha beta")]
+        )
         markov_mod._span_markup_segments(item_id="i", text="alpha beta gamma", config=span_cfg2)
-        markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("internalservererror"))
+        markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(
+            ValueError("internalservererror")
+        )
         markov_mod._llm_segments = lambda item_id, text, config: [
             markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="llm")
         ]
@@ -6469,7 +6850,9 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         original_generate = markov_mod.generate_completion
-        markov_mod.generate_completion = lambda *args, **kwargs: json.dumps({"label": "x", "label_confidence": 0.7, "summary": "s"})
+        markov_mod.generate_completion = lambda *args, **kwargs: json.dumps(
+            {"label": "x", "label_confidence": 0.7, "summary": "s"}
+        )
         obs_cfg = markov_mod.MarkovAnalysisConfiguration(
             llm_observations={
                 "enabled": True,
@@ -6513,11 +6896,13 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _Entity:
             def __init__(self, label, start, end):
                 self.label_ = label
                 self.start_char = start
                 self.end_char = end
+
         topic_modeling._remove_entities_from_text(
             text="alpha beta gamma",
             entities=[_Entity("PERSON", 0, 0), _Entity("ORG", 0, 5), _Entity("ORG", 0, 3)],
@@ -6528,7 +6913,13 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
-        fake_spacy = types.SimpleNamespace(load=lambda name: (lambda text: types.SimpleNamespace(ents=[types.SimpleNamespace(label_="ORG", start_char=0, end_char=1)])))
+        fake_spacy = types.SimpleNamespace(
+            load=lambda name: (
+                lambda text: types.SimpleNamespace(
+                    ents=[types.SimpleNamespace(label_="ORG", start_char=0, end_char=1)]
+                )
+            )
+        )
         sys.modules["spacy"] = fake_spacy
         docs_250 = [
             topic_modeling.TopicModelingDocument(document_id=str(i), source_item_id="s", text="A B")
@@ -6544,7 +6935,9 @@ def step_exhaust_gaps(context) -> None:
             model="en_core_web_sm",
         )
         topic_modeling._apply_entity_removal(documents=docs_250, config=entity_cfg, cache_path=None)
-        topic_modeling._apply_entity_removal(documents=docs_1100, config=entity_cfg, cache_path=None)
+        topic_modeling._apply_entity_removal(
+            documents=docs_1100, config=entity_cfg, cache_path=None
+        )
         lex_cfg = topic_modeling.TopicModelingLexicalProcessingConfig(
             enabled=True,
             lowercase=True,
@@ -6580,7 +6973,9 @@ def step_exhaust_gaps(context) -> None:
             )
             for i in range(30)
         ]
-        topic_modeling._apply_llm_fine_tuning(topics=topics_30, documents=docs_250[:1], config=fine_cfg)
+        topic_modeling._apply_llm_fine_tuning(
+            topics=topics_30, documents=docs_250[:1], config=fine_cfg
+        )
     except Exception:
         pass
     finally:
@@ -6591,15 +6986,25 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         original_event = topic_modeling.threading.Event
+
         class _Event:
             def __init__(self):
                 self.calls = 0
+
             def wait(self, timeout=None):
                 self.calls += 1
                 return self.calls > 1
-            def set(self): pass
+
+            def set(self):
+                pass
+
         topic_modeling.threading.Event = _Event  # type: ignore[assignment]
-        fake_bertopic = types.SimpleNamespace(BERTopic=lambda **kwargs: types.SimpleNamespace(fit_transform=lambda texts: ([0 for _ in texts], None), get_topic=lambda idx: [("x", 0.5)]))
+        fake_bertopic = types.SimpleNamespace(
+            BERTopic=lambda **kwargs: types.SimpleNamespace(
+                fit_transform=lambda texts: ([0 for _ in texts], None),
+                get_topic=lambda idx: [("x", 0.5)],
+            )
+        )
         sys.modules["bertopic"] = fake_bertopic
         bert_cfg = topic_modeling.TopicModelingBerTopicConfig(parameters={"nr_topics": 1})
         topic_modeling._apply_bertopic(documents=docs_250[:2], config=bert_cfg)
@@ -6673,7 +7078,9 @@ def step_exhaust_gaps(context) -> None:
         )
         run_dir.mkdir(parents=True, exist_ok=True)
         (run_dir / "observations.jsonl").write_text(
-            MarkovAnalysisObservation(item_id="i0", segment_index=1, segment_text="body").model_dump_json()
+            MarkovAnalysisObservation(
+                item_id="i0", segment_index=1, segment_text="body"
+            ).model_dump_json()
             + "\n",
             encoding="utf-8",
         )
@@ -6731,8 +7138,10 @@ def step_exhaust_gaps(context) -> None:
                     warnings=[],
                     errors=[],
                 ),
-                llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+                representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                     status=topic_modeling.TopicModelingStageStatus.SKIPPED,
+                    provider=None,
+                    model=None,
                     topics_labeled=0,
                     warnings=[],
                     errors=[],
@@ -6746,7 +7155,9 @@ def step_exhaust_gaps(context) -> None:
             corpus=cache_root,
             configuration_name="cache2",
             config=markov_cfg,
-            extraction_snapshot=parse_extraction_snapshot_reference(f"pipeline:{manifest.snapshot_id}"),
+            extraction_snapshot=parse_extraction_snapshot_reference(
+                f"pipeline:{manifest.snapshot_id}"
+            ),
         )
     except Exception:
         pass
@@ -6801,15 +7212,19 @@ def step_exhaust_gaps(context) -> None:
         )
         original_gen = markov_mod.generate_completion
         gen_calls = {"count": 0}
+
         def _gen(client, system_prompt, user_prompt):
             gen_calls["count"] += 1
             if gen_calls["count"] == 1:
                 raise ValueError("error code 520")
             return "[]"
+
         markov_mod.generate_completion = _gen
         markov_mod._collect_documents(
             corpus=cache_root,
-            extraction_snapshot=parse_extraction_snapshot_reference(f"pipeline:{manifest.snapshot_id}"),
+            extraction_snapshot=parse_extraction_snapshot_reference(
+                f"pipeline:{manifest.snapshot_id}"
+            ),
             config=markov_mod.MarkovAnalysisConfiguration(sample_size=1),
         )
         markov_mod._build_observations(
@@ -6819,13 +7234,19 @@ def step_exhaust_gaps(context) -> None:
             ],
             config=cfg,
             cache_context=markov_mod._LlmObservationCacheContext(
-                enabled=False, cache_id=None, cache_dir=root / "cache", cached_segments=0, generated_segments=0
+                enabled=False,
+                cache_id=None,
+                cache_dir=root / "cache",
+                cached_segments=0,
+                generated_segments=0,
             ),
         )
         markov_mod._build_states(
             segments=[markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="body")],
             observations=[
-                markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="body", llm_label="")
+                markov_mod.MarkovAnalysisObservation(
+                    item_id="i", segment_index=1, segment_text="body", llm_label=""
+                )
             ],
             predicted_states=[0],
             n_states=1,
@@ -6863,11 +7284,15 @@ def step_exhaust_gaps(context) -> None:
                 },
             }
         )
-        markov_mod._span_markup_segments(item_id="s1", text="Speaker 0: a\nSpeaker 0: b", config=span_cfg)
+        markov_mod._span_markup_segments(
+            item_id="s1", text="Speaker 0: a\nSpeaker 0: b", config=span_cfg
+        )
+
         class _Span:
             def __init__(self, text: str):
                 self.text = text
                 self.attributes = {"label": "L"}
+
         markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(
             spans=[_Span(" "), _Span("alpha"), _Span("alpha"), _Span("alpha beta")]
         )
@@ -6884,10 +7309,17 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
+
         class _SyncPub:
-            def __init__(self, name): self.name = name
-            def sync_catalog(self, *args, **kwargs): raise Exception("fail")
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_SyncPub)
+            def __init__(self, name):
+                self.name = name
+
+            def sync_catalog(self, *args, **kwargs):
+                raise Exception("fail")
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_SyncPub
+        )
         sync_corpus = _temp_corpus()
         path = sync_corpus.raw_dir / "s.txt"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -6914,6 +7346,7 @@ def step_exhaust_gaps(context) -> None:
             TopicModelingLexicalProcessingConfig,
             TopicModelingTextSourceConfig,
         )
+
         tm_corpus = _temp_corpus()
         tm_path = tm_corpus.raw_dir / "tm.txt"
         tm_path.parent.mkdir(parents=True, exist_ok=True)
@@ -6925,7 +7358,9 @@ def step_exhaust_gaps(context) -> None:
             name="tm",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        tm_manifest = create_extraction_snapshot_manifest(tm_corpus, configuration=tm_config_manifest)
+        tm_manifest = create_extraction_snapshot_manifest(
+            tm_corpus, configuration=tm_config_manifest
+        )
         tm_manifest = tm_manifest.model_copy(
             update={
                 "items": [
@@ -6978,9 +7413,7 @@ def step_exhaust_gaps(context) -> None:
         sys.modules["bertopic"] = types.SimpleNamespace()
         try:
             tm_mod._run_bertopic(
-                documents=[
-                    TopicModelingDocument(document_id="d", source_item_id="d", text="text")
-                ],
+                documents=[TopicModelingDocument(document_id="d", source_item_id="d", text="text")],
                 config=TopicModelingBerTopicConfig(parameters={}),
             )
         except Exception:
@@ -7033,9 +7466,7 @@ def step_exhaust_gaps(context) -> None:
             ),
             bertopic_analysis=TopicModelingBerTopicConfig(parameters={}),
         )
-        configuration_manifest = tm_mod._create_configuration_manifest(
-            name="tm", config=config
-        )
+        configuration_manifest = tm_mod._create_configuration_manifest(name="tm", config=config)
         snapshot_id = tm_mod._analysis_snapshot_id(
             configuration_id=configuration_manifest.configuration_id,
             extraction_snapshot=tm_snapshot,
@@ -7094,9 +7525,7 @@ def step_exhaust_gaps(context) -> None:
             "raw_dir": ".",
             "hooks": [{"hook_id": "add-tags", "hook_points": ["nope"], "config": {}}],
         }
-        (bad_hooks_meta / "config.json").write_text(
-            json.dumps(bad_hooks_config), encoding="utf-8"
-        )
+        (bad_hooks_meta / "config.json").write_text(json.dumps(bad_hooks_config), encoding="utf-8")
         try:
             Corpus.open(bad_hooks_root)
         except Exception:
@@ -7181,7 +7610,11 @@ def step_exhaust_gaps(context) -> None:
     except Exception:
         pass
     try:
-        from biblicus.frontmatter import parse_front_matter, render_front_matter, split_markdown_front_matter
+        from biblicus.frontmatter import (
+            parse_front_matter,
+            render_front_matter,
+            split_markdown_front_matter,
+        )
 
         parse_front_matter("no front matter")
         parse_front_matter("---\nkey: value\n---\nBody")
@@ -7223,7 +7656,12 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
-        from biblicus.inference import InferenceBackendConfig, InferenceBackendMode, ApiProvider, resolve_api_key
+        from biblicus.inference import (
+            InferenceBackendConfig,
+            InferenceBackendMode,
+            ApiProvider,
+            resolve_api_key,
+        )
 
         InferenceBackendConfig(mode=InferenceBackendMode.LOCAL)
         try:
@@ -7260,7 +7698,11 @@ def step_exhaust_gaps(context) -> None:
         from biblicus.hooks import HookPoint, HookSpec, IngestMutation, build_builtin_hook
 
         add_tags_hook = build_builtin_hook(
-            HookSpec(hook_id="add-tags", hook_points=[HookPoint.before_ingest], config={"tags": ["a", "b"]})
+            HookSpec(
+                hook_id="add-tags",
+                hook_points=[HookPoint.before_ingest],
+                config={"tags": ["a", "b"]},
+            )
         )
         deny_hook = build_builtin_hook(
             HookSpec(hook_id="deny-all", hook_points=[HookPoint.before_ingest], config={})
@@ -7300,12 +7742,15 @@ def step_exhaust_gaps(context) -> None:
             )
         except Exception:
             pass
+
         class _BadHook:
             hook_id = "bad"
             hook_points = [HookPoint.before_ingest]
+
             def run(self, context):
                 _ = context
                 return {"bad": True}
+
         bad_manager = HookManager(
             corpus_uri="file://hooks",
             log_dir=root / "hook_logs4",
@@ -7325,12 +7770,15 @@ def step_exhaust_gaps(context) -> None:
             )
         except Exception:
             pass
+
         class _RaiseHook:
             hook_id = "raise"
             hook_points = [HookPoint.before_ingest]
+
             def run(self, context):
                 _ = context
                 raise ValueError("boom")
+
         raise_manager = HookManager(
             corpus_uri="file://hooks",
             log_dir=root / "hook_logs5",
@@ -7373,6 +7821,7 @@ def step_exhaust_gaps(context) -> None:
                 "docling.pipeline_options",
             ]
         }
+
         class _DocResult:
             def __init__(self, text):
                 self.document = types.SimpleNamespace(
@@ -7380,14 +7829,20 @@ def step_exhaust_gaps(context) -> None:
                     export_to_text=lambda: text,
                     export_to_html=lambda: f"<p>{text}</p>",
                 )
+
         class _DocConverter:
             def convert(self, path):
                 _ = path
                 return _DocResult("docling")
+
         sys.modules["docling"] = types.SimpleNamespace()
-        sys.modules["docling.document_converter"] = types.SimpleNamespace(DocumentConverter=_DocConverter)
+        sys.modules["docling.document_converter"] = types.SimpleNamespace(
+            DocumentConverter=_DocConverter
+        )
         sys.modules["docling.datamodel"] = types.SimpleNamespace()
-        sys.modules["docling.datamodel.pipeline_options"] = types.SimpleNamespace(PdfPipelineOptions=object)
+        sys.modules["docling.datamodel.pipeline_options"] = types.SimpleNamespace(
+            PdfPipelineOptions=object
+        )
         sys.modules["docling.pipeline_options"] = types.SimpleNamespace(
             VlmPipelineOptions=object,
             vlm_model_specs=types.SimpleNamespace(GRANITE_DOCLING_MLX="x", SMOLDOCLING_MLX="y"),
@@ -7428,8 +7883,14 @@ def step_exhaust_gaps(context) -> None:
         )
         granite._is_supported_media_type("image/png")
         granite._is_supported_media_type("application/zip")
-        granite._convert_document(doc_corpus.root / "doc.pdf", DoclingGraniteExtractorConfig(output_format="text", retriever="mlx"))
-        smol._convert_document(doc_corpus.root / "doc.pdf", DoclingSmolExtractorConfig(output_format="html", retriever="mlx"))
+        granite._convert_document(
+            doc_corpus.root / "doc.pdf",
+            DoclingGraniteExtractorConfig(output_format="text", retriever="mlx"),
+        )
+        smol._convert_document(
+            doc_corpus.root / "doc.pdf",
+            DoclingSmolExtractorConfig(output_format="html", retriever="mlx"),
+        )
         smol._is_supported_media_type("image/jpeg")
         smol._is_supported_media_type("application/zip")
         sys.modules.pop("docling", None)
@@ -7447,16 +7908,24 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
-        from biblicus.extractors.markitdown_text import MarkItDownExtractor, _resolve_markitdown_text
+        from biblicus.extractors.markitdown_text import (
+            MarkItDownExtractor,
+            _resolve_markitdown_text,
+        )
 
         original_markitdown = sys.modules.get("markitdown")
+
         class _MarkItDown:
             def __init__(self, enable_plugins=False):
                 self.enable_plugins = enable_plugins
+
             def convert(self, path):
                 _ = path
                 return types.SimpleNamespace(text_content="from converter")
-        sys.modules["markitdown"] = types.SimpleNamespace(MarkItDown=_MarkItDown, __biblicus_fake__=True)
+
+        sys.modules["markitdown"] = types.SimpleNamespace(
+            MarkItDown=_MarkItDown, __biblicus_fake__=True
+        )
         extractor = MarkItDownExtractor()
         extractor.validate_config({"enable_plugins": True})
         md_corpus = _temp_corpus()
@@ -7497,7 +7966,9 @@ def step_exhaust_gaps(context) -> None:
             pass
         original_version = sys.version_info
         sys.version_info = (3, 9, 0)
-        sys.modules["markitdown"] = types.SimpleNamespace(MarkItDown=_MarkItDown, __biblicus_fake__=False)
+        sys.modules["markitdown"] = types.SimpleNamespace(
+            MarkItDown=_MarkItDown, __biblicus_fake__=False
+        )
         try:
             extractor.validate_config({})
         except Exception:
@@ -7511,7 +7982,10 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
-        from biblicus.extractors.metadata_text import MetadataTextExtractor, MetadataTextExtractorConfig
+        from biblicus.extractors.metadata_text import (
+            MetadataTextExtractor,
+            MetadataTextExtractorConfig,
+        )
 
         extractor = MetadataTextExtractor()
         extractor.validate_config({"include_title": True, "include_tags": True})
@@ -7555,12 +8029,15 @@ def step_exhaust_gaps(context) -> None:
         class _Page:
             def __init__(self, text):
                 self._text = text
+
             def extract_text(self):
                 return self._text
+
         class _Reader:
             def __init__(self, fh):
                 _ = fh
                 self.pages = [_Page("a"), _Page(None)]
+
         pdf_text.PdfReader = _Reader
         pdf_corpus = _temp_corpus()
         extractor = PortableDocumentFormatTextExtractor()
@@ -7597,6 +8074,7 @@ def step_exhaust_gaps(context) -> None:
         from biblicus.extractors.rapidocr_text import RapidOcrExtractor
 
         original_rapidocr = sys.modules.get("rapidocr_onnxruntime")
+
         class _RapidOCR:
             def __call__(self, path):
                 _ = path
@@ -7608,6 +8086,7 @@ def step_exhaust_gaps(context) -> None:
                     [None, " low ", 0.1],
                     [None, "keep", 0.9],
                 ], 0.1
+
         sys.modules["rapidocr_onnxruntime"] = types.SimpleNamespace(RapidOCR=_RapidOCR)
         img_corpus = _temp_corpus()
         extractor = RapidOcrExtractor()
@@ -7632,10 +8111,12 @@ def step_exhaust_gaps(context) -> None:
             config={"min_confidence": 0.5, "joiner": "|"},
             previous_extractions=[],
         )
+
         class _RapidOCRNone:
             def __call__(self, path):
                 _ = path
                 return None, 0.1
+
         sys.modules["rapidocr_onnxruntime"] = types.SimpleNamespace(RapidOCR=_RapidOCRNone)
         extractor.extract_text(
             corpus=img_corpus,
@@ -7657,9 +8138,11 @@ def step_exhaust_gaps(context) -> None:
             name: sys.modules.get(name)
             for name in ["unstructured", "unstructured.partition", "unstructured.partition.auto"]
         }
+
         class _Element:
             def __init__(self, text):
                 self.text = text
+
         sys.modules["unstructured"] = types.SimpleNamespace()
         sys.modules["unstructured.partition"] = types.SimpleNamespace()
         sys.modules["unstructured.partition.auto"] = types.SimpleNamespace(
@@ -7710,7 +8193,9 @@ def step_exhaust_gaps(context) -> None:
         if original_unstructured["unstructured.partition.auto"] is None:
             sys.modules.pop("unstructured.partition.auto", None)
         else:
-            sys.modules["unstructured.partition.auto"] = original_unstructured["unstructured.partition.auto"]
+            sys.modules["unstructured.partition.auto"] = original_unstructured[
+                "unstructured.partition.auto"
+            ]
     except Exception:
         pass
 
@@ -7718,24 +8203,29 @@ def step_exhaust_gaps(context) -> None:
         from biblicus.extractors.faster_whisper_stt import FasterWhisperSpeechToTextExtractor
 
         original_faster = sys.modules.get("faster_whisper")
+
         class _Info:
             def __init__(self):
                 self.language = "en"
                 self.language_probability = 0.9
                 self.duration = 1.2
+
         class _Seg:
             def __init__(self, text):
                 self.text = text
+
         class _WhisperModel:
             def __init__(self, model_size, device, compute_type):
                 _ = model_size
                 _ = device
                 _ = compute_type
+
             def transcribe(self, path, language=None, beam_size=5):
                 _ = path
                 _ = language
                 _ = beam_size
                 return [_Seg("hi"), _Seg("there")], _Info()
+
         sys.modules["faster_whisper"] = types.SimpleNamespace(WhisperModel=_WhisperModel)
         extractor = FasterWhisperSpeechToTextExtractor()
         extractor.validate_config({})
@@ -7780,23 +8270,31 @@ def step_exhaust_gaps(context) -> None:
         os.environ["OPENAI_API_KEY"] = "k"
         original_openai = sys.modules.get("openai")
         original_pydub = sys.modules.get("pydub")
+
         class _OpenAiAudio:
             def __init__(self):
                 self.transcriptions = types.SimpleNamespace(
                     create=lambda **kwargs: {"text": "hello", "segments": [{"no_speech_prob": 0.9}]}
                 )
+
         class _OpenAiChat:
             def __init__(self):
                 self.completions = types.SimpleNamespace(
                     create=lambda **kwargs: types.SimpleNamespace(
-                        choices=[types.SimpleNamespace(message=types.SimpleNamespace(content="audio text"))]
+                        choices=[
+                            types.SimpleNamespace(
+                                message=types.SimpleNamespace(content="audio text")
+                            )
+                        ]
                     )
                 )
+
         class _OpenAiClient:
             def __init__(self, api_key=None):
                 _ = api_key
                 self.audio = _OpenAiAudio()
                 self.chat = _OpenAiChat()
+
         sys.modules["openai"] = types.SimpleNamespace(OpenAI=_OpenAiClient)
         stt = OpenAiSpeechToTextExtractor()
         stt.validate_config({"response_format": "json"})
@@ -7842,18 +8340,21 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         os.environ["OPENAI_API_KEY"] = "k"
+
         class _OpenAiResult:
             def __init__(self):
                 self.text = "result text"
+
         class _OpenAiAudioObj:
             def __init__(self):
-                self.transcriptions = types.SimpleNamespace(
-                    create=lambda **kwargs: _OpenAiResult()
-                )
-        sys.modules["openai"] = types.SimpleNamespace(OpenAI=lambda api_key=None: types.SimpleNamespace(
-            audio=_OpenAiAudioObj(),
-            chat=_OpenAiChat(),
-        ))
+                self.transcriptions = types.SimpleNamespace(create=lambda **kwargs: _OpenAiResult())
+
+        sys.modules["openai"] = types.SimpleNamespace(
+            OpenAI=lambda api_key=None: types.SimpleNamespace(
+                audio=_OpenAiAudioObj(),
+                chat=_OpenAiChat(),
+            )
+        )
         stt.extract_text(
             corpus=audio_corpus,
             item=item.model_copy(update={"relpath": "audio.wav"}),
@@ -7882,15 +8383,18 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         os.environ["OPENAI_API_KEY"] = "k"
+
         class _AudioSegment:
             @staticmethod
             def from_file(path, format=None):
                 _ = path
                 _ = format
                 return _AudioSegment()
+
             def export(self, buffer, format="wav"):
                 _ = format
                 buffer.write(b"wav")
+
         sys.modules["pydub"] = types.SimpleNamespace(AudioSegment=_AudioSegment)
         audio_stt.extract_text(
             corpus=audio_corpus,
@@ -7922,10 +8426,12 @@ def step_exhaust_gaps(context) -> None:
 
         original_paddle = sys.modules.get("paddleocr")
         original_requests = sys.modules.get("requests")
+
         class _PaddleOCR:
             def __init__(self, use_angle_cls=True, lang="en"):
                 _ = use_angle_cls
                 _ = lang
+
             def ocr(self, path):
                 _ = path
                 return [
@@ -7935,6 +8441,7 @@ def step_exhaust_gaps(context) -> None:
                         [[0, 0, 1, 1], ("skip", 0.1)],
                     ],
                 ]
+
         sys.modules["paddleocr"] = types.SimpleNamespace(PaddleOCR=_PaddleOCR)
         extractor = PaddleOcrVlExtractor()
         extractor.validate_config({"backend": {"mode": "local"}, "min_confidence": 0.5})
@@ -7958,21 +8465,31 @@ def step_exhaust_gaps(context) -> None:
             config={"backend": {"mode": "local"}, "min_confidence": 0.5, "joiner": "|"},
             previous_extractions=[],
         )
+
         class _Response:
             def raise_for_status(self):
                 return None
+
             def json(self):
                 return {"generated_text": "api", "confidence": 0.7}
+
         sys.modules["requests"] = types.SimpleNamespace(post=lambda *args, **kwargs: _Response())
-        extractor.validate_config({"backend": {"mode": "api", "api_provider": "huggingface", "api_key": "k"}})
+        extractor.validate_config(
+            {"backend": {"mode": "api", "api_provider": "huggingface", "api_key": "k"}}
+        )
         extractor.extract_text(
             corpus=_temp_corpus(),
             item=item.model_copy(update={"relpath": "img.png"}),
             config={"backend": {"mode": "api", "api_provider": "huggingface", "api_key": "k"}},
             previous_extractions=[],
         )
-        extractor._parse_api_response("text", config=extractor.validate_config({"backend": {"mode": "local"}}))
-        extractor._parse_api_response({"generated_text": "x"}, config=extractor.validate_config({"backend": {"mode": "local"}}))
+        extractor._parse_api_response(
+            "text", config=extractor.validate_config({"backend": {"mode": "local"}})
+        )
+        extractor._parse_api_response(
+            {"generated_text": "x"},
+            config=extractor.validate_config({"backend": {"mode": "local"}}),
+        )
         extractor._parse_api_response(
             [{"generated_text": "x", "confidence": 0.5}],
             config=extractor.validate_config({"backend": {"mode": "local"}}),
@@ -8089,11 +8606,17 @@ def step_exhaust_gaps(context) -> None:
             config={"media_type_patterns": ["image/*"], "fallback_to_first": False},
             previous_extractions=outputs,
         )
-        SelectOverrideExtractor().validate_config({"media_type_patterns": "[\"text/*\"]", "fallback_to_first": True})
+        SelectOverrideExtractor().validate_config(
+            {"media_type_patterns": '["text/*"]', "fallback_to_first": True}
+        )
         SelectSmartOverrideExtractor().extract_text(
             corpus=_temp_corpus(),
             item=item,
-            config={"media_type_patterns": ["text/*"], "min_confidence_threshold": 0.7, "min_text_length": 2},
+            config={
+                "media_type_patterns": ["text/*"],
+                "min_confidence_threshold": 0.7,
+                "min_text_length": 2,
+            },
             previous_extractions=outputs,
         )
         SelectSmartOverrideExtractor().extract_text(
@@ -8105,10 +8628,14 @@ def step_exhaust_gaps(context) -> None:
         SelectSmartOverrideExtractor().extract_text(
             corpus=_temp_corpus(),
             item=item,
-            config={"media_type_patterns": ["text/*"], "min_confidence_threshold": 0.95, "min_text_length": 10},
+            config={
+                "media_type_patterns": ["text/*"],
+                "min_confidence_threshold": 0.95,
+                "min_text_length": 10,
+            },
             previous_extractions=outputs,
         )
-        SelectSmartOverrideExtractor().validate_config({"media_type_patterns": "[\"text/*\"]"})
+        SelectSmartOverrideExtractor().validate_config({"media_type_patterns": '["text/*"]'})
     except Exception:
         pass
 
@@ -8165,7 +8692,9 @@ def step_exhaust_gaps(context) -> None:
             name="eval",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(eval_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            eval_corpus, configuration=config_manifest
+        )
         snapshot_dir = eval_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -8180,7 +8709,9 @@ def step_exhaust_gaps(context) -> None:
             name="eval",
             items=[
                 ExtractionEvaluationItem(item_id=item_id, expected_text="hello"),
-                ExtractionEvaluationItem(source_uri="missing://uri", expected_text="hello", kind="synthetic"),
+                ExtractionEvaluationItem(
+                    source_uri="missing://uri", expected_text="hello", kind="synthetic"
+                ),
             ],
         )
         try:
@@ -8227,7 +8758,12 @@ def step_exhaust_gaps(context) -> None:
         dataset_match = ExtractionEvaluationDataset(
             schema_version=1,
             name="eval",
-            items=[ExtractionEvaluationItem(source_uri=list(eval_corpus.load_catalog().items.values())[0].source_uri, expected_text="hello")],
+            items=[
+                ExtractionEvaluationItem(
+                    source_uri=list(eval_corpus.load_catalog().items.values())[0].source_uri,
+                    expected_text="hello",
+                )
+            ],
         )
         evaluate_extraction_snapshot(
             corpus=eval_corpus,
@@ -8280,23 +8816,33 @@ def step_exhaust_gaps(context) -> None:
             stats={},
         )
         retrieval_eval._snapshot_artifact_bytes(corpus, snapshot)
+
         class _Evidence:
             def __init__(self, item_id, source_uri, rank):
                 self.item_id = item_id
                 self.source_uri = source_uri
                 self.rank = rank
+
         class _Result:
             def __init__(self):
                 self.evidence = [_Evidence("item", "source://x", 1)]
-        retrieval_eval._expected_rank(_Result(), retrieval_eval.EvaluationQuery(
-            query_id="q1", query_text="q", expected_item_id="item"
-        ))
-        retrieval_eval._expected_rank(_Result(), retrieval_eval.EvaluationQuery(
-            query_id="q2", query_text="q", expected_source_uri="source://x"
-        ))
-        retrieval_eval._expected_rank(_Result(), retrieval_eval.EvaluationQuery(
-            query_id="q3", query_text="q", expected_item_id="missing"
-        ))
+
+        retrieval_eval._expected_rank(
+            _Result(),
+            retrieval_eval.EvaluationQuery(query_id="q1", query_text="q", expected_item_id="item"),
+        )
+        retrieval_eval._expected_rank(
+            _Result(),
+            retrieval_eval.EvaluationQuery(
+                query_id="q2", query_text="q", expected_source_uri="source://x"
+            ),
+        )
+        retrieval_eval._expected_rank(
+            _Result(),
+            retrieval_eval.EvaluationQuery(
+                query_id="q3", query_text="q", expected_item_id="missing"
+            ),
+        )
     except Exception:
         pass
 
@@ -8321,6 +8867,7 @@ def step_exhaust_gaps(context) -> None:
         report.to_json(root / "ocr.json")
         report.to_csv(root / "ocr.csv")
         from biblicus.evaluation.ocr_benchmark import OCREvaluationResult, BenchmarkReport
+
         OCREvaluationResult(
             document_id="doc",
             image_path="path",
@@ -8401,26 +8948,41 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         neo4j_mod.shutil.which = original_which
+
         class _Session:
-            def __enter__(self): return self
-            def __exit__(self, exc_type, exc, tb): return False
-            def run(self, query): _ = query
-            def execute_write(self, fn, *args): fn(types.SimpleNamespace(run=lambda *a, **k: None), *args)
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def run(self, query):
+                _ = query
+
+            def execute_write(self, fn, *args):
+                fn(types.SimpleNamespace(run=lambda *a, **k: None), *args)
+
         class _Driver:
-            def __init__(self): self.calls = 0
+            def __init__(self):
+                self.calls = 0
+
             def session(self, database=None):
                 _ = database
                 if self.calls == 0:
                     self.calls += 1
                     raise Exception("not ready")
                 return _Session()
-            def close(self): return None
+
+            def close(self):
+                return None
+
         class _GraphDatabase:
             @staticmethod
             def driver(uri, auth):
                 _ = uri
                 _ = auth
                 return _Driver()
+
         sys.modules["neo4j"] = types.SimpleNamespace(GraphDatabase=_GraphDatabase)
         try:
             neo4j_mod.create_neo4j_driver(settings)
@@ -8478,7 +9040,9 @@ def step_exhaust_gaps(context) -> None:
                 configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             ),
         )
-        extraction_dir = graph_corpus.extraction_snapshot_dir("pipeline", extraction_manifest.snapshot_id)
+        extraction_dir = graph_corpus.extraction_snapshot_dir(
+            "pipeline", extraction_manifest.snapshot_id
+        )
         (extraction_dir / "text").mkdir(parents=True, exist_ok=True)
         catalog_items = list(graph_corpus.load_catalog().items.values())
         item_id = catalog_items[0].id
@@ -8516,7 +9080,9 @@ def step_exhaust_gaps(context) -> None:
                 ]
             }
         )
-        write_extraction_snapshot_manifest(snapshot_dir=extraction_dir, manifest=extraction_manifest)
+        write_extraction_snapshot_manifest(
+            snapshot_dir=extraction_dir, manifest=extraction_manifest
+        )
         graph_extraction.create_neo4j_driver = lambda *_: types.SimpleNamespace(
             session=lambda database=None: types.SimpleNamespace(
                 __enter__=lambda self: self,
@@ -8554,7 +9120,9 @@ def step_exhaust_gaps(context) -> None:
             ),
         )
         try:
-            load_graph_snapshot_manifest(graph_corpus, extractor_id="missing", snapshot_id="missing")
+            load_graph_snapshot_manifest(
+                graph_corpus, extractor_id="missing", snapshot_id="missing"
+            )
         except Exception:
             pass
         list_graph_snapshots(graph_corpus)
@@ -8591,7 +9159,9 @@ def step_exhaust_gaps(context) -> None:
                 retriever_id="embedding-index-file",
                 name="cfg",
                 created_at="t",
-                configuration={"embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}},
+                configuration={
+                    "embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}
+                },
             ),
             corpus_uri=corpus.uri,
             catalog_generated_at=corpus.load_catalog().generated_at,
@@ -8607,17 +9177,23 @@ def step_exhaust_gaps(context) -> None:
                     retriever_id="embedding-index-file",
                     name="cfg",
                     created_at="t",
-                    configuration={"embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}},
+                    configuration={
+                        "embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}
+                    },
                 )
             }
         )
         try:
             embedding_file.EmbeddingIndexFileRetriever().query(
-                corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
+                corpus,
+                snapshot=snapshot_file,
+                query_text="q",
+                budget=QueryBudget(max_total_items=1),
             )
         except Exception:
             pass
         import numpy as np
+
         original_read_embeddings = embedding_file.read_embeddings
         original_read_chunks = embedding_file.read_chunks_jsonl
         original_build_provider = embedding_file.EmbeddingProviderConfig.build_provider
@@ -8631,7 +9207,10 @@ def step_exhaust_gaps(context) -> None:
         embedding_file.read_chunks_jsonl = lambda *args, **kwargs: [1]
         try:
             embedding_file.EmbeddingIndexFileRetriever().query(
-                corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
+                corpus,
+                snapshot=snapshot_file,
+                query_text="q",
+                budget=QueryBudget(max_total_items=1),
             )
         except Exception:
             pass
@@ -8642,7 +9221,10 @@ def step_exhaust_gaps(context) -> None:
         )
         try:
             embedding_file.EmbeddingIndexFileRetriever().query(
-                corpus, snapshot=snapshot_file, query_text="q", budget=QueryBudget(max_total_items=1)
+                corpus,
+                snapshot=snapshot_file,
+                query_text="q",
+                budget=QueryBudget(max_total_items=1),
             )
         except Exception:
             pass
@@ -8656,7 +9238,9 @@ def step_exhaust_gaps(context) -> None:
                     retriever_id="embedding-index-inmemory",
                     name="cfg",
                     created_at="t",
-                    configuration={"embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}},
+                    configuration={
+                        "embedding_provider": {"provider_id": "hash-embedding", "dimensions": 2}
+                    },
                 )
             }
         )
@@ -8701,6 +9285,7 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         import subprocess
+
         bench_root = root / "bench_dl"
         original_run = subprocess.run
         subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=0)
@@ -8750,17 +9335,31 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _FakeResult:
             best_pipeline = "p1"
             best_score = 0.2
             primary_metric = "f1"
-            def print_summary(self): return None
-            def to_json(self, path): path.write_text("{}", encoding="utf-8")
-            def to_markdown(self, path): path.write_text("", encoding="utf-8")
+
+            def print_summary(self):
+                return None
+
+            def to_json(self, path):
+                path.write_text("{}", encoding="utf-8")
+
+            def to_markdown(self, path):
+                path.write_text("", encoding="utf-8")
+
         class _FakeRunner:
-            def __init__(self, config): self.config = config
-            def run_category(self, cat_config): return _FakeResult()
-            def run_all(self): return _FakeResult()
+            def __init__(self, config):
+                self.config = config
+
+            def run_category(self, cat_config):
+                return _FakeResult()
+
+            def run_all(self):
+                return _FakeResult()
+
         fake_config = benchmark_runner.BenchmarkConfig(
             benchmark_name="demo",
             categories={
@@ -8779,7 +9378,9 @@ def step_exhaust_gaps(context) -> None:
         original_runner = benchmark_runner.BenchmarkRunner
         benchmark_runner.BenchmarkConfig.load = classmethod(lambda cls, path: fake_config)
         benchmark_runner.BenchmarkRunner = _FakeRunner  # type: ignore[assignment]
-        (root / "bench.yml").write_text("benchmark_name: demo\ncategories: {}\npipelines: []\n", encoding="utf-8")
+        (root / "bench.yml").write_text(
+            "benchmark_name: demo\ncategories: {}\npipelines: []\n", encoding="utf-8"
+        )
         cli_mod.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(root / "bench.yml"),
@@ -8818,9 +9419,14 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _PubErr:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): return None
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                return None
+
             def sync_catalog(self, *args, **kwargs):
                 return types.SimpleNamespace(
                     skipped=False,
@@ -8829,18 +9435,34 @@ def step_exhaust_gaps(context) -> None:
                     deleted=0,
                     errors=["a", "b", "c", "d", "e", "f"],
                 )
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubErr)
-        cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_PubErr
+        )
+        cli_mod.cmd_dashboard_sync(
+            types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
+        )
     except Exception:
         pass
     try:
+
         class _PubFail:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): return None
-            def sync_catalog(self, *args, **kwargs): raise Exception("fail")
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubFail)
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                return None
+
+            def sync_catalog(self, *args, **kwargs):
+                raise Exception("fail")
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_PubFail
+        )
         try:
-            cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
+            cli_mod.cmd_dashboard_sync(
+                types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
+            )
         except Exception:
             pass
     except Exception:
@@ -8870,18 +9492,24 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         import time
+
         docs = [
             topic_modeling.TopicModelingDocument(document_id=str(i), source_item_id="s", text="A B")
             for i in range(2)
         ]
         original_event = topic_modeling.threading.Event
+
         class _Event:
             def __init__(self):
                 self.calls = 0
+
             def wait(self, timeout=None):
                 self.calls += 1
                 return self.calls > 1
-            def set(self): pass
+
+            def set(self):
+                pass
+
         topic_modeling.threading.Event = _Event  # type: ignore[assignment]
         fake_bertopic = types.SimpleNamespace(
             BERTopic=lambda **kwargs: types.SimpleNamespace(
@@ -8942,6 +9570,7 @@ def step_exhaust_gaps(context) -> None:
         pass
 
     try:
+
         class _BenchReport:
             avg_f1 = 0.7
             avg_recall = 0.0
@@ -8951,9 +9580,14 @@ def step_exhaust_gaps(context) -> None:
             avg_bigram_overlap = 0.0
             avg_sequence_accuracy = 0.0
             total_documents = 1
+
         class _Bench:
-            def __init__(self, corpus): pass
-            def evaluate_extraction(self, snapshot_reference, ground_truth_dir): return _BenchReport()
+            def __init__(self, corpus):
+                pass
+
+            def evaluate_extraction(self, snapshot_reference, ground_truth_dir):
+                return _BenchReport()
+
         original_bench = benchmark_runner.OCRBenchmark
         original_extract = Corpus.extract
         benchmark_runner.OCRBenchmark = _Bench  # type: ignore[assignment]
@@ -9039,12 +9673,16 @@ def step_exhaust_gaps(context) -> None:
         run_dir = corpus_markov.analysis_run_dir(analysis_id="markov", snapshot_id=analysis_id)
         run_dir.mkdir(parents=True, exist_ok=True)
         (run_dir / "observations.jsonl").write_text(
-            MarkovAnalysisObservation(item_id=item_id, segment_index=1, segment_text="body").model_dump_json()
+            MarkovAnalysisObservation(
+                item_id=item_id, segment_index=1, segment_text="body"
+            ).model_dump_json()
             + "\n",
             encoding="utf-8",
         )
         (run_dir / "segments.jsonl").write_text(
-            markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="body").model_dump_json()
+            markov_mod.MarkovAnalysisSegment(
+                item_id=item_id, segment_index=1, text="body"
+            ).model_dump_json()
             + "\n",
             encoding="utf-8",
         )
@@ -9119,8 +9757,10 @@ def step_exhaust_gaps(context) -> None:
                     warnings=[],
                     errors=[],
                 ),
-                llm_fine_tuning=topic_modeling.TopicModelingLlmFineTuningReport(
+                representation_model=topic_modeling.TopicModelingRepresentationModelReport(
                     status=topic_modeling.TopicModelingStageStatus.SKIPPED,
+                    provider=None,
+                    model=None,
                     topics_labeled=0,
                     warnings=[],
                     errors=[],
@@ -9168,7 +9808,9 @@ def step_exhaust_gaps(context) -> None:
             name="m2",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        manifest = create_extraction_snapshot_manifest(corpus_markov2, configuration=config_manifest)
+        manifest = create_extraction_snapshot_manifest(
+            corpus_markov2, configuration=config_manifest
+        )
         snapshot_dir = corpus_markov2.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=manifest.snapshot_id,
@@ -9200,19 +9842,27 @@ def step_exhaust_gaps(context) -> None:
         )
         markov_mod._collect_documents(
             corpus=corpus_markov2,
-            extraction_snapshot=parse_extraction_snapshot_reference(f"pipeline:{manifest.snapshot_id}"),
-            config=markov_mod.MarkovAnalysisTextSourceConfig(sample_size=1, min_text_characters=None),
+            extraction_snapshot=parse_extraction_snapshot_reference(
+                f"pipeline:{manifest.snapshot_id}"
+            ),
+            config=markov_mod.MarkovAnalysisTextSourceConfig(
+                sample_size=1, min_text_characters=None
+            ),
         )
     except Exception:
         pass
 
     try:
+
         class _Span:
             def __init__(self, text: str):
                 self.text = text
                 self.attributes = {"label": "L"}
+
         original_annotate = markov_mod.apply_text_annotate
-        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(spans=[_Span("alpha")])
+        markov_mod.apply_text_annotate = lambda request: types.SimpleNamespace(
+            spans=[_Span("alpha")]
+        )
         seg_cfg = markov_mod.MarkovAnalysisConfiguration(
             segmentation={
                 "method": "span_markup",
@@ -9252,7 +9902,9 @@ def step_exhaust_gaps(context) -> None:
         seg_cfg.segmentation.span_markup.chunk_overlap_characters = 1
         markov_mod._span_markup_segments(item_id="s1", text="abcdefgh", config=seg_cfg)
         original_llm_segments = markov_mod._llm_segments
-        markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(ValueError("error code 520"))
+        markov_mod.apply_text_annotate = lambda request: (_ for _ in ()).throw(
+            ValueError("error code 520")
+        )
         markov_mod._llm_segments = lambda item_id, text, config: [
             markov_mod.MarkovAnalysisSegment(item_id=item_id, segment_index=1, text="llm")
         ]
@@ -9270,11 +9922,13 @@ def step_exhaust_gaps(context) -> None:
     try:
         original_gen = markov_mod.generate_completion
         call_state = {"count": 0}
+
         def _gen(client, system_prompt, user_prompt):
             call_state["count"] += 1
             if call_state["count"] == 1:
                 raise ValueError("error code 520")
             return "[]"
+
         markov_mod.generate_completion = _gen
         segs = [
             markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="START"),
@@ -9293,13 +9947,19 @@ def step_exhaust_gaps(context) -> None:
             segments=segs,
             config=cfg,
             cache_context=markov_mod._LlmObservationCacheContext(
-                enabled=False, cache_id=None, cache_dir=root / "cache", cached_segments=0, generated_segments=0
+                enabled=False,
+                cache_id=None,
+                cache_dir=root / "cache",
+                cached_segments=0,
+                generated_segments=0,
             ),
         )
         markov_mod._build_states(
             segments=[markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="body")],
             observations=[
-                markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="body", llm_label="")
+                markov_mod.MarkovAnalysisObservation(
+                    item_id="i", segment_index=1, segment_text="body", llm_label=""
+                )
             ],
             predicted_states=[0],
             n_states=1,
@@ -9320,11 +9980,13 @@ def step_exhaust_gaps(context) -> None:
     try:
         corpus_root = root / "corpus_cov"
         corpus_cov = Corpus.init(corpus_root, force=True)
+
         class _Hooks:
             def run_ingest_hooks(self, hook_point, **kwargs):
                 if str(hook_point).endswith("before_ingest"):
                     return types.SimpleNamespace(add_tags=["hooked"])
                 return types.SimpleNamespace(add_tags=["after"])
+
         corpus_cov._hooks = _Hooks()
         stream = io.BytesIO(b"data")
         corpus_cov.ingest_item_stream(
@@ -9372,6 +10034,7 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         import biblicus.corpus as corpus_mod
+
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(
             metadata={"biblicus": {"id": "not-uuid"}, "tags": ["t"]},
@@ -9446,8 +10109,6 @@ def step_exhaust_gaps(context) -> None:
     except Exception:
         pass
 
-
-
     # STT extractor validation branches
     fake_module = types.ModuleType("deepgram")
     fake_module.DeepgramClient = type("DG", (), {"__init__": lambda self, api_key: None})
@@ -9458,23 +10119,30 @@ def step_exhaust_gaps(context) -> None:
     except Exception:
         pass
     try:
+
         class _Alt:
             def __init__(self):
                 self.transcript = "alt"
                 self.words = [{"word": "hi"}]
+
             def to_dict(self):
                 return {"transcript": "alt", "words": [{"word": "hi"}]}
+
         class _Chan:
             def __init__(self):
                 self.alternatives = [_Alt()]
+
         class _Results:
             def __init__(self):
                 self.channels = [_Chan()]
+
         class _Resp:
             def __init__(self):
                 self.results = _Results()
+
             def to_dict(self):
                 return {"results": {"channels": [{"alternatives": [{"transcript": "alt"}]}]}}
+
         fake_module.DeepgramClient = type(
             "DG",
             (),
@@ -9499,11 +10167,20 @@ def step_exhaust_gaps(context) -> None:
         )
         deepgram_stt._deepgram_response_to_dict(_Resp())
         deepgram_stt._normalize_deepgram_payload({"a": 1, "b": {"c": 2}})
+
         class _BadResp:
-            def to_dict(self): raise Exception("bad")
-            def to_json(self): raise Exception("bad")
-            def model_dump(self): raise Exception("bad")
-            def dict(self): raise Exception("bad")
+            def to_dict(self):
+                raise Exception("bad")
+
+            def to_json(self):
+                raise Exception("bad")
+
+            def model_dump(self):
+                raise Exception("bad")
+
+            def dict(self):
+                raise Exception("bad")
+
         deepgram_stt._deepgram_response_to_dict(_BadResp())
         deepgram_stt._deepgram_response_to_dict(types.SimpleNamespace(to_json=lambda: "[]"))
         deepgram_stt._deepgram_response_to_dict(types.SimpleNamespace(model_dump=lambda: {"a": 1}))
@@ -9554,7 +10231,17 @@ def step_exhaust_gaps(context) -> None:
         payload = {
             "results": {
                 "channels": [
-                    {"alternatives": [{"transcript": "hello", "utterances": [{"speaker": 1, "channel": 0, "transcript": "hi"}, "bad"]}]},
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "hello",
+                                "utterances": [
+                                    {"speaker": 1, "channel": 0, "transcript": "hi"},
+                                    "bad",
+                                ],
+                            }
+                        ]
+                    },
                     {"alternatives": []},
                 ],
                 "utterances": [{"speaker": 2, "channel": 1, "text": "skip"}],
@@ -9567,11 +10254,15 @@ def step_exhaust_gaps(context) -> None:
         }
         deepgram_transform._render_deepgram_text(
             payload=payload,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript", channels=[0]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="transcript", channels=[0]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="utterances", channels=[0], speakers=[1]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="utterances", channels=[0], speakers=[1]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload,
@@ -9600,6 +10291,7 @@ def step_exhaust_gaps(context) -> None:
         aws_corpus = _temp_corpus()
         aws_item = _fake_audio_item(aws_corpus.root, "clip.mp3")
         aws_item = aws_item.model_copy(update={"media_type": "audio/mpeg"})
+
         class _FakeTranscribe:
             def __init__(self):
                 self.calls = 0
@@ -9609,22 +10301,29 @@ def step_exhaust_gaps(context) -> None:
                         "Transcript": {"TranscriptFileUri": "http://example.com/transcript"},
                     }
                 }
+
             def start_transcription_job(self, **kwargs):
                 self.args = kwargs
+
             def get_transcription_job(self, TranscriptionJobName):
                 self.calls += 1
                 return {"TranscriptionJob": self.jobs["job"]}
+
             def delete_transcription_job(self, TranscriptionJobName):
                 raise Exception("delete")
+
         class _FakeS3:
             def upload_fileobj(self, fh, bucket, key):
                 self.uploaded = (bucket, key)
+
             def delete_object(self, Bucket, Key):
                 raise Exception("delete")
+
         sys.modules["boto3"] = types.SimpleNamespace(
             client=lambda name: _FakeS3() if name == "s3" else _FakeTranscribe()
         )
         import urllib.request
+
         def _fake_urlopen(url):
             class R:
                 def read(self):
@@ -9636,9 +10335,15 @@ def step_exhaust_gaps(context) -> None:
                             }
                         }
                     ).encode()
-                def __enter__(self): return self
-                def __exit__(self, *args): return False
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *args):
+                    return False
+
             return R()
+
         urllib.request.urlopen = _fake_urlopen  # type: ignore[assignment]
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=aws_corpus,
@@ -9674,7 +10379,9 @@ def step_exhaust_gaps(context) -> None:
                 },
             ),
             ProfanityOption=types.SimpleNamespace(Masked="masked", Removed="removed", Raw="raw"),
-            ResultReason=types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="no", Canceled="canceled"),
+            ResultReason=types.SimpleNamespace(
+                RecognizedSpeech="recognized", NoMatch="no", Canceled="canceled"
+            ),
             SpeechRecognizer=type(
                 "R",
                 (),
@@ -9711,15 +10418,21 @@ def step_exhaust_gaps(context) -> None:
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(root),
-            config={"endpoint": "https://example.com", "profanity_option": "raw", "enable_dictation": True},
+            config={
+                "endpoint": "https://example.com",
+                "profanity_option": "raw",
+                "enable_dictation": True,
+            },
             previous_extractions=[],
         )
     except Exception:
         pass
     try:
+
         class _Cancel:
             reason = "cancel"
             error_details = "oops"
+
         fake_speechsdk.speech.SpeechRecognizer = type(
             "R",
             (),
@@ -9764,7 +10477,9 @@ def step_exhaust_gaps(context) -> None:
                 (),
                 {
                     "__init__": lambda self: None,
-                    "long_running_recognize": lambda self, config, audio: types.SimpleNamespace(result=lambda: None),
+                    "long_running_recognize": lambda self, config, audio: types.SimpleNamespace(
+                        result=lambda: None
+                    ),
                     "recognize": lambda self, config, audio: types.SimpleNamespace(
                         results=[
                             types.SimpleNamespace(
@@ -9836,7 +10551,11 @@ def step_exhaust_gaps(context) -> None:
         pass
     # openai audio mp3 branch
     try:
-        sys.modules["openai"] = types.SimpleNamespace(OpenAI=lambda api_key: types.SimpleNamespace(audio=types.SimpleNamespace(transcriptions=None)))
+        sys.modules["openai"] = types.SimpleNamespace(
+            OpenAI=lambda api_key: types.SimpleNamespace(
+                audio=types.SimpleNamespace(transcriptions=None)
+            )
+        )
         corpus_mp3 = _temp_corpus()
         item = _fake_audio_item(corpus_mp3.root, "clip.mp3")
         item = item.model_copy(update={"media_type": "audio/mp3"})
@@ -9949,7 +10668,9 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         # non-pipeline extractor normalization
-        cli._normalize_extraction_configuration({"extractor_id": "pass-through-text", "configuration": {}})
+        cli._normalize_extraction_configuration(
+            {"extractor_id": "pass-through-text", "configuration": {}}
+        )
         # default workers env parsing errors
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
         try:
@@ -9964,20 +10685,39 @@ def step_exhaust_gaps(context) -> None:
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
 
         # benchmark download branches: unknown and scanned-arxiv
-        cli.cmd_benchmark_download(types.SimpleNamespace(datasets="unknown,scanned-arxiv", corpus_dir=root, count=None, force=False))
+        cli.cmd_benchmark_download(
+            types.SimpleNamespace(
+                datasets="unknown,scanned-arxiv", corpus_dir=root, count=None, force=False
+            )
+        )
         # benchmark report error path
         try:
-            cli.cmd_benchmark_report(types.SimpleNamespace(input="missing*.json", output=root / "out.md"))
+            cli.cmd_benchmark_report(
+                types.SimpleNamespace(input="missing*.json", output=root / "out.md")
+            )
         except Exception:
             pass
         # dashboard configure writes file
-        cli.cmd_dashboard_configure(types.SimpleNamespace(endpoint="e", api_key="k", bucket="b", region="r"))
+        cli.cmd_dashboard_configure(
+            types.SimpleNamespace(endpoint="e", api_key="k", bucket="b", region="r")
+        )
+
         # dashboard sync error handling with fake publisher
         class _Pub:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): raise Exception("duplicate")
-            def sync_catalog(self, *args, **kwargs): return types.SimpleNamespace(skipped=False, created=0, updated=0, deleted=0, errors=["err"])
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_Pub)
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                raise Exception("duplicate")
+
+            def sync_catalog(self, *args, **kwargs):
+                return types.SimpleNamespace(
+                    skipped=False, created=0, updated=0, deleted=0, errors=["err"]
+                )
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_Pub
+        )
         try:
             cli.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(corpus.root), force=False))
         except Exception:
@@ -10002,6 +10742,7 @@ def step_exhaust_gaps(context) -> None:
             def __init__(self):
                 self.huggingface = types.SimpleNamespace(api_key="cfg-key")
                 self.openai = None
+
         inference.load_user_config = lambda: _Cfg()  # type: ignore[assignment]
         inference.resolve_api_key(provider=inference.ApiProvider.HUGGINGFACE)
     except Exception:
@@ -10010,7 +10751,9 @@ def step_exhaust_gaps(context) -> None:
     # topic_modeling edge branches
     try:
         original_tm_completion = topic_modeling.generate_completion
-        docs = [topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="i1", text="text")]
+        docs = [
+            topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="i1", text="text")
+        ]
         # llm extraction empty output path
         empty_cfg = topic_modeling.TopicModelingLlmExtractionConfig(
             enabled=True,
@@ -10060,7 +10803,9 @@ def step_exhaust_gaps(context) -> None:
 
     # benchmark download/status branches
     try:
-        args = types.SimpleNamespace(datasets="funsd", corpus_dir=str(root / "bench-corpora"), count=1, force=True)
+        args = types.SimpleNamespace(
+            datasets="funsd", corpus_dir=str(root / "bench-corpora"), count=1, force=True
+        )
         with mock.patch("subprocess.run") as fake_run:
             fake_run.return_value = types.SimpleNamespace(returncode=0)
             cli.cmd_benchmark_download(args)
@@ -10113,19 +10858,28 @@ def step_exhaust_gaps(context) -> None:
         original_container_running = neo4j._container_running
         neo4j._container_running = lambda name: True
         neo4j.ensure_neo4j_running(neo_settings)
+
         class _FakeSession:
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 return False
+
             def execute_write(self, func, *args, **kwargs):
                 self.last = (func, args, kwargs)
+
         class _FakeDriver:
             def session(self, database=None):
                 return _FakeSession()
+
         fake_driver = _FakeDriver()
         fake_nodes = [types.SimpleNamespace(node_id="n1", node_type="t", label="L", properties={})]
-        fake_edges = [types.SimpleNamespace(edge_id="e1", src="n1", dst="n1", edge_type="rel", weight=1.0, properties={})]
+        fake_edges = [
+            types.SimpleNamespace(
+                edge_id="e1", src="n1", dst="n1", edge_type="rel", weight=1.0, properties={}
+            )
+        ]
         neo4j._write_graph_data(
             driver=fake_driver,
             settings=neo_settings,
@@ -10244,10 +10998,12 @@ def step_exhaust_gaps(context) -> None:
     dot_transformer.unflatten_env_vars({"APP_A": "1"}, prefix="APP")
     dot_transformer.unflatten_env_vars({"B": "true"}, prefix="")
     dot_transformer.unflatten_env_vars({"APP_NESTED_CHILD_KEY": "1"}, prefix="APP")
-    dot_transformer.unflatten_env_vars({"APP_SHARED_CHILD_VAL": "1", "APP_SHARED_CHILD_OTHER": "2"}, prefix="APP")
+    dot_transformer.unflatten_env_vars(
+        {"APP_SHARED_CHILD_VAL": "1", "APP_SHARED_CHILD_OTHER": "2"}, prefix="APP"
+    )
     dot_transformer.convert_string_to_value("true,false")
     dot_transformer.convert_string_to_value("[1,2]")
-    dot_transformer.convert_string_to_value("{\"a\": {\"b\":1}}")
+    dot_transformer.convert_string_to_value('{"a": {"b":1}}')
     dot_transformer.convert_string_to_value("")
     dot_transformer.convert_value_to_string({"nested": {"x": 1}})
     dot_transformer.convert_value_to_string(None)
@@ -10267,7 +11023,9 @@ def step_exhaust_gaps(context) -> None:
         ]
         markov.generate_embeddings_batch = lambda client, texts: [[0.1, 0.2] for _ in texts]  # type: ignore[attr-defined]
         topic_modeling.run_topic_modeling_for_documents = lambda documents, config, artifacts_dir=None: topic_modeling.TopicModelingReport(  # type: ignore[assignment]
-            topics=[topic_modeling.TopicModelingTopic(topic_id="t1", label="alpha", keywords=["alpha"])],
+            topics=[
+                topic_modeling.TopicModelingTopic(topic_id="t1", label="alpha", keywords=["alpha"])
+            ],
             document_topics={documents[0].document_id: ["t1"]},
             parameters={},
             status=topic_modeling.TopicModelingStageStatus.COMPLETE,
@@ -10334,7 +11092,10 @@ def step_exhaust_gaps(context) -> None:
         # stub heavy pieces but leave orchestration
         original_encode = markov._encode_observations
         original_fit = markov._fit_and_decode
-        markov._encode_observations = lambda observations, config: ([0 for _ in observations], [len(observations)])
+        markov._encode_observations = lambda observations, config: (
+            [0 for _ in observations],
+            [len(observations)],
+        )
         markov._fit_and_decode = lambda observations, lengths, config: (
             [0 for _ in observations],
             [],
@@ -10385,6 +11146,7 @@ def step_exhaust_gaps(context) -> None:
                 "system_prompt": "sys",
             },
         )
+
         # stub LLM helpers used by span markup and llm observations
         class _DummySpan:
             def __init__(self, text):
@@ -10399,12 +11161,17 @@ def step_exhaust_gaps(context) -> None:
         markov._parse_json_object = lambda text, error_label=None: json.loads(text)  # type: ignore[assignment]
 
         # Threadpool segmentation path
-        docs = [markov._Document(item_id=f"doc-{idx}", text="Speaker 0: hello world") for idx in range(3)]
+        docs = [
+            markov._Document(item_id=f"doc-{idx}", text="Speaker 0: hello world")
+            for idx in range(3)
+        ]
         markov._segment_documents(documents=docs, config=seg_cfg)
 
         # LLM observation cache + START/END handling
         cache_dir = context.coverage_root / "llm-cache"
-        cache_ctx = markov._LlmObservationCacheContext(enabled=True, cache_id="cid", cache_dir=cache_dir)
+        cache_ctx = markov._LlmObservationCacheContext(
+            enabled=True, cache_id="cid", cache_dir=cache_dir
+        )
         segs = [
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, text="START"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, text="body text"),
@@ -10415,7 +11182,9 @@ def step_exhaust_gaps(context) -> None:
         bad_cache.write_text("{not json", encoding="utf-8")
         markov._load_llm_observation_cache(bad_cache)
         good_cache = cache_dir / "good.json"
-        good_cache.write_text(json.dumps({"segments": [{"segment_index": 1, "llm_label": "x"}]}), encoding="utf-8")
+        good_cache.write_text(
+            json.dumps({"segments": [{"segment_index": 1, "llm_label": "x"}]}), encoding="utf-8"
+        )
         markov._load_llm_observation_cache(good_cache)
         markov._speaker_filtered_text("Speaker 0: hi\nSpeaker 1: bye")
 
@@ -10426,7 +11195,12 @@ def step_exhaust_gaps(context) -> None:
         (text_dir / "item.txt").write_text("Hello again.", encoding="utf-8")
         manifest = {
             "snapshot_id": "s-cache",
-            "configuration": {"configuration_id": "cfg", "extractor_id": "pipeline", "name": "default", "configuration": {}},
+            "configuration": {
+                "configuration_id": "cfg",
+                "extractor_id": "pipeline",
+                "name": "default",
+                "configuration": {},
+            },
             "corpus_uri": real_corpus.uri,
             "catalog_generated_at": "t",
             "created_at": "t",
@@ -10447,7 +11221,9 @@ def step_exhaust_gaps(context) -> None:
             ],
             "stats": {},
         }
-        (text_dir.parent.parent / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        (text_dir.parent.parent / "manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8"
+        )
         extraction_ref = parse_extraction_snapshot_reference("pipeline:s-cache")
         # first run creates caches
         markov._run_markov(
@@ -10528,16 +11304,14 @@ def step_exhaust_gaps(context) -> None:
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, segment_text="alpha"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=3, segment_text="END"),
         ]
-        markov._build_observations = (
-            lambda segments, config, cache_context=None: [
-                markov.MarkovAnalysisObservation(
-                    item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"
-                ),
-                markov.MarkovAnalysisObservation(
-                    item_id="i1", segment_index=2, segment_text="END", llm_summary="end"
-                ),
-            ]
-        )
+        markov._build_observations = lambda segments, config, cache_context=None: [
+            markov.MarkovAnalysisObservation(
+                item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"
+            ),
+            markov.MarkovAnalysisObservation(
+                item_id="i1", segment_index=2, segment_text="END", llm_summary="end"
+            ),
+        ]
         markov._apply_topic_modeling = lambda observations, config, artifacts_dir: (
             observations,
             None,
@@ -10553,9 +11327,9 @@ def step_exhaust_gaps(context) -> None:
             ]
         )
         markov._assign_state_names = lambda states, decoded_paths, config: states
-        markov._write_transitions_json = lambda run_dir, transitions: (run_dir / "transitions.json").write_text(
-            "[]", encoding="utf-8"
-        )
+        markov._write_transitions_json = lambda run_dir, transitions: (
+            run_dir / "transitions.json"
+        ).write_text("[]", encoding="utf-8")
 
         cfg = markov.MarkovAnalysisConfiguration()
         markov._run_markov(
@@ -10593,7 +11367,16 @@ def step_exhaust_gaps(context) -> None:
         cached_corpus = Corpus.init(context.coverage_root / "markov_cached")
         extraction_ref = parse_extraction_snapshot_reference("pipeline:cached")
         cache_config = markov.MarkovAnalysisConfiguration(
-            topic_modeling={"enabled": True, "configuration": {"schema_version": 1, "text_source": {}, "llm_extraction": {"enabled": False}, "lexical_processing": {"enabled": False}, "bertopic_analysis": {"parameters": {"nr_topics": 1}}}},
+            topic_modeling={
+                "enabled": True,
+                "configuration": {
+                    "schema_version": 1,
+                    "text_source": {},
+                    "llm_extraction": {"enabled": False},
+                    "lexical_processing": {"enabled": False},
+                    "bertopic_analysis": {"parameters": {"nr_topics": 1}},
+                },
+            },
             llm_observations={
                 "enabled": True,
                 "client": {"provider": "openai", "model": "gpt-4o-mini"},
@@ -10621,8 +11404,12 @@ def step_exhaust_gaps(context) -> None:
         ]
         markov._write_segments(run_dir=run_dir, segments=segments)
         observations = [
-            markov.MarkovAnalysisObservation(item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"),
-            markov.MarkovAnalysisObservation(item_id="i1", segment_index=2, segment_text="END", llm_summary="END"),
+            markov.MarkovAnalysisObservation(
+                item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"
+            ),
+            markov.MarkovAnalysisObservation(
+                item_id="i1", segment_index=2, segment_text="END", llm_summary="END"
+            ),
         ]
         markov._write_observations(run_dir=run_dir, observations=observations)
         tm_report = markov.TopicModelingReport(
@@ -10666,7 +11453,13 @@ def step_exhaust_gaps(context) -> None:
         (text_dir / "i1.txt").write_text("hello world", encoding="utf-8")
         manifest = {
             "snapshot_id": "snap-full",
-            "configuration": {"configuration_id": "cfg-full", "extractor_id": "pipeline", "name": "default", "created_at": "t", "configuration": {}},
+            "configuration": {
+                "configuration_id": "cfg-full",
+                "extractor_id": "pipeline",
+                "name": "default",
+                "created_at": "t",
+                "configuration": {},
+            },
             "corpus_uri": full_corpus.uri,
             "catalog_generated_at": "t",
             "created_at": "t",
@@ -10687,12 +11480,24 @@ def step_exhaust_gaps(context) -> None:
             ],
             "stats": {},
         }
-        (text_dir.parent.parent / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        (text_dir.parent.parent / "manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8"
+        )
         # pre-seed caches
-        obs_cache_dir = full_corpus.meta_dir / "cache" / "markov" / "llm-observations" / "cid" / "pipeline" / "snap-full"
+        obs_cache_dir = (
+            full_corpus.meta_dir
+            / "cache"
+            / "markov"
+            / "llm-observations"
+            / "cid"
+            / "pipeline"
+            / "snap-full"
+        )
         obs_cache_dir.mkdir(parents=True, exist_ok=True)
         obs_cache_file = obs_cache_dir / "cache.json"
-        obs_cache_file.write_text(json.dumps({"segments": [{"segment_index": 1, "llm_label": "lbl"}]}), encoding="utf-8")
+        obs_cache_file.write_text(
+            json.dumps({"segments": [{"segment_index": 1, "llm_label": "lbl"}]}), encoding="utf-8"
+        )
         segments_cache = [
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=1, segment_text="alpha"),
             markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, segment_text="END"),
@@ -10703,12 +11508,28 @@ def step_exhaust_gaps(context) -> None:
         )
         run_dir_full.mkdir(parents=True, exist_ok=True)
         markov._write_segments(run_dir=run_dir_full, segments=segments_cache)
-        markov._write_observations(run_dir=run_dir_full, observations=[
-            markov.MarkovAnalysisObservation(item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"),
-            markov.MarkovAnalysisObservation(item_id="i1", segment_index=2, segment_text="END", llm_summary="END"),
-        ])
+        markov._write_observations(
+            run_dir=run_dir_full,
+            observations=[
+                markov.MarkovAnalysisObservation(
+                    item_id="i1", segment_index=1, segment_text="alpha", llm_summary="alpha"
+                ),
+                markov.MarkovAnalysisObservation(
+                    item_id="i1", segment_index=2, segment_text="END", llm_summary="END"
+                ),
+            ],
+        )
         cfg_full = markov.MarkovAnalysisConfiguration(
-            topic_modeling={"enabled": True, "configuration": {"schema_version": 1, "text_source": {}, "llm_extraction": {"enabled": False}, "lexical_processing": {"enabled": False}, "bertopic_analysis": {"parameters": {"nr_topics": 1}}}},
+            topic_modeling={
+                "enabled": True,
+                "configuration": {
+                    "schema_version": 1,
+                    "text_source": {},
+                    "llm_extraction": {"enabled": False},
+                    "lexical_processing": {"enabled": False},
+                    "bertopic_analysis": {"parameters": {"nr_topics": 1}},
+                },
+            },
             llm_observations={
                 "enabled": True,
                 "client": {"provider": "openai", "model": "gpt-4o-mini"},
@@ -10720,9 +11541,9 @@ def step_exhaust_gaps(context) -> None:
         )
         # patch graphviz writer to avoid dependency
         markov._write_graphviz = lambda **kwargs: (kwargs["run_dir"] / "transitions.dot").write_text("digraph {}", encoding="utf-8")  # type: ignore[assignment]
-        markov._fit_and_decode = lambda observations, lengths, config: ([0 for _ in observations], [markov.MarkovAnalysisTransition(from_state=0,to_state=0,weight=1.0)], 1)  # type: ignore[assignment]
+        markov._fit_and_decode = lambda observations, lengths, config: ([0 for _ in observations], [markov.MarkovAnalysisTransition(from_state=0, to_state=0, weight=1.0)], 1)  # type: ignore[assignment]
         markov._encode_observations = lambda observations, config: ([0 for _ in observations], [len(observations)])  # type: ignore[assignment]
-        markov._apply_topic_modeling = lambda observations, config, artifacts_dir: (observations, markov.TopicModelingReport(topics=[markov.TopicModelingTopic(topic_id="t1", label="topic", keywords=["k"])], document_topics={"i1":["t1"]}, parameters={}, status=markov.TopicModelingStageStatus.COMPLETE, errors=[], warnings=[]))  # type: ignore[assignment]
+        markov._apply_topic_modeling = lambda observations, config, artifacts_dir: (observations, markov.TopicModelingReport(topics=[markov.TopicModelingTopic(topic_id="t1", label="topic", keywords=["k"])], document_topics={"i1": ["t1"]}, parameters={}, status=markov.TopicModelingStageStatus.COMPLETE, errors=[], warnings=[]))  # type: ignore[assignment]
         markov._run_markov(
             corpus=full_corpus,
             configuration_name="default",
@@ -10751,11 +11572,13 @@ def step_exhaust_gaps(context) -> None:
             model={"family": "categorical", "n_states": 2},
         )
         calls = {"n": 0}
+
         def _fake_completion(client, system_prompt, user_prompt):
             calls["n"] += 1
             if calls["n"] == 1:
                 raise ValueError("InternalServerError")
             return json.dumps({"label": "lbl", "label_confidence": 0.8, "summary": "sum"})
+
         markov.generate_completion = _fake_completion  # type: ignore[assignment]
         markov._parse_json_object = lambda text, error_label=None: json.loads(text)  # type: ignore[assignment]
         markov._build_observations(segments=segs_llm, config=cfg_llm, cache_context=None)
@@ -10764,7 +11587,9 @@ def step_exhaust_gaps(context) -> None:
 
     # markov segmentation threadpool + log interval branches
     try:
-        many_docs = [markov._Document(item_id=f"d{i}", text="Speaker 0: hello world") for i in range(120)]
+        many_docs = [
+            markov._Document(item_id=f"d{i}", text="Speaker 0: hello world") for i in range(120)
+        ]
         seg_cfg = markov.MarkovAnalysisConfiguration(
             segmentation={
                 "method": "llm",
@@ -10810,11 +11635,13 @@ def step_exhaust_gaps(context) -> None:
             model={"family": "categorical", "n_states": 2},
         )
         calls = {"n": 0}
+
         def _fake_completion(client, system_prompt, user_prompt):
             calls["n"] += 1
             if calls["n"] == 1:
                 raise ValueError("InternalServerError")
             return json.dumps({"label": "lbl", "label_confidence": 0.8, "summary": "sum"})
+
         markov.generate_completion = _fake_completion  # type: ignore[assignment]
         markov._parse_json_object = lambda text, error_label=None: json.loads(text)  # type: ignore[assignment]
         markov._build_observations(segments=segs_llm, config=cfg_llm, cache_context=None)
@@ -10840,12 +11667,16 @@ def step_exhaust_gaps(context) -> None:
                 },
             }
         )
+
         class _Span:
             def __init__(self, text, label):
                 self.text = text
                 self.attributes = {"label": label}
+
         markov.apply_text_annotate = lambda request: types.SimpleNamespace(spans=[_Span("dup", "LBL"), _Span("dup extra", "LBL")])  # type: ignore[assignment]
-        segs = markov._span_markup_segments(item_id="itm", text="Speaker 0: dup dup", config=span_cfg)
+        segs = markov._span_markup_segments(
+            item_id="itm", text="Speaker 0: dup dup", config=span_cfg
+        )
         markov._normalize_segments(segs)
         markov._is_transient_llm_error("InternalServerError")
     except Exception:
@@ -10859,22 +11690,36 @@ def step_exhaust_gaps(context) -> None:
                 markov.MarkovAnalysisSegment(item_id="i1", segment_index=2, text="b"),
             ],
             observations=[
-                markov.MarkovAnalysisObservation(item_id="i1", segment_index=1, segment_text="a", llm_label="L", llm_summary="S"),
-                markov.MarkovAnalysisObservation(item_id="i1", segment_index=2, segment_text="b", llm_label=None, llm_summary=None),
+                markov.MarkovAnalysisObservation(
+                    item_id="i1", segment_index=1, segment_text="a", llm_label="L", llm_summary="S"
+                ),
+                markov.MarkovAnalysisObservation(
+                    item_id="i1",
+                    segment_index=2,
+                    segment_text="b",
+                    llm_label=None,
+                    llm_summary=None,
+                ),
             ],
             predicted_states=[0, 1],
             n_states=2,
             max_exemplars=1,
             config=markov.MarkovAnalysisConfiguration(),
         )
-        markov._assign_state_names(states=states, decoded_paths=[markov.MarkovAnalysisDecodedPath(item_id="i1", state_sequence=[0, 1])], config=markov.MarkovAnalysisConfiguration())
+        markov._assign_state_names(
+            states=states,
+            decoded_paths=[markov.MarkovAnalysisDecodedPath(item_id="i1", state_sequence=[0, 1])],
+            config=markov.MarkovAnalysisConfiguration(),
+        )
     except Exception:
         pass
 
     # topic modeling remaining branches: llm extraction progress + parse failure
     try:
         docs_llm = [
-            topic_modeling.TopicModelingDocument(document_id=f"t{i}", source_item_id="s", text="alpha")
+            topic_modeling.TopicModelingDocument(
+                document_id=f"t{i}", source_item_id="s", text="alpha"
+            )
             for i in range(60)
         ]
         llm_cfg_prog = topic_modeling.TopicModelingLlmExtractionConfig(
@@ -10884,7 +11729,9 @@ def step_exhaust_gaps(context) -> None:
             prompt_template="{text}",
             system_prompt="sys",
         )
-        topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "- one\n- two\n-"
+        topic_modeling.generate_completion = (
+            lambda client, system_prompt, user_prompt: "- one\n- two\n-"
+        )
         try:
             topic_modeling._llm_extract_documents(documents=docs_llm, config=llm_cfg_prog)
         except Exception:
@@ -10895,7 +11742,9 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         # entity removal progress/log path
-        fake_nlp = lambda text: types.SimpleNamespace(ents=[types.SimpleNamespace(start=0, end=1, label_="ORG")])
+        fake_nlp = lambda text: types.SimpleNamespace(
+            ents=[types.SimpleNamespace(start=0, end=1, label_="ORG")]
+        )
         topic_modeling.spacy = types.SimpleNamespace(load=lambda model: fake_nlp)
         ent_cfg = topic_modeling.TopicModelingEntityRemovalConfig(
             enabled=True,
@@ -10935,14 +11784,23 @@ def step_exhaust_gaps(context) -> None:
     except Exception:
         pass
     try:
+
         class _FailJob:
             def __init__(self):
                 self.calls = 0
-            def start_transcription_job(self, **kwargs): pass
+
+            def start_transcription_job(self, **kwargs):
+                pass
+
             def get_transcription_job(self, TranscriptionJobName):
                 self.calls += 1
-                return {"TranscriptionJob": {"TranscriptionJobStatus": "FAILED", "FailureReason": "bad"}}
-            def delete_transcription_job(self, TranscriptionJobName): return None
+                return {
+                    "TranscriptionJob": {"TranscriptionJobStatus": "FAILED", "FailureReason": "bad"}
+                }
+
+            def delete_transcription_job(self, TranscriptionJobName):
+                return None
+
         sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: _FailJob())
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -10955,7 +11813,13 @@ def step_exhaust_gaps(context) -> None:
     try:
         # Deepgram None response
         class _DGNone:
-            def __init__(self, api_key): self.listen = types.SimpleNamespace(v1=types.SimpleNamespace(media=types.SimpleNamespace(transcribe_file=lambda request, **kwargs: None)))
+            def __init__(self, api_key):
+                self.listen = types.SimpleNamespace(
+                    v1=types.SimpleNamespace(
+                        media=types.SimpleNamespace(transcribe_file=lambda request, **kwargs: None)
+                    )
+                )
+
         sys.modules["deepgram"] = types.SimpleNamespace(DeepgramClient=_DGNone)
         DeepgramSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -10974,10 +11838,23 @@ def step_exhaust_gaps(context) -> None:
         )
         fake_sdk = types.SimpleNamespace(
             speech=types.SimpleNamespace(
-                SpeechConfig=type("C", (), {"__init__": lambda self, subscription, region=None, endpoint=None: None}),
-                SpeechRecognizer=type("R", (), {"__init__": lambda self, speech_config, audio_config: None, "recognize_once": lambda self: fake_result}),
+                SpeechConfig=type(
+                    "C",
+                    (),
+                    {"__init__": lambda self, subscription, region=None, endpoint=None: None},
+                ),
+                SpeechRecognizer=type(
+                    "R",
+                    (),
+                    {
+                        "__init__": lambda self, speech_config, audio_config: None,
+                        "recognize_once": lambda self: fake_result,
+                    },
+                ),
                 AudioConfig=type("A", (), {"__init__": lambda self, filename: None}),
-                ResultReason=types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled"),
+                ResultReason=types.SimpleNamespace(
+                    RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled"
+                ),
             )
         )
         sys.modules["azure.cognitiveservices.speech"] = fake_sdk
@@ -10994,16 +11871,25 @@ def step_exhaust_gaps(context) -> None:
     try:
         # Google long_running + confidence branches
         class _LR:
-            def result(self): return types.SimpleNamespace(results=[])
+            def result(self):
+                return types.SimpleNamespace(results=[])
+
         class _GC:
-            def __init__(self): pass
-            def long_running_recognize(self, config, audio): return _LR()
+            def __init__(self):
+                pass
+
+            def long_running_recognize(self, config, audio):
+                return _LR()
+
             def recognize(self, config, audio):
                 alt = types.SimpleNamespace(transcript="gtext", confidence=0.5)
                 res = types.SimpleNamespace(alternatives=[alt])
                 return types.SimpleNamespace(results=[res])
+
         sys.modules["google"] = types.SimpleNamespace()
-        sys.modules["google.cloud"] = types.SimpleNamespace(speech=types.SimpleNamespace(SpeechClient=_GC))
+        sys.modules["google.cloud"] = types.SimpleNamespace(
+            speech=types.SimpleNamespace(SpeechClient=_GC)
+        )
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
@@ -11034,6 +11920,7 @@ def step_exhaust_gaps(context) -> None:
 
     # embeddings backend (dspy) coverage
     try:
+
         class FakeEmbedder:
             def __init__(self, model, batch_size=1, caching=False, **kwargs):
                 self.model = model
@@ -11047,6 +11934,7 @@ def step_exhaust_gaps(context) -> None:
         fake_dspy = types.SimpleNamespace(Embedder=FakeEmbedder)
         sys.modules["dspy"] = fake_dspy
         from biblicus.ai.models import EmbeddingsClientConfig
+
         client_cfg = EmbeddingsClientConfig(
             provider="test",
             model="demo",
@@ -11065,10 +11953,13 @@ def step_exhaust_gaps(context) -> None:
 
     # markov hmmlearn fit/normalize paths with fake dependency
     try:
+
         class _FakeCat:
             def __init__(self, n_components):
                 self.startprob_ = [0.0 for _ in range(n_components)]
-                self.transmat_ = [[1.0 / n_components for _ in range(n_components)] for _ in range(n_components)]
+                self.transmat_ = [
+                    [1.0 / n_components for _ in range(n_components)] for _ in range(n_components)
+                ]
 
             def fit(self, X, lengths):
                 return self
@@ -11084,11 +11975,15 @@ def step_exhaust_gaps(context) -> None:
         sys.modules["hmmlearn.hmm"] = fake_hmm
 
         cfg = markov.MarkovAnalysisConfiguration()
-        cfg.model = cfg.model.model_copy(update={"family": markov.MarkovAnalysisModelFamily.CATEGORICAL, "n_states": 2})
+        cfg.model = cfg.model.model_copy(
+            update={"family": markov.MarkovAnalysisModelFamily.CATEGORICAL, "n_states": 2}
+        )
         markov._fit_and_decode(observations=[0, 1], lengths=[2], config=cfg)
 
         cfg2 = markov.MarkovAnalysisConfiguration()
-        cfg2.model = cfg2.model.model_copy(update={"family": markov.MarkovAnalysisModelFamily.GAUSSIAN, "n_states": 2})
+        cfg2.model = cfg2.model.model_copy(
+            update={"family": markov.MarkovAnalysisModelFamily.GAUSSIAN, "n_states": 2}
+        )
         markov._fit_and_decode(observations=[[0.1], [0.2]], lengths=[2], config=cfg2)
     except Exception:
         pass
@@ -11123,7 +12018,9 @@ def step_exhaust_gaps(context) -> None:
         deepgram_transform._render_deepgram_text(payload=payload, config=cfg2)
         # invalid source validation and missing payload branches
         try:
-            deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config({"source": "bad"})
+            deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config(
+                {"source": "bad"}
+            )
         except Exception:
             pass
         try:
@@ -11163,8 +12060,10 @@ def step_exhaust_gaps(context) -> None:
         class _FakeTranscribe:
             def __init__(self):
                 self.calls = 0
+
             def start_transcription_job(self, **kwargs):
                 self.started = kwargs
+
             def get_transcription_job(self, TranscriptionJobName):
                 self.calls += 1
                 return {
@@ -11173,24 +12072,33 @@ def step_exhaust_gaps(context) -> None:
                         "Transcript": {"TranscriptFileUri": "http://example.com/transcript"},
                     }
                 }
+
             def delete_transcription_job(self, TranscriptionJobName):
                 return None
+
         class _FakeS3:
             def upload_fileobj(self, fh, bucket, key):
                 self.uploaded = (bucket, key)
+
             def delete_object(self, Bucket, Key):
                 self.deleted = (Bucket, Key)
+
         sys.modules["boto3"] = types.SimpleNamespace(
             client=lambda name: _FakeS3() if name == "s3" else _FakeTranscribe()
         )
         import urllib.request
+
         urllib.request.urlopen = lambda url: types.SimpleNamespace(  # type: ignore[assignment]
             __enter__=lambda self: self,
             __exit__=lambda *args: False,
-            read=lambda: json.dumps({"results": {"transcripts": [{"transcript": "aws text"}]}}).encode(),
+            read=lambda: json.dumps(
+                {"results": {"transcripts": [{"transcript": "aws text"}]}}
+            ).encode(),
         )
         aws_corpus = _temp_corpus()
-        aws_item = _fake_audio_item(aws_corpus.root, "clip.mp3").model_copy(update={"media_type": "audio/mpeg"})
+        aws_item = _fake_audio_item(aws_corpus.root, "clip.mp3").model_copy(
+            update={"media_type": "audio/mpeg"}
+        )
         os.environ["AWS_ACCESS_KEY_ID"] = "k"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "s"
         AwsTranscribeSpeechToTextExtractor().extract_text(
@@ -11209,31 +12117,42 @@ def step_exhaust_gaps(context) -> None:
                 self.transcript = text
                 self.words = [{"word": text}]
                 self.to_dict = lambda: {"transcript": text, "words": [{"word": text}]}
+
         class _DGChannel:
             def __init__(self, text="hi"):
                 self.alternatives = [_DGAlt(text)]
+
         class _DGResults:
             def __init__(self, text="hi"):
                 self.channels = [_DGChannel(text)]
+
         class _DGResp:
             def __init__(self, text="hi"):
                 self.results = _DGResults(text)
+
             def to_dict(self):
                 return {"results": {"channels": [{"alternatives": [{"transcript": "dict"}]}]}}
+
         class _DGClient:
             def __init__(self, api_key):
                 self.listen = types.SimpleNamespace(
                     v1=types.SimpleNamespace(
-                        media=types.SimpleNamespace(transcribe_file=lambda request, **kwargs: _DGResp("dg"))
+                        media=types.SimpleNamespace(
+                            transcribe_file=lambda request, **kwargs: _DGResp("dg")
+                        )
                     )
                 )
+
         sys.modules["deepgram"] = types.SimpleNamespace(DeepgramClient=_DGClient)
         dg_corpus = _temp_corpus()
-        dg_item = _fake_audio_item(dg_corpus.root, "clip.ogg").model_copy(update={"media_type": "audio/ogg"})
+        dg_item = _fake_audio_item(dg_corpus.root, "clip.ogg").model_copy(
+            update={"media_type": "audio/ogg"}
+        )
         os.environ["DEEPGRAM_API_KEY"] = "key"
         DeepgramSpeechToTextExtractor().extract_text(
             corpus=dg_corpus, item=dg_item, config={"model": "nova-3"}, previous_extractions=[]
         )
+
         class _BadDGClient:
             def __init__(self, api_key):
                 self.listen = types.SimpleNamespace(
@@ -11241,6 +12160,7 @@ def step_exhaust_gaps(context) -> None:
                         media=types.SimpleNamespace(transcribe_file=lambda request, **kwargs: None)
                     )
                 )
+
         sys.modules["deepgram"] = types.SimpleNamespace(DeepgramClient=_BadDGClient)
         try:
             DeepgramSpeechToTextExtractor().extract_text(
@@ -11254,15 +12174,30 @@ def step_exhaust_gaps(context) -> None:
     try:
         # Azure speech path
         class _AzureRecognizer:
-            def __init__(self, *args, **kwargs): pass
+            def __init__(self, *args, **kwargs):
+                pass
+
             def recognize_once(self):
-                return types.SimpleNamespace(text="azure-ok", reason="recognized", cancellation_details=types.SimpleNamespace(reason="canceled", error_details="err"))
+                return types.SimpleNamespace(
+                    text="azure-ok",
+                    reason="recognized",
+                    cancellation_details=types.SimpleNamespace(
+                        reason="canceled", error_details="err"
+                    ),
+                )
+
         fake_speechsdk = types.SimpleNamespace(
             speech=types.SimpleNamespace(
-                SpeechConfig=type("C", (), {"__init__": lambda self, subscription, region=None, endpoint=None: None}),
+                SpeechConfig=type(
+                    "C",
+                    (),
+                    {"__init__": lambda self, subscription, region=None, endpoint=None: None},
+                ),
                 SpeechRecognizer=_AzureRecognizer,
                 AudioConfig=type("A", (), {"__init__": lambda self, filename: None}),
-                ResultReason=types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled"),
+                ResultReason=types.SimpleNamespace(
+                    RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled"
+                ),
             )
         )
         sys.modules["azure.cognitiveservices.speech"] = fake_speechsdk
@@ -11282,7 +12217,10 @@ def step_exhaust_gaps(context) -> None:
         aldea_corpus = _temp_corpus()
         aldea_item = _fake_audio_item(aldea_corpus.root, "clip.wav")
         AldeaSpeechToTextExtractor().extract_text(
-            corpus=aldea_corpus, item=aldea_item, config={"endpoint": "http://x"}, previous_extractions=[]
+            corpus=aldea_corpus,
+            item=aldea_item,
+            config={"endpoint": "http://x"},
+            previous_extractions=[],
         )
     except Exception:
         pass
@@ -11354,7 +12292,9 @@ def step_exhaust_gaps(context) -> None:
             config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript"),
         )
         try:
-            deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config({"source": "bad"})
+            deepgram_transform.DeepgramTranscriptTransformExtractor().validate_config(
+                {"source": "bad"}
+            )
         except Exception:
             pass
     except Exception:
@@ -11379,7 +12319,11 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         # normalize extraction configuration error paths
-        for bad_config in [{"configuration": "x"}, {"extractor_id": "", "configuration": {}}, {"max_workers": 0}]:
+        for bad_config in [
+            {"configuration": "x"},
+            {"extractor_id": "", "configuration": {}},
+            {"max_workers": 0},
+        ]:
             try:
                 cli._normalize_extraction_configuration(bad_config)  # type: ignore[arg-type]
             except Exception:
@@ -11393,25 +12337,29 @@ def step_exhaust_gaps(context) -> None:
         recipe.parent.mkdir(parents=True, exist_ok=True)
         recipe.write_text("extractor_id: pipeline\nconfiguration: {}\n", encoding="utf-8")
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "1"
-        with mock.patch(
-            "biblicus.cli.load_configuration_view",
-            return_value={"extractor_id": "pipeline"},
-            create=True,
-        ), mock.patch(
-            "biblicus.cli._normalize_extraction_configuration",
-            return_value=("pipeline", {}, None),
-        ), mock.patch(
-            "biblicus.cli.load_or_build_extraction_snapshot",
-            return_value=ExtractionSnapshotManifest(
-                snapshot_id="s-auto",
-                configuration=create_extraction_configuration_manifest(
-                    extractor_id="pipeline", name="default", configuration={}
+        with (
+            mock.patch(
+                "biblicus.cli.load_configuration_view",
+                return_value={"extractor_id": "pipeline"},
+                create=True,
+            ),
+            mock.patch(
+                "biblicus.cli._normalize_extraction_configuration",
+                return_value=("pipeline", {}, None),
+            ),
+            mock.patch(
+                "biblicus.cli.load_or_build_extraction_snapshot",
+                return_value=ExtractionSnapshotManifest(
+                    snapshot_id="s-auto",
+                    configuration=create_extraction_configuration_manifest(
+                        extractor_id="pipeline", name="default", configuration={}
+                    ),
+                    corpus_uri=str(temp_corpus.root.as_uri()),
+                    catalog_generated_at="t",
+                    created_at="t",
+                    items=[],
+                    stats={},
                 ),
-                corpus_uri=str(temp_corpus.root.as_uri()),
-                catalog_generated_at="t",
-                created_at="t",
-                items=[],
-                stats={},
             ),
         ):
             cli._resolve_extraction_snapshot_for_analysis(
@@ -11424,20 +12372,29 @@ def step_exhaust_gaps(context) -> None:
             )
         except Exception:
             pass
+
         # dependency plan execution branches
         class _FakePlan:
             def __init__(self, status, tasks):
                 self.status = status
                 self.tasks = tasks
-                self.root = types.SimpleNamespace(kind="query", reason="blocked" if status == "blocked" else "")
+                self.root = types.SimpleNamespace(
+                    kind="query", reason="blocked" if status == "blocked" else ""
+                )
 
         try:
-            cli._execute_dependency_plan(_FakePlan("complete", []), corpus=temp_corpus, label="L", mode="auto")
-            cli._execute_dependency_plan(_FakePlan("blocked", []), corpus=temp_corpus, label="L", mode="auto")
+            cli._execute_dependency_plan(
+                _FakePlan("complete", []), corpus=temp_corpus, label="L", mode="auto"
+            )
+            cli._execute_dependency_plan(
+                _FakePlan("blocked", []), corpus=temp_corpus, label="L", mode="auto"
+            )
         except Exception:
             pass
         try:
-            cli._execute_dependency_plan(_FakePlan("ready", []), corpus=temp_corpus, label="L", mode="none")
+            cli._execute_dependency_plan(
+                _FakePlan("ready", []), corpus=temp_corpus, label="L", mode="none"
+            )
         except Exception:
             pass
     finally:
@@ -11452,8 +12409,14 @@ def step_exhaust_gaps(context) -> None:
         dataset="demo",
         documents_evaluated=2,
         pipelines=[
-            {"name": "p1", "metrics": {"f1": 0.4, "recall": 0.5, "precision": 0.3, "lcs_ratio": 0.2}},
-            {"name": "p2", "metrics": {"f1": 0.6, "recall": 0.4, "precision": 0.7, "lcs_ratio": 0.8}},
+            {
+                "name": "p1",
+                "metrics": {"f1": 0.4, "recall": 0.5, "precision": 0.3, "lcs_ratio": 0.2},
+            },
+            {
+                "name": "p2",
+                "metrics": {"f1": 0.6, "recall": 0.4, "precision": 0.7, "lcs_ratio": 0.8},
+            },
         ],
         best_pipeline="p2",
         best_score=0.6,
@@ -11465,7 +12428,12 @@ def step_exhaust_gaps(context) -> None:
         category_name="receipts",
         dataset="demo",
         documents_evaluated=1,
-        pipelines=[{"name": "p1", "metrics": {"f1": 0.5, "recall": 0.6, "precision": 0.4, "lcs_ratio": 0.1}}],
+        pipelines=[
+            {
+                "name": "p1",
+                "metrics": {"f1": 0.5, "recall": 0.6, "precision": 0.4, "lcs_ratio": 0.1},
+            }
+        ],
         best_pipeline="p1",
         best_score=0.5,
         primary_metric="recall",
@@ -11520,7 +12488,9 @@ def step_exhaust_gaps(context) -> None:
     try:
         # topic modeling LLM extraction branches (progress logging and empty outputs)
         docs = [
-            topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="s1", text="text one"),
+            topic_modeling.TopicModelingDocument(
+                document_id="d1", source_item_id="s1", text="text one"
+            ),
             topic_modeling.TopicModelingDocument(document_id="d2", source_item_id="s2", text=""),
         ]
         llm_cfg = topic_modeling.TopicModelingLlmExtractionConfig(
@@ -11531,12 +12501,16 @@ def step_exhaust_gaps(context) -> None:
             system_prompt="sys",
         )
         original_topic_generate = topic_modeling.generate_completion
-        topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "itemized\n- one\n- two"
+        topic_modeling.generate_completion = (
+            lambda client, system_prompt, user_prompt: "itemized\n- one\n- two"
+        )
         try:
             topic_modeling._llm_extract_documents(documents=docs, config=llm_cfg)
         except Exception:
             pass
-        llm_cfg_item = llm_cfg.model_copy(update={"method": topic_modeling.TopicModelingLlmExtractionMethod.ITEMIZED})
+        llm_cfg_item = llm_cfg.model_copy(
+            update={"method": topic_modeling.TopicModelingLlmExtractionMethod.ITEMIZED}
+        )
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: ""
         try:
             topic_modeling._llm_extract_documents(documents=docs, config=llm_cfg_item)
@@ -11581,6 +12555,7 @@ def step_exhaust_gaps(context) -> None:
         def __init__(self):
             self.huggingface = None
             self.openai = types.SimpleNamespace(api_key="cfg-openai-only")
+
     inference.load_user_config = lambda: _CfgOpenaiOnly()  # type: ignore[assignment]
     os.environ.pop("OPENAI_API_KEY", None)
     inference.resolve_api_key(provider=inference.ApiProvider.OPENAI)
@@ -11618,10 +12593,14 @@ def step_exhaust_gaps(context) -> None:
         text_dir = snap_sample / "text"
         text_dir.mkdir(parents=True, exist_ok=True)
         (text_dir / "item2.txt").write_text("hello two", encoding="utf-8")
-        item2 = manifest_obj.items[0].model_copy(update={"item_id": "item-2", "final_text_relpath": "text/item2.txt"})
+        item2 = manifest_obj.items[0].model_copy(
+            update={"item_id": "item-2", "final_text_relpath": "text/item2.txt"}
+        )
         manifest_obj.items.append(item2)
         write_extraction_snapshot_manifest(snapshot_dir=snap_sample, manifest=manifest_obj)
-        cfg_collect = markov_mod.MarkovAnalysisTextSourceConfig(sample_size=1, min_text_characters=None)
+        cfg_collect = markov_mod.MarkovAnalysisTextSourceConfig(
+            sample_size=1, min_text_characters=None
+        )
         markov_mod._collect_documents(
             corpus=corpus_sample,
             extraction_snapshot=parse_extraction_snapshot_reference("pipeline:snap-sample"),
@@ -11681,12 +12660,21 @@ def step_exhaust_gaps(context) -> None:
         best_pipeline="",
         best_score=0.0,
         primary_metric="f1",
+        primary_score=0.0,
         processing_time_seconds=0.1,
     )
     runner = benchmark_runner.BenchmarkRunner(
         config=benchmark_runner.BenchmarkConfig(
             benchmark_name="b",
-            categories={"c": benchmark_runner.CategoryConfig(name="c", dataset="d", corpus_path=root, ground_truth_subdir="gt", primary_metric="f1")},
+            categories={
+                "c": benchmark_runner.CategoryConfig(
+                    name="c",
+                    dataset="d",
+                    corpus_path=root,
+                    ground_truth_subdir="gt",
+                    primary_metric="f1",
+                )
+            },
             pipelines=[],
             aggregate_weights={},
         )
@@ -11727,7 +12715,11 @@ def step_exhaust_gaps(context) -> None:
         for i in range(1, 1201)
     ]
     cache_ctx_many = markov_mod._LlmObservationCacheContext(
-        enabled=True, cache_id="cid2", cache_dir=root / "cache2", cached_segments=0, generated_segments=0
+        enabled=True,
+        cache_id="cid2",
+        cache_dir=root / "cache2",
+        cached_segments=0,
+        generated_segments=0,
     )
     llm_cfg_many = markov_mod.MarkovAnalysisConfiguration(
         llm_observations={
@@ -11740,10 +12732,16 @@ def step_exhaust_gaps(context) -> None:
         embeddings={"enabled": False},
         topic_modeling={"enabled": False},
     )
-    markov_mod.generate_completion = lambda client, system_prompt, user_prompt: '{"label":"x","summary":"s","label_confidence":0.1}'
-    markov_mod._build_observations(segments=many_segments, config=llm_cfg_many, cache_context=cache_ctx_many)
+    markov_mod.generate_completion = (
+        lambda client, system_prompt, user_prompt: '{"label":"x","summary":"s","label_confidence":0.1}'
+    )
+    markov_mod._build_observations(
+        segments=many_segments, config=llm_cfg_many, cache_context=cache_ctx_many
+    )
     # topic modeling LLM itemize empty path
-    item_docs = [topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="s1", text="text")]
+    item_docs = [
+        topic_modeling.TopicModelingDocument(document_id="d1", source_item_id="s1", text="text")
+    ]
     topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "[]"
     try:
         topic_modeling._llm_extraction(
@@ -11768,13 +12766,17 @@ def step_exhaust_gaps(context) -> None:
             entity_types={"PERSON"},
             replace_with="X",
         )
+
         class _Doc:
             def __init__(self):
                 self.ents = [
                     types.SimpleNamespace(label_="PERSON", start_char=0, end_char=5),
                 ]
+
         class _Spacy:
-            def load(self, model): return lambda text: _Doc()
+            def load(self, model):
+                return lambda text: _Doc()
+
         original_spacy = sys.modules.get("spacy")
         sys.modules["spacy"] = _Spacy()
         many_docs = [
@@ -11802,7 +12804,9 @@ def step_exhaust_gaps(context) -> None:
         else:
             sys.modules["spacy"] = original_spacy
         jsonl_path = root / "docs.jsonl"
-        jsonl_path.write_text("{\"document_id\":\"d\",\"source_item_id\":\"s\",\"text\":\"x\"}\n\n", encoding="utf-8")
+        jsonl_path.write_text(
+            '{"document_id":"d","source_item_id":"s","text":"x"}\n\n', encoding="utf-8"
+        )
         topic_modeling._read_documents_jsonl(jsonl_path)
         topic_modeling.generate_completion = lambda client, system_prompt, user_prompt: "ok"
         many_docs_llm = [
@@ -11820,19 +12824,32 @@ def step_exhaust_gaps(context) -> None:
                 prompt_template="{text}",
             ),
         )
+
         class _FakeTopicModel:
-            def fit_transform(self, texts): return [0 for _ in texts], None
+            def fit_transform(self, texts):
+                return [0 for _ in texts], None
+
         class _FakeBERTopic:
-            def __init__(self, **kwargs): pass
-            def fit_transform(self, texts): return [0 for _ in texts], None
+            def __init__(self, **kwargs):
+                pass
+
+            def fit_transform(self, texts):
+                return [0 for _ in texts], None
+
         original_bertopic = getattr(topic_modeling, "BERTopic", None)
         original_event = topic_modeling.threading.Event
+
         class _Event:
-            def __init__(self): self.calls = 0
+            def __init__(self):
+                self.calls = 0
+
             def wait(self, timeout):
                 self.calls += 1
                 return self.calls > 1
-            def set(self): return None
+
+            def set(self):
+                return None
+
         try:
             topic_modeling.BERTopic = _FakeBERTopic
             topic_modeling.threading.Event = _Event
@@ -11936,14 +12953,23 @@ def step_exhaust_gaps(context) -> None:
             markov_mod._segment_documents(
                 documents=docs,
                 config=markov_mod.MarkovAnalysisConfiguration(
-                    segmentation={"method": "span_markup", "max_workers": 2, "span_markup": {"client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "{text}"}},
+                    segmentation={
+                        "method": "span_markup",
+                        "max_workers": 2,
+                        "span_markup": {
+                            "client": {"provider": "openai", "model": "gpt-4o"},
+                            "prompt_template": "{text}",
+                        },
+                    },
                 ),
             )
         except Exception:
             pass
         markov_mod._build_states(
             segments=[markov_mod.MarkovAnalysisSegment(item_id="i", segment_index=1, text="x")],
-            observations=[markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="")],
+            observations=[
+                markov_mod.MarkovAnalysisObservation(item_id="i", segment_index=1, segment_text="")
+            ],
             predicted_states=[0],
             n_states=1,
             max_exemplars=1,
@@ -11982,7 +13008,9 @@ def step_exhaust_gaps(context) -> None:
             markov_mod._collect_documents(
                 corpus=tri_corpus,
                 extraction_snapshot=tri_ref,
-                config=markov_mod.MarkovAnalysisTextSourceConfig(sample_size=1, min_text_characters=1),
+                config=markov_mod.MarkovAnalysisTextSourceConfig(
+                    sample_size=1, min_text_characters=1
+                ),
             )
         markov_mod.apply_text_extract = lambda request: (_ for _ in ()).throw(ValueError("bad"))
         try:
@@ -12003,7 +13031,9 @@ def step_exhaust_gaps(context) -> None:
         except Exception:
             pass
         markov_mod.generate_completion = lambda client, system_prompt, user_prompt: "[]"
-        markov_mod.apply_text_extract = lambda request: (_ for _ in ()).throw(ValueError("non-transient"))
+        markov_mod.apply_text_extract = lambda request: (_ for _ in ()).throw(
+            ValueError("non-transient")
+        )
         markov_mod._segment_documents(
             documents=[markov_mod._Document(item_id="y", text="alpha")],
             config=markov_mod.MarkovAnalysisConfiguration(
@@ -12018,9 +13048,9 @@ def step_exhaust_gaps(context) -> None:
                 },
             ),
         )
-        markov_mod.generate_completion = lambda client, system_prompt, user_prompt: (_ for _ in ()).throw(
-            ValueError("LLM fail")
-        )
+        markov_mod.generate_completion = lambda client, system_prompt, user_prompt: (
+            _ for _ in ()
+        ).throw(ValueError("LLM fail"))
         markov_mod._build_observations(
             segments=[markov_mod.MarkovAnalysisSegment(item_id="z", segment_index=1, text="seg")],
             config=markov_mod.MarkovAnalysisConfiguration(
@@ -12073,9 +13103,13 @@ def step_exhaust_gaps(context) -> None:
             ),
         )
         ent = types.SimpleNamespace(label_="ORG", start_char=0, end_char=5)
-        tm_mod._remove_entities_from_text(text="acme corp", entities=[ent], entity_types={"ORG"}, replace_with="[ORG]")
+        tm_mod._remove_entities_from_text(
+            text="acme corp", entities=[ent], entity_types={"ORG"}, replace_with="[ORG]"
+        )
         bad_ent = types.SimpleNamespace(label_="ORG", start_char=2, end_char=2)
-        tm_mod._remove_entities_from_text(text="acme", entities=[bad_ent], entity_types={"ORG"}, replace_with="")
+        tm_mod._remove_entities_from_text(
+            text="acme", entities=[bad_ent], entity_types={"ORG"}, replace_with=""
+        )
         tm_mod._parse_itemized_response('["a","b"]')
         tm_mod._parse_itemized_response("not json")
         tm_mod._parse_itemized_response('"[\\"x\\"]"')
@@ -12177,6 +13211,7 @@ def step_exhaust_gaps(context) -> None:
             write_extraction_latest_pointer,
             build_extraction_snapshot,
         )
+
         analysis_corpus = _temp_corpus()
         recipe_path = cli_mod._default_extraction_recipe_path(analysis_corpus)
         recipe_path.parent.mkdir(parents=True, exist_ok=True)
@@ -12215,7 +13250,9 @@ def step_exhaust_gaps(context) -> None:
             extractor_id="pipeline", snapshot_id=snapshot_manifest.snapshot_id
         )
         snapshot_dir.mkdir(parents=True, exist_ok=True)
-        write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest)
+        write_extraction_latest_pointer(
+            extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest
+        )
         cli_mod._resolve_extraction_snapshot_for_analysis(
             corpus=missing_corpus,
             extraction_snapshot=None,
@@ -12224,6 +13261,7 @@ def step_exhaust_gaps(context) -> None:
         bench_root = root / "bench-cli"
         bench_root.mkdir(parents=True, exist_ok=True)
         import subprocess as subprocess_mod
+
         original_run = subprocess_mod.run
         subprocess_mod.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1)
         try:
@@ -12244,9 +13282,7 @@ def step_exhaust_gaps(context) -> None:
         gt_dir = meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("text", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(
-            argparse.Namespace(corpus_dir=str(bench_root))
-        )
+        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(bench_root)))
         # benchmark report with missing file glob
         try:
             cli_mod.cmd_benchmark_report(
@@ -12412,11 +13448,14 @@ def step_exhaust_gaps(context) -> None:
         sync_corpus.ingest_file(sync_path)
         sync_corpus.catalog_path.write_text("{}", encoding="utf-8")
         import builtins as builtins_mod
+
         original_import = builtins_mod.__import__
+
         def _fail_import(name, *args, **kwargs):
             if name == "biblicus.sync.amplify_publisher":
                 raise ImportError("fail")
             return original_import(name, *args, **kwargs)
+
         builtins_mod.__import__ = _fail_import
         try:
             build_extraction_snapshot(
@@ -12429,6 +13468,7 @@ def step_exhaust_gaps(context) -> None:
         finally:
             builtins_mod.__import__ = original_import
         import biblicus.sync.amplify_publisher as amplify_mod
+
         class _BadPublisher:
             def __init__(self, name):
                 _ = name
@@ -12437,6 +13477,7 @@ def step_exhaust_gaps(context) -> None:
                 _ = args
                 _ = kwargs
                 raise RuntimeError("sync fail")
+
         original_publisher = amplify_mod.AmplifyPublisher
         amplify_mod.AmplifyPublisher = _BadPublisher
         try:
@@ -12465,6 +13506,7 @@ def step_exhaust_gaps(context) -> None:
             SimpleEntitiesGraphExtractor,
             SimpleEntityGraphConfig,
         )
+
         graph_corpus = _temp_corpus()
         item = CatalogItem(
             id="g1",
@@ -12500,6 +13542,7 @@ def step_exhaust_gaps(context) -> None:
 
     try:
         from biblicus.knowledge_base import KnowledgeBase
+
         kb_root = root / "kb_src"
         kb_root.mkdir(parents=True, exist_ok=True)
         (kb_root / "doc.txt").write_text("text", encoding="utf-8")
@@ -12511,7 +13554,15 @@ def step_exhaust_gaps(context) -> None:
         pass
     try:
         from biblicus.graph import neo4j as neo_mod
-        settings = neo_mod.Neo4jSettings(auto_start=True, container_name="c", bolt_uri="bolt", http_uri="http", username="u", password="p")
+
+        settings = neo_mod.Neo4jSettings(
+            auto_start=True,
+            container_name="c",
+            bolt_uri="bolt",
+            http_uri="http",
+            username="u",
+            password="p",
+        )
         neo_mod.shutil.which = lambda *_args, **_kwargs: "docker"
         neo_mod._container_running = lambda name: True
         neo_mod.ensure_neo4j_running(settings)
@@ -12519,6 +13570,7 @@ def step_exhaust_gaps(context) -> None:
         pass
     try:
         from biblicus.workflow import _list_retrieval_snapshots
+
         wf_corpus = _temp_corpus()
         retr_dir = wf_corpus.retrieval_dir / "scan" / "snap1"
         retr_dir.mkdir(parents=True, exist_ok=True)
@@ -12530,6 +13582,7 @@ def step_exhaust_gaps(context) -> None:
         pass
     try:
         from biblicus.migration import _move_entry, _select_latest_manifest
+
         temp_root = Path(tempfile.mkdtemp(prefix="mig-"))
         dest = temp_root / "dest.txt"
         dest.write_text("dest", encoding="utf-8")
@@ -12542,19 +13595,33 @@ def step_exhaust_gaps(context) -> None:
         raw_root = temp_root / "raw"
         raw_root.mkdir(parents=True, exist_ok=True)
         (raw_root / "keep.txt").write_text("keep", encoding="utf-8")
-        stats = {"moved_raw_items": 0, "moved_extraction_snapshots": 0, "moved_graph_snapshots": 0, "moved_analysis_snapshots": 0, "moved_retrieval_snapshots": 0, "updated_catalog_items": 0}
+        stats = {
+            "moved_raw_items": 0,
+            "moved_extraction_snapshots": 0,
+            "moved_graph_snapshots": 0,
+            "moved_analysis_snapshots": 0,
+            "moved_retrieval_snapshots": 0,
+            "updated_catalog_items": 0,
+        }
         from biblicus import migration as mig_mod
+
         mig_mod._migrate_raw_items(root=temp_root, force=True, stats=stats)
         snap_root = temp_root / ".biblicus" / "snapshots" / "retrieval"
         snap_root.mkdir(parents=True, exist_ok=True)
         (snap_root / "snap1").mkdir(parents=True, exist_ok=True)
         (snap_root / "snap1" / "manifest.json").write_text("{}", encoding="utf-8")
-        mig_mod._migrate_snapshots(root=temp_root, meta_dir=temp_root / ".biblicus", force=True, stats=stats)
+        mig_mod._migrate_snapshots(
+            root=temp_root, meta_dir=temp_root / ".biblicus", force=True, stats=stats
+        )
         extractor_dir = temp_root / "extractor"
         (extractor_dir / "snap-a").mkdir(parents=True, exist_ok=True)
         (extractor_dir / "snap-b").mkdir(parents=True, exist_ok=True)
-        (extractor_dir / "snap-a" / "manifest.json").write_text(json.dumps({"snapshot_id": "a", "created_at": "2024-01-02"}), encoding="utf-8")
-        (extractor_dir / "snap-b" / "manifest.json").write_text(json.dumps({"snapshot_id": "b", "created_at": "2024-01-01"}), encoding="utf-8")
+        (extractor_dir / "snap-a" / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "a", "created_at": "2024-01-02"}), encoding="utf-8"
+        )
+        (extractor_dir / "snap-b" / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "b", "created_at": "2024-01-01"}), encoding="utf-8"
+        )
         _select_latest_manifest(extractor_dir)
     except Exception:
         pass
@@ -12589,6 +13656,7 @@ def step_exhaust_gaps(context) -> None:
         os.environ.pop("AMPLIFY_API_KEY", None)
         os.environ["AMPLIFY_S3_BUCKET"] = "env-bucket"
         AmplifyPublisher("coverage-corpus")
+
         class _Item:
             id = "item"
             relpath = "item.txt"
@@ -12599,6 +13667,7 @@ def step_exhaust_gaps(context) -> None:
             tags = []
             metadata = {}
             source_uri = "file://item.txt"
+
         original_sleep = amplify_mod.time.sleep
         try:
             amplify_mod.time.sleep = lambda *_args, **_kwargs: None
@@ -12644,8 +13713,11 @@ def step_exhaust_dotyaml(context) -> None:
     # loader with dotenv missing and absolute path
     abs_env = root / "none.env"
     abs_env.write_text("ABS_ONLY=1\n", encoding="utf-8")
-    dot_loader.load_config(yaml_path=None, prefix="APP", dotenv_path=abs_env, load_dotenv_first=True)
+    dot_loader.load_config(
+        yaml_path=None, prefix="APP", dotenv_path=abs_env, load_dotenv_first=True
+    )
     import importlib as _importlib
+
     original_dotenv = sys.modules.get("dotenv")
     fake_dotenv = types.ModuleType("dotenv")
     fake_dotenv.load_dotenv = lambda *args, **kwargs: None
@@ -12657,10 +13729,12 @@ def step_exhaust_dotyaml(context) -> None:
         sys.modules["dotenv"] = original_dotenv
     sys.modules.pop("dotenv", None)
     original_import = builtins.__import__
+
     def _block_dotenv(name, *args, **kwargs):
         if name == "dotenv":
             raise ImportError("blocked")
         return original_import(name, *args, **kwargs)
+
     builtins.__import__ = _block_dotenv
     _importlib.reload(dot_loader)
     builtins.__import__ = original_import
@@ -12678,7 +13752,7 @@ def step_exhaust_dotyaml(context) -> None:
     except Exception:
         pass
     config_yaml = root / "config.yml"
-    config_yaml.write_text("service:\n  host: \"{{PRESENT_ENV}}\"\n  port: 123\n", encoding="utf-8")
+    config_yaml.write_text('service:\n  host: "{{PRESENT_ENV}}"\n  port: 123\n', encoding="utf-8")
     os.environ["APP_SERVICE_HOST"] = "existing"
     dot_loader.load_config(
         yaml_path=config_yaml,
@@ -12696,7 +13770,13 @@ def step_exhaust_dotyaml(context) -> None:
     # dotenv absolute + override path
     env_abs = root / "abs.env"
     env_abs.write_text("APP_ABS=1\n", encoding="utf-8")
-    dot_loader.load_config(yaml_path=config_yaml, prefix="APP", dotenv_path=env_abs, load_dotenv_first=True, override=False)
+    dot_loader.load_config(
+        yaml_path=config_yaml,
+        prefix="APP",
+        dotenv_path=env_abs,
+        load_dotenv_first=True,
+        override=False,
+    )
     # loader set_env_vars override false path
     os.environ["APP_NESTED_K"] = "keep"
     loader = dot_loader.ConfigLoader(prefix="APP", dotenv_path=None, load_dotenv_first=False)
@@ -12706,7 +13786,9 @@ def step_exhaust_dotyaml(context) -> None:
     loader.load_from_yaml(root / "missing.yml")
     loader.load_from_env()
     # transformer conversions
-    dot_transformer.unflatten_env_vars({"APP_FOO_BAR": "true", "APP_FOO_LIST": "1,2", "APP_NUM": "-1.5"}, prefix="APP")
+    dot_transformer.unflatten_env_vars(
+        {"APP_FOO_BAR": "true", "APP_FOO_LIST": "1,2", "APP_NUM": "-1.5"}, prefix="APP"
+    )
     dot_transformer.convert_string_to_value("not-json")
     dot_transformer.convert_string_to_value("12")
     dot_transformer.convert_string_to_value("12.5")
@@ -12770,27 +13852,55 @@ def step_exhaust_stt(context) -> None:
         os.environ["AWS_ACCESS_KEY_ID"] = "k"
         os.environ["AWS_SECRET_ACCESS_KEY"] = "s"
         import urllib.request
+
         class _OkTranscribe:
-            def __init__(self): self.args = None
-            def start_transcription_job(self, **kwargs): self.args = kwargs
+            def __init__(self):
+                self.args = None
+
+            def start_transcription_job(self, **kwargs):
+                self.args = kwargs
+
             def get_transcription_job(self, TranscriptionJobName):
-                return {"TranscriptionJob": {"TranscriptionJobStatus": "COMPLETED", "Transcript": {"TranscriptFileUri": "http://example.com/transcript"}}}
-            def delete_transcription_job(self, TranscriptionJobName): raise Exception("del")
+                return {
+                    "TranscriptionJob": {
+                        "TranscriptionJobStatus": "COMPLETED",
+                        "Transcript": {"TranscriptFileUri": "http://example.com/transcript"},
+                    }
+                }
+
+            def delete_transcription_job(self, TranscriptionJobName):
+                raise Exception("del")
+
         class _OkS3:
-            def upload_fileobj(self, fh, bucket, key): pass
-            def delete_object(self, Bucket, Key): raise Exception("del")
-        sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: _OkS3() if name=="s3" else _OkTranscribe())
+            def upload_fileobj(self, fh, bucket, key):
+                pass
+
+            def delete_object(self, Bucket, Key):
+                raise Exception("del")
+
+        sys.modules["boto3"] = types.SimpleNamespace(
+            client=lambda name: _OkS3() if name == "s3" else _OkTranscribe()
+        )
         urllib.request.urlopen = lambda url: types.SimpleNamespace(
             __enter__=lambda self: self,
             __exit__=lambda *args: False,
-            read=lambda: json.dumps({"results":{"transcripts":[{"transcript":"x"}], "speaker_labels":{"speakers":2}}}).encode(),
+            read=lambda: json.dumps(
+                {
+                    "results": {
+                        "transcripts": [{"transcript": "x"}],
+                        "speaker_labels": {"speakers": 2},
+                    }
+                }
+            ).encode(),
         )
-        aws_item = _fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/m4a"})
+        aws_item = _fake_audio_item(_temp_corpus().root).model_copy(
+            update={"media_type": "audio/m4a"}
+        )
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=aws_item,
             config={
-                "s3_bucket":"b",
+                "s3_bucket": "b",
                 "identify_speakers": True,
                 "max_speakers": 2,
                 "show_alternatives": True,
@@ -12837,7 +13947,9 @@ def step_exhaust_stt(context) -> None:
             config={"profanity_option": "raw"},
             previous_extractions=[],
         )
-        fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(reason="other")
+        fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(
+            reason="other"
+        )
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
@@ -12869,29 +13981,57 @@ def step_exhaust_stt(context) -> None:
         pass
 
     try:
+
         class _Alt:
-            def __init__(self): self.transcript = "g text"; self.confidence = 0.9
+            def __init__(self):
+                self.transcript = "g text"
+                self.confidence = 0.9
+
         class _Res:
-            def __init__(self): self.alternatives = [_Alt()]
+            def __init__(self):
+                self.alternatives = [_Alt()]
+
         class _Resp:
-            def __init__(self): self.results = [_Res()]
+            def __init__(self):
+                self.results = [_Res()]
+
         class _SpeechConfig:
             class RecognitionConfig:
                 class AudioEncoding:
-                    FLAC=1; LINEAR16=2; MP3=3; OGG_OPUS=4; WEBM_OPUS=5
-                def __init__(self, **kwargs): pass
+                    FLAC = 1
+                    LINEAR16 = 2
+                    MP3 = 3
+                    OGG_OPUS = 4
+                    WEBM_OPUS = 5
+
+                def __init__(self, **kwargs):
+                    pass
+
         sys.modules["google"] = types.SimpleNamespace()
         sys.modules["google.cloud"] = types.SimpleNamespace(speech=_SpeechConfig)
-        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = lambda enable_speaker_diarization=True: types.SimpleNamespace()
-        sys.modules["google.cloud"].speech.RecognitionAudio = type("A",(object,),{"__init__":lambda self, content=None:None})
+        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = (
+            lambda enable_speaker_diarization=True: types.SimpleNamespace()
+        )
+        sys.modules["google.cloud"].speech.RecognitionAudio = type(
+            "A", (object,), {"__init__": lambda self, content=None: None}
+        )
+
         class _Client:
-            def recognize(self, config, audio): return _Resp()
+            def recognize(self, config, audio):
+                return _Resp()
+
         sys.modules["google.cloud"].speech.SpeechClient = _Client
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(context.coverage_root / "creds.json")
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/ogg"}),
-            config={"enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2},
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/ogg"}
+            ),
+            config={
+                "enable_word_time_offsets": True,
+                "enable_speaker_diarization": True,
+                "diarization_speaker_count": 2,
+            },
             previous_extractions=[],
         )
     except Exception:
@@ -12915,16 +14055,31 @@ def step_exhaust_stt(context) -> None:
         pass
 
     try:
+
         class _RespDictFail:
-            def to_json(self): raise ValueError("bad")
-            def model_dump(self): raise ValueError("bad")
-            def dict(self): raise ValueError("bad")
+            def to_json(self):
+                raise ValueError("bad")
+
+            def model_dump(self):
+                raise ValueError("bad")
+
+            def dict(self):
+                raise ValueError("bad")
+
         deepgram_stt._deepgram_response_to_dict(_RespDictFail())
         deepgram_stt._deepgram_response_to_dict(types.SimpleNamespace(to_json=lambda: "bad json"))
-        deepgram_stt._deepgram_response_to_dict(types.SimpleNamespace(model_dump=lambda: (_ for _ in ()).throw(ValueError("x"))))
-        deepgram_stt._deepgram_response_to_dict(types.SimpleNamespace(dict=lambda: (_ for _ in ()).throw(ValueError("x"))))
-        deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(model_dump=lambda: (_ for _ in ()).throw(ValueError("x"))))
-        deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(dict=lambda: (_ for _ in ()).throw(ValueError("x"))))
+        deepgram_stt._deepgram_response_to_dict(
+            types.SimpleNamespace(model_dump=lambda: (_ for _ in ()).throw(ValueError("x")))
+        )
+        deepgram_stt._deepgram_response_to_dict(
+            types.SimpleNamespace(dict=lambda: (_ for _ in ()).throw(ValueError("x")))
+        )
+        deepgram_stt._normalize_deepgram_value(
+            types.SimpleNamespace(model_dump=lambda: (_ for _ in ()).throw(ValueError("x")))
+        )
+        deepgram_stt._normalize_deepgram_value(
+            types.SimpleNamespace(dict=lambda: (_ for _ in ()).throw(ValueError("x")))
+        )
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(__dict__={"k": "v"}))
     except Exception:
         pass
@@ -12933,7 +14088,17 @@ def step_exhaust_stt(context) -> None:
         payload = {
             "results": {
                 "channels": [
-                    {"alternatives": [{"transcript": "hello", "utterances": [{"speaker": 1, "channel": 0, "transcript": "hi"}, "bad"]}]},
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "hello",
+                                "utterances": [
+                                    {"speaker": 1, "channel": 0, "transcript": "hi"},
+                                    "bad",
+                                ],
+                            }
+                        ]
+                    },
                     {"alternatives": []},
                 ],
                 "words": [
@@ -12945,11 +14110,15 @@ def step_exhaust_stt(context) -> None:
         }
         deepgram_transform._render_deepgram_text(
             payload=payload,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript", channels=[0]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="transcript", channels=[0]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="utterances", channels=[0], speakers=[1]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="utterances", channels=[0], speakers=[1]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload,
@@ -12961,7 +14130,14 @@ def step_exhaust_stt(context) -> None:
             "results": {
                 "channels": [
                     {"alternatives": []},
-                    {"alternatives": [{"transcript": "", "utterances": [{"speaker": 2, "channel": 1, "transcript": "x"}]}]},
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "",
+                                "utterances": [{"speaker": 2, "channel": 1, "transcript": "x"}],
+                            }
+                        ]
+                    },
                 ],
                 "utterances": [
                     {"speaker": 1, "channel": 0, "text": ""},
@@ -12974,7 +14150,9 @@ def step_exhaust_stt(context) -> None:
         }
         deepgram_transform._render_deepgram_text(
             payload=payload_alt,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="utterances", channels=[1], speakers=[2]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="utterances", channels=[1], speakers=[2]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload_alt,
@@ -12985,29 +14163,73 @@ def step_exhaust_stt(context) -> None:
         payload_words = {
             "results": {
                 "channels": [
-                    {"alternatives": [{"transcript": "t", "utterances": ["bad", {"speaker": 2, "channel": 0, "transcript": "skip"}, {"speaker": 1, "channel": 2, "transcript": "skip2"}, {"speaker": 1, "channel": 0, "transcript": ""}, {"speaker": 1, "channel": 0, "transcript": "ok"}], "words": ["bad", {"word": "a", "speaker": 1, "channel": 0}, {"word": "b", "speaker": 2, "channel": 0}, {"word": "", "speaker": 1, "channel": 0}, {"word": "c", "speaker": 1, "channel": 0}]}]}
+                    {
+                        "alternatives": [
+                            {
+                                "transcript": "t",
+                                "utterances": [
+                                    "bad",
+                                    {"speaker": 2, "channel": 0, "transcript": "skip"},
+                                    {"speaker": 1, "channel": 2, "transcript": "skip2"},
+                                    {"speaker": 1, "channel": 0, "transcript": ""},
+                                    {"speaker": 1, "channel": 0, "transcript": "ok"},
+                                ],
+                                "words": [
+                                    "bad",
+                                    {"word": "a", "speaker": 1, "channel": 0},
+                                    {"word": "b", "speaker": 2, "channel": 0},
+                                    {"word": "", "speaker": 1, "channel": 0},
+                                    {"word": "c", "speaker": 1, "channel": 0},
+                                ],
+                            }
+                        ]
+                    }
                 ],
             }
         }
         deepgram_transform._render_deepgram_text(
             payload=payload_words,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="utterances", channels=[0], speakers=[1]),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="utterances", channels=[0], speakers=[1]
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload=payload_words,
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="words", channels=[0], include_speaker_labels=True),
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="words", channels=[0], include_speaker_labels=True
+            ),
         )
         deepgram_transform._render_deepgram_text(
             payload={"results": {"channels": [{"alternatives": []}]}},
             config=deepgram_transform.DeepgramTranscriptTransformConfig(source="transcript"),
         )
         deepgram_transform._render_deepgram_text(
-            payload={"results": {"channels": [{"alternatives": [{"utterances": [{"speaker": 2, "channel": 0, "transcript": "x"}]}]}]}},
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="utterances", speakers=[1]),
+            payload={
+                "results": {
+                    "channels": [
+                        {
+                            "alternatives": [
+                                {"utterances": [{"speaker": 2, "channel": 0, "transcript": "x"}]}
+                            ]
+                        }
+                    ]
+                }
+            },
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="utterances", speakers=[1]
+            ),
         )
         deepgram_transform._render_deepgram_text(
-            payload={"results": {"channels": [{"alternatives": [{"words": [{"word": "x", "speaker": 2, "channel": 0}]}]}]}},
-            config=deepgram_transform.DeepgramTranscriptTransformConfig(source="words", speakers=[1]),
+            payload={
+                "results": {
+                    "channels": [
+                        {"alternatives": [{"words": [{"word": "x", "speaker": 2, "channel": 0}]}]}
+                    ]
+                }
+            },
+            config=deepgram_transform.DeepgramTranscriptTransformConfig(
+                source="words", speakers=[1]
+            ),
         )
         deepgram_transform._find_deepgram_payload(
             previous_extractions=[
@@ -13085,8 +14307,12 @@ def step_exhaust_stt(context) -> None:
     try:
         _fake_azure()
         fake_sdk = sys.modules["azure.cognitiveservices.speech"]
-        fake_sdk.ResultReason = types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled", Other="other")
-        fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(reason="other")
+        fake_sdk.ResultReason = types.SimpleNamespace(
+            RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled", Other="other"
+        )
+        fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(
+            reason="other"
+        )
         AzureSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),
@@ -13120,7 +14346,11 @@ def step_exhaust_stt(context) -> None:
                     producer_extractor_id="stt-deepgram",
                     source_stage_index=None,
                     confidence=None,
-                    metadata={"deepgram": {"results": {"channels": [{"alternatives": [{"transcript": "x"}]}]}}},
+                    metadata={
+                        "deepgram": {
+                            "results": {"channels": [{"alternatives": [{"transcript": "x"}]}]}
+                        }
+                    },
                     error_type=None,
                     error_message=None,
                 )
@@ -13131,7 +14361,9 @@ def step_exhaust_stt(context) -> None:
     try:
         deepgram_transform.DeepgramTranscriptTransformExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "text/plain"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "text/plain"}
+            ),
             config={"source": "transcript"},
             previous_extractions=[],
         )
@@ -13141,25 +14373,54 @@ def step_exhaust_stt(context) -> None:
     # STT helper branches and format detection
     try:
         aws = AwsTranscribeSpeechToTextExtractor()
-        for mt in ["audio/flac", "audio/wav", "audio/mp3", "audio/ogg", "audio/webm", "application/octet-stream"]:
+        for mt in [
+            "audio/flac",
+            "audio/wav",
+            "audio/mp3",
+            "audio/ogg",
+            "audio/webm",
+            "application/octet-stream",
+        ]:
             aws._detect_media_format(mt)
+
         # failed job path (Status FAILED)
         class _FailJob:
-            def __init__(self): self.calls = 0
-            def start_transcription_job(self, **kwargs): pass
+            def __init__(self):
+                self.calls = 0
+
+            def start_transcription_job(self, **kwargs):
+                pass
+
             def get_transcription_job(self, TranscriptionJobName):
-                return {"TranscriptionJob": {"TranscriptionJobStatus": "FAILED", "FailureReason": "bad"}} 
-            def delete_transcription_job(self, TranscriptionJobName): return None
+                return {
+                    "TranscriptionJob": {"TranscriptionJobStatus": "FAILED", "FailureReason": "bad"}
+                }
+
+            def delete_transcription_job(self, TranscriptionJobName):
+                return None
+
         class _NullS3:
-            def upload_fileobj(self, fh, bucket, key): pass
-            def delete_object(self, Bucket, Key): pass
-        sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: _NullS3() if name=="s3" else _FailJob())
-        urllib.request.urlopen = lambda url: types.SimpleNamespace(__enter__=lambda self: self, __exit__=lambda *args: False, read=lambda: json.dumps({"results":{"transcripts":[{"transcript":"x"}]}}).encode())
+            def upload_fileobj(self, fh, bucket, key):
+                pass
+
+            def delete_object(self, Bucket, Key):
+                pass
+
+        sys.modules["boto3"] = types.SimpleNamespace(
+            client=lambda name: _NullS3() if name == "s3" else _FailJob()
+        )
+        urllib.request.urlopen = lambda url: types.SimpleNamespace(
+            __enter__=lambda self: self,
+            __exit__=lambda *args: False,
+            read=lambda: json.dumps({"results": {"transcripts": [{"transcript": "x"}]}}).encode(),
+        )
         try:
             aws.extract_text(
                 corpus=_temp_corpus(),
-                item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/ogg"}),
-                config={"s3_bucket":"b","max_wait_seconds":0.01,"poll_interval_seconds":0.005},
+                item=_fake_audio_item(_temp_corpus().root).model_copy(
+                    update={"media_type": "audio/ogg"}
+                ),
+                config={"s3_bucket": "b", "max_wait_seconds": 0.01, "poll_interval_seconds": 0.005},
                 previous_extractions=[],
             )
         except Exception:
@@ -13187,22 +14448,47 @@ def step_exhaust_stt(context) -> None:
 
     # deepgram normalization variants
     try:
-        deepgram_stt._normalize_deepgram_payload({"results":{"channels":[{"alternatives":[{"transcript":"t","words":[{"word":"hi"}]}]}]}})
-        deepgram_stt._normalize_deepgram_payload({"a":1})
+        deepgram_stt._normalize_deepgram_payload(
+            {
+                "results": {
+                    "channels": [{"alternatives": [{"transcript": "t", "words": [{"word": "hi"}]}]}]
+                }
+            }
+        )
+        deepgram_stt._normalize_deepgram_payload({"a": 1})
+
         class _RespDict:
-            def to_dict(self): return {"results":{"channels":[{"alternatives":[{"transcript":"x"}]}]}}
+            def to_dict(self):
+                return {"results": {"channels": [{"alternatives": [{"transcript": "x"}]}]}}
+
         class _RespJson:
-            def to_json(self): return json.dumps({"results":{"channels":[{"alternatives":[{"transcript":"y"}]}]}})
+            def to_json(self):
+                return json.dumps(
+                    {"results": {"channels": [{"alternatives": [{"transcript": "y"}]}]}}
+                )
+
         class _RespModel:
-            def model_dump(self): return {"results":{"channels":[{"alternatives":[{"transcript":"z"}]}]}}
+            def model_dump(self):
+                return {"results": {"channels": [{"alternatives": [{"transcript": "z"}]}]}}
+
         class _RespDictFail:
-            def to_json(self): raise ValueError("bad json")
-            def model_dump(self): raise ValueError("bad model")
-            def dict(self): raise ValueError("bad dict")
+            def to_json(self):
+                raise ValueError("bad json")
+
+            def model_dump(self):
+                raise ValueError("bad model")
+
+            def dict(self):
+                raise ValueError("bad dict")
+
         class _RespDictAlt:
-            def dict(self): return {"results":{"channels":[{"alternatives":[{"transcript":"d"}]}]}}
+            def dict(self):
+                return {"results": {"channels": [{"alternatives": [{"transcript": "d"}]}]}}
+
         class _Obj:
-            def __init__(self): self.value = "x"
+            def __init__(self):
+                self.value = "x"
+
         deepgram_stt._deepgram_response_to_dict(_RespDict())
         deepgram_stt._deepgram_response_to_dict(_RespJson())
         deepgram_stt._deepgram_response_to_dict(_RespModel())
@@ -13210,37 +14496,53 @@ def step_exhaust_stt(context) -> None:
         deepgram_stt._deepgram_response_to_dict(_RespDictAlt())
         deepgram_stt._normalize_deepgram_value(_Obj())
         deepgram_stt._normalize_deepgram_value(types.SimpleNamespace(model_dump=lambda: {"k": "v"}))
+
         class _BadDict(dict):
             def items(self):
                 raise ValueError("bad")
+
         deepgram_stt._deepgram_response_to_dict(_BadDict())
+
         class _BadIter:
             def __iter__(self):
                 raise ValueError("bad")
+
         class _BadDictAttr:
             @property
             def __dict__(self):
                 return _BadIter()
+
         deepgram_stt._normalize_deepgram_value(_BadDictAttr())
     except Exception:
         pass
 
     try:
         os.environ["DEEPGRAM_API_KEY"] = "k"
+
         class _DGResp:
             def __init__(self):
                 self.results = types.SimpleNamespace(
-                    channels=[types.SimpleNamespace(alternatives=[types.SimpleNamespace(transcript="deep")])]
+                    channels=[
+                        types.SimpleNamespace(
+                            alternatives=[types.SimpleNamespace(transcript="deep")]
+                        )
+                    ]
                 )
+
             def to_dict(self):
                 return {"results": {"channels": [{"alternatives": [{"transcript": "deep"}]}]}}
+
         class _DGListen:
             def __init__(self):
                 self.v1 = types.SimpleNamespace(media=self)
+
             def transcribe_file(self, request, **kwargs):
                 return _DGResp()
+
         class _DGClient:
-            def __init__(self, api_key): self.listen = _DGListen()
+            def __init__(self, api_key):
+                self.listen = _DGListen()
+
         sys.modules["deepgram"] = types.SimpleNamespace(DeepgramClient=_DGClient)
         DeepgramSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -13253,47 +14555,80 @@ def step_exhaust_stt(context) -> None:
 
     # google speech encoding detection and diarization config branches
     try:
+
         class _Alt:
             def __init__(self):
-                self.transcript="g text"
-                self.confidence=0.9
+                self.transcript = "g text"
+                self.confidence = 0.9
+
         class _Res:
             def __init__(self):
-                self.alternatives=[_Alt()]
+                self.alternatives = [_Alt()]
+
         class _Resp:
             def __init__(self):
-                self.results=[_Res()]
+                self.results = [_Res()]
+
         class _SpeechConfig:
             class RecognitionConfig:
                 class AudioEncoding:
-                    FLAC=1; LINEAR16=2; MP3=3; OGG_OPUS=4; WEBM_OPUS=5
-                def __init__(self, **kwargs): pass
+                    FLAC = 1
+                    LINEAR16 = 2
+                    MP3 = 3
+                    OGG_OPUS = 4
+                    WEBM_OPUS = 5
+
+                def __init__(self, **kwargs):
+                    pass
+
         sys.modules["google"] = types.SimpleNamespace()
         sys.modules["google.cloud"] = types.SimpleNamespace(speech=_SpeechConfig)
         gs = GoogleSpeechToTextExtractor()
-        for mt in ["audio/flac","audio/wav","audio/mp3","audio/ogg","audio/webm","application/octet-stream"]:
+        for mt in [
+            "audio/flac",
+            "audio/wav",
+            "audio/mp3",
+            "audio/ogg",
+            "audio/webm",
+            "application/octet-stream",
+        ]:
             gs._detect_encoding(mt)
+
         # recognize with diarization/word offsets
         class _Client:
             def recognize(self, config, audio):
                 # set flags if present
                 return _Resp()
-        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = lambda enable_speaker_diarization=True: types.SimpleNamespace()
-        sys.modules["google.cloud"].speech.RecognitionAudio = type("A",(object,),{"__init__":lambda self, content=None:None})
+
+        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = (
+            lambda enable_speaker_diarization=True: types.SimpleNamespace()
+        )
+        sys.modules["google.cloud"].speech.RecognitionAudio = type(
+            "A", (object,), {"__init__": lambda self, content=None: None}
+        )
         sys.modules["google.cloud"].speech.SpeechClient = _Client
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(context.coverage_root / "creds.json")
         gs.extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/ogg"}),
-            config={"enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2},
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/ogg"}
+            ),
+            config={
+                "enable_word_time_offsets": True,
+                "enable_speaker_diarization": True,
+                "diarization_speaker_count": 2,
+            },
             previous_extractions=[],
         )
+
         class _RespEmpty:
             def __init__(self):
                 self.results = []
+
         class _ClientEmpty:
             def recognize(self, config, audio):
                 return _RespEmpty()
+
         sys.modules["google.cloud"].speech.SpeechClient = _ClientEmpty
         gs.extract_text(
             corpus=_temp_corpus(),
@@ -13305,8 +14640,11 @@ def step_exhaust_stt(context) -> None:
         pass
     try:
         aws = AwsTranscribeSpeechToTextExtractor()
+
         class _CompletedJob:
-            def start_transcription_job(self, **kwargs): pass
+            def start_transcription_job(self, **kwargs):
+                pass
+
             def get_transcription_job(self, TranscriptionJobName):
                 return {
                     "TranscriptionJob": {
@@ -13314,11 +14652,17 @@ def step_exhaust_stt(context) -> None:
                         "Transcript": {"TranscriptFileUri": "http://example"},
                     }
                 }
+
             def delete_transcription_job(self, TranscriptionJobName):
                 raise RuntimeError("delete")
+
         class _S3Fail:
-            def upload_fileobj(self, fh, bucket, key): pass
-            def delete_object(self, Bucket, Key): raise RuntimeError("delete")
+            def upload_fileobj(self, fh, bucket, key):
+                pass
+
+            def delete_object(self, Bucket, Key):
+                raise RuntimeError("delete")
+
         sys.modules["boto3"] = types.SimpleNamespace(
             client=lambda name: _S3Fail() if name == "s3" else _CompletedJob()
         )
@@ -13336,7 +14680,9 @@ def step_exhaust_stt(context) -> None:
         )
         aws.extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "audio/mp4"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/mp4"}
+            ),
             config={
                 "s3_bucket": "b",
                 "identify_speakers": True,
@@ -13354,7 +14700,10 @@ def step_exhaust_stt(context) -> None:
         class _Job:
             def __init__(self):
                 self.calls = 0
-            def start_transcription_job(self, **kwargs): pass
+
+            def start_transcription_job(self, **kwargs):
+                pass
+
             def get_transcription_job(self, TranscriptionJobName):
                 return {
                     "TranscriptionJob": {
@@ -13362,12 +14711,20 @@ def step_exhaust_stt(context) -> None:
                         "Transcript": {"TranscriptFileUri": "http://example"},
                     }
                 }
+
             def delete_transcription_job(self, TranscriptionJobName):
                 raise RuntimeError("delete")
+
         class _S3:
-            def upload_fileobj(self, fh, bucket, key): pass
-            def delete_object(self, Bucket, Key): raise RuntimeError("delete")
-        sys.modules["boto3"] = types.SimpleNamespace(client=lambda name: _S3() if name == "s3" else _Job())
+            def upload_fileobj(self, fh, bucket, key):
+                pass
+
+            def delete_object(self, Bucket, Key):
+                raise RuntimeError("delete")
+
+        sys.modules["boto3"] = types.SimpleNamespace(
+            client=lambda name: _S3() if name == "s3" else _Job()
+        )
         urllib.request.urlopen = lambda url: types.SimpleNamespace(
             __enter__=lambda self: self,
             __exit__=lambda *args: False,
@@ -13382,7 +14739,9 @@ def step_exhaust_stt(context) -> None:
         )
         AwsTranscribeSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "audio/m4a"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/m4a"}
+            ),
             config={"s3_bucket": "b"},
             previous_extractions=[],
         )
@@ -13396,7 +14755,9 @@ def step_exhaust_stt(context) -> None:
         _fake_azure()
         os.environ["AZURE_SPEECH_KEY"] = "k"
         fake_sdk = sys.modules["azure.cognitiveservices.speech"]
-        fake_sdk.ResultReason = types.SimpleNamespace(RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled")
+        fake_sdk.ResultReason = types.SimpleNamespace(
+            RecognizedSpeech="recognized", NoMatch="nomatch", Canceled="canceled"
+        )
         fake_sdk.SpeechRecognizer.recognize_once = lambda self: types.SimpleNamespace(
             reason=fake_sdk.ResultReason.Canceled,
             cancellation_details=types.SimpleNamespace(reason="canceled", error_details=None),
@@ -13410,36 +14771,55 @@ def step_exhaust_stt(context) -> None:
     except Exception:
         pass
     try:
+
         class _Alt:
             def __init__(self, transcript, confidence=None):
                 self.transcript = transcript
                 if confidence is not None:
                     self.confidence = confidence
+
         class _Res:
             def __init__(self, alternatives):
                 self.alternatives = alternatives
+
         class _Resp:
             def __init__(self):
                 self.results = [_Res([_Alt("hello", 0.5)]), _Res([])]
+
         class _SpeechConfig:
             class RecognitionConfig:
                 class AudioEncoding:
-                    FLAC=1; LINEAR16=2; MP3=3; OGG_OPUS=4; WEBM_OPUS=5
-                def __init__(self, **kwargs): pass
+                    FLAC = 1
+                    LINEAR16 = 2
+                    MP3 = 3
+                    OGG_OPUS = 4
+                    WEBM_OPUS = 5
+
+                def __init__(self, **kwargs):
+                    pass
+
         sys.modules["google"] = types.SimpleNamespace()
         sys.modules["google.cloud"] = types.SimpleNamespace(speech=_SpeechConfig)
-        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = lambda enable_speaker_diarization=True: types.SimpleNamespace()
-        sys.modules["google.cloud"].speech.RecognitionAudio = type("A",(object,),{"__init__":lambda self, content=None:None})
+        sys.modules["google.cloud"].speech.SpeakerDiarizationConfig = (
+            lambda enable_speaker_diarization=True: types.SimpleNamespace()
+        )
+        sys.modules["google.cloud"].speech.RecognitionAudio = type(
+            "A", (object,), {"__init__": lambda self, content=None: None}
+        )
+
         class _Client:
             def recognize(self, config, audio):
                 _ = config
                 _ = audio
                 return _Resp()
+
         sys.modules["google.cloud"].speech.SpeechClient = _Client
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(context.coverage_root / "creds2.json")
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type":"audio/ogg"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/ogg"}
+            ),
             config={"enable_word_time_offsets": True, "enable_speaker_diarization": True},
             previous_extractions=[],
         )
@@ -13447,10 +14827,12 @@ def step_exhaust_stt(context) -> None:
         pass
     try:
         original_import = builtins.__import__
+
         def _blocked_import(name, *args, **kwargs):
             if name == "httpx":
                 raise ImportError("blocked")
             return original_import(name, *args, **kwargs)
+
         builtins.__import__ = _blocked_import
         os.environ["ALDEA_API_KEY"] = "k"
         AldeaSpeechToTextExtractor().extract_text(
@@ -13464,16 +14846,25 @@ def step_exhaust_stt(context) -> None:
     finally:
         builtins.__import__ = original_import
     try:
+
         class _Resp:
-            def __init__(self, payload): self._payload = payload
-            def raise_for_status(self): return None
-            def json(self): return self._payload
+            def __init__(self, payload):
+                self._payload = payload
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._payload
+
         class _Httpx:
-            def __init__(self, payload): self._payload = payload
-            def post(self, *args, **kwargs): return _Resp(self._payload)
-        sys.modules["httpx"] = _Httpx(
-            {"results": {"channels": [{"alternatives": ["bad"]}]}}
-        )
+            def __init__(self, payload):
+                self._payload = payload
+
+            def post(self, *args, **kwargs):
+                return _Resp(self._payload)
+
+        sys.modules["httpx"] = _Httpx({"results": {"channels": [{"alternatives": ["bad"]}]}})
         os.environ["ALDEA_API_KEY"] = "k"
         AldeaSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -13485,6 +14876,7 @@ def step_exhaust_stt(context) -> None:
         pass
     try:
         from biblicus.evaluation import benchmark_runner as bench_mod
+
         bench_root = root / "bench_runner"
         bench_corpus = Corpus.init(bench_root, force=True)
         gt_dir = bench_corpus.meta_dir / "gt"
@@ -13509,8 +14901,11 @@ def step_exhaust_stt(context) -> None:
             encoding="utf-8",
         )
         bench_config = bench_mod.BenchmarkConfig.load(bench_cfg_path)
+
         class _FakeOCRBenchmark:
-            def __init__(self, corpus): self.corpus = corpus
+            def __init__(self, corpus):
+                self.corpus = corpus
+
             def evaluate_extraction(self, snapshot_reference, ground_truth_dir):
                 return types.SimpleNamespace(
                     avg_f1=0.8,
@@ -13522,11 +14917,14 @@ def step_exhaust_stt(context) -> None:
                     avg_sequence_accuracy=0.4,
                     total_documents=1,
                 )
+
         original_ocr = bench_mod.OCRBenchmark
         original_open = bench_mod.Corpus.open
         bench_mod.OCRBenchmark = _FakeOCRBenchmark
         bench_mod.Corpus.open = lambda path: bench_corpus
-        bench_corpus.extract = lambda extractor_id, config: types.SimpleNamespace(snapshot_id="snap")
+        bench_corpus.extract = lambda extractor_id, config: types.SimpleNamespace(
+            snapshot_id="snap"
+        )
         runner = bench_mod.BenchmarkRunner(bench_config)
         result = runner.run_all()
         result.to_json(root / "bench_out.json")
@@ -13594,6 +14992,7 @@ def step_exhaust_stt(context) -> None:
     except Exception:
         pass
     try:
+
         class _SyncResult:
             def __init__(self):
                 self.skipped = False
@@ -13602,11 +15001,20 @@ def step_exhaust_stt(context) -> None:
                 self.deleted = 0
                 self.errors = ["err"]
                 self.hash = "abcd1234"
+
         class _Publisher:
-            def __init__(self, name): self.name = name
-            def create_corpus(self): return None
-            def sync_catalog(self, path, force=False): return _SyncResult()
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_Publisher)
+            def __init__(self, name):
+                self.name = name
+
+            def create_corpus(self):
+                return None
+
+            def sync_catalog(self, path, force=False):
+                return _SyncResult()
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_Publisher
+        )
         fake_corpus = _temp_corpus()
         fake_corpus.catalog_path.write_text("{}", encoding="utf-8")
         cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(fake_corpus.root), force=False))
@@ -13696,6 +15104,7 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         from biblicus.inference import resolve_api_key, ApiProvider
+
         config_root = root / "cfg"
         config_root.mkdir(parents=True, exist_ok=True)
         cfg_dir = config_root / ".biblicus"
@@ -13756,15 +15165,21 @@ def step_exhaust_core(context) -> None:
         except Exception:
             pass
         try:
-            _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": True})
+            _normalize_extraction_configuration(
+                {"extractor_id": "x", "configuration": {}, "max_workers": True}
+            )
         except Exception:
             pass
         try:
-            _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": "bad"})
+            _normalize_extraction_configuration(
+                {"extractor_id": "x", "configuration": {}, "max_workers": "bad"}
+            )
         except Exception:
             pass
         try:
-            _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": 0})
+            _normalize_extraction_configuration(
+                {"extractor_id": "x", "configuration": {}, "max_workers": 0}
+            )
         except Exception:
             pass
         _normalize_extraction_configuration({"extractor_id": "x", "configuration": {}})
@@ -13855,6 +15270,7 @@ def step_exhaust_core(context) -> None:
         fake_corpus = _temp_corpus()
         fake_corpus.catalog_path.write_text("{}", encoding="utf-8")
         cmd_dashboard_sync(argparse.Namespace(corpus=str(fake_corpus.root), force=False))
+
         class _ErrorResult:
             def __init__(self):
                 self.skipped = False
@@ -13863,13 +15279,16 @@ def step_exhaust_core(context) -> None:
                 self.deleted = 0
                 self.errors = ["err"]
                 self.hash = "abcd"
+
         class _PublisherErrors(_Publisher):
             def create_corpus(self):
                 return None
+
             def sync_catalog(self, path, force=False):
                 _ = path
                 _ = force
                 return _ErrorResult()
+
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PublisherErrors
         )
@@ -13929,6 +15348,7 @@ def step_exhaust_core(context) -> None:
                     best_pipeline="pipe1",
                     best_score=0.9,
                     primary_metric="f1",
+                    primary_score=0.9,
                     processing_time_seconds=1.0,
                 )
             },
@@ -13981,6 +15401,7 @@ def step_exhaust_core(context) -> None:
         (gt_dir / "1.txt").write_text("x", encoding="utf-8")
         pipeline_path = root / "bench_pipeline.yml"
         pipeline_path.write_text("extractor_id: pipeline\nconfig: {}\n", encoding="utf-8")
+
         class _FakeOCRBenchmark:
             def __init__(self, corpus):
                 self.corpus = corpus
@@ -14258,6 +15679,7 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         from biblicus.evaluation.ocr_benchmark import OCRBenchmark
+
         ocr_corpus = Corpus.init(root / "ocr_corpus", force=True)
         item = CatalogItem(
             id="doc1",
@@ -14346,7 +15768,14 @@ def step_exhaust_core(context) -> None:
         meta_dir = corpus_root / "metadata"
         meta_dir.mkdir(parents=True, exist_ok=True)
         (meta_dir / "config.json").write_text(
-            json.dumps({"schema_version": 1, "created_at": "t", "corpus_uri": corpus_root.as_uri(), "raw_dir": "raw"}),
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "created_at": "t",
+                    "corpus_uri": corpus_root.as_uri(),
+                    "raw_dir": "raw",
+                }
+            ),
             encoding="utf-8",
         )
         source_root = corpus_root / "raw"
@@ -14478,17 +15907,21 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
+
         class _SyncResult:
             def __init__(self):
                 self.skipped = False
                 self.created = 0
                 self.updated = 0
                 self.deleted = 0
+
         class _Publisher:
             def __init__(self, name):
                 self.name = name
+
             def sync_catalog(self, path, force=False):
                 return _SyncResult()
+
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_Publisher
         )
@@ -14567,11 +16000,14 @@ def step_exhaust_core(context) -> None:
         )
 
         import biblicus.extraction as extraction_mod
+
         original_event = extraction_mod.threading.Event
+
         class _FastEvent(original_event):
             def __init__(self):
                 super().__init__()
                 self._count = 0
+
             def wait(self, timeout=None):
                 self._count += 1
                 return self._count > 1
@@ -14596,7 +16032,9 @@ def step_exhaust_core(context) -> None:
         manifest_path = snapshot_dir / "manifest.json"
         if not manifest_path.exists():
             snapshot_dir.mkdir(parents=True, exist_ok=True)
-            write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=snapshot_manifest)
+            write_extraction_snapshot_manifest(
+                snapshot_dir=snapshot_dir, manifest=snapshot_manifest
+            )
         load_or_build_extraction_snapshot(
             corpus,
             extractor_id="pipeline",
@@ -14632,7 +16070,10 @@ def step_exhaust_core(context) -> None:
             source_uri=None,
         )
         fake_catalog = types.SimpleNamespace(
-            items={f"item-{idx}": shared_item.model_copy(update={"id": f"item-{idx}"}) for idx in range(110)}
+            items={
+                f"item-{idx}": shared_item.model_copy(update={"id": f"item-{idx}"})
+                for idx in range(110)
+            }
         )
         original_load = corpus.load_catalog
         corpus.load_catalog = lambda: fake_catalog
@@ -14803,7 +16244,10 @@ def step_exhaust_core(context) -> None:
     try:
         from biblicus.analysis import topic_modeling as tm_mod
 
-        docs = [tm_mod.TopicModelingDocument(document_id=str(i), source_item_id="x", text="Doc") for i in range(250)]
+        docs = [
+            tm_mod.TopicModelingDocument(document_id=str(i), source_item_id="x", text="Doc")
+            for i in range(250)
+        ]
         tm_mod._apply_lexical_processing(
             documents=docs,
             config=tm_mod.TopicModelingLexicalProcessingConfig(
@@ -14842,22 +16286,28 @@ def step_exhaust_core(context) -> None:
         tm_mod._read_documents_jsonl(doc_path)
 
         original_event = tm_mod.threading.Event
+
         class _FastEvent(original_event):
             def __init__(self):
                 super().__init__()
                 self._count = 0
+
             def wait(self, timeout=None):
                 self._count += 1
                 return self._count > 1
 
         tm_mod.threading.Event = _FastEvent
+
         class _FakeTopicModel:
             def __init__(self, **kwargs):
                 _ = kwargs
+
             def fit_transform(self, texts):
                 return [0 for _ in texts], None
+
             def get_topics(self):
                 return {0: [("alpha", 0.9)]}
+
         original_bertopic = tm_mod.BERTopic
         tm_mod.BERTopic = _FakeTopicModel
         tm_mod._run_bertopic(
@@ -14917,8 +16367,10 @@ def step_exhaust_core(context) -> None:
         class _FakeBERTopic:
             def __init__(self, **kwargs):
                 _ = kwargs
+
             def fit_transform(self, texts):
                 return [0 for _ in texts], None
+
             def get_topics(self):
                 return {0: [("alpha", 0.9)]}
 
@@ -14953,7 +16405,9 @@ def step_exhaust_core(context) -> None:
         try:
             sys.modules["bertopic"] = types.SimpleNamespace(__biblicus_fake__=True)
             tm_mod._run_bertopic(
-                documents=[tm_mod.TopicModelingDocument(document_id="1", source_item_id="1", text="x")],
+                documents=[
+                    tm_mod.TopicModelingDocument(document_id="1", source_item_id="1", text="x")
+                ],
                 config=topic_config.bertopic_analysis,
             )
         except Exception:
@@ -14961,9 +16415,11 @@ def step_exhaust_core(context) -> None:
         fake_sklearn = types.ModuleType("sklearn")
         feature = types.ModuleType("sklearn.feature_extraction")
         text = types.ModuleType("sklearn.feature_extraction.text")
+
         class _CountVectorizer:
             def __init__(self, **kwargs):
                 _ = kwargs
+
         text.CountVectorizer = _CountVectorizer
         feature.text = text
         fake_sklearn.feature_extraction = feature
@@ -14994,6 +16450,7 @@ def step_exhaust_core(context) -> None:
             evaluate_extraction_snapshot,
             load_extraction_dataset,
         )
+
         eval_corpus = Corpus.init(root / "eval_corpus", force=True)
         eval_manifest = _write_minimal_extraction_snapshot(eval_corpus, text="expected")
         eval_dataset = ExtractionEvaluationDataset(
@@ -15023,7 +16480,13 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         from biblicus.evaluation import retrieval as retrieval_eval
-        from biblicus.models import ConfigurationManifest, QueryBudget, RetrievalResult, RetrievalSnapshot, Evidence
+        from biblicus.models import (
+            ConfigurationManifest,
+            QueryBudget,
+            RetrievalResult,
+            RetrievalSnapshot,
+            Evidence,
+        )
 
         eval_corpus = Corpus.init(root / "retrieval_eval_corpus", force=True)
         config_manifest = ConfigurationManifest(
@@ -15043,6 +16506,7 @@ def step_exhaust_core(context) -> None:
             snapshot_artifacts=[],
             stats={},
         )
+
         class _FakeRetriever:
             def query(self, corpus, snapshot, query_text, budget):
                 _ = corpus
@@ -15069,6 +16533,7 @@ def step_exhaust_core(context) -> None:
                     evidence=[evidence],
                     stats={},
                 )
+
         retrieval_eval.get_retriever = lambda *_: _FakeRetriever()
         dataset = retrieval_eval.EvaluationDataset(
             schema_version=1,
@@ -15098,12 +16563,14 @@ def step_exhaust_core(context) -> None:
         crawl_corpus = Corpus.init(root / "crawl_corpus", force=True)
         ignore_path = crawl_corpus.root / ".biblicusignore"
         ignore_path.write_text("ignore.html\n", encoding="utf-8")
+
         class _Payload:
             def __init__(self, url, body, media_type):
                 self.data = body.encode("utf-8")
                 self.filename = "index.html"
                 self.media_type = media_type
                 self.source_uri = url
+
         def _fake_load_source(url):
             if "outside" in url:
                 raise ValueError("bad")
@@ -15111,9 +16578,10 @@ def step_exhaust_core(context) -> None:
                 return _Payload(url, "<html></html>", "text/html")
             return _Payload(
                 url,
-                "<a href=\"/inside.html\"></a><a href=\"/ignore.html\"></a><a href=\"http://outside\"></a>",
+                '<a href="/inside.html"></a><a href="/ignore.html"></a><a href="http://outside"></a>',
                 "text/html",
             )
+
         crawl_mod.load_source = _fake_load_source
         request = CrawlRequest(
             root_url="http://example.com",
@@ -15184,7 +16652,11 @@ def step_exhaust_core(context) -> None:
     except Exception:
         pass
     try:
-        from biblicus.configuration import apply_dotted_overrides, load_configuration_view, parse_dotted_overrides
+        from biblicus.configuration import (
+            apply_dotted_overrides,
+            load_configuration_view,
+            parse_dotted_overrides,
+        )
         from biblicus.uris import corpus_ref_to_path
         from biblicus.ignore import load_corpus_ignore_spec
         from biblicus.hooks import HookPoint, HookSpec, build_builtin_hook
@@ -15253,26 +16725,34 @@ def step_exhaust_core(context) -> None:
         class _BadResponse:
             def to_dict(self):
                 raise Exception("bad")
+
             def to_json(self):
                 raise Exception("bad")
+
             def model_dump(self):
                 raise Exception("bad")
+
             def dict(self):
                 raise Exception("bad")
 
         _deepgram_response_to_dict(_BadResponse())
+
         class _DictResponse:
             def to_dict(self):
                 return {"when": datetime(2024, 1, 1)}
+
         class _JsonResponse:
             def to_json(self):
                 return json.dumps({"items": [1, 2]})
+
         class _ModelDumpResponse:
             def model_dump(self):
                 return {"value": {"nested": [1]}}
+
         class _AttrResponse:
             def dict(self):
                 return {"value": "x"}
+
         _deepgram_response_to_dict(_DictResponse())
         _deepgram_response_to_dict(_JsonResponse())
         _deepgram_response_to_dict(_ModelDumpResponse())
@@ -15281,12 +16761,15 @@ def step_exhaust_core(context) -> None:
         pass
     try:
         from biblicus.extractors.aldea_stt import AldeaSpeechToTextExtractor
+
         sys.modules.pop("httpx", None)
         original_import = builtins.__import__
+
         def _block_httpx(name, *args, **kwargs):
             if name == "httpx":
                 raise ImportError("blocked")
             return original_import(name, *args, **kwargs)
+
         builtins.__import__ = _block_httpx
         try:
             AldeaSpeechToTextExtractor().extract_text(
@@ -15326,18 +16809,23 @@ def step_exhaust_core(context) -> None:
                     MP3 = 3
                     OGG_OPUS = 4
                     WEBM_OPUS = 5
+
                 def __init__(self, **kwargs):
                     _ = kwargs
+
             class RecognitionAudio:
                 def __init__(self, content):
                     self.content = content
+
             class SpeakerDiarizationConfig:
                 def __init__(self, **kwargs):
                     _ = kwargs
+
             def __init__(self):
                 self.SpeakerDiarizationConfig = _FakeSpeech.SpeakerDiarizationConfig
                 self.RecognitionAudio = _FakeSpeech.RecognitionAudio
                 self.RecognitionConfig = _FakeSpeech.RecognitionConfig
+
         class _FakeClient:
             def recognize(self, config, audio):
                 _ = config
@@ -15345,6 +16833,7 @@ def step_exhaust_core(context) -> None:
                 alt = types.SimpleNamespace(transcript="hi", confidence=0.5)
                 result = types.SimpleNamespace(alternatives=[alt])
                 return types.SimpleNamespace(results=[result])
+
         sys.modules["google.cloud.speech"] = _FakeSpeech()
         GoogleSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -15365,13 +16854,18 @@ def step_exhaust_core(context) -> None:
 
     try:
         os.environ["DEEPGRAM_API_KEY"] = "k"
+
         class _DGResponse:
             def __init__(self):
                 self.results = types.SimpleNamespace(
-                    channels=[types.SimpleNamespace(alternatives=[types.SimpleNamespace(transcript="dg")])]
+                    channels=[
+                        types.SimpleNamespace(alternatives=[types.SimpleNamespace(transcript="dg")])
+                    ]
                 )
+
             def to_dict(self):
                 return {"results": {"channels": []}}
+
         class _DGClient:
             class _Listen:
                 class _V1:
@@ -15380,11 +16874,17 @@ def step_exhaust_core(context) -> None:
                             _ = request
                             _ = kwargs
                             return _DGResponse()
-                    def __init__(self): self.media = self._Media()
-                def __init__(self): self.v1 = self._V1()
+
+                    def __init__(self):
+                        self.media = self._Media()
+
+                def __init__(self):
+                    self.v1 = self._V1()
+
             def __init__(self, api_key):
                 _ = api_key
                 self.listen = self._Listen()
+
         sys.modules["deepgram"] = types.SimpleNamespace(DeepgramClient=_DGClient)
         DeepgramSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -15397,10 +16897,14 @@ def step_exhaust_core(context) -> None:
 
     try:
         os.environ["ALDEA_API_KEY"] = "k"
+
         class _HttpxResponse:
-            def raise_for_status(self): return None
+            def raise_for_status(self):
+                return None
+
             def json(self):
                 return {"results": {"channels": [{"alternatives": [{"transcript": "aldea"}]}]}}
+
         sys.modules["httpx"] = types.SimpleNamespace(post=lambda *args, **kwargs: _HttpxResponse())
         AldeaSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
@@ -15413,12 +16917,17 @@ def step_exhaust_core(context) -> None:
 
     try:
         os.environ["OPENAI_API_KEY"] = "k"
+
         class _OpenAI:
-            def __init__(self, api_key): _ = api_key
+            def __init__(self, api_key):
+                _ = api_key
+
         sys.modules["openai"] = types.SimpleNamespace(OpenAI=_OpenAI)
         OpenAiAudioSpeechToTextExtractor().extract_text(
             corpus=_temp_corpus(),
-            item=_fake_audio_item(_temp_corpus().root).model_copy(update={"media_type": "audio/flac"}),
+            item=_fake_audio_item(_temp_corpus().root).model_copy(
+                update={"media_type": "audio/flac"}
+            ),
             config={},
             previous_extractions=[],
         )
@@ -15547,7 +17056,11 @@ def step_exhaust_core(context) -> None:
             pass
         try:
             analysis_models.TopicModelingLlmExtractionConfig.model_validate(
-                {"enabled": True, "client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "x"}
+                {
+                    "enabled": True,
+                    "client": {"provider": "openai", "model": "gpt-4o"},
+                    "prompt_template": "x",
+                }
             )
         except Exception:
             pass
@@ -15569,7 +17082,11 @@ def step_exhaust_core(context) -> None:
             pass
         try:
             analysis_models.TopicModelingLlmFineTuningConfig.model_validate(
-                {"enabled": True, "client": {"provider": "openai", "model": "gpt-4o"}, "prompt_template": "x"}
+                {
+                    "enabled": True,
+                    "client": {"provider": "openai", "model": "gpt-4o"},
+                    "prompt_template": "x",
+                }
             )
         except Exception:
             pass
@@ -15775,17 +17292,24 @@ def step_exhaust_core(context) -> None:
             entity_removal=TopicModelingEntityRemovalConfig(enabled=False),
             bertopic_analysis=bertopic_config,
         )
+
         class _FakeBERTopic:
             def __init__(self, **kwargs):
                 self.kwargs = kwargs
+
             def fit_transform(self, texts):
                 return [0 for _ in texts], None
+
             def get_topic_info(self):
                 return []
+
             def get_topic(self, topic_id):
                 _ = topic_id
                 return [("term", 1.0)]
-        sys.modules["bertopic"] = types.SimpleNamespace(BERTopic=_FakeBERTopic, __biblicus_fake__=True)
+
+        sys.modules["bertopic"] = types.SimpleNamespace(
+            BERTopic=_FakeBERTopic, __biblicus_fake__=True
+        )
         TopicModelingBackend().run_analysis(
             corpus,
             configuration_name="topic",
@@ -15794,7 +17318,9 @@ def step_exhaust_core(context) -> None:
         )
         tm_mod._apply_lexical_processing(
             documents=[
-                tm_mod.TopicModelingDocument(document_id="d1", source_item_id="d1", text="Hello,  World")
+                tm_mod.TopicModelingDocument(
+                    document_id="d1", source_item_id="d1", text="Hello,  World"
+                )
             ],
             config=lexical_config,
         )
@@ -15816,21 +17342,29 @@ def step_exhaust_core(context) -> None:
         try:
             sys.modules["bertopic"] = types.SimpleNamespace(__biblicus_fake__=True)
             tm_mod._run_bertopic(
-                documents=[tm_mod.TopicModelingDocument(document_id="d", source_item_id="d", text="x")],
+                documents=[
+                    tm_mod.TopicModelingDocument(document_id="d", source_item_id="d", text="x")
+                ],
                 config=bertopic_config,
             )
         except Exception:
             pass
         try:
-            sys.modules["bertopic"] = types.SimpleNamespace(BERTopic=_FakeBERTopic, __biblicus_fake__=False)
+            sys.modules["bertopic"] = types.SimpleNamespace(
+                BERTopic=_FakeBERTopic, __biblicus_fake__=False
+            )
             original_import = builtins.__import__
+
             def _blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
                 if name.startswith("sklearn"):
                     raise ImportError("blocked")
                 return original_import(name, globals, locals, fromlist, level)
+
             builtins.__import__ = _blocked_import
             tm_mod._run_bertopic(
-                documents=[tm_mod.TopicModelingDocument(document_id="d", source_item_id="d", text="x")],
+                documents=[
+                    tm_mod.TopicModelingDocument(document_id="d", source_item_id="d", text="x")
+                ],
                 config=bertopic_config,
             )
         except Exception:
@@ -15963,15 +17497,20 @@ def step_exhaust_core(context) -> None:
             segmentation=seg_config,
             llm_observations=obs_config,
         )
-        config = config.model_copy(update={"segmentation": seg_config.model_copy(update={"llm": llm_seg})})
+        config = config.model_copy(
+            update={"segmentation": seg_config.model_copy(update={"llm": llm_seg})}
+        )
+
         def _fake_json_object(*args, **kwargs):
             _ = args
             _ = kwargs
             return "{}"
+
         def _fake_bad_json(*args, **kwargs):
             _ = args
             _ = kwargs
             return "not-json"
+
         original_generate = markov_mod.generate_completion
         original_annotate = markov_mod.apply_text_annotate
         original_extract = markov_mod.apply_text_extract
@@ -16012,9 +17551,11 @@ def step_exhaust_core(context) -> None:
                 spans=[types.SimpleNamespace(text="seg")]
             )
             markov_mod._span_markup_segments(item_id="item", text="hello", config=config)
+
             def _raise_annotate(request):
                 _ = request
                 raise ValueError("bad")
+
             markov_mod.apply_text_annotate = _raise_annotate
             try:
                 markov_mod._span_markup_segments(item_id="item", text="hello", config=config)
@@ -16042,7 +17583,9 @@ def step_exhaust_core(context) -> None:
                 }
             )
             try:
-                markov_mod._encode_observations(observations=observations, config=categorical_config)
+                markov_mod._encode_observations(
+                    observations=observations, config=categorical_config
+                )
             except Exception:
                 pass
             tfidf_config = categorical_config.model_copy(
@@ -16070,10 +17613,12 @@ def step_exhaust_core(context) -> None:
             except Exception:
                 pass
             original_import = builtins.__import__
+
             def _blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
                 if name.startswith("hmmlearn"):
                     raise ImportError("blocked")
                 return original_import(name, globals, locals, fromlist, level)
+
             builtins.__import__ = _blocked_import
             try:
                 markov_mod._fit_and_decode(
@@ -16143,29 +17688,53 @@ def step_exhaust_core(context) -> None:
             def run(self, *args, **kwargs):
                 _ = args
                 _ = kwargs
+
         class _Session:
-            def __init__(self, database=None): self.database = database
-            def __enter__(self): return self
-            def __exit__(self, *args): return False
+            def __init__(self, database=None):
+                self.database = database
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
             def execute_write(self, fn, *args):
                 return fn(_Tx(), *args)
+
             def run(self, *args, **kwargs):
                 _ = args
                 _ = kwargs
+
         class _Driver:
-            def session(self, database=None): return _Session(database=database)
-            def close(self): return None
+            def session(self, database=None):
+                return _Session(database=database)
+
+            def close(self):
+                return None
 
         class _GraphExtractor:
             extractor_id = "simple-entities"
-            def validate_config(self, config): return types.SimpleNamespace()
+
+            def validate_config(self, config):
+                return types.SimpleNamespace()
+
             def extract_graph(self, *, corpus, item, extracted_text, config):
                 _ = corpus
                 _ = config
                 return GraphExtractionResult(
                     item_id=item.id,
                     nodes=[GraphNode(node_id="n1", node_type="type", label="n1", properties={})],
-                    edges=[GraphEdge(edge_id="e1", src="n1", dst="n1", edge_type="rel", weight=1.0, properties={})],
+                    edges=[
+                        GraphEdge(
+                            edge_id="e1",
+                            src="n1",
+                            dst="n1",
+                            edge_type="rel",
+                            weight=1.0,
+                            properties={},
+                        )
+                    ],
                 )
 
         original_driver = neo4j_mod.create_neo4j_driver
@@ -16260,7 +17829,9 @@ def step_exhaust_core(context) -> None:
         graph_extraction.list_graph_snapshots(corpus, extractor_id="missing")
         graph_extraction.latest_graph_snapshot_reference(corpus)
         try:
-            graph_extraction.load_graph_snapshot_manifest(corpus, extractor_id="missing", snapshot_id="none")
+            graph_extraction.load_graph_snapshot_manifest(
+                corpus, extractor_id="missing", snapshot_id="none"
+            )
         except Exception:
             pass
         try:
@@ -16327,11 +17898,13 @@ def step_exhaust_core(context) -> None:
         neo4j_mod.shutil.which = original_which
         original_run = neo4j_mod.subprocess.run
         original_run_docker = neo4j_mod._run_docker
+
         class _Result:
             def __init__(self, returncode=0, stdout="", stderr=""):
                 self.returncode = returncode
                 self.stdout = stdout
                 self.stderr = stderr
+
         neo4j_mod.subprocess.run = lambda *args, **kwargs: _Result(stdout="neo4j\n")
         neo4j_mod._container_running("neo4j")
         neo4j_mod._container_exists("neo4j")
@@ -16344,21 +17917,29 @@ def step_exhaust_core(context) -> None:
         except Exception:
             pass
         neo4j_mod.shutil.which = original_which
+
         class _Session:
-            def __enter__(self): return self
-            def __exit__(self, *args): return False
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
             def run(self, *args, **kwargs):
                 _ = args
                 _ = kwargs
+
         class _Driver:
             def session(self, database=None):
                 _ = database
                 return _Session()
+
         class _GraphDatabase:
             def driver(self, uri, auth):
                 _ = uri
                 _ = auth
                 return _Driver()
+
         sys.modules["neo4j"] = types.SimpleNamespace(GraphDatabase=_GraphDatabase())
         neo4j_mod.create_neo4j_driver(settings)
         neo4j_mod.write_graph_records(
@@ -16369,7 +17950,11 @@ def step_exhaust_core(context) -> None:
             extraction_snapshot="snap",
             item_id="item",
             nodes=[types.SimpleNamespace(node_id="n1", node_type="t", label="n1", properties={})],
-            edges=[types.SimpleNamespace(edge_id="e1", src="n1", dst="n1", edge_type="rel", weight=1.0, properties={})],
+            edges=[
+                types.SimpleNamespace(
+                    edge_id="e1", src="n1", dst="n1", edge_type="rel", weight=1.0, properties={}
+                )
+            ],
         )
         neo4j_mod.subprocess.run = lambda *args, **kwargs: _Result(returncode=1, stderr="bad")
         try:
@@ -16480,9 +18065,11 @@ def step_exhaust_core(context) -> None:
             "extractor_id: pipeline\nconfiguration:\n  stages:\n    - extractor_id: pass-through-text\n      config: {}\n",
             encoding="utf-8",
         )
+
         def _fake_default_path(_corpus):
             _ = _corpus
             return recipe
+
         original_default = cli_mod._default_extraction_recipe_path
         cli_mod._default_extraction_recipe_path = _fake_default_path
         original_loader = cli_mod.load_or_build_extraction_snapshot
@@ -16503,7 +18090,9 @@ def step_exhaust_core(context) -> None:
             name="cfg",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            corpus, configuration=config_manifest
+        )
         snapshot_dir = corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -16555,7 +18144,9 @@ def step_exhaust_core(context) -> None:
             name="cache",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(stage_cache_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            stage_cache_corpus, configuration=config_manifest
+        )
         snapshot_dir = stage_cache_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -16563,7 +18154,9 @@ def step_exhaust_core(context) -> None:
         stage_dir = (
             snapshot_dir
             / "stages"
-            / extraction_mod._pipeline_stage_dir_name(stage_index=1, extractor_id="pass-through-text")
+            / extraction_mod._pipeline_stage_dir_name(
+                stage_index=1, extractor_id="pass-through-text"
+            )
         )
         (stage_dir / "text").mkdir(parents=True, exist_ok=True)
         (stage_dir / "metadata").mkdir(parents=True, exist_ok=True)
@@ -16605,14 +18198,18 @@ def step_exhaust_core(context) -> None:
 
         fatal_corpus = _temp_corpus()
         fatal_corpus.ingest_note("fatal")
+
         class _FatalExtractor:
-            def validate_config(self, config): return {}
+            def validate_config(self, config):
+                return {}
+
             def extract_text(self, *, corpus, item, config, previous_extractions):
                 _ = corpus
                 _ = item
                 _ = config
                 _ = previous_extractions
                 raise ExtractionSnapshotFatalError("fatal")
+
         original_get = extraction_mod.get_extractor
         extraction_mod.get_extractor = lambda extractor_id: _FatalExtractor()
         try:
@@ -16630,18 +18227,23 @@ def step_exhaust_core(context) -> None:
 
         sync_corpus = _temp_corpus()
         sync_corpus.ingest_note("sync")
+
         class _SyncResult:
             def __init__(self):
                 self.skipped = False
                 self.created = 1
                 self.updated = 0
                 self.deleted = 0
+
         class _Publisher:
-            def __init__(self, name): self.name = name
+            def __init__(self, name):
+                self.name = name
+
             def sync_catalog(self, path, force=False):
                 _ = path
                 _ = force
                 return _SyncResult()
+
         original_publisher = sys.modules.get("biblicus.sync.amplify_publisher")
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_Publisher
@@ -16864,6 +18466,7 @@ def step_exhaust_core(context) -> None:
         original_apply_filter = cli_mod.apply_evidence_filter
         original_corpus_open = cli_mod.Corpus.open
         import biblicus.graph.extraction as graph_extraction_mod
+
         original_graph_build = graph_extraction_mod.build_graph_snapshot
         original_graph_list = graph_extraction_mod.list_graph_snapshots
         original_graph_load = graph_extraction_mod.load_graph_snapshot_manifest
@@ -16871,6 +18474,7 @@ def step_exhaust_core(context) -> None:
         class _FakeSnapshot:
             def __init__(self, retriever_id="fake"):
                 self.configuration = types.SimpleNamespace(retriever_id=retriever_id)
+
             def model_dump_json(self, indent=2):
                 _ = indent
                 return "{}"
@@ -16881,6 +18485,7 @@ def step_exhaust_core(context) -> None:
                 _ = configuration_name
                 _ = configuration
                 return _FakeSnapshot()
+
             def query(self, corpus, snapshot, query_text, budget):
                 _ = corpus
                 _ = snapshot
@@ -16967,7 +18572,9 @@ def step_exhaust_core(context) -> None:
                 name="snap",
                 configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             )
-            manifest = create_extraction_snapshot_manifest(tmp_corpus, configuration=config_manifest)
+            manifest = create_extraction_snapshot_manifest(
+                tmp_corpus, configuration=config_manifest
+            )
             snapshot_dir = tmp_corpus.extraction_snapshot_dir(
                 extractor_id="pipeline",
                 snapshot_id=manifest.snapshot_id,
@@ -17033,30 +18640,37 @@ def step_exhaust_core(context) -> None:
 
             cli_mod.apply_evidence_reranker = lambda **kwargs: ["e2"]
             cli_mod.apply_evidence_filter = lambda **kwargs: ["e3"]
-            graph_extraction_mod.build_graph_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
-                model_dump_json=lambda indent=2: "{}"
+            graph_extraction_mod.build_graph_snapshot = (
+                lambda *args, **kwargs: types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
             )
             graph_extraction_mod.list_graph_snapshots = lambda *args, **kwargs: []
-            graph_extraction_mod.load_graph_snapshot_manifest = lambda *args, **kwargs: types.SimpleNamespace(
-                model_dump_json=lambda indent=2: "{}"
+            graph_extraction_mod.load_graph_snapshot_manifest = (
+                lambda *args, **kwargs: types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
             )
+
             class _FakeCorpus:
                 def __init__(self):
                     self.latest_snapshot_id = None
+
                 def load_snapshot(self, snapshot_id):
                     _ = snapshot_id
                     return _FakeSnapshot(retriever_id="fake")
+
             fake_corpus = _FakeCorpus()
+
             def _open(_path):
                 _ = _path
                 return fake_corpus
+
             cli_mod.Corpus.open = _open
+
             def _execute(plan, *, corpus, label, mode):
                 _ = plan
                 _ = label
                 _ = mode
                 corpus.latest_snapshot_id = "snap"
                 return []
+
             cli_mod._execute_dependency_plan = _execute
             try:
                 cli_mod.cmd_query(
@@ -17177,7 +18791,9 @@ def step_exhaust_migration(context) -> None:
         meta_dir.mkdir(parents=True, exist_ok=True)
         snapshots_root = meta_dir / "snapshots"
         snapshots_root.mkdir(parents=True, exist_ok=True)
-        migration_mod._migrate_snapshots(root=legacy_root, meta_dir=meta_dir, force=True, stats=stats)
+        migration_mod._migrate_snapshots(
+            root=legacy_root, meta_dir=meta_dir, force=True, stats=stats
+        )
         config = CorpusConfig(
             schema_version=SCHEMA_VERSION,
             created_at="t",
@@ -17292,6 +18908,7 @@ def step_exhaust_migration(context) -> None:
             encoding="utf-8",
         )
         import biblicus.corpus as corpus_mod
+
         original_parse = corpus_mod.parse_front_matter
         corpus_mod.parse_front_matter = lambda text: types.SimpleNamespace(metadata={}, body=None)
         try:
@@ -17349,6 +18966,7 @@ def step_exhaust_migration(context) -> None:
 
     try:
         from biblicus.evaluation.metrics import entity_metrics
+
         entity_metrics.normalize_entity_value("date: 2024/01/01", "date")
     except Exception:
         pass
@@ -17389,15 +19007,21 @@ def step_exhaust_migration(context) -> None:
             name="cfg",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(base_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            base_corpus, configuration=config_manifest
+        )
         snapshot_dir = base_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
         )
         snapshot_dir.mkdir(parents=True, exist_ok=True)
-        stage_dir = snapshot_dir / "stages" / extraction._pipeline_stage_dir_name(
-            stage_index=1,
-            extractor_id="pass-through-text",
+        stage_dir = (
+            snapshot_dir
+            / "stages"
+            / extraction._pipeline_stage_dir_name(
+                stage_index=1,
+                extractor_id="pass-through-text",
+            )
         )
         (stage_dir / "text").mkdir(parents=True, exist_ok=True)
         (stage_dir / "metadata").mkdir(parents=True, exist_ok=True)
@@ -17408,12 +19032,18 @@ def step_exhaust_migration(context) -> None:
         (snapshot_dir / "text" / "1.txt").write_text("cached", encoding="utf-8")
         (snapshot_dir / "metadata" / "1.json").write_text("{}", encoding="utf-8")
         original_event = extraction.threading.Event
+
         class _OneShotEvent:
-            def __init__(self): self._count = 0
+            def __init__(self):
+                self._count = 0
+
             def wait(self, timeout=None):
                 self._count += 1
                 return self._count > 1
-            def set(self): self._count = 2
+
+            def set(self):
+                self._count = 2
+
         extraction.threading.Event = _OneShotEvent
         build_extraction_snapshot(
             base_corpus,
@@ -17433,7 +19063,9 @@ def step_exhaust_migration(context) -> None:
             )
         except Exception:
             pass
-        reuse_manifest = create_extraction_snapshot_manifest(base_corpus, configuration=config_manifest)
+        reuse_manifest = create_extraction_snapshot_manifest(
+            base_corpus, configuration=config_manifest
+        )
         reuse_dir = base_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=reuse_manifest.snapshot_id,
@@ -17469,7 +19101,9 @@ def step_exhaust_migration(context) -> None:
             name="cfg-many",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest_many = create_extraction_snapshot_manifest(base_corpus, configuration=config_manifest_many)
+        snapshot_manifest_many = create_extraction_snapshot_manifest(
+            base_corpus, configuration=config_manifest_many
+        )
         snapshot_dir_many = base_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest_many.snapshot_id,
@@ -17510,6 +19144,7 @@ def step_exhaust_migration(context) -> None:
         pass
     try:
         import biblicus.sync.amplify_publisher as amp_mod
+
         config_dir = Path.home() / ".biblicus"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "amplify.env").write_text(
@@ -17524,15 +19159,27 @@ def step_exhaust_migration(context) -> None:
         sys.modules["boto3"] = types.SimpleNamespace(client=lambda name, region_name=None: object())
         amp = amp_mod.AmplifyPublisher("demo")
         calls = {"count": 0}
+
         def _execute(query, variables):
             calls["count"] += 1
             if calls["count"] < 3:
                 raise Exception("Network")
             return {}
+
         amp._execute_graphql = _execute
-        amp._create_catalog_item(types.SimpleNamespace(
-            id="1", relpath="r", sha256="s", bytes=1, media_type="text/plain", title=None, tags=[], metadata={}, source_uri=None
-        ))
+        amp._create_catalog_item(
+            types.SimpleNamespace(
+                id="1",
+                relpath="r",
+                sha256="s",
+                bytes=1,
+                media_type="text/plain",
+                title=None,
+                tags=[],
+                metadata={},
+                source_uri=None,
+            )
+        )
     except Exception:
         pass
 
@@ -17552,12 +19199,15 @@ def step_exhaust_migration(context) -> None:
             SimpleEntitiesGraphExtractor,
             SimpleEntitiesGraphConfig,
         )
+
         class _FakeDoc:
             def __init__(self):
                 self.ents = [types.SimpleNamespace(text="Alpha", label_="ORG")]
                 self._tokens = []
+
             def __iter__(self):
                 return iter(self._tokens)
+
         fake_doc = _FakeDoc()
         dep_load_doc = dependency_relations._load_doc
         ner_load_doc = ner_entities._load_doc
@@ -17580,7 +19230,9 @@ def step_exhaust_migration(context) -> None:
             corpus=_temp_corpus(),
             item=item,
             extracted_text="Alpha",
-            config=DependencyRelationsGraphConfig(model="en", min_entity_length=1, min_relation_length=1),
+            config=DependencyRelationsGraphConfig(
+                model="en", min_entity_length=1, min_relation_length=1
+            ),
         )
         DependencyRelationsGraphExtractor().extract_graph(
             corpus=_temp_corpus(),
@@ -17658,6 +19310,7 @@ def step_exhaust_migration(context) -> None:
 
     try:
         from biblicus.graph.neo4j import Neo4jSettings
+
         original_which = neo4j.shutil.which
         original_running = neo4j._container_running
         neo4j.shutil.which = lambda name: "/usr/bin/docker"
@@ -17704,7 +19357,9 @@ def step_exhaust_migration(context) -> None:
         (mig_root / "raw" / "a.txt").write_text("x", encoding="utf-8")
         migration_mod._migrate_raw_items(root=mig_root, force=True, stats={"moved_raw_items": 0})
         # no raw dir branch
-        migration_mod._migrate_raw_items(root=root / "no_raw", force=False, stats={"moved_raw_items": 0})
+        migration_mod._migrate_raw_items(
+            root=root / "no_raw", force=False, stats={"moved_raw_items": 0}
+        )
         # existing raw dir but already removed branch
         mig_root2 = root / "mig_raw2"
         mig_root2.mkdir(parents=True, exist_ok=True)
@@ -17731,20 +19386,47 @@ def step_exhaust_migration(context) -> None:
             "corpus_uri": "file:///tmp",
             "catalog_generated_at": "2024-01-01T00:00:00Z",
             "created_at": "2024-01-01T00:00:00Z",
-            "snapshot_artifacts": [".biblicus/snapshots/artifact.bin", ".biblicus/snapshots/missing.bin"],
+            "snapshot_artifacts": [
+                ".biblicus/snapshots/artifact.bin",
+                ".biblicus/snapshots/missing.bin",
+            ],
             "stats": {},
         }
-        (snapshots_root / "retrieval.json").write_text(json.dumps(retrieval_manifest), encoding="utf-8")
+        (snapshots_root / "retrieval.json").write_text(
+            json.dumps(retrieval_manifest), encoding="utf-8"
+        )
         migration_mod._migrate_retrieval_snapshots(
             snapshots_root, root / "retrieval", force=True, stats={"updated_snapshot_artifacts": 0}
         )
         # snapshots root missing branch in _migrate_snapshots rmtree skip
-        migration_mod._migrate_snapshots(root=root / "no_snapshots", meta_dir=root / "no_meta", force=False, stats={"moved_extraction_snapshots":0,"moved_graph_snapshots":0,"moved_analysis_runs":0,"moved_retrieval_snapshots":0,"updated_snapshot_artifacts":0})
+        migration_mod._migrate_snapshots(
+            root=root / "no_snapshots",
+            meta_dir=root / "no_meta",
+            force=False,
+            stats={
+                "moved_extraction_snapshots": 0,
+                "moved_graph_snapshots": 0,
+                "moved_analysis_runs": 0,
+                "moved_retrieval_snapshots": 0,
+                "updated_snapshot_artifacts": 0,
+            },
+        )
         # snapshots root exists but empty to hit cleanup block
         meta_dir = root / "empty_meta"
         snapshots_root2 = meta_dir / "snapshots"
         snapshots_root2.mkdir(parents=True, exist_ok=True)
-        migration_mod._migrate_snapshots(root=root / "empty_root", meta_dir=meta_dir, force=False, stats={"moved_extraction_snapshots":0,"moved_graph_snapshots":0,"moved_analysis_runs":0,"moved_retrieval_snapshots":0,"updated_snapshot_artifacts":0})
+        migration_mod._migrate_snapshots(
+            root=root / "empty_root",
+            meta_dir=meta_dir,
+            force=False,
+            stats={
+                "moved_extraction_snapshots": 0,
+                "moved_graph_snapshots": 0,
+                "moved_analysis_runs": 0,
+                "moved_retrieval_snapshots": 0,
+                "updated_snapshot_artifacts": 0,
+            },
+        )
     except Exception:
         pass
     try:
@@ -17759,35 +19441,61 @@ def step_exhaust_migration(context) -> None:
                 {
                     "raw_dir": "raw",
                     "items": {
-                        "i1": {"id": "i1", "relpath": "raw/file.txt", "sha256": "x", "bytes": 1, "media_type": "text/plain", "title": None, "tags": [], "metadata": {}, "created_at": "2024-01-01T00:00:00Z"}
+                        "i1": {
+                            "id": "i1",
+                            "relpath": "raw/file.txt",
+                            "sha256": "x",
+                            "bytes": 1,
+                            "media_type": "text/plain",
+                            "title": None,
+                            "tags": [],
+                            "metadata": {},
+                            "created_at": "2024-01-01T00:00:00Z",
+                        }
                     },
                 }
             )
             + "\n",
             encoding="utf-8",
         )
-        migration_mod._update_config_and_catalog(meta_dir=meta_dir, stats={"updated_catalog_items": 0})
+        migration_mod._update_config_and_catalog(
+            meta_dir=meta_dir, stats={"updated_catalog_items": 0}
+        )
         # relpath without raw/ branch
         catalog_path.write_text(
             json.dumps(
                 {
                     "raw_dir": ".",
                     "items": {
-                        "i2": {"id": "i2", "relpath": "file.txt", "sha256": "y", "bytes": 1, "media_type": "text/plain", "title": None, "tags": [], "metadata": {}, "created_at": "2024-01-02T00:00:00Z"}
+                        "i2": {
+                            "id": "i2",
+                            "relpath": "file.txt",
+                            "sha256": "y",
+                            "bytes": 1,
+                            "media_type": "text/plain",
+                            "title": None,
+                            "tags": [],
+                            "metadata": {},
+                            "created_at": "2024-01-02T00:00:00Z",
+                        }
                     },
                 }
             )
             + "\n",
             encoding="utf-8",
         )
-        migration_mod._update_config_and_catalog(meta_dir=meta_dir, stats={"updated_catalog_items": 0})
+        migration_mod._update_config_and_catalog(
+            meta_dir=meta_dir, stats={"updated_catalog_items": 0}
+        )
         bad_latest = root / "bad_latest"
         bad_latest.mkdir(parents=True, exist_ok=True)
         bad_extractor = bad_latest / "pipeline"
         bad_extractor.mkdir(parents=True, exist_ok=True)
         bad_snap = bad_extractor / "snap"
         bad_snap.mkdir(parents=True, exist_ok=True)
-        (bad_snap / "manifest.json").write_text(json.dumps({"snapshot_id": None, "created_at": 1}), encoding="utf-8")
+        (bad_snap / "manifest.json").write_text(
+            json.dumps({"snapshot_id": None, "created_at": 1}), encoding="utf-8"
+        )
         migration_mod._select_latest_manifest(bad_extractor)
     except Exception:
         pass
@@ -17804,7 +19512,9 @@ def step_exhaust_migration(context) -> None:
         nested_source = inside_root / "src"
         nested_source.mkdir(parents=True, exist_ok=True)
         try:
-            KnowledgeBase.create(source_root=nested_source, corpus_root=inside_root, retriever_id="scan")
+            KnowledgeBase.create(
+                source_root=nested_source, corpus_root=inside_root, retriever_id="scan"
+            )
         except Exception:
             pass
     except Exception:
@@ -17820,7 +19530,10 @@ def step_exhaust_migration(context) -> None:
         workflow._list_retrieval_snapshots(wf_corpus)
         wf_corpus.load_snapshot = original_load_snapshot
         # successful load branch
-        wf_corpus.load_snapshot = lambda name: types.SimpleNamespace(configuration=types.SimpleNamespace(retriever_id="scan", configuration_id="cfg"), catalog_generated_at="t")
+        wf_corpus.load_snapshot = lambda name: types.SimpleNamespace(
+            configuration=types.SimpleNamespace(retriever_id="scan", configuration_id="cfg"),
+            catalog_generated_at="t",
+        )
         workflow._list_retrieval_snapshots(wf_corpus)
         wf_corpus.load_snapshot = original_load_snapshot
     except Exception:
@@ -17831,7 +19544,9 @@ def step_exhaust_migration(context) -> None:
         select_root.mkdir(parents=True, exist_ok=True)
         invalid_snap = select_root / "snapx"
         invalid_snap.mkdir(parents=True, exist_ok=True)
-        (invalid_snap / "manifest.json").write_text(json.dumps({"snapshot_id": 1, "created_at": None}), encoding="utf-8")
+        (invalid_snap / "manifest.json").write_text(
+            json.dumps({"snapshot_id": 1, "created_at": None}), encoding="utf-8"
+        )
         migration_mod._select_latest_manifest(select_root)
     except Exception:
         pass
@@ -17840,7 +19555,13 @@ def step_exhaust_migration(context) -> None:
     try:
         tmp_corpus = _temp_corpus()
         try:
-            build_extraction_snapshot(tmp_corpus, extractor_id="pipeline", configuration_name="cfg", configuration={}, max_workers=0)
+            build_extraction_snapshot(
+                tmp_corpus,
+                extractor_id="pipeline",
+                configuration_name="cfg",
+                configuration={},
+                max_workers=0,
+            )
         except Exception:
             pass
         # create a tiny catalog to exercise log_interval and _write_partial_manifest
@@ -17878,7 +19599,9 @@ def step_exhaust_migration(context) -> None:
             name="cache",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(cache_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            cache_corpus, configuration=config_manifest
+        )
         snapshot_dir = cache_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -17940,7 +19663,9 @@ def step_exhaust_migration(context) -> None:
         (stage_stage_dir / "metadata").mkdir(parents=True, exist_ok=True)
         stage_item_id = list(stage_cache_corpus.load_catalog().items.values())[0].id
         (stage_stage_dir / "text" / f"{stage_item_id}.txt").write_text("stage", encoding="utf-8")
-        (stage_stage_dir / "metadata" / f"{stage_item_id}.json").write_text("{\"k\": 1}", encoding="utf-8")
+        (stage_stage_dir / "metadata" / f"{stage_item_id}.json").write_text(
+            '{"k": 1}', encoding="utf-8"
+        )
         write_extraction_snapshot_manifest(snapshot_dir=stage_dir, manifest=stage_manifest)
         build_extraction_snapshot(
             stage_cache_corpus,
@@ -17950,13 +19675,18 @@ def step_exhaust_migration(context) -> None:
             max_workers=1,
         )
         original_event = extraction.threading.Event
+
         class _Event:
             def __init__(self):
                 self.calls = 0
+
             def wait(self, timeout=None):
                 self.calls += 1
                 return self.calls > 1
-            def set(self): pass
+
+            def set(self):
+                pass
+
         extraction.threading.Event = _Event  # type: ignore[assignment]
         heartbeat_corpus = _temp_corpus()
         hb_path = heartbeat_corpus.raw_dir / "hb.txt"
@@ -18110,8 +19840,12 @@ def step_exhaust_migration(context) -> None:
         snap_b = snapshots_root / "b"
         snap_a.mkdir(parents=True, exist_ok=True)
         snap_b.mkdir(parents=True, exist_ok=True)
-        (snap_a / "manifest.json").write_text(json.dumps({"snapshot_id": "a", "created_at": "2024-01-01T00:00:00Z"}), encoding="utf-8")
-        (snap_b / "manifest.json").write_text(json.dumps({"snapshot_id": "b", "created_at": "2024-02-01T00:00:00Z"}), encoding="utf-8")
+        (snap_a / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "a", "created_at": "2024-01-01T00:00:00Z"}), encoding="utf-8"
+        )
+        (snap_b / "manifest.json").write_text(
+            json.dumps({"snapshot_id": "b", "created_at": "2024-02-01T00:00:00Z"}), encoding="utf-8"
+        )
         migrate_layout(corpus_root=latest_root, force=True)
     except Exception:
         pass
@@ -18157,7 +19891,9 @@ def step_exhaust_migration(context) -> None:
             ),
             encoding="utf-8",
         )
-        migration_mod._update_config_and_catalog(meta_dir=update_meta, stats={"updated_catalog_items": 0})
+        migration_mod._update_config_and_catalog(
+            meta_dir=update_meta, stats={"updated_catalog_items": 0}
+        )
     except Exception:
         pass
 
@@ -18169,10 +19905,17 @@ def step_exhaust_migration(context) -> None:
         sync_path.write_text("sync", encoding="utf-8")
         sync_corpus.ingest_file(sync_path)
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
+
         class _Syncer:
-            def __init__(self, name): self.name = name
-            def sync_catalog(self, path, force=False): return types.SimpleNamespace(skipped=False, created=1, updated=0, deleted=0)
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_Syncer)
+            def __init__(self, name):
+                self.name = name
+
+            def sync_catalog(self, path, force=False):
+                return types.SimpleNamespace(skipped=False, created=1, updated=0, deleted=0)
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_Syncer
+        )
         build_extraction_snapshot(
             sync_corpus,
             extractor_id="pipeline",
@@ -18180,10 +19923,17 @@ def step_exhaust_migration(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
+
         class _SyncFail:
-            def __init__(self, name): self.name = name
-            def sync_catalog(self, path, force=False): raise RuntimeError("boom")
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_SyncFail)
+            def __init__(self, name):
+                self.name = name
+
+            def sync_catalog(self, path, force=False):
+                raise RuntimeError("boom")
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_SyncFail
+        )
         build_extraction_snapshot(
             sync_corpus,
             extractor_id="pipeline",
@@ -18217,13 +19967,28 @@ def step_exhaust_migration(context) -> None:
                     "generated_at": "t",
                     "corpus_uri": "file:///tmp",
                     "raw_dir": "raw",
-                    "items": {"i1": {"id": "i1", "relpath": "raw/a.txt", "sha256": "x", "bytes": 1, "media_type": "text/plain", "title": None, "tags": [], "metadata": {}, "created_at": "t", "source_uri": None}},
+                    "items": {
+                        "i1": {
+                            "id": "i1",
+                            "relpath": "raw/a.txt",
+                            "sha256": "x",
+                            "bytes": 1,
+                            "media_type": "text/plain",
+                            "title": None,
+                            "tags": [],
+                            "metadata": {},
+                            "created_at": "t",
+                            "source_uri": None,
+                        }
+                    },
                     "order": ["i1"],
                 }
             ),
             encoding="utf-8",
         )
-        migration_mod._update_config_and_catalog(meta_dir=meta_dir, stats={"updated_catalog_items": 0})
+        migration_mod._update_config_and_catalog(
+            meta_dir=meta_dir, stats={"updated_catalog_items": 0}
+        )
     except Exception:
         pass
 
@@ -18260,13 +20025,18 @@ def step_exhaust_migration(context) -> None:
 
     try:
         original_event = extraction.threading.Event
+
         class _Event:
             def __init__(self):
                 self.calls = 0
+
             def wait(self, timeout=None):
                 self.calls += 1
                 return self.calls > 1
-            def set(self): pass
+
+            def set(self):
+                pass
+
         extraction.threading.Event = _Event  # type: ignore[assignment]
         hb_corpus = _temp_corpus()
         hb_path = hb_corpus.raw_dir / "hb.txt"
@@ -18299,7 +20069,9 @@ def step_exhaust_migration(context) -> None:
             name="cache2",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(cache_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            cache_corpus, configuration=config_manifest
+        )
         snapshot_dir = cache_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -18309,7 +20081,7 @@ def step_exhaust_migration(context) -> None:
         (snapshot_dir / "text").mkdir(parents=True, exist_ok=True)
         (snapshot_dir / "metadata").mkdir(parents=True, exist_ok=True)
         (snapshot_dir / "text" / f"{item_id}.txt").write_text("final", encoding="utf-8")
-        (snapshot_dir / "metadata" / f"{item_id}.json").write_text("{\"k\":1}", encoding="utf-8")
+        (snapshot_dir / "metadata" / f"{item_id}.json").write_text('{"k":1}', encoding="utf-8")
         cached_item = ExtractionItemResult(
             item_id=item_id,
             status="extracted",
@@ -18359,7 +20131,7 @@ def step_exhaust_migration(context) -> None:
         (stage_dir / "metadata").mkdir(parents=True, exist_ok=True)
         item_id = list(stage_cache.load_catalog().items.values())[0].id
         (stage_dir / "text" / f"{item_id}.txt").write_text("stage", encoding="utf-8")
-        (stage_dir / "metadata" / f"{item_id}.json").write_text("{\"k\":1}", encoding="utf-8")
+        (stage_dir / "metadata" / f"{item_id}.json").write_text('{"k":1}', encoding="utf-8")
         write_extraction_snapshot_manifest(snapshot_dir=snap_dir, manifest=snap_manifest)
         build_extraction_snapshot(
             stage_cache,
@@ -18373,7 +20145,12 @@ def step_exhaust_migration(context) -> None:
 
     try:
         import biblicus.analysis.profiling as profiling_mod
-        from biblicus.analysis.profiling import ProfilingBackend, _apply_sample, _build_distribution, _percentile_value
+        from biblicus.analysis.profiling import (
+            ProfilingBackend,
+            _apply_sample,
+            _build_distribution,
+            _percentile_value,
+        )
         from biblicus.analysis.models import ProfilingConfiguration
 
         profiling_corpus = _temp_corpus()
@@ -18391,7 +20168,9 @@ def step_exhaust_migration(context) -> None:
             name="profiling",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(profiling_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            profiling_corpus, configuration=config_manifest
+        )
         snapshot_dir = profiling_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -18493,7 +20272,9 @@ def step_exhaust_migration(context) -> None:
             name="cache-stage",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snapshot_manifest = create_extraction_snapshot_manifest(cache_corpus, configuration=config_manifest)
+        snapshot_manifest = create_extraction_snapshot_manifest(
+            cache_corpus, configuration=config_manifest
+        )
         snapshot_dir = cache_corpus.extraction_snapshot_dir(
             extractor_id="pipeline",
             snapshot_id=snapshot_manifest.snapshot_id,
@@ -18503,7 +20284,7 @@ def step_exhaust_migration(context) -> None:
         (stage_dir / "metadata").mkdir(parents=True, exist_ok=True)
         item_id = list(cache_corpus.load_catalog().items.values())[0].id
         (stage_dir / "text" / f"{item_id}.txt").write_text("cached", encoding="utf-8")
-        (stage_dir / "metadata" / f"{item_id}.json").write_text("{\"k\":1}", encoding="utf-8")
+        (stage_dir / "metadata" / f"{item_id}.json").write_text('{"k":1}', encoding="utf-8")
         build_extraction_snapshot(
             cache_corpus,
             extractor_id="pipeline",
@@ -18521,12 +20302,16 @@ def step_exhaust_migration(context) -> None:
         fatal_path.write_text("fatal", encoding="utf-8")
         fatal_corpus.ingest_file(fatal_path, media_type="application/octet-stream")
         original_get_extractor = extraction.get_extractor
+
         class _FatalExtractor:
             extractor_id = "fatal"
+
             def validate_config(self, config):
                 return config
+
             def extract_text(self, **kwargs):
                 raise ExtractionSnapshotFatalError("fatal")
+
         extraction.get_extractor = lambda extractor_id: _FatalExtractor()
         try:
             build_extraction_snapshot(
@@ -18546,7 +20331,7 @@ def step_exhaust_migration(context) -> None:
         import biblicus.cli as cli_mod
         from biblicus.configuration import parse_dotted_overrides, load_configuration_view
 
-        cli_mod._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])
+        cli_mod._parse_config_pairs(["a=1", "b=2.5", 'c={"x":1}', "d=[1,2]", "e=text"])
         try:
             cli_mod._parse_config_pairs(["bad={"])
         except Exception:
@@ -18571,7 +20356,7 @@ def step_exhaust_migration(context) -> None:
             pass
         cli_mod._parse_stage_spec("pass-through-text")
         cli_mod._parse_stage_spec("pass-through-text:")
-        cli_mod._parse_stage_spec("pass-through-text:alpha=1,beta={\"x\":1}")
+        cli_mod._parse_stage_spec('pass-through-text:alpha=1,beta={"x":1}')
         try:
             cli_mod._parse_stage_spec("")
         except Exception:
@@ -18633,7 +20418,9 @@ def step_exhaust_migration(context) -> None:
         import_root.mkdir(parents=True, exist_ok=True)
         (import_root / "a.txt").write_text("a", encoding="utf-8")
         cli_mod.cmd_import_tree(
-            argparse.Namespace(corpus=str(cli_corpus.root), path=str(import_root), tags=None, tag=None)
+            argparse.Namespace(
+                corpus=str(cli_corpus.root), path=str(import_root), tags=None, tag=None
+            )
         )
         try:
             cli_mod.cmd_ingest(file_args)
@@ -18650,7 +20437,9 @@ def step_exhaust_migration(context) -> None:
             name="extract",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snap_manifest = create_extraction_snapshot_manifest(extract_corpus, configuration=cfg_manifest)
+        snap_manifest = create_extraction_snapshot_manifest(
+            extract_corpus, configuration=cfg_manifest
+        )
         snap_dir = extract_corpus.extraction_snapshot_dir("pipeline", snap_manifest.snapshot_id)
         (snap_dir / "text").mkdir(parents=True, exist_ok=True)
         item_id = list(extract_corpus.load_catalog().items.values())[0].id
@@ -18725,14 +20514,18 @@ def step_exhaust_migration(context) -> None:
             name="extract",
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
         )
-        snap_manifest2 = create_extraction_snapshot_manifest(extract_corpus2, configuration=cfg_manifest2)
+        snap_manifest2 = create_extraction_snapshot_manifest(
+            extract_corpus2, configuration=cfg_manifest2
+        )
         snap_dir2 = extract_corpus2.extraction_snapshot_dir("pipeline", snap_manifest2.snapshot_id)
         snap_dir2.mkdir(parents=True, exist_ok=True)
         write_extraction_snapshot_manifest(snapshot_dir=snap_dir2, manifest=snap_manifest2)
         original_latest = extract_corpus2.latest_extraction_snapshot_reference
-        extract_corpus2.latest_extraction_snapshot_reference = lambda extractor_id=None: ExtractionSnapshotReference(
-            extractor_id="pipeline",
-            snapshot_id=snap_manifest2.snapshot_id,
+        extract_corpus2.latest_extraction_snapshot_reference = (
+            lambda extractor_id=None: ExtractionSnapshotReference(
+                extractor_id="pipeline",
+                snapshot_id=snap_manifest2.snapshot_id,
+            )
         )
         try:
             cli_mod.cmd_extract_evaluate(
@@ -18784,15 +20577,20 @@ def step_exhaust_migration(context) -> None:
             def __init__(self, kind, status="pending"):
                 self.kind = kind
                 self.status = status
+
         class _Plan:
             def __init__(self, status, tasks):
                 self.status = status
                 self.tasks = tasks
-                self.root = tasks[-1] if tasks else types.SimpleNamespace(reason="blocked", kind="query")
+                self.root = (
+                    tasks[-1] if tasks else types.SimpleNamespace(reason="blocked", kind="query")
+                )
+
             def execute(self, mode="auto", handler_registry=None):
                 _ = mode
                 _ = handler_registry
                 return ["ok"]
+
         original_input = builtins.input
         builtins.input = lambda *args, **kwargs: "y"
         cli_mod._prompt_dependency_plan(_Plan("ready", [_Task("index")]), "index")
@@ -18831,13 +20629,18 @@ def step_exhaust_migration(context) -> None:
         except Exception:
             pass
         build_cfg_path = root / "build_config.yml"
-        build_cfg_path.write_text("embedding_provider:\n  provider_id: hash-embedding\n  dimensions: 2\n", encoding="utf-8")
+        build_cfg_path.write_text(
+            "embedding_provider:\n  provider_id: hash-embedding\n  dimensions: 2\n",
+            encoding="utf-8",
+        )
+
         class _FakeRetriever:
             def build_snapshot(self, corpus, configuration_name, configuration):
                 _ = corpus
                 _ = configuration_name
                 _ = configuration
                 return types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
+
         original_get_retriever = cli_mod.get_retriever
         original_execute = cli_mod._execute_dependency_plan
         cli_mod.get_retriever = lambda retriever_id: _FakeRetriever()
@@ -18888,10 +20691,17 @@ def step_exhaust_migration(context) -> None:
 
     try:
         os.environ["AMPLIFY_AUTO_SYNC_CATALOG"] = "true"
+
         class _Pub:
-            def __init__(self, name): self.name = name
-            def sync_catalog(self, *args, **kwargs): return types.SimpleNamespace(skipped=False, created=1, updated=0, deleted=0)
-        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_Pub)
+            def __init__(self, name):
+                self.name = name
+
+            def sync_catalog(self, *args, **kwargs):
+                return types.SimpleNamespace(skipped=False, created=1, updated=0, deleted=0)
+
+        sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
+            AmplifyPublisher=_Pub
+        )
         sync_corpus = _temp_corpus()
         p = sync_corpus.raw_dir / "s.txt"
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -18912,27 +20722,41 @@ def step_exhaust_migration(context) -> None:
     try:
         # direct google speech coverage
         speech = types.SimpleNamespace()
+
         class _Alt:
             def __init__(self, text, confidence=None):
                 self.transcript = text
                 if confidence is not None:
                     self.confidence = confidence
+
         class _Result:
             def __init__(self, alternatives):
                 self.alternatives = alternatives
+
         class _Resp:
             def __init__(self):
                 self.results = [_Result([_Alt("one", confidence=0.5), _Alt("two")])]
+
         class RecognitionAudio:
-            def __init__(self, content): self.content = content
+            def __init__(self, content):
+                self.content = content
+
         class RecognitionConfig:
             class AudioEncoding:
                 LINEAR16 = 1
-            def __init__(self, **kwargs): pass
+
+            def __init__(self, **kwargs):
+                pass
+
         class SpeakerDiarizationConfig:
-            def __init__(self, enable_speaker_diarization=True): self.min_speaker_count=None; self.max_speaker_count=None
+            def __init__(self, enable_speaker_diarization=True):
+                self.min_speaker_count = None
+                self.max_speaker_count = None
+
         class SpeechClient:
-            def recognize(self, config, audio): return _Resp()
+            def recognize(self, config, audio):
+                return _Resp()
+
         speech.RecognitionAudio = RecognitionAudio
         speech.RecognitionConfig = RecognitionConfig
         speech.SpeakerDiarizationConfig = SpeakerDiarizationConfig
@@ -18942,7 +20766,14 @@ def step_exhaust_migration(context) -> None:
         _install_fake("google.cloud", cloud)
         _install_fake("google.cloud.speech", speech)
         extractor = GoogleSpeechToTextExtractor()
-        cfg = extractor.validate_config({"language_code": "en-US", "enable_word_time_offsets": True, "enable_speaker_diarization": True, "diarization_speaker_count": 2})
+        cfg = extractor.validate_config(
+            {
+                "language_code": "en-US",
+                "enable_word_time_offsets": True,
+                "enable_speaker_diarization": True,
+                "diarization_speaker_count": 2,
+            }
+        )
         extractor.extract_text(
             corpus=_temp_corpus(),
             item=_fake_audio_item(_temp_corpus().root),

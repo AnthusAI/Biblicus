@@ -75,6 +75,112 @@ class ContextPackBlock(BaseModel):
     metadata: Optional[Dict[str, object]] = None
 
 
+class ContextBlock(BaseModel):
+    """
+    Ordered context block used outside retrieval-specific evidence flows.
+
+    :ivar block_id: Stable block identifier.
+    :vartype block_id: str
+    :ivar section: Section key such as doctrine, taxonomy, desk_memory, or fresh_evidence.
+    :vartype section: str
+    :ivar text: Text payload for the block.
+    :vartype text: str
+    :ivar required: Whether this block is mandatory even when budgets are tight.
+    :vartype required: bool
+    :ivar priority: Higher values indicate more important blocks within the same order.
+    :vartype priority: int
+    :ivar metadata: Optional source/debug metadata for the block.
+    :vartype metadata: dict[str, object] or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str = Field(min_length=1)
+    section: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    required: bool = False
+    priority: int = 0
+    metadata: Optional[Dict[str, object]] = None
+
+
+class ContextSectionBudget(BaseModel):
+    """
+    Token share budget for one logical section of an assembled context pack.
+
+    :ivar section: Section key.
+    :vartype section: str
+    :ivar share: Fraction of the total token budget reserved for the section.
+    :vartype share: float
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    section: str = Field(min_length=1)
+    share: float = Field(gt=0, le=1)
+
+
+class ContextBlockBuildRequest(BaseModel):
+    """
+    Request to build a budgeted context pack from ordered context blocks.
+
+    :ivar blocks: Ordered context blocks.
+    :vartype blocks: list[ContextBlock]
+    :ivar join_with: Separator inserted between blocks.
+    :vartype join_with: str
+    :ivar max_tokens: Optional overall token budget.
+    :vartype max_tokens: int or None
+    :ivar max_characters: Optional overall character budget.
+    :vartype max_characters: int or None
+    :ivar section_budgets: Optional per-section token share budgets.
+    :vartype section_budgets: list[ContextSectionBudget]
+    :ivar token_counter: Token counter configuration.
+    :vartype token_counter: TokenCounter
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    blocks: List[ContextBlock] = Field(default_factory=list)
+    join_with: str = Field(default="\n\n")
+    max_tokens: Optional[int] = Field(default=None, ge=1)
+    max_characters: Optional[int] = Field(default=None, ge=1)
+    section_budgets: List[ContextSectionBudget] = Field(default_factory=list)
+    token_counter: TokenCounter = Field(default_factory=lambda: TokenCounter())
+
+
+class ContextBlockBuildResult(BaseModel):
+    """
+    Result of building a budgeted context pack from ordered context blocks.
+
+    :ivar text: Final context-pack text.
+    :vartype text: str
+    :ivar included_blocks: Blocks included in the final output.
+    :vartype included_blocks: list[ContextBlock]
+    :ivar dropped_blocks: Blocks removed during budget fitting.
+    :vartype dropped_blocks: list[ContextBlock]
+    :ivar section_token_counts: Token counts per included section.
+    :vartype section_token_counts: dict[str, int]
+    :ivar total_tokens: Total token count for the final text.
+    :vartype total_tokens: int
+    :ivar total_characters: Total character count for the final text.
+    :vartype total_characters: int
+    :ivar max_tokens: Applied overall token budget.
+    :vartype max_tokens: int or None
+    :ivar max_characters: Applied overall character budget.
+    :vartype max_characters: int or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str
+    included_blocks: List[ContextBlock] = Field(default_factory=list)
+    dropped_blocks: List[ContextBlock] = Field(default_factory=list)
+    section_token_counts: Dict[str, int] = Field(default_factory=dict)
+    total_tokens: int = Field(ge=0)
+    total_characters: int = Field(ge=0)
+    max_tokens: Optional[int] = Field(default=None, ge=1)
+    max_characters: Optional[int] = Field(default=None, ge=1)
+
+
 class TokenCounter(BaseModel):
     """
     Token counter configuration for token budget fitting.
@@ -250,6 +356,72 @@ def fit_context_pack_to_character_budget(
     return ContextPack(text="", evidence_count=0, blocks=[])
 
 
+def build_context_pack_from_blocks(request: ContextBlockBuildRequest) -> ContextBlockBuildResult:
+    """
+    Build a deterministic context pack from ordered context blocks.
+
+    The algorithm preserves caller-provided order. It first enforces per-section
+    token share budgets, then overall character and token budgets by dropping
+    trailing non-required blocks.
+
+    :param request: Context block build request.
+    :type request: ContextBlockBuildRequest
+    :return: Budgeted context-pack result.
+    :rtype: ContextBlockBuildResult
+    """
+    included_blocks = [
+        block.model_copy(update={"text": block.text.strip()})
+        for block in request.blocks
+        if isinstance(block.text, str) and block.text.strip()
+    ]
+    dropped_blocks: List[ContextBlock] = []
+
+    if request.max_tokens is not None and request.section_budgets:
+        for section_budget in request.section_budgets:
+            section_cap = max(1, int(request.max_tokens * float(section_budget.share)))
+            included_blocks, newly_dropped = _fit_blocks_for_section_budget(
+                included_blocks,
+                join_with=request.join_with,
+                section=section_budget.section,
+                max_tokens=section_cap,
+                token_counter=request.token_counter,
+            )
+            dropped_blocks.extend(newly_dropped)
+
+    if request.max_characters is not None:
+        included_blocks, newly_dropped = _fit_blocks_to_character_budget(
+            included_blocks,
+            join_with=request.join_with,
+            max_characters=request.max_characters,
+        )
+        dropped_blocks.extend(newly_dropped)
+
+    if request.max_tokens is not None:
+        included_blocks, newly_dropped = _fit_blocks_to_token_budget(
+            included_blocks,
+            join_with=request.join_with,
+            max_tokens=request.max_tokens,
+            token_counter=request.token_counter,
+        )
+        dropped_blocks.extend(newly_dropped)
+
+    text = request.join_with.join([block.text for block in included_blocks])
+    section_token_counts = _section_token_counts(
+        included_blocks,
+        tokenizer_id=request.token_counter.tokenizer_id,
+    )
+    return ContextBlockBuildResult(
+        text=text,
+        included_blocks=included_blocks,
+        dropped_blocks=dropped_blocks,
+        section_token_counts=section_token_counts,
+        total_tokens=count_tokens(text, tokenizer_id=request.token_counter.tokenizer_id) if text else 0,
+        total_characters=len(text),
+        max_tokens=request.max_tokens,
+        max_characters=request.max_characters,
+    )
+
+
 def _order_evidence(
     evidence: List[Evidence],
     *,
@@ -330,3 +502,100 @@ def _format_block_text(text: str, *, metadata: Optional[Dict[str, object]]) -> s
         metadata_lines.append(f"{key}: {metadata[key]}")
     metadata_text = "\n".join(metadata_lines)
     return f"{metadata_text}\n{text}"
+
+
+def _fit_blocks_for_section_budget(
+    blocks: List[ContextBlock],
+    *,
+    join_with: str,
+    section: str,
+    max_tokens: int,
+    token_counter: TokenCounter,
+) -> tuple[List[ContextBlock], List[ContextBlock]]:
+    included = list(blocks)
+    dropped: List[ContextBlock] = []
+    while _section_token_count(included, section=section, join_with=join_with, tokenizer_id=token_counter.tokenizer_id) > max_tokens:
+        drop_index = _last_droppable_block_index(included, section=section)
+        if drop_index is None:
+            break
+        dropped.append(included.pop(drop_index))
+    return included, dropped
+
+
+def _fit_blocks_to_token_budget(
+    blocks: List[ContextBlock],
+    *,
+    join_with: str,
+    max_tokens: int,
+    token_counter: TokenCounter,
+) -> tuple[List[ContextBlock], List[ContextBlock]]:
+    included = list(blocks)
+    dropped: List[ContextBlock] = []
+    while included:
+        text = join_with.join([block.text for block in included])
+        if count_tokens(text, tokenizer_id=token_counter.tokenizer_id) <= max_tokens:
+            break
+        drop_index = _last_droppable_block_index(included)
+        if drop_index is None:
+            break
+        dropped.append(included.pop(drop_index))
+    return included, dropped
+
+
+def _fit_blocks_to_character_budget(
+    blocks: List[ContextBlock],
+    *,
+    join_with: str,
+    max_characters: int,
+) -> tuple[List[ContextBlock], List[ContextBlock]]:
+    included = list(blocks)
+    dropped: List[ContextBlock] = []
+    while included:
+        text = join_with.join([block.text for block in included])
+        if len(text) <= max_characters:
+            break
+        drop_index = _last_droppable_block_index(included)
+        if drop_index is None:
+            break
+        dropped.append(included.pop(drop_index))
+    return included, dropped
+
+
+def _last_droppable_block_index(
+    blocks: List[ContextBlock],
+    *,
+    section: Optional[str] = None,
+) -> Optional[int]:
+    for index in range(len(blocks) - 1, -1, -1):
+        block = blocks[index]
+        if section is not None and block.section != section:
+            continue
+        if block.required:
+            continue
+        return index
+    return None
+
+
+def _section_token_count(
+    blocks: List[ContextBlock],
+    *,
+    section: str,
+    join_with: str,
+    tokenizer_id: str,
+) -> int:
+    section_blocks = [block.text for block in blocks if block.section == section]
+    if not section_blocks:
+        return 0
+    return count_tokens(join_with.join(section_blocks), tokenizer_id=tokenizer_id)
+
+
+def _section_token_counts(
+    blocks: List[ContextBlock],
+    *,
+    tokenizer_id: str,
+) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for block in blocks:
+        counts.setdefault(block.section, 0)
+        counts[block.section] += count_tokens(block.text, tokenizer_id=tokenizer_id)
+    return counts

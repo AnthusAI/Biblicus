@@ -194,11 +194,11 @@ The `ner-entities` extractor uses a named entity recognition model to emit entit
 This extractor is deterministic for a fixed model and configuration and provides a stronger baseline than the
 simple-entities heuristic.
 
-Install spaCy and the model referenced in your configuration before running:
+Install the `ner` extra before running. It includes spaCy and the default model referenced in the bundled
+`ner-entities` configuration:
 
 ```
-python -m pip install spacy
-python -m spacy download en_core_web_sm
+uv sync --extra ner
 ```
 
 Example command:
@@ -233,8 +233,7 @@ This extractor provides relation-centric baselines that are still deterministic 
 Install spaCy and the model referenced in your configuration before running:
 
 ```
-python -m pip install spacy
-python -m spacy download en_core_web_sm
+uv sync --extra ner
 ```
 
 Example command:

@@ -74,7 +74,8 @@ topic-modeling = [
   "bertopic>=0.15.0",
 ]
 ner = [
-  "spacy>=3.7.0",
+  "spacy>=3.8,<3.9",
+  "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
 ]
 markov-analysis = [
   "hmmlearn>=0.3.0",
