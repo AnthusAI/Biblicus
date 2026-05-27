@@ -1,4 +1,7 @@
 from types import SimpleNamespace
+import signal
+import sys
+import time
 
 import pytest
 
@@ -8,6 +11,7 @@ from biblicus.extraction import (
     ExtractionSnapshotManifest,
 )
 from biblicus.graph.extraction import build_graph_snapshot, export_graph_snapshot
+from biblicus.graph.extractors import ner_entities
 from biblicus.graph.extractors.ner_entities import _build_relation_edges, _looks_like_entity_label
 from biblicus.graph.models import GraphExtractionResult, GraphSnapshotReference
 
@@ -418,6 +422,200 @@ def test_ner_entity_label_shape_filter_rejects_math_fragments():
     assert not _looks_like_entity_label("+𝑡 𝑛𝑑(𝐴 𝑛 𝐵𝑛)+𝑦=")
     assert not _looks_like_entity_label("Classic LM Search\n LM")
     assert not _looks_like_entity_label("Cambridge,3Georgia Institute")
+
+
+def test_ner_spacy_pipeline_cache_reused(monkeypatch):
+    ner_entities._SPACY_PIPELINE_CACHE.clear()
+    load_calls: list[str] = []
+
+    class FakeDoc:
+        ents = []
+
+    class FakePipeline:
+        def __call__(self, _text):
+            return FakeDoc()
+
+    class FakeSpacy:
+        @staticmethod
+        def load(model_name):
+            load_calls.append(model_name)
+            return FakePipeline()
+
+    monkeypatch.setitem(sys.modules, "spacy", FakeSpacy())
+    ner_entities._extract_entities(
+        extracted_text="OpenAI and Microsoft",
+        model_name="fake-model",
+        min_length=1,
+        max_length=100,
+        entity_labels=None,
+    )
+    ner_entities._extract_entities(
+        extracted_text="OpenAI and Microsoft",
+        model_name="fake-model",
+        min_length=1,
+        max_length=100,
+        entity_labels=None,
+    )
+    assert load_calls == ["fake-model"]
+
+
+def test_graph_extraction_timeout_records_error_reason(monkeypatch, tmp_path):
+    if not hasattr(signal, "setitimer"):
+        pytest.skip("signal.setitimer is unavailable on this platform")
+
+    class DummyDriver:
+        def session(self, database=None):  # noqa: ARG002
+            return SimpleNamespace()
+
+        def close(self):
+            pass
+
+    class DummyExtractor:
+        def validate_config(self, config):  # noqa: ARG002
+            return {}
+
+        def extract_graph(self, **kwargs):  # noqa: ARG002
+            time.sleep(0.05)
+            return GraphExtractionResult(item_id="item1", nodes=[], edges=[])
+
+    class DummyCorpus:
+        def __init__(self, root):
+            self.uri = "file://corpus"
+            self.root = root
+            self.meta_dir = root
+
+        def graph_snapshot_dir(self, extractor_id, snapshot_id):  # noqa: ARG002
+            return self.root / "graph" / snapshot_id
+
+        def load_extraction_snapshot_manifest(self, extractor_id, snapshot_id):  # noqa: ARG002
+            config_manifest = ExtractionConfigurationManifest(
+                configuration_id="c1",
+                extractor_id=extractor_id,
+                name="cfg",
+                created_at="now",
+                configuration={},
+            )
+            return ExtractionSnapshotManifest(
+                snapshot_id=snapshot_id,
+                configuration=config_manifest,
+                corpus_uri="file://corpus",
+                catalog_generated_at="now",
+                created_at="now",
+                items=[ExtractionItemResult(item_id="item1", status="complete", stage_results=[])],
+            )
+
+        def get_item(self, item_id):
+            return SimpleNamespace(id=item_id)
+
+        def load_catalog(self):
+            return SimpleNamespace(generated_at="now")
+
+    monkeypatch.setattr("biblicus.graph.extraction.get_graph_extractor", lambda _: DummyExtractor())
+    monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
+    monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda _settings: DummyDriver())
+    monkeypatch.setattr("biblicus.graph.extraction.clear_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
+
+    manifest = build_graph_snapshot(
+        corpus=DummyCorpus(tmp_path),
+        extractor_id="dummy",
+        configuration_name="cfg",
+        configuration={},
+        extraction_snapshot=SimpleNamespace(
+            extractor_id="extractor",
+            snapshot_id="snap",
+            as_string=lambda: "extractor:snap",
+        ),
+        item_timeout_seconds=0.01,
+        item_retry_attempts=0,
+    )
+
+    assert manifest.stats["items_errored"] == 1
+    assert manifest.stats["items_timed_out"] == 1
+    summary = manifest.stats["item_summaries"][0]
+    assert summary["status"] == "error"
+    assert summary["error_reason"] == "timeout"
+    assert summary["attempts"] == 1
+
+
+def test_graph_extraction_retry_recovers_from_first_failure(monkeypatch, tmp_path):
+    attempts_by_item: dict[str, int] = {}
+
+    class DummyDriver:
+        def session(self, database=None):  # noqa: ARG002
+            return SimpleNamespace()
+
+        def close(self):
+            pass
+
+    class DummyExtractor:
+        def validate_config(self, config):  # noqa: ARG002
+            return {}
+
+        def extract_graph(self, *, item, **kwargs):  # noqa: ARG002
+            attempts_by_item[item.id] = attempts_by_item.get(item.id, 0) + 1
+            if attempts_by_item[item.id] == 1:
+                raise RuntimeError("first attempt fails")
+            return GraphExtractionResult(item_id=item.id, nodes=[], edges=[])
+
+    class DummyCorpus:
+        def __init__(self, root):
+            self.uri = "file://corpus"
+            self.root = root
+            self.meta_dir = root
+
+        def graph_snapshot_dir(self, extractor_id, snapshot_id):  # noqa: ARG002
+            return self.root / "graph" / snapshot_id
+
+        def load_extraction_snapshot_manifest(self, extractor_id, snapshot_id):  # noqa: ARG002
+            config_manifest = ExtractionConfigurationManifest(
+                configuration_id="c1",
+                extractor_id=extractor_id,
+                name="cfg",
+                created_at="now",
+                configuration={},
+            )
+            return ExtractionSnapshotManifest(
+                snapshot_id=snapshot_id,
+                configuration=config_manifest,
+                corpus_uri="file://corpus",
+                catalog_generated_at="now",
+                created_at="now",
+                items=[ExtractionItemResult(item_id="item1", status="complete", stage_results=[])],
+            )
+
+        def get_item(self, item_id):
+            return SimpleNamespace(id=item_id)
+
+        def load_catalog(self):
+            return SimpleNamespace(generated_at="now")
+
+    monkeypatch.setattr("biblicus.graph.extraction.get_graph_extractor", lambda _: DummyExtractor())
+    monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
+    monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda _settings: DummyDriver())
+    monkeypatch.setattr("biblicus.graph.extraction.clear_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
+
+    manifest = build_graph_snapshot(
+        corpus=DummyCorpus(tmp_path),
+        extractor_id="dummy",
+        configuration_name="cfg",
+        configuration={},
+        extraction_snapshot=SimpleNamespace(
+            extractor_id="extractor",
+            snapshot_id="snap",
+            as_string=lambda: "extractor:snap",
+        ),
+        item_timeout_seconds=None,
+        item_retry_attempts=1,
+    )
+
+    assert manifest.stats["items_errored"] == 0
+    summary = manifest.stats["item_summaries"][0]
+    assert summary["status"] == "complete"
+    assert summary["attempts"] == 2
     assert not _looks_like_entity_label("D. Kapur")
 
 

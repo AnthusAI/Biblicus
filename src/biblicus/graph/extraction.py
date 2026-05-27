@@ -5,6 +5,10 @@ Graph extraction snapshots for Biblicus.
 from __future__ import annotations
 
 import json
+import signal
+import threading
+import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -163,6 +167,9 @@ def build_graph_snapshot(
     configuration: Dict[str, Any],
     extraction_snapshot: ExtractionSnapshotReference,
     max_items: Optional[int] = None,
+    item_timeout_seconds: Optional[float] = 60.0,
+    item_retry_attempts: int = 0,
+    heartbeat_interval_seconds: float = 10.0,
     progress_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> GraphSnapshotManifest:
     """
@@ -180,6 +187,13 @@ def build_graph_snapshot(
     :type extraction_snapshot: ExtractionSnapshotReference
     :param max_items: Optional maximum number of extraction items to process.
     :type max_items: int or None
+    :param item_timeout_seconds: Optional per-item extraction timeout in seconds.
+        Non-positive values disable timeout enforcement.
+    :type item_timeout_seconds: float or None
+    :param item_retry_attempts: Number of retries after a failed extraction attempt.
+    :type item_retry_attempts: int
+    :param heartbeat_interval_seconds: Progress heartbeat cadence in seconds.
+    :type heartbeat_interval_seconds: float
     :param progress_callback: Optional callback for progress events.
     :type progress_callback: collections.abc.Callable or None
     :return: Graph snapshot manifest.
@@ -215,6 +229,11 @@ def build_graph_snapshot(
         if max_items <= 0:
             raise ValueError("max_items must be a positive integer")
         extraction_items = extraction_items[:max_items]
+    timeout_seconds = float(item_timeout_seconds) if item_timeout_seconds is not None else None
+    if timeout_seconds is not None and timeout_seconds <= 0:
+        timeout_seconds = None
+    retry_attempts = max(0, int(item_retry_attempts))
+    heartbeat_seconds = max(0.0, float(heartbeat_interval_seconds))
 
     snapshot_dir = corpus.graph_snapshot_dir(
         extractor_id=extractor_id,
@@ -236,8 +255,11 @@ def build_graph_snapshot(
     node_total = 0
     edge_total = 0
     errored_total = 0
+    timed_out_total = 0
     skipped_total = 0
     item_summaries: List[GraphExtractionItemSummary] = []
+    started_monotonic = time.monotonic()
+    last_heartbeat_monotonic = started_monotonic
 
     try:
         clear_graph_records(
@@ -248,7 +270,24 @@ def build_graph_snapshot(
             extraction_snapshot=extraction_snapshot.as_string(),
         )
         for index, item_result in enumerate(extraction_items, start=1):
+            last_heartbeat_monotonic = _maybe_emit_graph_heartbeat(
+                progress_callback=progress_callback,
+                snapshot_id=manifest.snapshot_id,
+                extractor_id=extractor_id,
+                items_total=len(extraction_items),
+                items_available=len(extraction_manifest.items),
+                item_index=index - 1,
+                node_total=node_total,
+                edge_total=edge_total,
+                skipped_total=skipped_total,
+                errored_total=errored_total,
+                timed_out_total=timed_out_total,
+                started_monotonic=started_monotonic,
+                heartbeat_interval_seconds=heartbeat_seconds,
+                last_heartbeat_monotonic=last_heartbeat_monotonic,
+            )
             item = corpus.get_item(item_result.item_id)
+            item_started_monotonic = time.monotonic()
             _emit_graph_progress(
                 progress_callback,
                 "processing",
@@ -256,6 +295,7 @@ def build_graph_snapshot(
                 item_id=item.id,
                 item_index=index,
                 items_total=len(extraction_items),
+                elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
             )
             try:
                 extracted_text = _load_extracted_text(
@@ -272,6 +312,9 @@ def build_graph_snapshot(
                             node_count=0,
                             edge_count=0,
                             error_message="No extracted text",
+                            error_reason="no_extracted_text",
+                            duration_ms=int((time.monotonic() - item_started_monotonic) * 1000),
+                            attempts=1,
                         )
                     )
                     _emit_graph_progress(
@@ -284,13 +327,20 @@ def build_graph_snapshot(
                         status="skipped",
                         nodes=node_total,
                         edges=edge_total,
+                        attempts=1,
+                        duration_ms=int((time.monotonic() - item_started_monotonic) * 1000),
+                        error_reason="no_extracted_text",
+                        elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
                     )
                     continue
-                result = extractor.extract_graph(
+                result, attempts = _run_extractor_with_retry(
+                    extractor=extractor,
                     corpus=corpus,
                     item=item,
                     extracted_text=extracted_text,
                     config=parsed_config,
+                    timeout_seconds=timeout_seconds,
+                    retry_attempts=retry_attempts,
                 )
                 if not isinstance(result, GraphExtractionResult):
                     raise ValueError("Graph extractor must return GraphExtractionResult")
@@ -312,6 +362,8 @@ def build_graph_snapshot(
                         status="complete",
                         node_count=len(result.nodes),
                         edge_count=len(result.edges),
+                        duration_ms=int((time.monotonic() - item_started_monotonic) * 1000),
+                        attempts=attempts,
                     )
                 )
                 _emit_graph_progress(
@@ -324,11 +376,48 @@ def build_graph_snapshot(
                     status="complete",
                     nodes=node_total,
                     edges=edge_total,
+                    attempts=attempts,
+                    duration_ms=int((time.monotonic() - item_started_monotonic) * 1000),
+                    elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
+                )
+            except _ExtractorExecutionError as exc:
+                errored_total += 1
+                if exc.reason == "timeout":
+                    timed_out_total += 1
+                duration_ms = int((time.monotonic() - item_started_monotonic) * 1000)
+                item_summaries.append(
+                    GraphExtractionItemSummary(
+                        item_id=item.id,
+                        status="error",
+                        node_count=0,
+                        edge_count=0,
+                        error_message=str(exc),
+                        error_reason=exc.reason,
+                        duration_ms=duration_ms,
+                        attempts=exc.attempts,
+                    )
+                )
+                _emit_graph_progress(
+                    progress_callback,
+                    "processed",
+                    snapshot_id=manifest.snapshot_id,
+                    item_id=item.id,
+                    item_index=index,
+                    items_total=len(extraction_items),
+                    status="error",
+                    error_message=str(exc),
+                    error_reason=exc.reason,
+                    attempts=exc.attempts,
+                    duration_ms=duration_ms,
+                    nodes=node_total,
+                    edges=edge_total,
+                    elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
                 )
             except ValueError as exc:
                 if "Graph extractor must return GraphExtractionResult" in str(exc):
                     raise
                 errored_total += 1
+                duration_ms = int((time.monotonic() - item_started_monotonic) * 1000)
                 item_summaries.append(
                     GraphExtractionItemSummary(
                         item_id=item.id,
@@ -336,6 +425,9 @@ def build_graph_snapshot(
                         node_count=0,
                         edge_count=0,
                         error_message=str(exc),
+                        error_reason="value_error",
+                        duration_ms=duration_ms,
+                        attempts=1,
                     )
                 )
                 _emit_graph_progress(
@@ -347,11 +439,16 @@ def build_graph_snapshot(
                     items_total=len(extraction_items),
                     status="error",
                     error_message=str(exc),
+                    error_reason="value_error",
+                    attempts=1,
+                    duration_ms=duration_ms,
                     nodes=node_total,
                     edges=edge_total,
+                    elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
                 )
             except Exception as exc:
                 errored_total += 1
+                duration_ms = int((time.monotonic() - item_started_monotonic) * 1000)
                 item_summaries.append(
                     GraphExtractionItemSummary(
                         item_id=item.id,
@@ -359,6 +456,9 @@ def build_graph_snapshot(
                         node_count=0,
                         edge_count=0,
                         error_message=str(exc),
+                        error_reason="exception",
+                        duration_ms=duration_ms,
+                        attempts=1,
                     )
                 )
                 _emit_graph_progress(
@@ -370,8 +470,12 @@ def build_graph_snapshot(
                     items_total=len(extraction_items),
                     status="error",
                     error_message=str(exc),
+                    error_reason="exception",
+                    attempts=1,
+                    duration_ms=duration_ms,
                     nodes=node_total,
                     edges=edge_total,
+                    elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
                 )
     finally:
         driver.close()
@@ -382,8 +486,12 @@ def build_graph_snapshot(
         "items_processed": len(item_summaries),
         "items_skipped": skipped_total,
         "items_errored": errored_total,
+        "items_timed_out": timed_out_total,
         "nodes": node_total,
         "edges": edge_total,
+        "item_timeout_seconds": timeout_seconds,
+        "item_retry_attempts": retry_attempts,
+        "item_summaries": [summary.model_dump(mode="json") for summary in item_summaries],
     }
     _emit_graph_progress(
         progress_callback,
@@ -395,8 +503,10 @@ def build_graph_snapshot(
         items_processed=len(item_summaries),
         items_skipped=skipped_total,
         items_errored=errored_total,
+        items_timed_out=timed_out_total,
         nodes=node_total,
         edges=edge_total,
+        elapsed_ms=int((time.monotonic() - started_monotonic) * 1000),
     )
     write_graph_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=manifest)
     write_graph_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=manifest)
@@ -411,6 +521,120 @@ def _emit_graph_progress(
     if progress_callback is None:
         return
     progress_callback(event, payload)
+
+
+class _ExtractorExecutionError(RuntimeError):
+    def __init__(self, *, reason: str, message: str, attempts: int) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.attempts = attempts
+
+
+class _ItemExtractionTimeout(RuntimeError):
+    pass
+
+
+def _run_extractor_with_retry(
+    *,
+    extractor,
+    corpus: Corpus,
+    item,
+    extracted_text: str,
+    config,
+    timeout_seconds: float | None,
+    retry_attempts: int,
+) -> tuple[Any, int]:
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            with _item_timeout_guard(timeout_seconds):
+                result = extractor.extract_graph(
+                    corpus=corpus,
+                    item=item,
+                    extracted_text=extracted_text,
+                    config=config,
+                )
+            return result, attempts
+        except _ItemExtractionTimeout as exc:
+            if attempts <= retry_attempts:
+                continue
+            timeout_label = timeout_seconds if timeout_seconds is not None else "-"
+            raise _ExtractorExecutionError(
+                reason="timeout",
+                message=f"item extraction timed out after {timeout_label}s (attempts={attempts})",
+                attempts=attempts,
+            ) from exc
+        except Exception as exc:
+            if attempts <= retry_attempts:
+                continue
+            reason = "value_error" if isinstance(exc, ValueError) else "exception"
+            raise _ExtractorExecutionError(reason=reason, message=str(exc), attempts=attempts) from exc
+
+
+@contextmanager
+def _item_timeout_guard(timeout_seconds: float | None):
+    if timeout_seconds is None or timeout_seconds <= 0:
+        yield
+        return
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    if not hasattr(signal, "setitimer"):
+        yield
+        return
+
+    def _raise_timeout(_signum, _frame):
+        raise _ItemExtractionTimeout(f"item extraction exceeded {timeout_seconds}s")
+
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.setitimer(signal.ITIMER_REAL, timeout_seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+
+
+def _maybe_emit_graph_heartbeat(
+    *,
+    progress_callback: Optional[Callable[[str, Dict[str, Any]], None]],
+    snapshot_id: str,
+    extractor_id: str,
+    items_total: int,
+    items_available: int,
+    item_index: int,
+    node_total: int,
+    edge_total: int,
+    skipped_total: int,
+    errored_total: int,
+    timed_out_total: int,
+    started_monotonic: float,
+    heartbeat_interval_seconds: float,
+    last_heartbeat_monotonic: float,
+) -> float:
+    if progress_callback is None or heartbeat_interval_seconds <= 0:
+        return last_heartbeat_monotonic
+    now = time.monotonic()
+    if (now - last_heartbeat_monotonic) < heartbeat_interval_seconds:
+        return last_heartbeat_monotonic
+    _emit_graph_progress(
+        progress_callback,
+        "heartbeat",
+        snapshot_id=snapshot_id,
+        extractor_id=extractor_id,
+        items_total=items_total,
+        items_available=items_available,
+        item_index=item_index,
+        nodes=node_total,
+        edges=edge_total,
+        items_skipped=skipped_total,
+        items_errored=errored_total,
+        items_timed_out=timed_out_total,
+        elapsed_ms=int((now - started_monotonic) * 1000),
+    )
+    return now
 
 
 def _load_extracted_text(

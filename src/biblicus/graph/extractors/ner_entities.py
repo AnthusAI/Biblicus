@@ -16,6 +16,8 @@ from ...models import CatalogItem
 from ..base import GraphExtractor
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 
+_SPACY_PIPELINE_CACHE: dict[str, object] = {}
+
 
 class NerEntitiesGraphConfig(GraphSchemaModel):
     """
@@ -140,13 +142,7 @@ def _extract_entities(
     max_length: int,
     entity_labels: Optional[List[str]],
 ) -> List[Tuple[str, str, int]]:
-    try:
-        import spacy
-    except ImportError as exc:
-        raise ValueError(
-            "NER graph extraction requires spaCy. Install it with pip install spacy."
-        ) from exc
-    nlp = spacy.load(model_name)
+    nlp = _load_spacy_pipeline(model_name)
     doc = nlp(extracted_text)
     entities: List[Tuple[str, str, int]] = []
     allowed_labels = set(entity_labels or []) or None
@@ -161,6 +157,21 @@ def _extract_entities(
             continue
         entities.append((text, label, _entity_sentence_index(ent)))
     return entities
+
+
+def _load_spacy_pipeline(model_name: str):
+    cached = _SPACY_PIPELINE_CACHE.get(model_name)
+    if cached is not None:
+        return cached
+    try:
+        import spacy
+    except ImportError as exc:
+        raise ValueError(
+            "NER graph extraction requires spaCy. Install it with pip install spacy."
+        ) from exc
+    pipeline = spacy.load(model_name)
+    _SPACY_PIPELINE_CACHE[model_name] = pipeline
+    return pipeline
 
 
 def _entity_sentence_index(entity) -> int:

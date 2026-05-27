@@ -20,8 +20,10 @@ from .analysis import get_analysis_backend
 from .collections import load_collection_config, pull_collection
 from .context import (
     CharacterBudget,
+    ContextBlockBuildRequest,
     ContextPackPolicy,
     TokenBudget,
+    build_context_pack_from_blocks,
     build_context_pack,
     fit_context_pack_to_character_budget,
     fit_context_pack_to_token_budget,
@@ -1383,6 +1385,8 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
             "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
         )
+    if arguments.item_retry_attempts < 0:
+        raise ValueError("--item-retry-attempts must be >= 0.")
 
     manifest = build_graph_snapshot(
         corpus,
@@ -1391,6 +1395,9 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
         configuration=configuration,
         extraction_snapshot=extraction_snapshot,
         max_items=arguments.max_items,
+        item_timeout_seconds=arguments.item_timeout_seconds,
+        item_retry_attempts=arguments.item_retry_attempts,
+        heartbeat_interval_seconds=arguments.heartbeat_interval_seconds,
         progress_callback=_graph_extract_progress,
     )
     print(manifest.model_dump_json(indent=2))
@@ -1408,7 +1415,18 @@ def _graph_extract_progress(event: str, payload: Dict[str, Any]) -> None:
     elif event == "processing":
         print(
             "[graph] processing "
-            f"{payload['item_index']}/{payload['items_total']} item {payload['item_id']}",
+            f"{payload['item_index']}/{payload['items_total']} item {payload['item_id']} "
+            f"elapsedMs={payload.get('elapsed_ms', 0)}",
+            file=sys.stderr,
+            flush=True,
+        )
+    elif event == "heartbeat":
+        print(
+            "[graph] heartbeat "
+            f"snapshot={payload['snapshot_id']} itemIndex={payload.get('item_index', 0)} "
+            f"nodes={payload.get('nodes', 0)} edges={payload.get('edges', 0)} "
+            f"skipped={payload.get('items_skipped', 0)} errored={payload.get('items_errored', 0)} "
+            f"timeouts={payload.get('items_timed_out', 0)} elapsedMs={payload.get('elapsed_ms', 0)}",
             file=sys.stderr,
             flush=True,
         )
@@ -1417,17 +1435,22 @@ def _graph_extract_progress(event: str, payload: Dict[str, Any]) -> None:
             "[graph] processed "
             f"{payload['item_index']}/{payload['items_total']} "
             f"item {payload['item_id']} status={payload['status']} "
-            f"nodes={payload['nodes']} edges={payload['edges']}"
+            f"nodes={payload['nodes']} edges={payload['edges']} "
+            f"attempts={payload.get('attempts', 1)} durationMs={payload.get('duration_ms', 0)} "
+            f"elapsedMs={payload.get('elapsed_ms', 0)}"
         )
         if payload.get("error_message"):
             message = f"{message} error={payload['error_message']}"
+        if payload.get("error_reason"):
+            message = f"{message} reason={payload['error_reason']}"
         print(message, file=sys.stderr, flush=True)
     elif event == "completed":
         print(
             "[graph] completed snapshot "
             f"{payload['snapshot_id']} processed={payload['items_processed']} "
             f"skipped={payload['items_skipped']} errored={payload['items_errored']} "
-            f"nodes={payload['nodes']} edges={payload['edges']}",
+            f"timeouts={payload.get('items_timed_out', 0)} "
+            f"nodes={payload['nodes']} edges={payload['edges']} elapsedMs={payload.get('elapsed_ms', 0)}",
             file=sys.stderr,
             flush=True,
         )
@@ -1758,6 +1781,28 @@ def cmd_context_pack_build(arguments: argparse.Namespace) -> int:
             indent=2,
         )
     )
+    return 0
+
+
+def cmd_context_pack_build_blocks(arguments: argparse.Namespace) -> int:
+    """
+    Build a context pack from ordered context blocks.
+
+    The build request is read from standard input as JavaScript Object Notation.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    input_text = sys.stdin.read()
+    if not input_text.strip():
+        raise ValueError(
+            "Context block build requires a context-block request JavaScript Object Notation on standard input"
+        )
+    request = ContextBlockBuildRequest.model_validate_json(input_text)
+    result = build_context_pack_from_blocks(request)
+    print(json.dumps(result.model_dump(), indent=2))
     return 0
 
 
@@ -3361,6 +3406,24 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Maximum number of extraction items to process for bounded validation runs.",
     )
+    p_graph_extract.add_argument(
+        "--item-timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Per-item extraction timeout in seconds (<=0 disables timeout).",
+    )
+    p_graph_extract.add_argument(
+        "--item-retry-attempts",
+        type=int,
+        default=0,
+        help="Retries per item after timeout/error before recording item error.",
+    )
+    p_graph_extract.add_argument(
+        "--heartbeat-interval-seconds",
+        type=float,
+        default=10.0,
+        help="Progress heartbeat interval in seconds (<=0 disables heartbeat events).",
+    )
     p_graph_extract.set_defaults(func=cmd_graph_extract)
 
     p_graph_list = graph_sub.add_parser("list", help="List graph extraction snapshots.")
@@ -3562,6 +3625,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional character budget for the final context pack.",
     )
     p_context_pack_build.set_defaults(func=cmd_context_pack_build)
+
+    p_context_pack_build_blocks = context_pack_sub.add_parser(
+        "build-blocks",
+        help="Build a budgeted context pack from ordered context blocks in JavaScript Object Notation.",
+    )
+    p_context_pack_build_blocks.set_defaults(func=cmd_context_pack_build_blocks)
 
     p_eval = sub.add_parser("eval", help="Evaluate a snapshot against a dataset.")
     _add_common_corpus_arg(p_eval)
