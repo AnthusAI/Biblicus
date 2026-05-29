@@ -40,10 +40,16 @@
       "author": "derek.norrbom",
       "text": "Task closed and branch pushed: feature/snyk-parent-remediation-gitpython-urllib3-idna. Commits include lockfile remediation + Kanbus history artifacts.",
       "created_at": "2026-05-29T21:10:52.749690Z"
+    },
+    {
+      "id": "a8682a57-8924-4ef6-b164-d69ebdabd967",
+      "author": "derek.norrbom",
+      "text": "Opened PR to develop: https://github.com/AnthusAI/Biblicus/pull/48",
+      "created_at": "2026-05-29T21:20:32.295339Z"
     }
   ],
   "created_at": "2026-05-29T21:08:04.217605Z",
-  "updated_at": "2026-05-29T21:10:52.749690Z",
+  "updated_at": "2026-05-29T21:20:32.295339Z",
   "closed_at": "2026-05-29T21:10:43.594656Z",
   "custom": {}
 }
