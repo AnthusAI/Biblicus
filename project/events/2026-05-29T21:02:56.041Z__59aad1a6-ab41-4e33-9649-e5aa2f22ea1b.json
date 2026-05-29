@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "59aad1a6-ab41-4e33-9649-e5aa2f22ea1b",
+  "issue_id": "blbs-4e676d18-1229-4cc3-b7c7-7600f1c011e2",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-29T21:02:56.041Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+    "priority": 1,
+    "status": "open",
+    "title": "Map Snyk transitive dependency remediation for GitPython urllib3 idna"
+  }
+}
