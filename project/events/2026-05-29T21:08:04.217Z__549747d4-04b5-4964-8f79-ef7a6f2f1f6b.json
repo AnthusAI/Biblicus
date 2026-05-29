@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "549747d4-04b5-4964-8f79-ef7a6f2f1f6b",
+  "issue_id": "blbs-dbe3daa0-70f2-413d-a62c-dea7ea8d455f",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-29T21:08:04.217Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate transitive Snyk findings via parent dependency upgrades"
+  }
+}
