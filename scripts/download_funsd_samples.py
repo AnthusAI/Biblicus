@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
@@ -41,10 +42,18 @@ def _extract_zip_safely(zip_path: Path, destination: Path) -> None:
     destination_root = destination.resolve()
     with zipfile.ZipFile(zip_path, "r") as archive:
         for member in archive.infolist():
+            member_path = Path(member.filename)
+            if member_path.is_absolute() or ".." in member_path.parts:
+                raise ValueError(f"Unsafe archive member path: {member.filename}")
             member_target = (destination / member.filename).resolve()
             if destination_root not in member_target.parents and member_target != destination_root:
                 raise ValueError(f"Unsafe archive member path: {member.filename}")
-        archive.extractall(destination)
+            if member.is_dir():
+                member_target.mkdir(parents=True, exist_ok=True)
+                continue
+            member_target.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(member, "r") as source_file, open(member_target, "wb") as target_file:
+                shutil.copyfileobj(source_file, target_file)
 
 
 def _prepare_corpus(path: Path, *, force: bool) -> Corpus:
