@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "6dee7042-9bf7-4f1a-aec1-580dfe9316d7",
+  "issue_id": "blbs-6a998dfb-4519-4a90-9256-fcfeb8d085b9",
+  "event_type": "issue_created",
+  "occurred_at": "2026-06-01T20:32:09.274Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate direct pypdf Snyk findings"
+  }
+}

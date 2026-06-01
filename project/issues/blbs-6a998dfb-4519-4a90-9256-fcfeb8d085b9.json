@@ -1,0 +1,31 @@
+{
+  "id": "blbs-6a998dfb-4519-4a90-9256-fcfeb8d085b9",
+  "title": "Remediate direct pypdf Snyk findings",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "3c9bb828-f641-445a-b948-def26f238690",
+      "author": "derek.norrbom",
+      "text": "Starting pypdf remediation: create fresh branch from develop, bump pypdf minimum to fixed version, update lockfile, rerun snyk validation, then commit/push.",
+      "created_at": "2026-06-01T20:32:11.989123Z"
+    },
+    {
+      "id": "79dc3d7d-73e4-42dc-9ac2-36463b0d20c3",
+      "author": "derek.norrbom",
+      "text": "Updated pypdf floor in pyproject.toml to >=6.12.1 and ran poetry update pypdf. Lockfile now resolves pypdf 6.12.2. Validation: snyk test on poetry.lock now reports 0 pypdf vulnerabilities; poetry check passes.",
+      "created_at": "2026-06-01T20:34:46.000408Z"
+    }
+  ],
+  "created_at": "2026-06-01T20:32:09.274362Z",
+  "updated_at": "2026-06-01T20:34:51.729516Z",
+  "closed_at": "2026-06-01T20:34:51.729516Z",
+  "custom": {}
+}
