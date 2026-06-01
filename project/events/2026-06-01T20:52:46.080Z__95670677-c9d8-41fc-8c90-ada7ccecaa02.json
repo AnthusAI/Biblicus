@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "95670677-c9d8-41fc-8c90-ada7ccecaa02",
+  "issue_id": "blbs-41be256c-33ab-4a10-a5f2-94dbcbf6cd27",
+  "event_type": "issue_created",
+  "occurred_at": "2026-06-01T20:52:46.080Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate Dependabot alerts for mako and ujson"
+  }
+}
