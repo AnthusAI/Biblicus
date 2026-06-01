@@ -1,0 +1,31 @@
+{
+  "id": "blbs-41be256c-33ab-4a10-a5f2-94dbcbf6cd27",
+  "title": "Remediate Dependabot alerts for mako and ujson",
+  "description": "",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "bae8e0b5-6ede-45d2-89dd-99f26150c0d8",
+      "author": "derek.norrbom",
+      "text": "Starting remediation for open Dependabot alerts #114 (Mako) and #123 (ujson): branch from develop, update lockfile to fixed versions, validate with OSV/Snyk, then commit/push and open PR.",
+      "created_at": "2026-06-01T20:52:51.078347Z"
+    },
+    {
+      "id": "80d08815-4528-40a9-beb9-7dd966e1cb93",
+      "author": "derek.norrbom",
+      "text": "Updated poetry.lock to resolve mako 1.3.12 and ujson 5.12.1 (fixed versions for GHSA-2h4p-vjrc-8xpq and GHSA-c38f-wx89-p2xg). Validation: snyk test on poetry.lock shows no mako/ujson findings; poetry check passes; osv-scanner no longer reports mako/ujson vulnerabilities.",
+      "created_at": "2026-06-01T20:56:57.024804Z"
+    }
+  ],
+  "created_at": "2026-06-01T20:52:46.080009Z",
+  "updated_at": "2026-06-01T20:56:57.024804Z",
+  "closed_at": null,
+  "custom": {}
+}
