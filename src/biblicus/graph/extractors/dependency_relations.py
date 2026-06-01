@@ -60,6 +60,7 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
         item: CatalogItem,
         extracted_text: str,
         config: BaseModel,
+        extraction_metadata=None,
     ) -> GraphExtractionResult:
         """
         Extract graph nodes and edges for a single item.
@@ -76,6 +77,7 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
         :rtype: GraphExtractionResult
         """
         _ = corpus
+        _ = extraction_metadata
         parsed = config if isinstance(config, DependencyRelationsGraphConfig) else None
         if parsed is None:
             parsed = DependencyRelationsGraphConfig.model_validate(config)

@@ -7,13 +7,19 @@ from __future__ import annotations
 import re
 from collections import Counter
 from itertools import combinations
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ...corpus import Corpus
 from ...models import CatalogItem
 from ..base import GraphExtractor
+from ..grobid_dedup import (
+    grobid_blocked_surface_forms,
+    grobid_structured_from_metadata,
+    is_grobid_extraction_metadata,
+    should_suppress_ner_entity,
+)
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
 
 _SPACY_PIPELINE_CACHE: dict[str, object] = {}
@@ -79,6 +85,7 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         item: CatalogItem,
         extracted_text: str,
         config: BaseModel,
+        extraction_metadata: Optional[Dict[str, Any]] = None,
     ) -> GraphExtractionResult:
         """
         Extract graph nodes and edges for a single item.
@@ -99,12 +106,18 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         if parsed is None:
             parsed = NerEntitiesGraphConfig.model_validate(config)
 
+        grobid_blocked: set[str] | None = None
+        if is_grobid_extraction_metadata(extraction_metadata):
+            structured = grobid_structured_from_metadata(extraction_metadata)
+            grobid_blocked = grobid_blocked_surface_forms(structured)
+
         entities = _extract_entities(
             extracted_text=extracted_text,
             model_name=parsed.model,
             min_length=parsed.min_entity_length,
             max_length=parsed.max_entity_length,
             entity_labels=parsed.entity_labels,
+            grobid_blocked_forms=grobid_blocked,
         )
         entity_counts = Counter(entity for entity, _label, _sentence_index in entities)
         entity_types = {entity: label for entity, label, _sentence_index in entities}
@@ -141,6 +154,7 @@ def _extract_entities(
     min_length: int,
     max_length: int,
     entity_labels: Optional[List[str]],
+    grobid_blocked_forms: set[str] | None = None,
 ) -> List[Tuple[str, str, int]]:
     nlp = _load_spacy_pipeline(model_name)
     doc = nlp(extracted_text)
@@ -154,6 +168,12 @@ def _extract_entities(
         if len(text) < min_length or len(text) > max_length:
             continue
         if not _looks_like_entity_label(text):
+            continue
+        if grobid_blocked_forms and should_suppress_ner_entity(
+            label=text,
+            entity_type=label,
+            blocked_forms=grobid_blocked_forms,
+        ):
             continue
         entities.append((text, label, _entity_sentence_index(ent)))
     return entities

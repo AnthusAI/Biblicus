@@ -26,6 +26,7 @@ from .openai_stt import OpenAiSpeechToTextExtractor
 from .paddleocr_layout import PaddleOCRLayoutExtractor
 from .paddleocr_vl_text import PaddleOcrVlExtractor
 from .pass_through_text import PassThroughTextExtractor
+from .grobid_pdf_text import GrobidPortableDocumentFormatTextExtractor
 from .pdf_text import PortableDocumentFormatTextExtractor
 from .pipeline import PipelineExtractor
 from .rapidocr_text import RapidOcrExtractor
@@ -46,6 +47,7 @@ EXTRACTOR_CLASSES: Dict[str, Type[TextExtractor]] = {
     PassThroughTextExtractor.extractor_id: PassThroughTextExtractor,
     PipelineExtractor.extractor_id: PipelineExtractor,
     PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor,
+    GrobidPortableDocumentFormatTextExtractor.extractor_id: GrobidPortableDocumentFormatTextExtractor,
     OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor,
     OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor,
     FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor,

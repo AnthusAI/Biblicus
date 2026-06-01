@@ -58,6 +58,7 @@ class CooccurrenceGraphExtractor(GraphExtractor):
         item: CatalogItem,
         extracted_text: str,
         config: BaseModel,
+        extraction_metadata=None,
     ) -> GraphExtractionResult:
         """
         Extract graph nodes and edges for a single item.
@@ -74,6 +75,7 @@ class CooccurrenceGraphExtractor(GraphExtractor):
         :rtype: GraphExtractionResult
         """
         _ = corpus
+        _ = extraction_metadata
         parsed = config if isinstance(config, CooccurrenceGraphConfig) else None
         if parsed is None:
             parsed = CooccurrenceGraphConfig.model_validate(config)

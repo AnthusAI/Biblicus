@@ -303,6 +303,11 @@ def build_graph_snapshot(
                     extraction_snapshot=extraction_snapshot,
                     item_result=item_result,
                 )
+                extraction_metadata = _load_extracted_metadata(
+                    corpus,
+                    extraction_snapshot=extraction_snapshot,
+                    item_result=item_result,
+                )
                 if extracted_text is None:
                     skipped_total += 1
                     item_summaries.append(
@@ -338,6 +343,7 @@ def build_graph_snapshot(
                     corpus=corpus,
                     item=item,
                     extracted_text=extracted_text,
+                    extraction_metadata=extraction_metadata,
                     config=parsed_config,
                     timeout_seconds=timeout_seconds,
                     retry_attempts=retry_attempts,
@@ -540,6 +546,7 @@ def _run_extractor_with_retry(
     corpus: Corpus,
     item,
     extracted_text: str,
+    extraction_metadata: dict[str, Any] | None,
     config,
     timeout_seconds: float | None,
     retry_attempts: int,
@@ -554,6 +561,7 @@ def _run_extractor_with_retry(
                     item=item,
                     extracted_text=extracted_text,
                     config=config,
+                    extraction_metadata=extraction_metadata,
                 )
             return result, attempts
         except _ItemExtractionTimeout as exc:
@@ -653,6 +661,25 @@ def _load_extracted_text(
     if not text_path.is_file():
         return None
     return text_path.read_text(encoding="utf-8")
+
+
+def _load_extracted_metadata(
+    corpus: Corpus,
+    *,
+    extraction_snapshot: ExtractionSnapshotReference,
+    item_result,
+) -> Optional[dict[str, Any]]:
+    if not item_result.final_metadata_relpath:
+        return None
+    snapshot_dir = corpus.extraction_snapshot_dir(
+        extractor_id=extraction_snapshot.extractor_id,
+        snapshot_id=extraction_snapshot.snapshot_id,
+    )
+    metadata_path = snapshot_dir / item_result.final_metadata_relpath
+    if not metadata_path.is_file():
+        return None
+    payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, dict) else None
 
 
 def load_graph_snapshot_manifest(

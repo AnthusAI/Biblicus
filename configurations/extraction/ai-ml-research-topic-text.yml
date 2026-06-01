@@ -3,8 +3,9 @@ configuration:
   stages:
     - extractor_id: pass-through-text
       config: {}
-    - extractor_id: pdf-text
-      config: {}
+    - extractor_id: grobid-pdf-text
+      config:
+        fallback_to_pypdf: true
     - extractor_id: markitdown
       config: {}
     - extractor_id: select-override

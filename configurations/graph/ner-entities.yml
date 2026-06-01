@@ -11,6 +11,7 @@ entity_labels:
   - LOC
   - NORP
   - ORG
+  - PER
   - PRODUCT
   - WORK_OF_ART
 include_item_node: true
