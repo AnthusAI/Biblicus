@@ -1,0 +1,31 @@
+{
+  "id": "blbs-03a72823-483a-41c5-8c78-ee36185fe000",
+  "title": "Remediate Snyk tar-slip finding in FUNSD sample downloader",
+  "description": "",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "2ad3bda3-a8ae-4535-becf-614627f2022c",
+      "author": "derek.norrbom",
+      "text": "Started remediation for Snyk Code tar-slip finding in scripts/download_funsd_samples.py. Reviewing extraction logic and replacing unsafe extraction pattern with safe per-member extraction.",
+      "created_at": "2026-06-01T20:43:50.823778Z"
+    },
+    {
+      "id": "4249a4b4-9613-4967-ba07-86ce746110d2",
+      "author": "derek.norrbom",
+      "text": "Replaced zip extractall() usage with validated per-member extraction in scripts/download_funsd_samples.py. Added absolute/.. path rejection and explicit file copy to destination. Validation: python -m compileall + ruff check pass; snyk code test on script no longer reports findings.",
+      "created_at": "2026-06-01T20:44:30.901036Z"
+    }
+  ],
+  "created_at": "2026-06-01T20:43:46.113009Z",
+  "updated_at": "2026-06-01T20:44:30.908935Z",
+  "closed_at": "2026-06-01T20:44:30.908935Z",
+  "custom": {}
+}

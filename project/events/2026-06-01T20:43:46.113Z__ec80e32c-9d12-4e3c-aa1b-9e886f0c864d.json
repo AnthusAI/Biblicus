@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "ec80e32c-9d12-4e3c-aa1b-9e886f0c864d",
+  "issue_id": "blbs-03a72823-483a-41c5-8c78-ee36185fe000",
+  "event_type": "issue_created",
+  "occurred_at": "2026-06-01T20:43:46.113Z",
+  "actor_id": "derek.norrbom",
+  "payload": {
+    "assignee": null,
+    "description": "",
+    "issue_type": "task",
+    "labels": [],
+    "parent": "blbs-4130e46d-d9f3-4b30-834e-ba0ab3b13a03",
+    "priority": 1,
+    "status": "open",
+    "title": "Remediate Snyk tar-slip finding in FUNSD sample downloader"
+  }
+}
