@@ -6,14 +6,23 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from typing import Dict, List, Tuple
+from itertools import combinations
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ...corpus import Corpus
 from ...models import CatalogItem
 from ..base import GraphExtractor
+from ..grobid_dedup import (
+    grobid_blocked_surface_forms,
+    grobid_structured_from_metadata,
+    is_grobid_extraction_metadata,
+    should_suppress_ner_entity,
+)
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
+
+_SPACY_PIPELINE_CACHE: dict[str, object] = {}
 
 
 class NerEntitiesGraphConfig(GraphSchemaModel):
@@ -24,15 +33,31 @@ class NerEntitiesGraphConfig(GraphSchemaModel):
     :vartype model: str
     :ivar min_entity_length: Minimum length for entity labels.
     :vartype min_entity_length: int
+    :ivar max_entity_length: Maximum length for entity labels.
+    :vartype max_entity_length: int
+    :ivar entity_labels: Optional allow-list of spaCy entity labels.
+    :vartype entity_labels: list[str] or None
     :ivar include_item_node: Whether to emit an item node and mentions edges.
     :vartype include_item_node: bool
+    :ivar include_relation_edges: Whether to emit sentence-level entity co-occurrence edges.
+    :vartype include_relation_edges: bool
+    :ivar max_relation_entities_per_sentence: Maximum unique entities per sentence used for
+        co-occurrence edges.
+    :vartype max_relation_entities_per_sentence: int
+    :ivar min_relation_weight: Minimum co-occurrence count needed to emit a relation edge.
+    :vartype min_relation_weight: int
     """
 
     model_config = ConfigDict(extra="forbid")
 
     model: str = Field(min_length=1)
     min_entity_length: int = Field(default=3, ge=1)
+    max_entity_length: int = Field(default=120, ge=1)
+    entity_labels: Optional[List[str]] = Field(default=None)
     include_item_node: bool = Field(default=True)
+    include_relation_edges: bool = Field(default=False)
+    max_relation_entities_per_sentence: int = Field(default=12, ge=2)
+    min_relation_weight: int = Field(default=1, ge=1)
 
 
 class NerEntitiesGraphExtractor(GraphExtractor):
@@ -60,6 +85,7 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         item: CatalogItem,
         extracted_text: str,
         config: BaseModel,
+        extraction_metadata: Optional[Dict[str, Any]] = None,
     ) -> GraphExtractionResult:
         """
         Extract graph nodes and edges for a single item.
@@ -80,13 +106,21 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         if parsed is None:
             parsed = NerEntitiesGraphConfig.model_validate(config)
 
+        grobid_blocked: set[str] | None = None
+        if is_grobid_extraction_metadata(extraction_metadata):
+            structured = grobid_structured_from_metadata(extraction_metadata)
+            grobid_blocked = grobid_blocked_surface_forms(structured)
+
         entities = _extract_entities(
             extracted_text=extracted_text,
             model_name=parsed.model,
             min_length=parsed.min_entity_length,
+            max_length=parsed.max_entity_length,
+            entity_labels=parsed.entity_labels,
+            grobid_blocked_forms=grobid_blocked,
         )
-        entity_counts = Counter(entity for entity, _ in entities)
-        entity_types = {entity: label for entity, label in entities}
+        entity_counts = Counter(entity for entity, _label, _sentence_index in entities)
+        entity_types = {entity: label for entity, label, _sentence_index in entities}
 
         nodes = _build_entity_nodes(entity_counts, entity_types)
         edges: List[GraphEdge] = []
@@ -101,6 +135,15 @@ class NerEntitiesGraphExtractor(GraphExtractor):
             nodes.insert(0, item_node)
             edges.extend(_build_mentions_edges(item_node.node_id, entity_counts))
 
+        if parsed.include_relation_edges:
+            edges.extend(
+                _build_relation_edges(
+                    entities,
+                    max_entities_per_sentence=parsed.max_relation_entities_per_sentence,
+                    min_relation_weight=parsed.min_relation_weight,
+                )
+            )
+
         return GraphExtractionResult(item_id=item.id, nodes=nodes, edges=edges)
 
 
@@ -109,23 +152,66 @@ def _extract_entities(
     extracted_text: str,
     model_name: str,
     min_length: int,
-) -> List[Tuple[str, str]]:
+    max_length: int,
+    entity_labels: Optional[List[str]],
+    grobid_blocked_forms: set[str] | None = None,
+) -> List[Tuple[str, str, int]]:
+    nlp = _load_spacy_pipeline(model_name)
+    doc = nlp(extracted_text)
+    entities: List[Tuple[str, str, int]] = []
+    allowed_labels = set(entity_labels or []) or None
+    for ent in getattr(doc, "ents", []):
+        label = getattr(ent, "label_", "ENTITY")
+        if allowed_labels is not None and label not in allowed_labels:
+            continue
+        text = ent.text.strip()
+        if len(text) < min_length or len(text) > max_length:
+            continue
+        if not _looks_like_entity_label(text):
+            continue
+        if grobid_blocked_forms and should_suppress_ner_entity(
+            label=text,
+            entity_type=label,
+            blocked_forms=grobid_blocked_forms,
+        ):
+            continue
+        entities.append((text, label, _entity_sentence_index(ent)))
+    return entities
+
+
+def _load_spacy_pipeline(model_name: str):
+    cached = _SPACY_PIPELINE_CACHE.get(model_name)
+    if cached is not None:
+        return cached
     try:
         import spacy
     except ImportError as exc:
         raise ValueError(
             "NER graph extraction requires spaCy. Install it with pip install spacy."
         ) from exc
-    nlp = spacy.load(model_name)
-    doc = nlp(extracted_text)
-    entities: List[Tuple[str, str]] = []
-    for ent in getattr(doc, "ents", []):
-        label = getattr(ent, "label_", "ENTITY")
-        text = ent.text.strip()
-        if len(text) < min_length:
-            continue
-        entities.append((text, label))
-    return entities
+    pipeline = spacy.load(model_name)
+    _SPACY_PIPELINE_CACHE[model_name] = pipeline
+    return pipeline
+
+
+def _entity_sentence_index(entity) -> int:
+    try:
+        sent = entity.sent
+        return int(getattr(sent, "start", 0))
+    except Exception:
+        return 0
+
+
+def _looks_like_entity_label(text: str) -> bool:
+    if re.search(r"[\r\n\t]", text):
+        return False
+    if re.search(r",\d|\d[A-Z]", text):
+        return False
+    if re.match(r"^[A-Z]\.\s+[A-Z]", text):
+        return False
+    if not re.search(r"[A-Za-z]", text):
+        return False
+    return re.match(r"^[A-Z][A-Za-z0-9&.,'’/()\- ]*$", text) is not None
 
 
 def _canonicalize(label: str) -> str:
@@ -169,6 +255,42 @@ def _build_mentions_edges(item_node_id: str, entity_counts: Counter[str]) -> Lis
                 edge_type="mentions",
                 weight=float(count),
                 properties={},
+            )
+        )
+    return edges
+
+
+def _build_relation_edges(
+    entities: List[Tuple[str, str, int]],
+    *,
+    max_entities_per_sentence: int,
+    min_relation_weight: int,
+) -> List[GraphEdge]:
+    sentence_entities: Dict[int, List[str]] = {}
+    for label, _entity_type, sentence_index in entities:
+        sentence_entities.setdefault(sentence_index, []).append(_canonicalize(label))
+
+    counts: Counter[tuple[str, str]] = Counter()
+    for canonical_entities in sentence_entities.values():
+        unique_entities = sorted(set(canonical_entities))[:max_entities_per_sentence]
+        for left, right in combinations(unique_entities, 2):
+            counts[(left, right)] += 1
+
+    edges: List[GraphEdge] = []
+    for (left, right), count in sorted(counts.items()):
+        if count < min_relation_weight:
+            continue
+        src = f"entity:{left}"
+        dst = f"entity:{right}"
+        edge_id = f"{src}|related_to|{dst}"
+        edges.append(
+            GraphEdge(
+                edge_id=edge_id,
+                src=src,
+                dst=dst,
+                edge_type="related_to",
+                weight=float(count),
+                properties={"source": "sentence_cooccurrence"},
             )
         )
     return edges

@@ -45,6 +45,9 @@ paddleocr = [
 markitdown = [
   "markitdown[all]>=0.1.0; python_version>='3.10' and python_version<'3.14'",
 ]
+web = [
+  "beautifulsoup4>=4.12",
+]
 deepgram = [
   "deepgram-sdk>=3.0",
 ]

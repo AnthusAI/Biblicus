@@ -1,4 +1,20 @@
 schema_version: 1
 model: en_core_web_sm
 min_entity_length: 3
+max_entity_length: 120
+entity_labels:
+  - EVENT
+  - FAC
+  - GPE
+  - LANGUAGE
+  - LAW
+  - LOC
+  - NORP
+  - ORG
+  - PER
+  - PRODUCT
+  - WORK_OF_ART
 include_item_node: true
+include_relation_edges: true
+max_relation_entities_per_sentence: 12
+min_relation_weight: 1

@@ -17,6 +17,7 @@ from .docling_granite_text import DoclingGraniteExtractor
 from .docling_smol_text import DoclingSmolExtractor
 from .faster_whisper_stt import FasterWhisperSpeechToTextExtractor
 from .google_speech_stt import GoogleSpeechToTextExtractor
+from .grobid_pdf_text import GrobidPortableDocumentFormatTextExtractor
 from .heron_layout import HeronLayoutExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
@@ -56,6 +57,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
         PipelineExtractor.extractor_id: PipelineExtractor(),
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
+        GrobidPortableDocumentFormatTextExtractor.extractor_id: GrobidPortableDocumentFormatTextExtractor(),
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
         OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor(),
         FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor(),

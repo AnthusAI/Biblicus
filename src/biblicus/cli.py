@@ -992,6 +992,94 @@ def cmd_extract_delete(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
+    """
+    Extract reference metadata (title, authors, dates) from web HTML heuristics.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .url_text import URL_TEXT_DEFAULT_TIMEOUT_SECONDS, load_url_text_input_json
+    from .web_reference_metadata import (
+        extract_web_reference_metadata_from_html,
+        extract_web_reference_metadata_from_url,
+    )
+
+    try:
+        payload = load_url_text_input_json(arguments.input_json)
+    except ValueError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "error": {"code": "invalid_input_json", "message": str(exc)},
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 2
+
+    source_uri = str(payload.get("source_uri") or "").strip()
+    html_content = str(payload.get("html_content") or payload.get("html") or "").strip()
+    use_llm_fallback = bool(payload.get("use_llm_fallback"))
+    reference_title = str(payload.get("reference_title") or "")
+
+    try:
+        if html_content:
+            from .web_reference_metadata import LOCAL_HTML_SOURCE_URI
+
+            output = extract_web_reference_metadata_from_html(
+                html_content,
+                source_uri=source_uri or LOCAL_HTML_SOURCE_URI,
+                reference_title=reference_title,
+                use_llm_fallback=use_llm_fallback,
+                model=str(payload.get("model") or ""),
+            )
+        elif source_uri:
+            output = extract_web_reference_metadata_from_url(
+                source_uri,
+                reference_title=reference_title,
+                use_llm_fallback=use_llm_fallback,
+                model=str(payload.get("model") or ""),
+                timeout_seconds=float(
+                    payload.get("timeout_seconds") or URL_TEXT_DEFAULT_TIMEOUT_SECONDS
+                ),
+            )
+        else:
+            print(
+                json.dumps(
+                    {
+                        "status": "failed",
+                        "error": {
+                            "code": "missing_input",
+                            "message": "Provide source_uri and/or html_content.",
+                        },
+                    },
+                    indent=2,
+                ),
+                file=sys.stderr,
+            )
+            return 2
+    except ValueError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "error": {"code": "web_metadata_failed", "message": str(exc)},
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 2
+
+    print(json.dumps({"status": "ok", **output}, indent=2))
+    return 0
+
+
 def cmd_extract_evaluate(arguments: argparse.Namespace) -> int:
     """
     Evaluate an extraction snapshot against a dataset.
@@ -2007,6 +2095,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Type the exact extractor_id:snapshot_id to confirm deletion.",
     )
     p_extract_delete.set_defaults(func=cmd_extract_delete)
+
+    p_extract_web_metadata = extract_sub.add_parser(
+        "web-metadata",
+        help="Extract title, authors, and bibliography metadata from web HTML.",
+    )
+    p_extract_web_metadata.add_argument(
+        "--input-json",
+        default="-",
+        help="JSON payload with source_uri and/or html_content (default: stdin).",
+    )
+    p_extract_web_metadata.add_argument(
+        "--use-llm-fallback",
+        action="store_true",
+        help="Run LLM structured enrichment when heuristics are sparse.",
+    )
+    p_extract_web_metadata.set_defaults(func=cmd_extract_web_metadata)
 
     p_extract_evaluate = extract_sub.add_parser(
         "evaluate", help="Evaluate an extraction snapshot against a dataset."

@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from behave import then, when
 
-from biblicus.text.extract import _extract_validation_error_from_messages
+from biblicus.text.extract import _extract_latest_failure_error_from_messages as _extract_validation_error_from_messages
 from biblicus.text.tool_loop import _build_no_tool_calls_message
 
 

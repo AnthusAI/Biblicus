@@ -5,7 +5,7 @@ Graph extractor interface for Biblicus.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -44,6 +44,7 @@ class GraphExtractor(ABC):
         item: CatalogItem,
         extracted_text: str,
         config: BaseModel,
+        extraction_metadata: Optional[Dict[str, Any]] = None,
     ) -> GraphExtractionResult:
         """
         Extract graph nodes and edges for a single item.
@@ -56,6 +57,8 @@ class GraphExtractor(ABC):
         :type extracted_text: str
         :param config: Parsed extractor configuration.
         :type config: pydantic.BaseModel
+        :param extraction_metadata: Optional per-item extraction metadata (e.g. GROBID structured).
+        :type extraction_metadata: dict[str, Any] or None
         :return: Graph extraction result.
         :rtype: GraphExtractionResult
         """

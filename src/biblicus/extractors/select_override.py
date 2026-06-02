@@ -116,6 +116,7 @@ class SelectOverrideExtractor(TextExtractor):
         return ExtractedText(
             text=candidate.text or "",
             producer_extractor_id=producer,
-            source_stage_index=candidate.stage_index,
+            source_stage_index=candidate.source_stage_index or candidate.stage_index,
             confidence=candidate.confidence,
+            metadata=dict(candidate.metadata or {}),
         )
