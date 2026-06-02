@@ -199,20 +199,37 @@ def build_graph_snapshot(
     :return: Graph snapshot manifest.
     :rtype: GraphSnapshotManifest
     """
+    snapshot_configuration = dict(configuration)
+    execution_block = snapshot_configuration.pop("_execution", None)
+    if not isinstance(execution_block, dict):
+        execution_block = {}
+    graph_execution = snapshot_configuration.pop("graph", None)
+    if isinstance(graph_execution, dict):
+        if "max_items" in graph_execution and max_items is None:
+            max_items = int(graph_execution["max_items"])
+        execution_block = {**graph_execution, **execution_block}
+    if max_items is not None:
+        execution_block["max_items"] = max_items
+
     extractor = get_graph_extractor(extractor_id)
     try:
-        parsed_config = extractor.validate_config(configuration)
+        parsed_config = extractor.validate_config(snapshot_configuration)
     except ValidationError as exc:
         raise ValueError(f"Invalid graph extraction configuration: {exc}") from exc
 
-    snapshot_configuration = dict(configuration)
-    if max_items is not None:
-        snapshot_configuration["_execution"] = {"max_items": max_items}
-    graph_id = create_graph_id(extractor_id=extractor_id, configuration=snapshot_configuration)
+    if max_items is None:
+        execution_max_items = execution_block.get("max_items") if execution_block else None
+        if execution_max_items is not None:
+            max_items = int(execution_max_items)
+
+    manifest_configuration = dict(snapshot_configuration)
+    if execution_block:
+        manifest_configuration["_execution"] = execution_block
+    graph_id = create_graph_id(extractor_id=extractor_id, configuration=manifest_configuration)
     configuration_manifest = create_graph_configuration_manifest(
         extractor_id=extractor_id,
         name=configuration_name,
-        configuration=snapshot_configuration,
+        configuration=manifest_configuration,
     )
     manifest = create_graph_snapshot_manifest(
         corpus,

@@ -253,3 +253,48 @@ class GraphExtractionItemSummary(BaseModel):
     edge_count: int = Field(default=0, ge=0)
     status: str = Field(min_length=1)
     error_message: Optional[str] = None
+    error_reason: Optional[str] = None
+    duration_ms: Optional[int] = Field(default=None, ge=0)
+    attempts: Optional[int] = Field(default=None, ge=1)
+
+
+class GraphExportNode(GraphSchemaModel):
+    """Portable node record exported from a graph snapshot."""
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    node_id: str = Field(min_length=1)
+    node_type: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphExportEdge(GraphSchemaModel):
+    """Portable edge record exported from a graph snapshot."""
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    edge_id: str = Field(min_length=1)
+    src: str = Field(min_length=1)
+    dst: str = Field(min_length=1)
+    edge_type: str = Field(min_length=1)
+    weight: float = Field(default=1.0)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphSnapshotExport(BaseModel):
+    """Portable export payload for a graph extraction snapshot."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    snapshot: GraphSnapshotReference
+    manifest: GraphSnapshotManifest
+    nodes: List[GraphExportNode] = Field(default_factory=list)
+    edges: List[GraphExportEdge] = Field(default_factory=list)
+    stats: Dict[str, Any] = Field(default_factory=dict)
