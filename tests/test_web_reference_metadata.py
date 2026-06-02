@@ -6,6 +6,7 @@ from pathlib import Path
 
 from biblicus.web_reference_metadata import (
     extract_web_reference_metadata_from_html,
+    extraction_metadata_from_web_payload,
     title_subtitle_resolution_from_web_metadata,
 )
 
@@ -14,6 +15,16 @@ _FIXTURES = Path(__file__).parent / "fixtures" / "html_heuristics"
 
 def _read(name: str) -> str:
     return (_FIXTURES / name).read_text(encoding="utf-8")
+
+
+def test_extraction_metadata_from_web_payload_fixture():
+    payload = extract_web_reference_metadata_from_html(
+        _read("synthetic_blog_json_ld.html"),
+        source_uri="https://fixture.test/blog/post",
+    )
+    metadata = extraction_metadata_from_web_payload(payload)
+    assert metadata["method"] == "html-heuristics"
+    assert metadata["structured"].get("authors")
 
 
 def test_web_metadata_from_json_ld_fixture():

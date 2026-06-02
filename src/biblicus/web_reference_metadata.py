@@ -20,6 +20,35 @@ WEB_REFERENCE_METADATA_VERSION = "web-reference-metadata-v1"
 LOCAL_HTML_SOURCE_URI = "https://papyrus.local/imported-html"
 
 
+def extraction_metadata_from_web_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Shape web metadata for corpus extraction snapshots and graph NER dedup.
+
+    :param payload: Output from :func:`extract_web_reference_metadata_from_html`.
+    :type payload: dict[str, Any]
+    :return: Metadata dict for :class:`~biblicus.models.ExtractedText`.
+    :rtype: dict[str, Any]
+    """
+    structured = payload.get("structured") if isinstance(payload.get("structured"), dict) else {}
+    method = str(payload.get("method") or "html-heuristics").strip() or "html-heuristics"
+    metadata: Dict[str, Any] = {
+        "method": method,
+        "structured": structured,
+    }
+    title = str(payload.get("title") or "").strip()
+    if title:
+        metadata["title"] = title
+    authors = payload.get("authors")
+    if isinstance(authors, list) and authors:
+        metadata["authors"] = list(authors)
+    if payload.get("publicationDate"):
+        metadata["publicationDate"] = payload.get("publicationDate")
+    layers = payload.get("layers")
+    if isinstance(layers, list) and layers:
+        metadata["htmlHeuristicLayers"] = list(layers)
+    return metadata
+
+
 def extract_web_reference_metadata_from_html(
     html: str,
     *,

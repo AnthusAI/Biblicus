@@ -19,6 +19,7 @@ from .faster_whisper_stt import FasterWhisperSpeechToTextExtractor
 from .google_speech_stt import GoogleSpeechToTextExtractor
 from .grobid_pdf_text import GrobidPortableDocumentFormatTextExtractor
 from .heron_layout import HeronLayoutExtractor
+from .html_web_metadata import HtmlWebMetadataExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
 from .mock_layout_detector import MockLayoutDetectorExtractor
@@ -52,6 +53,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
         MockLayoutDetectorExtractor.extractor_id: MockLayoutDetectorExtractor(),
         MarkItDownExtractor.extractor_id: MarkItDownExtractor(),
+        HtmlWebMetadataExtractor.extractor_id: HtmlWebMetadataExtractor(),
         DoclingSmolExtractor.extractor_id: DoclingSmolExtractor(),
         DoclingGraniteExtractor.extractor_id: DoclingGraniteExtractor(),
         PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
