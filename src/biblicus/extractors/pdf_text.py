@@ -85,7 +85,20 @@ class PortableDocumentFormatTextExtractor(TextExtractor):
 
         pdf_path = corpus.root / item.relpath
         pdf_bytes = pdf_path.read_bytes()
-        reader = PdfReader(BytesIO(pdf_bytes))
+        try:
+            reader = PdfReader(BytesIO(pdf_bytes), strict=False)
+        except Exception as exc:
+            return ExtractedText(
+                text="",
+                producer_extractor_id=self.extractor_id,
+                metadata={
+                    "pdf_error": {
+                        "code": "pdf_reader_failed",
+                        "message": str(exc),
+                        "relpath": item.relpath,
+                    }
+                },
+            )
 
         texts: list[str] = []
         pages = list(reader.pages)
@@ -93,7 +106,10 @@ class PortableDocumentFormatTextExtractor(TextExtractor):
             pages = pages[: int(parsed_config.max_pages)]
 
         for page in pages:
-            page_text = page.extract_text() or ""
+            try:
+                page_text = page.extract_text() or ""
+            except Exception:
+                continue
             texts.append(page_text)
 
         combined_text = "\n".join(texts).strip()

@@ -1,0 +1,17 @@
+extractor_id: pipeline
+configuration:
+  stages:
+    - extractor_id: pass-through-text
+      config: {}
+    - extractor_id: grobid-pdf-text
+      config:
+        fallback_to_pypdf: true
+        record_fallback_metadata: true
+    - extractor_id: markitdown
+      config: {}
+    - extractor_id: select-override
+      config:
+        media_type_patterns:
+          - text/html
+          - application/xhtml+xml
+        fallback_to_first: true
