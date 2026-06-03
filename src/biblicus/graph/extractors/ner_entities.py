@@ -21,6 +21,11 @@ from ..grobid_dedup import (
     should_suppress_ner_entity,
 )
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
+from ..reference_anchor import (
+    build_reference_anchor_node,
+    reference_title_blocked_forms,
+    should_suppress_reference_title,
+)
 
 _SPACY_PIPELINE_CACHE: dict[str, object] = {}
 
@@ -37,7 +42,7 @@ class NerEntitiesGraphConfig(GraphSchemaModel):
     :vartype max_entity_length: int
     :ivar entity_labels: Optional allow-list of spaCy entity labels.
     :vartype entity_labels: list[str] or None
-    :ivar include_item_node: Whether to emit an item node and mentions edges.
+    :ivar include_item_node: Whether to emit a reference anchor node and mentions edges.
     :vartype include_item_node: bool
     :ivar include_relation_edges: Whether to emit sentence-level entity co-occurrence edges.
     :vartype include_relation_edges: bool
@@ -111,6 +116,7 @@ class NerEntitiesGraphExtractor(GraphExtractor):
             structured = grobid_structured_from_metadata(extraction_metadata)
             grobid_blocked = grobid_blocked_surface_forms(structured)
 
+        title_blocked = reference_title_blocked_forms(item)
         entities = _extract_entities(
             extracted_text=extracted_text,
             model_name=parsed.model,
@@ -118,6 +124,7 @@ class NerEntitiesGraphExtractor(GraphExtractor):
             max_length=parsed.max_entity_length,
             entity_labels=parsed.entity_labels,
             grobid_blocked_forms=grobid_blocked,
+            title_blocked_forms=title_blocked,
         )
         entity_counts = Counter(entity for entity, _label, _sentence_index in entities)
         entity_types = {entity: label for entity, label, _sentence_index in entities}
@@ -126,14 +133,9 @@ class NerEntitiesGraphExtractor(GraphExtractor):
         edges: List[GraphEdge] = []
 
         if parsed.include_item_node:
-            item_node = GraphNode(
-                node_id=f"item:{item.id}",
-                node_type="item",
-                label=item.title or item.relpath,
-                properties={"item_id": item.id},
-            )
-            nodes.insert(0, item_node)
-            edges.extend(_build_mentions_edges(item_node.node_id, entity_counts))
+            reference_node = build_reference_anchor_node(item)
+            nodes.insert(0, reference_node)
+            edges.extend(_build_mentions_edges(reference_node.node_id, entity_counts))
 
         if parsed.include_relation_edges:
             edges.extend(
@@ -155,6 +157,7 @@ def _extract_entities(
     max_length: int,
     entity_labels: Optional[List[str]],
     grobid_blocked_forms: set[str] | None = None,
+    title_blocked_forms: set[str] | None = None,
 ) -> List[Tuple[str, str, int]]:
     nlp = _load_spacy_pipeline(model_name)
     doc = nlp(extracted_text)
@@ -174,6 +177,8 @@ def _extract_entities(
             entity_type=label,
             blocked_forms=grobid_blocked_forms,
         ):
+            continue
+        if title_blocked_forms and should_suppress_reference_title(text, title_blocked_forms):
             continue
         entities.append((text, label, _entity_sentence_index(ent)))
     return entities
@@ -241,16 +246,16 @@ def _build_entity_nodes(
     return nodes
 
 
-def _build_mentions_edges(item_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
+def _build_mentions_edges(anchor_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
     edges: List[GraphEdge] = []
     for label, count in sorted(entity_counts.items()):
         canonical = _canonicalize(label)
         entity_id = f"entity:{canonical}"
-        edge_id = f"{item_node_id}|mentions|{entity_id}"
+        edge_id = f"{anchor_node_id}|mentions|{entity_id}"
         edges.append(
             GraphEdge(
                 edge_id=edge_id,
-                src=item_node_id,
+                src=anchor_node_id,
                 dst=entity_id,
                 edge_type="mentions",
                 weight=float(count),
