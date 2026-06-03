@@ -1233,6 +1233,33 @@ def cmd_graph_show(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph_export(arguments: argparse.Namespace) -> int:
+    """
+    Export graph snapshot nodes and edges from Neo4j as portable JSON.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from .graph.extraction import export_graph_snapshot
+    from .graph.models import parse_graph_snapshot_reference
+
+    corpus = (
+        Corpus.open(arguments.corpus)
+        if getattr(arguments, "corpus", None)
+        else Corpus.find(Path.cwd())
+    )
+    reference = parse_graph_snapshot_reference(arguments.snapshot)
+    payload = export_graph_snapshot(corpus, snapshot=reference)
+    output = payload.model_dump_json(indent=2)
+    if arguments.output:
+        Path(arguments.output).write_text(output + "\n", encoding="utf-8")
+    else:
+        print(output)
+    return 0
+
+
 def cmd_query(arguments: argparse.Namespace) -> int:
     """
     Execute a retrieval query.
@@ -2177,6 +2204,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Graph snapshot reference in the form extractor_id:snapshot_id.",
     )
     p_graph_show.set_defaults(func=cmd_graph_show)
+
+    p_graph_export = graph_sub.add_parser(
+        "export", help="Export graph snapshot nodes and edges from Neo4j."
+    )
+    _add_common_corpus_arg(p_graph_export)
+    p_graph_export.add_argument(
+        "--snapshot",
+        required=True,
+        help="Graph snapshot reference in the form extractor_id:snapshot_id.",
+    )
+    p_graph_export.add_argument(
+        "--output",
+        default=None,
+        help="Optional output JSON path (defaults to stdout).",
+    )
+    p_graph_export.set_defaults(func=cmd_graph_export)
 
     p_query = sub.add_parser("query", help="Run a retrieval query.")
     _add_common_corpus_arg(p_query)
