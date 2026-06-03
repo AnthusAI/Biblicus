@@ -9,16 +9,15 @@ import json
 import os
 import random
 import re
-import threading
 import time
 import uuid
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
-
-from .html_structured_pipeline import enrich_web_extraction_structured
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
+
+from .html_structured_pipeline import enrich_web_extraction_structured
 
 URL_TEXT_PROMPT_VERSION = "url-text-v1"
 URL_TEXT_DEFAULT_TIMEOUT_SECONDS = 20.0
