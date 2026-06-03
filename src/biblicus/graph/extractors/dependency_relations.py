@@ -14,6 +14,11 @@ from ...corpus import Corpus
 from ...models import CatalogItem
 from ..base import GraphExtractor
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
+from ..reference_anchor import (
+    build_reference_anchor_node,
+    reference_title_blocked_forms,
+    should_suppress_reference_title,
+)
 
 
 class DependencyRelationsGraphConfig(GraphSchemaModel):
@@ -24,7 +29,7 @@ class DependencyRelationsGraphConfig(GraphSchemaModel):
     :vartype model: str
     :ivar min_entity_length: Minimum length for entity labels.
     :vartype min_entity_length: int
-    :ivar include_item_node: Whether to emit an item node and mentions edges.
+    :ivar include_item_node: Whether to emit a reference anchor node and mentions edges.
     :vartype include_item_node: bool
     """
 
@@ -82,10 +87,12 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
         if parsed is None:
             parsed = DependencyRelationsGraphConfig.model_validate(config)
 
+        title_blocked = reference_title_blocked_forms(item)
         entities = _extract_entities(
             extracted_text=extracted_text,
             model_name=parsed.model,
             min_length=parsed.min_entity_length,
+            title_blocked_forms=title_blocked,
         )
         relations = _extract_relations(
             extracted_text=extracted_text,
@@ -99,14 +106,9 @@ class DependencyRelationsGraphExtractor(GraphExtractor):
         edges: List[GraphEdge] = []
 
         if parsed.include_item_node:
-            item_node = GraphNode(
-                node_id=f"item:{item.id}",
-                node_type="item",
-                label=item.title or item.relpath,
-                properties={"item_id": item.id},
-            )
-            nodes.insert(0, item_node)
-            edges.extend(_build_mentions_edges(item_node.node_id, entity_counts))
+            reference_node = build_reference_anchor_node(item)
+            nodes.insert(0, reference_node)
+            edges.extend(_build_mentions_edges(reference_node.node_id, entity_counts))
 
         edges.extend(_build_relation_edges(relations))
 
@@ -118,6 +120,7 @@ def _extract_entities(
     extracted_text: str,
     model_name: str,
     min_length: int,
+    title_blocked_forms: set[str] | None = None,
 ) -> List[Tuple[str, str]]:
     doc = _load_doc(extracted_text, model_name)
     entities: List[Tuple[str, str]] = []
@@ -125,6 +128,8 @@ def _extract_entities(
         label = getattr(ent, "label_", "ENTITY")
         text = ent.text.strip()
         if len(text) < min_length:
+            continue
+        if title_blocked_forms and should_suppress_reference_title(text, title_blocked_forms):
             continue
         entities.append((text, label))
     return entities
@@ -198,16 +203,16 @@ def _build_entity_nodes(
     return nodes
 
 
-def _build_mentions_edges(item_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
+def _build_mentions_edges(anchor_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
     edges: List[GraphEdge] = []
     for label, count in sorted(entity_counts.items()):
         canonical = _canonicalize(label)
         entity_id = f"entity:{canonical}"
-        edge_id = f"{item_node_id}|mentions|{entity_id}"
+        edge_id = f"{anchor_node_id}|mentions|{entity_id}"
         edges.append(
             GraphEdge(
                 edge_id=edge_id,
-                src=item_node_id,
+                src=anchor_node_id,
                 dst=entity_id,
                 edge_type="mentions",
                 weight=float(count),
