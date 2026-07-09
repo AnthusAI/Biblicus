@@ -10,9 +10,10 @@ Defines callable type aliases and factory functions for the three LLM tasks:
 - **Synthesis** (:data:`SynthesisFn`): Synthesize a single root cause
   statement for a topic from per-exemplar causes.
 
-Two labeler/causal/synthesizer implementations are provided:
+Three labeler/causal/synthesizer implementations are provided:
 
 - ``dspy_*`` — uses Biblicus's existing ``ai/llm.py`` backend.
+- ``openai_*`` — calls OpenAI directly through the Responses API.
 - ``bedrock_*`` — calls AWS Bedrock directly (Claude Haiku by default),
   compatible with the Plexus usage pattern.
 """
@@ -22,7 +23,17 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
+from biblicus.user_config import resolve_openai_api_key
+
 logger = logging.getLogger(__name__)
+
+DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
+DEFAULT_OPENAI_REASONING_EFFORT = "low"
+DEFAULT_OPENAI_TIMEOUT_SECONDS = 60.0
+DEFAULT_OPENAI_MAX_RETRIES = 1
+DEFAULT_OPENAI_MIN_OUTPUT_TOKENS = 200
+DEFAULT_BEDROCK_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
+DEFAULT_BEDROCK_REGION = "us-east-1"
 
 # ---------------------------------------------------------------------------
 # Type aliases
@@ -82,6 +93,151 @@ def _build_context_block(context: Dict[str, Any]) -> str:
     if context.get("item_text_excerpt"):
         parts.append(f"Item text: {context['item_text_excerpt'][:500]}")
     return ("\n".join(parts) + "\n") if parts else ""
+
+
+# ---------------------------------------------------------------------------
+# OpenAI-backed helpers
+# ---------------------------------------------------------------------------
+
+
+def _openai_call(
+    model_id: str,
+    system: str,
+    prompt: str,
+    max_tokens: int = 60,
+    *,
+    reasoning_effort: str = DEFAULT_OPENAI_REASONING_EFFORT,
+    timeout_seconds: Optional[float] = None,
+    max_retries: int = DEFAULT_OPENAI_MAX_RETRIES,
+) -> Optional[str]:
+    """Make a single OpenAI Responses invocation and return the text."""
+    try:
+        from openai import OpenAI
+
+        api_key = resolve_openai_api_key()
+        if not api_key:
+            raise RuntimeError(
+                "OpenAI RCA provider requires an OpenAI API key. "
+                "Set OPENAI_API_KEY or configure openai.api_key in Biblicus user config."
+            )
+
+        client = OpenAI(
+            api_key=api_key,
+            timeout=timeout_seconds or DEFAULT_OPENAI_TIMEOUT_SECONDS,
+            max_retries=max_retries,
+        )
+        response = client.responses.create(
+            model=model_id,
+            instructions=system,
+            input=[{"role": "user", "content": prompt}],
+            reasoning={"effort": reasoning_effort},
+            max_output_tokens=max(max_tokens, DEFAULT_OPENAI_MIN_OUTPUT_TOKENS),
+        )
+        text = (getattr(response, "output_text", "") or "").strip()
+        return text if text else None
+    except Exception as exc:
+        logger.warning("OpenAI LLM call failed: %s", exc)
+        return None
+
+
+def openai_labeler(
+    model_id: str = DEFAULT_OPENAI_MODEL,
+    *,
+    timeout_seconds: Optional[float] = None,
+    max_retries: int = DEFAULT_OPENAI_MAX_RETRIES,
+) -> LabelFn:
+    """
+    Return a :data:`LabelFn` that calls OpenAI.
+
+    :param model_id: OpenAI model ID.
+    :param timeout_seconds: Optional request timeout.
+    :param max_retries: OpenAI SDK retry count.
+    :return: Label generation callable.
+    """
+
+    def _label(keywords: List[str], exemplars: List[str]) -> str:
+        kw_str = ", ".join(keywords[:8])
+        ex_str = "\n".join(f"- {e[:200]}" for e in exemplars[:5])
+        prompt = _LABEL_PROMPT_TEMPLATE.format(keywords=kw_str, exemplars=ex_str)
+        result = _openai_call(
+            model_id,
+            _LABEL_SYSTEM,
+            prompt,
+            max_tokens=30,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+        )
+        return result or ", ".join(keywords[:3])
+
+    return _label
+
+
+def openai_causal(
+    model_id: str = DEFAULT_OPENAI_MODEL,
+    *,
+    timeout_seconds: Optional[float] = None,
+    max_retries: int = DEFAULT_OPENAI_MAX_RETRIES,
+) -> CausalFn:
+    """
+    Return a :data:`CausalFn` that calls OpenAI.
+
+    :param model_id: OpenAI model ID.
+    :param timeout_seconds: Optional request timeout.
+    :param max_retries: OpenAI SDK retry count.
+    :return: Causal inference callable.
+    """
+
+    def _causal(text: str, context: Dict[str, Any]) -> Optional[str]:
+        ctx_block = _build_context_block(context)
+        prompt = _CAUSAL_PROMPT_TEMPLATE.format(
+            edit_comment=text[:500],
+            context_block=ctx_block,
+        )
+        return _openai_call(
+            model_id,
+            _CAUSAL_SYSTEM,
+            prompt,
+            max_tokens=60,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+        )
+
+    return _causal
+
+
+def openai_synthesizer(
+    model_id: str = DEFAULT_OPENAI_MODEL,
+    *,
+    timeout_seconds: Optional[float] = None,
+    max_retries: int = DEFAULT_OPENAI_MAX_RETRIES,
+) -> SynthesisFn:
+    """
+    Return a :data:`SynthesisFn` that calls OpenAI.
+
+    :param model_id: OpenAI model ID.
+    :param timeout_seconds: Optional request timeout.
+    :param max_retries: OpenAI SDK retry count.
+    :return: Cause synthesis callable.
+    """
+
+    def _synthesize(label: str, keywords: List[str], causes: List[str]) -> Optional[str]:
+        kw_str = ", ".join(keywords[:8])
+        causes_str = "\n".join(f"{i + 1}. {c}" for i, c in enumerate(causes))
+        prompt = _SYNTHESIS_PROMPT_TEMPLATE.format(
+            label=label,
+            keywords=kw_str,
+            causes=causes_str,
+        )
+        return _openai_call(
+            model_id,
+            _SYNTHESIS_SYSTEM,
+            prompt,
+            max_tokens=60,
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+        )
+
+    return _synthesize
 
 
 # ---------------------------------------------------------------------------
@@ -215,8 +371,8 @@ def _bedrock_call(
 
 
 def bedrock_labeler(
-    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
-    region: str = "us-east-1",
+    model_id: str = DEFAULT_BEDROCK_MODEL,
+    region: str = DEFAULT_BEDROCK_REGION,
 ) -> LabelFn:
     """
     Return a :data:`LabelFn` that calls AWS Bedrock Claude.
@@ -237,8 +393,8 @@ def bedrock_labeler(
 
 
 def bedrock_causal(
-    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
-    region: str = "us-east-1",
+    model_id: str = DEFAULT_BEDROCK_MODEL,
+    region: str = DEFAULT_BEDROCK_REGION,
 ) -> CausalFn:
     """
     Return a :data:`CausalFn` that calls AWS Bedrock Claude.
@@ -260,8 +416,8 @@ def bedrock_causal(
 
 
 def bedrock_synthesizer(
-    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
-    region: str = "us-east-1",
+    model_id: str = DEFAULT_BEDROCK_MODEL,
+    region: str = DEFAULT_BEDROCK_REGION,
 ) -> SynthesisFn:
     """
     Return a :data:`SynthesisFn` that calls AWS Bedrock Claude.
@@ -282,3 +438,62 @@ def bedrock_synthesizer(
         return _bedrock_call(model_id, region, _SYNTHESIS_SYSTEM, prompt, max_tokens=60)
 
     return _synthesize
+
+
+def resolve_llm_helpers(
+    provider: str = "auto",
+    *,
+    model_id: Optional[str] = None,
+    region: str = DEFAULT_BEDROCK_REGION,
+    timeout_seconds: Optional[float] = None,
+    max_retries: int = DEFAULT_OPENAI_MAX_RETRIES,
+) -> tuple[LabelFn, CausalFn, SynthesisFn]:
+    """
+    Resolve reinforcement-memory LLM helpers for a provider.
+
+    ``auto`` prefers OpenAI when an OpenAI API key is configured and falls
+    back to Bedrock otherwise.
+
+    :param provider: ``auto``, ``openai``, or ``bedrock``.
+    :param model_id: Provider-specific model ID override.
+    :param region: AWS region for Bedrock.
+    :param timeout_seconds: Optional OpenAI request timeout.
+    :param max_retries: OpenAI SDK retry count.
+    :return: ``(label, infer_cause, synthesize_cause)`` callables.
+    :raises ValueError: If provider is not supported.
+    """
+    normalized = (provider or "auto").strip().lower()
+    if normalized == "auto":
+        normalized = "openai" if resolve_openai_api_key() else "bedrock"
+
+    if normalized == "openai":
+        openai_model_id = model_id or DEFAULT_OPENAI_MODEL
+        return (
+            openai_labeler(
+                openai_model_id,
+                timeout_seconds=timeout_seconds,
+                max_retries=max_retries,
+            ),
+            openai_causal(
+                openai_model_id,
+                timeout_seconds=timeout_seconds,
+                max_retries=max_retries,
+            ),
+            openai_synthesizer(
+                openai_model_id,
+                timeout_seconds=timeout_seconds,
+                max_retries=max_retries,
+            ),
+        )
+
+    if normalized == "bedrock":
+        bedrock_model_id = model_id or DEFAULT_BEDROCK_MODEL
+        return (
+            bedrock_labeler(bedrock_model_id, region=region),
+            bedrock_causal(bedrock_model_id, region=region),
+            bedrock_synthesizer(bedrock_model_id, region=region),
+        )
+
+    raise ValueError(
+        "reinforcement-memory LLM provider must be one of: auto, openai, bedrock"
+    )

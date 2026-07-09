@@ -46,9 +46,13 @@ LLM helpers::
         dspy_labeler,
         dspy_causal,
         dspy_synthesizer,
+        openai_labeler,
+        openai_causal,
+        openai_synthesizer,
         bedrock_labeler,
         bedrock_causal,
         bedrock_synthesizer,
+        resolve_llm_helpers,
     )
 """
 
@@ -71,6 +75,10 @@ from ._llm import (
     dspy_causal,
     dspy_labeler,
     dspy_synthesizer,
+    openai_causal,
+    openai_labeler,
+    openai_synthesizer,
+    resolve_llm_helpers,
 )
 from ._models import (
     AnalysisResult,
@@ -110,7 +118,11 @@ __all__ = [
     "dspy_labeler",
     "dspy_causal",
     "dspy_synthesizer",
+    "openai_labeler",
+    "openai_causal",
+    "openai_synthesizer",
     "bedrock_labeler",
     "bedrock_causal",
     "bedrock_synthesizer",
+    "resolve_llm_helpers",
 ]
