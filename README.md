@@ -736,6 +736,14 @@ Open `http://localhost:8000` in your browser.
 
 License terms are in `LICENSE`.
 
+---
+
+Built by [Anthus AI Solutions](https://anth.us). We run this class of system in production.
+
+This is how we make a real document pile inspectable.
+
+If you need this operated, not just cloned, [talk to us](https://anth.us).
+
 [retrieval augmented generation overview]: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
 [architecture]: docs/architecture.md
 [roadmap]: docs/roadmap.md
