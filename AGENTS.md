@@ -6,9 +6,18 @@
 Use Kanbus for task management.
 Why: Kanbus task management is MANDATORY here; every task must live in Kanbus.
 When: Create/update the Kanbus task before coding; close it only after the change lands.
-How: See CONTRIBUTING_AGENT.md for the Kanbus workflow, hierarchy, status rules, priorities, command examples, and the sins to avoid. Never inspect project/ or issue JSON directly (including with cat or jq); use Kanbus commands only.
-Performance: Prefer kanbusr (Rust) when available; kanbus (Python) is equivalent but slower.
-Warning: Editing project/ directly is a sin against The Way. Do not read or write anything in project/; work only through Kanbus.
+How: See CONTRIBUTING_AGENT.md for the Kanbus workflow, hierarchy, status rules, priorities, command examples, and the mistakes to avoid. Never inspect project/ or issue JSON directly (including with cat or jq); use Kanbus commands only.
+Performance: Prefer kbs (Rust) when available; kanbus (Python) is equivalent but slower.
+Warning: Editing project/ directly violates The Way. Do not read or write anything in project/; work only through Kanbus.
+Git / PR policy: Rules for product-code commits, branch names, pull requests, and human approval live in this repository's AGENTS.md (outside this Kanbus section). CONTRIBUTING_AGENT.md covers Kanbus board mechanics such as `kbs commit`; follow AGENTS.md for product code and git workflow.
+
+## Product code, Git, and pull requests
+
+- **Integration branch**: `main` is the default branch and the target for pull requests. Continuous integration and semantic release run against `main`; `develop` exists for long-lived integration when needed, but routine agent and contributor work merges through PRs into `main`.
+- **Feature branches**: Do product work on named feature branches (for example `cursor/<topic>-<id>`). Do not commit product changes directly to `main`.
+- **Pull requests**: Open a PR from your feature branch into `main`. Use conventional commit messages in PR commits; do not manually bump versions or edit `CHANGELOG.md` (see Semantic versioning and releases below).
+- **Kanbus board state in git**: After creating, updating, or closing Kanbus cards, run `kbs commit` to persist `project/issues/` to git, then push as part of **Landing the Plane** so the board does not drift.
+- **AI agent provenance**: When an AI coding agent runs `kbs create` or `kbs comment`, set `KANBUS_AGENT_PLATFORM` and `KANBUS_AGENT_MODEL` (environment variables or `--agent-platform` / `--agent-model` flags). Prefer also setting `KANBUS_AGENT_NAME` and `KANBUS_AGENT_SETTINGS` when they aid auditability. See CONTRIBUTING_AGENT.md (Kanbus PR #264 agent provenance).
 
 ## What we're building
 
