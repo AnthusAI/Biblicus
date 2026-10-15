@@ -24,10 +24,17 @@
       "text": "Offline quality fixes landed and pushed at1b170876b9ed9518a37ec7ca8ad1ae8d1140b9ca.53 BDD/159 steps pass at100 percent worker statement+branch coverage, Ruff/Black pass. Integration owner notified with exact optional context fields and deterministic failure guards. No paid validation; semantic live-model quality remains unverified pending separately approved run. Human catalog/server/tabs untouched.",
       "created_at": "2026-10-15T21:41:49.641685Z",
       "comment_type": "default"
+    },
+    {
+      "id": "4406fcfd-c3fc-44ae-b0df-13d3acef611a",
+      "author": "home",
+      "text": "Integration owner independently VERIFIED source1b170876:66 focused Papyrus tests PASS, including12 actual CLI -> disposable FastAPI gateway -> fake provider checks. Known source date/archive/generated title reach both map and reduce; missing-year title and duplicate subtitle fail after2 requests with no repair; legal/footer instructions and exact selected source span verified; full7-call pipeline and prior cancellation/outage/token admission regressions PASS. Papyrus pins8317a95 and7c8dbe6 wire context/projection/proof.41ab4a7 source/docs unchanged from1b170876. No new paid calls/grants or human catalog/server/tab changes. Semantic live quality remains unverified; original seven-call paid test grant remains closed.",
+      "created_at": "2026-10-15T21:43:44.483249Z",
+      "comment_type": "default"
     }
   ],
   "created_at": "2026-10-15T21:38:46.410752Z",
-  "updated_at": "2026-10-15T21:41:49.648691Z",
+  "updated_at": "2026-10-15T21:43:44.483277Z",
   "closed_at": "2026-10-15T21:41:49.648669Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
