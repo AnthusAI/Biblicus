@@ -10,9 +10,17 @@
   "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "6aea759f-19a2-4266-bd71-fe1e1c536bf7",
+      "author": "home",
+      "text": "Implementation pushed e4001ea1c2378a66d2b58bae4ee793c7e5a2fe38;46 executable offline scenarios prove bounded CLI contracts at100 percent coverage. Story remains in_progress pending integration owner real CLI-to-PrimingProviderBudget proof; no paid validation authorized. Existing baseline gate repair bug blbs-1e7073 remains open.",
+      "created_at": "2026-10-15T20:00:28.191019Z",
+      "comment_type": "default"
+    }
+  ],
   "created_at": "2026-10-15T19:50:22.297780Z",
-  "updated_at": "2026-10-15T19:53:11.060257Z",
+  "updated_at": "2026-10-15T20:00:28.191041Z",
   "closed_at": null,
   "agent": {
     "platform": "codex",

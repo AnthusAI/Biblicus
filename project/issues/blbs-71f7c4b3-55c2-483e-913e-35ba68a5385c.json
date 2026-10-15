@@ -3,7 +3,7 @@
   "title": "Implement bounded web transformation CLI and offline gateway proof",
   "description": "Implement parent-authorized article-text and map-reduce contracts; PR-FAQ within existing approved integration scope; docs, failing BDD, implementation, offline tests, pushed handoff. No paid calls.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -31,11 +31,18 @@
       "text": "Final offline proof:46 scenarios/138 steps pass; web_transform.py100% statement+branch coverage (153 statements32 branches). Ruff and Black pass. Both CLI help contracts load under existing Papyrus Poetry runtime. Existing focused regressions19 pass7 fail identically against original baseline; tracked separately. Gateway owner agrees authoritative token admission plus byte ceiling and no tokenizer download. Ready to commit/push tested implementation; no paid provider invocation.",
       "created_at": "2026-10-15T19:59:49.628077Z",
       "comment_type": "default"
+    },
+    {
+      "id": "17101f19-4076-455a-b895-41e1c29a806e",
+      "author": "home",
+      "text": "Implementation landed on pushed codex/bounded-web-transform at e4001ea1c2378a66d2b58bae4ee793c7e5a2fe38.46 offline BDD pass,100 percent branch+statement coverage. Exact contracts/runtime/examples in docs/bounded-web-transform.md. Integration owner notified and independently validating with disposable gateway, no paid calls.",
+      "created_at": "2026-10-15T20:00:28.152444Z",
+      "comment_type": "default"
     }
   ],
   "created_at": "2026-10-15T19:53:11.144126Z",
-  "updated_at": "2026-10-15T19:59:49.628116Z",
-  "closed_at": null,
+  "updated_at": "2026-10-15T20:00:28.175035Z",
+  "closed_at": "2026-10-15T20:00:28.174998Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
   "custom": {}
