@@ -2027,6 +2027,9 @@ def build_parser() -> argparse.ArgumentParser:
         "extract", help="Work with text extraction snapshots for the corpus."
     )
     extract_sub = p_extract.add_subparsers(dest="extract_command", required=True)
+    from .web_transform import add_transform_commands
+
+    add_transform_commands(sub, extract_sub)
 
     p_extract_build = extract_sub.add_parser("build", help="Build a text extraction snapshot.")
     _add_common_corpus_arg(p_extract_build)
