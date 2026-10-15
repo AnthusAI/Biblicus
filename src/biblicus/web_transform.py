@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Literal
 from urllib.error import HTTPError, URLError
@@ -16,7 +17,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
 MODEL = "gpt-5.4-mini-2026-03-17"
-PROMPT_VERSION = "bounded-web-v1"
+PROMPT_VERSION = "bounded-web-v2"
 MAX_INPUT_BYTES = 262144
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
@@ -35,6 +36,12 @@ class SourceInput(BaseModel):
     :vartype original_title: str
     :ivar original_subtitle: Advisory original subtitle.
     :vartype original_subtitle: str
+    :ivar source_publication_date: Confirmed source publication date, never intake time.
+    :vartype source_publication_date: datetime.date or None
+    :ivar source_is_archived: Explicit source archive evidence, unknown when None.
+    :vartype source_is_archived: bool or None
+    :ivar generated_title: Generated title used to keep the subtitle complementary.
+    :vartype generated_title: str
     """
 
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -43,6 +50,9 @@ class SourceInput(BaseModel):
     reference_title: str = ""
     original_title: str = ""
     original_subtitle: str = ""
+    source_publication_date: date | None = None
+    source_is_archived: bool | None = None
+    generated_title: str = ""
 
 
 class ArticleInput(SourceInput):
@@ -245,7 +255,7 @@ def run_transform(arguments: argparse.Namespace) -> int:
         endpoint, key = _gateway_configuration()
         if article:
             paragraphs = re.split(r"\n[ \t]*\n", source.extracted_text)
-            data = source.model_dump(exclude={"model", "extracted_text"})
+            data = source.model_dump(mode="json", exclude={"model", "extracted_text"})
             data["paragraphs"] = [
                 {"id": index, "text": text} for index, text in enumerate(paragraphs)
             ]
@@ -253,6 +263,9 @@ def run_transform(arguments: argparse.Namespace) -> int:
                 endpoint,
                 key,
                 "Select article body paragraphs; exclude navigation, ads and unrelated boilerplate. "
+                "Exclude legal/privacy notices, site-wide monitoring/security banners, feedback "
+                "requests and footer links even when their wording concerns security. "
+                "Keep substantive incident mitigations and article dates/archive labels. "
                 "Return only paragraph_ids in source order, without duplicates. Select at least one.",
                 data,
                 ParagraphSelection,
@@ -268,12 +281,22 @@ def run_transform(arguments: argparse.Namespace) -> int:
             result.span_count = len(selected)
         else:
             task = arguments.web_transform_task
+            quality_instruction = (
+                "Treat explicitly archived material as historical, not a current incident. "
+                "When source_is_archived is unknown, do not claim archive status. "
+                "For an explicitly archived source without a date, mark the title Archived "
+                "without inventing a year. Retain dates explicitly stated in the source. Preserve the "
+                "confirmed source publication year in the title when supplied; do not use intake "
+                "time or infer publication dates from the URL. A subtitle must complement "
+                "generated_title with a concrete additional detail, not paraphrase its headline. "
+            )
             mapped = _request_json(
                 endpoint,
                 key,
                 f"Map the source to factual notes relevant to a {task}. Preserve evidence; "
-                "do not invent facts or human classification labels. Return notes as value.",
-                source.model_dump(),
+                "do not invent facts or human classification labels. Return notes as value. "
+                + quality_instruction,
+                source.model_dump(mode="json"),
                 MetadataValue,
             ).value
             if not mapped.strip():
@@ -282,12 +305,30 @@ def run_transform(arguments: argparse.Namespace) -> int:
                 endpoint,
                 key,
                 f"Reduce these factual notes to one concise {task}. Return only the requested "
-                "metadata as value, without commentary, invented facts or classification labels.",
-                {"task": task, "notes": mapped},
+                "metadata as value, without commentary, invented facts or classification labels. "
+                + quality_instruction,
+                {
+                    **source.model_dump(mode="json", exclude={"model", "extracted_text"}),
+                    "task": task,
+                    "notes": mapped,
+                },
                 MetadataValue,
             ).value
             if not reduced.strip():
                 raise TransformError("invalid_provider_output", "Empty metadata value.")
+            if task == "title" and source.source_publication_date is not None:
+                if str(source.source_publication_date.year) not in re.findall(r"\w+", reduced):
+                    raise TransformError(
+                        "invalid_provider_output", "Title omits the known source publication year."
+                    )
+            if task == "subtitle" and source.generated_title.strip():
+                title_words = set(re.findall(r"\w+", source.generated_title.casefold()))
+                subtitle_words = set(re.findall(r"\w+", reduced.casefold()))
+                combined_words = title_words | subtitle_words
+                if len(title_words & subtitle_words) / max(1, len(combined_words)) >= 0.8:
+                    raise TransformError(
+                        "invalid_provider_output", "Subtitle repeats the generated title."
+                    )
             result.value = reduced.strip()
             result.map_reduce = {"map_calls": 1, "reduce_calls": 1, "chunk_count": 1}
         result.status = "ok"

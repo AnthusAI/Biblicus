@@ -1,0 +1,28 @@
+{
+  "id": "blbs-3d7e765b-5873-4faf-85af-572004268435",
+  "title": "Improve bounded article and metadata quality after approved CISA review",
+  "description": "Parent authorizes offline fixes only: article legal/privacy boilerplate exclusion, distinct subtitle, historical title cue. Add reusable source date/archive/generated-title context, preserve seven-call budget and fail-closed contracts, document/specify before implementation. No paid calls or human catalog/server access.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "41436566-1a56-4ac4-81fb-85ab6c4457a0",
+      "author": "home",
+      "text": "Read quality-review/report from approved CISA run: actual7 calls USD0.013821, grant closed by integration owner. Recorded approved scope in PR-FAQ/docs, added failing historical-title BDD before implementation. New v2 optional source_publication_date/date|null, source_is_archived/bool|null, generated_title/string accepted by integration owner. Both map and reduce carry context; known-year title guard and word-set Jaccard>=0.8 subtitle rejection use no retries. Explicit legal/privacy/security footer exclusion prompt.53 offline scenarios pass at100 percent statements+branches; final verification after prompt clarification underway. No additional paid calls, no catalog/server access.",
+      "created_at": "2026-10-15T21:41:22.927385Z",
+      "comment_type": "default"
+    }
+  ],
+  "created_at": "2026-10-15T21:38:46.410752Z",
+  "updated_at": "2026-10-15T21:41:22.927408Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

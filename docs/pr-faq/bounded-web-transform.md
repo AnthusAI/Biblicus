@@ -9,3 +9,7 @@ How is spending bounded? Article selection uses one request; each metadata field
 What is excluded? Source fetching changes, classification labels, tools, deployments, live grants, paid validation, and changes to the existing paper/GROBID path.
 
 Approval basis: parent explicitly authorized implementing this missing dependency end to end; this draft records that existing scope, not a request for new product scope.
+
+## Approved offline quality correction
+
+The first approved CISA run exposed retained legal/privacy boilerplate, a nearly redundant subtitle and no historical title cue. The parent authorized offline corrections only. Bounded-web-v2 adds explicit boilerplate exclusion instructions, source publication/archive context, and the already-generated title for complementary subtitles. Known publication years are required in titles; near-duplicate subtitles fail visibly without repair calls. Source dates come from the caller, never intake time. The seven-request ceiling stays unchanged.

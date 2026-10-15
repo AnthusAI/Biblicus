@@ -22,11 +22,19 @@ Offline verification: PYTHONPATH=src python -m behave --stage bounded features/b
 Example article success (identity/retry fields are always present):
 
 ```json
-{"status":"ok","prompt_version":"bounded-web-v1","model":"gpt-5.4-mini-2026-03-17","task":null,"text":"Article body.","span_count":1,"value":"","map_reduce":{},"warnings":[],"error":null,"retry_trace":[],"retry_failure_count":0,"retry_rounds_used":0}
+{"status":"ok","prompt_version":"bounded-web-v2","model":"gpt-5.4-mini-2026-03-17","task":null,"text":"Article body.","span_count":1,"value":"","map_reduce":{},"warnings":[],"error":null,"retry_trace":[],"retry_failure_count":0,"retry_rounds_used":0}
 ```
 
 Example metadata success uses task=summary, value="Grounded summary", text="", span_count=0 and map_reduce={"map_calls":1,"reduce_calls":1,"chunk_count":1}. Example denied request uses status=failed, error={"code":"provider_failed","message":"Gateway request failed; no retry was attempted."}, empty text/value and exit 2. Neither failure object nor stderr includes the provider response body.
 
 The request byte ceiling is 65536; stdin/file JSON ceiling is 262144 UTF-8 bytes; response ceiling is 262144 bytes. Token admission belongs to the trusted gateway, so a byte-admitted request can still fail the gateway token check. No worker tokenizer downloads occur. No new runtime dependency was added.
 
-Verification at implementation handoff: 46 offline BDD scenarios pass with 100% statement and branch coverage for web_transform.py, Ruff passes and Black passes for the new files. Existing URL/GROBID/HTML tests return 19 passing and 7 failing both here and against baseline d3ba6cb sources. The default BDD loader independently fails on the existing missing _extract_latest_failure_error_from_messages import. The bounded stage shares the conventional step file through a symlink, keeping both normal discovery and isolated verification available.
+Verification at implementation handoff: 53 offline BDD scenarios pass with 100% statement and branch coverage for web_transform.py, Ruff passes and Black passes for the new files. Existing URL/GROBID/HTML tests return 19 passing and 7 failing both here and against baseline d3ba6cb sources. The default BDD loader independently fails on the existing missing _extract_latest_failure_error_from_messages import. The bounded stage shares the conventional step file through a symlink, keeping both normal discovery and isolated verification available.
+
+## Quality context (bounded-web-v2)
+
+Both input objects accept source_publication_date (ISO YYYY-MM-DD or null), source_is_archived (boolean or null), and generated_title (string, default empty). Supply the confirmed source date and archive flag, and pass the generated title when generating a subtitle. Unknown values stay null/empty; the worker never substitutes intake time or infers publication dates from the URL. All context reaches both map and reduce. Archived material is described historically; a known publication year must appear in a generated title or the command fails with invalid_provider_output.
+
+A subtitle must add a concrete detail absent from the supplied generated_title. Normalized case-insensitive word-set Jaccard similarity >=0.8 is rejected with invalid_provider_output. This is a transparent lexical guard, not proof of semantic distinctness; no extra model/repair calls occur. With no generated_title the prompt still requests complementary detail, but pairwise validation requires the caller to provide it.
+
+Article selection explicitly excludes legal/privacy notices, general website security banners, feedback requests and footer boilerplate, including security-related wording outside the article. Preserve substantive incident mitigations and historical/archive evidence. Offline regressions verify prompts, context propagation, exact source reconstruction and deterministic output guards; they do not establish improved live-model quality.

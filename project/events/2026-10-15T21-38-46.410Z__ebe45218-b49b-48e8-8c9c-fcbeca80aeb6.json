@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "ebe45218-b49b-48e8-8c9c-fcbeca80aeb6",
+  "issue_id": "blbs-3d7e765b-5873-4faf-85af-572004268435",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-15T21:38:46.410Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Improve bounded article and metadata quality after approved CISA review",
+    "description": "Parent authorizes offline fixes only: article legal/privacy boilerplate exclusion, distinct subtitle, historical title cue. Add reusable source date/archive/generated-title context, preserve seven-call budget and fail-closed contracts, document/specify before implementation. No paid calls or human catalog/server access.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+    "labels": []
+  }
+}

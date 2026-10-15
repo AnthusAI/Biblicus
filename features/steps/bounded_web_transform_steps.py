@@ -30,6 +30,31 @@ def given_gateway(context, case):
     context.web_task = case if case in {"title", "subtitle", "summary"} else "article"
     if case in {"blank_value", "denied_reduce", "blank_reduce", "metadata_wrong_model"}:
         context.web_task = "summary"
+    if case in {"historical_title", "missing_title_year", "archive_without_date"}:
+        context.web_task = "title"
+    if case in {"complementary_subtitle", "duplicate_subtitle"}:
+        context.web_task = "subtitle"
+    if case.startswith("quality_") or case in {
+        "historical_title",
+        "missing_title_year",
+        "complementary_subtitle",
+        "duplicate_subtitle",
+        "invalid_source_date",
+        "archive_without_date",
+    }:
+        context.web_payload.update(
+            source_publication_date="2021-01-07",
+            source_is_archived=True,
+            generated_title="2021 CISA SolarWinds Supply Chain Incident",
+        )
+    if case == "quality_article":
+        context.web_payload["extracted_text"] = (
+            "Legal/privacy: This site monitors network traffic.\n\nCISA investigated SolarWinds in January 2021.\n\nOrganizations should apply incident mitigations."
+        )
+    if case == "archive_without_date":
+        context.web_payload["source_publication_date"] = None
+    if case == "invalid_source_date":
+        context.web_payload["source_publication_date"] = "2021-02-31"
     if context.web_task == "article":
         context.web_payload["model"] = "gpt-5.4-mini-2026-03-17"
 
@@ -50,6 +75,16 @@ def given_gateway(context, case):
             output = {"paragraph_ids": [1, 2]}
             if context.web_task != "article":
                 output = {"value": "Grounded metadata"}
+            if case == "historical_title":
+                output = {"value": "2021 SolarWinds incident: CISA response"}
+            if case == "archive_without_date":
+                output = {"value": "Archived SolarWinds incident response"}
+            if case == "complementary_subtitle":
+                output = {
+                    "value": "Orion compromise prompted joint federal response and recovery guidance"
+                }
+            if case == "duplicate_subtitle":
+                output = {"value": "2021 CISA major SolarWinds supply chain incident"}
             if case == "empty_ids":
                 output = {"paragraph_ids": []}
             if case == "negative_ids":
@@ -97,7 +132,9 @@ def given_gateway(context, case):
 
     context.web_server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     context.web_base = f"http://127.0.0.1:{context.web_server.server_port}/provider/v1"
-    context.web_thread = threading.Thread(target=context.web_server.serve_forever, daemon=True)
+    context.web_thread = threading.Thread(
+        target=lambda: context.web_server.serve_forever(poll_interval=0.01), daemon=True
+    )
     context.web_thread.start()
     context.add_cleanup(context.web_server.server_close)
     context.add_cleanup(context.web_server.shutdown)
@@ -184,6 +221,12 @@ def when_command(context):
 def then_contract(context, case):
     """Verify results and exact gateway dispatch bounds."""
     successful = case in {"article", "title", "subtitle", "summary", "file_input", "proxy_ignored"}
+    successful = successful or case in {
+        "quality_article",
+        "historical_title",
+        "complementary_subtitle",
+        "archive_without_date",
+    }
     assert context.web_exit == (0 if successful else 2), context.web_result
     result = context.web_result
     assert result["status"] == ("ok" if successful else "failed"), result
@@ -193,11 +236,17 @@ def then_contract(context, case):
     if successful:
         assert result["error"] is None
         if context.web_task == "article":
-            assert result["text"] == "Article body.\n\nMore evidence."
+            expected_text = (
+                "CISA investigated SolarWinds in January 2021.\n\nOrganizations should apply incident mitigations."
+                if case == "quality_article"
+                else "Article body.\n\nMore evidence."
+            )
+            assert result["text"] == expected_text
             assert result["span_count"] == 2
         else:
             assert result["task"] == context.web_task
-            assert result["value"] == "Grounded metadata"
+            if case not in {"historical_title", "complementary_subtitle", "archive_without_date"}:
+                assert result["value"] == "Grounded metadata"
             assert result["map_reduce"] == {"map_calls": 1, "reduce_calls": 1, "chunk_count": 1}
     else:
         assert result["error"]["code"]
@@ -222,12 +271,24 @@ def then_contract(context, case):
         "request_bytes",
         "missing_file",
         "transport",
+        "invalid_source_date",
         "metadata_wrong_model",
         "credentials_in_base",
         "malformed_base",
     }
     expected = 0 if case in before_network else 1
-    if case in {"title", "subtitle", "summary", "denied_reduce", "blank_reduce"}:
+    if case in {
+        "title",
+        "subtitle",
+        "summary",
+        "denied_reduce",
+        "blank_reduce",
+        "historical_title",
+        "missing_title_year",
+        "complementary_subtitle",
+        "duplicate_subtitle",
+        "archive_without_date",
+    }:
         expected = 2
     assert len(context.web_requests) == expected, context.web_requests
     for path, authorization, payload in context.web_requests:
@@ -240,3 +301,22 @@ def then_contract(context, case):
         assert "untrusted" in payload["input"][0]["content"]
     if len(context.web_requests) == 2:
         assert context.web_requests[0][2] != context.web_requests[1][2]
+
+    if case == "quality_article":
+        instruction = context.web_requests[0][2]["input"][0]["content"]
+        assert "legal/privacy" in instruction
+        assert "incident mitigations" in instruction
+    if case in {
+        "historical_title",
+        "missing_title_year",
+        "complementary_subtitle",
+        "duplicate_subtitle",
+        "archive_without_date",
+    }:
+        for _, _, request in context.web_requests:
+            data = json.loads(request["input"][1]["content"])
+            assert data["source_publication_date"] == context.web_payload["source_publication_date"]
+            assert data["source_is_archived"] is True
+            assert data["generated_title"] == context.web_payload["generated_title"]
+            assert "historical" in request["input"][0]["content"]
+        assert "complement" in context.web_requests[-1][2]["input"][0]["content"]

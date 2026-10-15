@@ -52,3 +52,10 @@ Feature: Bounded web transformation through a trusted host gateway
       | blank_paragraph      |
       | credentials_in_base  |
       | malformed_base       |
+      | quality_article      |
+      | historical_title     |
+      | missing_title_year   |
+      | complementary_subtitle |
+      | duplicate_subtitle   |
+      | invalid_source_date  |
+      | archive_without_date |
