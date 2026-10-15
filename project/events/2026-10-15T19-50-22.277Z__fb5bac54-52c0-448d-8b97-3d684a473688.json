@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_id": "fb5bac54-52c0-448d-8b97-3d684a473688",
+  "issue_id": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-15T19:50:22.277Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Provide Papyrus bounded web transformation handoff",
+    "description": "As a Papyrus integration owner, I need a pinned Biblicus article filtering and metadata generation contract so URL-only optional priming uses the existing corpus worker. Parent explicitly requested ownership resolution 2026-10-15. No identifiable active Biblicus task appears in the app inventory; existing in-progress local issues concern remote sources/security/release work, not this feature. Assignment is pending parent selection; do not assume an owner. Repository AnthusAI/Biblicus; local checkout /Users/home/Documents/Codex/2026-10-14/task/Biblicus, baseline 7cb4e8b835e4880d463146bd12bfb29cc553fae1. Papyrus integration pinned e1c7b6c0fd1edd8b12a86135d9b02076cc788437, issue PPY-7227acea-e3f5-4bc2-b3c5-17f62568d49d. Definition of done: owner provides compatible existing implementation pin or implements documented commands in their isolated Biblicus worktree, offline executable contracts and bounded gateway compatibility proof; then integration owner verifies read-only before any separately approved paid call. No new source edits, paid calls, deployment or cloud activation authorized by this issue.",
+    "issue_type": "epic",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "codex",
+      "model": "gpt-6.1-sol",
+      "name": "CuratedExamplePriming",
+      "settings": {
+        "reasoning_effort": "medium"
+      }
+    }
+  }
+}
