@@ -17,10 +17,17 @@
       "text": "Implementation pushed e4001ea1c2378a66d2b58bae4ee793c7e5a2fe38;46 executable offline scenarios prove bounded CLI contracts at100 percent coverage. Story remains in_progress pending integration owner real CLI-to-PrimingProviderBudget proof; no paid validation authorized. Existing baseline gate repair bug blbs-1e7073 remains open.",
       "created_at": "2026-10-15T20:00:28.191019Z",
       "comment_type": "default"
+    },
+    {
+      "id": "d89804c1-7203-406a-8356-1b27f081c349",
+      "author": "home",
+      "text": "Integration owner independently verified actual Papyrus planner/wrapper -> actual Biblicus CLI -> FastAPI loopback gateway -> fake provider: success at7 calls and USD0.126 reserved. Stable source e4001ea matches a4e8902 src/docs. Found inherited Papyrus planner filterFallbacks continuation after malformed article output; owner implementing priming-only fail-closed gate before metadata, no Biblicus source change required. Combined failure/cancellation/token-bound regression pending; keep story in_progress. Fake provider only, no paid call/live grant; human server untouched.",
+      "created_at": "2026-10-15T20:02:37.236020Z",
+      "comment_type": "default"
     }
   ],
   "created_at": "2026-10-15T19:50:22.297780Z",
-  "updated_at": "2026-10-15T20:00:28.191041Z",
+  "updated_at": "2026-10-15T20:02:37.236047Z",
   "closed_at": null,
   "agent": {
     "platform": "codex",
