@@ -17,13 +17,11 @@ from urllib.request import Request, urlopen
 
 DEFAULT_GROBID_URL = "http://127.0.0.1:8070"
 DEFAULT_GROBID_DOCKER_IMAGE = "lfoppiano/grobid:0.8.0"
-DEFAULT_GROBID_CONTAINER_NAME = "papyrus-grobid"
+DEFAULT_GROBID_CONTAINER_NAME = "biblicus-grobid"
 URL_TEXT_GROBID_URL_ENV = "BIBLICUS_GROBID_URL"
 GROBID_AUTO_START_ENV = "BIBLICUS_GROBID_AUTO_START"
 GROBID_CONTAINER_NAME_ENV = "BIBLICUS_GROBID_CONTAINER_NAME"
 GROBID_DOCKER_IMAGE_ENV = "BIBLICUS_GROBID_DOCKER_IMAGE"
-PAPYRUS_GROBID_CONTAINER_NAME_ENV = "PAPYRUS_GROBID_CONTAINER_NAME"
-PAPYRUS_GROBID_DOCKER_IMAGE_ENV = "PAPYRUS_GROBID_DOCKER_IMAGE"
 
 DOCKER_CANDIDATE_PATHS = (
     "/usr/local/bin/docker",
@@ -55,10 +53,7 @@ def resolve_grobid_base_url() -> str:
     :return: Base URL without trailing slash.
     :rtype: str
     """
-    explicit = (
-        str(os.environ.get(URL_TEXT_GROBID_URL_ENV) or "").strip()
-        or str(os.environ.get("PAPYRUS_GROBID_URL") or "").strip()
-    )
+    explicit = str(os.environ.get(URL_TEXT_GROBID_URL_ENV) or "").strip()
     if explicit:
         return explicit.rstrip("/")
     return DEFAULT_GROBID_URL
@@ -126,7 +121,6 @@ def grobid_is_alive(grobid_url: str) -> bool:
 def _grobid_container_name() -> str:
     return (
         str(os.environ.get(GROBID_CONTAINER_NAME_ENV) or "").strip()
-        or str(os.environ.get(PAPYRUS_GROBID_CONTAINER_NAME_ENV) or "").strip()
         or DEFAULT_GROBID_CONTAINER_NAME
     )
 
@@ -134,7 +128,6 @@ def _grobid_container_name() -> str:
 def _grobid_docker_image() -> str:
     return (
         str(os.environ.get(GROBID_DOCKER_IMAGE_ENV) or "").strip()
-        or str(os.environ.get(PAPYRUS_GROBID_DOCKER_IMAGE_ENV) or "").strip()
         or DEFAULT_GROBID_DOCKER_IMAGE
     )
 

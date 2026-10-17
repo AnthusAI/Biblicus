@@ -587,9 +587,7 @@ def _is_retryable_youtube_transcript_error(error: BaseException) -> bool:
             return True
         details = error.details if isinstance(error.details, dict) else {}
         nested_error = str(details.get("error") or "").lower()
-        if "429" in nested_error or "too many requests" in nested_error:
-            return True
-        return True
+        return "429" in nested_error or "too many requests" in nested_error
     message = str(error or "").lower()
     retry_markers = (
         "429",

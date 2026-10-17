@@ -347,10 +347,11 @@ def _normalize_citations(value: Any) -> tuple[List[Dict[str, Any]], List[Dict[st
         if not isinstance(entry, dict):
             continue
         title = str(entry.get("title") or "").strip()
+        raw_authors = entry.get("authors")
         authors = [
             _clean_person_name(str(name))
-            for name in (entry.get("authors") or [])
-            if isinstance(entry.get("authors"), list) and _clean_person_name(str(name))
+            for name in (raw_authors if isinstance(raw_authors, list) else [])
+            if _clean_person_name(str(name))
         ]
         year = _coerce_year(entry.get("year"))
         doi = _normalize_doi(entry.get("doi"))

@@ -745,11 +745,11 @@ def test_is_retryable_youtube_transcript_error_accepts_rate_limited_nested_error
     assert url_text_module._is_retryable_youtube_transcript_error(error) is True
 
 
-def test_is_retryable_youtube_transcript_error_accepts_other_structured_errors():
-    """Verify is retryable youtube transcript error accepts other structured errors."""
+def test_is_retryable_youtube_transcript_error_rejects_permanent_structured_errors():
+    """Verify is retryable youtube transcript error rejects permanent structured errors."""
     error = UrlTextExtractionError(code="other", message="m")
     error.details = None
-    assert url_text_module._is_retryable_youtube_transcript_error(error) is True
+    assert url_text_module._is_retryable_youtube_transcript_error(error) is False
 
 
 @pytest.mark.parametrize(

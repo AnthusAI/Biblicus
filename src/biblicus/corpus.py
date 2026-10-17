@@ -645,8 +645,9 @@ class Corpus:
         )
         config_path.write_text(config.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
-        corpus._init_catalog()
-        return corpus
+        initialized_corpus = cls(root)
+        initialized_corpus._init_catalog()
+        return initialized_corpus
 
     @property
     def catalog_path(self) -> Path:
