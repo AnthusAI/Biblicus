@@ -70,7 +70,7 @@ jobs:
       - name: Install package and development dependencies
         run: |
           poetry env use python${{ matrix.python-version }}
-          poetry install --with dev --extras datasets
+          poetry install --with dev --extras "datasets web markitdown"
 
       - name: Cache test fixtures
         uses: actions/cache@v4

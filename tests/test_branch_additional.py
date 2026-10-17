@@ -53,7 +53,11 @@ def test_ner_entities_skip_short_entities(monkeypatch):
     fake_spacy = SimpleNamespace(load=lambda model: _FakeNlp())
     monkeypatch.setitem(sys.modules, "spacy", fake_spacy)
     entities = _extract_entities(
-        extracted_text="NY", model_name="fake", min_length=3
+        extracted_text="NY",
+        model_name="fake",
+        min_length=3,
+        max_length=120,
+        entity_labels=None,
     )
     assert entities == []
 

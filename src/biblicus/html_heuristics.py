@@ -35,36 +35,36 @@ FOOTER_BOTTOM_FRACTION = 0.25
 @dataclass
 class HtmlHeuristicDocument:
     """
-  Parsed heuristic document payload.
+    Parsed heuristic document payload.
 
-  :ivar source_uri: Page URL when known.
-  :vartype source_uri: str
-  :ivar title: Resolved article title.
-  :vartype title: str or None
-  :ivar authors: Author rows with name and normalized_name.
-  :vartype authors: list[dict[str, str]]
-  :ivar publication_date: ISO date when resolved (YYYY-MM-DD).
-  :vartype publication_date: str or None
-  :ivar publication_date_raw: Verbatim date string from markup.
-  :vartype publication_date_raw: str or None
-  :ivar updated_at: ISO date for last update when known.
-  :vartype updated_at: str or None
-  :ivar body_html: Main article HTML subset when detected.
-  :vartype body_html: str
-  :ivar body_text: Plain text from body_html.
-  :vartype body_text: str
-  :ivar links: External link candidates with anchor text.
-  :vartype links: list[dict[str, str]]
-  :ivar reference_candidates: Unnormalized bibliography rows.
-  :vartype reference_candidates: list[dict[str, Any]]
-  :ivar citations: GROBID-shaped bibliography entries.
-  :vartype citations: list[dict[str, Any]]
-  :ivar raw_metadata: Layered extraction provenance.
-  :vartype raw_metadata: dict[str, Any]
-  :ivar warnings: Non-fatal extraction warnings.
-  :vartype warnings: list[dict[str, str]]
-  :ivar layers: Ordered layer ids that contributed fields.
-  :vartype layers: list[str]
+    :ivar source_uri: Page URL when known.
+    :vartype source_uri: str
+    :ivar title: Resolved article title.
+    :vartype title: str or None
+    :ivar authors: Author rows with name and normalized_name.
+    :vartype authors: list[dict[str, str]]
+    :ivar publication_date: ISO date when resolved (YYYY-MM-DD).
+    :vartype publication_date: str or None
+    :ivar publication_date_raw: Verbatim date string from markup.
+    :vartype publication_date_raw: str or None
+    :ivar updated_at: ISO date for last update when known.
+    :vartype updated_at: str or None
+    :ivar body_html: Main article HTML subset when detected.
+    :vartype body_html: str
+    :ivar body_text: Plain text from body_html.
+    :vartype body_text: str
+    :ivar links: External link candidates with anchor text.
+    :vartype links: list[dict[str, str]]
+    :ivar reference_candidates: Unnormalized bibliography rows.
+    :vartype reference_candidates: list[dict[str, Any]]
+    :ivar citations: GROBID-shaped bibliography entries.
+    :vartype citations: list[dict[str, Any]]
+    :ivar raw_metadata: Layered extraction provenance.
+    :vartype raw_metadata: dict[str, Any]
+    :ivar warnings: Non-fatal extraction warnings.
+    :vartype warnings: list[dict[str, str]]
+    :ivar layers: Ordered layer ids that contributed fields.
+    :vartype layers: list[str]
     """
 
     source_uri: str = ""

@@ -41,6 +41,10 @@ def test_call_grobid_with_limits_retries(monkeypatch):
     monkeypatch.setenv("BIBLICUS_GROBID_MAX_CONCURRENT", "1")
     import biblicus.grobid_client as grobid_client
 
+    import biblicus.grobid_runtime as grobid_runtime
+
+    monkeypatch.setattr(grobid_runtime, "ensure_grobid_running", lambda: None)
+    monkeypatch.setattr(grobid_client.time, "sleep", lambda seconds: None)
     grobid_client._GROBID_SEMAPHORE = None
     assert call_grobid_with_limits(flaky) == "ok"
     assert attempts["count"] == 2
