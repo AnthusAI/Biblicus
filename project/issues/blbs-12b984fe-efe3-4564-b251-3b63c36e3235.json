@@ -1,0 +1,27 @@
+{
+  "id": "blbs-12b984fe-efe3-4564-b251-3b63c36e3235",
+  "title": "Land the unmerged curation branches onto main",
+  "description": "## Goal\nBring the unmerged curation command groups onto `main` and release them, so Papyrus can run on a released Biblicus.\n\n## Why\nPapyrus calls these commands by subprocess and they exist only on unmerged branches: `taxonomy discover/record`, `steering export/artifacts/graph-signals/render-seed-manifest`, `topic-classifier train/project`, `analyze topic-context`, `analyze topic-trends`, `context-pack build-blocks`, `summarize map-reduce`, `extract article-text`. PyPI 1.11.4 has none of them.\n\n## Source branches\n- `origin/cursor/grobid-spacy-dedup-1503`: 10 commits ahead, about 190 behind main. A superset of `origin/codex/steering-taxonomy`.\n- `origin/codex/bounded-web-transform`: 9 commits ahead, was current with main.\nTogether they add about 12,000 lines of source, 42 feature files and 16 test files.\n\n## State when stopped\nA first merge attempt was in progress in a local agent worktree with 184 files changed and nothing committed. It was not saved. Start again from current `origin/main`.\n\n## Work\n1. Branch from `origin/main`. Merge (not rebase) `origin/cursor/grobid-spacy-dedup-1503`, then `origin/codex/bounded-web-transform`.\n2. Expect conflicts in `src/biblicus/cli.py`, `corpus.py`, `extraction.py`, `graph/*`, `url_text.py`, `pyproject.toml`, `poetry.lock`, `docs/index.rst`, `docs/feature-index.md`, and `project/`. Keep both sides' behavior. Where the branch duplicates work already on main (extract url-text, web-metadata, GROBID dedup, Reference anchors, catalog compat), keep main. Regenerate `poetry.lock` with `poetry lock`. For `project/` take main's issue files and keep new event files.\n3. Land the code faithfully. Do not redesign `topic_classifier.py` or remove the steering `recommendation` field here; those are blbs follow-ups filed under the epic.\n4. List every new command group in `docs/feature-index.md`; add new pages to `docs/index.rst`.\n5. Run the CI recipe (see the repo hygiene task for the commands, plus the extras the new modules import such as `topic-modeling` and `ner`). Tag any test needing a network or API key `@integration` instead of deleting it.\n6. Split into reviewable PRs by command group if the single diff is too large (taxonomy and steering, topic intelligence, web transform and summarize). Do not open one 25,000 line PR.\n\n## Done when\n`biblicus --help` lists all the commands above on `main`, CI is green, and a release has gone out via semantic-release. Report the new version so Papyrus can pin it.",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T14:42:33.156110Z",
+  "updated_at": "2026-10-17T16:39:29.677318Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

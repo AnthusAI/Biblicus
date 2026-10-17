@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "5eee1354-4684-4410-9dc4-caa352d5ed98",
+  "issue_id": "blbs-49f6fbf2-1a21-44e1-9998-c509b10a8a86",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T16:41:26.179Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Split cli.py into one module per command group",
+    "description": "## Goal\n`src/biblicus/cli.py` is 2,507 lines on main and grows by about 2,300 with the curation branch. Split it into one module per command group (corpus, extract, retrieval and evaluation, analyze, graph, curation, benchmark, sync) under `src/biblicus/cli/` with a small `main` that registers them. No behavior change; the existing features are the safety net. Do this after blbs-12b984 so the new commands are split too. Keep `biblicus = \"biblicus.cli:main\"`.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "Claude"
+    }
+  }
+}

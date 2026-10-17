@@ -1,0 +1,27 @@
+{
+  "id": "blbs-af04bd92-ff1c-4738-b217-300694f9167f",
+  "title": "Papyrus: declare Biblicus dependency and replace subprocess bridges with one runner",
+  "description": "## Goal (Papyrus repo, AnthusAI/Papyrus; tracked here because it depends on a Biblicus release)\nReplace four hand-written subprocess bridges and the sibling-checkout assumption with one declared dependency and one runner.\n\n## Findings\n- Papyrus declares no Biblicus dependency. `uv.lock` pins biblicus 1.11.1 only through `tactus @ file:///Users/ryan/Projects/Tactus`.\n- `BIBLICUS_ROOT` defaults to `../Biblicus`; `analysis_profiles.py` hardcodes `/Users/ryan/Projects/Biblicus`.\n- Four modules each build their own subprocess: `newsroom.py` (`.venv/bin/python -m biblicus`), `reference_url_text.py` and `reference_curation_signals.py` (same, plus `PYTHONPATH=BIBLICUS_ROOT/src`), `curation_cycle.py` and `accession.py` (`uv run --extra topic-modeling biblicus`).\n- `reference_url_text.py` retries under `uv run --extra markitdown` when MarkItDown is missing.\n\n## Work (after the curation surface is released)\n1. Declare `biblicus[web,ner,markitdown,topic-modeling,openai]>=<release with curation commands>` directly in `pyproject.toml`.\n2. One `BiblicusRunner` class owns the subprocess: executable resolution, environment, JSON parse, typed errors. Keep the process boundary; it keeps BERTopic and spaCy out of the Lambda runtime.\n3. Remove every `/Users/ryan` default; take `BIBLICUS_WORKDIR` from the environment or fail with a clear message.\n4. Add Papyrus CI that runs its Python tests against the released Biblicus.",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T16:40:53.988960Z",
+  "updated_at": "2026-10-17T16:40:53.989329Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

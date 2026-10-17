@@ -1,0 +1,27 @@
+{
+  "id": "blbs-12cfcfd1-e0d2-40a5-952a-d8dc5c7d0e71",
+  "title": "Add typed biblicus.api request and response models for the Papyrus commands",
+  "description": "## Goal\nGive Papyrus a stable, typed contract instead of ad hoc JSON over a subprocess.\n\n## Work (after the curation surface lands, blbs-12b984)\nAdd a `biblicus.api` module with one Pydantic request model and one response model per command Papyrus calls: `taxonomy discover/record`, `steering export/artifacts/graph-signals/render-seed-manifest`, `topic-classifier train/project`, `analyze topic-context/topic-trends`, `context-pack build-blocks`, `summarize map-reduce`, `extract url-text/article-text/web-metadata`, `query`, `reindex`, `graph extract`. Each has a plain Python function. The CLI becomes a thin wrapper over those functions and prints the response model as JSON. Specs first. Validation errors must be clear.\n\nPapyrus call sites for reference: `newsroom.py` `_run_biblicus`, `curation_cycle.py` `run_biblicus`, `reference_url_text.py`, `reference_curation_signals.py`, `accession.py`.\n\n## Done when\nEvery command Papyrus calls has typed models, a JSON schema is published in docs, and the CLI output validates against it in a feature scenario.",
+  "type": "task",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T16:40:31.821900Z",
+  "updated_at": "2026-10-17T16:40:31.822199Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

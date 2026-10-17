@@ -1,0 +1,40 @@
+{
+  "id": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "title": "Biblicus review follow-through: repo health, curation surface, consumer contract",
+  "description": "Execute the recommendations of the 2026-10-17 Biblicus review (Claude Doc: Biblicus Review: Platform Fit and Improvements). Children: repository hygiene, land the unmerged curation branches, Corpus path accessors and env cleanup for the Papyrus contract, roadmap and scope docs, stale branch deletion.",
+  "type": "epic",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "5cdc7a08-c179-415b-bafd-94a9e2539a9e",
+      "author": "unknown",
+      "text": "Suggested order. Source: Claude Doc \"Biblicus Review: Platform Fit and Improvements\" (https://claude.ai/code/artifact/8b797c1b-5c8c-4931-acd6-1655b52f6f79).\n\nIndependent, start now: blbs-d8fc85 (repo hygiene), blbs-bc9c7d (roadmap and scope docs), blbs-1aca09 (delete merged branches, needs delete permission), blbs-45b76d (branch triage).\nCritical path: blbs-12b984 (land curation branches) then release. Then blbs-def144 (Corpus paths and env names), blbs-12cfcf (typed api), blbs-5e783e (metadata.papyrus), blbs-af04bd (Papyrus runner and dependency).\nAfter the curation release: blbs-49f6fb (split cli.py), blbs-f801df (Tactus gate), blbs-ca6f88 (drop supervised loop), blbs-67eb7d (Cyclotron shadow mode; blbs-ca6f88 waits on its result).\n\nPartial work saved on branches: claude/project-thread-dmru5y-repo-hygiene, claude/project-thread-dmru5y-corpus-contract, claude/project-thread-dmru5y-roadmap-scope. None is verified or has a PR. All need current origin/main merged in (PR 60, PR 61, v1.11.4 landed after they were cut).\n",
+      "created_at": "2026-10-17T16:42:28.980753Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    }
+  ],
+  "created_at": "2026-10-17T14:41:54.366054Z",
+  "updated_at": "2026-10-17T16:42:28.980884Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {
+    "source": "shared",
+    "project_label": "blbs"
+  },
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

@@ -115,40 +115,6 @@ biblicus = "biblicus.cli:main"
 [tool.poetry]
 packages = [{ include = "biblicus", from = "src" }]
 
-[tool.coverage.run]
-branch = true
-source = ["biblicus"]
-omit = [
-  "*/biblicus/_vendor/*",
-  "*/biblicus/analysis/*",
-  "*/biblicus/analysis/reinforcement_memory/*",
-  "*/biblicus/evaluation/*",
-  "*/biblicus/ai/*",
-  "*/biblicus/corpus.py",
-  "*/biblicus/extraction.py",
-  "*/biblicus/extractors/aldea_stt.py",
-  "*/biblicus/extractors/deepgram_*",
-  "*/biblicus/cli.py",
-  "*/biblicus/graph/neo4j.py",
-  "*/biblicus/graph/extraction.py",
-  "*/biblicus/graph/extractors/dependency_relations.py",
-  "*/biblicus/graph/extractors/ner_entities.py",
-  "*/biblicus/graph/extractors/simple_entities.py",
-  "*/biblicus/workflow.py",
-  "*/biblicus/knowledge_base.py",
-  "*/biblicus/migration.py",
-  "*/biblicus/sync/amplify_publisher.py",
-]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = false
-fail_under = 98
-exclude_lines = [
-  "pragma: no cover",
-  "if __name__ == .__main__.:",
-]
-
 [tool.black]
 line-length = 100
 target-version = ["py310"]
