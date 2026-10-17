@@ -1,7 +1,7 @@
 {
   "id": "blbs-def1443c-88dd-4f78-9c6b-e2fca2d765e5",
   "title": "Corpus path accessors and caller-neutral environment for the Papyrus contract",
-  "description": "Add Corpus methods that return the catalog path, extracted text path for a snapshot and item, and graph manifest path for an extractor and snapshot, with feature specs. Remove PAPYRUS_* environment variable names from grobid_runtime.py in favor of BIBLICUS_* names only.",
+  "description": "## Goal\nBiblicus owns its on-disk layout and exposes it. Remove the caller-specific environment names.\n\n## Why\nPapyrus computes Biblicus paths itself: `metadata/catalog.json`, `extracted/pipeline/<snapshot>/text/<item>.txt` (Papyrus `source_readiness.py`) and `graph/<extractor>/<snapshot>/manifest.json` (Papyrus `analysis_commands.py`). Biblicus `grobid_runtime.py` reads `PAPYRUS_GROBID_URL`, `PAPYRUS_GROBID_CONTAINER_NAME`, `PAPYRUS_GROBID_DOCKER_IMAGE`; a library must not know its caller's names.\n\n## State when stopped\nBranch `claude/project-thread-dmru5y-corpus-contract` is pushed with one `wip:` commit. It has new `features/corpus_layout_paths.feature` and `features/grobid_runtime_environment.feature` with step files, edits to `constants.py`, `corpus.py`, `extraction.py`, `graph/extraction.py`, docs (`corpus-design.md`, `feature-index.md`), and unexplained edits to `features/html_heuristics.feature` and its steps. None of it has been run.\n\n## Work\n1. Merge current `origin/main` into the branch.\n2. Review the wip diff. Revert the `html_heuristics` edits unless they are required by this change and say why.\n3. `Corpus` exposes `catalog_path()`, `extracted_text_path(snapshot_id, item_id)`, `graph_snapshot_manifest_path(extractor_id, snapshot_id)` returning `Path`, built from the same constants the writers use. If equivalents exist, document them instead of duplicating.\n4. `grobid_runtime.py` reads only `BIBLICUS_GROBID_URL`, `BIBLICUS_GROBID_CONTAINER_NAME`, `BIBLICUS_GROBID_DOCKER_IMAGE`. No fallback to the old names. Update features, tests, docs. Also close Kanbus blbs-091ac0, including the duplicate `json_ld` layer if it is small.\n5. Document the layout in `docs/corpus-design.md`.\n6. Specs first, strict BDD, Sphinx docstrings, no line comments. Run the CI recipe. Coverage must not drop.\n\n## Done when\nPR to `main` is green. The PR body lists the Papyrus files that should switch to the new methods: `src/papyrus_content/source_readiness.py`, `analysis_commands.py`, `reference_curation_signals.py`.",
   "type": "task",
   "status": "open",
   "priority": 1,
@@ -12,7 +12,7 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-10-17T14:42:43.580993Z",
-  "updated_at": "2026-10-17T14:42:43.581237Z",
+  "updated_at": "2026-10-17T16:39:30.433020Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,

@@ -1,7 +1,7 @@
 {
   "id": "blbs-1aca0969-fb15-4796-a8c5-ced898ed9853",
   "title": "Delete the merged remote branches",
-  "description": "About 35 remote branches are merged security and dependency fixes. Delete them after Ryan confirms. Keep claude/project-thread-6xq9b7, cursor/reference-anchor-1503, cursor/grobid-spacy-dedup-1503, codex/steering-taxonomy, codex/bounded-web-transform, develop.",
+  "description": "## Decision already made\nRyan approved (2026-10-17, this thread): delete all remote branches that are fully merged into main.\n\n## Why it is an issue and not done\n`git push origin --delete` from the cloud sandbox returns HTTP 403 from the git proxy, so the deletion must be run from somewhere with delete permission (the GitHub UI \"Branches\" page, or a local clone).\n\n## Branches to delete (every tip is an ancestor of origin/main as of main at ece28f4)\nclaude/project-thread-6xq9b7, cursor/reference-anchor-1503, feat/pipeline-metadata-field, feature/blbs-465066-lxml-advisory, feature/blbs-6415ba-funsd-zip-slip-fix, feature/blbs-7e43f4-kanbus-artifacts, feature/blbs-7e43f4-snyk-deps, feature/blbs-9459a5-dashboard-audit-remediation, feature/blbs-c97601-litellm-advisory, feature/configurable-exemplar-count-and-recency-sort, feature/dependabot-mako-ujson-remediation, feature/poetry-conversion, feature/pypdf-snyk-remediation-from-develop, feature/release-bot, feature/ruleset-iac, feature/snyk-funsd-archive-extraction-remediation, feature/snyk-parent-remediation-gitpython-urllib3-idna, fix/codeql-cyclic-imports, fix/codeql-findings, fix/dependabot-findings, fix/semantic-release-build-command, fix/snyk-findings\n\nRe-check before deleting: `git merge-base --is-ancestor origin/<branch> origin/main` must succeed for each. Do not delete `main`.\n\n## Keep\nAll branches with unmerged commits, including `claude/project-thread-dmru5y*`, `codex/*`, `cursor/grobid-spacy-dedup-1503`, `develop`, `dev`, and the older feature branches (see the triage task).",
   "type": "chore",
   "status": "open",
   "priority": 2,
@@ -12,7 +12,7 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-10-17T14:43:04.520849Z",
-  "updated_at": "2026-10-17T14:43:04.521088Z",
+  "updated_at": "2026-10-17T16:40:20.962750Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,
