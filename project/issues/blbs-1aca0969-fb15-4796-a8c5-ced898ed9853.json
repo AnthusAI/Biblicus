@@ -1,0 +1,27 @@
+{
+  "id": "blbs-1aca0969-fb15-4796-a8c5-ced898ed9853",
+  "title": "Delete the merged remote branches",
+  "description": "About 35 remote branches are merged security and dependency fixes. Delete them after Ryan confirms. Keep claude/project-thread-6xq9b7, cursor/reference-anchor-1503, cursor/grobid-spacy-dedup-1503, codex/steering-taxonomy, codex/bounded-web-transform, develop.",
+  "type": "chore",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T14:43:04.520849Z",
+  "updated_at": "2026-10-17T14:43:04.521088Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

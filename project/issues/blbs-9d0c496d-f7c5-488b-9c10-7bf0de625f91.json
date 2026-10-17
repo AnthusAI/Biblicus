@@ -1,0 +1,27 @@
+{
+  "id": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "title": "Biblicus review follow-through: repo health, curation surface, consumer contract",
+  "description": "Execute the recommendations of the 2026-10-17 Biblicus review (Claude Doc: Biblicus Review: Platform Fit and Improvements). Children: repository hygiene, land the unmerged curation branches, Corpus path accessors and env cleanup for the Papyrus contract, roadmap and scope docs, stale branch deletion.",
+  "type": "epic",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T14:41:54.366054Z",
+  "updated_at": "2026-10-17T14:41:54.366435Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

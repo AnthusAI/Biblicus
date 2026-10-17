@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "42b76cdc-1528-44b9-acf6-286522815bae",
+  "issue_id": "blbs-def1443c-88dd-4f78-9c6b-e2fca2d765e5",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T14:42:43.581Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Corpus path accessors and caller-neutral environment for the Papyrus contract",
+    "description": "Add Corpus methods that return the catalog path, extracted text path for a snapshot and item, and graph manifest path for an extractor and snapshot, with feature specs. Remove PAPYRUS_* environment variable names from grobid_runtime.py in favor of BIBLICUS_* names only.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude",
+      "name": "Claude"
+    }
+  }
+}
