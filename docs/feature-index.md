@@ -24,6 +24,7 @@ Documentation:
 Behavior specifications:
 
 - `features/biblicus_corpus.feature`
+- `features/corpus_layout_paths.feature`
 - `features/corpus_identity.feature`
 - `features/corpus_edge_cases.feature`
 - `features/corpus_purge.feature`
@@ -145,6 +146,7 @@ Behavior specifications:
 - `features/unstructured_extractor.feature`
 - `features/markitdown_extractor.feature`
 - `features/integration_unstructured_extraction.feature`
+- `features/grobid_runtime_environment.feature`
 
 Primary implementation:
 

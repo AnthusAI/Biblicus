@@ -16,6 +16,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .constants import (
+    EXTRACTED_TEXT_DIR_NAME,
+    EXTRACTED_TEXT_FILE_SUFFIX,
+    SNAPSHOT_MANIFEST_FILE_NAME,
+)
 from .errors import ExtractionSnapshotFatalError
 from .extractors import get_extractor
 from .models import CatalogItem, ExtractionStageOutput
@@ -246,7 +251,7 @@ def write_extraction_snapshot_manifest(
     :return: None.
     :rtype: None
     """
-    manifest_path = snapshot_dir / "manifest.json"
+    manifest_path = snapshot_dir / SNAPSHOT_MANIFEST_FILE_NAME
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
@@ -304,9 +309,9 @@ def _ensure_extraction_alias_snapshot_dir(
 
 
 def _write_alias_text_artifact(*, alias_snapshot_dir: Path, item: CatalogItem, text: str) -> str:
-    text_dir = alias_snapshot_dir / "text"
+    text_dir = alias_snapshot_dir / EXTRACTED_TEXT_DIR_NAME
     text_dir.mkdir(parents=True, exist_ok=True)
-    relpath = str(Path("text") / f"{item.id}.txt")
+    relpath = str(Path(EXTRACTED_TEXT_DIR_NAME) / f"{item.id}{EXTRACTED_TEXT_FILE_SUFFIX}")
     (alias_snapshot_dir / relpath).write_text(text, encoding="utf-8")
     return relpath
 
@@ -336,9 +341,9 @@ def write_extracted_text_artifact(*, snapshot_dir: Path, item: CatalogItem, text
     :return: Relative path to the stored text artifact.
     :rtype: str
     """
-    text_dir = snapshot_dir / "text"
+    text_dir = snapshot_dir / EXTRACTED_TEXT_DIR_NAME
     text_dir.mkdir(parents=True, exist_ok=True)
-    relpath = str(Path("text") / f"{item.id}.txt")
+    relpath = str(Path(EXTRACTED_TEXT_DIR_NAME) / f"{item.id}{EXTRACTED_TEXT_FILE_SUFFIX}")
     path = snapshot_dir / relpath
     path.write_text(text, encoding="utf-8")
     return relpath
@@ -518,7 +523,7 @@ def build_extraction_snapshot(
                 extractor_id=extractor_id, snapshot_id=manifest.snapshot_id
             )
         except FileNotFoundError:
-            manifest_path = snapshot_dir / "manifest.json"
+            manifest_path = snapshot_dir / SNAPSHOT_MANIFEST_FILE_NAME
             if manifest_path.exists():
                 raise
     else:
@@ -708,7 +713,7 @@ def build_extraction_snapshot(
             current_item_id = item.id
             current_stage_label = "prepare"
 
-        final_text_relpath = str(Path("text") / f"{item.id}.txt")
+        final_text_relpath = str(Path(EXTRACTED_TEXT_DIR_NAME) / f"{item.id}{EXTRACTED_TEXT_FILE_SUFFIX}")
         final_metadata_relpath = str(Path("metadata") / f"{item.id}.json")
         final_text_path = snapshot_dir / final_text_relpath
 
@@ -716,7 +721,7 @@ def build_extraction_snapshot(
             legacy_text_path = next(
                 (
                     path
-                    for path in snapshot_dir.parent.glob(f"*/text/{item.id}.txt")
+                    for path in snapshot_dir.parent.glob(f"*/{EXTRACTED_TEXT_DIR_NAME}/{item.id}{EXTRACTED_TEXT_FILE_SUFFIX}")
                     if path.is_file()
                 ),
                 None,
@@ -1115,7 +1120,7 @@ def load_or_build_extraction_snapshot(
         extractor_id=extractor_id,
         snapshot_id=snapshot_manifest.snapshot_id,
     )
-    manifest_path = snapshot_dir / "manifest.json"
+    manifest_path = snapshot_dir / SNAPSHOT_MANIFEST_FILE_NAME
     if manifest_path.is_file():
         print(
             f"[extract] reusing snapshot {snapshot_manifest.snapshot_id}",

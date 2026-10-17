@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import ValidationError
 
+from ..constants import SNAPSHOT_MANIFEST_FILE_NAME
 from ..corpus import Corpus
 from ..models import ExtractionSnapshotReference
 from ..retrieval import hash_text
@@ -133,7 +134,7 @@ def write_graph_snapshot_manifest(*, snapshot_dir: Path, manifest: GraphSnapshot
     :return: None.
     :rtype: None
     """
-    manifest_path = snapshot_dir / "manifest.json"
+    manifest_path = snapshot_dir / SNAPSHOT_MANIFEST_FILE_NAME
     manifest_path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
@@ -716,9 +717,8 @@ def load_graph_snapshot_manifest(
     :raises FileNotFoundError: If the manifest file does not exist.
     :raises ValueError: If the manifest data is invalid.
     """
-    manifest_path = (
-        corpus.graph_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
-        / "manifest.json"
+    manifest_path = corpus.graph_snapshot_manifest_path(
+        extractor_id=extractor_id, snapshot_id=snapshot_id
     )
     if not manifest_path.is_file():
         raise FileNotFoundError(f"Missing graph snapshot manifest: {manifest_path}")
@@ -835,7 +835,7 @@ def list_graph_snapshots(
         for snapshot_dir in sorted(extractor_dir.iterdir()):
             if not snapshot_dir.is_dir():
                 continue
-            manifest_path = snapshot_dir / "manifest.json"
+            manifest_path = snapshot_dir / SNAPSHOT_MANIFEST_FILE_NAME
             if not manifest_path.is_file():
                 continue
             try:

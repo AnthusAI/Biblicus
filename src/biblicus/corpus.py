@@ -19,12 +19,16 @@ from pydantic import ValidationError
 from .catalog_compat import load_corpus_catalog
 from .constants import (
     ANALYSIS_DIR_NAME,
+    CATALOG_FILE_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
     EXTRACTED_DIR_NAME,
+    EXTRACTED_TEXT_DIR_NAME,
+    EXTRACTED_TEXT_FILE_SUFFIX,
     GRAPH_DIR_NAME,
     LEGACY_CORPUS_DIR_NAME,
     RETRIEVAL_DIR_NAME,
+    SNAPSHOT_MANIFEST_FILE_NAME,
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
 )
@@ -651,12 +655,15 @@ class Corpus:
     @property
     def catalog_path(self) -> Path:
         """
-        Return the path to the corpus catalog file.
+        Return the path to the corpus catalog file, ``metadata/catalog.json``.
+
+        This is part of the corpus layout contract: callers locate the catalog through this
+        property instead of assembling the path themselves.
 
         :return: Catalog file path.
         :rtype: Path
         """
-        return self.meta_dir / "catalog.json"
+        return self.meta_dir / CATALOG_FILE_NAME
 
     def _init_catalog(self) -> None:
         """
@@ -832,6 +839,48 @@ class Corpus:
         """
         return self.graph_snapshots_dir / extractor_id / snapshot_id
 
+    def extracted_text_path(self, *, extractor_id: str, snapshot_id: str, item_id: str) -> Path:
+        """
+        Resolve the final extracted text artifact of an item in an extraction snapshot.
+
+        The layout is ``extracted/<extractor_id>/<snapshot_id>/text/<item_id>.txt``. The path is
+        computed from identifiers only; the artifact exists only when the snapshot extracted
+        text for the item.
+
+        :param extractor_id: Extractor plugin identifier, for example ``pipeline``.
+        :type extractor_id: str
+        :param snapshot_id: Extraction snapshot identifier.
+        :type snapshot_id: str
+        :param item_id: Item identifier.
+        :type item_id: str
+        :return: Extracted text artifact path.
+        :rtype: Path
+        """
+        return (
+            self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
+            / EXTRACTED_TEXT_DIR_NAME
+            / f"{item_id}{EXTRACTED_TEXT_FILE_SUFFIX}"
+        )
+
+    def graph_snapshot_manifest_path(self, *, extractor_id: str, snapshot_id: str) -> Path:
+        """
+        Resolve the manifest file of a graph snapshot.
+
+        The layout is ``graph/<extractor_id>/<snapshot_id>/manifest.json``. The path is computed
+        from identifiers only; the manifest exists only after the graph snapshot was built.
+
+        :param extractor_id: Graph extractor identifier.
+        :type extractor_id: str
+        :param snapshot_id: Graph snapshot identifier.
+        :type snapshot_id: str
+        :return: Graph snapshot manifest path.
+        :rtype: Path
+        """
+        return (
+            self.graph_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
+            / SNAPSHOT_MANIFEST_FILE_NAME
+        )
+
     def read_extracted_text(
         self, *, extractor_id: str, snapshot_id: str, item_id: str
     ) -> Optional[str]:
@@ -848,10 +897,8 @@ class Corpus:
         :rtype: str or None
         :raises OSError: If the file exists but cannot be read.
         """
-        path = (
-            self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
-            / "text"
-            / f"{item_id}.txt"
+        path = self.extracted_text_path(
+            extractor_id=extractor_id, snapshot_id=snapshot_id, item_id=item_id
         )
         if not path.is_file():
             return None
@@ -874,7 +921,7 @@ class Corpus:
 
         manifest_path = (
             self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
-            / "manifest.json"
+            / SNAPSHOT_MANIFEST_FILE_NAME
         )
         if not manifest_path.is_file():
             raise FileNotFoundError(f"Missing extraction snapshot manifest: {manifest_path}")
