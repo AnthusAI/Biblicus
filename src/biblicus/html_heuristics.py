@@ -317,6 +317,8 @@ def _merge_json_ld(doc: HtmlHeuristicDocument, rows: List[Dict[str, Any]]) -> No
         if published and not doc.publication_date:
             doc.publication_date_raw = published
             doc.publication_date = _normalize_date_token(published)
+            if "json_ld" not in doc.layers:
+                doc.layers.append("json_ld")
         modified = _first_non_empty([row.get("dateModified"), row.get("dateUpdated")])
         if modified and not doc.updated_at:
             doc.updated_at = _normalize_date_token(modified)
