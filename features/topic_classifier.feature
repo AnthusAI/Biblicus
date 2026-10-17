@@ -1,6 +1,7 @@
 Feature: Topic classifier workflows
   Biblicus trains classifier-style topic models from strict seed manifests.
 
+  @integration
   Scenario: AI-ML research canonical classifier excludes history articles
     Then the AI-ML research canonical topic classifier manifest does not include topic "machine-learning-history"
 

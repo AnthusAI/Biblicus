@@ -50,17 +50,20 @@ def canonical_ingest_identity_keys(
     if metadata:
         identity_values.extend(_metadata_identity_values(metadata))
 
-    keys: List[str] = []
+    arxiv_keys: List[str] = []
+    doi_keys: List[str] = []
+    documentcloud_keys: List[str] = []
     for value in identity_values:
         arxiv_key = _arxiv_identity_key(value)
         if arxiv_key:
-            keys.append(arxiv_key)
+            arxiv_keys.append(arxiv_key)
         doi_key = _doi_identity_key(value)
         if doi_key:
-            keys.append(doi_key)
+            doi_keys.append(doi_key)
         documentcloud_key = _documentcloud_identity_key(value)
         if documentcloud_key:
-            keys.append(documentcloud_key)
+            documentcloud_keys.append(documentcloud_key)
+    keys = arxiv_keys + doi_keys + documentcloud_keys
     return _deduplicate(keys)
 
 

@@ -740,6 +740,11 @@ def step_openai_client_configured_with_api_key(context, expected_api_key: str) -
     assert configured == expected_api_key
 
 
+@then("the OpenAI client was configured with the scenario API key")
+def step_openai_client_configured_with_scenario_api_key(context) -> None:
+    step_openai_client_configured_with_api_key(context, build_test_openai_api_key_value())
+
+
 @then('the OpenAI chat request omitted parameter "{parameter_name}"')
 def step_openai_chat_request_omitted_parameter(context, parameter_name: str) -> None:
     _ = context

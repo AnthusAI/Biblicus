@@ -193,7 +193,7 @@ Feature: Topic modeling analysis
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic constructor received a representation model
-    And the OpenAI client was configured with API key "test-openai-key"
+    And the OpenAI client was configured with the scenario API key
     And the BERTopic representation model used OpenAI model "gpt-5.4-mini"
     And the topic analysis output includes topic label "Specific Label"
     And the topic analysis output label source is "llm"

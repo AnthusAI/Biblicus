@@ -146,15 +146,6 @@ class NerEntitiesGraphExtractor(GraphExtractor):
                 )
             )
 
-        if parsed.include_relation_edges:
-            edges.extend(
-                _build_relation_edges(
-                    entities,
-                    max_entities_per_sentence=parsed.max_relation_entities_per_sentence,
-                    min_relation_weight=parsed.min_relation_weight,
-                )
-            )
-
         return GraphExtractionResult(item_id=item.id, nodes=nodes, edges=edges)
 
 

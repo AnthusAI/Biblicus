@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
+from biblicus.extractors.faster_whisper_stt import _load_whisper_model
 
 _EPHEMERAL_ENV_KEYS = [
     "OPENAI_API_KEY",
@@ -533,6 +534,7 @@ def after_scenario(context, scenario) -> None:
                 sys.modules[name] = original_modules[name]
             else:
                 sys.modules.pop(name, None)
+        _load_whisper_model.cache_clear()
         context._fake_faster_whisper_installed = False
         context._fake_faster_whisper_original_modules = {}
     if getattr(context, "_fake_faster_whisper_unavailable_installed", False):
@@ -542,6 +544,7 @@ def after_scenario(context, scenario) -> None:
                 sys.modules[name] = original_modules[name]
             else:
                 sys.modules.pop(name, None)
+        _load_whisper_model.cache_clear()
         context._fake_faster_whisper_unavailable_installed = False
         context._fake_faster_whisper_unavailable_original_modules = {}
     if getattr(context, "_fake_pydub_installed", False):

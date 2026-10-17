@@ -120,6 +120,7 @@ Feature: Taxonomy and ontology graph steering
     Then the command succeeds
     And the steering signal bundle includes missing graph entity for topic "agent-memory"
 
+  @integration
   Scenario: Ontology apply materializes taxonomy and accepted relationship assertions
     Given I initialized a corpus at "ontology-apply-lab"
     When I ingest the text "agent memory retrieval planning" with title "Agent Memory" and tags "agent" into corpus "ontology-apply-lab"
