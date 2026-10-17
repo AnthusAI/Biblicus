@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "89ca5051-0a1d-48c4-84d5-ece971e2fe52",
+  "issue_id": "blbs-8e29209e-c189-49ea-b13a-d834319eb689",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T15:44:54.706Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Serialize release and coverage badge writes to main",
+    "description": "As a maintainer, I want automated main writers serialized so successful CI can publish a release without the coverage badge racing it. Observed Release run 39046316429 fail after build because Coverage Badge run 39046316427 moved main from 807b184 to 2cb44f7. Scope: repository workflow concurrency only; retain existing CI/release gates, bot auth and shared reusable workflows. Plan: reproduce concurrency mismatch, assign the same non-cancelling group to both callers, validate workflow syntax and checks, merge via PR, follow deployment/release/PyPI. Acceptance: Given successful main CI, when Release and Coverage Badge run, then only one may write main at a time and both can finish without cancelling each other.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+    "labels": [],
+    "agent": {
+      "platform": "codex",
+      "model": "gpt-6.1-sol",
+      "name": "Biblicus-deployment-recovery"
+    }
+  }
+}

@@ -19,10 +19,37 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "edec606e-de56-452f-9e65-7bfa2c1202be",
+      "author": "home",
+      "text": "2026-10-17 deployment diagnosis: main 807b1841aa7839ab6b7fdd3a560ec8d246bdf4c2 passed lint, tests Python 3.10/3.11/3.12 and docs in run 39042276917. deploy-docs failed creating Pages deployment with HTTP 404; GET repos/AnthusAI/Biblicus/pages also returns 404 despite admin access. Goal: restore existing GitHub Pages deployment and allow normal gated semantic release/PyPI path, without manual version changes. Plan: enable Pages with build_type=workflow, rerun failed jobs, follow downstream release to terminal outcome, verify served docs and package metadata. No application code change or permission expansion is needed for the Pages root cause.",
+      "created_at": "2026-10-17T15:43:01.256550Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    },
+    {
+      "id": "1920934d-6caf-4806-ae85-e77bb23561a5",
+      "author": "home",
+      "text": "Pages configuration repair applied via POST repos/AnthusAI/Biblicus/pages with build_type=workflow. API now reports https://anthusai.github.io/Biblicus/, public=true and https_enforced=true. Reused existing workflow permissions and environment; no credentials, grants, branch protections, or application code changed. CI rerun attempt 2 is deploying the previously successful docs artifact.",
+      "created_at": "2026-10-17T15:43:31.605925Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    },
+    {
+      "id": "c24e8e20-11e6-412b-9a97-66ea0fe731a9",
+      "author": "home",
+      "text": "Verification: CI run 39042276917 attempt 2 completed SUCCESS, including deploy-docs. Public docs https://anthusai.github.io/Biblicus/ returns HTTP 200 and Biblicus Sphinx content. Successful CI triggered Release run 39046316429 and Coverage Badge run 39046316427 (badge succeeded). Read-only semantic-release version --print on tested main 807b184 predicts 1.11.4 from existing fix commits; no forced bump. Monitoring release/PyPI to completion.",
+      "created_at": "2026-10-17T15:44:13.883567Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-10-17T00:03:51.147490Z",
-  "updated_at": "2026-10-17T00:43:17.570974Z",
+  "updated_at": "2026-10-17T15:44:13.883727Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,
