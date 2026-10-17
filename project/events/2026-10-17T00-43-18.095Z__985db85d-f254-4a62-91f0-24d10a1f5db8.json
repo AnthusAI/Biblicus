@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "event_id": "985db85d-f254-4a62-91f0-24d10a1f5db8",
+  "issue_id": "Biblicus-5rt",
+  "event_type": "comment_added",
+  "occurred_at": "2026-10-17T00:43:18.095Z",
+  "actor_id": "unknown",
+  "payload": {
+    "comment_id": "c290cc51-9120-4e8a-8370-255ec679e625",
+    "comment_author": "unknown"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "blbs-f8009d38-8125-4e59-8cd4-cfb438444bb3",
+  "title": "YouTube transcript retry treats every structured error as retryable",
+  "description": "url_text._is_retryable_youtube_transcript_error ends with an unconditional return True, so permanent failures retry until the time budget (default 3600s) runs out; the known-code and 429 checks are dead.",
+  "type": "bug",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:42:46.506711Z",
+  "updated_at": "2026-10-17T00:42:46.507346Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}
