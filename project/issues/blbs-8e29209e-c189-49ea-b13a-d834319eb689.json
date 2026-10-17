@@ -1,0 +1,46 @@
+{
+  "id": "blbs-8e29209e-c189-49ea-b13a-d834319eb689",
+  "title": "Serialize release and coverage badge writes to main",
+  "description": "As a maintainer, I want automated main writers serialized so successful CI can publish a release without the coverage badge racing it. Observed Release run 39046316429 fail after build because Coverage Badge run 39046316427 moved main from 807b184 to 2cb44f7. Scope: repository workflow concurrency only; retain existing CI/release gates, bot auth and shared reusable workflows. Plan: reproduce concurrency mismatch, assign the same non-cancelling group to both callers, validate workflow syntax and checks, merge via PR, follow deployment/release/PyPI. Acceptance: Given successful main CI, when Release and Coverage Badge run, then only one may write main at a time and both can finish without cancelling each other.",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-ded60666-6844-4c08-a569-07ded185096c",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "6ba5e632-140f-4eba-8aac-86c2f965c5b9",
+      "author": "home",
+      "text": "Specification before implementation: Given successful main CI, when the release and coverage badge workflows are triggered together, then their main writes must be mutually exclusive and neither running writer is cancelled. Reproduction: YAML assertion requiring matching non-cancelling concurrency failed: release group=release, badge group=coverage-badge. Observed production failure confirms this permits simultaneous writers. Smallest fix: shared main-automation group at workflow level in the two Biblicus callers.",
+      "created_at": "2026-10-17T15:45:05.450379Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    },
+    {
+      "id": "96469424-1198-4891-8719-bd11bd4774d0",
+      "author": "home",
+      "text": "Implemented the two-line concurrency fix in the release and coverage callers. The same YAML assertion now passes; git diff --check passes. No Python/application behavior changed. Pages root cause was fixed through repository configuration. Next: PR checks, merge, then observe release/PyPI and served docs.",
+      "created_at": "2026-10-17T15:45:16.101968Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    }
+  ],
+  "created_at": "2026-10-17T15:44:54.706602Z",
+  "updated_at": "2026-10-17T15:45:16.102103Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "codex",
+    "model": "gpt-6.1-sol",
+    "name": "Biblicus-deployment-recovery",
+    "settings": {}
+  },
+  "agent_assignment": null
+}
