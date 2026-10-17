@@ -772,3 +772,7 @@ License terms are in `LICENSE`.
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
 [documentation-badge]: https://img.shields.io/badge/docs-GitHub%20Pages-blue
+
+## Bounded web transformation
+
+The [bounded web transformation commands](docs/bounded-web-transform.md) select article passages and generate metadata through an explicitly configured trusted host gateway.

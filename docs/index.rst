@@ -227,3 +227,8 @@ implementation details or when you want a catalog of features.
    roadmap
    architecture
    api
+
+.. toctree::
+   :maxdepth: 1
+
+   bounded-web-transform

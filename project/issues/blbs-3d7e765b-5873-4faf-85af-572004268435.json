@@ -1,0 +1,42 @@
+{
+  "id": "blbs-3d7e765b-5873-4faf-85af-572004268435",
+  "title": "Improve bounded article and metadata quality after approved CISA review",
+  "description": "Parent authorizes offline fixes only: article legal/privacy boilerplate exclusion, distinct subtitle, historical title cue. Add reusable source date/archive/generated-title context, preserve seven-call budget and fail-closed contracts, document/specify before implementation. No paid calls or human catalog/server access.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "41436566-1a56-4ac4-81fb-85ab6c4457a0",
+      "author": "home",
+      "text": "Read quality-review/report from approved CISA run: actual7 calls USD0.013821, grant closed by integration owner. Recorded approved scope in PR-FAQ/docs, added failing historical-title BDD before implementation. New v2 optional source_publication_date/date|null, source_is_archived/bool|null, generated_title/string accepted by integration owner. Both map and reduce carry context; known-year title guard and word-set Jaccard>=0.8 subtitle rejection use no retries. Explicit legal/privacy/security footer exclusion prompt.53 offline scenarios pass at100 percent statements+branches; final verification after prompt clarification underway. No additional paid calls, no catalog/server access.",
+      "created_at": "2026-10-15T21:41:22.927385Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "1ba953e0-9844-475d-af9b-7a6840a1ed4c",
+      "author": "home",
+      "text": "Offline quality fixes landed and pushed at1b170876b9ed9518a37ec7ca8ad1ae8d1140b9ca.53 BDD/159 steps pass at100 percent worker statement+branch coverage, Ruff/Black pass. Integration owner notified with exact optional context fields and deterministic failure guards. No paid validation; semantic live-model quality remains unverified pending separately approved run. Human catalog/server/tabs untouched.",
+      "created_at": "2026-10-15T21:41:49.641685Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "4406fcfd-c3fc-44ae-b0df-13d3acef611a",
+      "author": "home",
+      "text": "Integration owner independently VERIFIED source1b170876:66 focused Papyrus tests PASS, including12 actual CLI -> disposable FastAPI gateway -> fake provider checks. Known source date/archive/generated title reach both map and reduce; missing-year title and duplicate subtitle fail after2 requests with no repair; legal/footer instructions and exact selected source span verified; full7-call pipeline and prior cancellation/outage/token admission regressions PASS. Papyrus pins8317a95 and7c8dbe6 wire context/projection/proof.41ab4a7 source/docs unchanged from1b170876. No new paid calls/grants or human catalog/server/tab changes. Semantic live quality remains unverified; original seven-call paid test grant remains closed.",
+      "created_at": "2026-10-15T21:43:44.483249Z",
+      "comment_type": "default"
+    }
+  ],
+  "created_at": "2026-10-15T21:38:46.410752Z",
+  "updated_at": "2026-10-15T21:43:44.483277Z",
+  "closed_at": "2026-10-15T21:41:49.648669Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
