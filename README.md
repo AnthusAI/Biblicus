@@ -218,6 +218,17 @@ biblicus ingest https://example.com/article.html --tags "article"
 biblicus ingest --corpus corpora/example https://docs.example.com/guide.md --tags "documentation"
 ```
 
+Source-specific resolvers can turn a public landing page into the canonical raw item before storage. DocumentCloud URLs are resolved through DocumentCloud metadata, stored as the original PDF, and annotated with the canonical DocumentCloud identity, metadata endpoint, raw asset URI, and source-provided text URI. The same identity is used to catch duplicate ingests across DocumentCloud viewer, API, PDF, and text asset links.
+
+Use `--import-rationale` to record why an item belongs in the corpus:
+
+```bash
+biblicus ingest \
+  --corpus corpora/AI-ML-journalism \
+  --import-rationale "Primary-source court filing relevant to AI and machine learning journalism." \
+  https://www.documentcloud.org/documents/27013007-govuscourtsnysd6422871181/
+```
+
 ### Crawl Websites
 
 Crawl entire website sections with automatic link discovery. The crawler follows links within the allowed prefix and stores discovered content:
@@ -578,6 +589,7 @@ These extractors are built in. Optional ones require extra dependencies. See [te
 ### Text and document extraction
 
 - [`pass-through-text`](docs/extractors/text-document/pass-through.md) reads text items and strips Markdown front matter.
+- `source-provided-text` reads text artifacts advertised by source-specific ingestion metadata.
 - [`metadata-text`](docs/extractors/text-document/metadata.md) turns catalog metadata into a small text artifact.
 - [`pdf-text`](docs/extractors/text-document/pdf.md) extracts text from Portable Document Format items with `pypdf`.
 - [`unstructured`](docs/extractors/text-document/unstructured.md) provides broad document parsing (optional).
@@ -685,6 +697,10 @@ python scripts/topic_modeling_integration.py --corpus corpora/ag_news_demo --for
 
 See `docs/topic-modeling.md` for parameter examples and per-topic output behavior.
 
+Topic classifiers are a separate workflow for reviewed seed manifests. They train semi-supervised BERTopic model
+versions and classify existing or newly ingested items without changing the raw corpus layout. See
+`docs/topic-classifier.md` for the manifest schema and command examples.
+
 ## Integration corpus and evaluation dataset
 
 Use `scripts/download_ag_news.py` to download the AG News dataset when running topic modeling demos. The repository does not include that content.
@@ -760,3 +776,7 @@ License terms are in `LICENSE`.
 [continuous-integration-badge]: https://github.com/AnthusAI/Biblicus/actions/workflows/ci.yml/badge.svg?branch=main
 [coverage-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AnthusAI/Biblicus/main/coverage_badge.json
 [documentation-badge]: https://img.shields.io/badge/docs-GitHub%20Pages-blue
+
+## Bounded web transformation
+
+The [bounded web transformation commands](docs/bounded-web-transform.md) select article passages and generate metadata through an explicitly configured trusted host gateway.

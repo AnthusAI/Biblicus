@@ -8,6 +8,8 @@ from urllib.parse import unquote
 
 from behave import given, then
 
+from biblicus.extractors.faster_whisper_stt import _load_whisper_model
+
 
 @dataclass
 class _FakeWhisperSegment:
@@ -96,6 +98,7 @@ def _install_fake_faster_whisper_module(context) -> None:
     faster_whisper_module.last_beam_size = None
 
     sys.modules["faster_whisper"] = faster_whisper_module
+    _load_whisper_model.cache_clear()
 
     context._fake_faster_whisper_installed = True
     context._fake_faster_whisper_original_modules = original_modules
@@ -112,6 +115,7 @@ def _install_faster_whisper_unavailable_module(context) -> None:
 
     faster_whisper_module = types.ModuleType("faster_whisper")
     sys.modules["faster_whisper"] = faster_whisper_module
+    _load_whisper_model.cache_clear()
 
     context._fake_faster_whisper_unavailable_installed = True
     context._fake_faster_whisper_unavailable_original_modules = original_modules

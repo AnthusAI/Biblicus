@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "description": "Validate article selection input including its pinned model.\n\n:ivar model: The admitted provider model identifier.\n:vartype model: str",
+  "properties": {
+    "extracted_text": {
+      "minLength": 1,
+      "title": "Extracted Text",
+      "type": "string"
+    },
+    "generated_title": {
+      "default": "",
+      "title": "Generated Title",
+      "type": "string"
+    },
+    "model": {
+      "const": "gpt-5.4-mini-2026-03-17",
+      "title": "Model",
+      "type": "string"
+    },
+    "original_subtitle": {
+      "default": "",
+      "title": "Original Subtitle",
+      "type": "string"
+    },
+    "original_title": {
+      "default": "",
+      "title": "Original Title",
+      "type": "string"
+    },
+    "reference_title": {
+      "default": "",
+      "title": "Reference Title",
+      "type": "string"
+    },
+    "source_is_archived": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Is Archived"
+    },
+    "source_publication_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Publication Date"
+    },
+    "source_uri": {
+      "default": "",
+      "title": "Source Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "extracted_text",
+    "model"
+  ],
+  "title": "ArticleInput",
+  "type": "object"
+}

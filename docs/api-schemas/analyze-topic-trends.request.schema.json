@@ -1,0 +1,62 @@
+{
+  "additionalProperties": false,
+  "description": "Request to run publication-date topic trend analysis.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar topic_modeling_snapshot_id: Topic modeling snapshot to analyze.\n:vartype topic_modeling_snapshot_id: str\n:ivar classifier_id: Optional topic classifier for canonical topic coverage.\n:vartype classifier_id: str or None\n:ivar windows: Publication windows such as ``30d``, ``90d``, ``1y``, ``all``.\n:vartype windows: list[str]\n:ivar as_of: Publication date anchor, or None for the latest published date.\n:vartype as_of: str or None\n:ivar rank_window: Window used to rank topics; must be one of ``windows``.\n:vartype rank_window: str",
+  "properties": {
+    "as_of": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "As Of"
+    },
+    "classifier_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Classifier Id"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "rank_window": {
+      "default": "90d",
+      "minLength": 1,
+      "title": "Rank Window",
+      "type": "string"
+    },
+    "topic_modeling_snapshot_id": {
+      "minLength": 1,
+      "title": "Topic Modeling Snapshot Id",
+      "type": "string"
+    },
+    "windows": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Windows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "topic_modeling_snapshot_id"
+  ],
+  "title": "TopicTrendsRequest",
+  "type": "object"
+}

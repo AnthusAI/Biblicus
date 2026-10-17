@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "Output for a rendered Biblicus seed manifest.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar classifier_id: Classifier identity.\n:vartype classifier_id: str\n:ivar output_path: Written seed manifest path.\n:vartype output_path: str\n:ivar topic_count: Number of rendered topics.\n:vartype topic_count: int\n:ivar ignored_app_fields: Application-owned fields ignored in the Biblicus output.\n:vartype ignored_app_fields: list[str]",
+  "properties": {
+    "classifier_id": {
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "ignored_app_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Ignored App Fields",
+      "type": "array"
+    },
+    "output_path": {
+      "title": "Output Path",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "topic_count": {
+      "minimum": 0,
+      "title": "Topic Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "classifier_id",
+    "output_path",
+    "topic_count"
+  ],
+  "title": "SteeringRenderSeedManifestOutput",
+  "type": "object"
+}

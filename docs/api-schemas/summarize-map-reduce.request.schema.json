@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "description": "Request to map-reduce one bounded metadata field from extracted source text.\n\n:ivar task: Metadata field to generate.\n:vartype task: str\n:ivar model: Pinned model identifier.\n:vartype model: str",
+  "properties": {
+    "extracted_text": {
+      "minLength": 1,
+      "title": "Extracted Text",
+      "type": "string"
+    },
+    "generated_title": {
+      "default": "",
+      "title": "Generated Title",
+      "type": "string"
+    },
+    "model": {
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "original_subtitle": {
+      "default": "",
+      "title": "Original Subtitle",
+      "type": "string"
+    },
+    "original_title": {
+      "default": "",
+      "title": "Original Title",
+      "type": "string"
+    },
+    "reference_title": {
+      "default": "",
+      "title": "Reference Title",
+      "type": "string"
+    },
+    "source_is_archived": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Is Archived"
+    },
+    "source_publication_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Publication Date"
+    },
+    "source_uri": {
+      "default": "",
+      "title": "Source Uri",
+      "type": "string"
+    },
+    "task": {
+      "enum": [
+        "title",
+        "subtitle",
+        "summary"
+      ],
+      "title": "Task",
+      "type": "string"
+    }
+  },
+  "required": [
+    "extracted_text",
+    "task",
+    "model"
+  ],
+  "title": "SummarizeMapReduceRequest",
+  "type": "object"
+}

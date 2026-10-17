@@ -216,6 +216,12 @@ def step_layers_include(context, layer: str) -> None:
     assert layer in context.heuristic_document.layers
 
 
+@then('the heuristic extraction layers list "{layer}" exactly once')
+def step_layers_list_exactly_once(context, layer: str) -> None:
+    layers = context.heuristic_document.layers
+    assert layers.count(layer) == 1, layers
+
+
 @then("the heuristic structured payload has at least {count:d} citations")
 def step_structured_citations(context, count: int) -> None:
     citations = context.heuristic_structured.get("citations") or []

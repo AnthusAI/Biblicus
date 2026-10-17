@@ -1,0 +1,100 @@
+{
+  "description": "Represent the stable JSON result for either transformation command.\n\n:ivar status: Success or failure state.\n:vartype status: str\n:ivar error: Sanitized failure code and explanation, or None.\n:vartype error: dict[str, str] or None",
+  "properties": {
+    "error": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "map_reduce": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Map Reduce",
+      "type": "object"
+    },
+    "model": {
+      "default": "gpt-5.4-mini-2026-03-17",
+      "title": "Model",
+      "type": "string"
+    },
+    "prompt_version": {
+      "default": "bounded-web-v2",
+      "title": "Prompt Version",
+      "type": "string"
+    },
+    "retry_failure_count": {
+      "default": 0,
+      "title": "Retry Failure Count",
+      "type": "integer"
+    },
+    "retry_rounds_used": {
+      "default": 0,
+      "title": "Retry Rounds Used",
+      "type": "integer"
+    },
+    "retry_trace": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Retry Trace",
+      "type": "array"
+    },
+    "span_count": {
+      "default": 0,
+      "title": "Span Count",
+      "type": "integer"
+    },
+    "status": {
+      "default": "failed",
+      "enum": [
+        "ok",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "task": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task"
+    },
+    "text": {
+      "default": "",
+      "title": "Text",
+      "type": "string"
+    },
+    "value": {
+      "default": "",
+      "title": "Value",
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "title": "TransformResult",
+  "type": "object"
+}

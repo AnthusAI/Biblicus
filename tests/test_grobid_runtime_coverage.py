@@ -83,11 +83,12 @@ def test_grobid_auto_start_enabled_defaults_to_true(monkeypatch):
 def test_resolve_grobid_base_url_prefers_biblicus_environment_and_strips_slash(monkeypatch):
     """Verify that resolve grobid base url prefers biblicus environment and strips slash."""
     monkeypatch.setenv("BIBLICUS_GROBID_URL", " http://grobid.example:9000/ ")
+    monkeypatch.setenv("PAPYRUS_GROBID_URL", "http://papyrus.example:9000")
     assert grobid_runtime.resolve_grobid_base_url() == "http://grobid.example:9000"
 
 
-def test_resolve_grobid_base_url_ignores_papyrus_environment(monkeypatch):
-    """Verify that resolve grobid base url ignores the retired papyrus environment variable."""
+def test_resolve_grobid_base_url_ignores_caller_specific_environment(monkeypatch):
+    """Verify that resolve grobid base url ignores caller-specific environment names."""
     monkeypatch.delenv("BIBLICUS_GROBID_URL", raising=False)
     monkeypatch.setenv("PAPYRUS_GROBID_URL", "http://papyrus.example:9000/")
     assert grobid_runtime.resolve_grobid_base_url() == grobid_runtime.DEFAULT_GROBID_URL
@@ -212,13 +213,15 @@ def test_grobid_is_alive_returns_false_when_probe_raises(monkeypatch):
 def test_grobid_container_name_and_image_prefer_biblicus_environment(monkeypatch):
     """Verify that grobid container name and image prefer biblicus environment."""
     monkeypatch.setenv("BIBLICUS_GROBID_CONTAINER_NAME", "biblicus-grobid")
+    monkeypatch.setenv("PAPYRUS_GROBID_CONTAINER_NAME", "papyrus-other")
     monkeypatch.setenv("BIBLICUS_GROBID_DOCKER_IMAGE", "example/grobid:1")
+    monkeypatch.setenv("PAPYRUS_GROBID_DOCKER_IMAGE", "example/grobid:2")
     assert grobid_runtime._grobid_container_name() == "biblicus-grobid"
     assert grobid_runtime._grobid_docker_image() == "example/grobid:1"
 
 
-def test_grobid_container_name_and_image_ignore_papyrus_environment(monkeypatch):
-    """Verify that grobid container name and image ignore the retired papyrus variables."""
+def test_grobid_container_name_and_image_ignore_caller_specific_environment(monkeypatch):
+    """Verify that grobid container name and image ignore caller-specific environment names."""
     monkeypatch.delenv("BIBLICUS_GROBID_CONTAINER_NAME", raising=False)
     monkeypatch.setenv("PAPYRUS_GROBID_CONTAINER_NAME", "papyrus-other")
     monkeypatch.delenv("BIBLICUS_GROBID_DOCKER_IMAGE", raising=False)
@@ -231,7 +234,9 @@ def test_grobid_container_name_and_image_fall_back_to_defaults(monkeypatch):
     """Verify that grobid container name and image fall back to defaults."""
     for environment_name in (
         "BIBLICUS_GROBID_CONTAINER_NAME",
+        "PAPYRUS_GROBID_CONTAINER_NAME",
         "BIBLICUS_GROBID_DOCKER_IMAGE",
+        "PAPYRUS_GROBID_DOCKER_IMAGE",
     ):
         monkeypatch.delenv(environment_name, raising=False)
     assert grobid_runtime._grobid_container_name() == grobid_runtime.DEFAULT_GROBID_CONTAINER_NAME

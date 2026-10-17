@@ -22,8 +22,6 @@ Feature: Cascading YAML configurations
       bertopic_analysis:
         parameters:
           nr_topics: 3
-      llm_fine_tuning:
-        enabled: false
       """
     And a configuration file "overlay.yml" exists with content:
       """

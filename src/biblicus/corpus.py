@@ -16,25 +16,31 @@ from urllib.parse import quote, unquote, urlparse
 import yaml
 from pydantic import ValidationError
 
-from .catalog_compat import load_corpus_catalog
 from .constants import (
     ANALYSIS_DIR_NAME,
+    CATALOG_FILE_NAME,
     CORPUS_DIR_NAME,
     DEFAULT_RAW_DIR,
     EXTRACTED_DIR_NAME,
+    EXTRACTED_TEXT_DIR_NAME,
+    EXTRACTED_TEXT_FILE_SUFFIX,
     GRAPH_DIR_NAME,
     LEGACY_CORPUS_DIR_NAME,
+    PIPELINE_EXTRACTOR_ID,
     RETRIEVAL_DIR_NAME,
     SCHEMA_VERSION,
     SIDECAR_SUFFIX,
+    SNAPSHOT_MANIFEST_FILE_NAME,
 )
 from .errors import IngestCollisionError
 from .frontmatter import parse_front_matter, render_front_matter
 from .hook_manager import HookManager
 from .hooks import HookPoint
 from .ignore import load_corpus_ignore_spec
+from .ingest_identity import canonical_ingest_identity_keys
 from .models import (
     CatalogItem,
+    CatalogItemDates,
     CorpusCatalog,
     CorpusConfig,
     ExtractionSnapshotListEntry,
@@ -43,11 +49,51 @@ from .models import (
     RemoteSourcePullResult,
     RetrievalSnapshot,
 )
-from .remote_sources import AzureBlobRemoteSource, S3RemoteSource
+from .remote_sources import (
+    AzureBlobRemoteSource,
+    GoogleDriveRemoteSource,
+    S3RemoteSource,
+    parse_google_drive_folder_id,
+)
 from .sources import _media_type_from_filename, load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
 from .user_config import resolve_source_profile
+
+
+def _describe_catalog_validation_error(
+    catalog_path: Path, validation_error: ValidationError
+) -> str:
+    """
+    Build a clear message for a catalog that fails strict validation.
+
+    Unknown top-level item fields are named explicitly and the migration script is
+    pointed to; every other validation problem is reported verbatim.
+
+    :param catalog_path: Catalog file that failed validation.
+    :type catalog_path: Path
+    :param validation_error: Validation error raised by the catalog model.
+    :type validation_error: ValidationError
+    :return: User-facing error message.
+    :rtype: str
+    """
+    unknown_field_names = sorted(
+        {
+            str(error["loc"][-1])
+            for error in validation_error.errors()
+            if error["type"] == "extra_forbidden"
+            and len(error["loc"]) == 3
+            and error["loc"][0] == "items"
+        }
+    )
+    if not unknown_field_names:
+        return f"Invalid corpus catalog {catalog_path}: {validation_error}"
+    return (
+        f"Invalid corpus catalog {catalog_path}: unknown top-level item fields "
+        f"{', '.join(unknown_field_names)}. Extension data belongs under metadata "
+        "(for example metadata.papyrus). Run "
+        "scripts/migrate_catalog_extensions.py <corpus> to move these fields under metadata."
+    )
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -393,6 +439,20 @@ def _merge_metadata(front: Dict[str, Any], side: Dict[str, Any]) -> Dict[str, An
     return merged_metadata
 
 
+def _catalog_item_dates(metadata: Dict[str, Any]) -> Optional[CatalogItemDates]:
+    dates = metadata.get("dates")
+    if not isinstance(dates, dict):
+        return None
+    payload = {
+        key: value
+        for key, value in dates.items()
+        if key in {"published_at", "updated_at", "retrieved_at"} and value is not None
+    }
+    if not payload:
+        return None
+    return CatalogItemDates.model_validate(payload)
+
+
 class Corpus:
     """
     Local corpus manager for Biblicus.
@@ -652,12 +712,15 @@ class Corpus:
     @property
     def catalog_path(self) -> Path:
         """
-        Return the path to the corpus catalog file.
+        Return the path to the corpus catalog file, ``metadata/catalog.json``.
+
+        This is part of the corpus layout contract: callers locate the catalog through this
+        property instead of assembling the path themselves.
 
         :return: Catalog file path.
         :rtype: Path
         """
-        return self.meta_dir / "catalog.json"
+        return self.meta_dir / CATALOG_FILE_NAME
 
     def _init_catalog(self) -> None:
         """
@@ -691,7 +754,12 @@ class Corpus:
         if not self.catalog_path.is_file():
             raise FileNotFoundError(f"Missing corpus catalog: {self.catalog_path}")
         catalog_data = json.loads(self.catalog_path.read_text(encoding="utf-8"))
-        return load_corpus_catalog(catalog_data)
+        try:
+            return CorpusCatalog.model_validate(catalog_data)
+        except ValidationError as validation_error:
+            raise ValueError(
+                _describe_catalog_validation_error(self.catalog_path, validation_error)
+            ) from validation_error
 
     def load_catalog(self) -> CorpusCatalog:
         """
@@ -753,6 +821,87 @@ class Corpus:
             if item.source_uri == source_uri:
                 return item
         return None
+
+    def _find_item_by_identity_key(self, identity_key: str) -> Optional[CatalogItem]:
+        """
+        Locate an existing catalog item by canonical ingest identity key.
+
+        :param identity_key: Canonical ingest identity key.
+        :type identity_key: str
+        :return: Matching catalog item or None.
+        :rtype: CatalogItem or None
+        """
+        if not identity_key:
+            return None
+        self._init_catalog()
+        catalog = self._load_catalog()
+        for item in catalog.items.values():
+            item_keys = canonical_ingest_identity_keys(
+                source_uri=item.source_uri, metadata=item.metadata
+            )
+            if identity_key in item_keys:
+                return item
+        return None
+
+    def _find_item_by_sha256(self, sha256_digest: str) -> Optional[CatalogItem]:
+        """
+        Locate an existing catalog item by stored byte digest.
+
+        :param sha256_digest: Secure Hash Algorithm 256 digest.
+        :type sha256_digest: str
+        :return: Matching catalog item or None.
+        :rtype: CatalogItem or None
+        """
+        if not sha256_digest:
+            return None
+        self._init_catalog()
+        catalog = self._load_catalog()
+        for item in catalog.items.values():
+            if item.sha256 == sha256_digest:
+                return item
+        return None
+
+    def _raise_if_canonical_ingest_duplicate(
+        self,
+        *,
+        source_uri: str,
+        metadata: Dict[str, Any],
+        sha256_digest: Optional[str],
+    ) -> None:
+        """
+        Raise when an ingest request matches an existing canonical identity.
+
+        :param source_uri: Source uniform resource identifier for the ingest request.
+        :type source_uri: str
+        :param metadata: Metadata prepared for the stored item.
+        :type metadata: dict[str, Any]
+        :param sha256_digest: Optional stored byte digest.
+        :type sha256_digest: str or None
+        :return: None.
+        :rtype: None
+        :raises IngestCollisionError: If an existing item has the same identity.
+        """
+        for identity_key in canonical_ingest_identity_keys(
+            source_uri=source_uri, metadata=metadata
+        ):
+            existing_item = self._find_item_by_identity_key(identity_key)
+            if existing_item is not None:
+                raise IngestCollisionError(
+                    source_uri=source_uri,
+                    existing_item_id=existing_item.id,
+                    existing_relpath=existing_item.relpath,
+                    collision_key=identity_key,
+                )
+        if sha256_digest is None:
+            return
+        existing_item = self._find_item_by_sha256(sha256_digest)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+                collision_key=f"sha256:{sha256_digest}",
+            )
 
     @property
     def snapshots_dir(self) -> Path:
@@ -833,6 +982,48 @@ class Corpus:
         """
         return self.graph_snapshots_dir / extractor_id / snapshot_id
 
+    def extracted_text_path(self, snapshot_id: str, item_id: str) -> Path:
+        """
+        Resolve the final extracted text artifact of an item in a pipeline extraction snapshot.
+
+        The layout is ``extracted/pipeline/<snapshot_id>/text/<item_id>.txt``. The path is
+        computed from identifiers only; the artifact exists only when the snapshot extracted
+        text for the item.
+
+        :param snapshot_id: Pipeline extraction snapshot identifier.
+        :type snapshot_id: str
+        :param item_id: Item identifier.
+        :type item_id: str
+        :return: Extracted text artifact path.
+        :rtype: Path
+        """
+        return (
+            self.extraction_snapshot_dir(
+                extractor_id=PIPELINE_EXTRACTOR_ID, snapshot_id=snapshot_id
+            )
+            / EXTRACTED_TEXT_DIR_NAME
+            / f"{item_id}{EXTRACTED_TEXT_FILE_SUFFIX}"
+        )
+
+    def graph_snapshot_manifest_path(self, extractor_id: str, snapshot_id: str) -> Path:
+        """
+        Resolve the manifest file of a graph snapshot.
+
+        The layout is ``graph/<extractor_id>/<snapshot_id>/manifest.json``. The path is computed
+        from identifiers only; the manifest exists only after the graph snapshot was built.
+
+        :param extractor_id: Graph extractor identifier.
+        :type extractor_id: str
+        :param snapshot_id: Graph snapshot identifier.
+        :type snapshot_id: str
+        :return: Graph snapshot manifest path.
+        :rtype: Path
+        """
+        return (
+            self.graph_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
+            / SNAPSHOT_MANIFEST_FILE_NAME
+        )
+
     def read_extracted_text(
         self, *, extractor_id: str, snapshot_id: str, item_id: str
     ) -> Optional[str]:
@@ -851,8 +1042,8 @@ class Corpus:
         """
         path = (
             self.extraction_snapshot_dir(extractor_id=extractor_id, snapshot_id=snapshot_id)
-            / "text"
-            / f"{item_id}.txt"
+            / EXTRACTED_TEXT_DIR_NAME
+            / f"{item_id}{EXTRACTED_TEXT_FILE_SUFFIX}"
         )
         if not path.is_file():
             return None
@@ -1110,10 +1301,14 @@ class Corpus:
         self._ensure_local_ingest_allowed()
         existing_item = self._find_item_by_source_uri(source_uri)
         if existing_item is not None:
+            identity_keys = canonical_ingest_identity_keys(
+                source_uri=source_uri, metadata=metadata or {}
+            )
             raise IngestCollisionError(
                 source_uri=source_uri,
                 existing_item_id=existing_item.id,
                 existing_relpath=existing_item.relpath,
+                collision_key=identity_keys[0] if identity_keys else None,
             )
 
         item_id = str(uuid.uuid4())
@@ -1169,6 +1364,11 @@ class Corpus:
 
             parsed_document = parse_front_matter(markdown_text)
             frontmatter = dict(parsed_document.metadata)
+            if metadata_input:
+                for metadata_key, metadata_value in metadata_input.items():
+                    if metadata_key in {"tags", "biblicus", "title"}:
+                        continue
+                    frontmatter[metadata_key] = metadata_value
 
             merged_tags = _merge_tags(resolved_tags, frontmatter.get("tags"))
             if merged_tags:
@@ -1193,6 +1393,12 @@ class Corpus:
             data_to_write = data
 
         sha256_digest = _sha256_bytes(data_to_write)
+        duplicate_metadata = frontmatter if media_type == "text/markdown" else metadata_input
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata=dict(duplicate_metadata or {}),
+            sha256_digest=sha256_digest,
+        )
         output_path.write_bytes(data_to_write)
 
         if media_type != "text/markdown":
@@ -1247,6 +1453,7 @@ class Corpus:
             title=resolved_title,
             tags=list(resolved_tags),
             metadata=dict(frontmatter or {}),
+            dates=_catalog_item_dates(dict(frontmatter or {})),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1336,9 +1543,20 @@ class Corpus:
                     if tag not in resolved_tags:
                         resolved_tags.append(tag)
 
-        write_result = _write_stream_and_hash(stream, output_path)
+        temporary_output_path = output_path.with_name(f"{output_path.name}.tmp")
+        write_result = _write_stream_and_hash(stream, temporary_output_path)
         sha256_digest = str(write_result["sha256"])
         bytes_written = int(write_result["bytes_written"])
+        try:
+            self._raise_if_canonical_ingest_duplicate(
+                source_uri=source_uri,
+                metadata=dict(metadata_input or {}),
+                sha256_digest=sha256_digest,
+            )
+        except IngestCollisionError:
+            temporary_output_path.unlink(missing_ok=True)
+            raise
+        temporary_output_path.replace(output_path)
 
         sidecar: Dict[str, Any] = {}
         sidecar["media_type"] = media_type
@@ -1383,6 +1601,7 @@ class Corpus:
             title=None,
             tags=list(resolved_tags),
             metadata=dict(sidecar or {}),
+            dates=_catalog_item_dates(dict(sidecar or {})),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1397,6 +1616,7 @@ class Corpus:
         title: Optional[str] = None,
         tags: Sequence[str] = (),
         source_uri: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> IngestResult:
         """
         Ingest a text note as Markdown.
@@ -1409,6 +1629,8 @@ class Corpus:
         :type tags: Sequence[str]
         :param source_uri: Optional source uniform resource identifier for provenance.
         :type source_uri: str or None
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
         :return: Ingestion result summary.
         :rtype: IngestResult
         """
@@ -1423,7 +1645,7 @@ class Corpus:
             media_type="text/markdown",
             title=title,
             tags=tags,
-            metadata=None,
+            metadata=metadata,
             source_uri=source_uri,
             storage_subdir="notes",
         )
@@ -1499,6 +1721,8 @@ class Corpus:
         if item_id is None:
             item_id = str(uuid.uuid4())
 
+        rendered_markdown: Optional[str] = None
+        sidecar_to_write: Optional[Dict[str, Any]] = None
         if media_type == "text/markdown":
             updated_metadata: Dict[str, Any] = dict(merged_metadata)
             if resolved_tags:
@@ -1509,7 +1733,7 @@ class Corpus:
             if markdown_body is None:
                 markdown_body = ""
             rendered_document = render_front_matter(updated_metadata, markdown_body)
-            path.write_text(rendered_document, encoding="utf-8")
+            rendered_markdown = rendered_document
             data = rendered_document.encode("utf-8")
             merged_metadata = updated_metadata
         else:
@@ -1518,10 +1742,19 @@ class Corpus:
             if resolved_tags:
                 sidecar_metadata["tags"] = resolved_tags
             sidecar_metadata["media_type"] = media_type
-            _write_sidecar(path, sidecar_metadata)
+            sidecar_to_write = sidecar_metadata
             merged_metadata = sidecar_metadata
 
         sha256_digest = _sha256_bytes(data)
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata=dict(merged_metadata or {}),
+            sha256_digest=sha256_digest,
+        )
+        if rendered_markdown is not None:
+            path.write_text(rendered_markdown, encoding="utf-8")
+        if sidecar_to_write is not None:
+            _write_sidecar(path, sidecar_to_write)
         created_at = utc_now_iso()
         item_record = CatalogItem(
             id=item_id,
@@ -1529,11 +1762,14 @@ class Corpus:
             sha256=sha256_digest,
             bytes=len(data),
             media_type=media_type,
-            title=merged_metadata.get("title")
-            if isinstance(merged_metadata.get("title"), str)
-            else None,
+            title=(
+                merged_metadata.get("title")
+                if isinstance(merged_metadata.get("title"), str)
+                else None
+            ),
             tags=list(resolved_tags),
             metadata=dict(merged_metadata),
+            dates=_catalog_item_dates(dict(merged_metadata)),
             created_at=created_at,
             source_uri=source_uri,
         )
@@ -1546,6 +1782,7 @@ class Corpus:
         *,
         tags: Sequence[str] = (),
         source_uri: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         allow_external: bool = False,
     ) -> IngestResult:
         """
@@ -1557,6 +1794,8 @@ class Corpus:
         :type tags: Sequence[str]
         :param source_uri: Optional override for the source uniform resource identifier.
         :type source_uri: str or None
+        :param metadata: Optional metadata mapping.
+        :type metadata: dict[str, Any] or None
         :param allow_external: Whether to ingest files outside the corpus root by copying them into imports.
         :type allow_external: bool
         :return: Ingestion result summary.
@@ -1584,19 +1823,22 @@ class Corpus:
                 media_type=media_type,
                 title=None,
                 tags=tags,
-                metadata=None,
+                metadata=metadata,
                 source_uri=resolved_source_uri,
                 storage_subdir="imports",
             )
 
         payload = load_source(source, source_uri=source_uri)
+        payload_metadata = dict(payload.metadata)
+        if metadata:
+            payload_metadata.update(metadata)
         return self.ingest_item(
             payload.data,
             filename=payload.filename,
             media_type=payload.media_type,
-            title=None,
+            title=payload.title,
             tags=tags,
-            metadata=None,
+            metadata=payload_metadata,
             source_uri=payload.source_uri,
             storage_subdir="imports",
         )
@@ -1728,6 +1970,7 @@ class Corpus:
             title=title,
             tags=list(resolved_tags),
             metadata=dict(merged_metadata or {}),
+            dates=_catalog_item_dates(dict(merged_metadata or {})),
             created_at=utc_now_iso(),
             source_uri=source_path.as_uri(),
         )
@@ -1809,6 +2052,19 @@ class Corpus:
         """
         self._ensure_local_ingest_allowed()
         _ = filename
+        existing_item = self._find_item_by_source_uri(source_uri)
+        if existing_item is not None:
+            raise IngestCollisionError(
+                source_uri=source_uri,
+                existing_item_id=existing_item.id,
+                existing_relpath=existing_item.relpath,
+            )
+        sha256_digest = _sha256_bytes(data)
+        self._raise_if_canonical_ingest_duplicate(
+            source_uri=source_uri,
+            metadata={},
+            sha256_digest=sha256_digest,
+        )
         item_id = str(uuid.uuid4())
         destination_relpath = self._raw_relpath(
             output_name=relative_path,
@@ -1817,8 +2073,6 @@ class Corpus:
         destination_path = (self.root / destination_relpath).resolve()
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         destination_path.write_bytes(data)
-
-        sha256_digest = _sha256_bytes(data)
 
         sidecar: Dict[str, Any] = {}
         sidecar["tags"] = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
@@ -1838,6 +2092,7 @@ class Corpus:
             title=None,
             tags=list(resolved_tags),
             metadata=dict(merged_metadata or {}),
+            dates=_catalog_item_dates(dict(merged_metadata or {})),
             created_at=utc_now_iso(),
             source_uri=source_uri,
         )
@@ -1870,6 +2125,8 @@ class Corpus:
             source = S3RemoteSource(source_config, profile)
         elif source_config.kind == "azure-blob":
             source = AzureBlobRemoteSource(source_config, profile)
+        elif source_config.kind == "google-drive":
+            source = GoogleDriveRemoteSource(source_config, profile)
         else:
             raise ValueError(f"Unsupported remote source kind: {source_config.kind}")
 
@@ -1926,6 +2183,10 @@ class Corpus:
             return _sanitize_filename(source_config.bucket)
         if source_config.kind == "azure-blob" and source_config.container:
             return _sanitize_filename(source_config.container)
+        if source_config.kind == "google-drive" and source_config.folder_url:
+            folder_id = parse_google_drive_folder_id(source_config.folder_url)
+            if folder_id:
+                return _sanitize_filename(folder_id)
         return "remote"
 
     def _relative_remote_key(self, key: str, *, prefix: Optional[str]) -> str:
@@ -2042,6 +2303,7 @@ class Corpus:
             title=title,
             tags=list(tags),
             metadata=dict(metadata or {}),
+            dates=_catalog_item_dates(dict(metadata or {})),
             created_at=created_at or utc_now_iso(),
             source_uri=source_uri,
         )
@@ -2189,6 +2451,7 @@ class Corpus:
                 title=title,
                 tags=list(resolved_tags),
                 metadata=dict(merged_metadata or {}),
+                dates=_catalog_item_dates(dict(merged_metadata or {})),
                 created_at=created_at,
                 source_uri=source_uri,
             )
@@ -2278,3 +2541,19 @@ class Corpus:
                 order=[],
             )
         )
+
+    def delete_item(self, item_id: str) -> None:
+        """
+        Delete an item payload and its sidecar metadata from the corpus.
+
+        :param item_id: Item identifier to delete.
+        :type item_id: str
+        :return: None.
+        :rtype: None
+        :raises KeyError: If the item identifier is not present in the catalog.
+        """
+        catalog = self._load_catalog()
+        item = catalog.items.get(item_id)
+        if item is None:
+            raise KeyError(f"Unknown item id: {item_id}")
+        self._delete_item_files(item.relpath)

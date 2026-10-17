@@ -1,0 +1,133 @@
+{
+  "additionalProperties": false,
+  "description": "Result of a URL text extraction.\n\nFields that the extraction did not produce are absent from the serialized JSON, so a\nfailed extraction omits ``method``, ``grobid`` and ``structured``.\n\n:ivar status: ``ok`` or ``failed``.\n:vartype status: str\n:ivar source_kind: ``web``, ``pdf`` or ``youtube``.\n:vartype source_kind: str\n:ivar strategy: Fetch strategy that was applied.\n:vartype strategy: str\n:ivar text: Extracted plain text.\n:vartype text: str\n:ivar markdown: Extracted markdown.\n:vartype markdown: str\n:ivar title: Extracted title or None.\n:vartype title: str or None\n:ivar content_type: Fetched content type or None.\n:vartype content_type: str or None\n:ivar method: Extraction method or None.\n:vartype method: str or None\n:ivar grobid: Scholarly parse payload or None.\n:vartype grobid: dict[str, Any] or None\n:ivar structured: Structured web payload or None.\n:vartype structured: dict[str, Any] or None\n:ivar prompt_version: Extraction contract version.\n:vartype prompt_version: str\n:ivar attempts: Ordered fetch attempts.\n:vartype attempts: list[dict[str, Any]]\n:ivar error: Structured failure or None.\n:vartype error: dict[str, Any] or None",
+  "properties": {
+    "attempts": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Attempts",
+      "type": "array"
+    },
+    "content_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Content Type"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Error"
+    },
+    "grobid": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Grobid"
+    },
+    "markdown": {
+      "title": "Markdown",
+      "type": "string"
+    },
+    "method": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Method"
+    },
+    "prompt_version": {
+      "title": "Prompt Version",
+      "type": "string"
+    },
+    "source_kind": {
+      "enum": [
+        "web",
+        "pdf",
+        "youtube"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "strategy": {
+      "title": "Strategy",
+      "type": "string"
+    },
+    "structured": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Structured"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Title"
+    }
+  },
+  "required": [
+    "status",
+    "source_kind",
+    "strategy",
+    "text",
+    "markdown",
+    "title",
+    "content_type",
+    "prompt_version",
+    "attempts",
+    "error"
+  ],
+  "title": "UrlTextResponse",
+  "type": "object"
+}

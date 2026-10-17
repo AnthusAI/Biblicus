@@ -52,7 +52,7 @@ Feature: Unstructured extractor plugin
     And a fake Unstructured library is available that raises a RuntimeError for filename "boom.pdf"
     And a binary file "boom.pdf" exists
     And a fake Unstructured library is available that returns text "ok" for filename "ok.pdf"
-    And a binary file "ok.pdf" exists
+    And a binary file "ok.pdf" exists with Portable Document Format bytes
     When I ingest the file "boom.pdf" into corpus "corpus"
     And I ingest the file "ok.pdf" into corpus "corpus"
     And I build a "unstructured" extraction snapshot in corpus "corpus"

@@ -1,9 +1,9 @@
 # Topic modeling
 
 Biblicus provides a topic modeling analysis backend that reads extracted text artifacts, optionally applies an LLM
-extraction pass, optionally removes named entities, applies lexical processing, runs BERTopic, and optionally applies
-an LLM fine-tuning pass for labels. The output is structured JavaScript Object Notation with explicit per-topic
-evidence.
+extraction pass, optionally removes named entities, applies lexical processing, and runs BERTopic. Topic labels are
+refined through BERTopic representation models when configured. The output is structured JavaScript Object Notation
+with explicit per-topic evidence.
 
 ## What topic modeling does
 
@@ -25,13 +25,12 @@ schema.
 - LLM extraction optionally transforms each document into one or more analysis documents.
 - Entity removal optionally deletes named entities before modeling.
 - Lexical processing optionally normalizes text before BERTopic.
-- BERTopic produces topic assignments and keyword weights.
-- LLM fine-tuning optionally replaces topic labels based on sampled documents.
+- BERTopic produces topic assignments, keyword weights, and representation-model labels when configured.
 
 ## Run topic modeling from the CLI
 
 ```
-biblicus analyze topics --corpus corpora/example --configuration configurations/topic-modeling.yml --extraction-run pipeline:RUN_ID
+biblicus analyze topics --corpus corpora/example --configuration configurations/topic-modeling.yml --extraction-snapshot pipeline:RUN_ID
 ```
 
 Topic modeling configurations support cascading composition. Pass multiple `--configuration` files; later configurations override earlier
@@ -42,7 +41,7 @@ biblicus analyze topics \
   --corpus corpora/example \
   --configuration configurations/topic-modeling/base.yml \
   --configuration configurations/topic-modeling/ag-news.yml \
-  --extraction-run pipeline:RUN_ID
+  --extraction-snapshot pipeline:RUN_ID
 ```
 
 To override the composed configuration view from the command line, use `--config key=value` with dotted keys:
@@ -53,10 +52,10 @@ biblicus analyze topics \
   --configuration configurations/topic-modeling/base.yml \
   --configuration configurations/topic-modeling/ag-news.yml \
   --config bertopic_analysis.parameters.nr_topics=12 \
-  --extraction-run pipeline:RUN_ID
+  --extraction-snapshot pipeline:RUN_ID
 ```
 
-If you omit `--extraction-run`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
+If you omit `--extraction-snapshot`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
 ## Output structure
 
@@ -65,7 +64,7 @@ Topic modeling writes a single `output.json` file under the analysis snapshot di
 - `run.snapshot_id` and `run.stats` for reproducible tracking.
 - `report.topics` with the modeled topics.
 - `report.text_collection`, `report.llm_extraction`, `report.entity_removal`, `report.lexical_processing`,
-  `report.bertopic_analysis`, and `report.llm_fine_tuning` describing each pipeline stage.
+  `report.bertopic_analysis`, and `report.representation_model` describing each pipeline stage.
 
 When entity removal is enabled, Biblicus also writes `entity_removal.jsonl` alongside `output.json`. This artifact
 contains the redacted documents that feed BERTopic and is reused on subsequent runs for the same snapshot.
@@ -74,13 +73,14 @@ Each topic record includes:
 
 - `topic_id`: The BERTopic topic identifier. The outlier topic uses `-1`.
 - `label`: The human-readable label.
-- `label_source`: `bertopic` or `llm` depending on the stage that set the label.
+- `label_source`: `bertopic` or `llm` depending on whether BERTopic keyword representation or a BERTopic
+  representation model set the label.
 - `keywords`: Keyword list with weights.
 - `document_count`: Number of documents assigned to the topic.
 - `document_ids`: Item identifiers for the assigned documents.
 - `document_examples`: Sampled document text used for inspection.
 
-Per-topic behavior is determined by the BERTopic assignments and the optional fine-tuning stage. The lexical
+Per-topic behavior is determined by the BERTopic assignments and optional BERTopic representation model. The lexical
 processing flags can substantially change tokenization and therefore the resulting topic labels. The outlier
 `topic_id` `-1` indicates documents that BERTopic could not confidently assign to a cluster.
 
@@ -147,15 +147,35 @@ Topic modeling configurations use a strict schema. Unknown fields or type mismat
 - `bertopic_analysis.parameters`: Mapping of BERTopic constructor parameters.
 - `bertopic_analysis.vectorizer.ngram_range`: Inclusive n-gram range (for example `[1, 2]`).
 - `bertopic_analysis.vectorizer.stop_words`: `english` or a list of stop words. Set to `null` to disable.
+- `bertopic_analysis.umap_model.parameters`: Mapping forwarded to `umap.UMAP`.
+- `bertopic_analysis.hdbscan_model.parameters`: Mapping forwarded to `hdbscan.HDBSCAN`.
+- `bertopic_analysis.representation_model`: Optional BERTopic representation model configuration.
 
-### LLM fine-tuning
+### BERTopic representation model
 
-- `llm_fine_tuning.enabled`: Enable LLM topic labeling.
-- `llm_fine_tuning.client`: LLM client configuration.
-- `llm_fine_tuning.prompt_template`: Prompt template containing `{keywords}` and `{documents}`.
-- `llm_fine_tuning.system_prompt`: Optional system prompt.
-- `llm_fine_tuning.max_keywords`: Maximum keywords included per prompt.
-- `llm_fine_tuning.max_documents`: Maximum documents included per prompt.
+Biblicus supports BERTopic's OpenAI representation model for LLM-generated topic labels. The representation model is
+passed into the BERTopic constructor, so topic labels remain part of the BERTopic fit instead of a separate Biblicus
+post-processing stage.
+
+```yaml
+bertopic_analysis:
+  representation_model:
+    provider: openai
+    model: gpt-5.4-mini
+    nr_docs: 4
+    delay_in_seconds: 0
+    prompt_template: |
+      I have a topic that contains the following documents:
+      [DOCUMENTS]
+
+      The topic is described by these keywords:
+      [KEYWORDS]
+
+      Return a short, specific AI/ML topic label.
+```
+
+The OpenAI representation model requires the `openai` package and an OpenAI API key from the environment or Biblicus
+user configuration. The prompt template is the BERTopic prompt, so it uses `[KEYWORDS]` and `[DOCUMENTS]`.
 
 ## Vectorizer configuration
 
@@ -172,6 +192,73 @@ bertopic_analysis:
     ngram_range: [1, 2]
     stop_words: english
 ```
+
+## AI-ML-Research fine discovery
+
+The official first-pass discovery input for the AI-ML-Research corpus is metadata-derived text containing only the
+title and abstract:
+
+```bash
+biblicus extract build \
+  --corpus corpora/AI-ML-research \
+  --configuration configurations/extraction/ai-ml-research-topic-abstracts.yml \
+  --force
+```
+
+The recipe uses:
+
+```yaml
+extractor_id: metadata-text
+configuration:
+  fields:
+    - title
+    - metadata.abstract
+```
+
+Tags and curation metadata are intentionally excluded so blind candidate labels do not leak into unsupervised topic
+discovery.
+
+Run a granularity sweep against the metadata snapshot:
+
+```bash
+biblicus analyze topic-granularity-sweep \
+  --corpus corpora/AI-ML-research \
+  --configuration configurations/topic-modeling/ai-ml-research-fine.yml \
+  --extraction-snapshot pipeline:<snapshot_id> \
+  --target-topic-range 10:20 \
+  --format markdown
+```
+
+The sweep runs `coarse`, `balanced`, and `fine` profiles without representation labels, selects the best profile for
+the requested range, and reruns the selected profile with BERTopic OpenAI labels.
+
+## Research agent topic context
+
+Research agents need a compact map of what is already in a knowledge base before they search for new related
+material. Generate that context from a topic-modeling snapshot:
+
+```bash
+biblicus analyze topic-context \
+  --corpus corpora/AI-ML-research \
+  --topic-modeling-snapshot <topic_modeling_snapshot_id> \
+  --max-topics 20 \
+  --examples-per-topic 3 \
+  --summary-model gpt-5.4-mini \
+  --format markdown
+```
+
+The command writes artifacts under `analysis/topic-context/<snapshot_id>/` and prints either JavaScript Object
+Notation or Markdown. Markdown is the research-agent handoff format. It includes the topic label, topic identifier,
+document count, keywords, and representative examples. Examples include title, subtitle when present, source,
+publication date when present, and an abstract or summary.
+
+Representative examples are deterministic, not random. Biblicus scores each document by similarity to the other
+documents assigned to the same topic and keeps the most central examples first. The command excludes BERTopic's
+outlier topic `-1` unless `--include-outlier` is passed.
+
+When `--summary-model` is provided, Biblicus asks OpenAI for concise topic guidance and for summaries of examples
+that do not have abstract-like metadata. The report remains context only: it does not edit classifier manifests,
+accept governance proposals, or promote examples into seeds.
 
 ## Repeatable integration script
 
@@ -234,7 +321,8 @@ Start with a small sample to validate the pipeline, then scale up:
 1) Run with `--limit 500` to validate extraction and output structure.
 2) Add bigrams and stop words to reduce noise in keyword lists.
 3) Increase `--limit` or `--sample-size` once topics look stable.
-4) Experiment with `nr_topics` and `min_topic_size` to control granularity.
+4) Experiment with `nr_topics`, UMAP, and HDBSCAN settings to control granularity, or use
+   `topic-granularity-sweep` to compare the built-in profiles.
 
 ## Interpreting results
 

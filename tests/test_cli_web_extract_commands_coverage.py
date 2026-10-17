@@ -22,6 +22,30 @@ def _read_json_stream(stream_text):
     return json.loads(stream_text)
 
 
+def _url_text_payload(status):
+    return {
+        "status": status,
+        "source_kind": "web",
+        "strategy": "markdown-then-html-then-direct",
+        "text": "page text",
+        "markdown": "page text",
+        "title": None,
+        "content_type": None,
+        "prompt_version": "url-text-v1",
+        "attempts": [],
+        "error": None,
+    }
+
+
+def _metadata_payload(title, warnings=None):
+    payload = web_reference_metadata._empty_payload(
+        source_uri="https://fixture.test/page", method="html-heuristics"
+    )
+    payload["title"] = title
+    payload["warnings"] = warnings or []
+    return payload
+
+
 def test_extract_url_text_reports_invalid_input_json(tmp_path, capsys):
     """Verify that extract url text reports invalid input json."""
     input_path = tmp_path / "broken.json"
@@ -54,7 +78,7 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
 
     def fake_extract_url_text(**keyword_arguments):
         recorded_calls.append(keyword_arguments)
-        return {"status": status, "text": "page text"}
+        return _url_text_payload(status)
 
     monkeypatch.setattr(url_text, "extract_url_text", fake_extract_url_text)
     exit_code = cli.main(
@@ -74,7 +98,7 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
     )
     captured = capsys.readouterr()
     assert exit_code == expected_exit_code
-    assert _read_json_stream(captured.out) == {"status": status, "text": "page text"}
+    assert _read_json_stream(captured.out) == _url_text_payload(status)
     assert recorded_calls == [
         {
             "source_uri": "https://fixture.test/page",
@@ -142,7 +166,7 @@ def test_extract_web_metadata_from_html_content_uses_local_source_uri(
 
     def fake_extract_from_html(html, **keyword_arguments):
         recorded_calls.append((html, keyword_arguments))
-        return {"title": "From HTML"}
+        return _metadata_payload("From HTML")
 
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
@@ -165,7 +189,7 @@ def test_extract_web_metadata_from_html_content_uses_local_source_uri(
     )
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert _read_json_stream(captured.out) == {"status": "ok", "title": "From HTML"}
+    assert _read_json_stream(captured.out) == {**_metadata_payload("From HTML"), "status": "ok"}
     html, keyword_arguments = recorded_calls[0]
     assert html == "<html><title>From HTML</title></html>"
     assert keyword_arguments == {
@@ -184,7 +208,7 @@ def test_extract_web_metadata_from_html_content_keeps_explicit_source_uri(
 
     def fake_extract_from_html(_html, **keyword_arguments):
         recorded_source_uris.append(keyword_arguments["source_uri"])
-        return {"title": "Explicit"}
+        return _metadata_payload("Explicit")
 
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
@@ -217,7 +241,7 @@ def test_extract_web_metadata_from_source_uri_fetches_page(
 
     def fake_extract_from_url(source_uri, **keyword_arguments):
         recorded_calls.append((source_uri, keyword_arguments))
-        return {"title": "From URL", "warnings": []}
+        return _metadata_payload("From URL")
 
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_url", fake_extract_from_url
@@ -236,11 +260,7 @@ def test_extract_web_metadata_from_source_uri_fetches_page(
     )
     captured = capsys.readouterr()
     assert exit_code == 0
-    assert _read_json_stream(captured.out) == {
-        "status": "ok",
-        "title": "From URL",
-        "warnings": [],
-    }
+    assert _read_json_stream(captured.out) == {**_metadata_payload("From URL"), "status": "ok"}
     source_uri, keyword_arguments = recorded_calls[0]
     assert source_uri == "https://fixture.test/page"
     assert keyword_arguments == {
@@ -343,7 +363,7 @@ def test_extract_web_metadata_command_line_flag_enables_llm_fallback(
 
     def fake_extract_from_html(_html, **keyword_arguments):
         recorded_keyword_arguments.append(keyword_arguments)
-        return {"title": "Flag"}
+        return _metadata_payload("Flag")
 
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html

@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "ExtractionSnapshotReference": {
+      "additionalProperties": false,
+      "description": "Reference to an extraction snapshot.\n\n:ivar extractor_id: Extractor plugin identifier.\n:vartype extractor_id: str\n:ivar snapshot_id: Extraction snapshot identifier.\n:vartype snapshot_id: str",
+      "properties": {
+        "extractor_id": {
+          "minLength": 1,
+          "title": "Extractor Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extractor_id",
+        "snapshot_id"
+      ],
+      "title": "ExtractionSnapshotReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to build a graph extraction snapshot.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar extractor_id: Graph extractor identifier, for example ``cooccurrence``.\n:vartype extractor_id: str\n:ivar extraction_snapshot: Extraction snapshot supplying item text.\n:vartype extraction_snapshot: ExtractionSnapshotReference\n:ivar configuration_name: Human-readable configuration name that keys the snapshot identity.\n:vartype configuration_name: str\n:ivar configuration_paths: Configuration YAML paths; later files override earlier ones.\n:vartype configuration_paths: list[str]\n:ivar overrides: ``key=value`` overrides applied after composing configurations.\n:vartype overrides: list[str]\n:ivar max_items: Maximum extraction items to process, or None for all.\n:vartype max_items: int or None\n:ivar item_timeout_seconds: Per-item timeout in seconds; zero or less disables the timeout.\n:vartype item_timeout_seconds: float\n:ivar item_retry_attempts: Retries per item after a timeout or error.\n:vartype item_retry_attempts: int\n:ivar heartbeat_interval_seconds: Progress heartbeat interval; zero or less disables it.\n:vartype heartbeat_interval_seconds: float",
+  "properties": {
+    "configuration_name": {
+      "default": "default",
+      "minLength": 1,
+      "title": "Configuration Name",
+      "type": "string"
+    },
+    "configuration_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Configuration Paths",
+      "type": "array"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "$ref": "#/$defs/ExtractionSnapshotReference"
+    },
+    "extractor_id": {
+      "minLength": 1,
+      "title": "Extractor Id",
+      "type": "string"
+    },
+    "heartbeat_interval_seconds": {
+      "default": 10.0,
+      "title": "Heartbeat Interval Seconds",
+      "type": "number"
+    },
+    "item_retry_attempts": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Item Retry Attempts",
+      "type": "integer"
+    },
+    "item_timeout_seconds": {
+      "default": 60.0,
+      "title": "Item Timeout Seconds",
+      "type": "number"
+    },
+    "max_items": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Items"
+    },
+    "overrides": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Overrides",
+      "type": "array"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "extractor_id",
+    "extraction_snapshot"
+  ],
+  "title": "GraphExtractRequest",
+  "type": "object"
+}

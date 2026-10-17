@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "ContextBlock": {
+      "additionalProperties": false,
+      "description": "Ordered context block used outside retrieval-specific evidence flows.\n\n:ivar block_id: Stable block identifier.\n:vartype block_id: str\n:ivar section: Section key such as doctrine, taxonomy, desk_memory, or fresh_evidence.\n:vartype section: str\n:ivar text: Text payload for the block.\n:vartype text: str\n:ivar required: Whether this block is mandatory even when budgets are tight.\n:vartype required: bool\n:ivar priority: Higher values indicate more important blocks within the same order.\n:vartype priority: int\n:ivar metadata: Optional source/debug metadata for the block.\n:vartype metadata: dict[str, object] or None",
+      "properties": {
+        "block_id": {
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "priority": {
+          "default": 0,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "section": {
+          "minLength": 1,
+          "title": "Section",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "block_id",
+        "section",
+        "text"
+      ],
+      "title": "ContextBlock",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Result of building a budgeted context pack from ordered context blocks.\n\n:ivar text: Final context-pack text.\n:vartype text: str\n:ivar included_blocks: Blocks included in the final output.\n:vartype included_blocks: list[ContextBlock]\n:ivar dropped_blocks: Blocks removed during budget fitting.\n:vartype dropped_blocks: list[ContextBlock]\n:ivar section_token_counts: Token counts per included section.\n:vartype section_token_counts: dict[str, int]\n:ivar total_tokens: Total token count for the final text.\n:vartype total_tokens: int\n:ivar total_characters: Total character count for the final text.\n:vartype total_characters: int\n:ivar max_tokens: Applied overall token budget.\n:vartype max_tokens: int or None\n:ivar max_characters: Applied overall character budget.\n:vartype max_characters: int or None",
+  "properties": {
+    "dropped_blocks": {
+      "items": {
+        "$ref": "#/$defs/ContextBlock"
+      },
+      "title": "Dropped Blocks",
+      "type": "array"
+    },
+    "included_blocks": {
+      "items": {
+        "$ref": "#/$defs/ContextBlock"
+      },
+      "title": "Included Blocks",
+      "type": "array"
+    },
+    "max_characters": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Characters"
+    },
+    "max_tokens": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Tokens"
+    },
+    "section_token_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Section Token Counts",
+      "type": "object"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "total_characters": {
+      "minimum": 0,
+      "title": "Total Characters",
+      "type": "integer"
+    },
+    "total_tokens": {
+      "minimum": 0,
+      "title": "Total Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "text",
+    "total_tokens",
+    "total_characters"
+  ],
+  "title": "ContextBlockBuildResult",
+  "type": "object"
+}

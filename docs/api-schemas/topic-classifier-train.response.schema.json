@@ -1,0 +1,56 @@
+{
+  "additionalProperties": false,
+  "description": "Command output for a topic classifier training run.\n\n:ivar schema_version: Output schema version.\n:vartype schema_version: int\n:ivar classifier_id: Classifier identifier.\n:vartype classifier_id: str\n:ivar model_version: Model version identifier.\n:vartype model_version: str\n:ivar model_manifest_path: Path to the model manifest artifact.\n:vartype model_manifest_path: str\n:ivar topic_map_path: Path to the topic map artifact.\n:vartype topic_map_path: str\n:ivar holdout_evaluation_path: Path to the holdout evaluation artifact.\n:vartype holdout_evaluation_path: str\n:ivar model_path: Path to the persisted BERTopic model directory.\n:vartype model_path: str\n:ivar latest_pointer_path: Path to the classifier latest pointer.\n:vartype latest_pointer_path: str\n:ivar stats: Training statistics.\n:vartype stats: dict[str, Any]",
+  "properties": {
+    "classifier_id": {
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "holdout_evaluation_path": {
+      "title": "Holdout Evaluation Path",
+      "type": "string"
+    },
+    "latest_pointer_path": {
+      "title": "Latest Pointer Path",
+      "type": "string"
+    },
+    "model_manifest_path": {
+      "title": "Model Manifest Path",
+      "type": "string"
+    },
+    "model_path": {
+      "title": "Model Path",
+      "type": "string"
+    },
+    "model_version": {
+      "title": "Model Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "stats": {
+      "additionalProperties": true,
+      "title": "Stats",
+      "type": "object"
+    },
+    "topic_map_path": {
+      "title": "Topic Map Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "classifier_id",
+    "model_version",
+    "model_manifest_path",
+    "topic_map_path",
+    "holdout_evaluation_path",
+    "model_path",
+    "latest_pointer_path"
+  ],
+  "title": "TopicClassifierTrainOutput",
+  "type": "object"
+}

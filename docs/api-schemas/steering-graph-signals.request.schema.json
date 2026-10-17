@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "description": "Request to emit topic-informed graph steering signals.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar classifier_id: Topic classifier identifier used to load accepted topics.\n:vartype classifier_id: str\n:ivar graph_snapshot: Graph snapshot reference in ``extractor_id:snapshot_id`` form.\n:vartype graph_snapshot: str\n:ivar steering_feedback_path: Optional reviewed steering feedback JSON path.\n:vartype steering_feedback_path: str or None",
+  "properties": {
+    "classifier_id": {
+      "minLength": 1,
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "graph_snapshot": {
+      "minLength": 1,
+      "title": "Graph Snapshot",
+      "type": "string"
+    },
+    "steering_feedback_path": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Steering Feedback Path"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "classifier_id",
+    "graph_snapshot"
+  ],
+  "title": "SteeringGraphSignalsRequest",
+  "type": "object"
+}
