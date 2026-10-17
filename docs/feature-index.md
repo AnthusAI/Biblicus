@@ -607,3 +607,30 @@ Documentation:
 Behavior specifications:
 
 - `features/context_pack_cli.feature`
+
+## Typed application programming interface
+
+What it does:
+
+- Gives every command Papyrus calls one Pydantic request model, one Pydantic response model, and one plain Python function in `biblicus.api`.
+- Publishes a JSON Schema for every request and response in `docs/api-schemas`, regenerated and checked with `scripts/generate_api_schemas.py`.
+- Keeps the command-line interface a thin wrapper that validates arguments into the request model and prints the response model as JSON.
+
+Documentation:
+
+- `docs/api-contract.md`
+
+Behavior specifications:
+
+- `features/api_contract.feature`
+- `features/taxonomy_ontology.feature`
+- `features/topic_classifier.feature`
+- `features/topic_trends.feature`
+- `features/topic_context.feature`
+- `features/graph_extraction.feature`
+- `features/bounded_web_transform.feature`
+
+Primary implementation:
+
+- `src/biblicus/api/`
+- `scripts/generate_api_schemas.py`

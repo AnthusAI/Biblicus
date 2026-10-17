@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "Structured retrieval evidence returned from a retriever.\n\n:ivar item_id: Item identifier that produced the evidence.\n:vartype item_id: str\n:ivar source_uri: Source uniform resource identifier from ingestion metadata.\n:vartype source_uri: str or None\n:ivar media_type: Media type for the evidence item.\n:vartype media_type: str\n:ivar score: Retrieval score (higher is better).\n:vartype score: float\n:ivar rank: Rank within the final evidence list (1-based).\n:vartype rank: int\n:ivar text: Optional text payload for the evidence.\n:vartype text: str or None\n:ivar content_ref: Optional reference for non-text content.\n:vartype content_ref: str or None\n:ivar span_start: Optional start offset in the source text.\n:vartype span_start: int or None\n:ivar span_end: Optional end offset in the source text.\n:vartype span_end: int or None\n:ivar stage: Retrieval stage label (for example, scan, full-text search, rerank).\n:vartype stage: str\n:ivar stage_scores: Optional per-stage scores for multi-stage retrieval.\n:vartype stage_scores: dict[str, float] or None\n:ivar configuration_id: Configuration identifier used to create the snapshot.\n:vartype configuration_id: str\n:ivar snapshot_id: Retrieval snapshot identifier.\n:vartype snapshot_id: str\n:ivar metadata: Optional metadata payload from the catalog item.\n:vartype metadata: dict[str, Any]\n:ivar hash: Optional content hash for provenance.\n:vartype hash: str or None",
+      "properties": {
+        "configuration_id": {
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "content_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Ref"
+        },
+        "hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hash"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "snapshot_id": {
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Uri"
+        },
+        "span_end": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span End"
+        },
+        "span_start": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Span Start"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "stage_scores": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stage Scores"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "item_id",
+        "media_type",
+        "score",
+        "rank",
+        "stage",
+        "configuration_id",
+        "snapshot_id"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "QueryBudget": {
+      "additionalProperties": false,
+      "description": "Evidence selection budget for retrieval.\n\nThe budget constrains the *returned* evidence. It intentionally does not\nchange how a backend scores candidates, only how many evidence items are\nselected and how much text is allowed through.\n\n:ivar max_total_items: Maximum number of evidence items to return.\n:vartype max_total_items: int\n:ivar offset: Number of ranked candidates to skip before selecting evidence.\n    This enables simple pagination by re-running the same query with a\n    higher offset.\n:vartype offset: int\n:ivar maximum_total_characters: Optional maximum total characters across evidence text.\n:vartype maximum_total_characters: int or None\n:ivar max_items_per_source: Optional cap per source uniform resource identifier.\n:vartype max_items_per_source: int or None",
+      "properties": {
+        "max_items_per_source": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Items Per Source"
+        },
+        "max_total_items": {
+          "minimum": 1,
+          "title": "Max Total Items",
+          "type": "integer"
+        },
+        "maximum_total_characters": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Total Characters"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_total_items"
+      ],
+      "title": "QueryBudget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Retrieval result bundle returned from a retriever query.\n\n:ivar query_text: Query text issued against the backend.\n:vartype query_text: str\n:ivar budget: Evidence selection budget applied to results.\n:vartype budget: QueryBudget\n:ivar snapshot_id: Retrieval snapshot identifier.\n:vartype snapshot_id: str\n:ivar configuration_id: Configuration identifier used for this query.\n:vartype configuration_id: str\n:ivar retriever_id: Retriever identifier used for this query.\n:vartype retriever_id: str\n:ivar generated_at: International Organization for Standardization 8601 timestamp for the query result.\n:vartype generated_at: str\n:ivar evidence: Evidence objects selected under the budget.\n:vartype evidence: list[Evidence]\n:ivar stats: Backend-specific query statistics.\n:vartype stats: dict[str, Any]",
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/QueryBudget"
+    },
+    "configuration_id": {
+      "title": "Configuration Id",
+      "type": "string"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "query_text": {
+      "title": "Query Text",
+      "type": "string"
+    },
+    "retriever_id": {
+      "title": "Retriever Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "stats": {
+      "additionalProperties": true,
+      "title": "Stats",
+      "type": "object"
+    }
+  },
+  "required": [
+    "query_text",
+    "budget",
+    "snapshot_id",
+    "configuration_id",
+    "retriever_id",
+    "generated_at"
+  ],
+  "title": "RetrievalResult",
+  "type": "object"
+}

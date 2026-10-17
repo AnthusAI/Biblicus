@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "Request to extract reference metadata from a page URL or supplied HTML.\n\n:ivar source_uri: Page URL; fetched when ``html_content`` is absent.\n:vartype source_uri: str\n:ivar html_content: Supplied HTML document, which takes precedence over fetching.\n:vartype html_content: str\n:ivar reference_title: Optional title hint for model enrichment.\n:vartype reference_title: str\n:ivar use_llm_fallback: True to enrich sparse heuristics with a model.\n:vartype use_llm_fallback: bool\n:ivar model: Model identifier for enrichment.\n:vartype model: str\n:ivar timeout_seconds: Fetch timeout in seconds.\n:vartype timeout_seconds: float",
+  "properties": {
+    "html_content": {
+      "default": "",
+      "title": "Html Content",
+      "type": "string"
+    },
+    "model": {
+      "default": "",
+      "title": "Model",
+      "type": "string"
+    },
+    "reference_title": {
+      "default": "",
+      "title": "Reference Title",
+      "type": "string"
+    },
+    "source_uri": {
+      "default": "",
+      "title": "Source Uri",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "default": 20.0,
+      "exclusiveMinimum": 0,
+      "title": "Timeout Seconds",
+      "type": "number"
+    },
+    "use_llm_fallback": {
+      "default": false,
+      "title": "Use Llm Fallback",
+      "type": "boolean"
+    }
+  },
+  "title": "WebMetadataRequest",
+  "type": "object"
+}

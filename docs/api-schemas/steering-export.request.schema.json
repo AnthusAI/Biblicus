@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "description": "Request to export a stable steering bundle.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar classifier_id: Topic classifier identifier used to load the accepted topic set.\n:vartype classifier_id: str\n:ivar topic_governance_snapshot_id: Topic governance snapshot, or None for the latest pointer.\n:vartype topic_governance_snapshot_id: str or None",
+  "properties": {
+    "classifier_id": {
+      "minLength": 1,
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "topic_governance_snapshot_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Topic Governance Snapshot Id"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "classifier_id"
+  ],
+  "title": "SteeringExportRequest",
+  "type": "object"
+}

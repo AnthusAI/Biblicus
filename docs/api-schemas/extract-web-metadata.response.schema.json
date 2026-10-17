@@ -1,0 +1,143 @@
+{
+  "additionalProperties": false,
+  "description": "Reference metadata extracted from a web page.\n\n:ivar status: Always ``ok``; failures are raised as errors.\n:vartype status: str\n:ivar schemaVersion: Metadata contract version.\n:vartype schemaVersion: str\n:ivar sourceUri: Page URL used for provenance.\n:vartype sourceUri: str\n:ivar title: Page title or None.\n:vartype title: str or None\n:ivar subtitle: Page subtitle or None.\n:vartype subtitle: str or None\n:ivar authors: Author names.\n:vartype authors: list[str]\n:ivar authorsStructured: Structured author records.\n:vartype authorsStructured: list[dict[str, Any]]\n:ivar publicationDate: Normalized publication date or None.\n:vartype publicationDate: str or None\n:ivar publicationDateRaw: Publication date as found or None.\n:vartype publicationDateRaw: str or None\n:ivar updatedAt: Last update timestamp or None.\n:vartype updatedAt: str or None\n:ivar structured: Structured web payload.\n:vartype structured: dict[str, Any]\n:ivar method: Extraction method.\n:vartype method: str\n:ivar layers: Heuristic layers that contributed.\n:vartype layers: list[Any]\n:ivar rawMetadata: Raw page metadata.\n:vartype rawMetadata: dict[str, Any]\n:ivar warnings: Extraction warnings.\n:vartype warnings: list[Any]\n:ivar referenceCandidates: Candidate cited references.\n:vartype referenceCandidates: list[Any]\n:ivar citationCount: Number of structured citations.\n:vartype citationCount: int",
+  "properties": {
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Authors",
+      "type": "array"
+    },
+    "authorsStructured": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Authorsstructured",
+      "type": "array"
+    },
+    "citationCount": {
+      "title": "Citationcount",
+      "type": "integer"
+    },
+    "layers": {
+      "items": {},
+      "title": "Layers",
+      "type": "array"
+    },
+    "method": {
+      "title": "Method",
+      "type": "string"
+    },
+    "publicationDate": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Publicationdate"
+    },
+    "publicationDateRaw": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Publicationdateraw"
+    },
+    "rawMetadata": {
+      "additionalProperties": true,
+      "title": "Rawmetadata",
+      "type": "object"
+    },
+    "referenceCandidates": {
+      "items": {},
+      "title": "Referencecandidates",
+      "type": "array"
+    },
+    "schemaVersion": {
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "sourceUri": {
+      "title": "Sourceuri",
+      "type": "string"
+    },
+    "status": {
+      "const": "ok",
+      "title": "Status",
+      "type": "string"
+    },
+    "structured": {
+      "additionalProperties": true,
+      "title": "Structured",
+      "type": "object"
+    },
+    "subtitle": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Subtitle"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Title"
+    },
+    "updatedAt": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Updatedat"
+    },
+    "warnings": {
+      "items": {},
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "schemaVersion",
+    "sourceUri",
+    "title",
+    "subtitle",
+    "authors",
+    "authorsStructured",
+    "publicationDate",
+    "publicationDateRaw",
+    "updatedAt",
+    "structured",
+    "method",
+    "layers",
+    "rawMetadata",
+    "warnings",
+    "referenceCandidates",
+    "citationCount"
+  ],
+  "title": "WebMetadataResponse",
+  "type": "object"
+}

@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "Request to extract readable text from a source URL.\n\n:ivar source_uri: Source URL.\n:vartype source_uri: str\n:ivar reference_title: Optional reference title context.\n:vartype reference_title: str\n:ivar timeout_seconds: Per-attempt fetch timeout in seconds.\n:vartype timeout_seconds: float",
+  "properties": {
+    "reference_title": {
+      "default": "",
+      "title": "Reference Title",
+      "type": "string"
+    },
+    "source_uri": {
+      "minLength": 1,
+      "title": "Source Uri",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "default": 20.0,
+      "exclusiveMinimum": 0,
+      "title": "Timeout Seconds",
+      "type": "number"
+    }
+  },
+  "required": [
+    "source_uri"
+  ],
+  "title": "UrlTextRequest",
+  "type": "object"
+}

@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "Request to render an accepted steering topic set as a seed manifest.\n\n:ivar input_path: Accepted steering topic-set JSON input path.\n:vartype input_path: str\n:ivar output_path: Destination seed-manifest path.\n:vartype output_path: str",
+  "properties": {
+    "input_path": {
+      "minLength": 1,
+      "title": "Input Path",
+      "type": "string"
+    },
+    "output_path": {
+      "minLength": 1,
+      "title": "Output Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input_path",
+    "output_path"
+  ],
+  "title": "SteeringRenderSeedManifestRequest",
+  "type": "object"
+}

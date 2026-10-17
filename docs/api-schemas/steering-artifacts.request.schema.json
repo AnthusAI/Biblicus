@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "description": "Request to list stable artifact references.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str",
+  "properties": {
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "corpus_path"
+  ],
+  "title": "SteeringArtifactsRequest",
+  "type": "object"
+}

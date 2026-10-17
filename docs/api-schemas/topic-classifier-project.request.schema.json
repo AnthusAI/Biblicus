@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "ExtractionSnapshotReference": {
+      "additionalProperties": false,
+      "description": "Reference to an extraction snapshot.\n\n:ivar extractor_id: Extractor plugin identifier.\n:vartype extractor_id: str\n:ivar snapshot_id: Extraction snapshot identifier.\n:vartype snapshot_id: str",
+      "properties": {
+        "extractor_id": {
+          "minLength": 1,
+          "title": "Extractor Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extractor_id",
+        "snapshot_id"
+      ],
+      "title": "ExtractionSnapshotReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to project a classifier from an authority corpus onto a target corpus.\n\n:ivar classifier_corpus_path: Corpus path holding classifier artifacts.\n:vartype classifier_corpus_path: str\n:ivar target_corpus_path: Corpus path holding the items to classify.\n:vartype target_corpus_path: str\n:ivar classifier_id: Topic classifier identifier.\n:vartype classifier_id: str\n:ivar extraction_snapshot: Target corpus extraction snapshot.\n:vartype extraction_snapshot: ExtractionSnapshotReference\n:ivar project_all: True to project onto every target item.\n:vartype project_all: bool\n:ivar item_ids: Target item identifiers to project.\n:vartype item_ids: list[str]\n:ivar review_threshold: Minimum confidence before review is recommended.\n:vartype review_threshold: float\n:ivar top_k: Maximum ranked topic candidates to include.\n:vartype top_k: int\n:ivar record: True to persist projection predictions as audit records.\n:vartype record: bool",
+  "properties": {
+    "classifier_corpus_path": {
+      "minLength": 1,
+      "title": "Classifier Corpus Path",
+      "type": "string"
+    },
+    "classifier_id": {
+      "minLength": 1,
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "$ref": "#/$defs/ExtractionSnapshotReference"
+    },
+    "item_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Item Ids",
+      "type": "array"
+    },
+    "project_all": {
+      "default": false,
+      "title": "Project All",
+      "type": "boolean"
+    },
+    "record": {
+      "default": false,
+      "title": "Record",
+      "type": "boolean"
+    },
+    "review_threshold": {
+      "default": 0.35,
+      "title": "Review Threshold",
+      "type": "number"
+    },
+    "target_corpus_path": {
+      "minLength": 1,
+      "title": "Target Corpus Path",
+      "type": "string"
+    },
+    "top_k": {
+      "default": 5,
+      "minimum": 1,
+      "title": "Top K",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "classifier_corpus_path",
+    "target_corpus_path",
+    "classifier_id",
+    "extraction_snapshot"
+  ],
+  "title": "TopicClassifierProjectRequest",
+  "type": "object"
+}

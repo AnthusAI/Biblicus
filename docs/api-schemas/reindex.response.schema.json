@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "description": "Catalog rebuild statistics.\n\n:ivar scanned: Files examined.\n:vartype scanned: int\n:ivar skipped: Files skipped.\n:vartype skipped: int\n:ivar inserted: Catalog entries added.\n:vartype inserted: int\n:ivar updated: Catalog entries refreshed.\n:vartype updated: int",
+  "properties": {
+    "inserted": {
+      "minimum": 0,
+      "title": "Inserted",
+      "type": "integer"
+    },
+    "scanned": {
+      "minimum": 0,
+      "title": "Scanned",
+      "type": "integer"
+    },
+    "skipped": {
+      "minimum": 0,
+      "title": "Skipped",
+      "type": "integer"
+    },
+    "updated": {
+      "minimum": 0,
+      "title": "Updated",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "scanned",
+    "skipped",
+    "inserted",
+    "updated"
+  ],
+  "title": "ReindexResponse",
+  "type": "object"
+}
