@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "644757e8-a8c2-4f0f-9c55-7f8aa9419659",
+  "issue_id": "blbs-12b984fe-efe3-4564-b251-3b63c36e3235",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T14:42:33.156Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Land the unmerged curation branches onto main",
+    "description": "Merge cursor/grobid-spacy-dedup-1503 (superset of codex/steering-taxonomy) and codex/bounded-web-transform onto the current base so taxonomy, steering, topic-classifier, topic-context, topic-trends, context-pack build-blocks, summarize map-reduce and extract article-text reach main. Resolve conflicts, keep feature files, make lint and tests pass, register everything in docs/feature-index.md.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude",
+      "name": "Claude"
+    }
+  }
+}
