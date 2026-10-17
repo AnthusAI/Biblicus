@@ -10,9 +10,24 @@
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "91c9eb9b-c7fd-44b0-b4be-2975a7e046c1",
+      "author": "unknown",
+      "text": "Triage run 2026-10-17 using `git cherry origin/main origin/<branch>` (+ = commit not on main by patch; - = already on main).\n\nSafe to delete (cherry all `-`): branch (1), cursor/catalog-compat-main-156a (1), codex/topic-intent-modeling-sanitized (1). No deletion done; merged-branch deletion is handled through blbs-1aca09.\n\nHas unmerged work (needs Ryan decision, ahead/behind main, `+` count):\n- feat/gdrive-residio-corpus: 24/204, +24, last 2026-05-08 (corpus/scenario records; chore commits)\n- feature/graph-extraction-layer: 6/207, +5 (1 already on main), last 2026-02-04\n- feature/graph-extractor-baselines: 10/207, +9 (1 already on main), last 2026-02-04\n- feature/reinforcement-memory: 11/204, +11, last 2026-03-14 (CI stabilization/coverage commits; overlaps repo hygiene PR 64)\n- feature/shared-anthus-footer: 3/146, +2, last 2026-03-30 (docs site Anthus footer)\n- fix/dependabot-vulnerabilities: 1/86, +1, last 2026-04-17 (package-lock update)\n- retrieval-extraction-run-fallback: 4/215, +4, last 2026-02-02 (warns on latest extraction run fallback; conflicts with the no-fallback policy, so likely delete)\n- update-docs: 1/215, +1, last 2026-02-02 (docs fix: backend name tf-vector)\n- dev: 2/178, +2, last 2026-03-17 (reinforcement memory diagram)\n- develop: 1/25, +1, last 2026-07-09 (feat(rca) OpenAI reinforcement memory helpers); CI integration-branch reference still unresolved\n\nDrafts: PR 57 (docs/anthus-readme-closer, 1 commit, +1) and PR 58 (cursor/kanbus-264-agent-provenance-44d0, 1 commit, +1) are both still open drafts, 18 commits behind main. Not closed or merged yet; waiting on Ryan since PR 58 rewrites AGENTS.md and CONTRIBUTING_AGENT.md.\n",
+      "created_at": "2026-10-17T16:59:10.146817Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "Claude",
+        "settings": {}
+      }
+    }
+  ],
   "created_at": "2026-10-17T16:41:48.696377Z",
-  "updated_at": "2026-10-17T16:41:48.696669Z",
+  "updated_at": "2026-10-17T16:59:10.147227Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,
