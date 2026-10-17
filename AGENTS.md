@@ -104,6 +104,16 @@ Tactus is a separate project: an imperative, sandboxed Lua domain-specific langu
 - **Development flow**: update `features/*.feature`, implement, run tests; use the command-line interface to ingest; `reindex` refreshes catalog.
 - **Kanbus tracking**: This project uses **Kanbus** for issue and task tracking (project key `blbs`). Use `kbs`/`kanbus` commands; do not use Beads.
 
+### Scope boundary
+
+Biblicus manages corpora and produces evidence, extracted text, analysis outputs, and context packs. It does not absorb work that belongs to its consumers:
+
+- **Editorial state belongs to Papyrus.** Biblicus does not hold categories, accepted or rejected proposals, or assignments. Papyrus stores its extension fields under `metadata.papyrus`, and Biblicus does not interpret them.
+- **Learned decisions belong to Cyclotron.** Biblicus does not learn decisions from human labels. It supplies extracted text, item metadata, and topic signals as features; Cyclotron decides.
+- **Publishing belongs to Papyrus and Markus.** Biblicus does not publish.
+
+If a proposed feature needs one of these, it belongs in that project. See `docs/roadmap.md` for the hand-off plan.
+
 ## Local telemetry for AI-assisted iteration
 
 This repo includes a **dev-only telemetry bridge** that forwards browser console output to the local API server and writes JSONL logs to disk. It exists to help AI coding agents iterate without asking you to copy/paste console output.
