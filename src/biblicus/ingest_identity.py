@@ -144,11 +144,15 @@ def _doi_candidate(value: str) -> str:
         path = parsed.path.lstrip("/")
         if host in {"doi.org", "dx.doi.org", "www.doi.org"}:
             candidate = path
-        elif (host == "nature.com" or host.endswith(".nature.com")) and path.startswith("articles/"):
+        elif _registered_domain(host) == "nature.com" and path.startswith("articles/"):
             article_id = path.split("/", 1)[1].split("/", 1)[0]
             candidate = f"10.1038/{article_id}"
     candidate = re.sub(r"^doi:\s*", "", candidate, flags=re.IGNORECASE)
     return candidate
+
+
+def _registered_domain(host: str) -> str:
+    return ".".join(host.split(".")[-2:])
 
 
 def _documentcloud_identity_key(value: str) -> Optional[str]:
@@ -172,7 +176,7 @@ def _documentcloud_identity_key(value: str) -> Optional[str]:
         and path_parts[2].isdigit()
     ):
         return f"documentcloud:{path_parts[2]}"
-    if (host == "documentcloud.org" or host.endswith(".documentcloud.org")) and len(path_parts) >= 2 and path_parts[0] == "documents":
+    if _registered_domain(host) == "documentcloud.org" and len(path_parts) >= 2 and path_parts[0] == "documents":
         if path_parts[1].isdigit():
             return f"documentcloud:{path_parts[1]}"
     return None

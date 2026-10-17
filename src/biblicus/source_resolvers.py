@@ -198,13 +198,17 @@ def _parse_documentcloud_reference(source_uri: str) -> Optional[DocumentCloudRef
         match = _DOCUMENTCLOUD_API_PATTERN.match(path)
         if match:
             return DocumentCloudReference(document_id=int(match.group("id")))
-    if (host == "documentcloud.org" or host.endswith(".documentcloud.org")):
+    if _registered_domain(host) == "documentcloud.org":
         match = _DOCUMENTCLOUD_ASSET_PATTERN.match(path)
         if match:
             return DocumentCloudReference(
                 document_id=int(match.group("id")), slug=match.group("slug")
             )
     return None
+
+
+def _registered_domain(host: str) -> str:
+    return ".".join(host.split(".")[-2:])
 
 
 def _load_json(url: str) -> Any:
