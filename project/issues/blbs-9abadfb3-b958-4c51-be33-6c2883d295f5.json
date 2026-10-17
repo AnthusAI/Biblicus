@@ -3,7 +3,7 @@
   "title": "Fix PyPI publication in release workflow",
   "description": "",
   "type": "bug",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -46,11 +46,20 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "1154bef2-f458-4ee7-90f4-cb991450c939",
+      "author": "home",
+      "text": "End-to-end validation completed after restoring Pages and serializing bot writes in PR #60. Release https://github.com/AnthusAI/Biblicus/actions/runs/39047775001 completed SUCCESS: reusable semantic release and explicit publish_pypi both passed. Published GitHub release https://github.com/AnthusAI/Biblicus/releases/tag/v1.11.4 and public https://pypi.org/project/biblicus/1.11.4/ verified; wheel and sdist present, non-yanked. Version selected automatically from existing conventional fixes; no forced bump.",
+      "created_at": "2026-10-17T16:05:31.006031Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-03-27T06:48:09.103673Z",
-  "updated_at": "2026-10-17T15:43:30.241879Z",
-  "closed_at": null,
+  "updated_at": "2026-10-17T16:05:31.523699Z",
+  "closed_at": "2026-10-17T16:05:31.523614Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
   "custom": {},

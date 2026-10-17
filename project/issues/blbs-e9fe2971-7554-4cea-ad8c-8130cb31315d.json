@@ -3,7 +3,7 @@
   "title": "Align release workflow with platform-ci reusable semantic release",
   "description": "",
   "type": "chore",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -172,11 +172,20 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "151f69ab-0c41-40ea-b7d1-09eb5d181e2a",
+      "author": "home",
+      "text": "Shared platform-ci integration verified in production: main CI/deploy 39047082559 SUCCESS; Release 39047775001 SUCCESS (semantic release + PyPI); Coverage Badge 39047775063 SUCCESS. PR #60 adds shared workflow-level main-automation concurrency to prevent badge/release main-write race, observed queued badge during release. v1.11.4 published automatically and public package metadata verified. Existing bot auth, scopes and branch protections preserved.",
+      "created_at": "2026-10-17T16:05:32.787335Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-03-23T16:55:44.504275Z",
-  "updated_at": "2026-10-17T15:44:31.204989Z",
-  "closed_at": null,
+  "updated_at": "2026-10-17T16:05:33.330681Z",
+  "closed_at": "2026-10-17T16:05:33.330592Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
   "custom": {},

@@ -3,7 +3,7 @@
   "title": "Serialize release and coverage badge writes to main",
   "description": "As a maintainer, I want automated main writers serialized so successful CI can publish a release without the coverage badge racing it. Observed Release run 39046316429 fail after build because Coverage Badge run 39046316427 moved main from 807b184 to 2cb44f7. Scope: repository workflow concurrency only; retain existing CI/release gates, bot auth and shared reusable workflows. Plan: reproduce concurrency mismatch, assign the same non-cancelling group to both callers, validate workflow syntax and checks, merge via PR, follow deployment/release/PyPI. Acceptance: Given successful main CI, when Release and Coverage Badge run, then only one may write main at a time and both can finish without cancelling each other.",
   "type": "bug",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -28,11 +28,48 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "ae3a7907-33ad-4fbb-a52c-45f96727e9b4",
+      "author": "home",
+      "text": "PR https://github.com/AnthusAI/Biblicus/pull/60 merged 2026-10-17T15:54:13Z as 667d530cbf1d97bc23cd6304ba3332dd87357b6d. All required PR checks passed: lint, tests Python 3.10/3.11/3.12, docs, Analyze (Python), plus Snyk. Auto-merge was unavailable, so merged normally only after green checks. Main CI and downstream release will provide end-to-end verification of serialization.",
+      "created_at": "2026-10-17T15:54:29.030287Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "codex",
+        "model": "gpt-6.1-sol",
+        "name": "Biblicus-deployment-recovery",
+        "settings": {}
+      }
+    },
+    {
+      "id": "f0db0ba9-fba4-473e-b0f0-9027f1acc732",
+      "author": "home",
+      "text": "Main CI run https://github.com/AnthusAI/Biblicus/actions/runs/39047082559 completed SUCCESS on merged commit 667d530: lint, tests 3.10/3.11/3.12, docs and deploy-docs all passed. At 16:04 UTC, Release run 39047775001 is in_progress while Coverage Badge run 39047775063 is pending, confirming the shared concurrency group is serializing the actual workflow runs. Awaiting release/PyPI terminal results.",
+      "created_at": "2026-10-17T16:04:21.600466Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "codex",
+        "model": "gpt-6.1-sol",
+        "name": "Biblicus-deployment-recovery",
+        "settings": {}
+      }
+    },
+    {
+      "id": "996494ef-83b0-4876-805a-1ba15c44792e",
+      "author": "home",
+      "text": "Resolved by PR https://github.com/AnthusAI/Biblicus/pull/60, merged as 667d530cbf1d97bc23cd6304ba3332dd87357b6d. Main CI/deploy 39047082559 succeeded. Actual Release 39047775001 ran while Coverage Badge 39047775063 waited pending; both completed SUCCESS in sequence. Release created v1.11.4 automatically at commit fa268ad71e4651e80431ddb5d9019d4ac496a856, and publish_pypi passed. Public PyPI version 1.11.4 has non-yanked wheel and sdist uploaded 16:04:46/48 UTC. New main served homepage, API page and stylesheet return 200 and exactly match CI docs-html artifact. No manual bump or security/credential changes.",
+      "created_at": "2026-10-17T16:05:29.126618Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-10-17T15:44:54.706602Z",
-  "updated_at": "2026-10-17T15:45:16.102103Z",
-  "closed_at": null,
+  "updated_at": "2026-10-17T16:05:29.724342Z",
+  "closed_at": "2026-10-17T16:05:29.724232Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
   "custom": {},
