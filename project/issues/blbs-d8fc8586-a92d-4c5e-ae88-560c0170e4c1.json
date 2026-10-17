@@ -3,16 +3,31 @@
   "title": "Repository hygiene: remove tracked cruft, consolidate coverage config, un-skip reinforcement memory suites",
   "description": "Delete tracked console.log, junit-reports/, results/, tmp_crawl_debug/, _demo_embedding_retrieval/, project.kanbus.bak/, src/biblicus/inference.py,cover and CHANGELOG_STT_BENCHMARKING.md; add .gitignore rules; keep .coveragerc as the only coverage config and delete the dead [tool.coverage] section in pyproject.toml; stop ignoring the reinforcement memory pytest suites in scripts/test.py and make them pass.",
   "type": "task",
-  "status": "open",
+  "status": "in_progress",
   "priority": 1,
   "assignee": null,
   "creator": null,
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "6d4ff2d0-96d4-480c-b712-14ada7e4a5eb",
+      "author": "unknown",
+      "text": "Started on branch claude/project-thread-dmru5y-repo-hygiene from c829745 (stacked on cursor/reference-anchor-1503). Plan: remove tracked artifacts with .gitignore rules, fold CHANGELOG_STT_BENCHMARKING.md into docs/guides/stt-benchmarking.md, delete dead [tool.coverage] in pyproject.toml, re-enable reinforcement memory suites, set fail_under to measured coverage.",
+      "created_at": "2026-10-17T14:45:00.370009Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude",
+        "name": "Claude",
+        "settings": {}
+      }
+    }
+  ],
   "created_at": "2026-10-17T14:42:22.324691Z",
-  "updated_at": "2026-10-17T14:42:22.324956Z",
+  "updated_at": "2026-10-17T14:45:00.370176Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,
