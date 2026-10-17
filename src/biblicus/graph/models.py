@@ -244,6 +244,12 @@ class GraphExtractionItemSummary(BaseModel):
     :vartype status: str
     :ivar error_message: Optional error message.
     :vartype error_message: str or None
+    :ivar error_reason: Optional normalized error reason.
+    :vartype error_reason: str or None
+    :ivar duration_ms: Item processing duration in milliseconds.
+    :vartype duration_ms: int or None
+    :ivar attempts: Number of extraction attempts for this item.
+    :vartype attempts: int or None
     """
 
     model_config = ConfigDict(extra="forbid")

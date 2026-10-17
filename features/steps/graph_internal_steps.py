@@ -439,6 +439,10 @@ def step_run_graph_extract_command_with_config(context) -> None:
         configuration_name="default",
         extraction_snapshot=ref.as_string(),
         override=[],
+        max_items=None,
+        item_timeout_seconds=60.0,
+        item_retry_attempts=0,
+        heartbeat_interval_seconds=10.0,
     )
     prior_auto_start = os.environ.get("BIBLICUS_NEO4J_AUTO_START")
     os.environ["BIBLICUS_NEO4J_AUTO_START"] = "false"
@@ -463,6 +467,10 @@ def step_run_graph_extract_command_without_snapshots(context) -> None:
         configuration_name="default",
         extraction_snapshot=None,
         override=[],
+        max_items=None,
+        item_timeout_seconds=60.0,
+        item_retry_attempts=0,
+        heartbeat_interval_seconds=10.0,
     )
     try:
         cmd_graph_extract(arguments)

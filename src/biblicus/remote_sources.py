@@ -4,8 +4,14 @@ Remote source adapters for Biblicus corpora.
 
 from __future__ import annotations
 
+import hashlib
+import mimetypes
+import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterable, Optional, Tuple
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 from .errors import RemoteSourceDependencyError
 from .models import RemoteCorpusSourceConfig, RemoteSourceItem
@@ -118,7 +124,7 @@ class AzureBlobRemoteSource:
             from azure.storage.blob import ContainerClient
         except ImportError as import_error:
             raise RemoteSourceDependencyError(
-                'Remote Azure Blob sources require azure-storage-blob. '
+                "Remote Azure Blob sources require azure-storage-blob. "
                 'Install it with pip install "biblicus[azure]".'
             ) from import_error
         if self._azure.connection_string:
@@ -179,6 +185,157 @@ class AzureBlobRemoteSource:
         return content, item.content_type
 
 
+def parse_google_drive_folder_id(folder_url: str) -> Optional[str]:
+    """
+    Parse the folder identifier from a Google Drive folder URL.
+
+    :param folder_url: Google Drive folder URL.
+    :type folder_url: str
+    :return: Parsed folder identifier when present.
+    :rtype: str or None
+    """
+    parsed = urlparse(folder_url)
+    path_parts = [part for part in parsed.path.split("/") if part]
+    if "folders" in path_parts:
+        index = path_parts.index("folders")
+        if len(path_parts) > index + 1:
+            candidate = path_parts[index + 1].strip()
+            if candidate:
+                return candidate
+    query_id = parse_qs(parsed.query).get("id", [])
+    if query_id:
+        candidate = (query_id[0] or "").strip()
+        if candidate:
+            return candidate
+    return None
+
+
+class GoogleDriveRemoteSource:
+    """
+    Remote source adapter for Google Drive shared folders.
+    """
+
+    def __init__(self, config: RemoteCorpusSourceConfig, profile: SourceProfileConfig) -> None:
+        self._config = config
+        self._profile = profile
+        self._mirror_dir = Path(tempfile.mkdtemp(prefix="biblicus-gdrive-"))
+        self._mirrored = False
+
+    def _mirror_folder(self) -> None:
+        if self._mirrored:
+            return
+        folder_url = (self._config.folder_url or "").strip()
+        if not folder_url:
+            raise ValueError("Remote Google Drive source requires folder_url")
+        try:
+            import gdown
+        except ImportError as import_error:
+            raise RemoteSourceDependencyError(
+                "Remote Google Drive sources require gdown. "
+                'Install it with pip install "biblicus[google-drive]".'
+            ) from import_error
+        planned_downloads = gdown.download_folder(
+            url=folder_url,
+            output=str(self._mirror_dir),
+            quiet=True,
+            remaining_ok=True,
+            skip_download=True,
+        )
+        if planned_downloads is None:
+            raise ValueError("Failed to list Google Drive folder contents")
+        prefix = self._config.prefix or ""
+        for planned in planned_downloads:
+            if prefix and not str(planned.path).startswith(prefix):
+                continue
+            target = Path(planned.local_path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            downloaded = self._download_file_by_id(file_id=str(planned.id), target=target)
+            if not downloaded:
+                try:
+                    gdown.download(id=str(planned.id), output=str(target), quiet=True)
+                    downloaded = True
+                except Exception:
+                    downloaded = False
+            if not downloaded:
+                continue
+        self._mirrored = True
+
+    def _download_file_by_id(self, *, file_id: str, target: Path) -> bool:
+        query = urlencode({"id": file_id})
+        url = f"https://drive.usercontent.google.com/download?{query}"
+        request = Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        try:
+            with urlopen(request, timeout=120) as response:
+                content_type = response.headers.get_content_type()
+                if content_type == "text/html":
+                    return False
+                with target.open("wb") as handle:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        handle.write(chunk)
+        except Exception:
+            return False
+        return True
+
+    def _content_root(self) -> Path:
+        self._mirror_folder()
+        return self._mirror_dir
+
+    def list_items(self) -> list[RemoteSourceItem]:
+        """
+        List items mirrored from the configured Google Drive folder.
+
+        :return: Remote source items describing each downloaded file.
+        :rtype: list[RemoteSourceItem]
+        """
+        root = self._content_root()
+        folder_url = (self._config.folder_url or "").strip()
+        folder_id = parse_google_drive_folder_id(folder_url) or "folder"
+        prefix = self._config.prefix or ""
+        items = []
+        for file_path in sorted(root.rglob("*")):
+            if not file_path.is_file():
+                continue
+            key = file_path.relative_to(root).as_posix()
+            if prefix and not key.startswith(prefix):
+                continue
+            stat = file_path.stat()
+            last_modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+            media_type, _ = mimetypes.guess_type(file_path.name)
+            etag = hashlib.sha256(file_path.read_bytes()).hexdigest()
+            items.append(
+                RemoteSourceItem(
+                    key=key,
+                    source_uri=f"gdrive://{folder_id}/{key}",
+                    etag=etag,
+                    last_modified=_isoformat_timestamp(last_modified),
+                    size=int(stat.st_size),
+                    content_type=media_type,
+                )
+            )
+        return items
+
+    def fetch_bytes(self, item: RemoteSourceItem) -> Tuple[bytes, Optional[str]]:
+        """
+        Fetch the raw bytes for a mirrored Google Drive file.
+
+        :param item: Remote source item to download.
+        :type item: RemoteSourceItem
+        :return: Tuple containing file bytes and content type.
+        :rtype: tuple[bytes, Optional[str]]
+        """
+        path = self._content_root() / item.key
+        payload = path.read_bytes()
+        media_type, _ = mimetypes.guess_type(path.name)
+        content_type = item.content_type or media_type
+        return payload, content_type
+
+
 def iter_items(source: object) -> Iterable[RemoteSourceItem]:
     """
     Return the iterable of items for a supported remote source adapter.
@@ -192,5 +349,7 @@ def iter_items(source: object) -> Iterable[RemoteSourceItem]:
     if isinstance(source, S3RemoteSource):
         return source.list_items()
     if isinstance(source, AzureBlobRemoteSource):
+        return source.list_items()
+    if isinstance(source, GoogleDriveRemoteSource):
         return source.list_items()
     raise ValueError("Unsupported remote source")

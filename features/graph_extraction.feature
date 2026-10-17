@@ -108,6 +108,21 @@ Feature: Graph extraction snapshots
     When I show graph extraction snapshot "simple-entities" in corpus "corpus"
     Then the graph extraction snapshot graph identifier starts with "simple-entities:"
 
+  Scenario: Graph extraction reports progress while writing a snapshot
+    Given I initialized a corpus at "corpus"
+    When I ingest the text "Ada Lovelace and Alan Turing." with no metadata into corpus "corpus"
+    And I ingest the text "Grace Hopper built compilers." with no metadata into corpus "corpus"
+    And I build a "pipeline" extraction snapshot in corpus "corpus" with stages:
+      | extractor_id      | config_json |
+      | pass-through-text | {}          |
+    And I build a "simple-entities" graph extraction snapshot in corpus "corpus" using the latest extraction snapshot and config:
+      | key               | value |
+      | min_entity_length | 3     |
+    Then standard error includes "[graph] starting snapshot"
+    And standard error includes "[graph] processed 1/2"
+    And standard error includes "[graph] processed 2/2"
+    And standard error includes "[graph] completed snapshot"
+
   Scenario: Graph extraction auto-starts Neo4j when missing
     Given I initialized a corpus at "corpus"
     And a fake Neo4j driver is installed

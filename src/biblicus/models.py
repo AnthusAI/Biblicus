@@ -74,7 +74,7 @@ class RemoteCorpusSourceConfig(BaseModel):
     """
     Configuration for a remote corpus source.
 
-    :ivar kind: Remote source kind (s3 or azure-blob).
+    :ivar kind: Remote source kind (s3, azure-blob, or google-drive).
     :vartype kind: str
     :ivar profile: Source profile name in user configuration.
     :vartype profile: str
@@ -86,6 +86,8 @@ class RemoteCorpusSourceConfig(BaseModel):
     :vartype container: str or None
     :ivar prefix: Optional remote prefix to scope the mirror.
     :vartype prefix: str
+    :ivar folder_url: Google Drive folder URL for google-drive sources.
+    :vartype folder_url: str or None
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -96,10 +98,11 @@ class RemoteCorpusSourceConfig(BaseModel):
     bucket: Optional[str] = None
     container: Optional[str] = None
     prefix: str = Field(default="")
+    folder_url: Optional[str] = None
 
     @model_validator(mode="after")
     def _validate_source_kind(self) -> "RemoteCorpusSourceConfig":
-        if self.kind not in {"s3", "azure-blob"}:
+        if self.kind not in {"s3", "azure-blob", "google-drive"}:
             raise ValueError(f"Unsupported remote source kind: {self.kind}")
         if self.kind == "s3":
             if not (isinstance(self.bucket, str) and self.bucket.strip()):
@@ -107,6 +110,9 @@ class RemoteCorpusSourceConfig(BaseModel):
         if self.kind == "azure-blob":
             if not (isinstance(self.container, str) and self.container.strip()):
                 raise ValueError("Remote Azure Blob source requires container")
+        if self.kind == "google-drive":
+            if not (isinstance(self.folder_url, str) and self.folder_url.strip()):
+                raise ValueError("Remote Google Drive source requires folder_url")
         return self
 
 
@@ -388,6 +394,25 @@ class RemoteSourcePullResult(BaseModel):
     errored: int = Field(default=0, ge=0)
 
 
+class CatalogItemDates(BaseModel):
+    """
+    Canonical date metadata projected from item metadata.
+
+    :ivar published_at: Original content publication date or timestamp.
+    :vartype published_at: str or None
+    :ivar updated_at: Original content update date or timestamp.
+    :vartype updated_at: str or None
+    :ivar retrieved_at: Retrieval timestamp for the stored source.
+    :vartype retrieved_at: str or None
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    published_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    retrieved_at: Optional[str] = None
+
+
 class CatalogItem(BaseModel):
     """
     Catalog entry derived from a raw corpus item.
@@ -408,6 +433,8 @@ class CatalogItem(BaseModel):
     :vartype tags: list[str]
     :ivar metadata: Merged front matter or sidecar metadata.
     :vartype metadata: dict[str, Any]
+    :ivar dates: Canonical date metadata projected from metadata.dates.
+    :vartype dates: CatalogItemDates or None
     :ivar created_at: International Organization for Standardization 8601 timestamp when the item was first indexed.
     :vartype created_at: str
     :ivar source_uri: Optional source uniform resource identifier used at ingestion time.
@@ -424,6 +451,7 @@ class CatalogItem(BaseModel):
     title: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    dates: Optional[CatalogItemDates] = None
     created_at: str
     source_uri: Optional[str] = None
 

@@ -111,7 +111,7 @@ class SourceProfileConfig(BaseModel):
 
     :ivar name: Unique profile name.
     :vartype name: str
-    :ivar kind: Remote source kind (s3 or azure-blob).
+    :ivar kind: Remote source kind (s3, azure-blob, or google-drive).
     :vartype kind: str
     :ivar access_key_id: AWS access key identifier.
     :vartype access_key_id: str or None
@@ -149,7 +149,7 @@ class SourceProfileConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_kind(self) -> "SourceProfileConfig":
-        if self.kind not in {"s3", "azure-blob"}:
+        if self.kind not in {"s3", "azure-blob", "google-drive"}:
             raise ValueError(f"Unsupported source profile kind: {self.kind}")
         return self
 
@@ -406,9 +406,7 @@ def resolve_source_profile(
         resolved.account_name = env_account or resolved.account_name
         resolved.account_key = env_key or resolved.account_key
         if resolved.connection_string and not resolved.account_name:
-            parsed_account = _parse_account_name_from_connection_string(
-                resolved.connection_string
-            )
+            parsed_account = _parse_account_name_from_connection_string(resolved.connection_string)
             resolved.account_name = parsed_account or resolved.account_name
         if resolved.connection_string:
             return resolved
@@ -417,6 +415,8 @@ def resolve_source_profile(
                 "Azure storage credentials not found. Set AZURE_STORAGE_CONNECTION_STRING "
                 "or configure sources in .biblicus/config.yml."
             )
+    elif resolved.kind == "google-drive":
+        return resolved
     else:
         raise ValueError(f"Unsupported source profile kind: {resolved.kind}")
 

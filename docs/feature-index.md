@@ -507,3 +507,101 @@ Integration scripts:
 - `scripts/download_pdf_samples.py`
 - `scripts/download_mixed_samples.py`
 - `scripts/download_audio_samples.py`
+
+## Taxonomy
+
+What it does:
+
+- Discovers accepted topic taxonomy and ontology assertions from a corpus and records accepted taxonomy manifests.
+
+Documentation:
+
+- `docs/taxonomy-ontology.md`
+
+Behavior specifications:
+
+- `features/taxonomy_ontology.feature`
+
+Primary implementation:
+
+- `src/biblicus/taxonomy.py`
+
+## Steering
+
+What it does:
+
+- Exports steering artifacts, graph signals, and seed manifests, and manages steering proposals and feedback.
+
+Documentation:
+
+- `docs/steering-integration.md`
+- `docs/steering-proposals.md`
+
+Behavior specifications:
+
+- `features/steering_contract.feature`
+- `features/steering_proposals.feature`
+
+Primary implementation:
+
+- `src/biblicus/steering.py`
+- `src/biblicus/steering_proposals.py`
+- `src/biblicus/steering_feedback.py`
+
+## Topic intelligence
+
+What it does:
+
+- Trains and projects topic classifiers, builds topic context for research agents, and reports topic trends over time.
+
+Documentation:
+
+- `docs/topic-classifier.md`
+- `docs/topic-trends.md`
+- `docs/research-agent-intake.md`
+
+Behavior specifications:
+
+- `features/topic_classifier.feature`
+- `features/topic_context.feature`
+- `features/topic_trends.feature`
+- `features/research_intake.feature`
+
+Primary implementation:
+
+- `src/biblicus/topic_classifier.py`
+- `src/biblicus/topic_context.py`
+- `src/biblicus/topic_trends.py`
+- `src/biblicus/research_intake.py`
+
+## Bounded web transform
+
+What it does:
+
+- Extracts article text from web pages and summarizes items with a bounded map-reduce transform.
+
+Documentation:
+
+- `docs/bounded-web-transform.md`
+
+Behavior specifications:
+
+- `features/bounded_web_transform.feature`
+
+Primary implementation:
+
+- `src/biblicus/cli.py`
+
+## Context pack blocks
+
+What it does:
+
+- Builds ordered context-block packs with `context-pack build-blocks`.
+
+Documentation:
+
+- `docs/context-pack.md`
+
+Behavior specifications:
+
+- `features/context_pack_cli.feature`

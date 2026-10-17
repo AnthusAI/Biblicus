@@ -8,7 +8,7 @@
 
 The metadata text extractor generates searchable text representations from catalog item metadata. Instead of processing file content, it creates small, stable text artifacts from titles and tags stored in the corpus catalog.
 
-This extractor is designed for retrieval over non-text items like images, audio, or binary files where the metadata provides the primary semantic signal. It's also useful for comparing retrieval backends while keeping extraction deterministic and stable.
+This extractor is designed for retrieval over non-text items like images, audio, or binary files where the metadata provides the primary semantic signal. It's also useful for comparing retrieval backends while keeping extraction deterministic and stable. For topic modeling, explicit field selection can emit title and abstract text without leaking tags or curation metadata into discovery.
 
 ## Installation
 
@@ -30,6 +30,7 @@ All media types are supported. The extractor processes any catalog item that has
 class MetadataTextExtractorConfig(BaseModel):
     include_title: bool = True   # Include item title
     include_tags: bool = True    # Include tags line
+    fields: list[str] = []       # Explicit field paths to emit
 ```
 
 ### Configuration Options
@@ -38,6 +39,9 @@ class MetadataTextExtractorConfig(BaseModel):
 |--------|------|---------|-------------|
 | `include_title` | bool | `true` | Include the item title as the first line |
 | `include_tags` | bool | `true` | Include a `tags: ...` line if tags exist |
+| `fields` | list[str] | `[]` | Explicit field paths to emit instead of the default title/tags behavior |
+
+When `fields` is present, only those fields are emitted. Supported paths are `title`, `tags`, and `metadata.<key>`.
 
 ## Usage
 
@@ -66,6 +70,18 @@ config:
   include_title: true
   include_tags: true
 ```
+
+For blind topic discovery over research papers, use explicit metadata fields:
+
+```yaml
+extractor_id: metadata-text
+config:
+  fields:
+    - title
+    - metadata.abstract
+```
+
+This excludes tags, `curation.*`, and other metadata by construction.
 
 ```bash
 biblicus extract my-corpus --configuration configuration.yml

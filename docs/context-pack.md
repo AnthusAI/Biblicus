@@ -153,3 +153,44 @@ fitted_context_pack = fit_context_pack_to_token_budget(
 )
 print(fitted_context_pack.text)
 ```
+
+## Ordered context blocks
+
+Some systems assemble context from doctrine, summaries, or memory sections
+before budgeting. Biblicus supports that by accepting an ordered list of
+context blocks instead of a retrieval result.
+
+In Python:
+
+```python
+from biblicus.context import (
+    ContextBlock,
+    ContextBlockBuildRequest,
+    ContextSectionBudget,
+    build_context_pack_from_blocks,
+)
+
+request = ContextBlockBuildRequest(
+    blocks=[
+        ContextBlock(block_id="doctrine-1", section="doctrine", text="Mission paragraph", required=True),
+        ContextBlock(block_id="memory-1", section="desk_memory", text="Recent assignment summary"),
+        ContextBlock(block_id="memory-2", section="desk_memory", text="Older assignment summary"),
+    ],
+    max_tokens=20,
+    section_budgets=[
+        ContextSectionBudget(section="doctrine", share=0.25),
+        ContextSectionBudget(section="desk_memory", share=0.75),
+    ],
+)
+result = build_context_pack_from_blocks(request)
+print(result.text)
+```
+
+The command-line interface can build the same structure from standard input:
+
+```bash
+cat context-blocks.json | biblicus context-pack build-blocks
+```
+
+The result includes final text plus the included and dropped blocks, section
+token counts, and applied budgets.
