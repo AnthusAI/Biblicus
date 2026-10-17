@@ -1,0 +1,22 @@
+{
+  "id": "blbs-eeb23e9a-9037-43e8-940f-0f2b3ff9a158",
+  "title": "Fix PyPI upload rejection from direct URL dependency in ner extra",
+  "description": "PyPI returned 400 for 1.14.0 (and earlier releases since 1.12.0) because the ner extra pinned en-core-web-sm by direct URL. Removed it; docs already tell users to run python -m spacy download en_core_web_sm. Added a guard test.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 0,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T21:32:55.801025Z",
+  "updated_at": "2026-10-17T21:33:09.277838Z",
+  "closed_at": "2026-10-17T21:33:09.277612Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}

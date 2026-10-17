@@ -2234,22 +2234,6 @@ files = [
 dev = ["coverage", "pytest (>=7.4.4)"]
 
 [[package]]
-name = "en_core_web_sm"
-version = "3.8.0"
-description = "English pipeline optimized for CPU. Components: tok2vec, tagger, parser, senter, ner, attribute_ruler, lemmatizer."
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"ner\""
-files = [
-    {file = "en_core_web_sm-3.8.0-py3-none-any.whl", hash = "sha256:1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85"},
-]
-
-[package.source]
-type = "url"
-url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
-
-[[package]]
 name = "et-xmlfile"
 version = "2.0.0"
 description = "An implementation of lxml.xmlfile for the standard library"
@@ -11087,7 +11071,7 @@ google-drive = ["gdown"]
 markitdown = ["markitdown", "onnxruntime"]
 markov-analysis = ["hmmlearn"]
 neo4j = ["neo4j"]
-ner = ["en_core_web_sm", "spacy"]
+ner = ["spacy"]
 ocr = ["rapidocr-onnxruntime"]
 openai = ["openai"]
 paddleocr = ["huggingface_hub", "paddleocr", "paddlepaddle", "requests"]
@@ -11100,4 +11084,4 @@ web = ["beautifulsoup4"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "eedf59e0f20ffd5f0b3c3abd9f3321efcfdeaaa6dc52b9b83821523f39fc85bf"
+content-hash = "4b6d8b07ac529e7504d9506ea916fe5978753174cdbe459d36a22e707699b1fb"
