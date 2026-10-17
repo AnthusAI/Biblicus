@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "33645043-d00e-4cdd-a6ed-d8aa8b70fce7",
+  "issue_id": "blbs-5e783eb4-cbb7-4d81-9a23-a65eb25841d9",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T16:40:42.985Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Move Papyrus catalog fields under metadata.papyrus and delete both compatibility shims",
+    "description": "## Goal\nDelete both compatibility shims for the catalog by giving Papyrus extension data one home.\n\n## Background\nPapyrus writes top-level fields into `metadata/catalog.json` items (`identifiers`, `papyrus`, `summary`, `subtitle`, `title_subtitle_resolution`, and others listed in Papyrus `reference_curation_signals.py` `CATALOG_EXTENSION_ROOT_FIELDS`). Biblicus answered with `src/biblicus/catalog_compat.py`, which folds unknown fields into `metadata` on read. Papyrus answered with `_preflight_biblicus_catalog_compatibility` in `analysis_commands.py`, which rejects those same fields before graph extraction.\n\n## Work\n1. Biblicus: document `metadata.papyrus` as the extension location. Migration: a one-time command or script that moves existing top-level extension fields under `metadata`. Then delete `catalog_compat.py` and make strict `CatalogItem` validation the only path. No fallback.\n2. Papyrus (repo AnthusAI/Papyrus): write extension fields under `metadata.papyrus`, delete `_preflight_biblicus_catalog_compatibility` and the `.biblicus/catalog.json` fallback in `reference_curation_signals.py`, and remove the legacy mixed-case corpus folder fallback in `analysis_commands.py`.\n3. Migrate the Pilobol.us and Papyrus corpora.\n\nDepends on blbs-def144 (Corpus path accessors).",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "Claude"
+    }
+  }
+}

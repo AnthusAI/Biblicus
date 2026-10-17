@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "3a27afbd-e365-4d18-94f2-f1dee5b6dc15",
+  "issue_id": "blbs-45b76d95-123a-4f29-89ce-a403bb5377e7",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T16:41:48.696Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Triage remote branches with unmerged commits",
+    "description": "## Goal\nRemote branches with unmerged commits that are not part of the current work. Decide per branch: merge, rebase and PR, or delete.\n\nBranches (commits ahead of main on 2026-10-17): branch (1), feat/gdrive-residio-corpus (24), feature/graph-extraction-layer (6), feature/graph-extractor-baselines (10), feature/reinforcement-memory (11), feature/shared-anthus-footer (3), fix/dependabot-vulnerabilities (1), retrieval-extraction-run-fallback (4), update-docs (1), dev (2), develop (1; CI lists it as an integration branch but it is behind main; make it real or delete it), cursor/catalog-compat-main-156a (1, likely superseded by main's catalog_compat), cursor/kanbus-264-agent-provenance-44d0 (1, PR 58 draft), docs/anthus-readme-closer (1, PR 57 draft), codex/topic-intent-modeling-sanitized (1).\n\nMethod: for each, check whether the content is already on main by patch equivalence (`git cherry origin/main origin/<branch>`). Only branches whose cherry output is all `-` are safe to delete. Report anything with `+` lines to Ryan. Close or merge drafts 57 and 58.",
+    "issue_type": "chore",
+    "status": "open",
+    "priority": 3,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "Claude"
+    }
+  }
+}

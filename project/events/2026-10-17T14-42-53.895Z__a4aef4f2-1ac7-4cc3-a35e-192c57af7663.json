@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "a4aef4f2-1ac7-4cc3-a35e-192c57af7663",
+  "issue_id": "blbs-bc9c7da4-91d2-4ca9-981d-4517fcbdd455",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T14:42:53.895Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Roadmap and scope documentation",
+    "description": "Update docs/roadmap.md: Tactus integration shipped as a Python dependency; next is the curation surface, the Papyrus contract and Cyclotron for learned decisions. Add a scope statement to AGENTS.md and README naming what Biblicus does not absorb: editorial state, learned decisions, publishing.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude",
+      "name": "Claude"
+    }
+  }
+}

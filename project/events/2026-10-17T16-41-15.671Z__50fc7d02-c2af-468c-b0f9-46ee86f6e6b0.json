@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "50fc7d02-c2af-468c-b0f9-46ee86f6e6b0",
+  "issue_id": "blbs-67eb7d88-4aba-45e8-98ba-44e7643a84c8",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T16:41:15.671Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Papyrus relevance through Cyclotron in shadow mode",
+    "description": "## Goal (Papyrus repo, with the Cyclotron repo; tracked here as part of the review follow-through)\nRoute Papyrus source relevance through Cyclotron in shadow mode and measure it before relying on it.\n\n## Plan\n1. Papyrus opens a `papyrus-relevance` cyclotron as shown in Cyclotron `docs/embedding.md` (single classifier: \"Should this source become a reference for this publication?\", positive label include). Seed the rubric from the publication doctrine. Use an exclusive Assignment claim as the single-writer lease.\n2. For each reference, Biblicus supplies extracted text and web metadata (that is the application transformer Cyclotron expects). The Cyclotron decision is recorded next to the current 1 to 5 quality rubric in `reference_curation_signals.py`. It does not change any editorial outcome.\n3. Editor accept or reject becomes a review (`cyclotron.review`).\n4. After enough real reviews, compare Cyclotron's accuracy and calibration with the rubric on the same items. Promote only if it wins; record the numbers.\n5. Then repeat for steering proposal acceptance.\n\n## Done when\nShadow decisions are recorded for every new reference and a written comparison on real editor labels exists.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "Claude"
+    }
+  }
+}
