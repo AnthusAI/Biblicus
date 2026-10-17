@@ -39,6 +39,27 @@ Primary implementation:
 - `src/biblicus/frontmatter.py`
 - `src/biblicus/uris.py`
 
+## Catalog extension metadata
+
+What it does:
+
+- Loads the catalog strictly and rejects unknown top-level item fields with an error that names them.
+- Stores downstream extension data under `metadata.papyrus` without interpreting it.
+- Migrates legacy top-level extension fields under `metadata` with a script that supports a dry run and writes atomically.
+
+Documentation:
+
+- `docs/corpus-design.md`
+
+Behavior specifications:
+
+- `features/catalog_extension_metadata.feature`
+
+Primary implementation:
+
+- `src/biblicus/corpus.py`
+- `scripts/migrate_catalog_extensions.py`
+
 ## Import and ignore rules
 
 What it does:
