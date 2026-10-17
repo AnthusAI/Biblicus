@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "ebe5f905-5de8-4056-bf33-9111aa16d23d",
+  "issue_id": "blbs-035b3b4f-f878-4bb5-af8a-5b1bd071725a",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T00:43:01.631Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Corpus.init returns a corpus whose config is None",
+    "description": "Corpus.init instantiates cls(root) before config.json is written, so the returned instance behaves as if it has no config (raw_dir, pull_source, hooks).",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

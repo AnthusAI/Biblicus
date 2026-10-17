@@ -82,20 +82,72 @@ Acceptance checks:
 - Utilities have end-to-end behavior specifications and are fully covered by tests.
 - Integration tests can be run against real model APIs when configured.
 
-## Next: Tactus integration
+### Tactus integration
 
-Goal: make Biblicus usable from durable agent workflows without baking assistant logic into Biblicus itself.
+Tactus uses Biblicus as an ordinary Python dependency (`biblicus>=1.11.3,<2`). It shipped as library imports, not as a Model Context Protocol (MCP) toolset.
+
+What Tactus uses:
+
+- `biblicus.context_engine`: Tactus subclasses `ContextAssembler` and calls `retrieve_context_pack` to build context packs from evidence.
+- `biblicus.context_engine.compaction`: Tactus builds its compactors from Biblicus.
+- `biblicus.workflow`: Tactus calls `build_default_handler_registry`, `build_plan_for_extract`, and `build_plan_for_index` to plan extraction and indexing for a corpus.
+- `biblicus.text` and `biblicus.ai.models`: the Tactus standard library wraps the text utilities and passes `LlmClientConfig`.
+- `biblicus.corpus` and `biblicus.context`: `Corpus`, `ContextPack`, and `ContextPackBlock` cross the boundary as values.
+
+Tactus is a consumer. Biblicus must keep these imports stable within a major version. A change that breaks one of them is a breaking change and needs a major version bump.
+
+## Next: curation surface, consumer contract, and learned decisions
+
+Papyrus, the automated newsroom, uses Biblicus for curation. It calls the `biblicus` command by subprocess. The next work makes that use first-class and moves learned decisions out of Biblicus.
+
+### Curation surface on main
+
+Goal: land the curation commands Papyrus already depends on, so that every command it calls exists on `main` and is specified.
 
 Deliverables:
 
-- A Model Context Protocol (MCP) toolset surface for Biblicus (ingest, query, stats, and evidence retrieval).
-- Clear dependency wiring for secrets and network access (in-sandbox vs brokered).
-- One reference procedure demonstrating retrieval-augmented generation built on Biblicus evidence outputs.
+- These command groups, landed from their branches: taxonomy, steering, topic classifier, topic context and trends, summarize (map-reduce), article text, and block context packs.
+- Behavior specifications and documentation for each command group.
 
 Acceptance checks:
 
-- Tools expose evidence-first outputs with stable schemas.
-- Procedures remain in control of prompting and context budgeting policy.
+- Every command Papyrus calls runs from a released Biblicus, not from a branch.
+- Each command group has end-to-end behavior specifications and full test coverage.
+
+### Consumer contract for Papyrus
+
+Goal: give Papyrus one stable, typed way to call Biblicus, with no guessing about paths or output shapes.
+
+Deliverables:
+
+- A `biblicus.api` module with a Pydantic request model and a Pydantic response model for each command Papyrus uses.
+- `Corpus` methods that return the paths Papyrus needs (items, extraction snapshots, analysis outputs), so Papyrus never builds corpus paths by hand.
+- Papyrus extension fields stored under `metadata.papyrus` on each item. Biblicus stores and returns them. It does not interpret them.
+- Removal of the compatibility shims on both sides once the contract is in use.
+
+Acceptance checks:
+
+- Command output validates against the response models in `biblicus.api`.
+- Papyrus reads corpus paths only through `Corpus` methods.
+- No item metadata written by Papyrus lives outside `metadata.papyrus`.
+- Neither project keeps a shim for the old call shapes.
+
+### Learned decisions move to Cyclotron
+
+Goal: stop learning human judgments inside Biblicus. Cyclotron (AnthusAI/Cyclotron) owns one recurring yes or no decision that learns from human review, such as whether a source is relevant or whether a proposal should be accepted.
+
+Deliverables:
+
+- Biblicus supplies features for each item: extracted text, item metadata, and topic signals.
+- Cyclotron makes the decision and learns from reviews.
+- Papyrus owns the reviewers, the review record, and the review interface.
+- Relevance and proposal acceptance logic that learns from labels is removed from Biblicus.
+
+Acceptance checks:
+
+- Biblicus has no code that fits a model to human labels for relevance or proposal acceptance.
+- The features Biblicus supplies are deterministic for the same corpus state and extraction snapshot.
+- Documentation shows the hand-off: Biblicus produces features, Cyclotron decides, Papyrus reviews.
 
 ## Later: alternate backends and hosting modes
 

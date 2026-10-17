@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "458691a1-8513-4cdb-b73f-b68105155025",
+  "issue_id": "blbs-f8714f3e-e3fe-4c50-a24f-1d242d3291b8",
+  "event_type": "field_updated",
+  "occurred_at": "2026-10-17T00:04:16.837Z",
+  "actor_id": "unknown",
+  "payload": {
+    "changes": {
+      "assignee": {
+        "from": null,
+        "to": "rap@endymion.com"
+      }
+    }
+  }
+}

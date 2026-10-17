@@ -17,8 +17,8 @@ from ..corpus import Corpus
 from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from ..web_reference_metadata import (
     LOCAL_HTML_SOURCE_URI,
-    extraction_metadata_from_web_payload,
     extract_web_reference_metadata_from_html,
+    extraction_metadata_from_web_payload,
 )
 from .base import TextExtractor
 

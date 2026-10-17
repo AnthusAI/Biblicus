@@ -73,6 +73,7 @@ def test_graph_extraction_requires_result_type(monkeypatch, tmp_path):
     monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
     monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver())  # noqa: ARG002
     monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction.clear_graph_records", lambda **kwargs: None)
     monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
 
     with pytest.raises(ValueError):
@@ -184,6 +185,7 @@ def test_graph_extraction_closes_driver(monkeypatch, tmp_path):
     monkeypatch.setattr("biblicus.graph.extraction.resolve_neo4j_settings", lambda: SimpleNamespace(database="neo"))
     monkeypatch.setattr("biblicus.graph.extraction.create_neo4j_driver", lambda settings: DummyDriver())  # noqa: ARG002
     monkeypatch.setattr("biblicus.graph.extraction.write_graph_records", lambda **kwargs: None)
+    monkeypatch.setattr("biblicus.graph.extraction.clear_graph_records", lambda **kwargs: None)
     monkeypatch.setattr("biblicus.graph.extraction._load_extracted_text", lambda *a, **k: "text")
 
     build_graph_snapshot(

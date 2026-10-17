@@ -12,7 +12,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: release
+  group: main-automation
   cancel-in-progress: false
 
 jobs:

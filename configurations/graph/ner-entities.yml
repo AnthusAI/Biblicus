@@ -14,6 +14,8 @@ entity_labels:
   - PER
   - PRODUCT
   - WORK_OF_ART
+# Graph extraction emits a lightweight reference anchor (not a SemanticNode) so
+# mentions edges resolve to Papyrus Reference records at import time.
 include_item_node: true
 include_relation_edges: true
 max_relation_entities_per_sentence: 12
