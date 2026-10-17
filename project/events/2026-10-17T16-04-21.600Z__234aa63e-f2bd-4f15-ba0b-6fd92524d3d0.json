@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "event_id": "234aa63e-f2bd-4f15-ba0b-6fd92524d3d0",
+  "issue_id": "blbs-8e29209e-c189-49ea-b13a-d834319eb689",
+  "event_type": "comment_added",
+  "occurred_at": "2026-10-17T16:04:21.600Z",
+  "actor_id": "home",
+  "payload": {
+    "comment_id": "f0db0ba9-fba4-473e-b0f0-9027f1acc732",
+    "comment_author": "home",
+    "agent": {
+      "platform": "codex",
+      "model": "gpt-6.1-sol",
+      "name": "Biblicus-deployment-recovery"
+    }
+  }
+}
