@@ -740,6 +740,15 @@ def step_openai_client_configured_with_api_key(context, expected_api_key: str) -
     assert configured == expected_api_key
 
 
+@then('the OpenAI chat request omitted parameter "{parameter_name}"')
+def step_openai_chat_request_omitted_parameter(context, parameter_name: str) -> None:
+    _ = context
+    openai_module = sys.modules.get("openai")
+    assert openai_module is not None
+    kwargs: Dict[str, Any] = getattr(openai_module, "last_chat_kwargs", {})
+    assert parameter_name not in kwargs
+
+
 @given("no OpenAI API key is configured")
 def step_no_openai_api_key_configured(context) -> None:
     """Ensure no OpenAI API key is available from any source."""
@@ -757,6 +766,7 @@ def step_no_openai_api_key_configured(context) -> None:
 
     def mock_load_user_config():
         from biblicus.user_config import BiblicusUserConfig
+
         return BiblicusUserConfig(openai=None, aldea=None)
 
     config_module.load_user_config = mock_load_user_config

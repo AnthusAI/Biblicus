@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-16T00:00:00+00:00",
+  "corpus": {
+    "corpus_uri": "file:///corpora/AI-ML-research",
+    "corpus_path": "/corpora/AI-ML-research",
+    "name": "AI-ML-research",
+    "generated_at": "2026-05-16T00:00:00+00:00",
+    "item_count": 2
+  },
+  "items": [
+    {
+      "item_id": "item-agent-memory",
+      "relpath": "item-agent-memory--agent-memory.pdf",
+      "sha256": "example-sha256",
+      "byte_count": 12345,
+      "media_type": "application/pdf",
+      "title": "Agent Memory Systems",
+      "source_uri": "https://example.test/agent-memory",
+      "tags": ["ai-ml-research"],
+      "dates": {
+        "published_at": "2026-01-15"
+      },
+      "intake_status": "accepted",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "title": "Agent Memory Systems",
+        "abstract": "A paper about persistent memory in agent systems.",
+        "dates": {
+          "published_at": "2026-01-15"
+        },
+        "curation": {
+          "intake_status": "accepted"
+        }
+      }
+    }
+  ],
+  "topic_set": {
+    "schema_version": 1,
+    "classifier_id": "ai-ml-research",
+    "display_name": "AI/ML Research Topics",
+    "description": "Accepted canonical topic roots.",
+    "topics": [
+      {
+        "topic_uid": "llm-agents",
+        "display_name": "LLM Agents",
+        "description": "Research about agent architectures, tool use, and memory.",
+        "seed_item_ids": ["item-agent-memory"],
+        "holdout_item_ids": []
+      }
+    ],
+    "unlabeled_policy": "use_minus_one"
+  },
+  "proposals": [
+    {
+      "schema_version": 1,
+      "proposal_id": "create-taxonomy-node:llm-agents-agent-memory",
+      "proposal_kind": "create-taxonomy-node",
+      "domain": "topic",
+      "recommendation": "needs_clarification",
+      "status": "proposed",
+      "author": {
+        "kind": "biblicus",
+        "id": "taxonomy-discovery"
+      },
+      "source_signal_ids": [
+        "taxonomy-child-topic-candidate:llm-agents:3"
+      ],
+      "evidence": {
+        "item_ids": ["item-agent-memory"]
+      },
+      "rationale": "Scoped discovery found a possible child topic under an accepted root.",
+      "confidence": null,
+      "payload": {
+        "topic_uid": "llm-agents-agent-memory",
+        "parent_topic_uid": "llm-agents",
+        "display_name": "Agent Memory",
+        "description": "Candidate subtopic under LLM Agents: Agent Memory. Keywords: memory, retrieval.",
+        "document_ids": ["item-agent-memory"],
+        "keywords": ["memory", "retrieval"],
+        "topic_id": 3
+      }
+    },
+    {
+      "schema_version": 1,
+      "proposal_id": "add-ontology-relationship:assertion-agent-memory-history",
+      "proposal_kind": "add-ontology-relationship",
+      "domain": "graph",
+      "recommendation": "recommend",
+      "status": "proposed",
+      "author": {
+        "kind": "agent",
+        "id": "ontology-review-worker"
+      },
+      "source_signal_ids": [
+        "topic-relationship-edge-candidate:llm-agents-agent-memory:machine-learning-history"
+      ],
+      "evidence": {
+        "item_ids": ["item-agent-memory"]
+      },
+      "rationale": "The evidence describes historical context for agent memory research.",
+      "confidence": 0.82,
+      "payload": {
+        "assertion_id": "assertion-agent-memory-history",
+        "source_ref": "topic:machine-learning-history",
+        "relationship_uid": "historical_context_for",
+        "target_ref": "topic:llm-agents-agent-memory",
+        "direction": "outbound",
+        "evidence_item_ids": ["item-agent-memory"],
+        "confidence": 0.82,
+        "notes": "Use as a reviewed ontology assertion if accepted."
+      }
+    }
+  ],
+  "proposal_bundles": [
+    {
+      "schema_version": 1,
+      "analysis_id": "steering-proposals",
+      "snapshot_id": "example-steering-proposals-snapshot",
+      "generated_at": "2026-05-16T00:00:00+00:00",
+      "source_artifact_refs": [
+        "taxonomy-discovery:taxonomy-discovery-snapshot",
+        "graph:simple-entities:graph-snapshot"
+      ],
+      "signals": [
+        {
+          "schema_version": 1,
+          "signal_id": "taxonomy-child-topic-candidate:llm-agents:3",
+          "signal_kind": "taxonomy-child-topic-candidate",
+          "domain": "topic",
+          "source_artifact_refs": [
+            "topic-classifier:ai-ml-research",
+            "taxonomy:taxonomy-snapshot",
+            "extraction:pipeline:extraction-snapshot"
+          ],
+          "metrics": {
+            "document_count": 1
+          },
+          "evidence_item_ids": ["item-agent-memory"],
+          "payload": {
+            "topic_uid": "llm-agents-agent-memory",
+            "parent_topic_uid": "llm-agents",
+            "topic_id": 3
+          }
+        }
+      ],
+      "proposals": [
+        {
+          "schema_version": 1,
+          "proposal_id": "create-taxonomy-node:llm-agents-agent-memory",
+          "proposal_kind": "create-taxonomy-node",
+          "domain": "topic",
+          "recommendation": "needs_clarification",
+          "status": "proposed",
+          "author": {
+            "kind": "biblicus",
+            "id": "taxonomy-discovery"
+          },
+          "source_signal_ids": [
+            "taxonomy-child-topic-candidate:llm-agents:3"
+          ],
+          "evidence": {
+            "item_ids": ["item-agent-memory"]
+          },
+          "rationale": "Scoped discovery found a possible child topic under an accepted root.",
+          "confidence": null,
+          "payload": {
+            "topic_uid": "llm-agents-agent-memory",
+            "parent_topic_uid": "llm-agents",
+            "display_name": "Agent Memory",
+            "description": "Candidate subtopic under LLM Agents: Agent Memory. Keywords: memory, retrieval.",
+            "document_ids": ["item-agent-memory"],
+            "keywords": ["memory", "retrieval"],
+            "topic_id": 3
+          }
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "taxonomy",
+      "artifact_id": "taxonomy:taxonomy-snapshot",
+      "path": "analysis/taxonomy/taxonomy-snapshot/manifest.json",
+      "snapshot_id": "taxonomy-snapshot",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "analysis_id": "taxonomy"
+      }
+    },
+    {
+      "kind": "taxonomy-discovery",
+      "artifact_id": "taxonomy-discovery:taxonomy-discovery-snapshot",
+      "path": "analysis/taxonomy-discovery/taxonomy-discovery-snapshot/manifest.json",
+      "snapshot_id": "taxonomy-discovery-snapshot",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "analysis_id": "taxonomy-discovery"
+      }
+    },
+    {
+      "kind": "ontology",
+      "artifact_id": "ontology:ontology-snapshot",
+      "path": "analysis/ontology/ontology-snapshot/manifest.json",
+      "snapshot_id": "ontology-snapshot",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "analysis_id": "ontology"
+      }
+    },
+    {
+      "kind": "steering-proposals",
+      "artifact_id": "steering-proposals:example-steering-proposals-snapshot",
+      "path": "analysis/steering-proposals/example-steering-proposals-snapshot/manifest.json",
+      "snapshot_id": "example-steering-proposals-snapshot",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "analysis_id": "steering-proposals"
+      }
+    },
+    {
+      "kind": "graph",
+      "artifact_id": "simple-entities:graph-snapshot",
+      "path": "graph/simple-entities/graph-snapshot/manifest.json",
+      "snapshot_id": "graph-snapshot",
+      "created_at": "2026-05-16T00:00:00+00:00",
+      "metadata": {
+        "extractor_id": "simple-entities",
+        "graph_id": "simple-entities:graph"
+      }
+    }
+  ],
+  "warnings": []
+}

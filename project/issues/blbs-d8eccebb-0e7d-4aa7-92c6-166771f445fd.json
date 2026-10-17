@@ -3,7 +3,7 @@
   "title": "Fix remote source lint errors",
   "description": "Fix CI lint failures for remote sources (import order + docstrings)",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -37,7 +37,7 @@
     }
   ],
   "created_at": "2026-02-19T06:12:51.634197Z",
-  "updated_at": "2026-02-19T06:44:33.821874Z",
-  "closed_at": null,
+  "updated_at": "2026-03-04T22:58:20.497116Z",
+  "closed_at": "2026-03-04T22:58:20.497116Z",
   "custom": {}
 }

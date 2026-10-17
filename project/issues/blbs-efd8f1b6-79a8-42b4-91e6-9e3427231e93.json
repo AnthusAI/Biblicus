@@ -1,0 +1,18 @@
+{
+  "id": "blbs-efd8f1b6-79a8-42b4-91e6-9e3427231e93",
+  "title": "Specify source-specific ingestion resolution",
+  "description": "Feature: Source-specific ingestion resolution\n\nScenario: Ingesting a DocumentCloud viewer URL stores the original PDF as the raw item\nGiven a user has a Biblicus corpus\nWhen the user imports a public DocumentCloud document URL with an import rationale\nThen Biblicus resolves the source through the DocumentCloud resolver\nAnd stores the original PDF as one raw item\nAnd records canonical source identity, source metadata, derived text asset references, and the import rationale in item metadata.\n\nScenario: Reimporting the same DocumentCloud document reports a canonical collision\nGiven a DocumentCloud document was already imported\nWhen the user imports another URL for the same DocumentCloud document\nThen Biblicus reports a duplicate keyed by documentcloud:<id>.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-05-17T15:44:05.548790Z",
+  "updated_at": "2026-05-17T16:40:17.665735Z",
+  "closed_at": "2026-05-17T16:40:17.665735Z",
+  "custom": {}
+}

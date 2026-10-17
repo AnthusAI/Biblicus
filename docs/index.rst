@@ -161,8 +161,9 @@ Analysis and Modeling
 ---------------------
 
 Analysis tools help you find structure inside large text corpora. Topic modeling provides a
-first pass at clustering themes. Markov analysis (Hidden Markov Models) adds sequence modeling
-to detect recurring phases in longer documents or conversations.
+first pass at clustering themes. Topic classifiers turn reviewed exemplars into reusable
+classifier model versions. Markov analysis (Hidden Markov Models) adds sequence modeling to
+detect recurring phases in longer documents or conversations.
 
 .. toctree::
    :maxdepth: 2
@@ -170,6 +171,11 @@ to detect recurring phases in longer documents or conversations.
 
    profiling
    topic-modeling
+   topic-classifier
+   taxonomy-ontology
+   research-agent-intake
+   topic-trends
+   steering-proposals
    markov-analysis
 
 Toolbox
@@ -204,6 +210,7 @@ are designed to be runnable end-to-end and serve as acceptance tests.
 
    demos
    user-configuration
+   steering-integration
    testing
 
 Reference

@@ -208,6 +208,52 @@ class GraphSnapshotListEntry(BaseModel):
     stats: Dict[str, object] = Field(default_factory=dict)
 
 
+class GraphExportNode(GraphSchemaModel):
+    """
+    Exported graph node enriched with snapshot provenance.
+    """
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    node_id: str = Field(min_length=1)
+    node_type: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphExportEdge(GraphSchemaModel):
+    """
+    Exported graph edge enriched with snapshot provenance.
+    """
+
+    extractor_id: str = Field(min_length=1)
+    snapshot_id: str = Field(min_length=1)
+    graph_id: str = Field(min_length=1)
+    extraction_snapshot: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    edge_id: str = Field(min_length=1)
+    src: str = Field(min_length=1)
+    dst: str = Field(min_length=1)
+    edge_type: str = Field(min_length=1)
+    weight: float = Field(default=1.0)
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphSnapshotExport(GraphSchemaModel):
+    """
+    Portable graph snapshot export for downstream application imports.
+    """
+
+    snapshot: GraphSnapshotReference
+    manifest: GraphSnapshotManifest
+    nodes: List[GraphExportNode] = Field(default_factory=list)
+    edges: List[GraphExportEdge] = Field(default_factory=list)
+    stats: Dict[str, object] = Field(default_factory=dict)
+
+
 def parse_graph_snapshot_reference(value: str) -> GraphSnapshotReference:
     """
     Parse a graph snapshot reference in the form extractor_id:snapshot_id.
@@ -244,6 +290,12 @@ class GraphExtractionItemSummary(BaseModel):
     :vartype status: str
     :ivar error_message: Optional error message.
     :vartype error_message: str or None
+    :ivar error_reason: Optional normalized error reason.
+    :vartype error_reason: str or None
+    :ivar duration_ms: Item processing duration in milliseconds.
+    :vartype duration_ms: int or None
+    :ivar attempts: Number of extraction attempts for this item.
+    :vartype attempts: int or None
     """
 
     model_config = ConfigDict(extra="forbid")

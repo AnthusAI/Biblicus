@@ -4,6 +4,8 @@ Error types for Biblicus.
 
 from __future__ import annotations
 
+from typing import Optional
+
 
 class ExtractionSnapshotFatalError(RuntimeError):
     """
@@ -25,17 +27,34 @@ class IngestCollisionError(RuntimeError):
     :type existing_item_id: str
     :param existing_relpath: Raw storage relpath of the existing item.
     :type existing_relpath: str
+    :param collision_key: Optional canonical duplicate key that caused the collision.
+    :type collision_key: str or None
     """
 
-    def __init__(self, *, source_uri: str, existing_item_id: str, existing_relpath: str) -> None:
+    def __init__(
+        self,
+        *,
+        source_uri: str,
+        existing_item_id: str,
+        existing_relpath: str,
+        collision_key: Optional[str] = None,
+    ) -> None:
         self.source_uri = source_uri
         self.existing_item_id = existing_item_id
         self.existing_relpath = existing_relpath
-        message = (
-            "Source already ingested"
-            f": source_uri={source_uri} existing_item_id={existing_item_id}"
-            f" existing_relpath={existing_relpath}"
-        )
+        self.collision_key = collision_key
+        if collision_key is None:
+            message = (
+                "Source already ingested"
+                f": source_uri={source_uri} existing_item_id={existing_item_id}"
+                f" existing_relpath={existing_relpath}"
+            )
+        else:
+            message = (
+                "Item already ingested"
+                f": source_uri={source_uri} matching_key={collision_key}"
+                f" existing_item_id={existing_item_id} existing_relpath={existing_relpath}"
+            )
         super().__init__(message)
 
 

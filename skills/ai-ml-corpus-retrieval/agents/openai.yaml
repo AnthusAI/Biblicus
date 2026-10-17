@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI-ML Corpus Retrieval"
+  short_description: "Use Biblicus to retrieve AI/ML corpus context"
+  default_prompt: "Use $ai-ml-corpus-retrieval to search the AI-ML-Research corpus and produce evidence-backed context."

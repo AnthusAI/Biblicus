@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "e1d79fd5-c118-4dac-92bc-799105b7c7ee",
+  "issue_id": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+  "event_type": "issue_created",
+  "occurred_at": "2026-05-17T15:43:55.395Z",
+  "actor_id": "ryan",
+  "payload": {
+    "assignee": null,
+    "description": "Build a standard source-resolution utility for Biblicus ingestion so site-specific URLs, starting with DocumentCloud, resolve to canonical raw items, stable provenance, duplicate identity keys, and import rationale metadata before entering the corpus.",
+    "issue_type": "epic",
+    "labels": [],
+    "parent": null,
+    "priority": 2,
+    "status": "open",
+    "title": "Source-specific ingestion resolvers"
+  }
+}

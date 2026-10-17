@@ -1,0 +1,5 @@
+extractor_id: metadata-text
+configuration:
+  fields:
+    - title
+    - metadata.abstract

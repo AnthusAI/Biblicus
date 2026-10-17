@@ -137,6 +137,15 @@ python -m biblicus graph extract \
 
 If you omit `--extraction-snapshot`, Biblicus uses the latest extraction snapshot and emits a reproducibility warning.
 
+`graph extract` writes the snapshot manifest to standard output as JSON. Progress is emitted to standard error while the
+run starts, processes each item, and completes, so long-running Neo4j-backed extraction jobs can be monitored without
+mixing progress text into the JSON payload. The snapshot manifest includes `items_total`, `items_processed`,
+`items_skipped`, `items_errored`, `nodes`, and `edges` in its stats block.
+
+Missing extracted text skips only that item. Per-item extraction or write failures are recorded as item errors and the
+snapshot continues; an invalid extractor implementation still fails the run because it violates the graph extractor
+contract.
+
 ## Example configurations
 
 Minimal co-occurrence configuration:
@@ -185,11 +194,11 @@ The `ner-entities` extractor uses a named entity recognition model to emit entit
 This extractor is deterministic for a fixed model and configuration and provides a stronger baseline than the
 simple-entities heuristic.
 
-Install spaCy and the model referenced in your configuration before running:
+Install the `ner` extra before running. It includes spaCy and the default model referenced in the bundled
+`ner-entities` configuration:
 
 ```
-python -m pip install spacy
-python -m spacy download en_core_web_sm
+uv sync --extra ner
 ```
 
 Example command:
@@ -224,8 +233,7 @@ This extractor provides relation-centric baselines that are still deterministic 
 Install spaCy and the model referenced in your configuration before running:
 
 ```
-python -m pip install spacy
-python -m spacy download en_core_web_sm
+uv sync --extra ner
 ```
 
 Example command:

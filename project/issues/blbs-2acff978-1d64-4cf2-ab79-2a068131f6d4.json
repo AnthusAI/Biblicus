@@ -1,0 +1,18 @@
+{
+  "id": "blbs-2acff978-1d64-4cf2-ab79-2a068131f6d4",
+  "title": "Create AI-ML-journalism corpus and smoke ingest DocumentCloud item",
+  "description": "Create corpora/AI-ML-journalism, import the requested DocumentCloud court filing through the resolver path with an import rationale, reindex, and verify the item metadata and duplicate identity behavior.",
+  "type": "task",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-05-17T15:44:05.548574Z",
+  "updated_at": "2026-05-17T16:40:17.698719Z",
+  "closed_at": "2026-05-17T16:40:17.698719Z",
+  "custom": {}
+}
