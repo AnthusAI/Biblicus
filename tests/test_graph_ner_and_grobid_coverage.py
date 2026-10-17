@@ -299,11 +299,11 @@ def test_ner_extract_graph_emits_item_node_mentions_and_grobid_suppression(monke
         },
     )
 
-    assert [node.node_id for node in result.nodes] == ["item:item-1", "entity:royal_society"]
+    assert [node.node_id for node in result.nodes] == ["reference:item-1", "entity:royal_society"]
     assert result.nodes[0].label == "notes/item.txt"
     assert result.nodes[1].properties == {"canonical": "royal_society", "entity_type": "ORG"}
     assert [(edge.edge_id, edge.weight) for edge in result.edges] == [
-        ("item:item-1|mentions|entity:royal_society", 2.0)
+        ("reference:item-1|mentions|entity:royal_society", 2.0)
     ]
 
 
