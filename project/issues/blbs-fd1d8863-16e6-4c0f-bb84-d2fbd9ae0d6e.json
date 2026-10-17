@@ -1,0 +1,22 @@
+{
+  "id": "blbs-fd1d8863-16e6-4c0f-bb84-d2fbd9ae0d6e",
+  "title": "extract web-metadata ignores the --use-llm-fallback flag",
+  "description": "cmd_extract_web_metadata reads use_llm_fallback only from the input JSON; the CLI flag is parsed and discarded.",
+  "type": "bug",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:42:54.061085Z",
+  "updated_at": "2026-10-17T00:42:54.061260Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}

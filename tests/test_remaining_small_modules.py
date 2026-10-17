@@ -193,7 +193,7 @@ def test_dependency_relations_validates_config_dict(monkeypatch):
 
 def test_ner_entities_validates_config_dict(monkeypatch):
     extractor = ner_entities.NerEntitiesGraphExtractor()
-    monkeypatch.setattr(ner_entities, "_extract_entities", lambda **kwargs: [("Name", "PERSON")])
+    monkeypatch.setattr(ner_entities, "_extract_entities", lambda **kwargs: [("Name", "PERSON", 0)])
     extraction = extractor.extract_graph(
         corpus=SimpleNamespace(),
         item=SimpleNamespace(id="i1", title="t", relpath="r"),

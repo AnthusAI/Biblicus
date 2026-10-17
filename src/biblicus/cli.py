@@ -9,7 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from pydantic import ValidationError
 
@@ -990,6 +990,48 @@ def cmd_extract_delete(arguments: argparse.Namespace) -> int:
     )
     print(json.dumps({"deleted": True, "snapshot": arguments.snapshot}, indent=2))
     return 0
+
+
+def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
+    """
+    Extract readable text from a source URL using the source-aware fetch strategy.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from . import url_text as url_text_module
+
+    def print_failure_to_standard_error(error_payload: Dict[str, Any]) -> int:
+        print(json.dumps({"status": "failed", "error": error_payload}, indent=2), file=sys.stderr)
+        return 2
+
+    try:
+        payload = url_text_module.load_url_text_input_json(arguments.input_json)
+    except ValueError as exc:
+        return print_failure_to_standard_error({"code": "invalid_input_json", "message": str(exc)})
+
+    source_uri = str(payload.get("source_uri") or "").strip()
+    if not source_uri:
+        return print_failure_to_standard_error(
+            {"code": "missing_source_uri", "message": "source_uri is required"}
+        )
+
+    try:
+        output = url_text_module.extract_url_text(
+            source_uri=source_uri,
+            reference_title=str(payload.get("reference_title") or ""),
+            timeout_seconds=float(
+                payload.get("timeout_seconds")
+                or url_text_module.URL_TEXT_DEFAULT_TIMEOUT_SECONDS
+            ),
+        )
+    except url_text_module.UrlTextExtractionError as exc:
+        return print_failure_to_standard_error(exc.to_dict())
+
+    print(json.dumps(output, indent=2))
+    return 0 if output.get("status") == "ok" else 1
 
 
 def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
@@ -2122,6 +2164,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Type the exact extractor_id:snapshot_id to confirm deletion.",
     )
     p_extract_delete.set_defaults(func=cmd_extract_delete)
+
+    p_extract_url_text = extract_sub.add_parser(
+        "url-text",
+        help="Extract readable text from a source URL (web pages, PDFs, YouTube).",
+    )
+    p_extract_url_text.add_argument(
+        "--input-json",
+        default="-",
+        help="JSON payload with source_uri and optional reference_title (default: stdin).",
+    )
+    p_extract_url_text.add_argument(
+        "--format",
+        choices=["json"],
+        default="json",
+        help="Output format (only json is supported).",
+    )
+    p_extract_url_text.set_defaults(func=cmd_extract_url_text)
 
     p_extract_web_metadata = extract_sub.add_parser(
         "web-metadata",
