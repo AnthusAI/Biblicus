@@ -1390,7 +1390,7 @@ def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
         source_uri=source_uri,
         html_content=html_content,
         reference_title=str(payload.get("reference_title") or ""),
-        use_llm_fallback=bool(payload.get("use_llm_fallback")),
+        use_llm_fallback=bool(arguments.use_llm_fallback or payload.get("use_llm_fallback")),
         model=str(payload.get("model") or ""),
         timeout_seconds=float(payload.get("timeout_seconds") or URL_TEXT_DEFAULT_TIMEOUT_SECONDS),
     )
