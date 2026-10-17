@@ -15,6 +15,11 @@ from ...corpus import Corpus
 from ...models import CatalogItem
 from ..base import GraphExtractor
 from ..models import GraphEdge, GraphExtractionResult, GraphNode, GraphSchemaModel
+from ..reference_anchor import (
+    build_reference_anchor_node,
+    reference_title_blocked_forms,
+    should_suppress_reference_title,
+)
 
 
 class SimpleEntityGraphConfig(GraphSchemaModel):
@@ -23,7 +28,7 @@ class SimpleEntityGraphConfig(GraphSchemaModel):
 
     :ivar min_entity_length: Minimum length for entity labels.
     :vartype min_entity_length: int
-    :ivar include_item_node: Whether to emit an item node and mentions edges.
+    :ivar include_item_node: Whether to emit a reference anchor node and mentions edges.
     :vartype include_item_node: bool
     :ivar max_entity_words: Maximum words per entity span.
     :vartype max_entity_words: int
@@ -88,9 +93,15 @@ class SimpleEntitiesGraphExtractor(GraphExtractor):
         parsed = config if isinstance(config, SimpleEntityGraphConfig) else None
         if parsed is None:
             parsed = self.validate_config(config)
+        title_blocked = reference_title_blocked_forms(item)
         sentences = _split_sentences(extracted_text)
         entities_by_sentence = [
-            _extract_entities(sentence, parsed.max_entity_words, parsed.min_entity_length)
+            _extract_entities(
+                sentence,
+                parsed.max_entity_words,
+                parsed.min_entity_length,
+                title_blocked_forms=title_blocked,
+            )
             for sentence in sentences
         ]
         entity_counts = Counter(entity for entities in entities_by_sentence for entity in entities)
@@ -99,14 +110,9 @@ class SimpleEntitiesGraphExtractor(GraphExtractor):
         edges: List[GraphEdge] = []
 
         if parsed.include_item_node:
-            item_node = GraphNode(
-                node_id=f"item:{item.id}",
-                node_type="item",
-                label=item.title or item.relpath,
-                properties={"item_id": item.id},
-            )
-            nodes.insert(0, item_node)
-            edges.extend(_build_mentions_edges(item_node.node_id, entity_counts))
+            reference_node = build_reference_anchor_node(item)
+            nodes.insert(0, reference_node)
+            edges.extend(_build_mentions_edges(reference_node.node_id, entity_counts))
 
         edges.extend(_build_relation_edges(entities_by_sentence))
         return GraphExtractionResult(item_id=item.id, nodes=nodes, edges=edges)
@@ -117,15 +123,25 @@ def _split_sentences(text: str) -> List[str]:
     return [segment.strip() for segment in raw if segment.strip()]
 
 
-def _extract_entities(text: str, max_words: int, min_length: int) -> List[str]:
+def _extract_entities(
+    text: str,
+    max_words: int,
+    min_length: int,
+    *,
+    title_blocked_forms: set[str] | None = None,
+) -> List[str]:
     entities: List[str] = []
     word_pattern = r"[A-Z][a-z]+"
     phrase_pattern = rf"\b{word_pattern}(?:\s+{word_pattern}){{0,{max_words - 1}}}\b"
     for match in re.findall(phrase_pattern, text):
-        if len(match) >= min_length:
+        if len(match) >= min_length and not (
+            title_blocked_forms and should_suppress_reference_title(match, title_blocked_forms)
+        ):
             entities.append(match)
     for match in re.findall(r"\b[A-Z]{2,}\b", text):
-        if len(match) >= min_length:
+        if len(match) >= min_length and not (
+            title_blocked_forms and should_suppress_reference_title(match, title_blocked_forms)
+        ):
             entities.append(match)
     return list(dict.fromkeys(entities))
 
@@ -152,16 +168,16 @@ def _build_entity_nodes(entity_counts: Counter[str]) -> List[GraphNode]:
     return nodes
 
 
-def _build_mentions_edges(item_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
+def _build_mentions_edges(anchor_node_id: str, entity_counts: Counter[str]) -> List[GraphEdge]:
     edges: List[GraphEdge] = []
     for label, count in sorted(entity_counts.items()):
         canonical = _canonicalize(label)
         entity_id = f"entity:{canonical}"
-        edge_id = f"{item_node_id}|mentions|{entity_id}"
+        edge_id = f"{anchor_node_id}|mentions|{entity_id}"
         edges.append(
             GraphEdge(
                 edge_id=edge_id,
-                src=item_node_id,
+                src=anchor_node_id,
                 dst=entity_id,
                 edge_type="mentions",
                 weight=float(count),
