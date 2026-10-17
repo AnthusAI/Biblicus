@@ -10,9 +10,19 @@
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "96f6dde7-20fb-4ceb-b1c1-e853b08e72c2",
+      "author": "unknown",
+      "text": "Papyrus side merged (AnthusAI/Papyrus PR 244). Corpus migrations are left to Ryan; the steps are in Papyrus docs/biblicus-1-14-upgrade.md.",
+      "created_at": "2026-10-17T23:00:25.926370Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    }
+  ],
   "created_at": "2026-10-17T16:40:42.985314Z",
-  "updated_at": "2026-10-17T20:52:13.598582Z",
+  "updated_at": "2026-10-17T23:00:25.926547Z",
   "closed_at": "2026-10-17T20:52:13.598368Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
