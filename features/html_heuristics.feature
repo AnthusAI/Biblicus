@@ -13,6 +13,7 @@ Feature: HTML heuristic structured extraction
     And the heuristic document has at least 2 authors including "Alex Example"
     And the heuristic document publication date is "2021-03-15"
     And the heuristic extraction layers include "json_ld"
+    And the heuristic extraction layers list "json_ld" exactly once
     And the heuristic structured payload has at least 2 citations
 
   Scenario: Open Graph and Twitter card metadata is extracted
