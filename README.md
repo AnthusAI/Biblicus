@@ -133,6 +133,10 @@ sequenceDiagram
   App-->>User: response
 ```
 
+### What Biblicus does not do
+
+Biblicus does not hold editorial state such as categories, accepted or rejected proposals, or assignments. Papyrus holds that. Biblicus does not learn decisions from human labels. Cyclotron does that, using the extracted text, metadata, and topic signals Biblicus supplies. Biblicus does not publish. Papyrus and Markus do.
+
 ## Practical value
 
 - You can ingest raw material once, then try many retrieval approaches over time.
