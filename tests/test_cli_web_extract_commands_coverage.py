@@ -245,7 +245,7 @@ def test_extract_web_metadata_from_source_uri_fetches_page(
     assert source_uri == "https://fixture.test/page"
     assert keyword_arguments == {
         "reference_title": "",
-        "use_llm_fallback": False,
+        "use_llm_fallback": True,
         "model": "",
         "timeout_seconds": expected_timeout_seconds,
     }
@@ -333,3 +333,30 @@ def test_get_or_build_extraction_snapshot_ignores_invalid_recipe_json(tmp_path):
     )
     assert reference.extractor_id == "pipeline"
     assert fake_corpus.recorded_extract_calls[0]["config"] == {}
+
+
+def test_extract_web_metadata_command_line_flag_enables_llm_fallback(
+    monkeypatch, tmp_path, capsys
+):
+    """Verify that the --use-llm-fallback flag enables the LLM fallback."""
+    recorded_keyword_arguments = []
+
+    def fake_extract_from_html(_html, **keyword_arguments):
+        recorded_keyword_arguments.append(keyword_arguments)
+        return {"title": "Flag"}
+
+    monkeypatch.setattr(
+        web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
+    )
+    exit_code = cli.main(
+        [
+            "extract",
+            "web-metadata",
+            "--use-llm-fallback",
+            "--input-json",
+            _write_input_json(tmp_path, {"html": "<html><title>Flag</title></html>"}),
+        ]
+    )
+    capsys.readouterr()
+    assert exit_code == 0
+    assert recorded_keyword_arguments[0]["use_llm_fallback"] is True
