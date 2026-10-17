@@ -16,6 +16,34 @@ The project already supports:
 
 The decisions below describe how version zero refined and extended these workflows without changing the core principle that the corpus is the source of truth.
 
+## Corpus layout
+
+Biblicus owns the on-disk layout of a corpus. Code outside Biblicus should ask a `Corpus` for these locations
+instead of joining path segments itself, so the layout can change in one place.
+
+| Path under the corpus root | `Corpus` accessor |
+| --- | --- |
+| `metadata/catalog.json` | `Corpus.catalog_path` (property, already existed) |
+| `extracted/<extractor_id>/<snapshot_id>/` | `Corpus.extraction_snapshot_dir(extractor_id=..., snapshot_id=...)` |
+| `extracted/pipeline/<snapshot_id>/text/<item_id>.txt` | `Corpus.extracted_text_path(snapshot_id, item_id)` |
+| `graph/<extractor_id>/<snapshot_id>/` | `Corpus.graph_snapshot_dir(extractor_id=..., snapshot_id=...)` |
+| `graph/<extractor_id>/<snapshot_id>/manifest.json` | `Corpus.graph_snapshot_manifest_path(extractor_id, snapshot_id)` |
+
+The accessors compute paths from identifiers and do not check that the files exist. An extracted text artifact
+exists only when the snapshot produced text for that item, and a graph manifest exists only after the graph snapshot
+was built. `extracted_text_path` addresses pipeline extraction snapshots, whose extractor identifier is `pipeline`.
+
+```python
+from biblicus.corpus import Corpus
+
+corpus = Corpus.open("corpora/example")
+catalog_path = corpus.catalog_path
+text_path = corpus.extracted_text_path(extraction_snapshot_id, item_id)
+manifest_path = corpus.graph_snapshot_manifest_path("cooccurrence", graph_snapshot_id)
+```
+
+The behavior is specified in `features/corpus_layout_paths.feature`.
+
 ## Core vocabulary for this document
 
 - Corpus: the folder that holds raw items and their metadata.
