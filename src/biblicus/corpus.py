@@ -16,7 +16,6 @@ from urllib.parse import quote, unquote, urlparse
 import yaml
 from pydantic import ValidationError
 
-from .catalog_compat import load_corpus_catalog
 from .constants import (
     ANALYSIS_DIR_NAME,
     CATALOG_FILE_NAME,
@@ -60,6 +59,41 @@ from .sources import _media_type_from_filename, load_source
 from .time import utc_now_iso
 from .uris import corpus_ref_to_path, normalize_corpus_uri
 from .user_config import resolve_source_profile
+
+
+def _describe_catalog_validation_error(
+    catalog_path: Path, validation_error: ValidationError
+) -> str:
+    """
+    Build a clear message for a catalog that fails strict validation.
+
+    Unknown top-level item fields are named explicitly and the migration script is
+    pointed to; every other validation problem is reported verbatim.
+
+    :param catalog_path: Catalog file that failed validation.
+    :type catalog_path: Path
+    :param validation_error: Validation error raised by the catalog model.
+    :type validation_error: ValidationError
+    :return: User-facing error message.
+    :rtype: str
+    """
+    unknown_field_names = sorted(
+        {
+            str(error["loc"][-1])
+            for error in validation_error.errors()
+            if error["type"] == "extra_forbidden"
+            and len(error["loc"]) == 3
+            and error["loc"][0] == "items"
+        }
+    )
+    if not unknown_field_names:
+        return f"Invalid corpus catalog {catalog_path}: {validation_error}"
+    return (
+        f"Invalid corpus catalog {catalog_path}: unknown top-level item fields "
+        f"{', '.join(unknown_field_names)}. Extension data belongs under metadata "
+        "(for example metadata.papyrus). Run "
+        "scripts/migrate_catalog_extensions.py <corpus> to move these fields under metadata."
+    )
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -719,7 +753,12 @@ class Corpus:
         if not self.catalog_path.is_file():
             raise FileNotFoundError(f"Missing corpus catalog: {self.catalog_path}")
         catalog_data = json.loads(self.catalog_path.read_text(encoding="utf-8"))
-        return load_corpus_catalog(catalog_data)
+        try:
+            return CorpusCatalog.model_validate(catalog_data)
+        except ValidationError as validation_error:
+            raise ValueError(
+                _describe_catalog_validation_error(self.catalog_path, validation_error)
+            ) from validation_error
 
     def load_catalog(self) -> CorpusCatalog:
         """
