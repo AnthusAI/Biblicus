@@ -1213,11 +1213,12 @@ def step_run_harness(context) -> None:
                 )
 
         query_corpus = _QueryCorpus(cli_corpus.root)
+        from biblicus.api import retrieval as api_retrieval_mod
         original_open = cli_mod.Corpus.open
-        original_get_retriever = cli_mod.get_retriever
+        original_get_retriever = api_retrieval_mod.get_retriever
         original_execute = cli_mod._execute_dependency_plan
-        original_rerank = cli_mod.apply_evidence_reranker
-        original_filter = cli_mod.apply_evidence_filter
+        original_rerank = api_retrieval_mod.apply_evidence_reranker
+        original_filter = api_retrieval_mod.apply_evidence_filter
         original_query_plan = workflow_mod.build_plan_for_query
         cli_mod.Corpus.open = classmethod(lambda cls, path: query_corpus)
         cli_mod._execute_dependency_plan = lambda *args, **kwargs: (
@@ -1226,7 +1227,7 @@ def step_run_harness(context) -> None:
         workflow_mod.build_plan_for_query = lambda *args, **kwargs: types.SimpleNamespace(
             status="ready", tasks=[]
         )
-        cli_mod.get_retriever = lambda retriever_id: types.SimpleNamespace(
+        api_retrieval_mod.get_retriever = lambda retriever_id: types.SimpleNamespace(
             query=lambda *args, **kwargs: RetrievalResult(
                 query_text="q",
                 budget=QueryBudget(max_total_items=1),
@@ -1249,8 +1250,8 @@ def step_run_harness(context) -> None:
                 ],
             )
         )
-        cli_mod.apply_evidence_reranker = lambda *args, **kwargs: []
-        cli_mod.apply_evidence_filter = lambda *args, **kwargs: []
+        api_retrieval_mod.apply_evidence_reranker = lambda *args, **kwargs: []
+        api_retrieval_mod.apply_evidence_filter = lambda *args, **kwargs: []
         try:
             cli_mod.cmd_query(
                 argparse.Namespace(
@@ -1288,10 +1289,10 @@ def step_run_harness(context) -> None:
             )
         )
         cli_mod.Corpus.open = original_open
-        cli_mod.get_retriever = original_get_retriever
+        api_retrieval_mod.get_retriever = original_get_retriever
         cli_mod._execute_dependency_plan = original_execute
-        cli_mod.apply_evidence_reranker = original_rerank
-        cli_mod.apply_evidence_filter = original_filter
+        api_retrieval_mod.apply_evidence_reranker = original_rerank
+        api_retrieval_mod.apply_evidence_filter = original_filter
         workflow_mod.build_plan_for_query = original_query_plan
 
         original_stdin = sys.stdin
@@ -18274,7 +18275,10 @@ def step_exhaust_core(context) -> None:
         from biblicus import workflow as workflow_mod
         from biblicus import cli as cli_mod
 
+        from biblicus.api import retrieval as api_retrieval_mod
+
         original_get_retriever = cli_mod.get_retriever
+        original_api_get_retriever = api_retrieval_mod.get_retriever
         original_execute = cli_mod._execute_dependency_plan
         original_build_index = workflow_mod.build_plan_for_index
         original_build_extract = workflow_mod.build_plan_for_extract
@@ -18283,8 +18287,8 @@ def step_exhaust_core(context) -> None:
         original_load_dataset = cli_mod.load_extraction_dataset
         original_eval_snapshot = cli_mod.evaluate_extraction_snapshot
         original_write_eval = cli_mod.write_extraction_evaluation_result
-        original_apply_reranker = cli_mod.apply_evidence_reranker
-        original_apply_filter = cli_mod.apply_evidence_filter
+        original_apply_reranker = api_retrieval_mod.apply_evidence_reranker
+        original_apply_filter = api_retrieval_mod.apply_evidence_filter
         original_corpus_open = cli_mod.Corpus.open
         from biblicus.graph import extraction as graph_extraction_mod
         original_graph_build = graph_extraction_mod.build_graph_snapshot
@@ -18323,6 +18327,7 @@ def step_exhaust_core(context) -> None:
                 )
 
         cli_mod.get_retriever = lambda name: _FakeRetriever()
+        api_retrieval_mod.get_retriever = lambda name: _FakeRetriever()
         cli_mod._execute_dependency_plan = lambda *args, **kwargs: []
         workflow_mod.build_plan_for_index = lambda *args, **kwargs: types.SimpleNamespace(
             status="complete", tasks=[], root=types.SimpleNamespace(reason=None)
@@ -18466,8 +18471,8 @@ def step_exhaust_core(context) -> None:
                 _ignore_expected_coverage_exception()
 
 
-            cli_mod.apply_evidence_reranker = lambda **kwargs: ["e2"]
-            cli_mod.apply_evidence_filter = lambda **kwargs: ["e3"]
+            api_retrieval_mod.apply_evidence_reranker = lambda **kwargs: ["e2"]
+            api_retrieval_mod.apply_evidence_filter = lambda **kwargs: ["e3"]
             graph_extraction_mod.build_graph_snapshot = (
                 lambda *args, **kwargs: types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
             )
@@ -18571,6 +18576,7 @@ def step_exhaust_core(context) -> None:
 
         finally:
             cli_mod.get_retriever = original_get_retriever
+            api_retrieval_mod.get_retriever = original_api_get_retriever
             cli_mod._execute_dependency_plan = original_execute
             workflow_mod.build_plan_for_index = original_build_index
             workflow_mod.build_plan_for_extract = original_build_extract
@@ -18579,8 +18585,8 @@ def step_exhaust_core(context) -> None:
             cli_mod.load_extraction_dataset = original_load_dataset
             cli_mod.evaluate_extraction_snapshot = original_eval_snapshot
             cli_mod.write_extraction_evaluation_result = original_write_eval
-            cli_mod.apply_evidence_reranker = original_apply_reranker
-            cli_mod.apply_evidence_filter = original_apply_filter
+            api_retrieval_mod.apply_evidence_reranker = original_apply_reranker
+            api_retrieval_mod.apply_evidence_filter = original_apply_filter
             cli_mod.Corpus.open = original_corpus_open
             graph_extraction_mod.build_graph_snapshot = original_graph_build
             graph_extraction_mod.list_graph_snapshots = original_graph_list

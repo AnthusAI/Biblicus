@@ -428,7 +428,7 @@ def test_graph_extract_rejects_negative_retry_attempts(
     )
 
     assert exit_code == 2
-    assert "--item-retry-attempts must be >= 0." in error_output
+    assert "item_retry_attempts: Input should be greater than or equal to 0" in error_output
 
 
 def test_graph_extract_progress_reports_heartbeat_and_errors(

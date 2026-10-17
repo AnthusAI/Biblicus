@@ -238,19 +238,25 @@ def _load_source(source: str, article: bool) -> SourceInput:
         ) from None
 
 
-def run_transform(arguments: argparse.Namespace) -> int:
-    """Run one bounded transformation and print its validated JSON result.
+def transform_source(
+    source: SourceInput, *, article: bool, task: str | None, model: str | None
+) -> TransformResult:
+    """Run one bounded transformation on an already validated source.
 
-    :param arguments: Parsed CLI arguments with source and command selection.
-    :type arguments: argparse.Namespace
-    :return: Zero on success, two on a structured failure.
-    :rtype: int
+    :param source: Validated source and advisory context.
+    :type source: SourceInput
+    :param article: True to select article paragraphs, false to map-reduce metadata.
+    :type article: bool
+    :param task: Metadata field to generate, or None for article selection.
+    :type task: str or None
+    :param model: Requested model identifier, checked only for metadata generation.
+    :type model: str or None
+    :return: The stable result, with a sanitized error when the transformation failed.
+    :rtype: TransformResult
     """
-    article = arguments.web_transform_task == "article"
-    result = TransformResult(task=None if article else arguments.web_transform_task)
+    result = TransformResult(task=None if article else task)
     try:
-        source = _load_source(arguments.input_json, article)
-        if not article and arguments.model != MODEL:
+        if not article and model != MODEL:
             raise TransformError("invalid_input", "Only the pinned model is supported.")
         endpoint, key = _gateway_configuration()
         if article:
@@ -280,7 +286,6 @@ def run_transform(arguments: argparse.Namespace) -> int:
             result.text = "\n\n".join(paragraphs[index] for index in selected)
             result.span_count = len(selected)
         else:
-            task = arguments.web_transform_task
             quality_instruction = (
                 "Treat explicitly archived material as historical, not a current incident. "
                 "When source_is_archived is unknown, do not claim archive status. "
@@ -334,6 +339,43 @@ def run_transform(arguments: argparse.Namespace) -> int:
         result.status = "ok"
     except TransformError as error:
         result.error = {"code": error.code, "message": str(error)}
+    return result
+
+
+def run_transform(arguments: argparse.Namespace) -> int:
+    """Run one bounded transformation and print its validated JSON result.
+
+    :param arguments: Parsed CLI arguments with source and command selection.
+    :type arguments: argparse.Namespace
+    :return: Zero on success, two on a structured failure.
+    :rtype: int
+    """
+    article = arguments.web_transform_task == "article"
+    task = None if article else arguments.web_transform_task
+    try:
+        source = _load_source(arguments.input_json, article)
+    except TransformError as error:
+        result = TransformResult(task=task)
+        result.error = {"code": error.code, "message": str(error)}
+    else:
+        from .api import (
+            SummarizeMapReduceRequest,
+            extract_article_text,
+            summarize_map_reduce,
+            validate_request,
+        )
+
+        if article:
+            result = extract_article_text(source)
+        else:
+            request = validate_request(
+                SummarizeMapReduceRequest,
+                "summarize map-reduce",
+                **source.model_dump(),
+                task=task,
+                model=arguments.model,
+            )
+            result = summarize_map_reduce(request)
     print(result.model_dump_json())
     return 0 if result.status == "ok" else 2
 

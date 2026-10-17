@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "description": "Request to generate a research-agent topic context report.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar topic_modeling_snapshot_id: Topic modeling snapshot to summarize.\n:vartype topic_modeling_snapshot_id: str\n:ivar max_topics: Maximum non-outlier topic buckets to include.\n:vartype max_topics: int\n:ivar examples_per_topic: Maximum representative examples per topic.\n:vartype examples_per_topic: int\n:ivar summary_model: Optional model for topic guidance and missing example summaries.\n:vartype summary_model: str or None\n:ivar include_outlier: True to include the outlier topic.\n:vartype include_outlier: bool",
+  "properties": {
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "examples_per_topic": {
+      "default": 3,
+      "minimum": 1,
+      "title": "Examples Per Topic",
+      "type": "integer"
+    },
+    "include_outlier": {
+      "default": false,
+      "title": "Include Outlier",
+      "type": "boolean"
+    },
+    "max_topics": {
+      "default": 20,
+      "minimum": 1,
+      "title": "Max Topics",
+      "type": "integer"
+    },
+    "summary_model": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Summary Model"
+    },
+    "topic_modeling_snapshot_id": {
+      "minLength": 1,
+      "title": "Topic Modeling Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "topic_modeling_snapshot_id"
+  ],
+  "title": "TopicContextRequest",
+  "type": "object"
+}

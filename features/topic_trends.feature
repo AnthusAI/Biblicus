@@ -56,7 +56,8 @@ Feature: Temporal topic intelligence
     When I train a topic classifier in corpus "trend-lab" using manifest "trend-topic-classifier.json" and configuration "trend-topic-classifier.yml"
     And I snapshot a topic analysis in corpus "trend-lab" using configuration "trend-topic-classifier.yml" and the latest extraction snapshot
     And I analyze topic trends in corpus "trend-lab" using classifier "classifier-lab-v1" with windows "30d,90d,all" as of "2026-01-31"
-    Then the topic trend output excludes 1 undated item
+    Then the standard output validates against the published "analyze-topic-trends" response schema
+    And the topic trend output excludes 1 undated item
     And the topic trend output ranks discovered topic "1" above discovered topic "0" for window "90d"
     And the topic trend output includes canonical and discovered rankings
     And the topic trend output includes a governance proposal for topic "scientific-discovery"

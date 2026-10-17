@@ -27,6 +27,7 @@ Feature: Topic classifier workflows
     When I train a topic classifier in corpus "classifier-lab" using manifest "topic-classifier.json" and configuration "topic-classifier.yml"
     Then the command succeeds
     And the fake BERTopic training labels contain 1 label "0", 1 label "1", and 2 labels "-1"
+    And the standard output validates against the published "topic-classifier-train" response schema
 
   Scenario: Training labels history seeds and leaves history holdouts unlabelled
     Given I initialized a corpus at "history-classifier-lab"
@@ -163,6 +164,7 @@ Feature: Topic classifier workflows
     Given fake BERTopic classification returns topic "0" with score "0.8"
     When I project classifier "classifier-lab-v1" from corpus "authority-lab" onto item titled "History Article" in corpus "target-lab" with review threshold "0.5"
     Then the command succeeds
+    And the standard output validates against the published "topic-classifier-project" response schema
     And the topic classifier projection includes 1 item
     And the topic classifier projection item titled "History Article" has topic_uid "agent-systems" and review_recommended "false"
 

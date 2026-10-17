@@ -1,0 +1,316 @@
+{
+  "$defs": {
+    "SteeringProposal": {
+      "additionalProperties": false,
+      "description": "Reviewable steering recommendation authored outside human decision state.\n\n:ivar proposal_id: Stable proposal identifier.\n:vartype proposal_id: str\n:ivar proposal_kind: Proposal type.\n:vartype proposal_kind: str\n:ivar domain: Steering domain.\n:vartype domain: str\n:ivar recommendation: Proposal recommendation.\n:vartype recommendation: str\n:ivar status: Proposal artifact status.\n:vartype status: str\n:ivar author: Proposal author metadata.\n:vartype author: dict[str, Any]\n:ivar source_signal_ids: Signal identifiers used by this proposal.\n:vartype source_signal_ids: list[str]\n:ivar evidence: Proposal evidence payload.\n:vartype evidence: dict[str, Any]\n:ivar rationale: Proposal rationale.\n:vartype rationale: str\n:ivar confidence: Optional proposal confidence.\n:vartype confidence: float or None\n:ivar payload: Proposal-specific payload.\n:vartype payload: dict[str, Any]",
+      "properties": {
+        "author": {
+          "additionalProperties": true,
+          "title": "Author",
+          "type": "object"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "domain": {
+          "minLength": 1,
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "proposal_id": {
+          "minLength": 1,
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "proposal_kind": {
+          "minLength": 1,
+          "title": "Proposal Kind",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "recommendation": {
+          "enum": [
+            "recommend",
+            "do_not_recommend",
+            "needs_clarification"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_signal_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Signal Ids",
+          "type": "array"
+        },
+        "status": {
+          "const": "proposed",
+          "default": "proposed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "proposal_kind",
+        "domain",
+        "recommendation",
+        "rationale"
+      ],
+      "title": "SteeringProposal",
+      "type": "object"
+    },
+    "TopicTrendEntry": {
+      "additionalProperties": false,
+      "description": "Ranked topic trend row.\n\n:ivar rank: Rank within its topic list.\n:vartype rank: int\n:ivar topic_id: BERTopic topic identifier for discovered topics.\n:vartype topic_id: int or None\n:ivar topic_uid: Canonical topic identity for classifier topics.\n:vartype topic_uid: str or None\n:ivar label: Human-readable topic label.\n:vartype label: str\n:ivar keywords: Topic keywords.\n:vartype keywords: list[str]\n:ivar document_count: Total topic documents in the snapshot.\n:vartype document_count: int\n:ivar trend_eligible_document_count: Topic documents with dates.published_at.\n:vartype trend_eligible_document_count: int\n:ivar document_ids: Topic document identifiers.\n:vartype document_ids: list[str]\n:ivar window_metrics: Metrics keyed by window.\n:vartype window_metrics: dict[str, TopicTrendWindowMetric]",
+      "properties": {
+        "document_count": {
+          "minimum": 0,
+          "title": "Document Count",
+          "type": "integer"
+        },
+        "document_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Document Ids",
+          "type": "array"
+        },
+        "keywords": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keywords",
+          "type": "array"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Id"
+        },
+        "topic_uid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Uid"
+        },
+        "trend_eligible_document_count": {
+          "minimum": 0,
+          "title": "Trend Eligible Document Count",
+          "type": "integer"
+        },
+        "window_metrics": {
+          "additionalProperties": {
+            "$ref": "#/$defs/TopicTrendWindowMetric"
+          },
+          "title": "Window Metrics",
+          "type": "object"
+        }
+      },
+      "required": [
+        "rank",
+        "label",
+        "document_count",
+        "trend_eligible_document_count"
+      ],
+      "title": "TopicTrendEntry",
+      "type": "object"
+    },
+    "TopicTrendWindowMetric": {
+      "additionalProperties": false,
+      "description": "Publication-window metric for a topic.\n\n:ivar window: Window identifier.\n:vartype window: str\n:ivar document_count: Topic documents inside the window.\n:vartype document_count: int\n:ivar corpus_document_count: Corpus documents inside the window.\n:vartype corpus_document_count: int\n:ivar share: Topic share inside the window.\n:vartype share: float\n:ivar baseline_share: Topic all-time share.\n:vartype baseline_share: float\n:ivar momentum_score: Window share divided by baseline share.\n:vartype momentum_score: float",
+      "properties": {
+        "baseline_share": {
+          "minimum": 0,
+          "title": "Baseline Share",
+          "type": "number"
+        },
+        "corpus_document_count": {
+          "minimum": 0,
+          "title": "Corpus Document Count",
+          "type": "integer"
+        },
+        "document_count": {
+          "minimum": 0,
+          "title": "Document Count",
+          "type": "integer"
+        },
+        "momentum_score": {
+          "minimum": 0,
+          "title": "Momentum Score",
+          "type": "number"
+        },
+        "share": {
+          "minimum": 0,
+          "title": "Share",
+          "type": "number"
+        },
+        "window": {
+          "minLength": 1,
+          "title": "Window",
+          "type": "string"
+        }
+      },
+      "required": [
+        "window",
+        "document_count",
+        "corpus_document_count",
+        "share",
+        "baseline_share",
+        "momentum_score"
+      ],
+      "title": "TopicTrendWindowMetric",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Topic trend analysis output.\n\n:ivar schema_version: Schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar snapshot_id: Topic governance snapshot identifier.\n:vartype snapshot_id: str\n:ivar generated_at: Deterministic generation timestamp derived from as_of.\n:vartype generated_at: str\n:ivar inputs: Reproducibility inputs.\n:vartype inputs: dict[str, Any]\n:ivar as_of: Publication date used as the window anchor.\n:vartype as_of: str\n:ivar windows: Window identifiers.\n:vartype windows: list[str]\n:ivar rank_window: Window used for ranking.\n:vartype rank_window: str\n:ivar summary: Corpus-level trend summary.\n:vartype summary: dict[str, Any]\n:ivar canonical_topics: Ranked canonical topic coverage.\n:vartype canonical_topics: list[TopicTrendEntry]\n:ivar discovered_topics: Ranked discovered topic trends.\n:vartype discovered_topics: list[TopicTrendEntry]\n:ivar proposals: Unified steering proposal records.\n:vartype proposals: list[SteeringProposal]\n:ivar artifact_paths: Written artifact paths.\n:vartype artifact_paths: dict[str, str]\n:ivar warnings: Warning messages.\n:vartype warnings: list[str]",
+  "properties": {
+    "analysis_id": {
+      "default": "topic-governance",
+      "title": "Analysis Id",
+      "type": "string"
+    },
+    "artifact_paths": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifact Paths",
+      "type": "object"
+    },
+    "as_of": {
+      "minLength": 1,
+      "title": "As Of",
+      "type": "string"
+    },
+    "canonical_topics": {
+      "items": {
+        "$ref": "#/$defs/TopicTrendEntry"
+      },
+      "title": "Canonical Topics",
+      "type": "array"
+    },
+    "discovered_topics": {
+      "items": {
+        "$ref": "#/$defs/TopicTrendEntry"
+      },
+      "title": "Discovered Topics",
+      "type": "array"
+    },
+    "generated_at": {
+      "minLength": 1,
+      "title": "Generated At",
+      "type": "string"
+    },
+    "inputs": {
+      "additionalProperties": true,
+      "title": "Inputs",
+      "type": "object"
+    },
+    "proposals": {
+      "items": {
+        "$ref": "#/$defs/SteeringProposal"
+      },
+      "title": "Proposals",
+      "type": "array"
+    },
+    "rank_window": {
+      "minLength": 1,
+      "title": "Rank Window",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "snapshot_id": {
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "summary": {
+      "additionalProperties": true,
+      "title": "Summary",
+      "type": "object"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "windows": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Windows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "generated_at",
+    "as_of",
+    "rank_window"
+  ],
+  "title": "TopicTrendOutput",
+  "type": "object"
+}

@@ -1,0 +1,320 @@
+{
+  "$defs": {
+    "TopicClassifierProjectionItem": {
+      "additionalProperties": false,
+      "description": "Cross-corpus topic projection for one target item.\n\n:ivar schema_version: Output schema version.\n:vartype schema_version: int\n:ivar classifier_id: Classifier identifier.\n:vartype classifier_id: str\n:ivar item_id: Target corpus item identifier.\n:vartype item_id: str\n:ivar title: Target item title when available.\n:vartype title: str or None\n:ivar source_uri: Target item source uniform resource identifier when available.\n:vartype source_uri: str or None\n:ivar model_version: Classifier model version identifier.\n:vartype model_version: str\n:ivar classifier_corpus_uri: Corpus uniform resource identifier that owns the classifier.\n:vartype classifier_corpus_uri: str\n:ivar target_corpus_uri: Corpus uniform resource identifier that owns the target item.\n:vartype target_corpus_uri: str\n:ivar extraction_snapshot: Target corpus extraction snapshot used for classification text.\n:vartype extraction_snapshot: dict[str, Any]\n:ivar bertopic_topic_id: BERTopic topic identifier assigned by this model version.\n:vartype bertopic_topic_id: int\n:ivar topic_uid: Stable Biblicus topic identity, when mapped.\n:vartype topic_uid: str or None\n:ivar display_name: Human-readable mapped topic name, when mapped.\n:vartype display_name: str or None\n:ivar score: Prediction confidence when available.\n:vartype score: float or None\n:ivar review_recommended: Whether human review is recommended.\n:vartype review_recommended: bool\n:ivar representative_evidence: Topic keywords and representative item identifiers.\n:vartype representative_evidence: dict[str, Any]\n:ivar topic_candidates: Ranked candidate topics from classifier scores.\n:vartype topic_candidates: list[TopicClassifierTopicCandidate]\n:ivar recorded: Whether this projection was persisted as an audit record.\n:vartype recorded: bool",
+      "properties": {
+        "bertopic_topic_id": {
+          "title": "Bertopic Topic Id",
+          "type": "integer"
+        },
+        "classifier_corpus_uri": {
+          "title": "Classifier Corpus Uri",
+          "type": "string"
+        },
+        "classifier_id": {
+          "title": "Classifier Id",
+          "type": "string"
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Name"
+        },
+        "extraction_snapshot": {
+          "additionalProperties": true,
+          "title": "Extraction Snapshot",
+          "type": "object"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "recorded": {
+          "default": false,
+          "title": "Recorded",
+          "type": "boolean"
+        },
+        "representative_evidence": {
+          "additionalProperties": true,
+          "title": "Representative Evidence",
+          "type": "object"
+        },
+        "review_recommended": {
+          "title": "Review Recommended",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "source_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Uri"
+        },
+        "target_corpus_uri": {
+          "title": "Target Corpus Uri",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "topic_candidates": {
+          "items": {
+            "$ref": "#/$defs/TopicClassifierTopicCandidate"
+          },
+          "title": "Topic Candidates",
+          "type": "array"
+        },
+        "topic_uid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Uid"
+        }
+      },
+      "required": [
+        "classifier_id",
+        "item_id",
+        "model_version",
+        "classifier_corpus_uri",
+        "target_corpus_uri",
+        "extraction_snapshot",
+        "bertopic_topic_id",
+        "review_recommended"
+      ],
+      "title": "TopicClassifierProjectionItem",
+      "type": "object"
+    },
+    "TopicClassifierProjectionSkippedItem": {
+      "additionalProperties": false,
+      "description": "Target item skipped during a classifier projection batch.\n\n:ivar schema_version: Output schema version.\n:vartype schema_version: int\n:ivar item_id: Target corpus item identifier.\n:vartype item_id: str\n:ivar title: Target item title when available.\n:vartype title: str or None\n:ivar source_uri: Target item source uniform resource identifier when available.\n:vartype source_uri: str or None\n:ivar reason: Reason the item was not projected.\n:vartype reason: str",
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Uri"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "item_id",
+        "reason"
+      ],
+      "title": "TopicClassifierProjectionSkippedItem",
+      "type": "object"
+    },
+    "TopicClassifierTopicCandidate": {
+      "additionalProperties": false,
+      "description": "Ranked topic candidate for a classifier prediction.\n\n:ivar rank: One-based rank within the prediction.\n:vartype rank: int\n:ivar bertopic_topic_id: BERTopic topic identifier.\n:vartype bertopic_topic_id: int\n:ivar topic_uid: Stable Biblicus topic identity, when mapped.\n:vartype topic_uid: str or None\n:ivar display_name: Human-readable topic name, when mapped.\n:vartype display_name: str or None\n:ivar score: Prediction confidence when available.\n:vartype score: float or None\n:ivar representative_evidence: Topic keywords and representative item identifiers.\n:vartype representative_evidence: dict[str, Any]",
+      "properties": {
+        "bertopic_topic_id": {
+          "title": "Bertopic Topic Id",
+          "type": "integer"
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Name"
+        },
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "representative_evidence": {
+          "additionalProperties": true,
+          "title": "Representative Evidence",
+          "type": "object"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "topic_uid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Uid"
+        }
+      },
+      "required": [
+        "rank",
+        "bertopic_topic_id"
+      ],
+      "title": "TopicClassifierTopicCandidate",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Output for projecting a canonical classifier onto a target corpus.\n\n:ivar schema_version: Output schema version.\n:vartype schema_version: int\n:ivar classifier_id: Classifier identifier.\n:vartype classifier_id: str\n:ivar model_version: Classifier model version identifier.\n:vartype model_version: str\n:ivar classifier_corpus_uri: Corpus uniform resource identifier that owns the classifier.\n:vartype classifier_corpus_uri: str\n:ivar target_corpus_uri: Corpus uniform resource identifier that owns the target items.\n:vartype target_corpus_uri: str\n:ivar extraction_snapshot: Target corpus extraction snapshot used for classification text.\n:vartype extraction_snapshot: dict[str, Any]\n:ivar review_threshold: Minimum confidence score before review is recommended.\n:vartype review_threshold: float\n:ivar recorded: Whether projections were persisted as audit records.\n:vartype recorded: bool\n:ivar summary: Projection summary metrics.\n:vartype summary: dict[str, Any]\n:ivar items: Projected item rows.\n:vartype items: list[TopicClassifierProjectionItem]\n:ivar skipped_items: Target items skipped before projection.\n:vartype skipped_items: list[TopicClassifierProjectionSkippedItem]",
+  "properties": {
+    "classifier_corpus_uri": {
+      "title": "Classifier Corpus Uri",
+      "type": "string"
+    },
+    "classifier_id": {
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "additionalProperties": true,
+      "title": "Extraction Snapshot",
+      "type": "object"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/TopicClassifierProjectionItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "model_version": {
+      "title": "Model Version",
+      "type": "string"
+    },
+    "recorded": {
+      "title": "Recorded",
+      "type": "boolean"
+    },
+    "review_threshold": {
+      "title": "Review Threshold",
+      "type": "number"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "skipped_items": {
+      "items": {
+        "$ref": "#/$defs/TopicClassifierProjectionSkippedItem"
+      },
+      "title": "Skipped Items",
+      "type": "array"
+    },
+    "summary": {
+      "additionalProperties": true,
+      "title": "Summary",
+      "type": "object"
+    },
+    "target_corpus_uri": {
+      "title": "Target Corpus Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "classifier_id",
+    "model_version",
+    "classifier_corpus_uri",
+    "target_corpus_uri",
+    "extraction_snapshot",
+    "review_threshold",
+    "recorded"
+  ],
+  "title": "TopicClassifierProjectionOutput",
+  "type": "object"
+}

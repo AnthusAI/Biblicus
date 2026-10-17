@@ -17,6 +17,7 @@ import yaml
 from pydantic import ValidationError
 
 from .analysis import get_analysis_backend
+from .api import validate_request
 from .collections import load_collection_config, pull_collection
 from .context import (
     CharacterBudget,
@@ -24,7 +25,6 @@ from .context import (
     ContextPackPolicy,
     TokenBudget,
     build_context_pack,
-    build_context_pack_from_blocks,
     fit_context_pack_to_character_budget,
     fit_context_pack_to_token_budget,
 )
@@ -33,7 +33,6 @@ from .corpus_audit import build_corpus_audit, corpus_audit_markdown
 from .crawl import CrawlRequest, crawl_into_corpus
 from .errors import ExtractionSnapshotFatalError, IngestCollisionError, RemoteSourceDependencyError
 from .evaluation.retrieval import evaluate_snapshot, load_dataset
-from .evidence_processing import apply_evidence_filter, apply_evidence_reranker
 from .extraction import build_extraction_snapshot, load_or_build_extraction_snapshot
 from .extraction_evaluation import (
     evaluate_extraction_snapshot,
@@ -51,13 +50,7 @@ from .models import (
 )
 from .pipelines import run_pipeline_recipe
 from .retrievers import get_retriever
-from .steering import (
-    build_steering_artifact_inventory,
-    build_steering_export,
-    render_steering_seed_manifest,
-)
 from .steering_proposals import (
-    build_steering_graph_signal_bundle,
     load_steering_proposal_bundle,
     record_steering_proposal_bundle,
 )
@@ -116,6 +109,32 @@ def _add_common_corpus_arg(parser: argparse.ArgumentParser) -> None:
             "upward)."
         ),
     )
+
+
+def _corpus_path_from_arguments(arguments: argparse.Namespace) -> str:
+    """
+    Resolve the corpus path or uniform resource identifier named by command-line interface arguments.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Explicit corpus reference, or the root of the corpus found from the working directory.
+    :rtype: str
+    """
+    if getattr(arguments, "corpus", None):
+        return str(arguments.corpus)
+    return str(Corpus.find(Path.cwd()).root)
+
+
+def _open_corpus_from_arguments(arguments: argparse.Namespace) -> Corpus:
+    """
+    Open the corpus named by command-line interface arguments.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Opened corpus.
+    :rtype: Corpus
+    """
+    return Corpus.open(_corpus_path_from_arguments(arguments))
 
 
 def cmd_init(arguments: argparse.Namespace) -> int:
@@ -526,13 +545,12 @@ def cmd_reindex(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
+    from .api import ReindexRequest, reindex
+
+    request = validate_request(
+        ReindexRequest, "reindex", corpus_path=_corpus_path_from_arguments(arguments)
     )
-    stats = corpus.reindex()
-    print(json.dumps(stats, indent=2, sort_keys=False))
+    print(reindex(request).model_dump_json(indent=2))
     return 0
 
 
@@ -1303,6 +1321,7 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     :rtype: int
     """
     from . import url_text as url_text_module
+    from .api import UrlTextRequest, extract_url_text
 
     def print_failure_to_standard_error(error_payload: Dict[str, Any]) -> int:
         print(json.dumps({"status": "failed", "error": error_payload}, indent=2), file=sys.stderr)
@@ -1319,20 +1338,22 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
             {"code": "missing_source_uri", "message": "source_uri is required"}
         )
 
+    request = validate_request(
+        UrlTextRequest,
+        "extract url-text",
+        source_uri=source_uri,
+        reference_title=str(payload.get("reference_title") or ""),
+        timeout_seconds=float(
+            payload.get("timeout_seconds") or url_text_module.URL_TEXT_DEFAULT_TIMEOUT_SECONDS
+        ),
+    )
     try:
-        output = url_text_module.extract_url_text(
-            source_uri=source_uri,
-            reference_title=str(payload.get("reference_title") or ""),
-            timeout_seconds=float(
-                payload.get("timeout_seconds")
-                or url_text_module.URL_TEXT_DEFAULT_TIMEOUT_SECONDS
-            ),
-        )
+        output = extract_url_text(request)
     except url_text_module.UrlTextExtractionError as exc:
         return print_failure_to_standard_error(exc.to_dict())
 
-    print(json.dumps(output, indent=2))
-    return 0 if output.get("status") == "ok" else 1
+    print(output.model_dump_json(indent=2, exclude_unset=True))
+    return 0 if output.status == "ok" else 1
 
 
 def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
@@ -1344,82 +1365,41 @@ def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    from .api import WebMetadataRequest, extract_web_metadata
     from .url_text import URL_TEXT_DEFAULT_TIMEOUT_SECONDS, load_url_text_input_json
-    from .web_reference_metadata import (
-        extract_web_reference_metadata_from_html,
-        extract_web_reference_metadata_from_url,
-    )
+
+    def print_failure_to_standard_error(error_payload: Dict[str, Any]) -> int:
+        print(json.dumps({"status": "failed", "error": error_payload}, indent=2), file=sys.stderr)
+        return 2
 
     try:
         payload = load_url_text_input_json(arguments.input_json)
     except ValueError as exc:
-        print(
-            json.dumps(
-                {
-                    "status": "failed",
-                    "error": {"code": "invalid_input_json", "message": str(exc)},
-                },
-                indent=2,
-            ),
-            file=sys.stderr,
-        )
-        return 2
+        return print_failure_to_standard_error({"code": "invalid_input_json", "message": str(exc)})
 
     source_uri = str(payload.get("source_uri") or "").strip()
     html_content = str(payload.get("html_content") or payload.get("html") or "").strip()
-    use_llm_fallback = bool(payload.get("use_llm_fallback"))
-    reference_title = str(payload.get("reference_title") or "")
-
-    try:
-        if html_content:
-            from .web_reference_metadata import LOCAL_HTML_SOURCE_URI
-
-            output = extract_web_reference_metadata_from_html(
-                html_content,
-                source_uri=source_uri or LOCAL_HTML_SOURCE_URI,
-                reference_title=reference_title,
-                use_llm_fallback=use_llm_fallback,
-                model=str(payload.get("model") or ""),
-            )
-        elif source_uri:
-            output = extract_web_reference_metadata_from_url(
-                source_uri,
-                reference_title=reference_title,
-                use_llm_fallback=use_llm_fallback,
-                model=str(payload.get("model") or ""),
-                timeout_seconds=float(
-                    payload.get("timeout_seconds") or URL_TEXT_DEFAULT_TIMEOUT_SECONDS
-                ),
-            )
-        else:
-            print(
-                json.dumps(
-                    {
-                        "status": "failed",
-                        "error": {
-                            "code": "missing_input",
-                            "message": "Provide source_uri and/or html_content.",
-                        },
-                    },
-                    indent=2,
-                ),
-                file=sys.stderr,
-            )
-            return 2
-    except ValueError as exc:
-        print(
-            json.dumps(
-                {
-                    "status": "failed",
-                    "error": {"code": "web_metadata_failed", "message": str(exc)},
-                },
-                indent=2,
-            ),
-            file=sys.stderr,
+    if not html_content and not source_uri:
+        return print_failure_to_standard_error(
+            {"code": "missing_input", "message": "Provide source_uri and/or html_content."}
         )
-        return 2
 
-    print(json.dumps({"status": "ok", **output}, indent=2))
+    request = validate_request(
+        WebMetadataRequest,
+        "extract web-metadata",
+        source_uri=source_uri,
+        html_content=html_content,
+        reference_title=str(payload.get("reference_title") or ""),
+        use_llm_fallback=bool(payload.get("use_llm_fallback")),
+        model=str(payload.get("model") or ""),
+        timeout_seconds=float(payload.get("timeout_seconds") or URL_TEXT_DEFAULT_TIMEOUT_SECONDS),
+    )
+    try:
+        output = extract_web_metadata(request)
+    except ValueError as exc:
+        return print_failure_to_standard_error({"code": "web_metadata_failed", "message": str(exc)})
+
+    print(output.model_dump_json(indent=2))
     return 0
 
 
@@ -1482,30 +1462,9 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .configuration import (
-        apply_dotted_overrides,
-        load_configuration_view,
-        parse_dotted_overrides,
-    )
-    from .graph.extraction import build_graph_snapshot
+    from .api import GraphExtractRequest, graph_extract
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
-
-    base_config: Dict[str, object] = {}
-    if arguments.configuration is not None:
-        base_config = load_configuration_view(
-            arguments.configuration,
-            configuration_label="Graph extraction configuration",
-            mapping_error_message="Graph extraction configuration must be a mapping/object",
-        )
-
-    overrides = parse_dotted_overrides(arguments.override)
-    configuration = apply_dotted_overrides(base_config, overrides)
-
+    corpus = _open_corpus_from_arguments(arguments)
     if arguments.extraction_snapshot:
         extraction_snapshot = parse_extraction_snapshot_reference(arguments.extraction_snapshot)
     else:
@@ -1516,21 +1475,21 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
             "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
         )
-    if arguments.item_retry_attempts < 0:
-        raise ValueError("--item-retry-attempts must be >= 0.")
-
-    manifest = build_graph_snapshot(
-        corpus,
+    request = validate_request(
+        GraphExtractRequest,
+        "graph extract",
+        corpus_path=str(corpus.root),
         extractor_id=arguments.extractor,
-        configuration_name=arguments.configuration_name,
-        configuration=configuration,
         extraction_snapshot=extraction_snapshot,
+        configuration_name=arguments.configuration_name,
+        configuration_paths=arguments.configuration or [],
+        overrides=arguments.override,
         max_items=arguments.max_items,
         item_timeout_seconds=arguments.item_timeout_seconds,
         item_retry_attempts=arguments.item_retry_attempts,
         heartbeat_interval_seconds=arguments.heartbeat_interval_seconds,
-        progress_callback=_graph_extract_progress,
     )
+    manifest = graph_extract(request, progress_callback=_graph_extract_progress)
     print(manifest.model_dump_json(indent=2))
     return 0
 
@@ -1671,15 +1630,15 @@ def cmd_taxonomy_record(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .taxonomy import record_taxonomy_manifest
+    from .api import TaxonomyRecordRequest, taxonomy_record
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
+    request = validate_request(
+        TaxonomyRecordRequest,
+        "taxonomy record",
+        corpus_path=_corpus_path_from_arguments(arguments),
+        input_path=arguments.input,
     )
-    output = record_taxonomy_manifest(corpus=corpus, input_path=Path(arguments.input))
-    print(output.model_dump_json(indent=2))
+    print(taxonomy_record(request).model_dump_json(indent=2))
     return 0
 
 
@@ -1692,30 +1651,24 @@ def cmd_taxonomy_discover(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .steering_feedback import load_steering_feedback
-    from .taxonomy import discover_taxonomy_children, taxonomy_discovery_markdown
+    from .api import TaxonomyDiscoverRequest, taxonomy_discover
+    from .taxonomy import taxonomy_discovery_markdown
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
+    corpus = _open_corpus_from_arguments(arguments)
     extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
         corpus=corpus,
         extraction_snapshot=arguments.extraction_snapshot,
         analysis_label="Taxonomy discovery",
     )
-    steering_feedback = (
-        load_steering_feedback(Path(arguments.steering_feedback))
-        if arguments.steering_feedback
-        else None
-    )
-    output = discover_taxonomy_children(
-        corpus=corpus,
+    request = validate_request(
+        TaxonomyDiscoverRequest,
+        "taxonomy discover",
+        corpus_path=str(corpus.root),
         classifier_id=arguments.classifier,
         extraction_snapshot=extraction_snapshot,
-        steering_feedback=steering_feedback,
+        steering_feedback_path=arguments.steering_feedback,
     )
+    output = taxonomy_discover(request)
     if arguments.format == "markdown":
         print(taxonomy_discovery_markdown(output))
     else:
@@ -1806,11 +1759,9 @@ def cmd_query(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
+    from .api import QueryRequest, query
+
+    corpus = _open_corpus_from_arguments(arguments)
     snapshot_id = arguments.snapshot or corpus.latest_snapshot_id
     if not snapshot_id:
         from .workflow import build_plan_for_query
@@ -1831,37 +1782,19 @@ def cmd_query(arguments: argparse.Namespace) -> int:
             mode=dependency_mode,
         )
         snapshot_id = corpus.latest_snapshot_id
-    if not snapshot_id:
-        raise ValueError(
-            "No snapshot identifier provided and no latest snapshot is recorded for this corpus"
-        )
-    snapshot = corpus.load_snapshot(snapshot_id)
-    if arguments.retriever and arguments.retriever != snapshot.configuration.retriever_id:
-        raise ValueError(
-            "Retriever mismatch: snapshot uses "
-            f"{snapshot.configuration.retriever_id!r} but {arguments.retriever!r} was requested"
-        )
-    retriever = get_retriever(snapshot.configuration.retriever_id)
     query_text = arguments.query if arguments.query is not None else sys.stdin.read()
-    budget = _budget_from_args(arguments)
-    result = retriever.query(corpus, snapshot=snapshot, query_text=query_text, budget=budget)
-    processed_evidence = result.evidence
-    if getattr(arguments, "reranker_id", None):
-        processed_evidence = apply_evidence_reranker(
-            reranker_id=arguments.reranker_id,
-            query_text=result.query_text,
-            evidence=processed_evidence,
-        )
-    if getattr(arguments, "minimum_score", None) is not None:
-        processed_evidence = apply_evidence_filter(
-            filter_id="filter-minimum-score",
-            query_text=result.query_text,
-            evidence=processed_evidence,
-            config={"minimum_score": float(arguments.minimum_score)},
-        )
-    if processed_evidence is not result.evidence:
-        result = result.model_copy(update={"evidence": processed_evidence})
-    print(result.model_dump_json(indent=2))
+    request = validate_request(
+        QueryRequest,
+        "query",
+        corpus_path=str(corpus.root),
+        query_text=query_text,
+        snapshot_id=snapshot_id,
+        retriever_id=arguments.retriever,
+        budget=_budget_from_args(arguments),
+        reranker_id=getattr(arguments, "reranker_id", None),
+        minimum_score=getattr(arguments, "minimum_score", None),
+    )
+    print(query(request).model_dump_json(indent=2))
     return 0
 
 
@@ -1924,13 +1857,15 @@ def cmd_context_pack_build_blocks(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
+    from .api import context_pack_build_blocks
+
     input_text = sys.stdin.read()
     if not input_text.strip():
         raise ValueError(
             "Context block build requires a context-block request JavaScript Object Notation on standard input"
         )
     request = ContextBlockBuildRequest.model_validate_json(input_text)
-    result = build_context_pack_from_blocks(request)
+    result = context_pack_build_blocks(request)
     print(json.dumps(result.model_dump(), indent=2))
     return 0
 
@@ -1997,17 +1932,16 @@ def cmd_steering_export(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
-    bundle = build_steering_export(
-        corpus=corpus,
+    from .api import SteeringExportRequest, steering_export
+
+    request = validate_request(
+        SteeringExportRequest,
+        "steering export",
+        corpus_path=_corpus_path_from_arguments(arguments),
         classifier_id=arguments.classifier,
         topic_governance_snapshot_id=arguments.topic_governance_snapshot,
     )
-    print(bundle.model_dump_json(indent=2))
+    print(steering_export(request).model_dump_json(indent=2))
     return 0
 
 
@@ -2020,13 +1954,14 @@ def cmd_steering_artifacts(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
+    from .api import SteeringArtifactsRequest, steering_artifacts
+
+    request = validate_request(
+        SteeringArtifactsRequest,
+        "steering artifacts",
+        corpus_path=_corpus_path_from_arguments(arguments),
     )
-    inventory = build_steering_artifact_inventory(corpus)
-    print(inventory.model_dump_json(indent=2))
+    print(steering_artifacts(request).model_dump_json(indent=2))
     return 0
 
 
@@ -2039,11 +1974,15 @@ def cmd_steering_render_seed_manifest(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    output = render_steering_seed_manifest(
-        input_path=Path(arguments.input),
-        output_path=Path(arguments.output),
+    from .api import SteeringRenderSeedManifestRequest, steering_render_seed_manifest
+
+    request = validate_request(
+        SteeringRenderSeedManifestRequest,
+        "steering render-seed-manifest",
+        input_path=arguments.input,
+        output_path=arguments.output,
     )
-    print(output.model_dump_json(indent=2))
+    print(steering_render_seed_manifest(request).model_dump_json(indent=2))
     return 0
 
 
@@ -2056,25 +1995,17 @@ def cmd_steering_graph_signals(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .steering_feedback import load_steering_feedback
+    from .api import SteeringGraphSignalsRequest, steering_graph_signals
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
-    steering_feedback = (
-        load_steering_feedback(Path(arguments.steering_feedback))
-        if arguments.steering_feedback
-        else None
-    )
-    bundle = build_steering_graph_signal_bundle(
-        corpus=corpus,
+    request = validate_request(
+        SteeringGraphSignalsRequest,
+        "steering graph-signals",
+        corpus_path=_corpus_path_from_arguments(arguments),
         classifier_id=arguments.classifier,
         graph_snapshot=arguments.graph_snapshot,
-        steering_feedback=steering_feedback,
+        steering_feedback_path=arguments.steering_feedback,
     )
-    print(bundle.model_dump_json(indent=2))
+    print(steering_graph_signals(request).model_dump_json(indent=2))
     return 0
 
 
@@ -2171,22 +2102,21 @@ def cmd_analyze_topic_trends(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .topic_trends import build_topic_trends, topic_trends_markdown
+    from .api import TopicTrendsRequest, analyze_topic_trends
+    from .topic_trends import topic_trends_markdown
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
     windows = [token.strip() for token in arguments.windows.split(",") if token.strip()]
-    output = build_topic_trends(
-        corpus=corpus,
+    request = validate_request(
+        TopicTrendsRequest,
+        "analyze topic-trends",
+        corpus_path=_corpus_path_from_arguments(arguments),
         topic_modeling_snapshot_id=arguments.topic_modeling_snapshot,
         classifier_id=arguments.classifier,
         windows=windows,
         as_of=arguments.as_of,
         rank_window=arguments.rank_window,
     )
+    output = analyze_topic_trends(request)
     if arguments.format == "markdown":
         print(topic_trends_markdown(output))
     else:
@@ -2253,21 +2183,20 @@ def cmd_analyze_topic_context(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .topic_context import build_topic_context, topic_context_markdown
+    from .api import TopicContextRequest, analyze_topic_context
+    from .topic_context import topic_context_markdown
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
-    output = build_topic_context(
-        corpus=corpus,
+    request = validate_request(
+        TopicContextRequest,
+        "analyze topic-context",
+        corpus_path=_corpus_path_from_arguments(arguments),
         topic_modeling_snapshot_id=arguments.topic_modeling_snapshot,
         max_topics=arguments.max_topics,
         examples_per_topic=arguments.examples_per_topic,
         summary_model=arguments.summary_model,
         include_outlier=arguments.include_outlier,
     )
+    output = analyze_topic_context(request)
     if arguments.format == "markdown":
         print(topic_context_markdown(output))
     else:
@@ -2305,38 +2234,25 @@ def cmd_topic_classifier_train(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .configuration import (
-        apply_dotted_overrides,
-        load_configuration_view,
-        parse_dotted_overrides,
-    )
-    from .topic_classifier import train_topic_classifier
+    from .api import TopicClassifierTrainRequest, topic_classifier_train
 
-    corpus = (
-        Corpus.open(arguments.corpus)
-        if getattr(arguments, "corpus", None)
-        else Corpus.find(Path.cwd())
-    )
-    configuration_data = load_configuration_view(
-        arguments.configuration,
-        configuration_label="Topic classifier configuration",
-        mapping_error_message="Topic classifier configuration must be a mapping/object",
-    )
-    overrides = parse_dotted_overrides(arguments.override)
-    configuration_data = apply_dotted_overrides(configuration_data, overrides)
+    corpus = _open_corpus_from_arguments(arguments)
     extraction_snapshot = _resolve_extraction_snapshot_for_analysis(
         corpus=corpus,
         extraction_snapshot=arguments.extraction_snapshot,
         analysis_label="Topic classifier training",
     )
-    output = train_topic_classifier(
-        corpus=corpus,
-        manifest_path=Path(arguments.manifest).resolve(),
+    request = validate_request(
+        TopicClassifierTrainRequest,
+        "topic-classifier train",
+        corpus_path=str(corpus.root),
+        manifest_path=arguments.manifest,
+        configuration_paths=arguments.configuration,
+        overrides=arguments.override,
         configuration_name=arguments.configuration_name,
-        configuration=configuration_data,
         extraction_snapshot=extraction_snapshot,
     )
-    print(output.model_dump_json(indent=2))
+    print(topic_classifier_train(request).model_dump_json(indent=2))
     return 0
 
 
@@ -2377,14 +2293,13 @@ def cmd_topic_classifier_project(arguments: argparse.Namespace) -> int:
     :return: Exit code.
     :rtype: int
     """
-    from .models import parse_extraction_snapshot_reference
-    from .topic_classifier import project_topic_classifier_items
+    from .api import TopicClassifierProjectRequest, topic_classifier_project
 
-    classifier_corpus = Corpus.open(arguments.classifier_corpus)
-    target_corpus = Corpus.open(arguments.target_corpus)
-    output = project_topic_classifier_items(
-        classifier_corpus=classifier_corpus,
-        target_corpus=target_corpus,
+    request = validate_request(
+        TopicClassifierProjectRequest,
+        "topic-classifier project",
+        classifier_corpus_path=arguments.classifier_corpus,
+        target_corpus_path=arguments.target_corpus,
         classifier_id=arguments.classifier,
         extraction_snapshot=parse_extraction_snapshot_reference(arguments.extraction_snapshot),
         project_all=arguments.project_all,
@@ -2393,9 +2308,9 @@ def cmd_topic_classifier_project(arguments: argparse.Namespace) -> int:
         top_k=arguments.top_k,
         record=arguments.record,
     )
-    payload = output.model_dump(mode="json")
+    output = topic_classifier_project(request)
     if arguments.format == "markdown":
-        print(_topic_classifier_projection_markdown(payload))
+        print(_topic_classifier_projection_markdown(output.model_dump(mode="json")))
     else:
         print(output.model_dump_json(indent=2))
     return 0

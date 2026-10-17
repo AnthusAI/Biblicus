@@ -13,6 +13,7 @@ from unittest.mock import patch
 from behave import given, then, when
 
 from biblicus.cli import main
+from features.steps.api_schema_support import assert_matches_published_schema
 
 
 @given('a disposable web transformation gateway for "{case}"')
@@ -229,6 +230,11 @@ def then_contract(context, case):
     }
     assert context.web_exit == (0 if successful else 2), context.web_result
     result = context.web_result
+    assert_matches_published_schema(
+        "extract-article-text" if context.web_task == "article" else "summarize-map-reduce",
+        "response",
+        result,
+    )
     assert result["status"] == ("ok" if successful else "failed"), result
     assert context.web_stderr == ""
     assert result["retry_trace"] == []

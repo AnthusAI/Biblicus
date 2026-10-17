@@ -69,6 +69,7 @@ Feature: Research agent topic context
     When I snapshot a topic analysis in corpus "context-lab" using configuration "topic.yml" and the latest extraction snapshot
     And I generate a topic context report in corpus "context-lab" with max topics 1 and 1 example as markdown
     Then the topic context output includes 1 topic
+    And the stored topic context output validates against the published "analyze-topic-context" response schema
     And the topic context Markdown includes "Agent Tool Bridge"
     And the topic context Markdown includes "Representative agent systems example"
     And the topic context Markdown includes "Memory planning tool evaluation; memory planning tool evaluation."

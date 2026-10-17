@@ -33,6 +33,7 @@ Feature: Graph extraction snapshots
       | window_size     | 3     |
       | min_cooccurrence| 1     |
     Then the last graph extraction snapshot reference equals "first"
+    And the standard output validates against the published "graph-extract" response schema
 
   Scenario: Graph extraction snapshot changes when the catalog changes
     Given I initialized a corpus at "corpus"

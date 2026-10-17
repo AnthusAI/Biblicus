@@ -232,3 +232,4 @@ implementation details or when you want a catalog of features.
    :maxdepth: 1
 
    bounded-web-transform
+   api-contract

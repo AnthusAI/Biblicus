@@ -6,6 +6,7 @@ Feature: Taxonomy and ontology graph steering
     And an accepted taxonomy input "accepted-taxonomy.json" exists for corpus "taxonomy-lab" with root "agent-systems" and child "agent-memory"
     When I record taxonomy input "accepted-taxonomy.json" in corpus "taxonomy-lab"
     Then the command succeeds
+    And the standard output validates against the published "taxonomy-record" response schema
     And the taxonomy artifact includes topic "agent-memory" under "agent-systems"
 
   Scenario Outline: Accepted taxonomy rejects malformed trees
@@ -40,6 +41,7 @@ Feature: Taxonomy and ontology graph steering
       | tool use      | 1        | tools,planning |
     When I discover taxonomy children in corpus "taxonomy-discovery-lab" with classifier "steering-classifier"
     Then the command succeeds
+    And the standard output validates against the published "taxonomy-discover" response schema
     And the taxonomy discovery output includes proposal kind "create-taxonomy-node"
     And taxonomy input "accepted-taxonomy.json" still includes 2 nodes
 
@@ -118,6 +120,7 @@ Feature: Taxonomy and ontology graph steering
     When I record taxonomy input "accepted-taxonomy.json" in corpus "taxonomy-graph-lab"
     And I build steering graph signals for corpus "taxonomy-graph-lab" with classifier "steering-classifier" and graph snapshot "simple-entities:graph-one"
     Then the command succeeds
+    And the standard output validates against the published "steering-graph-signals" response schema
     And the steering signal bundle includes missing graph entity for topic "agent-memory"
 
   @integration
