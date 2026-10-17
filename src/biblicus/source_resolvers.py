@@ -198,7 +198,7 @@ def _parse_documentcloud_reference(source_uri: str) -> Optional[DocumentCloudRef
         match = _DOCUMENTCLOUD_API_PATTERN.match(path)
         if match:
             return DocumentCloudReference(document_id=int(match.group("id")))
-    if host.endswith("documentcloud.org"):
+    if (host == "documentcloud.org" or host.endswith(".documentcloud.org")):
         match = _DOCUMENTCLOUD_ASSET_PATTERN.match(path)
         if match:
             return DocumentCloudReference(
