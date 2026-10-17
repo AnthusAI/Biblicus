@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "7c6dea1f-60de-46a3-befd-398d4212a57b",
+  "issue_id": "blbs-f8714f3e-e3fe-4c50-a24f-1d242d3291b8",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T00:03:51.147Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Restore green continuous integration on main",
+    "description": "Main CI has been red since 2026-06-02: stale poetry.lock, Ruff lint errors, a Behave step importing a nonexistent function, tests for an unregistered extract url-text command, stale mocks, and missing web/markitdown extras in CI. Coverage gap to the 98% gate is tracked in 5rt.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

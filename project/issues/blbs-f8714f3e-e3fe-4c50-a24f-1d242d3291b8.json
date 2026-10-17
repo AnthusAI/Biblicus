@@ -1,0 +1,22 @@
+{
+  "id": "blbs-f8714f3e-e3fe-4c50-a24f-1d242d3291b8",
+  "title": "Restore green continuous integration on main",
+  "description": "Main CI has been red since 2026-06-02: stale poetry.lock, Ruff lint errors, a Behave step importing a nonexistent function, tests for an unregistered extract url-text command, stale mocks, and missing web/markitdown extras in CI. Coverage gap to the 98% gate is tracked in 5rt.",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": "rap@endymion.com",
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:03:51.147490Z",
+  "updated_at": "2026-10-17T00:04:16.837306Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}
