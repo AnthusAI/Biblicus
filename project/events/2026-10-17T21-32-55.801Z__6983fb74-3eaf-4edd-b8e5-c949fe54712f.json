@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "6983fb74-3eaf-4edd-b8e5-c949fe54712f",
+  "issue_id": "blbs-eeb23e9a-9037-43e8-940f-0f2b3ff9a158",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T21:32:55.801Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Fix PyPI upload rejection from direct URL dependency in ner extra",
+    "description": "PyPI returned 400 for 1.14.0 (and earlier releases since 1.12.0) because the ner extra pinned en-core-web-sm by direct URL. Removed it; docs already tell users to run python -m spacy download en_core_web_sm. Added a guard test.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 0,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": []
+  }
+}
