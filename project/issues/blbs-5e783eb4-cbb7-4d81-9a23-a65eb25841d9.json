@@ -19,10 +19,19 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "ea577d03-4f05-4154-bb80-7e54a11f824e",
+      "author": "unknown",
+      "text": "Papyrus side landed in AnthusAI/Papyrus PR 244, which pins Biblicus 1.14.1. Biblicus side shipped in Biblicus PR 69 (strict catalog, scripts/migrate_catalog_extensions.py).",
+      "created_at": "2026-10-18T11:45:45.502735Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-10-17T16:40:42.985314Z",
-  "updated_at": "2026-10-17T23:00:25.926547Z",
+  "updated_at": "2026-10-18T11:45:45.502919Z",
   "closed_at": "2026-10-17T20:52:13.598368Z",
   "right_now_summary": null,
   "right_now_updated_at": null,
