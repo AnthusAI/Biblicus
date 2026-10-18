@@ -2,16 +2,13 @@
 
 Basic text extraction from structured documents and plain text formats.
 
-```{toctree}
-:maxdepth: 1
-:caption: Text & Document Extractors
+**Text & Document Extractors**
 
-pass-through
-metadata
-pdf
-markitdown
-unstructured
-```
+- [Pass-Through Text Extractor](pass-through.md)
+- [Metadata Text Extractor](metadata.md)
+- [PDF Text Extractor](pdf.md)
+- [MarkItDown Extractor](markitdown.md)
+- [Unstructured Extractor](unstructured.md)
 
 ## Overview
 

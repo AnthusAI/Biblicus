@@ -490,7 +490,7 @@ function useConditionalSubscription(enabled: boolean) {
 
 ## Related Documentation
 
-- [Corpus Viewer Implementation Plan](corpus-viewer-implementation-plan.md) - Overall architecture
+- Corpus Viewer Implementation Plan - Overall architecture (internal planning document, not published)
 - [AmplifyPublisher API Reference](../src/biblicus/sync/amplify_publisher.py) - Backend Python API
 - [Amplify Gen 2 Documentation](https://docs.amplify.aws/gen2/) - Official Amplify docs
 - [AppSync Real-Time](https://docs.aws.amazon.com/appsync/latest/devguide/aws-appsync-real-time-data.html) - AWS AppSync details
