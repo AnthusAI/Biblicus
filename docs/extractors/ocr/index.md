@@ -2,24 +2,18 @@
 
 Traditional OCR extractors for text recognition from images and scanned documents.
 
-```{toctree}
-:maxdepth: 1
-:caption: OCR Extractors
+**OCR Extractors**
 
-rapidocr
-paddleocr-vl
-```
+- [RapidOCR Extractor](rapidocr.md)
+- [PaddleOCR-VL Extractor](paddleocr-vl.md)
 
-```{toctree}
-:maxdepth: 1
-:caption: Benchmarking
+**Benchmarking**
 
-/guides/document-understanding-benchmark
-/guides/ocr-benchmarking
-/guides/benchmark-results
-/guides/heron-implementation
-/guides/layout-aware-ocr-results
-```
+- [Biblicus Document Understanding Benchmark](../../guides/document-understanding-benchmark.md)
+- [OCR Pipeline Benchmarking Guide](../../guides/ocr-benchmarking.md)
+- [Biblicus Benchmark Results](../../guides/benchmark-results.md)
+- [Heron Layout Detection Implementation - COMPLETE](../../guides/heron-implementation.md)
+- [Layout-Aware OCR Implementation Results](../../guides/layout-aware-ocr-results.md)
 
 ## Overview
 

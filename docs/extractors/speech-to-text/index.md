@@ -2,15 +2,12 @@
 
 Audio transcription extractors for converting spoken content into text.
 
-```{toctree}
-:maxdepth: 1
-:caption: Speech-to-Text Extractors
+**Speech-to-Text Extractors**
 
-openai
-deepgram
-aldea
-deepgram-transform
-```
+- [OpenAI Whisper Speech-to-Text Extractor](openai.md)
+- [Deepgram Speech-to-Text Extractor](deepgram.md)
+- [Aldea Speech-to-Text Extractor](aldea.md)
+- [Deepgram Transform Extractor](deepgram-transform.md)
 
 ## Overview
 

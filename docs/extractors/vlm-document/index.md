@@ -2,13 +2,10 @@
 
 Advanced VLM-based document understanding with layout analysis, semantic structure preservation, and intelligent content extraction.
 
-```{toctree}
-:maxdepth: 1
-:caption: VLM Extractors
+**VLM Extractors**
 
-docling-smol
-docling-granite
-```
+- [SmolDocling-256M Extractor](docling-smol.md)
+- [Granite Docling-258M Extractor](docling-granite.md)
 
 ## Overview
 

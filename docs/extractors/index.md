@@ -2,16 +2,13 @@
 
 Biblicus provides a plugin-based text extraction system supporting diverse document types, media formats, and processing strategies.
 
-```{toctree}
-:maxdepth: 1
-:caption: Extractor Families
+**Extractor Families**
 
-text-document/index
-ocr/index
-vlm-document/index
-speech-to-text/index
-pipeline-utilities/index
-```
+- [Text & Document Processing](text-document/index.md)
+- [Optical Character Recognition (OCR)](ocr/index.md)
+- [Vision-Language Models (VLM) for Document Understanding](vlm-document/index.md)
+- [Speech-to-Text (STT)](speech-to-text/index.md)
+- [Pipeline Utilities](pipeline-utilities/index.md)
 
 ## Extractor Categories
 
@@ -144,5 +141,5 @@ results = corpus.extract_text(extractor_id="pdf-text")
 ## See Also
 
 - [extraction.md](../extraction.md) - Extraction pipeline concepts and architecture
-- [API Reference](../api.rst) - Python API documentation
+- [API Reference](../api-reference/api.html) - Python API documentation
 - Repository README - Getting started guide

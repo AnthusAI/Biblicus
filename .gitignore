@@ -50,3 +50,4 @@ project/.cache/index.json
 /raw/
 /CHANGELOG_STT_BENCHMARKING.md
 *.py,cover
+_site/

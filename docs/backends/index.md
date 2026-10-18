@@ -2,16 +2,13 @@
 
 Biblicus provides pluggable retrieval backends that implement different search and ranking strategies. Each backend defines how evidence is retrieved from your corpus.
 
-```{toctree}
-:maxdepth: 1
-:caption: Retrieval Backends
+**Retrieval Backends**
 
-scan
-sqlite-full-text-search
-tf-vector
-embedding-index-inmemory
-embedding-index-file
-```
+- [Scan Backend](scan.md)
+- [SQLite Full-Text Search Backend](sqlite-full-text-search.md)
+- [TF Vector backend](tf-vector.md)
+- [Embedding index (in-memory)](embedding-index-inmemory.md)
+- [Embedding index (file-backed)](embedding-index-file.md)
 
 ## Available Backends
 

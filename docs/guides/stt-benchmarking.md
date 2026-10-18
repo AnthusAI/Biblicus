@@ -600,7 +600,7 @@ LibriSpeech test-clean is the only dataset that has been benchmarked end to end.
 - [OCR Benchmarking Guide](ocr-benchmarking.md) - OCR pipeline benchmarking
 
 **STT Documentation:**
-- [Speech to Text](../stt.md) - STT extraction guide
+- [Speech to Text](../STT.md) - STT extraction guide
 
 **External References:**
 - [LibriSpeech Dataset](https://www.openslr.org/12)

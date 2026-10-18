@@ -2,16 +2,13 @@
 
 Meta-extractors for combining, selecting, and orchestrating extraction strategies.
 
-```{toctree}
-:maxdepth: 1
-:caption: Pipeline Utilities
+**Pipeline Utilities**
 
-select-text
-select-longest
-select-override
-select-smart-override
-pipeline
-```
+- [Select Text Extractor](select-text.md)
+- [Select Longest Text Extractor](select-longest.md)
+- [Select Override Extractor](select-override.md)
+- [Select Smart Override Extractor](select-smart-override.md)
+- [Pipeline Extractor](pipeline.md)
 
 ## Overview
 
