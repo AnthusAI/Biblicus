@@ -19,10 +19,28 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "35737ca6-0043-427b-b0fb-9f2c05dabbcb",
+      "author": "unknown",
+      "text": "2026-10-19 status. Closed: d8fc85, bc9c7d, 12b984, def144, 12cfcf, 5e783e, eeb23e, 1aca09 (PRs 62-74 on Biblicus, Papyrus PR 244; releases 1.12.0 to 1.14.2, PyPI has 1.14.2). Open in suggested order: af04bd (Papyrus runner, in progress), 45b76d (branch triage, re-triaged today), d7a1c0 (Papyrus merged branch deletion), 49f6fb (split cli.py), f801df (Tactus gate), 67eb7d (Cyclotron shadow mode), ca6f88 (waits on 67eb7d). Handoff report: /mnt/project-files/handoff/HANDOFF.md in the Biblicus project.",
+      "created_at": "2026-10-19T16:45:23.299060Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    },
+    {
+      "id": "f06de923-b771-4832-a873-bfd3510b0816",
+      "author": "unknown",
+      "text": "Correction: the Papyrus second-pass branch deletion issue is blbs-dfb988 (not d7a1c0).",
+      "created_at": "2026-10-19T16:45:47.346560Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
     }
   ],
   "created_at": "2026-10-17T14:41:54.366054Z",
-  "updated_at": "2026-10-17T16:42:28.980884Z",
+  "updated_at": "2026-10-19T16:45:47.346745Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,
