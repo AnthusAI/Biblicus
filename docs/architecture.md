@@ -99,6 +99,49 @@ retrieved and *why*, so models can use evidence directly and safely.
 - **Durability and evaluations** are central: invariants via specifications, quality via
   evaluations.
 
+## Stability promise for Tactus
+
+Tactus is the first consumer of Biblicus as a library. It declares the requirement
+`biblicus>=1.11.3,<2.0.0`, so every release inside major version one reaches Tactus users
+automatically. A library that other projects build on must therefore say precisely which names
+it will not change without a major version. This section is that statement.
+
+The promise covers the following public names, exactly as Tactus imports them. Within major
+version one they keep their import path, their name, and the meaning of their fields and
+arguments. New optional fields and new names may be added; existing ones are not removed, renamed,
+or given a different meaning.
+
+| Module | Names Tactus depends on |
+| --- | --- |
+| `biblicus.corpus` | `Corpus` |
+| `biblicus.context` | `ContextPack`, `ContextPackBlock` |
+| `biblicus.context_engine` | `ContextAssembler`, `ContextAssemblyResult`, `retrieve_context_pack`, `ContextRetrieverRequest`, `BaseCompactor`, `CompactionRequest`, `SummaryCompactor`, `TruncateCompactor`, and the declaration and specification models `AssistantMessageSpec`, `CompactorDeclaration`, `ContextBudgetSpec`, `ContextDeclaration`, `ContextExpansionSpec`, `ContextInsertSpec`, `ContextMessageSpec`, `ContextPackBudgetSpec`, `ContextPackSpec`, `ContextPolicySpec`, `ContextTemplateSpec`, `CorpusDeclaration`, `HistoryInsertSpec`, `RetrieverDeclaration`, `SystemMessageSpec`, `UserMessageSpec` |
+| `biblicus.context_engine.compaction` | `build_compactor` |
+| `biblicus.workflow` | `build_plan_for_extract`, `build_plan_for_index`, `build_default_handler_registry` |
+| `biblicus.ai.models` | `LlmClientConfig` |
+| `biblicus.text` | `apply_text_annotate`, `apply_text_extract`, `apply_text_link`, `apply_text_redact`, `apply_text_slice` |
+| `biblicus.text.markup` | `parse_span_markup`, `strip_span_tags`, `summarize_span_context` |
+| `biblicus.text.models` | `TextAnnotateRequest`, `TextExtractRequest`, `TextLinkRequest`, `TextRedactRequest`, `TextSliceRequest` |
+
+A promise that nothing checks is only a hope, so the release process checks it. Before a release
+is created, the workflow `tactus-compatibility.yml` builds a wheel from the commit being
+released, checks out the Tactus repository, installs Tactus with its development extras, replaces
+the published Biblicus with the candidate wheel, and runs the Tactus tests that exercise the
+names above:
+
+- the pytest modules `tests/core/test_retrieval.py`, `tests/core/test_context_assembler.py`,
+  `tests/core/test_compaction.py`, `tests/core/test_runtime_tasks.py`,
+  `tests/stdlib/test_biblicus_text.py`, and `tests/dspy/test_agent_context_assembly.py`;
+- the behave scenarios in `features/*_context_*.feature` and
+  `features/90_task_dependency_planning.feature`.
+
+The release job needs this check to succeed, and the publish job needs the release job, so a
+failing check creates no version tag, no release notes, and no package on the Python Package
+Index. The same check runs on every push and pull request in the continuous integration workflow,
+which means a breaking change is normally caught before it is merged. When the check fails, the
+fix is one of two things: restore the promised behavior in Biblicus, or, if the change is
+intended, make it in a major version and update the Tactus requirement in step.
+
 ## Where to go next
 
 - Start with **corpus.md** and **extraction.md** to understand how raw content is ingested.

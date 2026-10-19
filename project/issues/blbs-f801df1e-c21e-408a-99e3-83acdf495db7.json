@@ -3,7 +3,7 @@
   "title": "Run Tactus tests against each Biblicus release candidate",
   "description": "## Goal\nTactus pins `biblicus>=1.11.3,<2` and subclasses or calls `ContextAssembler`, `biblicus.context_engine.compaction`, `retrieve_context_pack`, `Corpus`, `build_plan_for_extract`, `build_plan_for_index`, and the text utilities. A Biblicus release can break it silently.\n\n## Work\nAdd a release-workflow job that installs the release candidate into a checkout of AnthusAI/Tactus and runs its Biblicus-related tests (`tactus/core/retrieval.py`, `context_assembler.py`, `compaction.py`, `stdlib/biblicus`, and the `features/context_*` scenarios). It must block the publish step on failure. Document the stability promise for those modules in `docs/architecture.md`.",
   "type": "task",
-  "status": "open",
+  "status": "in_progress",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -12,16 +12,14 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-10-17T16:41:37.672654Z",
-  "updated_at": "2026-10-17T16:41:37.672916Z",
+  "updated_at": "2026-10-19T17:41:25.117726Z",
   "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }
