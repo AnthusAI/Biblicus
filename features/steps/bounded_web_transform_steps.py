@@ -13,6 +13,7 @@ from unittest.mock import patch
 from behave import given, then, when
 
 from biblicus.cli import main
+from biblicus.command_failure import INVALID_INPUT_FAILURE_CODES, CommandFailure
 from features.steps.api_schema_support import assert_matches_published_schema
 
 
@@ -228,19 +229,19 @@ def then_contract(context, case):
         "complementary_subtitle",
         "archive_without_date",
     }
-    assert context.web_exit == (0 if successful else 2), context.web_result
     result = context.web_result
-    assert_matches_published_schema(
-        "extract-article-text" if context.web_task == "article" else "summarize-map-reduce",
-        "response",
-        result,
-    )
-    assert result["status"] == ("ok" if successful else "failed"), result
     assert context.web_stderr == ""
-    assert result["retry_trace"] == []
-    assert result["retry_failure_count"] == result["retry_rounds_used"] == 0
     if successful:
+        assert context.web_exit == 0, result
+        assert_matches_published_schema(
+            "extract-article-text" if context.web_task == "article" else "summarize-map-reduce",
+            "response",
+            result,
+        )
+        assert result["status"] == "ok", result
         assert result["error"] is None
+        assert result["retry_trace"] == []
+        assert result["retry_failure_count"] == result["retry_rounds_used"] == 0
         if context.web_task == "article":
             expected_text = (
                 "CISA investigated SolarWinds in January 2021.\n\nOrganizations should apply incident mitigations."
@@ -255,10 +256,17 @@ def then_contract(context, case):
                 assert result["value"] == "Grounded metadata"
             assert result["map_reduce"] == {"map_calls": 1, "reduce_calls": 1, "chunk_count": 1}
     else:
-        assert result["error"]["code"]
+        failure = CommandFailure.model_validate(result)
+        assert set(result) == {"status", "error"}, result
+        assert context.web_exit == failure.exit_status, result
+        assert context.web_exit == (2 if failure.error.code in INVALID_INPUT_FAILURE_CODES else 1)
+        assert failure.error.code
+        if case == "denied":
+            assert (context.web_exit, failure.error.code) == (1, "provider_failed")
+        if case == "invalid_json":
+            assert (context.web_exit, failure.error.code) == (2, "invalid_input")
         assert "offline-capability" not in json.dumps(result)
         assert "Article body" not in json.dumps(result)
-        assert not result.get("text") and not result.get("value")
     before_network = {
         "invalid_json",
         "non_object",

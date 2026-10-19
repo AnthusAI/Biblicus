@@ -67,8 +67,8 @@ Feature: Topic classifier workflows
     And a topic classifier configuration "topic-classifier.yml" exists
     And a fake BERTopic library is available
     When I train a topic classifier in corpus "invalid-classifier-lab" using manifest "duplicate-topic.json" and configuration "topic-classifier.yml"
-    Then the command fails with exit code 2
-    And standard error includes "Duplicate topic_uid"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Duplicate topic_uid"
 
   Scenario: Topic mapping records seed majority, split seed topics, and discovered topics
     Given I initialized a corpus at "mapping-lab"
@@ -283,8 +283,8 @@ Feature: Topic classifier workflows
     Given I initialized a corpus at "ambiguous-authority-lab"
     And I initialized a corpus at "ambiguous-target-lab"
     When I project classifier "classifier-lab-v1" from corpus "ambiguous-authority-lab" onto all items and item id "example-item" in corpus "ambiguous-target-lab"
-    Then the command fails with exit code 2
-    And standard error includes "Topic classifier projection requires exactly one of --all or --item-id"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Topic classifier projection requires exactly one of --all or --item-id"
 
   Scenario: Cross-corpus projection requires a target extraction snapshot
     Given I initialized a corpus at "missing-snapshot-authority-lab"
@@ -304,8 +304,8 @@ Feature: Topic classifier workflows
     When I train a topic classifier in corpus "missing-snapshot-authority-lab" using manifest "missing-snapshot-topic-classifier.json" and configuration "missing-snapshot-topic-classifier.yml"
     And I ingest the text "agent planning history article" with title "Missing Snapshot History Article" and tags "article" into corpus "missing-snapshot-target-lab"
     And I project classifier "classifier-lab-v1" from corpus "missing-snapshot-authority-lab" onto item titled "Missing Snapshot History Article" in corpus "missing-snapshot-target-lab" with missing extraction snapshot
-    Then the command fails with exit code 2
-    And standard error includes "Missing extraction snapshot manifest"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Missing extraction snapshot manifest"
 
   Scenario: Blind candidate batch review classifies items and summarizes discovery
     Given I initialized a corpus at "review-lab"

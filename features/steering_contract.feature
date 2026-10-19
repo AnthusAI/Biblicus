@@ -57,17 +57,17 @@ Feature: Steering contract toolkit
   Scenario: Rendering rejects duplicate topic identifiers
     Given a malformed steering topic-set input "duplicate-topic-set.json" exists with duplicate topic identifiers
     When I attempt to render a steering seed manifest from "duplicate-topic-set.json" to "duplicate-seed-manifest.json"
-    Then the command fails with exit code 2
-    And standard error includes "Duplicate topic_uid"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Duplicate topic_uid"
 
   Scenario: Rendering rejects seed and holdout overlap
     Given a malformed steering topic-set input "overlap-topic-set.json" exists with seed holdout overlap
     When I attempt to render a steering seed manifest from "overlap-topic-set.json" to "overlap-seed-manifest.json"
-    Then the command fails with exit code 2
-    And standard error includes "Item cannot be both seed and holdout"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Item cannot be both seed and holdout"
 
   Scenario: Rendering rejects unknown fields
     Given a malformed steering topic-set input "unknown-field-topic-set.json" exists with unknown fields
     When I attempt to render a steering seed manifest from "unknown-field-topic-set.json" to "unknown-seed-manifest.json"
-    Then the command fails with exit code 2
-    And standard error includes "Unknown steering topic-set fields"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Unknown steering topic-set fields"

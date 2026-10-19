@@ -12,7 +12,8 @@ from typing import Any, Dict, List
 
 from pydantic import ValidationError
 
-from ..api import validate_request
+from ..api import InvalidRequestError, validate_request
+from ..command_failure import CommandFailureException, raise_for_error_payload
 from ..corpus import Corpus
 from ..extraction import build_extraction_snapshot
 from ..extraction_evaluation import (
@@ -266,6 +267,48 @@ def cmd_extract_delete(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _timeout_seconds_from_payload(
+    payload: Dict[str, Any], default_seconds: float, command_label: str
+) -> float:
+    """
+    Read the optional ``timeout_seconds`` member of an input JSON object.
+
+    :param payload: Parsed input JSON object.
+    :type payload: dict[str, Any]
+    :param default_seconds: Timeout used when the member is absent or zero.
+    :type default_seconds: float
+    :param command_label: Human-readable command name used in the error message.
+    :type command_label: str
+    :return: Timeout in seconds.
+    :rtype: float
+    :raises InvalidRequestError: If the member is not a number.
+    """
+    try:
+        return float(payload.get("timeout_seconds") or default_seconds)
+    except (TypeError, ValueError) as error:
+        raise InvalidRequestError(
+            f"Invalid {command_label} request: timeout_seconds: Input should be a valid number"
+        ) from error
+
+
+def _load_input_json_object(input_json: str) -> Dict[str, Any]:
+    """
+    Load the input JSON object of a typed extraction command.
+
+    :param input_json: Path to the JSON file, or ``-`` for standard input.
+    :type input_json: str
+    :return: Parsed JSON object.
+    :rtype: dict[str, Any]
+    :raises CommandFailureException: If the JSON is invalid or not an object.
+    """
+    from ..url_text import load_url_text_input_json
+
+    try:
+        return load_url_text_input_json(input_json)
+    except ValueError as error:
+        raise CommandFailureException(code="invalid_input_json", message=str(error)) from error
+
+
 def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     """
     Extract readable text from a source URL using the source-aware fetch strategy.
@@ -274,41 +317,33 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     :type arguments: argparse.Namespace
     :return: Exit code.
     :rtype: int
+    :raises CommandFailureException: If the input is invalid or the extraction fails.
     """
     from .. import url_text as url_text_module
     from ..api import UrlTextRequest, extract_url_text
 
-    def print_failure_to_standard_error(error_payload: Dict[str, Any]) -> int:
-        print(json.dumps({"status": "failed", "error": error_payload}, indent=2), file=sys.stderr)
-        return 2
-
-    try:
-        payload = url_text_module.load_url_text_input_json(arguments.input_json)
-    except ValueError as exc:
-        return print_failure_to_standard_error({"code": "invalid_input_json", "message": str(exc)})
-
+    payload = _load_input_json_object(arguments.input_json)
     source_uri = str(payload.get("source_uri") or "").strip()
     if not source_uri:
-        return print_failure_to_standard_error(
-            {"code": "missing_source_uri", "message": "source_uri is required"}
-        )
+        raise CommandFailureException(code="missing_source_uri", message="source_uri is required")
 
     request = validate_request(
         UrlTextRequest,
         "extract url-text",
         source_uri=source_uri,
         reference_title=str(payload.get("reference_title") or ""),
-        timeout_seconds=float(
-            payload.get("timeout_seconds") or url_text_module.URL_TEXT_DEFAULT_TIMEOUT_SECONDS
+        timeout_seconds=_timeout_seconds_from_payload(
+            payload, url_text_module.URL_TEXT_DEFAULT_TIMEOUT_SECONDS, "extract url-text"
         ),
     )
     try:
         output = extract_url_text(request)
-    except url_text_module.UrlTextExtractionError as exc:
-        return print_failure_to_standard_error(exc.to_dict())
-
+    except url_text_module.UrlTextExtractionError as error:
+        raise_for_error_payload(error.to_dict())
+    if output.status != "ok":
+        raise_for_error_payload(output.error)
     print(output.model_dump_json(indent=2, exclude_unset=True))
-    return 0 if output.status == "ok" else 1
+    return 0
 
 
 def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
@@ -319,24 +354,17 @@ def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
     :type arguments: argparse.Namespace
     :return: Exit code.
     :rtype: int
+    :raises CommandFailureException: If the input is invalid or the page is rejected.
     """
     from ..api import WebMetadataRequest, extract_web_metadata
-    from ..url_text import URL_TEXT_DEFAULT_TIMEOUT_SECONDS, load_url_text_input_json
+    from ..url_text import URL_TEXT_DEFAULT_TIMEOUT_SECONDS
 
-    def print_failure_to_standard_error(error_payload: Dict[str, Any]) -> int:
-        print(json.dumps({"status": "failed", "error": error_payload}, indent=2), file=sys.stderr)
-        return 2
-
-    try:
-        payload = load_url_text_input_json(arguments.input_json)
-    except ValueError as exc:
-        return print_failure_to_standard_error({"code": "invalid_input_json", "message": str(exc)})
-
+    payload = _load_input_json_object(arguments.input_json)
     source_uri = str(payload.get("source_uri") or "").strip()
     html_content = str(payload.get("html_content") or payload.get("html") or "").strip()
     if not html_content and not source_uri:
-        return print_failure_to_standard_error(
-            {"code": "missing_input", "message": "Provide source_uri and/or html_content."}
+        raise CommandFailureException(
+            code="missing_input", message="Provide source_uri and/or html_content."
         )
 
     request = validate_request(
@@ -347,12 +375,14 @@ def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
         reference_title=str(payload.get("reference_title") or ""),
         use_llm_fallback=bool(arguments.use_llm_fallback or payload.get("use_llm_fallback")),
         model=str(payload.get("model") or ""),
-        timeout_seconds=float(payload.get("timeout_seconds") or URL_TEXT_DEFAULT_TIMEOUT_SECONDS),
+        timeout_seconds=_timeout_seconds_from_payload(
+            payload, URL_TEXT_DEFAULT_TIMEOUT_SECONDS, "extract web-metadata"
+        ),
     )
     try:
         output = extract_web_metadata(request)
-    except ValueError as exc:
-        return print_failure_to_standard_error({"code": "web_metadata_failed", "message": str(exc)})
+    except ValueError as error:
+        raise CommandFailureException(code="web_metadata_failed", message=str(error)) from error
 
     print(output.model_dump_json(indent=2))
     return 0
@@ -508,7 +538,7 @@ def register_extract_commands(subparsers: argparse._SubParsersAction) -> None:
         default="json",
         help="Output format (only json is supported).",
     )
-    p_extract_url_text.set_defaults(func=cmd_extract_url_text)
+    p_extract_url_text.set_defaults(func=cmd_extract_url_text, typed_command="extract url-text")
 
     p_extract_web_metadata = extract_sub.add_parser(
         "web-metadata",
@@ -524,7 +554,9 @@ def register_extract_commands(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="Run LLM structured enrichment when heuristics are sparse.",
     )
-    p_extract_web_metadata.set_defaults(func=cmd_extract_web_metadata)
+    p_extract_web_metadata.set_defaults(
+        func=cmd_extract_web_metadata, typed_command="extract web-metadata"
+    )
 
     p_extract_evaluate = extract_sub.add_parser(
         "evaluate", help="Evaluate an extraction snapshot against a dataset."

@@ -722,7 +722,7 @@ def register_corpus_commands(subparsers: argparse._SubParsersAction) -> None:
         "reindex", help="Rebuild/refresh the corpus catalog from the on-disk corpus."
     )
     _add_common_corpus_arg(p_reindex)
-    p_reindex.set_defaults(func=cmd_reindex)
+    p_reindex.set_defaults(func=cmd_reindex, typed_command="reindex")
 
     p_corpus = subparsers.add_parser("corpus", help="Inspect and audit corpora.")
     corpus_sub = p_corpus.add_subparsers(dest="corpus_command", required=True)

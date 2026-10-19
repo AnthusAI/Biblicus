@@ -12,12 +12,60 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 import yaml
+from pydantic import ValidationError
 
+from ..api import InvalidRequestError, format_validation_error
+from ..command_failure import (
+    INVALID_REQUEST_CODE,
+    OPERATION_FAILED_CODE,
+    CommandFailure,
+    CommandFailureError,
+)
 from ..corpus import Corpus
 from ..extraction import load_or_build_extraction_snapshot
 from ..models import (
     ExtractionSnapshotReference,
 )
+
+
+def failure_from_exception(exception: Exception, command_label: str) -> CommandFailure:
+    """
+    Describe an exception raised by a typed command as a failure envelope.
+
+    A request that failed validation becomes ``invalid_request``. Any other handled exception
+    means the request was accepted and the operation failed, so it becomes ``operation_failed``.
+
+    :param exception: Exception raised while the typed command ran.
+    :type exception: Exception
+    :param command_label: Human-readable command name, for example ``extract url-text``.
+    :type command_label: str
+    :return: Failure envelope for the exception.
+    :rtype: CommandFailure
+    """
+    if isinstance(exception, ValidationError):
+        code = INVALID_REQUEST_CODE
+        message = format_validation_error(command_label, exception)
+    else:
+        code = (
+            INVALID_REQUEST_CODE
+            if isinstance(exception, InvalidRequestError)
+            else OPERATION_FAILED_CODE
+        )
+        message = str(exception.args[0] if exception.args else exception)
+    return CommandFailure(error=CommandFailureError(code=code, message=message))
+
+
+def print_failure_envelope(failure: CommandFailure) -> int:
+    """
+    Print a failure envelope as the only standard output and return its exit status.
+
+    :param failure: Failure envelope to print.
+    :type failure: CommandFailure
+    :return: Exit status for the failure.
+    :rtype: int
+    """
+    print(failure.model_dump_json(indent=2))
+    return failure.exit_status
 
 
 def _get_or_build_extraction_snapshot(

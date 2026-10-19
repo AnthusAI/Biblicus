@@ -13,6 +13,14 @@ from ..corpus import Corpus
 RequestModelType = TypeVar("RequestModelType", bound=BaseModel)
 
 
+class InvalidRequestError(ValueError):
+    """
+    A request failed validation before any operation ran.
+
+    The command-line interface reports it as the ``invalid_request`` failure with exit status 2.
+    """
+
+
 class ApiRequestModel(BaseModel):
     """
     Base class for typed application programming interface requests.
@@ -63,12 +71,12 @@ def validate_request(
     :type fields: Any
     :return: Validated request model.
     :rtype: pydantic.BaseModel
-    :raises ValueError: If the fields do not satisfy the request model.
+    :raises InvalidRequestError: If the fields do not satisfy the request model.
     """
     try:
         return request_type(**fields)
     except ValidationError as error:
-        raise ValueError(format_validation_error(command_label, error)) from error
+        raise InvalidRequestError(format_validation_error(command_label, error)) from error
 
 
 def open_request_corpus(corpus_path: str) -> Corpus:

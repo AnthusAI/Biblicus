@@ -10,9 +10,11 @@ from typing import List, Optional
 
 from pydantic import ValidationError
 
+from ..command_failure import CommandFailureException
 from ..errors import ExtractionSnapshotFatalError, RemoteSourceDependencyError
 from .analyze import register_analyze_commands
 from .benchmark import register_benchmark_commands
+from .common import failure_from_exception, print_failure_envelope
 from .corpus import register_corpus_commands
 from .crawl import register_crawl_commands
 from .dashboard import register_dashboard_commands
@@ -70,6 +72,11 @@ def main(argument_list: Optional[List[str]] = None) -> int:
     """
     Entry point for the Biblicus command-line interface.
 
+    A command registered with a ``typed_command`` default is a typed command. When it fails it
+    prints one :class:`biblicus.command_failure.CommandFailure` as JSON on standard output and
+    exits with 2 for a rejected request or 1 for a failed operation. Every other command prints
+    the failure message on standard error and exits with 2.
+
     :param argument_list: Optional command-line interface arguments.
     :type argument_list: list[str] or None
     :return: Exit code.
@@ -79,6 +86,8 @@ def main(argument_list: Optional[List[str]] = None) -> int:
     arguments = parser.parse_args(argument_list)
     try:
         return int(arguments.func(arguments))
+    except CommandFailureException as exception:
+        return print_failure_envelope(exception.failure)
     except (
         FileNotFoundError,
         FileExistsError,
@@ -89,6 +98,9 @@ def main(argument_list: Optional[List[str]] = None) -> int:
         NotImplementedError,
         ValidationError,
     ) as exception:
+        typed_command = getattr(arguments, "typed_command", None)
+        if typed_command is not None:
+            return print_failure_envelope(failure_from_exception(exception, typed_command))
         message = exception.args[0] if getattr(exception, "args", None) else str(exception)
         print(str(message), file=sys.stderr)
         return 2

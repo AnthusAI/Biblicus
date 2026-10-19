@@ -13,8 +13,8 @@ Feature: Graph extraction snapshots
   Scenario: Graph extraction requires an extraction snapshot
     Given I initialized a corpus at "corpus"
     When I attempt to build a "cooccurrence" graph extraction snapshot in corpus "corpus" with extraction snapshot "pipeline:missing"
-    Then the command fails with exit code 2
-    And standard error includes "Missing extraction snapshot"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Missing extraction snapshot"
 
   Scenario: Graph extraction snapshot is idempotent for the same configuration and catalog
     Given I initialized a corpus at "corpus"

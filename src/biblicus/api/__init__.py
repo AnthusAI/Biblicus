@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from ._common import (
     ApiRequestModel,
     ApiResponseModel,
+    InvalidRequestError,
     format_validation_error,
     open_request_corpus,
     validate_request,
@@ -275,6 +276,7 @@ __all__ = [
     "extract_article_text",
     "extract_url_text",
     "extract_web_metadata",
+    "InvalidRequestError",
     "format_validation_error",
     "graph_extract",
     "open_request_corpus",

@@ -16,6 +16,8 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
+from .command_failure import CommandFailureException, raise_for_error_payload
+
 MODEL = "gpt-5.4-mini-2026-03-17"
 PROMPT_VERSION = "bounded-web-v2"
 MAX_INPUT_BYTES = 262144
@@ -347,37 +349,38 @@ def run_transform(arguments: argparse.Namespace) -> int:
 
     :param arguments: Parsed CLI arguments with source and command selection.
     :type arguments: argparse.Namespace
-    :return: Zero on success, two on a structured failure.
+    :return: Zero on success.
     :rtype: int
+    :raises CommandFailureException: If the input is rejected or the transformation fails.
     """
     article = arguments.web_transform_task == "article"
     task = None if article else arguments.web_transform_task
     try:
         source = _load_source(arguments.input_json, article)
     except TransformError as error:
-        result = TransformResult(task=task)
-        result.error = {"code": error.code, "message": str(error)}
-    else:
-        from .api import (
-            SummarizeMapReduceRequest,
-            extract_article_text,
-            summarize_map_reduce,
-            validate_request,
-        )
+        raise CommandFailureException(code=error.code, message=str(error)) from error
+    from .api import (
+        SummarizeMapReduceRequest,
+        extract_article_text,
+        summarize_map_reduce,
+        validate_request,
+    )
 
-        if article:
-            result = extract_article_text(source)
-        else:
-            request = validate_request(
-                SummarizeMapReduceRequest,
-                "summarize map-reduce",
-                **source.model_dump(),
-                task=task,
-                model=arguments.model,
-            )
-            result = summarize_map_reduce(request)
+    if article:
+        result = extract_article_text(source)
+    else:
+        request = validate_request(
+            SummarizeMapReduceRequest,
+            "summarize map-reduce",
+            **source.model_dump(),
+            task=task,
+            model=arguments.model,
+        )
+        result = summarize_map_reduce(request)
+    if result.status != "ok":
+        raise_for_error_payload(result.error)
     print(result.model_dump_json())
-    return 0 if result.status == "ok" else 2
+    return 0
 
 
 def add_transform_commands(subparsers, extract_subparsers) -> None:
@@ -403,8 +406,8 @@ def add_transform_commands(subparsers, extract_subparsers) -> None:
         parser.add_argument("--input-json", required=True)
         parser.add_argument("--format", choices=["json"], default="json")
         parser.set_defaults(func=run_transform)
-    article.set_defaults(web_transform_task="article")
-    summary.set_defaults(func=_run_summary)
+    article.set_defaults(web_transform_task="article", typed_command="extract article-text")
+    summary.set_defaults(func=_run_summary, typed_command="summarize map-reduce")
 
 
 def _run_summary(arguments: argparse.Namespace) -> int:
