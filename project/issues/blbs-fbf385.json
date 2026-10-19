@@ -1,0 +1,28 @@
+{
+  "id": "blbs-fbf385",
+  "title": "Every CLI failure prints one JSON error envelope on one stream",
+  "description": "Consumer (Papyrus BiblicusRunner) found inconsistent failure output across JSON-emitting CLI commands. extract url-text prints UrlTextResponse status failed on stdout exit 1 for extraction failures but a status/error envelope on stderr exit 2 for input failures. validate_request ValueError prints bare text on stderr exit 2. extract web-metadata prints status/error on stderr. summarize map-reduce and extract article-text print TransformResult with error on stdout. context-pack build-blocks has no structured failure. Goal: one contract.",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-19T19:20:43.847409Z",
+  "updated_at": "2026-10-19T19:20:54.538988Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {
+    "project_label": "blbs",
+    "source": "shared"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "5a3e96bd-dd62-41e8-97b9-37a87d866cc6",
+  "issue_id": "blbs-fbf385",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T19:20:43.847Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Every CLI failure prints one JSON error envelope on one stream",
+    "description": "Consumer (Papyrus BiblicusRunner) found inconsistent failure output across JSON-emitting CLI commands. extract url-text prints UrlTextResponse status failed on stdout exit 1 for extraction failures but a status/error envelope on stderr exit 2 for input failures. validate_request ValueError prints bare text on stderr exit 2. extract web-metadata prints status/error on stderr. summarize map-reduce and extract article-text print TransformResult with error on stdout. context-pack build-blocks has no structured failure. Goal: one contract.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}
