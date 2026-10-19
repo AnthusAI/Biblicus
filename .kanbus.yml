@@ -4,6 +4,9 @@ ignore_paths: []
 console_port: 4245
 project_key: blbs
 project_management_template: null
+methodologies:
+  - bdd
+  - git-flow
 
 # Hierarchy and types are fixed today; kept here for validation.
 hierarchy:

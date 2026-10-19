@@ -37,10 +37,24 @@
       "comment_type": "default",
       "data": {},
       "agent": null
+    },
+    {
+      "id": "89746718-00eb-438e-bba7-9e2037e5478b",
+      "author": "home",
+      "text": "Branch model adoption: methodologies bdd and the flow bundle selected, template updated, AGENTS.md release and landing sections revised, develop ruleset added, stale dev triggers removed.",
+      "created_at": "2026-10-19T17:59:46.072278Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "claude_code",
+        "model": "Claude Sonnet 5.5",
+        "name": "Branch Model Adoption",
+        "settings": {}
+      }
     }
   ],
   "created_at": "2026-10-17T14:41:54.366054Z",
-  "updated_at": "2026-10-19T16:45:47.346745Z",
+  "updated_at": "2026-10-19T17:59:50.591064Z",
   "closed_at": null,
   "right_now_summary": null,
   "right_now_updated_at": null,

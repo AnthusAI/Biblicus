@@ -9,6 +9,7 @@ When: Create/update the Kanbus task before coding; close it only after the chang
 How: See CONTRIBUTING_AGENT.md for the Kanbus workflow, hierarchy, status rules, priorities, command examples, and the sins to avoid. Never inspect project/ or issue JSON directly (including with cat or jq); use Kanbus commands only.
 Performance: Prefer kanbusr (Rust) when available; kanbus (Python) is equivalent but slower.
 Warning: Editing project/ directly is a sin against The Way. Do not read or write anything in project/; work only through Kanbus.
+Git / PR policy: Rules for product-code commits, branch names, pull requests, and human approval live in this repository's AGENTS.md (outside this Kanbus section). CONTRIBUTING_AGENT.md covers Kanbus board mechanics such as `kbs commit`; follow AGENTS.md for product code and git workflow.
 
 ## What we're building
 
@@ -233,7 +234,8 @@ except FileNotFoundError:
 - **Do NOT manually edit the CHANGELOG.md file**.
 - **Use conventional commits** for all commits: prefix with `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, etc. to trigger the appropriate semantic version bump.
 - The workflow parses commit messages to determine the next version (major, minor, patch) and automatically generates release notes.
-- Local development should focus on writing code and tests; versioning and publishing are automated on `main` after code review.
+- Local development should focus on writing code and tests; versioning and publishing are automated on `main`, which receives code only through a `develop` to `main` release pull request after code review.
+- Branching follows Git Flow: `develop` is the integration branch and `main` holds releases. Feature branches start from `develop` and their pull requests target `develop`. Merging `develop` into `main` is the release, and nothing earlier triggers semantic-release.
 
 ## Coding style policies
 
@@ -313,17 +315,18 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
 
 ## Landing the Plane (Session Completion)
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until your feature branch is pushed and its pull request to `develop` is open. Never push directly to `main` or `develop`.
 
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+4. **PUSH TO REMOTE** - This is MANDATORY. Work on a feature branch cut from `develop` (never commit on `main` or `develop`), push it, and open a pull request against `develop`:
    ```bash
-   git pull --rebase
-   git push
+   git pull --rebase origin develop
+   git push -u origin HEAD
+   gh pr create --base develop
    git status  # MUST show "up to date with origin"
    ```
 5. **Clean up** - Clear stashes, prune remote branches
@@ -331,7 +334,7 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
+- Work is NOT complete until `git push` succeeds and the pull request to `develop` is open
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds

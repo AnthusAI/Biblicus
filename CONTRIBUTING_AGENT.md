@@ -31,7 +31,7 @@ Chores that are purely about maintaining the project-management machinery (for e
 
 For complex work, break the plan into sub-tasks and file them under the parent task/bug/chore/epic as appropriate. Create one issue per concrete step in the plan. Do not put sub-tasks under stories; stories hold behavior specs, not implementation steps.
 
-Operational discipline: use the minimum commands needed. To inspect work, run `kbs list --status open --long` once to find the ID, then `kbs show <id>`. Do not guess IDs or spam multiple variants; if the ID is unknown, ask the user.
+Operational discipline: use the minimum commands needed. To inspect work, run `kanbusr list --status open --long` once to find the ID, then `kanbusr show <id>`. Do not guess IDs or spam multiple variants; if the ID is unknown, ask the user.
 
 Editing project/ directly is hacking the data and is a sin against The Way. Do not read or write anything inside project/. Do not inspect issue JSON with tools like cat or jq. All work must pass through Kanbus.
 
@@ -62,6 +62,7 @@ Allowed parent-child relationships:
 
 
 Structure is not bureaucracy. Structure is memory.
+
 
 ## The Cognitive Framework
 
@@ -104,17 +105,13 @@ Chores maintain the ground on which behavior stands.
 Every story must contain a Gherkin form.
 
 Minimum structure:
-
+```gherkin
 Feature:
-
-Scenario:
-
-Given
-
-When
-
-Then
-
+  Scenario:
+    Given
+    When
+    Then
+```
 
 This is required.
 
@@ -135,7 +132,7 @@ Record intent and Definition of Done.
 6. Refactor only while all specifications remain green.
 7. Record progress. Close only when complete.
 
-Skipping steps is corruption of the process.
+Skipping steps undermines the process.
 
 ## Coverage
 
@@ -145,96 +142,6 @@ Every behavior must be specified.
 Every specification must pass.
 
 Green is peace. Red is unfinished.
-
-## Status and Priority
-
-Statuses and workflows are fixed. They exist to maintain order.
-
-Initial status: open.
-Status changes must follow the workflow transitions below.
-Workflow selection: use a workflow named after the issue type when present; otherwise use the default workflow.
-
-
-default workflow:
-
-
-- blocked -> in_progress, closed
-
-- closed -> open
-
-- deferred -> open, closed
-
-- in_progress -> open, blocked, closed
-
-- open -> in_progress, closed, deferred
-
-
-
-
-epic workflow:
-
-
-- closed -> open
-
-- in_progress -> open, closed
-
-- open -> in_progress, closed
-
-
-
-
-Priorities are:
-
-
-- 0 -- critical
-
-- 1 -- high
-
-- 2 -- medium
-
-- 3 -- low
-
-- 4 -- trivial
-
-Default is 2 (medium).
-
-Severity is not emotion. It is signal.
-
-## Command examples
-
-
-kbs create "Plan the roadmap" --type initiative
-
-kbs create "Release v1" --type epic --parent <initiative-id>
-
-kbs create "Implement feature" --type task --parent <epic-id>
-
-kbs create "Fix crash on launch" --type bug --priority 0 --parent <epic-id>
-
-kbs update <id> --status in_progress --assignee "you@example.com"
-
-kbs update <id> --status blocked
-
-kbs comment <id> "Progress note"
-
-kbs list --status open
-
-kbs close <id> --comment "Summary of the change"
-
-
-## Semantic Release Alignment
-
-Issue types map directly to release categories.
-
-
-- bug -> fix
-
-- story -> feat
-
-- chore -> chore
-
-
-Release notes are not commentary. They are a ledger of truth.
 
 ## Example: Hello World
 
@@ -261,28 +168,40 @@ Example:
 As a new user, I want a Hello World program, so that I can verify the toolchain works.
 
 3. Create an epic for the milestone and record the story
-Command:
+
+```bash
 kbs create "Hello World program" --type epic
+```
 
 Example output (capture the ID):
-ID: kbs-1a2b3c
+```
+ID: kanbus-1a2b3c
+```
 
 Record the intent on the epic:
-kbs comment kbs-1a2b3c "As a new user, I want a Hello World program, so that I can verify the toolchain works."
+```bash
+kbs comment kanbus-1a2b3c "As a new user, I want a Hello World program, so that I can verify the toolchain works."
+```
 
 4. Create a story for the behavior and include Gherkin (before any code)
-Command:
-kbs create "Prints Hello World to stdout" --type story --parent kbs-1a2b3c
+
+```bash
+kbs create "Prints Hello World to stdout" --type story --parent kanbus-1a2b3c
+```
 
 Example output (capture the story ID):
-ID: kbs-4d5e6f
+```
+ID: kanbus-4d5e6f
+```
 
 Attach the Gherkin acceptance criteria:
-kbs comment kbs-4d5e6f "Feature: Hello World
+```bash
+kbs comment kanbus-4d5e6f "Feature: Hello World
   Scenario: Run the program
     Given a configured environment
     When I run the program
     Then it prints \"Hello, world\" to stdout"
+```
 
 5. Run the Gherkin and confirm it fails (before any production code)
 Run the behavior tests in the repo and confirm the new scenario fails for the right reason.
@@ -290,3 +209,107 @@ Run the behavior tests in the repo and confirm the new scenario fails for the ri
 6. Implement the minimum code to pass, then refactor
 Write the smallest change that makes the Gherkin scenario pass.
 Refactor only while all specs remain green.
+
+## Git Flow
+
+Branches have fixed roles.
+
+- `main` holds released code. Every commit on `main` is a release.
+- `develop` integrates finished work. Pull requests target `develop` unless they are releases or hotfixes.
+- Feature branches start from `develop` and return to it through a pull request.
+- Release branches start from `develop`, stabilize a version, and merge to `main` and back to `develop`.
+- Hotfix branches start from `main`, fix an urgent defect, and merge to `main` and back to `develop`.
+
+Never commit directly to `main` or `develop`.
+Name the Kanbus issue in the branch name or the pull request description so code stays linked to intent.
+Branch naming, review and approval rules in this repository's AGENTS.md take precedence over this section.
+
+## Semantic Release Alignment
+
+Issue types map directly to release categories.
+
+
+- bug -> fix
+
+- story -> feat
+
+- chore -> chore
+
+
+Release notes are a record, not commentary.
+
+
+## Status and Priority
+
+Statuses and workflows are fixed. They exist to maintain order.
+
+Initial status: open.
+Status changes must follow the workflow transitions below.
+Workflow selection: use a workflow named after the issue type when present; otherwise use the default workflow.
+
+
+default workflow:
+
+
+- backlog -> Start discovery (Discovery), Drop (Done)
+
+- blocked -> Unblock (In Progress), Drop (Done)
+
+- closed -> Reopen (Discovery)
+
+- in_progress -> Pause (Discovery), Block (Blocked), Complete (Done)
+
+- open -> Start work (In Progress), Drop (Done), Back to backlog (Backlog)
+
+
+
+
+epic workflow:
+
+
+- closed -> Reopen (Discovery)
+
+- in_progress -> Pause (Discovery), Complete (Done)
+
+- open -> Start (In Progress), Complete (Done)
+
+
+
+
+Priorities are:
+
+
+- 0 -- critical
+
+- 1 -- high
+
+- 2 -- medium
+
+- 3 -- low
+
+- 4 -- trivial
+
+Default is 2 (medium).
+
+Severity is not emotion. It is signal.
+
+## Command examples
+
+
+kanbus create "Plan the roadmap" --type initiative
+
+kanbus create "Release v1" --type epic --parent <initiative-id>
+
+kanbus create "Implement feature" --type task --parent <epic-id>
+
+kanbus create "Fix crash on launch" --type bug --priority 0 --parent <epic-id>
+
+kanbus update <id> --status in_progress --assignee "you@example.com"
+
+kanbus update <id> --status blocked
+
+kanbus comment <id> "Progress note"
+
+kanbus list --status open
+
+kanbus close <id> --comment "Summary of the change"
