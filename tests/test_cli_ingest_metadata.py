@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from biblicus import cli
+import biblicus.cli as cli_package
+from biblicus.cli import common as cli_common
+from biblicus.cli import corpus as cli_corpus
 
 
 def test_load_ingest_metadata_file_requires_mapping(tmp_path: Path):
@@ -15,7 +17,7 @@ def test_load_ingest_metadata_file_requires_mapping(tmp_path: Path):
     metadata_path.write_text("- a\n- b\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="mapping/object"):
-        cli._load_ingest_metadata_file(metadata_path)
+        cli_common._load_ingest_metadata_file(metadata_path)
 
 
 def test_ingest_metadata_cli_uses_standard_item_storage(tmp_path: Path, capsys):
@@ -38,9 +40,9 @@ def test_ingest_metadata_cli_uses_standard_item_storage(tmp_path: Path, capsys):
         encoding="utf-8",
     )
 
-    assert cli.main(["init", str(corpus_path)]) == 0
+    assert cli_package.main(["init", str(corpus_path)]) == 0
     assert (
-        cli.main(
+        cli_package.main(
             [
                 "--corpus",
                 str(corpus_path),
@@ -61,7 +63,7 @@ def test_ingest_metadata_cli_uses_standard_item_storage(tmp_path: Path, capsys):
     sidecar = yaml.safe_load(
         sidecar_path.with_name(sidecar_path.name + ".biblicus.yml").read_text(encoding="utf-8")
     )
-    shown_result = cli.main(["--corpus", str(corpus_path), "show", item_id])
+    shown_result = cli_package.main(["--corpus", str(corpus_path), "show", item_id])
     shown = json.loads(capsys.readouterr().out)
 
     assert shown_result == 0
@@ -98,9 +100,9 @@ def test_ingest_metadata_cli_date_flags_write_canonical_dates(tmp_path: Path, ca
         encoding="utf-8",
     )
 
-    assert cli.main(["init", str(corpus_path)]) == 0
+    assert cli_package.main(["init", str(corpus_path)]) == 0
     assert (
-        cli.main(
+        cli_package.main(
             [
                 "--corpus",
                 str(corpus_path),
@@ -147,7 +149,7 @@ def test_apply_ingest_date_overrides_rejects_legacy_top_level_dates():
     Legacy top-level publication dates are rejected at the ingest boundary.
     """
     with pytest.raises(ValueError, match="dates.published_at"):
-        cli._apply_ingest_date_overrides(
+        cli_corpus._apply_ingest_date_overrides(
             metadata={"published": "2025-01-01"},
             published_at=None,
             updated_at=None,
@@ -160,7 +162,7 @@ def test_apply_ingest_date_overrides_rejects_invalid_date_format():
     Publication date values must use a date or full timestamp format.
     """
     with pytest.raises(ValueError, match="YYYY-MM-DD"):
-        cli._apply_ingest_date_overrides(
+        cli_corpus._apply_ingest_date_overrides(
             metadata={},
             published_at="June 10, 2025",
             updated_at=None,
