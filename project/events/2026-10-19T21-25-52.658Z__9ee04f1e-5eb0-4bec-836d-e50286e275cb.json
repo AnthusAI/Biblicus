@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "9ee04f1e-5eb0-4bec-836d-e50286e275cb",
+  "issue_id": "blbs-153ac9cd-b5f5-45e5-ad3c-63d327101e91",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T21:25:52.658Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Coverage harness steps must not hide errors behind suppress(Exception)",
+    "description": "features/steps/coverage_harness_steps.py drives code inside suppress(Exception). During blbs-d4c93b about 56 undefined names were found behind those blocks (Optional, shutil, subprocess, KnowledgeBase and more, mostly in the migration gap steps), so the NameError is swallowed, the code after it never runs, and coverage counts lines that no behavior specification actually exercises. That contradicts the specification-completeness policy. Work: list every suppress(Exception) in features/steps; for each, either write a real scenario that exercises the behavior with explicit expected outcomes, or delete the behavior if it cannot be specified. Remove the harness blocks. Expect real coverage to drop before it recovers; fix gaps with scenarios, not suppression.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-opus-5-5",
+      "name": "claude"
+    }
+  }
+}
