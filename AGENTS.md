@@ -324,7 +324,7 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY. Work on a feature branch cut from `develop` (never commit on `main` or `develop`), push it, and open a pull request against `develop`:
    ```bash
-   git pull --rebase origin develop
+   git fetch origin && git merge origin/develop
    git push -u origin HEAD
    gh pr create --base develop
    git status  # MUST show "up to date with origin"
