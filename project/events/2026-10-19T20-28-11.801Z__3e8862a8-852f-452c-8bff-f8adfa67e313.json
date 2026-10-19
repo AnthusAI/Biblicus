@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "event_id": "3e8862a8-852f-452c-8bff-f8adfa67e313",
+  "issue_id": "Biblicus-788",
+  "event_type": "state_transition",
+  "occurred_at": "2026-10-19T20:28:11.801Z",
+  "actor_id": "home",
+  "payload": {
+    "from_status": "closed",
+    "to_status": "open"
+  }
+}

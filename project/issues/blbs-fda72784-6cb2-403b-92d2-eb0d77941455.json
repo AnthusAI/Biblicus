@@ -3,7 +3,7 @@
   "title": "Remote collections and pipeline recipes",
   "description": "Collections discover remote subfolders and materialize corpora; pipeline recipes run extraction/retrieval/analysis by recipe.",
   "type": "epic",
-  "status": "closed",
+  "status": "open",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -15,17 +15,33 @@
       "id": "b02d351a-4bff-4518-8200-bd96d382197f",
       "author": "ryan.porter",
       "text": "Ran behave after reboot: remote_collection_azure, collection_partitions, pipeline_recipes all green (conda py311). Collections mirror/prune, partition tagging, and pipeline recipes now verified.",
-      "created_at": "2026-02-20T23:33:24.951530Z"
+      "created_at": "2026-02-20T23:33:24.951530Z",
+      "comment_type": "default"
     },
     {
       "id": "a3bfc462-c54c-42c3-8026-f66d9a750126",
       "author": "ryan.porter",
       "text": "Closed. Collections + pipeline recipes delivered: docs, models, CLI, and Behave specs passing (remote_collection_azure, collection_partitions, pipeline_recipes).",
-      "created_at": "2026-02-21T00:46:19.734011Z"
+      "created_at": "2026-02-21T00:46:19.734011Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "17a36aed-d19a-4076-8613-d6fdf8ea6be7",
+      "author": "home",
+      "text": "2026-10-19: reopened. The epic was closed while six children (2b05f7, 9355e7, 9d5991, a0e652, acf5a6, bfaab6) and task 22be8a were still open, and those children stored the short id blbs-fda727 as their parent, which kbs 0.36 doctor rejects as a missing parent. Parents re-set through kbs update --parent, so they now store the full id. The open children are older work, not part of the review follow-through; their scope is unchanged.",
+      "created_at": "2026-10-19T20:28:21.529620Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-02-19T23:24:24.345678Z",
-  "updated_at": "2026-02-21T00:46:19.734011Z",
-  "closed_at": "2026-02-21T00:46:11.067139Z",
+  "updated_at": "2026-10-19T20:28:21.529661Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
   "custom": {}
 }
