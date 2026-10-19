@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from pydantic import ValidationError
 
-from biblicus import cli as cli_module
+from biblicus.cli import taxonomy_ontology as cli_taxonomy_ontology
 from biblicus import taxonomy as taxonomy_module
 from biblicus.corpus import Corpus
 from biblicus.models import ExtractionSnapshotReference
@@ -915,7 +915,7 @@ def test_taxonomy_discover_cli_renders_markdown(
         ],
     )
     monkeypatch.setattr(
-        cli_module,
+        cli_taxonomy_ontology,
         "_resolve_extraction_snapshot_for_analysis",
         lambda *, corpus, extraction_snapshot, analysis_label: ExtractionSnapshotReference(
             extractor_id="pipeline",
@@ -928,7 +928,7 @@ def test_taxonomy_discover_cli_renders_markdown(
         lambda *, corpus, classifier_id, extraction_snapshot, steering_feedback=None: output,
     )
 
-    exit_code = cli_module.cmd_taxonomy_discover(
+    exit_code = cli_taxonomy_ontology.cmd_taxonomy_discover(
         SimpleNamespace(
             corpus=str(corpus.root),
             classifier="classifier-one",

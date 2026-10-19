@@ -2,12 +2,14 @@ import argparse
 
 import pytest
 
-from biblicus import cli, corpus as corpus_mod
+from biblicus import corpus as corpus_mod
+from biblicus.cli import benchmark as cli_benchmark
+from biblicus.cli import common as cli_common
 from biblicus.models import CatalogItem
 
 
 def test_normalize_extraction_configuration_pipeline_passthrough():
-    extractor_id, config, max_workers = cli._normalize_extraction_configuration(
+    extractor_id, config, max_workers = cli_common._normalize_extraction_configuration(
         {"extractor_id": "pipeline", "configuration": {"a": 1}, "max_workers": 5}
     )
     assert extractor_id == "pipeline"
@@ -16,7 +18,7 @@ def test_normalize_extraction_configuration_pipeline_passthrough():
 
 
 def test_normalize_extraction_configuration_single_stage_wrap():
-    extractor_id, config, max_workers = cli._normalize_extraction_configuration(
+    extractor_id, config, max_workers = cli_common._normalize_extraction_configuration(
         {"extractor_id": "stt-openai", "configuration": {"foo": "bar"}}
     )
     assert extractor_id == "pipeline"
@@ -25,12 +27,12 @@ def test_normalize_extraction_configuration_single_stage_wrap():
 
 def test_normalize_extraction_configuration_max_workers_validation():
     with pytest.raises(ValueError):
-        cli._normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": True})
+        cli_common._normalize_extraction_configuration({"extractor_id": "x", "configuration": {}, "max_workers": True})
 
 
 def test_cli_benchmark_download_unknown_dataset(capsys, monkeypatch, tmp_path):
     args = argparse.Namespace(datasets="unknown", corpus_dir=tmp_path, count=None, force=False)
-    exit_code = cli.cmd_benchmark_download(args)
+    exit_code = cli_benchmark.cmd_benchmark_download(args)
     captured = capsys.readouterr().out
     assert "Unknown dataset" in captured
     assert exit_code == 0

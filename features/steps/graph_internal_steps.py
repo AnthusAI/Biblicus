@@ -28,7 +28,7 @@ from biblicus.graph.neo4j import (
     create_neo4j_driver,
     ensure_neo4j_running,
 )
-from biblicus.cli import cmd_graph_extract
+from biblicus.cli.graph import cmd_graph_extract
 from biblicus.graph.extractors.cooccurrence import CooccurrenceGraphExtractor, _windowed
 from biblicus.graph.extractors.dependency_relations import DependencyRelationsGraphExtractor
 from biblicus.graph.extractors import ner_entities as ner_entities_module

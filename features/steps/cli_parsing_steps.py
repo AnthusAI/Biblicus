@@ -4,7 +4,8 @@ from typing import List
 
 from behave import then, when
 
-from biblicus.cli import _parse_config_pairs, _parse_stage_spec
+from biblicus.cli.common import _parse_config_pairs
+from biblicus.cli.extract import _parse_stage_spec
 
 
 def _table_pairs(rows) -> List[str]:
