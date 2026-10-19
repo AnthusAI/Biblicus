@@ -16,57 +16,47 @@
       "author": "unknown",
       "text": "Suggested order. Source: Claude Doc \"Biblicus Review: Platform Fit and Improvements\" (https://claude.ai/code/artifact/8b797c1b-5c8c-4931-acd6-1655b52f6f79).\n\nIndependent, start now: blbs-d8fc85 (repo hygiene), blbs-bc9c7d (roadmap and scope docs), blbs-1aca09 (delete merged branches, needs delete permission), blbs-45b76d (branch triage).\nCritical path: blbs-12b984 (land curation branches) then release. Then blbs-def144 (Corpus paths and env names), blbs-12cfcf (typed api), blbs-5e783e (metadata.papyrus), blbs-af04bd (Papyrus runner and dependency).\nAfter the curation release: blbs-49f6fb (split cli.py), blbs-f801df (Tactus gate), blbs-ca6f88 (drop supervised loop), blbs-67eb7d (Cyclotron shadow mode; blbs-ca6f88 waits on its result).\n\nPartial work saved on branches: claude/project-thread-dmru5y-repo-hygiene, claude/project-thread-dmru5y-corpus-contract, claude/project-thread-dmru5y-roadmap-scope. None is verified or has a PR. All need current origin/main merged in (PR 60, PR 61, v1.11.4 landed after they were cut).\n",
       "created_at": "2026-10-17T16:42:28.980753Z",
-      "comment_type": "default",
-      "data": {},
-      "agent": null
+      "comment_type": "default"
     },
     {
       "id": "35737ca6-0043-427b-b0fb-9f2c05dabbcb",
       "author": "unknown",
       "text": "2026-10-19 status. Closed: d8fc85, bc9c7d, 12b984, def144, 12cfcf, 5e783e, eeb23e, 1aca09 (PRs 62-74 on Biblicus, Papyrus PR 244; releases 1.12.0 to 1.14.2, PyPI has 1.14.2). Open in suggested order: af04bd (Papyrus runner, in progress), 45b76d (branch triage, re-triaged today), d7a1c0 (Papyrus merged branch deletion), 49f6fb (split cli.py), f801df (Tactus gate), 67eb7d (Cyclotron shadow mode), ca6f88 (waits on 67eb7d). Handoff report: /mnt/project-files/handoff/HANDOFF.md in the Biblicus project.",
       "created_at": "2026-10-19T16:45:23.299060Z",
-      "comment_type": "default",
-      "data": {},
-      "agent": null
+      "comment_type": "default"
     },
     {
       "id": "f06de923-b771-4832-a873-bfd3510b0816",
       "author": "unknown",
       "text": "Correction: the Papyrus second-pass branch deletion issue is blbs-dfb988 (not d7a1c0).",
       "created_at": "2026-10-19T16:45:47.346560Z",
-      "comment_type": "default",
-      "data": {},
-      "agent": null
+      "comment_type": "default"
     },
     {
-      "id": "89746718-00eb-438e-bba7-9e2037e5478b",
+      "id": "8502c69e-c9a9-40c1-bb3a-d7a96e44d552",
       "author": "home",
-      "text": "Branch model adoption: methodologies bdd and the flow bundle selected, template updated, AGENTS.md release and landing sections revised, develop ruleset added, stale dev triggers removed.",
-      "created_at": "2026-10-19T17:59:46.072278Z",
+      "text": "2026-10-19 session (local Mac session, Sonnet workers, Opus review). Biblicus adopted Git Flow at Ryan's direction: PR 77 synced develop with main; feature PRs now target develop; releases are develop->main PRs. Kanbus git-flow methodology adoption is PR 78, parked as draft until Kanbus 0.36.0 (dogfood bugs filed on the Kanbus board under kbs-121c3209). Branch cleanup done (blbs-45b76d, blbs-dfb988 closed). In review: PR 76 Tactus release gate (blbs-f801df), PR 79 cli split (blbs-49f6fb, sent back to remove a test proxy that rebinds names across modules), Papyrus PR 364 BiblicusRunner (blbs-af04bd, sent back), CodeQL fixes for url_text YouTube host matching and import cycles (blbs-7569c0, in progress). blbs-67eb7d re-scoped to the rubric comparison and step 5; blbs-ca6f88 premise corrected, still blocked.",
+      "created_at": "2026-10-19T18:20:08.539330Z",
       "comment_type": "default",
-      "data": {},
       "agent": {
-        "platform": "claude_code",
-        "model": "Claude Sonnet 5.5",
-        "name": "Branch Model Adoption",
-        "settings": {}
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
       }
     }
   ],
   "created_at": "2026-10-17T14:41:54.366054Z",
-  "updated_at": "2026-10-19T17:59:50.591064Z",
+  "updated_at": "2026-10-19T18:20:08.539443Z",
   "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {
-    "source": "shared",
-    "project_label": "blbs"
-  },
   "agent": {
     "platform": "claude-code",
     "model": "claude",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {
+    "project_label": "blbs",
+    "source": "shared"
+  }
 }
