@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from biblicus import inference
-from features.steps.cli_namespace import cli_namespace as cli
+from biblicus.cli import benchmark as cli_benchmark
 from biblicus.analysis import markov, topic_modeling
 from biblicus.analysis.markov import (
     MarkovAnalysisConfiguration,
@@ -148,7 +148,7 @@ def test_cli_benchmark_run_category_not_found(monkeypatch, tmp_path: Path):
     cfg_path.write_text("dummy", encoding="utf-8")
     args = Namespace(config=str(cfg_path), pipelines=None, category="missing", output=None)
     with pytest.raises(ValueError):
-        cli.cmd_benchmark_run(args)
+        cli_benchmark.cmd_benchmark_run(args)
 
 
 def test_cli_benchmark_status_ready(tmp_path: Path, monkeypatch):
@@ -158,7 +158,7 @@ def test_cli_benchmark_status_ready(tmp_path: Path, monkeypatch):
     (gt / "doc.txt").write_text("gt", encoding="utf-8")
     args = Namespace(corpus_dir=str(corpus_dir))
     # Should not raise; ready branch includes count
-    cli.cmd_benchmark_status(args)
+    cli_benchmark.cmd_benchmark_status(args)
 
 
 def test_corpus_reserved_path(tmp_path: Path):

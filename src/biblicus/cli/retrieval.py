@@ -27,11 +27,11 @@ from ..models import (
     RetrievalResult,
 )
 from ..retrievers import get_retriever
+from . import common
 from .common import (
     _add_common_corpus_arg,
     _add_dependency_flags,
     _dependency_mode,
-    _execute_dependency_plan,
     _open_corpus_from_arguments,
 )
 
@@ -96,7 +96,7 @@ def cmd_build(arguments: argparse.Namespace) -> int:
         index_config=configuration,
         load_handler_available=False,
     )
-    _execute_dependency_plan(
+    common._execute_dependency_plan(
         index_plan,
         corpus=corpus,
         label="index",
@@ -137,7 +137,7 @@ def cmd_query(arguments: argparse.Namespace) -> int:
             index_config=None,
             load_handler_available=False,
         )
-        _execute_dependency_plan(
+        common._execute_dependency_plan(
             query_plan,
             corpus=corpus,
             label="query",

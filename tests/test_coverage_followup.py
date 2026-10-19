@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from features.steps.cli_namespace import cli_namespace as cli
+from biblicus.cli import benchmark as cli_benchmark
 from biblicus.analysis import markov
 from biblicus.analysis.models import (
     MarkovAnalysisTextSourceConfig,
@@ -62,7 +62,7 @@ def test_cli_benchmark_download_handles_unknown_and_pending(monkeypatch, capsys,
     arguments = SimpleNamespace(
         datasets="scanned-arxiv,unknown", corpus_dir=str(tmp_path), count=None, force=False
     )
-    cli.cmd_benchmark_download(arguments)
+    cli_benchmark.cmd_benchmark_download(arguments)
     output = capsys.readouterr().out
     assert "scanned-arxiv dataset is not yet available" in output
     assert "Unknown dataset" in output
@@ -78,7 +78,7 @@ def test_cli_benchmark_status_uses_legacy_metadata_dir(tmp_path, capsys):
     (gt_dir / "sample.txt").write_text("ok", encoding="utf-8")
 
     arguments = SimpleNamespace(corpus_dir=str(corpus_dir))
-    cli.cmd_benchmark_status(arguments)
+    cli_benchmark.cmd_benchmark_status(arguments)
     output = capsys.readouterr().out
     assert "READY (1 docs)" in output
 
@@ -211,7 +211,7 @@ def test_cli_benchmark_download_force_and_error(monkeypatch, capsys, tmp_path):
     arguments = SimpleNamespace(
         datasets="funsd", corpus_dir=str(tmp_path), count=2, force=True
     )
-    cli.cmd_benchmark_download(arguments)
+    cli_benchmark.cmd_benchmark_download(arguments)
     out = capsys.readouterr().out
     assert "ERROR: Failed to download funsd" in out
     assert "--count" in " ".join(called["cmd"])
@@ -225,7 +225,7 @@ def test_cli_benchmark_status_downloaded_but_not_ready(tmp_path, capsys):
     (meta_dir / "config.json").write_text("{}", encoding="utf-8")
 
     arguments = SimpleNamespace(corpus_dir=str(corpus_dir))
-    cli.cmd_benchmark_status(arguments)
+    cli_benchmark.cmd_benchmark_status(arguments)
     out = capsys.readouterr().out
     assert "sroie" in out and "DOWNLOADED" in out
 

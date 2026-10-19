@@ -23,12 +23,12 @@ from ..extraction_evaluation import (
 from ..models import (
     parse_extraction_snapshot_reference,
 )
+from . import common
 from .common import (
     _add_common_corpus_arg,
     _add_dependency_flags,
     _default_extraction_max_workers,
     _dependency_mode,
-    _execute_dependency_plan,
 )
 
 
@@ -179,7 +179,7 @@ def cmd_extract_build(arguments: argparse.Namespace) -> int:
         force=bool(arguments.force),
         max_workers=resolved_max_workers,
     )
-    results = _execute_dependency_plan(
+    results = common._execute_dependency_plan(
         extract_plan,
         corpus=corpus,
         label="extract",

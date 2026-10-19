@@ -4,12 +4,12 @@ from pathlib import Path
 import pytest
 
 from biblicus import migration
-from features.steps.cli_namespace import cli_namespace as cli
+from biblicus.cli import benchmark as cli_benchmark
 
 
 def test_cmd_download_unknown_dataset(capsys):
     args = argparse.Namespace(datasets="unknown", corpus_dir=Path("/tmp"), count=None, force=False)
-    rc = cli.cmd_benchmark_download(args)
+    rc = cli_benchmark.cmd_benchmark_download(args)
     out = capsys.readouterr().out
     assert rc == 0
     assert "Unknown dataset" in out

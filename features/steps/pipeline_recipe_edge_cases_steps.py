@@ -692,7 +692,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         "extractor_id: pipeline\nconfiguration:\n  stages: []\n", encoding="utf-8"
     )
 
-    from features.steps.cli_namespace import cli_namespace as cli_module
+    from biblicus.cli import common as cli_common
 
     manifest_path = (
         corpus_for_analysis.extraction_snapshot_dir(
@@ -709,8 +709,8 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         resolved_snapshot.snapshot_id == extraction_ref.snapshot_id
     ), "Expected snapshot reuse path"
 
-    original_loader = cli_module.load_or_build_extraction_snapshot
-    cli_module.load_or_build_extraction_snapshot = lambda *args, **kwargs: SimpleNamespace(
+    original_loader = cli_common.load_or_build_extraction_snapshot
+    cli_common.load_or_build_extraction_snapshot = lambda *args, **kwargs: SimpleNamespace(
         snapshot_id="snap-2"
     )
     try:
@@ -720,7 +720,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         )
         assert resolved_fallback.snapshot_id == "snap-2", "Expected snapshot build fallback"
     finally:
-        cli_module.load_or_build_extraction_snapshot = original_loader
+        cli_common.load_or_build_extraction_snapshot = original_loader
 
     download_args = SimpleNamespace(
         datasets="funsd,sroie,scanned-arxiv,unknown",

@@ -1,6 +1,7 @@
 import argparse
 
-from features.steps.cli_namespace import cli_namespace as cli
+from biblicus.cli import benchmark as cli_benchmark
+from biblicus.cli import common as cli_common
 from biblicus.models import ExtractionSnapshotReference
 from biblicus.corpus import Corpus
 
@@ -14,7 +15,7 @@ def test_get_or_build_extraction_snapshot_reuses_latest(monkeypatch, tmp_path):
     monkeypatch.setattr(
         Corpus, "latest_extraction_snapshot_reference", lambda self, extractor_id=None: ExtractionSnapshotReference(extractor_id="pipeline", snapshot_id="snap")
     )
-    ref = cli._get_or_build_extraction_snapshot(
+    ref = cli_common._get_or_build_extraction_snapshot(
         corpus=corpus,
         recipe_path=tmp_path / "recipe.yml",
         analysis_label="analysis",
@@ -24,7 +25,7 @@ def test_get_or_build_extraction_snapshot_reuses_latest(monkeypatch, tmp_path):
 
 def test_cmd_benchmark_download_handles_unknown(tmp_path, capsys):
     arguments = argparse.Namespace(datasets=["unknown"], corpus_dir=tmp_path, count=None, force=False)
-    result = cli.cmd_benchmark_download(arguments)
+    result = cli_benchmark.cmd_benchmark_download(arguments)
     out = capsys.readouterr().out
     assert "Unknown dataset" in out
     assert result == 0
