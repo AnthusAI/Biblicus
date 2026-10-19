@@ -43,7 +43,7 @@ from biblicus.analysis.models import (
     TopicModelingConfiguration,
     TopicModelingReport,
 )
-from biblicus.constants import CORPUS_DIR_NAME, SIDECAR_SUFFIX
+from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
 from biblicus.corpus import Corpus
 from biblicus.evaluation import benchmark_runner, metrics, ocr_benchmark, stt_benchmark
 from biblicus.extraction import (
@@ -68,6 +68,7 @@ from biblicus.graph import neo4j
 from biblicus.migration import migrate_layout
 from biblicus.models import (
     CatalogItem,
+    CorpusConfig,
     ExtractedText,
     ExtractionSnapshotReference,
     ExtractionStageOutput,
