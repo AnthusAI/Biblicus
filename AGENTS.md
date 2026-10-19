@@ -7,7 +7,7 @@ Use Kanbus for task management.
 Why: Kanbus task management is MANDATORY here; every task must live in Kanbus.
 When: Create/update the Kanbus task before coding; close it only after the change lands.
 How: See CONTRIBUTING_AGENT.md for the Kanbus workflow, hierarchy, status rules, priorities, command examples, and the sins to avoid. Never inspect project/ or issue JSON directly (including with cat or jq); use Kanbus commands only.
-Performance: Prefer kanbusr (Rust) when available; kanbus (Python) is equivalent but slower.
+Performance: Prefer kbs (Rust) when available; kanbus (Python) is equivalent but slower.
 Warning: Editing project/ directly is a sin against The Way. Do not read or write anything in project/; work only through Kanbus.
 Git / PR policy: Rules for product-code commits, branch names, pull requests, and human approval live in this repository's AGENTS.md (outside this Kanbus section). CONTRIBUTING_AGENT.md covers Kanbus board mechanics such as `kbs commit`; follow AGENTS.md for product code and git workflow.
 
@@ -329,6 +329,7 @@ def persist_raw_item_bytes(request: RawItemWriteRequest) -> None:
    gh pr create --base develop
    git status  # MUST show "up to date with origin"
    ```
+   Kanbus board changes (`kbs commit`) ride along in that same pull request, because the `develop` ruleset requires pull requests for every change.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
