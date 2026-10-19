@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "559a65e9-a595-4205-b593-0f6d7cdf35e5",
+  "issue_id": "blbs-d4c93b94-ec5e-469c-a142-63836b783828",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T19:19:24.140Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Define CorpusConfig in coverage_harness_steps",
+    "description": "features/steps/coverage_harness_steps.py references CorpusConfig without importing or defining it (noticed during blbs-49f6fb; present on main 537264d). Find the scenario path that reaches it, add the import from its real module, and make sure a scenario covers that path.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 3,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-opus-5-5",
+      "name": "claude"
+    }
+  }
+}
