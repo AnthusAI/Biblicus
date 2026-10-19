@@ -10,7 +10,9 @@ import pytest
 import yaml
 from pydantic import BaseModel
 
-from biblicus import cli
+import biblicus.cli as cli_package
+from biblicus.cli import graph as cli_graph
+from biblicus.cli import topic_classifier as cli_topic_classifier
 from biblicus.corpus import Corpus
 
 
@@ -26,7 +28,7 @@ class _StubOutput(BaseModel):
 
 
 def _run_cli(capsys: pytest.CaptureFixture[str], argument_list: List[str]) -> Tuple[int, str, str]:
-    exit_code = cli.main(argument_list)
+    exit_code = cli_package.main(argument_list)
     captured = capsys.readouterr()
     return exit_code, captured.out, captured.err
 
@@ -435,11 +437,11 @@ def test_graph_extract_progress_reports_heartbeat_and_errors(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Graph progress callbacks render heartbeat and errored item events."""
-    cli._graph_extract_progress(
+    cli_graph._graph_extract_progress(
         "heartbeat",
         {"snapshot_id": "s1", "item_index": 2, "nodes": 4, "edges": 5},
     )
-    cli._graph_extract_progress(
+    cli_graph._graph_extract_progress(
         "processed",
         {
             "item_index": 1,
@@ -452,7 +454,7 @@ def test_graph_extract_progress_reports_heartbeat_and_errors(
             "error_reason": "timeout",
         },
     )
-    cli._graph_extract_progress("unknown-event", {})
+    cli_graph._graph_extract_progress("unknown-event", {})
     error_output = capsys.readouterr().err
 
     assert "[graph] heartbeat snapshot=s1 itemIndex=2 nodes=4 edges=5" in error_output
@@ -821,13 +823,13 @@ def test_topic_classifier_project_renders_markdown_with_skipped_items(
 
 def test_topic_classifier_candidates_markdown_ignores_non_list_input() -> None:
     """Candidate rendering returns nothing for non-list input and skips non-mappings."""
-    assert cli._topic_classifier_candidates_markdown(None) == ""
-    assert cli._topic_classifier_candidates_markdown(["x", {"topic_uid": "t"}]) == "t"
+    assert cli_topic_classifier._topic_classifier_candidates_markdown(None) == ""
+    assert cli_topic_classifier._topic_classifier_candidates_markdown(["x", {"topic_uid": "t"}]) == "t"
 
 
 def test_topic_classifier_projection_markdown_without_skipped_items() -> None:
     """Projection Markdown omits the skipped section when nothing was skipped."""
-    markdown = cli._topic_classifier_projection_markdown(
+    markdown = cli_topic_classifier._topic_classifier_projection_markdown(
         {
             "classifier_id": "history",
             "model_version": "v1",
