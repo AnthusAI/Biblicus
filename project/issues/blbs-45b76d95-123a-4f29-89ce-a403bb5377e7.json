@@ -3,7 +3,7 @@
   "title": "Triage remote branches with unmerged commits",
   "description": "## Goal\nRemote branches with unmerged commits that are not part of the current work. Decide per branch: merge, rebase and PR, or delete.\n\nBranches (commits ahead of main on 2026-10-17): branch (1), feat/gdrive-residio-corpus (24), feature/graph-extraction-layer (6), feature/graph-extractor-baselines (10), feature/reinforcement-memory (11), feature/shared-anthus-footer (3), fix/dependabot-vulnerabilities (1), retrieval-extraction-run-fallback (4), update-docs (1), dev (2), develop (1; CI lists it as an integration branch but it is behind main; make it real or delete it), cursor/catalog-compat-main-156a (1, likely superseded by main's catalog_compat), cursor/kanbus-264-agent-provenance-44d0 (1, PR 58 draft), docs/anthus-readme-closer (1, PR 57 draft), codex/topic-intent-modeling-sanitized (1).\n\nMethod: for each, check whether the content is already on main by patch equivalence (`git cherry origin/main origin/<branch>`). Only branches whose cherry output is all `-` are safe to delete. Report anything with `+` lines to Ryan. Close or merge drafts 57 and 58.",
   "type": "chore",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "assignee": null,
   "creator": null,
@@ -16,22 +16,30 @@
       "author": "unknown",
       "text": "2026-10-19 re-triage of Biblicus remote branches against main 00a15f0. SAFE TO DELETE (content already on main, needs Remote Control delete): codex/steering-taxonomy, cursor/grobid-spacy-dedup-1503 and codex/bounded-web-transform (squash-landed in PR 65, 44855ab; git cherry shows + only because squash changes patch ids); feat/gdrive-residio-corpus, update-docs, retrieval-extraction-run-fallback, branch (all 140+ commits behind, history diverged; confirm with Ryan only if he wants any of them); codex/topic-intent-modeling-sanitized and cursor/catalog-compat-main-156a (git cherry all -); claude/project-thread-dmru5y-repo-hygiene, -roadmap-scope, -corpus-contract (superseded by PRs 64, 63 and 5fa92d3); claude/project-thread-jsehvq (only pm event commits already reflected on main); docs/papyrus-docs-site (PR 74 landed). NEED A DECISION: dev (3 ahead, March 2026 reinforcement-memory diagram), develop (1 ahead, OpenAI reinforcement memory helpers; behind main, CI still lists it as an integration branch), fix/dependabot-vulnerabilities (1 ahead, April package-lock bump; probably superseded by dashboard audit work), cursor/kanbus-264-agent-provenance-44d0 (draft PR 58 docs rollout), docs/anthus-readme-closer (draft PR 57 README closer). Blocker: deletion only works via Remote Control on Ryan's Mac (see blbs-1aca09).",
       "created_at": "2026-10-19T16:45:21.955317Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "deb3f190-90e1-400a-8d5b-42934491fae6",
+      "author": "home",
+      "text": "2026-10-19 (Ryan approved in chat). Deleted from origin, each re-verified first; tip SHAs for restore: branch d6e8af233e77b8de110e8193c993cbada30ccf62;codex/topic-intent-modeling-sanitized eab21395c21301c234e9230e6b7100b22774c71d;cursor/catalog-compat-main-156a a1cf2b1529b36e846fe4f74fce4fe1b416aa7cd8;docs/papyrus-docs-site 4c33e2d542e1bf7f84fa2f80974d1e5749ee48c5;codex/bounded-web-transform 79861bb266f22b38c84e762b9fba66adef3f1683;codex/steering-taxonomy 8d19256805f363b59c0ade39f78aed29f57554a0;cursor/grobid-spacy-dedup-1503 12aa2de0edb3f39a9a33abe6f5fd70958d862a31;claude/project-thread-dmru5y-corpus-contract 33ebbc25549256ae0984d86950b7978cb0a8f253;claude/project-thread-dmru5y-repo-hygiene 86d10314b1d63fbb5a96bfef2c742e2de579f416;claude/project-thread-dmru5y-roadmap-scope e2fcc983465b7cc74ae9b3f9a5038e661afce9a3;claude/project-thread-jsehvq 77403f4f44a76055539c00f7cf7774a561c3b2a1;update-docs 065032a3c8f6eb4df60b31a1771d857ae5da1334;retrieval-extraction-run-fallback a7d749cf1b939cad122001bf0af317ea7298ddc3;fix/dependabot-vulnerabilities f8257da025fa3b7893e5874ca890372fbde8fff2;cursor/kanbus-264-agent-provenance-44d0 8e358fbdcde6553cab950178ac25045b9d68e7db;docs/anthus-readme-closer 17940d259f90560b2e938a8627f35cda08cecd9a;feat/gdrive-residio-corpus f14a658e5f287416c6afd816cd68c8a97aced75e;dev 4e4a7d3f5c0349c961b3a3aaab0a1de1b0d75a4f; Kept: develop (Git Flow integration branch; Biblicus adopted Git Flow today, PR 77 synced develop with main). dev deleted per Ryan (superseded by develop). Draft PRs 57 and 58 were already closed. No branches with unmerged work remain except develop.",
+      "created_at": "2026-10-19T18:19:27.732871Z",
       "comment_type": "default",
-      "data": {},
-      "agent": null
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-10-17T16:41:48.696377Z",
-  "updated_at": "2026-10-19T16:45:21.955515Z",
-  "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
+  "updated_at": "2026-10-19T18:19:54.822982Z",
+  "closed_at": "2026-10-19T18:19:28.225182Z",
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }

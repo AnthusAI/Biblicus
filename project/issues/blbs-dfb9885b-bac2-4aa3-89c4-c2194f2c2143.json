@@ -3,25 +3,36 @@
   "title": "Delete merged Papyrus remote branches (second pass)",
   "description": "28 Papyrus remote branches are fully merged into main as of 2026-10-19 (git merge-base --is-ancestor origin/<branch> origin/main succeeds). Cloud sandbox deletion returns 403; run through Remote Control on Ryan's Mac (BlackbookM1, /Users/home/Projects/Chattic.us) with his gh credentials, re-checking ancestry first. Never delete main. The earlier pass on 2026-10-18 removed 143. Papyrus has 84 more branches with unmerged commits that belong to the Papyrus owner to triage.",
   "type": "chore",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "assignee": null,
   "creator": null,
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "e105e867-ace5-48cd-984c-4920817e558e",
+      "author": "home",
+      "text": "2026-10-19 (Ryan approved in chat). Re-checked each with git merge-base --is-ancestor against Papyrus origin/main immediately before deleting. Deleted 27 (the 28th from the original list had already gone): chore/PPY-cd62ae-reporting-skill chore/markus-0.6.0-pin chore/markus-0.7.0-pin claude/account-chooser claude/card-excerpt-three-lines claude/curation-delegation-screen claude/cyclotron-priming-flow-ulslgn claude/multi-tenant claude/newsroom-ui-polish claude/preview-tenants claude/project-thread-3wbg4z claude/project-thread-6i8njy claude/project-thread-o9xkql feature/PPY-0e4ec8-wire-priming-retraction feature/PPY-1b1788-human-section-label feature/PPY-3de51d-site-shadow-decisions feature/PPY-47e484-delegated-approval feature/PPY-743f0e-site-cyclotron-definition feature/PPY-human-labels-shadow-mode feature/consumer-site-typecheck-ci fix/PPY-16a4d4-markus-version-range fix/PPY-759492-budget-tokenizer release/1.12.1 release/app-shell-repository release/next-from-319 release/next-from-333 release/tenant-scoped-ids ",
+      "created_at": "2026-10-19T18:19:28.722007Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
+    }
+  ],
   "created_at": "2026-10-19T16:45:29.988219Z",
-  "updated_at": "2026-10-19T16:45:29.988543Z",
-  "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
+  "updated_at": "2026-10-19T18:19:55.299136Z",
+  "closed_at": "2026-10-19T18:19:29.224350Z",
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "claude",
-    "settings": {}
+    "name": "claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }
