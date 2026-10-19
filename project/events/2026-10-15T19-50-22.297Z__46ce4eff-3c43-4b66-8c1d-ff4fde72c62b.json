@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_id": "46ce4eff-3c43-4b66-8c1d-ff4fde72c62b",
+  "issue_id": "blbs-e50f1705-0421-4234-aefb-50e11e9ada59",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-15T19:50:22.297Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Specify article-text and map-reduce CLI contracts for optional priming",
+    "description": "Feature: Bounded Biblicus web transformation handoff\n\nScenario: Transform public extracted source through the existing worker\nGiven Papyrus supplies extracted_text, source_uri, reference_title, original_title, original_subtitle and model as stdin JSON\nWhen python -m biblicus extract article-text --input-json - --format json executes from the Biblicus root\nThen stdout is one documented JSON object with status, text, span_count, prompt_version, model, warnings and structured error/retry metadata\nAnd success contains nonempty source-grounded text without invented human classification labels\n\nScenario: Generate each configured metadata value\nGiven Papyrus supplies extracted_text, original_title, original_subtitle, reference_title and source_uri as stdin JSON\nWhen python -m biblicus summarize map-reduce --task title|subtitle|summary --model gpt-5.4-mini-2026-03-17 --input-json - --format json executes\nThen stdout is one JSON object with matching task, nonempty value, prompt_version and map_reduce metadata\nAnd a documented nonzero exit or structured failure makes errors visible rather than importing incomplete content\n\nScenario: Respect trusted host provider admission\nGiven only an ephemeral capability and loopback OPENAI_BASE_URL/OPENAI_API_BASE are supplied to the worker\nWhen a bounded priming job transforms the selected public CISA source\nThen provider calls use the host Responses gateway and pinned model, max_output_tokens at most 2000 and input at most 12000 tokens\nAnd no real provider key, credential-file fallback, tools, hidden alternate destinations, automatic retries or dependency installation bypasses the gateway\nAnd the job uses at most seven requests, rejects oversized input visibly and stops on denied, cancelled or expired admission\nAnd fetched text is treated as untrusted data\n\nEvidence: scripts/priming-preview/web-readiness.py in Papyrus probes both CLI help contracts without credentials; both currently return exit code2 (missing commands), while existing Poetry runtime has MarkItDown. Existing extract_url_text already produced 16111 characters from https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise with model key absent. Paper/GROBID flow must remain usable. Proposed $0.50 cap is not approval; no paid call or live grant exists. Required handoff: exact source pin, command/cwd/interpreter and dependency versions, stdin/stdout/error examples, provider client/environment precedence, call/token/retry bounds, cancellation behavior, source/converter network destinations, offline tests. Papyrus callers: src/papyrus_content/reference_url_text.py:_filter_article_text/_run_biblicus_article_text; src/papyrus_newsroom/reference_curation_signals.py:_run_biblicus_summarize_map_reduce. No source implementation in this coordinating checkout.",
+    "issue_type": "story",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+    "labels": [],
+    "agent": {
+      "platform": "codex",
+      "model": "gpt-6.1-sol",
+      "name": "CuratedExamplePriming",
+      "settings": {
+        "reasoning_effort": "medium"
+      }
+    }
+  }
+}

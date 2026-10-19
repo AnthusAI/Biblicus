@@ -12,11 +12,11 @@ from pathlib import Path
 from behave import given, then, when
 from pydantic import BaseModel, ConfigDict
 
+from biblicus.corpus import Corpus
 from biblicus.graph import get_graph_extractor
 from biblicus.graph.base import GraphExtractor
 from biblicus.graph.models import GraphExtractionResult
 from biblicus.models import CatalogItem
-from biblicus.corpus import Corpus
 from features.environment import run_biblicus
 
 
@@ -347,7 +347,9 @@ def step_install_fake_spacy(context) -> None:
 @when(
     'I build a "{extractor_id}" graph extraction snapshot in corpus "{corpus_name}" using the latest extraction snapshot and config:'
 )
-def step_build_graph_snapshot_latest_extraction(context, extractor_id: str, corpus_name: str) -> None:
+def step_build_graph_snapshot_latest_extraction(
+    context, extractor_id: str, corpus_name: str
+) -> None:
     corpus = _corpus_path(context, corpus_name)
     _install_fake_neo4j_module(context)
     if not getattr(context, "_fake_docker_installed", False):
@@ -359,6 +361,7 @@ def step_build_graph_snapshot_latest_extraction(context, extractor_id: str, corp
         key, value = _table_key_value(row)
         args.extend(["--override", f"{key}={value}"])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
     assert result.returncode == 0, result.stderr
     context.last_graph_snapshot = _parse_json_output(result.stdout)
     context.last_graph_snapshot_id = context.last_graph_snapshot.get("snapshot_id")
@@ -396,6 +399,7 @@ def step_build_graph_snapshot_latest_extraction_real(
         key, value = _table_key_value(row)
         args.extend(["--override", f"{key}={value}"])
     result = run_biblicus(context, args, extra_env=getattr(context, "extra_env", None))
+    context.last_result = result
     assert result.returncode == 0, result.stderr
     context.last_graph_snapshot = _parse_json_output(result.stdout)
     context.last_graph_snapshot_id = context.last_graph_snapshot.get("snapshot_id")

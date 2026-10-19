@@ -1,0 +1,50 @@
+{
+  "additionalProperties": false,
+  "description": "Output for recording an accepted taxonomy artifact.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar taxonomy_id: Taxonomy identity.\n:vartype taxonomy_id: str\n:ivar snapshot_id: Recorded snapshot identifier.\n:vartype snapshot_id: str\n:ivar node_count: Number of taxonomy nodes.\n:vartype node_count: int\n:ivar root_count: Number of root nodes.\n:vartype root_count: int\n:ivar artifact_paths: Written artifact paths.\n:vartype artifact_paths: dict[str, str]",
+  "properties": {
+    "analysis_id": {
+      "default": "taxonomy",
+      "title": "Analysis Id",
+      "type": "string"
+    },
+    "artifact_paths": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifact Paths",
+      "type": "object"
+    },
+    "node_count": {
+      "minimum": 0,
+      "title": "Node Count",
+      "type": "integer"
+    },
+    "root_count": {
+      "minimum": 0,
+      "title": "Root Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "snapshot_id": {
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "taxonomy_id": {
+      "title": "Taxonomy Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "taxonomy_id",
+    "snapshot_id",
+    "node_count",
+    "root_count"
+  ],
+  "title": "TaxonomyRecordOutput",
+  "type": "object"
+}

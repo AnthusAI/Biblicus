@@ -552,6 +552,46 @@ STT benchmarking involves API costs:
 
 ---
 
+## Additional Datasets
+
+LibriSpeech test-clean is the only dataset that has been benchmarked end to end. The repository ships download scripts for other speech corpora, with the following status:
+
+| Dataset | Script | Status |
+|---------|--------|--------|
+| LibriSpeech test-clean | `scripts/download_librispeech_samples.py` | Working, 500 samples ingested and tested |
+| LibriSpeech test-other and other OpenSLR sets | `scripts/download_openslr_samples.py` | Working |
+| Mozilla Common Voice | `scripts/download_common_voice_samples.py` | Requires a manual download from Mozilla |
+| Google FLEURS (multilingual) | `scripts/download_fleurs_samples.py` | Requires the `datasets` library |
+| TED-LIUM | `scripts/download_tedlium_samples.py` | Upstream download URL is broken |
+| VoxForge | `scripts/download_voxforge_samples.py` | Upstream download URL is broken |
+| CMU AN4 | `scripts/download_an4_samples.py` | Upstream download URL is broken |
+
+---
+
+## Provider Configuration Notes
+
+- **AWS Transcribe** (`stt-aws-transcribe`) uploads audio to an S3 bucket before transcription. Configure `language_code`, `region_name` and `s3_bucket`.
+- **Faster-Whisper** (`stt-faster-whisper`) runs locally with CTranslate2. The benchmark used `model_size: large-v3`, `device: auto` and `compute_type: int8`, at roughly 14 seconds per file on CPU.
+- **GPT-4o Audio** (`stt-openai-audio`) does not accept FLAC directly; the extractor converts FLAC to WAV in memory with `pydub`, which needs `sox` or `ffmpeg` installed on the host.
+- **Azure Speech** (`stt-azure-speech`) and **Google Cloud Speech-to-Text** (`stt-google-speech`) are integrated but have not been benchmarked yet.
+
+**Accuracy tiers on LibriSpeech test-clean (120 samples):**
+- Top tier (under 4% WER): AWS Transcribe, Aldea, Deepgram Nova-3
+- Mid tier (4% to 5% WER): OpenAI Whisper, Faster-Whisper
+- Poor (over 40% WER): GPT-4o Audio
+
+---
+
+## Planned Improvements
+
+- Expand the LibriSpeech sample to 500 or more for statistical significance.
+- Add harder datasets (LibriSpeech test-other, Common Voice) and multilingual testing with FLEURS.
+- Add domain-specific speech (medical, legal, technical).
+- Measure real-time factor and streaming latency.
+- Run providers in parallel, track cost in benchmark results, and visualize results.
+
+---
+
 ## See Also
 
 **Benchmarking Documentation:**
@@ -560,7 +600,7 @@ STT benchmarking involves API costs:
 - [OCR Benchmarking Guide](ocr-benchmarking.md) - OCR pipeline benchmarking
 
 **STT Documentation:**
-- [Speech to Text](../stt.md) - STT extraction guide
+- [Speech to Text](../STT.md) - STT extraction guide
 
 **External References:**
 - [LibriSpeech Dataset](https://www.openslr.org/12)

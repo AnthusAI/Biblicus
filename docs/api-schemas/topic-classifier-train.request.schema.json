@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "ExtractionSnapshotReference": {
+      "additionalProperties": false,
+      "description": "Reference to an extraction snapshot.\n\n:ivar extractor_id: Extractor plugin identifier.\n:vartype extractor_id: str\n:ivar snapshot_id: Extraction snapshot identifier.\n:vartype snapshot_id: str",
+      "properties": {
+        "extractor_id": {
+          "minLength": 1,
+          "title": "Extractor Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extractor_id",
+        "snapshot_id"
+      ],
+      "title": "ExtractionSnapshotReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to train a topic classifier model version.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar manifest_path: Topic classifier seed manifest path.\n:vartype manifest_path: str\n:ivar configuration_paths: Configuration YAML paths; later files override earlier ones.\n:vartype configuration_paths: list[str]\n:ivar overrides: ``key=value`` overrides applied after composing configurations.\n:vartype overrides: list[str]\n:ivar configuration_name: Human-readable configuration name that keys the snapshot identity.\n:vartype configuration_name: str\n:ivar extraction_snapshot: Extraction snapshot supplying item text.\n:vartype extraction_snapshot: ExtractionSnapshotReference",
+  "properties": {
+    "configuration_name": {
+      "default": "default",
+      "minLength": 1,
+      "title": "Configuration Name",
+      "type": "string"
+    },
+    "configuration_paths": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Configuration Paths",
+      "type": "array"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "$ref": "#/$defs/ExtractionSnapshotReference"
+    },
+    "manifest_path": {
+      "minLength": 1,
+      "title": "Manifest Path",
+      "type": "string"
+    },
+    "overrides": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Overrides",
+      "type": "array"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "manifest_path",
+    "configuration_paths",
+    "extraction_snapshot"
+  ],
+  "title": "TopicClassifierTrainRequest",
+  "type": "object"
+}

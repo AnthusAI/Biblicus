@@ -17,7 +17,9 @@ from .docling_granite_text import DoclingGraniteExtractor
 from .docling_smol_text import DoclingSmolExtractor
 from .faster_whisper_stt import FasterWhisperSpeechToTextExtractor
 from .google_speech_stt import GoogleSpeechToTextExtractor
+from .grobid_pdf_text import GrobidPortableDocumentFormatTextExtractor
 from .heron_layout import HeronLayoutExtractor
+from .html_web_metadata import HtmlWebMetadataExtractor
 from .markitdown_text import MarkItDownExtractor
 from .metadata_text import MetadataTextExtractor
 from .mock_layout_detector import MockLayoutDetectorExtractor
@@ -33,6 +35,7 @@ from .select_longest_text import SelectLongestTextExtractor
 from .select_override import SelectOverrideExtractor
 from .select_smart_override import SelectSmartOverrideExtractor
 from .select_text import SelectTextExtractor
+from .source_provided_text import SourceProvidedTextExtractor
 from .tesseract_text import TesseractExtractor
 from .unstructured_text import UnstructuredExtractor
 
@@ -51,11 +54,13 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         MetadataTextExtractor.extractor_id: MetadataTextExtractor(),
         MockLayoutDetectorExtractor.extractor_id: MockLayoutDetectorExtractor(),
         MarkItDownExtractor.extractor_id: MarkItDownExtractor(),
+        HtmlWebMetadataExtractor.extractor_id: HtmlWebMetadataExtractor(),
         DoclingSmolExtractor.extractor_id: DoclingSmolExtractor(),
         DoclingGraniteExtractor.extractor_id: DoclingGraniteExtractor(),
         PassThroughTextExtractor.extractor_id: PassThroughTextExtractor(),
         PipelineExtractor.extractor_id: PipelineExtractor(),
         PortableDocumentFormatTextExtractor.extractor_id: PortableDocumentFormatTextExtractor(),
+        GrobidPortableDocumentFormatTextExtractor.extractor_id: GrobidPortableDocumentFormatTextExtractor(),
         OpenAiSpeechToTextExtractor.extractor_id: OpenAiSpeechToTextExtractor(),
         OpenAiAudioSpeechToTextExtractor.extractor_id: OpenAiAudioSpeechToTextExtractor(),
         FasterWhisperSpeechToTextExtractor.extractor_id: FasterWhisperSpeechToTextExtractor(),
@@ -72,6 +77,7 @@ def get_extractor(extractor_id: str) -> TextExtractor:
         PaddleOcrVlExtractor.extractor_id: PaddleOcrVlExtractor(),
         TesseractExtractor.extractor_id: TesseractExtractor(),
         SelectTextExtractor.extractor_id: SelectTextExtractor(),
+        SourceProvidedTextExtractor.extractor_id: SourceProvidedTextExtractor(),
         SelectLongestTextExtractor.extractor_id: SelectLongestTextExtractor(),
         SelectSmartOverrideExtractor.extractor_id: SelectSmartOverrideExtractor(),
         SelectOverrideExtractor.extractor_id: SelectOverrideExtractor(),

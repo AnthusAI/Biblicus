@@ -1,0 +1,25 @@
+{
+  "id": "blbs-d5350e83-7e0f-47a0-b5f4-11a521e6bb24",
+  "title": "Source-specific ingestion resolvers",
+  "description": "Build a standard source-resolution utility for Biblicus ingestion so site-specific URLs, starting with DocumentCloud, resolve to canonical raw items, stable provenance, duplicate identity keys, and import rationale metadata before entering the corpus.",
+  "type": "epic",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b808f214-75a5-4c9d-aa92-42fe7a9cd6c7",
+      "author": "ryan",
+      "text": "Implementation started from approved plan: source resolver registry, DocumentCloud resolver, optional import rationale metadata, source-provided text extraction, and AI-ML-journalism smoke ingest.",
+      "created_at": "2026-05-17T16:31:36.962340Z"
+    }
+  ],
+  "created_at": "2026-05-17T15:43:55.394468Z",
+  "updated_at": "2026-05-17T16:40:17.708369Z",
+  "closed_at": "2026-05-17T16:40:17.708369Z",
+  "custom": {}
+}

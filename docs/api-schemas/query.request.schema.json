@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "QueryBudget": {
+      "additionalProperties": false,
+      "description": "Evidence selection budget for retrieval.\n\nThe budget constrains the *returned* evidence. It intentionally does not\nchange how a backend scores candidates, only how many evidence items are\nselected and how much text is allowed through.\n\n:ivar max_total_items: Maximum number of evidence items to return.\n:vartype max_total_items: int\n:ivar offset: Number of ranked candidates to skip before selecting evidence.\n    This enables simple pagination by re-running the same query with a\n    higher offset.\n:vartype offset: int\n:ivar maximum_total_characters: Optional maximum total characters across evidence text.\n:vartype maximum_total_characters: int or None\n:ivar max_items_per_source: Optional cap per source uniform resource identifier.\n:vartype max_items_per_source: int or None",
+      "properties": {
+        "max_items_per_source": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Items Per Source"
+        },
+        "max_total_items": {
+          "minimum": 1,
+          "title": "Max Total Items",
+          "type": "integer"
+        },
+        "maximum_total_characters": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Total Characters"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_total_items"
+      ],
+      "title": "QueryBudget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to run a retrieval query against a built snapshot.\n\nThe query never builds a snapshot. When ``snapshot_id`` is absent the corpus latest snapshot\nis used, and a corpus without one is an error.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar query_text: Query text.\n:vartype query_text: str\n:ivar snapshot_id: Snapshot identifier, or None for the corpus latest snapshot.\n:vartype snapshot_id: str or None\n:ivar retriever_id: Retriever the snapshot must use, or None to accept the snapshot retriever.\n:vartype retriever_id: str or None\n:ivar budget: Evidence selection budget.\n:vartype budget: QueryBudget\n:ivar reranker_id: Optional reranker applied after retrieval.\n:vartype reranker_id: str or None\n:ivar minimum_score: Optional minimum score threshold applied after retrieval.\n:vartype minimum_score: float or None",
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/QueryBudget"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "minimum_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Minimum Score"
+    },
+    "query_text": {
+      "title": "Query Text",
+      "type": "string"
+    },
+    "reranker_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reranker Id"
+    },
+    "retriever_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retriever Id"
+    },
+    "snapshot_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Snapshot Id"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "query_text",
+    "budget"
+  ],
+  "title": "QueryRequest",
+  "type": "object"
+}

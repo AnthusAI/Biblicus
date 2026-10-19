@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "450930f8-2b33-4457-bfa0-e7ca47c2fcaf",
+  "issue_id": "blbs-1e7073e3-b699-493e-8a67-1479ec1f6cff",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-15T19:59:49.607Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Repair baseline URL metadata regression expectations and BDD helper import",
+    "description": "Pre-existing on d3ba6cb and unchanged by bounded worker: default Behave loader cannot import _extract_latest_failure_error_from_messages from text.extract. Focused URL/GROBID/HTML pytest returns same 7 failures and19 passes on baseline and worker. Restore baseline gates separately; bounded-stage46 scenarios pass at100 percent branch/statement coverage.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+    "labels": []
+  }
+}

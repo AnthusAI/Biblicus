@@ -1,0 +1,219 @@
+{
+  "$defs": {
+    "SteeringProposal": {
+      "additionalProperties": false,
+      "description": "Reviewable steering recommendation authored outside human decision state.\n\n:ivar proposal_id: Stable proposal identifier.\n:vartype proposal_id: str\n:ivar proposal_kind: Proposal type.\n:vartype proposal_kind: str\n:ivar domain: Steering domain.\n:vartype domain: str\n:ivar recommendation: Proposal recommendation.\n:vartype recommendation: str\n:ivar status: Proposal artifact status.\n:vartype status: str\n:ivar author: Proposal author metadata.\n:vartype author: dict[str, Any]\n:ivar source_signal_ids: Signal identifiers used by this proposal.\n:vartype source_signal_ids: list[str]\n:ivar evidence: Proposal evidence payload.\n:vartype evidence: dict[str, Any]\n:ivar rationale: Proposal rationale.\n:vartype rationale: str\n:ivar confidence: Optional proposal confidence.\n:vartype confidence: float or None\n:ivar payload: Proposal-specific payload.\n:vartype payload: dict[str, Any]",
+      "properties": {
+        "author": {
+          "additionalProperties": true,
+          "title": "Author",
+          "type": "object"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "domain": {
+          "minLength": 1,
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "proposal_id": {
+          "minLength": 1,
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "proposal_kind": {
+          "minLength": 1,
+          "title": "Proposal Kind",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "recommendation": {
+          "enum": [
+            "recommend",
+            "do_not_recommend",
+            "needs_clarification"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_signal_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Signal Ids",
+          "type": "array"
+        },
+        "status": {
+          "const": "proposed",
+          "default": "proposed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "proposal_kind",
+        "domain",
+        "recommendation",
+        "rationale"
+      ],
+      "title": "SteeringProposal",
+      "type": "object"
+    },
+    "SteeringSignal": {
+      "additionalProperties": false,
+      "description": "Computational steering candidate derived from Biblicus artifacts.\n\n:ivar signal_id: Stable signal identifier.\n:vartype signal_id: str\n:ivar signal_kind: Signal type.\n:vartype signal_kind: str\n:ivar domain: Steering domain.\n:vartype domain: str\n:ivar source_artifact_refs: Source artifact references.\n:vartype source_artifact_refs: list[str]\n:ivar metrics: Numeric or logical signal metrics.\n:vartype metrics: dict[str, Any]\n:ivar evidence_item_ids: Evidence item identifiers.\n:vartype evidence_item_ids: list[str]\n:ivar payload: Signal-specific payload.\n:vartype payload: dict[str, Any]",
+      "properties": {
+        "domain": {
+          "minLength": 1,
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence_item_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Item Ids",
+          "type": "array"
+        },
+        "metrics": {
+          "additionalProperties": true,
+          "title": "Metrics",
+          "type": "object"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "signal_id": {
+          "minLength": 1,
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_kind": {
+          "minLength": 1,
+          "title": "Signal Kind",
+          "type": "string"
+        },
+        "source_artifact_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Artifact Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "signal_id",
+        "signal_kind",
+        "domain"
+      ],
+      "title": "SteeringSignal",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Validated steering proposal artifact bundle.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar snapshot_id: Deterministic proposal snapshot identifier.\n:vartype snapshot_id: str or None\n:ivar generated_at: Generation timestamp.\n:vartype generated_at: str\n:ivar source_artifact_refs: Source artifact references.\n:vartype source_artifact_refs: list[str]\n:ivar signals: Computational signal records.\n:vartype signals: list[SteeringSignal]\n:ivar proposals: Proposal judgment records.\n:vartype proposals: list[SteeringProposal]\n:ivar warnings: Bundle warnings.\n:vartype warnings: list[str]",
+  "properties": {
+    "analysis_id": {
+      "default": "steering-proposals",
+      "title": "Analysis Id",
+      "type": "string"
+    },
+    "generated_at": {
+      "minLength": 1,
+      "title": "Generated At",
+      "type": "string"
+    },
+    "proposals": {
+      "items": {
+        "$ref": "#/$defs/SteeringProposal"
+      },
+      "title": "Proposals",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "signals": {
+      "items": {
+        "$ref": "#/$defs/SteeringSignal"
+      },
+      "title": "Signals",
+      "type": "array"
+    },
+    "snapshot_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Snapshot Id"
+    },
+    "source_artifact_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Artifact Refs",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at"
+  ],
+  "title": "SteeringProposalBundle",
+  "type": "object"
+}

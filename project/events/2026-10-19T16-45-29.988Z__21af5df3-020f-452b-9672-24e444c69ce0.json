@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "21af5df3-020f-452b-9672-24e444c69ce0",
+  "issue_id": "blbs-dfb9885b-bac2-4aa3-89c4-c2194f2c2143",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T16:45:29.988Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Delete merged Papyrus remote branches (second pass)",
+    "description": "28 Papyrus remote branches are fully merged into main as of 2026-10-19 (git merge-base --is-ancestor origin/<branch> origin/main succeeds). Cloud sandbox deletion returns 403; run through Remote Control on Ryan's Mac (BlackbookM1, /Users/home/Projects/Chattic.us) with his gh credentials, re-checking ancestry first. Never delete main. The earlier pass on 2026-10-18 removed 143. Papyrus has 84 more branches with unmerged commits that belong to the Papyrus owner to triage.",
+    "issue_type": "chore",
+    "status": "open",
+    "priority": 3,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "claude"
+    }
+  }
+}

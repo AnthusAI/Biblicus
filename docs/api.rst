@@ -28,6 +28,17 @@ Core
    :members:
    :undoc-members:
 
+Typed commands
+--------------
+
+.. automodule:: biblicus.api
+   :members:
+   :undoc-members:
+
+.. automodule:: biblicus.api.schemas
+   :members:
+   :undoc-members:
+
 Extraction
 ----------
 

@@ -31,6 +31,7 @@ from biblicus.graph.neo4j import (
 from biblicus.cli import cmd_graph_extract
 from biblicus.graph.extractors.cooccurrence import CooccurrenceGraphExtractor, _windowed
 from biblicus.graph.extractors.dependency_relations import DependencyRelationsGraphExtractor
+from biblicus.graph.extractors import ner_entities as ner_entities_module
 from biblicus.graph.extractors.ner_entities import NerEntitiesGraphExtractor
 from biblicus.graph.extractors.simple_entities import SimpleEntitiesGraphExtractor
 from biblicus.models import CatalogItem, ExtractionSnapshotReference
@@ -438,6 +439,10 @@ def step_run_graph_extract_command_with_config(context) -> None:
         configuration_name="default",
         extraction_snapshot=ref.as_string(),
         override=[],
+        max_items=None,
+        item_timeout_seconds=60.0,
+        item_retry_attempts=0,
+        heartbeat_interval_seconds=10.0,
     )
     prior_auto_start = os.environ.get("BIBLICUS_NEO4J_AUTO_START")
     os.environ["BIBLICUS_NEO4J_AUTO_START"] = "false"
@@ -462,6 +467,10 @@ def step_run_graph_extract_command_without_snapshots(context) -> None:
         configuration_name="default",
         extraction_snapshot=None,
         override=[],
+        max_items=None,
+        item_timeout_seconds=60.0,
+        item_retry_attempts=0,
+        heartbeat_interval_seconds=10.0,
     )
     try:
         cmd_graph_extract(arguments)
@@ -733,6 +742,7 @@ def step_dependency_relations_empty(context) -> None:
 
 @given("the NLP dependency is unavailable")
 def step_nlp_dependency_unavailable(context) -> None:
+    ner_entities_module._SPACY_PIPELINE_CACHE.clear()
     _block_spacy_import(context)
 
 

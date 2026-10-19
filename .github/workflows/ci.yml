@@ -70,7 +70,7 @@ jobs:
       - name: Install package and development dependencies
         run: |
           poetry env use python${{ matrix.python-version }}
-          poetry install --with dev --extras datasets
+          poetry install --with dev --extras "datasets web markitdown"
 
       - name: Cache test fixtures
         uses: actions/cache@v4
@@ -131,7 +131,7 @@ jobs:
           path: docs/_build/html
 
       - name: Upload Pages artifact
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_SITE_ENABLED != 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/_build/html
@@ -139,7 +139,7 @@ jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     needs: docs
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_SITE_ENABLED != 'true' }}
     permissions:
       pages: write
       id-token: write

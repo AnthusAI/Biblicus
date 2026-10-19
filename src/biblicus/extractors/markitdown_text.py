@@ -16,6 +16,16 @@ from ..errors import ExtractionSnapshotFatalError
 from ..models import CatalogItem, ExtractedText, ExtractionStageOutput
 from .base import TextExtractor
 
+# Media types handled by pass-through-text; markitdown converts HTML and binary formats.
+_MARKITDOWN_SKIP_MEDIA_TYPES = frozenset(
+    {
+        "text/plain",
+        "text/markdown",
+        "text/csv",
+        "text/tab-separated-values",
+    }
+)
+
 
 class MarkItDownExtractorConfig(BaseModel):
     """
@@ -97,8 +107,13 @@ class MarkItDownExtractor(TextExtractor):
             else MarkItDownExtractorConfig.model_validate(config)
         )
         _ = previous_extractions
-        media_type = item.media_type
-        if media_type == "text/markdown" or media_type.startswith("text/"):
+        media_type = str(item.media_type or "").strip().lower()
+        if media_type in _MARKITDOWN_SKIP_MEDIA_TYPES:
+            return None
+        if media_type.startswith("text/") and media_type not in {
+            "text/html",
+            "application/xhtml+xml",
+        }:
             return None
 
         from markitdown import MarkItDown

@@ -108,8 +108,8 @@ Install the Neo4j Python driver before running graph extraction:
 python -m pip install neo4j
 ```
 
-If you use NLP-based graph extractors (for example `ner-entities` or `dependency-relations`), install the NLP model
-package and the model data your configuration references.
+If you use NLP-based graph extractors (for example `ner-entities` or `dependency-relations`), install the matching
+Biblicus extra for the extractor. The `ner` extra includes spaCy and the default `en_core_web_sm` model.
 
 `~/.biblicus/config.yml`:
 

@@ -327,6 +327,174 @@ def _write_nodes(tx, corpus_id: str, graph_id: str, extraction_snapshot: str, it
     )
 
 
+def clear_graph_records(
+    *,
+    driver,
+    settings: Neo4jSettings,
+    corpus_id: str,
+    graph_id: str,
+    extraction_snapshot: str,
+) -> None:
+    """
+    Remove graph nodes and edges for a corpus graph snapshot.
+
+    :param driver: Neo4j driver instance.
+    :param settings: Resolved Neo4j settings.
+    :param corpus_id: Corpus identifier.
+    :param graph_id: Graph identifier.
+    :param extraction_snapshot: Extraction snapshot reference string.
+    """
+    with driver.session(database=settings.database) as session:
+        session.execute_write(
+            _clear_graph_records,
+            corpus_id,
+            graph_id,
+            extraction_snapshot,
+        )
+
+
+def read_graph_records(
+    *,
+    driver,
+    settings: Neo4jSettings,
+    corpus_id: str,
+    graph_id: str,
+    extraction_snapshot: str,
+) -> dict[str, list[dict[str, object]]]:
+    """
+    Read graph nodes and edges for a corpus graph snapshot from Neo4j.
+
+    :return: Mapping with ``nodes`` and ``edges`` record lists.
+    """
+    with driver.session(database=settings.database) as session:
+        node_rows = session.execute_read(
+            _read_nodes,
+            corpus_id,
+            graph_id,
+            extraction_snapshot,
+        )
+        edge_rows = session.execute_read(
+            _read_edges,
+            corpus_id,
+            graph_id,
+            extraction_snapshot,
+        )
+    return {"nodes": node_rows, "edges": edge_rows}
+
+
+def _clear_graph_records(tx, corpus_id: str, graph_id: str, extraction_snapshot: str) -> None:
+    tx.run(
+        """
+        MATCH ()-[r:RELATED {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        }]->()
+        DELETE r
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+    tx.run(
+        """
+        MATCH (n:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })
+        DELETE n
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+
+
+def _read_nodes(tx, corpus_id: str, graph_id: str, extraction_snapshot: str) -> list[dict[str, object]]:
+    result = tx.run(
+        """
+        MATCH (n:GraphNode {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        })
+        RETURN n.item_id AS item_id,
+               n.node_id AS node_id,
+               n.node_type AS node_type,
+               n.label AS label,
+               n.properties_json AS properties_json
+        ORDER BY item_id, node_id
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+    rows: list[dict[str, object]] = []
+    for record in result:
+        properties_raw = record.get("properties_json")
+        try:
+            properties = json.loads(properties_raw) if properties_raw else {}
+        except json.JSONDecodeError:
+            properties = {}
+        if not isinstance(properties, dict):
+            properties = {}
+        rows.append(
+            {
+                "item_id": record["item_id"],
+                "node_id": record["node_id"],
+                "node_type": record["node_type"],
+                "label": record["label"],
+                "properties": properties,
+            }
+        )
+    return rows
+
+
+def _read_edges(tx, corpus_id: str, graph_id: str, extraction_snapshot: str) -> list[dict[str, object]]:
+    result = tx.run(
+        """
+        MATCH ()-[r:RELATED {
+            corpus_id: $corpus_id,
+            graph_id: $graph_id,
+            extraction_snapshot_id: $extraction_snapshot
+        }]->()
+        RETURN r.item_id AS item_id,
+               r.edge_id AS edge_id,
+               startNode(r).node_id AS src,
+               endNode(r).node_id AS dst,
+               r.edge_type AS edge_type,
+               r.weight AS weight,
+               r.properties_json AS properties_json
+        ORDER BY item_id, edge_id
+        """,
+        corpus_id=corpus_id,
+        graph_id=graph_id,
+        extraction_snapshot=extraction_snapshot,
+    )
+    rows: list[dict[str, object]] = []
+    for record in result:
+        properties_raw = record.get("properties_json")
+        try:
+            properties = json.loads(properties_raw) if properties_raw else {}
+        except json.JSONDecodeError:
+            properties = {}
+        if not isinstance(properties, dict):
+            properties = {}
+        rows.append(
+            {
+                "item_id": record["item_id"],
+                "edge_id": record["edge_id"],
+                "src": record["src"],
+                "dst": record["dst"],
+                "edge_type": record["edge_type"],
+                "weight": record.get("weight", 1.0),
+                "properties": properties,
+            }
+        )
+    return rows
+
+
 def _write_edges(
     tx, corpus_id: str, graph_id: str, extraction_snapshot: str, item_id: str, edges
 ):

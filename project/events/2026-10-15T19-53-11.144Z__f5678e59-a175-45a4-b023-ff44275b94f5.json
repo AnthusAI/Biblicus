@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "f5678e59-a175-45a4-b023-ff44275b94f5",
+  "issue_id": "blbs-71f7c4b3-55c2-483e-913e-35ba68a5385c",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-15T19:53:11.144Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Implement bounded web transformation CLI and offline gateway proof",
+    "description": "Implement parent-authorized article-text and map-reduce contracts; PR-FAQ within existing approved integration scope; docs, failing BDD, implementation, offline tests, pushed handoff. No paid calls.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-dde6aeaf-5e9a-4b49-9d35-57a1308f9792",
+    "labels": []
+  }
+}

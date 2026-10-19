@@ -23,7 +23,7 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 templates_path = ["_templates"]
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "index.md"]
 autodoc_typehints = "description"
 html_theme = "biblicus_rtd"
 html_theme_path = [str(Path(__file__).resolve().parent / "_themes")]
@@ -50,7 +50,8 @@ source_suffix = {
     ".md": "markdown",
 }
 
-suppress_warnings = ["misc.highlighting_failure"]
+root_doc = "api"
+suppress_warnings = ["misc.highlighting_failure", "toc.not_included"]
 sys.path.insert(0, str(SOURCE_ROOT))
 
 lexers["mermaid"] = TextLexer()

@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "ExtractionSnapshotReference": {
+      "additionalProperties": false,
+      "description": "Reference to an extraction snapshot.\n\n:ivar extractor_id: Extractor plugin identifier.\n:vartype extractor_id: str\n:ivar snapshot_id: Extraction snapshot identifier.\n:vartype snapshot_id: str",
+      "properties": {
+        "extractor_id": {
+          "minLength": 1,
+          "title": "Extractor Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "extractor_id",
+        "snapshot_id"
+      ],
+      "title": "ExtractionSnapshotReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to discover candidate child taxonomy nodes under accepted root topics.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar classifier_id: Topic classifier identifier used to collect root topic members.\n:vartype classifier_id: str\n:ivar extraction_snapshot: Extraction snapshot supplying item text.\n:vartype extraction_snapshot: ExtractionSnapshotReference\n:ivar steering_feedback_path: Optional reviewed steering feedback JSON path.\n:vartype steering_feedback_path: str or None",
+  "properties": {
+    "classifier_id": {
+      "minLength": 1,
+      "title": "Classifier Id",
+      "type": "string"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "$ref": "#/$defs/ExtractionSnapshotReference"
+    },
+    "steering_feedback_path": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Steering Feedback Path"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "classifier_id",
+    "extraction_snapshot"
+  ],
+  "title": "TaxonomyDiscoverRequest",
+  "type": "object"
+}

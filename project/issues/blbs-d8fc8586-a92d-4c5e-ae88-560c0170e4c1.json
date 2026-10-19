@@ -1,0 +1,27 @@
+{
+  "id": "blbs-d8fc8586-a92d-4c5e-ae88-560c0170e4c1",
+  "title": "Repository hygiene: remove tracked cruft, consolidate coverage config, un-skip reinforcement memory suites",
+  "description": "## Goal\nRemove tracked build and run artifacts, make `.coveragerc` the single coverage configuration, and run the reinforcement memory suites in CI.\n\n## State when stopped\nBranch `claude/project-thread-dmru5y-repo-hygiene` is pushed with 5 commits plus one `wip:` commit. It already has: removal of tracked run artifacts with `.gitignore` rules, STT benchmarking milestone notes folded into the benchmarking guide, a merge of main as of PR 56, and an unverified edit that deletes the `[tool.coverage]` sections from `pyproject.toml`. Nothing has been installed, linted or tested.\n\n## Remaining work\n1. Merge current `origin/main` (it now has PR 60, PR 61, v1.11.4) into the branch.\n2. Confirm every path below is gone from git and ignored: `console.log`, `junit-reports/`, `results/`, `tmp_crawl_debug/`, `_demo_embedding_retrieval/`, `project.kanbus.bak/`, `src/biblicus/inference.py,cover`, `CHANGELOG_STT_BENCHMARKING.md`, `*.py,cover`. Before deleting, grep `features/`, `tests/`, `scripts/`, `docs/` for references. Keep `corpora/` and `raw/` content that tests or docs use.\n3. In `.coveragerc` remove the omit of `analysis/reinforcement_memory`. In `scripts/test.py` remove the six `--ignore=tests/test_reinforcement_memory*.py` arguments.\n4. Run the CI recipe from `.github/workflows/ci.yml`: `poetry install --with dev --extras datasets --extras web --extras markitdown`, `poetry run python tests/fixtures/fetch_wikitext2.py`, `poetry run ruff check src/biblicus/`, `poetry run python scripts/test.py`. If a reinforcement memory suite fails for a real bug, file a Kanbus bug under epic blbs-9d0c496d and ignore only that file. Set `fail_under` to the achieved whole-number coverage and say what it is. Do not edit AGENTS.md policy text here.\n5. Fold in Kanbus blbs-5rt (Restore 100% coverage and fix coverage harness) if this makes it moot; otherwise comment on it.\n\n## Done when\nA PR to `main` is green on lint, tests (3.10 to 3.12), docs and CodeQL, with the achieved coverage number in the PR body.",
+  "type": "task",
+  "status": "closed",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T14:42:22.324691Z",
+  "updated_at": "2026-10-17T18:24:52.318026Z",
+  "closed_at": "2026-10-17T18:24:52.317797Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

@@ -1,0 +1,22 @@
+{
+  "id": "blbs-9e0bf539-e1b6-4036-b25c-e3205806187c",
+  "title": "html_structured._normalize_citations crashes on non-list authors",
+  "description": "The isinstance(entry.get('authors'), list) check sits inside the comprehension it guards, so a citation with authors: 5 raises TypeError and discards the whole LLM structured result.",
+  "type": "bug",
+  "status": "closed",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:43:09.260043Z",
+  "updated_at": "2026-10-17T22:31:49.244777Z",
+  "closed_at": "2026-10-17T22:31:49.244604Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}

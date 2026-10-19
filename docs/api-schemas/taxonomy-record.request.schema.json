@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "Request to record an accepted taxonomy manifest.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar input_path: Accepted taxonomy JSON input path.\n:vartype input_path: str",
+  "properties": {
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "input_path": {
+      "minLength": 1,
+      "title": "Input Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "input_path"
+  ],
+  "title": "TaxonomyRecordRequest",
+  "type": "object"
+}

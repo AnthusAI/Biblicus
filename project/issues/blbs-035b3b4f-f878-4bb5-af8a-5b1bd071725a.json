@@ -1,0 +1,22 @@
+{
+  "id": "blbs-035b3b4f-f878-4bb5-af8a-5b1bd071725a",
+  "title": "Corpus.init returns a corpus whose config is None",
+  "description": "Corpus.init instantiates cls(root) before config.json is written, so the returned instance behaves as if it has no config (raw_dir, pull_source, hooks).",
+  "type": "bug",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:43:01.631699Z",
+  "updated_at": "2026-10-17T22:31:48.682919Z",
+  "closed_at": "2026-10-17T22:31:48.682726Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}

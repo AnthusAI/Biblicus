@@ -1,0 +1,569 @@
+{
+  "$defs": {
+    "SteeringArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable reference to a Biblicus artifact.\n\n:ivar kind: Artifact kind.\n:vartype kind: str\n:ivar artifact_id: Stable artifact reference.\n:vartype artifact_id: str\n:ivar path: Corpus-relative artifact path.\n:vartype path: str\n:ivar snapshot_id: Snapshot identifier, when the artifact has one.\n:vartype snapshot_id: str or None\n:ivar created_at: Artifact creation timestamp, when present.\n:vartype created_at: str or None\n:ivar metadata: Stable metadata for the artifact reference.\n:vartype metadata: dict[str, Any]",
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_id",
+        "path"
+      ],
+      "title": "SteeringArtifactReference",
+      "type": "object"
+    },
+    "SteeringCatalogItem": {
+      "additionalProperties": false,
+      "description": "Catalog item projection for the steering export contract.\n\n:ivar item_id: Biblicus item identifier.\n:vartype item_id: str\n:ivar relpath: Relative raw item path.\n:vartype relpath: str\n:ivar sha256: Stored item digest.\n:vartype sha256: str\n:ivar byte_count: Stored item byte count.\n:vartype byte_count: int\n:ivar media_type: Item media type.\n:vartype media_type: str\n:ivar title: Item title.\n:vartype title: str or None\n:ivar source_uri: Provenance uniform resource identifier.\n:vartype source_uri: str or None\n:ivar tags: Catalog tags.\n:vartype tags: list[str]\n:ivar dates: Canonical item dates.\n:vartype dates: dict[str, Any]\n:ivar intake_status: Research intake status, when present.\n:vartype intake_status: str or None\n:ivar created_at: Catalog item creation timestamp.\n:vartype created_at: str\n:ivar metadata: Full item metadata JSON.\n:vartype metadata: dict[str, Any]",
+      "properties": {
+        "byte_count": {
+          "minimum": 0,
+          "title": "Byte Count",
+          "type": "integer"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "dates": {
+          "additionalProperties": true,
+          "title": "Dates",
+          "type": "object"
+        },
+        "intake_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intake Status"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "relpath": {
+          "title": "Relpath",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Uri"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "item_id",
+        "relpath",
+        "sha256",
+        "byte_count",
+        "media_type",
+        "created_at"
+      ],
+      "title": "SteeringCatalogItem",
+      "type": "object"
+    },
+    "SteeringCorpusIdentity": {
+      "additionalProperties": false,
+      "description": "Corpus identity exported to an external steering system.\n\n:ivar corpus_uri: Canonical corpus uniform resource identifier.\n:vartype corpus_uri: str\n:ivar corpus_path: Local corpus path used by the worker.\n:vartype corpus_path: str\n:ivar name: Corpus directory name.\n:vartype name: str\n:ivar generated_at: Catalog generation timestamp used for this bundle.\n:vartype generated_at: str\n:ivar item_count: Number of catalog items.\n:vartype item_count: int",
+      "properties": {
+        "corpus_path": {
+          "title": "Corpus Path",
+          "type": "string"
+        },
+        "corpus_uri": {
+          "title": "Corpus Uri",
+          "type": "string"
+        },
+        "generated_at": {
+          "title": "Generated At",
+          "type": "string"
+        },
+        "item_count": {
+          "minimum": 0,
+          "title": "Item Count",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "corpus_uri",
+        "corpus_path",
+        "name",
+        "generated_at",
+        "item_count"
+      ],
+      "title": "SteeringCorpusIdentity",
+      "type": "object"
+    },
+    "SteeringProposal": {
+      "additionalProperties": false,
+      "description": "Reviewable steering recommendation authored outside human decision state.\n\n:ivar proposal_id: Stable proposal identifier.\n:vartype proposal_id: str\n:ivar proposal_kind: Proposal type.\n:vartype proposal_kind: str\n:ivar domain: Steering domain.\n:vartype domain: str\n:ivar recommendation: Proposal recommendation.\n:vartype recommendation: str\n:ivar status: Proposal artifact status.\n:vartype status: str\n:ivar author: Proposal author metadata.\n:vartype author: dict[str, Any]\n:ivar source_signal_ids: Signal identifiers used by this proposal.\n:vartype source_signal_ids: list[str]\n:ivar evidence: Proposal evidence payload.\n:vartype evidence: dict[str, Any]\n:ivar rationale: Proposal rationale.\n:vartype rationale: str\n:ivar confidence: Optional proposal confidence.\n:vartype confidence: float or None\n:ivar payload: Proposal-specific payload.\n:vartype payload: dict[str, Any]",
+      "properties": {
+        "author": {
+          "additionalProperties": true,
+          "title": "Author",
+          "type": "object"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "domain": {
+          "minLength": 1,
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "proposal_id": {
+          "minLength": 1,
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "proposal_kind": {
+          "minLength": 1,
+          "title": "Proposal Kind",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "recommendation": {
+          "enum": [
+            "recommend",
+            "do_not_recommend",
+            "needs_clarification"
+          ],
+          "title": "Recommendation",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_signal_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Signal Ids",
+          "type": "array"
+        },
+        "status": {
+          "const": "proposed",
+          "default": "proposed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "proposal_kind",
+        "domain",
+        "recommendation",
+        "rationale"
+      ],
+      "title": "SteeringProposal",
+      "type": "object"
+    },
+    "SteeringProposalBundle": {
+      "additionalProperties": false,
+      "description": "Validated steering proposal artifact bundle.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar snapshot_id: Deterministic proposal snapshot identifier.\n:vartype snapshot_id: str or None\n:ivar generated_at: Generation timestamp.\n:vartype generated_at: str\n:ivar source_artifact_refs: Source artifact references.\n:vartype source_artifact_refs: list[str]\n:ivar signals: Computational signal records.\n:vartype signals: list[SteeringSignal]\n:ivar proposals: Proposal judgment records.\n:vartype proposals: list[SteeringProposal]\n:ivar warnings: Bundle warnings.\n:vartype warnings: list[str]",
+      "properties": {
+        "analysis_id": {
+          "default": "steering-proposals",
+          "title": "Analysis Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "minLength": 1,
+          "title": "Generated At",
+          "type": "string"
+        },
+        "proposals": {
+          "items": {
+            "$ref": "#/$defs/SteeringProposal"
+          },
+          "title": "Proposals",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "signals": {
+          "items": {
+            "$ref": "#/$defs/SteeringSignal"
+          },
+          "title": "Signals",
+          "type": "array"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Id"
+        },
+        "source_artifact_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Artifact Refs",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "generated_at"
+      ],
+      "title": "SteeringProposalBundle",
+      "type": "object"
+    },
+    "SteeringSignal": {
+      "additionalProperties": false,
+      "description": "Computational steering candidate derived from Biblicus artifacts.\n\n:ivar signal_id: Stable signal identifier.\n:vartype signal_id: str\n:ivar signal_kind: Signal type.\n:vartype signal_kind: str\n:ivar domain: Steering domain.\n:vartype domain: str\n:ivar source_artifact_refs: Source artifact references.\n:vartype source_artifact_refs: list[str]\n:ivar metrics: Numeric or logical signal metrics.\n:vartype metrics: dict[str, Any]\n:ivar evidence_item_ids: Evidence item identifiers.\n:vartype evidence_item_ids: list[str]\n:ivar payload: Signal-specific payload.\n:vartype payload: dict[str, Any]",
+      "properties": {
+        "domain": {
+          "minLength": 1,
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence_item_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Item Ids",
+          "type": "array"
+        },
+        "metrics": {
+          "additionalProperties": true,
+          "title": "Metrics",
+          "type": "object"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "signal_id": {
+          "minLength": 1,
+          "title": "Signal Id",
+          "type": "string"
+        },
+        "signal_kind": {
+          "minLength": 1,
+          "title": "Signal Kind",
+          "type": "string"
+        },
+        "source_artifact_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Artifact Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "signal_id",
+        "signal_kind",
+        "domain"
+      ],
+      "title": "SteeringSignal",
+      "type": "object"
+    },
+    "SteeringTopicDefinition": {
+      "additionalProperties": false,
+      "description": "Reviewed topic definition exported from a Biblicus seed manifest.\n\n:ivar topic_uid: Stable topic identity.\n:vartype topic_uid: str\n:ivar display_name: Human-readable topic name.\n:vartype display_name: str\n:ivar description: Topic definition.\n:vartype description: str\n:ivar seed_item_ids: Reviewed seed item identifiers.\n:vartype seed_item_ids: list[str]\n:ivar holdout_item_ids: Reviewed holdout item identifiers.\n:vartype holdout_item_ids: list[str]",
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "holdout_item_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Holdout Item Ids",
+          "type": "array"
+        },
+        "seed_item_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Seed Item Ids",
+          "type": "array"
+        },
+        "topic_uid": {
+          "minLength": 1,
+          "title": "Topic Uid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "topic_uid",
+        "display_name",
+        "description",
+        "seed_item_ids"
+      ],
+      "title": "SteeringTopicDefinition",
+      "type": "object"
+    },
+    "SteeringTopicSet": {
+      "additionalProperties": false,
+      "description": "Accepted topic set exported to or imported from a steering system.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar classifier_id: Classifier identity.\n:vartype classifier_id: str\n:ivar display_name: Topic set display name.\n:vartype display_name: str\n:ivar description: Topic set description.\n:vartype description: str\n:ivar topics: Reviewed topic definitions.\n:vartype topics: list[SteeringTopicDefinition]\n:ivar unlabeled_policy: Policy for unlabeled training items.\n:vartype unlabeled_policy: str",
+      "properties": {
+        "classifier_id": {
+          "minLength": 1,
+          "title": "Classifier Id",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "display_name": {
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "topics": {
+          "items": {
+            "$ref": "#/$defs/SteeringTopicDefinition"
+          },
+          "minItems": 1,
+          "title": "Topics",
+          "type": "array"
+        },
+        "unlabeled_policy": {
+          "default": "use_minus_one",
+          "title": "Unlabeled Policy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "classifier_id",
+        "display_name",
+        "description",
+        "topics"
+      ],
+      "title": "SteeringTopicSet",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Full steering bundle for external application import.\n\n:ivar schema_version: Contract schema version.\n:vartype schema_version: int\n:ivar generated_at: Catalog timestamp used for deterministic output.\n:vartype generated_at: str\n:ivar corpus: Corpus identity.\n:vartype corpus: SteeringCorpusIdentity\n:ivar items: Catalog item projections.\n:vartype items: list[SteeringCatalogItem]\n:ivar topic_set: Accepted topic set, when available.\n:vartype topic_set: SteeringTopicSet or None\n:ivar proposals: Normalized steering proposal records.\n:vartype proposals: list[SteeringProposal]\n:ivar proposal_bundles: Recorded steering proposal bundles.\n:vartype proposal_bundles: list[SteeringProposalBundle]\n:ivar artifacts: Artifact references.\n:vartype artifacts: list[SteeringArtifactReference]\n:ivar warnings: Export warnings.\n:vartype warnings: list[str]",
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/SteeringArtifactReference"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "corpus": {
+      "$ref": "#/$defs/SteeringCorpusIdentity"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/SteeringCatalogItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "proposal_bundles": {
+      "items": {
+        "$ref": "#/$defs/SteeringProposalBundle"
+      },
+      "title": "Proposal Bundles",
+      "type": "array"
+    },
+    "proposals": {
+      "items": {
+        "$ref": "#/$defs/SteeringProposal"
+      },
+      "title": "Proposals",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "topic_set": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SteeringTopicSet"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at",
+    "corpus"
+  ],
+  "title": "SteeringExportBundle",
+  "type": "object"
+}

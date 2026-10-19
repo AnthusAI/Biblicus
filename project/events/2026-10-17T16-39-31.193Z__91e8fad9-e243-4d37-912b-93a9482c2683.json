@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "91e8fad9-e243-4d37-912b-93a9482c2683",
+  "issue_id": "blbs-bc9c7da4-91d2-4ca9-981d-4517fcbdd455",
+  "event_type": "field_updated",
+  "occurred_at": "2026-10-17T16:39:31.193Z",
+  "actor_id": "unknown",
+  "payload": {
+    "changes": {
+      "description": {
+        "from": "Update docs/roadmap.md: Tactus integration shipped as a Python dependency; next is the curation surface, the Papyrus contract and Cyclotron for learned decisions. Add a scope statement to AGENTS.md and README naming what Biblicus does not absorb: editorial state, learned decisions, publishing.",
+        "to": "## Goal\nMake the roadmap and scope text match reality.\n\n## State when stopped\nBranch `claude/project-thread-dmru5y-roadmap-scope` is pushed with one commit that edits `README.md` and `docs/roadmap.md`. The Sphinx build was not run, and `AGENTS.md` has no scope section yet.\n\n## Work\n1. Merge current `origin/main`. Review the commit; keep the voice plain, no em-dashes, project vocabulary only.\n2. `docs/roadmap.md`: Tactus integration is a completed foundation (Tactus depends on `biblicus>=1.11.3` and uses the context engine, workflow planner, `Corpus`, and text utilities). Replace \"Next\" with: curation surface on main; consumer contract for Papyrus (`biblicus.api`, `Corpus` path methods, `metadata.papyrus`); learned decisions move to Cyclotron.\n3. Add a \"Scope boundary\" section to `AGENTS.md` and a short \"What Biblicus does not do\" paragraph to `README.md`: no editorial state (Papyrus), no learning from human labels (Cyclotron), no publishing (Papyrus and Markus).\n4. `poetry run sphinx-build -b html docs docs/_build/html` succeeds without new warnings.\n\n## Done when\nPR to `main` is green and merged."
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "1ee1e841-b379-41e3-9c9f-d4092805df07",
+  "issue_id": "blbs-d8fc8586-a92d-4c5e-ae88-560c0170e4c1",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T14:42:22.324Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Repository hygiene: remove tracked cruft, consolidate coverage config, un-skip reinforcement memory suites",
+    "description": "Delete tracked console.log, junit-reports/, results/, tmp_crawl_debug/, _demo_embedding_retrieval/, project.kanbus.bak/, src/biblicus/inference.py,cover and CHANGELOG_STT_BENCHMARKING.md; add .gitignore rules; keep .coveragerc as the only coverage config and delete the dead [tool.coverage] section in pyproject.toml; stop ignoring the reinforcement memory pytest suites in scripts/test.py and make them pass.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude",
+      "name": "Claude"
+    }
+  }
+}

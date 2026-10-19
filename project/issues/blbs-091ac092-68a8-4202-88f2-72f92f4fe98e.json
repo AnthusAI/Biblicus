@@ -1,0 +1,22 @@
+{
+  "id": "blbs-091ac092-68a8-4202-88f2-72f92f4fe98e",
+  "title": "Remove PAPYRUS_* environment fallback and duplicate json_ld layer in HTML/GROBID code",
+  "description": "grobid_runtime reads PAPYRUS_* env vars when BIBLICUS_* are missing (violates the no-fallback rule) and defaults the container to papyrus-grobid; html_heuristics._merge_json_ld appends json_ld to layers twice.",
+  "type": "task",
+  "status": "closed",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-17T00:43:16.955563Z",
+  "updated_at": "2026-10-17T19:57:01.127073Z",
+  "closed_at": "2026-10-17T19:57:01.126855Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": null,
+  "agent_assignment": null
+}

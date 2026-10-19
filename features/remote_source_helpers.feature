@@ -24,6 +24,12 @@ Feature: Remote source helpers
     And a configured fake Azure Blob remote source adapter
     When I iterate remote source items for the Azure adapter
     Then the iterated remote source item count is 1
+    Given a fake Google Drive source contains files:
+      | path        | content    |
+      | docs/a.md   | Alpha note |
+    And a configured fake Google Drive remote source adapter
+    When I iterate remote source items for the Google Drive adapter
+    Then the iterated remote source item count is 1
 
   Scenario: Iterating unsupported remote sources fails
     When I iterate remote source items for an unsupported adapter
@@ -44,3 +50,7 @@ Feature: Remote source helpers
   Scenario: Remote source config requires container
     When I validate a remote source config without an Azure container
     Then the remote source validation error includes "Remote Azure Blob source requires container"
+
+  Scenario: Remote source config requires Google Drive folder url
+    When I validate a remote source config without a Google Drive folder url
+    Then the remote source validation error includes "Remote Google Drive source requires folder_url"

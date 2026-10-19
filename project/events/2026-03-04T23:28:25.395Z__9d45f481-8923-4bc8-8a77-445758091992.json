@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "9d45f481-8923-4bc8-8a77-445758091992",
+  "issue_id": "blbs-2acfce6d-8a58-4243-8284-51bad2b920f3",
+  "event_type": "issue_created",
+  "occurred_at": "2026-03-04T23:28:25.395Z",
+  "actor_id": "ryan.porter",
+  "payload": {
+    "assignee": null,
+    "description": "Add google-drive remote corpus source support, validate nested-folder ingest using the residio Drive folder, and run topic/Markov(HMM) analysis workflows on the ingested corpus.",
+    "issue_type": "story",
+    "labels": [],
+    "parent": "blbs-482709e8-c418-4cd3-a0cc-07935a2ab87c",
+    "priority": 2,
+    "status": "open",
+    "title": "Support Google Drive remote corpus ingestion for residio corpus"
+  }
+}

@@ -24,6 +24,7 @@ Documentation:
 Behavior specifications:
 
 - `features/biblicus_corpus.feature`
+- `features/corpus_layout_paths.feature`
 - `features/corpus_identity.feature`
 - `features/corpus_edge_cases.feature`
 - `features/corpus_purge.feature`
@@ -37,6 +38,27 @@ Primary implementation:
 - `src/biblicus/sources.py`
 - `src/biblicus/frontmatter.py`
 - `src/biblicus/uris.py`
+
+## Catalog extension metadata
+
+What it does:
+
+- Loads the catalog strictly and rejects unknown top-level item fields with an error that names them.
+- Stores downstream extension data under `metadata.papyrus` without interpreting it.
+- Migrates legacy top-level extension fields under `metadata` with a script that supports a dry run and writes atomically.
+
+Documentation:
+
+- `docs/corpus-design.md`
+
+Behavior specifications:
+
+- `features/catalog_extension_metadata.feature`
+
+Primary implementation:
+
+- `src/biblicus/corpus.py`
+- `scripts/migrate_catalog_extensions.py`
 
 ## Import and ignore rules
 
@@ -145,6 +167,7 @@ Behavior specifications:
 - `features/unstructured_extractor.feature`
 - `features/markitdown_extractor.feature`
 - `features/integration_unstructured_extraction.feature`
+- `features/grobid_runtime_environment.feature`
 
 Primary implementation:
 
@@ -507,3 +530,128 @@ Integration scripts:
 - `scripts/download_pdf_samples.py`
 - `scripts/download_mixed_samples.py`
 - `scripts/download_audio_samples.py`
+
+## Taxonomy
+
+What it does:
+
+- Discovers accepted topic taxonomy and ontology assertions from a corpus and records accepted taxonomy manifests.
+
+Documentation:
+
+- `docs/taxonomy-ontology.md`
+
+Behavior specifications:
+
+- `features/taxonomy_ontology.feature`
+
+Primary implementation:
+
+- `src/biblicus/taxonomy.py`
+
+## Steering
+
+What it does:
+
+- Exports steering artifacts, graph signals, and seed manifests, and manages steering proposals and feedback.
+
+Documentation:
+
+- `docs/steering-integration.md`
+- `docs/steering-proposals.md`
+
+Behavior specifications:
+
+- `features/steering_contract.feature`
+- `features/steering_proposals.feature`
+
+Primary implementation:
+
+- `src/biblicus/steering.py`
+- `src/biblicus/steering_proposals.py`
+- `src/biblicus/steering_feedback.py`
+
+## Topic intelligence
+
+What it does:
+
+- Trains and projects topic classifiers, builds topic context for research agents, and reports topic trends over time.
+
+Documentation:
+
+- `docs/topic-classifier.md`
+- `docs/topic-trends.md`
+- `docs/research-agent-intake.md`
+
+Behavior specifications:
+
+- `features/topic_classifier.feature`
+- `features/topic_context.feature`
+- `features/topic_trends.feature`
+- `features/research_intake.feature`
+
+Primary implementation:
+
+- `src/biblicus/topic_classifier.py`
+- `src/biblicus/topic_context.py`
+- `src/biblicus/topic_trends.py`
+- `src/biblicus/research_intake.py`
+
+## Bounded web transform
+
+What it does:
+
+- Extracts article text from web pages and summarizes items with a bounded map-reduce transform.
+
+Documentation:
+
+- `docs/bounded-web-transform.md`
+
+Behavior specifications:
+
+- `features/bounded_web_transform.feature`
+
+Primary implementation:
+
+- `src/biblicus/cli.py`
+
+## Context pack blocks
+
+What it does:
+
+- Builds ordered context-block packs with `context-pack build-blocks`.
+
+Documentation:
+
+- `docs/context-pack.md`
+
+Behavior specifications:
+
+- `features/context_pack_cli.feature`
+
+## Typed application programming interface
+
+What it does:
+
+- Gives every command Papyrus calls one Pydantic request model, one Pydantic response model, and one plain Python function in `biblicus.api`.
+- Publishes a JSON Schema for every request and response in `docs/api-schemas`, regenerated and checked with `scripts/generate_api_schemas.py`.
+- Keeps the command-line interface a thin wrapper that validates arguments into the request model and prints the response model as JSON.
+
+Documentation:
+
+- `docs/api-contract.md`
+
+Behavior specifications:
+
+- `features/api_contract.feature`
+- `features/taxonomy_ontology.feature`
+- `features/topic_classifier.feature`
+- `features/topic_trends.feature`
+- `features/topic_context.feature`
+- `features/graph_extraction.feature`
+- `features/bounded_web_transform.feature`
+
+Primary implementation:
+
+- `src/biblicus/api/`
+- `scripts/generate_api_schemas.py`

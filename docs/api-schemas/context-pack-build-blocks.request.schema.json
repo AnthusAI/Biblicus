@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "ContextBlock": {
+      "additionalProperties": false,
+      "description": "Ordered context block used outside retrieval-specific evidence flows.\n\n:ivar block_id: Stable block identifier.\n:vartype block_id: str\n:ivar section: Section key such as doctrine, taxonomy, desk_memory, or fresh_evidence.\n:vartype section: str\n:ivar text: Text payload for the block.\n:vartype text: str\n:ivar required: Whether this block is mandatory even when budgets are tight.\n:vartype required: bool\n:ivar priority: Higher values indicate more important blocks within the same order.\n:vartype priority: int\n:ivar metadata: Optional source/debug metadata for the block.\n:vartype metadata: dict[str, object] or None",
+      "properties": {
+        "block_id": {
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
+        },
+        "priority": {
+          "default": 0,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "section": {
+          "minLength": 1,
+          "title": "Section",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "block_id",
+        "section",
+        "text"
+      ],
+      "title": "ContextBlock",
+      "type": "object"
+    },
+    "ContextSectionBudget": {
+      "additionalProperties": false,
+      "description": "Token share budget for one logical section of an assembled context pack.\n\n:ivar section: Section key.\n:vartype section: str\n:ivar share: Fraction of the total token budget reserved for the section.\n:vartype share: float",
+      "properties": {
+        "section": {
+          "minLength": 1,
+          "title": "Section",
+          "type": "string"
+        },
+        "share": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Share",
+          "type": "number"
+        }
+      },
+      "required": [
+        "section",
+        "share"
+      ],
+      "title": "ContextSectionBudget",
+      "type": "object"
+    },
+    "TokenCounter": {
+      "additionalProperties": false,
+      "description": "Token counter configuration for token budget fitting.\n\nThis is a lightweight model wrapper so token fitting remains explicit and testable even when\nthe underlying tokenizer is provided by an optional dependency.\n\n:ivar tokenizer_id: Tokenizer identifier (for example, naive-whitespace).\n:vartype tokenizer_id: str",
+      "properties": {
+        "tokenizer_id": {
+          "default": "naive-whitespace",
+          "minLength": 1,
+          "title": "Tokenizer Id",
+          "type": "string"
+        }
+      },
+      "title": "TokenCounter",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to build a budgeted context pack from ordered context blocks.\n\n:ivar blocks: Ordered context blocks.\n:vartype blocks: list[ContextBlock]\n:ivar join_with: Separator inserted between blocks.\n:vartype join_with: str\n:ivar max_tokens: Optional overall token budget.\n:vartype max_tokens: int or None\n:ivar max_characters: Optional overall character budget.\n:vartype max_characters: int or None\n:ivar section_budgets: Optional per-section token share budgets.\n:vartype section_budgets: list[ContextSectionBudget]\n:ivar token_counter: Token counter configuration.\n:vartype token_counter: TokenCounter",
+  "properties": {
+    "blocks": {
+      "items": {
+        "$ref": "#/$defs/ContextBlock"
+      },
+      "title": "Blocks",
+      "type": "array"
+    },
+    "join_with": {
+      "default": "\n\n",
+      "title": "Join With",
+      "type": "string"
+    },
+    "max_characters": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Characters"
+    },
+    "max_tokens": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Tokens"
+    },
+    "section_budgets": {
+      "items": {
+        "$ref": "#/$defs/ContextSectionBudget"
+      },
+      "title": "Section Budgets",
+      "type": "array"
+    },
+    "token_counter": {
+      "$ref": "#/$defs/TokenCounter"
+    }
+  },
+  "title": "ContextBlockBuildRequest",
+  "type": "object"
+}

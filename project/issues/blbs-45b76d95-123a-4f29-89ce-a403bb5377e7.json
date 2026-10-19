@@ -1,0 +1,37 @@
+{
+  "id": "blbs-45b76d95-123a-4f29-89ce-a403bb5377e7",
+  "title": "Triage remote branches with unmerged commits",
+  "description": "## Goal\nRemote branches with unmerged commits that are not part of the current work. Decide per branch: merge, rebase and PR, or delete.\n\nBranches (commits ahead of main on 2026-10-17): branch (1), feat/gdrive-residio-corpus (24), feature/graph-extraction-layer (6), feature/graph-extractor-baselines (10), feature/reinforcement-memory (11), feature/shared-anthus-footer (3), fix/dependabot-vulnerabilities (1), retrieval-extraction-run-fallback (4), update-docs (1), dev (2), develop (1; CI lists it as an integration branch but it is behind main; make it real or delete it), cursor/catalog-compat-main-156a (1, likely superseded by main's catalog_compat), cursor/kanbus-264-agent-provenance-44d0 (1, PR 58 draft), docs/anthus-readme-closer (1, PR 57 draft), codex/topic-intent-modeling-sanitized (1).\n\nMethod: for each, check whether the content is already on main by patch equivalence (`git cherry origin/main origin/<branch>`). Only branches whose cherry output is all `-` are safe to delete. Report anything with `+` lines to Ryan. Close or merge drafts 57 and 58.",
+  "type": "chore",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "85f63178-bfa9-4ebb-8165-f04a03cba3b4",
+      "author": "unknown",
+      "text": "2026-10-19 re-triage of Biblicus remote branches against main 00a15f0. SAFE TO DELETE (content already on main, needs Remote Control delete): codex/steering-taxonomy, cursor/grobid-spacy-dedup-1503 and codex/bounded-web-transform (squash-landed in PR 65, 44855ab; git cherry shows + only because squash changes patch ids); feat/gdrive-residio-corpus, update-docs, retrieval-extraction-run-fallback, branch (all 140+ commits behind, history diverged; confirm with Ryan only if he wants any of them); codex/topic-intent-modeling-sanitized and cursor/catalog-compat-main-156a (git cherry all -); claude/project-thread-dmru5y-repo-hygiene, -roadmap-scope, -corpus-contract (superseded by PRs 64, 63 and 5fa92d3); claude/project-thread-jsehvq (only pm event commits already reflected on main); docs/papyrus-docs-site (PR 74 landed). NEED A DECISION: dev (3 ahead, March 2026 reinforcement-memory diagram), develop (1 ahead, OpenAI reinforcement memory helpers; behind main, CI still lists it as an integration branch), fix/dependabot-vulnerabilities (1 ahead, April package-lock bump; probably superseded by dashboard audit work), cursor/kanbus-264-agent-provenance-44d0 (draft PR 58 docs rollout), docs/anthus-readme-closer (draft PR 57 README closer). Blocker: deletion only works via Remote Control on Ryan's Mac (see blbs-1aca09).",
+      "created_at": "2026-10-19T16:45:21.955317Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    }
+  ],
+  "created_at": "2026-10-17T16:41:48.696377Z",
+  "updated_at": "2026-10-19T16:45:21.955515Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {},
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "Claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}

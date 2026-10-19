@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 from biblicus.cli import main as biblicus_main
+from biblicus.extractors.faster_whisper_stt import _load_whisper_model
 
 _EPHEMERAL_ENV_KEYS = [
     "OPENAI_API_KEY",
@@ -130,12 +131,17 @@ def before_scenario(context, scenario) -> None:
         "azure.storage",
         "azure.storage.blob",
         "boto3",
+        "gdown",
     ]:
         sys.modules.pop(name, None)
     context._fake_boto3_remote_installed = False
     context._fake_boto3_remote_original = {}
     context._fake_azure_blob_installed = False
     context._fake_azure_blob_original = {}
+    context._fake_gdown_installed = False
+    context._fake_gdown_original = {}
+    context._fake_gdown_unavailable = False
+    context._fake_gdown_blocker = None
 
     for key in _EPHEMERAL_ENV_KEYS:
         os.environ.pop(key, None)
@@ -222,11 +228,16 @@ def after_scenario(context, scenario) -> None:
         sys.meta_path.remove(context._fake_boto3_remote_blocker)
     if getattr(context, "_fake_azure_blob_blocker", None) in sys.meta_path:
         sys.meta_path.remove(context._fake_azure_blob_blocker)
+    if getattr(context, "_fake_gdown_blocker", None) in sys.meta_path:
+        sys.meta_path.remove(context._fake_gdown_blocker)
     if getattr(context, "_fake_boto3_remote_original", None):
         for name, module in context._fake_boto3_remote_original.items():
             sys.modules[name] = module
     if getattr(context, "_fake_azure_blob_original", None):
         for name, module in context._fake_azure_blob_original.items():
+            sys.modules[name] = module
+    if getattr(context, "_fake_gdown_original", None):
+        for name, module in context._fake_gdown_original.items():
             sys.modules[name] = module
     if getattr(context, "_fake_openai_installed", False):
         original_modules = getattr(context, "_fake_openai_original_modules", {})
@@ -309,18 +320,20 @@ def after_scenario(context, scenario) -> None:
         context._fake_hmmlearn_unavailable_original_modules = {}
     if getattr(context, "_fake_bertopic_installed", False):
         original_modules = getattr(context, "_fake_bertopic_original_modules", {})
-        if "bertopic" in original_modules:
-            sys.modules["bertopic"] = original_modules["bertopic"]
-        else:
-            sys.modules.pop("bertopic", None)
+        for name in ["bertopic.representation", "bertopic"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
         context._fake_bertopic_installed = False
         context._fake_bertopic_original_modules = {}
     if getattr(context, "_fake_bertopic_unavailable_installed", False):
         original_modules = getattr(context, "_fake_bertopic_unavailable_original_modules", {})
-        if "bertopic" in original_modules:
-            sys.modules["bertopic"] = original_modules["bertopic"]
-        else:
-            sys.modules.pop("bertopic", None)
+        for name in ["bertopic.representation", "bertopic"]:
+            if name in original_modules:
+                sys.modules[name] = original_modules[name]
+            else:
+                sys.modules.pop(name, None)
         context._fake_bertopic_unavailable_installed = False
         context._fake_bertopic_unavailable_original_modules = {}
     if getattr(context, "_fake_neo4j_installed", False):
@@ -521,6 +534,7 @@ def after_scenario(context, scenario) -> None:
                 sys.modules[name] = original_modules[name]
             else:
                 sys.modules.pop(name, None)
+        _load_whisper_model.cache_clear()
         context._fake_faster_whisper_installed = False
         context._fake_faster_whisper_original_modules = {}
     if getattr(context, "_fake_faster_whisper_unavailable_installed", False):
@@ -530,6 +544,7 @@ def after_scenario(context, scenario) -> None:
                 sys.modules[name] = original_modules[name]
             else:
                 sys.modules.pop(name, None)
+        _load_whisper_model.cache_clear()
         context._fake_faster_whisper_unavailable_installed = False
         context._fake_faster_whisper_unavailable_original_modules = {}
     if getattr(context, "_fake_pydub_installed", False):
@@ -745,7 +760,10 @@ def after_scenario(context, scenario) -> None:
     if original_editdistance is not None:
         sys.modules["editdistance"] = original_editdistance
         context._editdistance_original_module = None
-    elif "editdistance" in sys.modules and getattr(context, "_editdistance_original_module", None) is None:
+    elif (
+        "editdistance" in sys.modules
+        and getattr(context, "_editdistance_original_module", None) is None
+    ):
         sys.modules.pop("editdistance", None)
     # Clear fake docling behaviors
     if hasattr(context, "fake_docling_behaviors"):

@@ -26,6 +26,14 @@ def test_resolve_remote_source_name_defaults():
     assert corpus._resolve_remote_source_name(source) == "my-bucket"
     source = SimpleNamespace(kind="azure-blob", bucket=None, container="my-container", name=None)
     assert corpus._resolve_remote_source_name(source) == "my-container"
+    source = SimpleNamespace(
+        kind="google-drive",
+        bucket=None,
+        container=None,
+        folder_url="https://drive.google.com/drive/folders/folder-id-123?usp=drive_link",
+        name=None,
+    )
+    assert corpus._resolve_remote_source_name(source) == "folder-id-123"
 
 
 def test_relative_remote_key_strips_prefix():
@@ -36,7 +44,9 @@ def test_relative_remote_key_strips_prefix():
 
 def test_remote_item_unchanged_checks_etag_and_last_modified():
     corpus = Corpus(Path("/tmp"))
-    existing = SimpleNamespace(metadata={"biblicus": {"source_etag": "etag1", "source_last_modified": "y"}})
+    existing = SimpleNamespace(
+        metadata={"biblicus": {"source_etag": "etag1", "source_last_modified": "y"}}
+    )
     item = SimpleNamespace(etag="etag1", last_modified="z")
     assert corpus._remote_item_unchanged(existing, item)
     item2 = SimpleNamespace(etag=None, last_modified="y")

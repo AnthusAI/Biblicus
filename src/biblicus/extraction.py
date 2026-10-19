@@ -736,7 +736,13 @@ def build_extraction_snapshot(
                         encoding="utf-8",
                     )
 
-        if not force and final_text_path.is_file():
+        metadata_path = snapshot_dir / final_metadata_relpath
+        html_needs_metadata = (
+            media_type.startswith("text/html")
+            and final_text_path.is_file()
+            and not metadata_path.is_file()
+        )
+        if not force and final_text_path.is_file() and not html_needs_metadata:
             final_text_value = final_text_path.read_text(encoding="utf-8")
             cached_item = previous_items.get(item.id)
             if cached_item and cached_item.final_stage_extractor_id:

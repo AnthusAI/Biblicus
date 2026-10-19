@@ -5,7 +5,6 @@ __pycache__/
 *.pyd
 *.egg-info/
 build/
-console.log
 
 .coverage
 coverage.json
@@ -40,3 +39,15 @@ apps/dashboard/dist/
 apps/dashboard/dist-ssr/
 apps/dashboard/.vite/
 project/.cache/index.json
+
+# Local run output (never tracked)
+/console.log
+/junit-reports/
+/results/
+/tmp_crawl_debug/
+/_demo_embedding_retrieval/
+/project.kanbus.bak/
+/raw/
+/CHANGELOG_STT_BENCHMARKING.md
+*.py,cover
+_site/

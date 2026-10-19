@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "GraphConfigurationManifest": {
+      "additionalProperties": false,
+      "description": "Reproducible configuration for a graph extraction snapshot.\n\n:ivar configuration_id: Deterministic configuration identifier.\n:vartype configuration_id: str\n:ivar extractor_id: Graph extractor identifier.\n:vartype extractor_id: str\n:ivar name: Human-readable configuration name.\n:vartype name: str\n:ivar created_at: International Organization for Standardization 8601 timestamp.\n:vartype created_at: str\n:ivar configuration: Extractor-specific configuration values.\n:vartype configuration: dict[str, Any]",
+      "properties": {
+        "configuration": {
+          "additionalProperties": true,
+          "title": "Configuration",
+          "type": "object"
+        },
+        "configuration_id": {
+          "title": "Configuration Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "extractor_id": {
+          "title": "Extractor Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_id",
+        "extractor_id",
+        "name",
+        "created_at"
+      ],
+      "title": "GraphConfigurationManifest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable record describing a graph extraction snapshot.\n\n:ivar snapshot_id: Unique snapshot identifier.\n:vartype snapshot_id: str\n:ivar graph_id: Deterministic graph identifier.\n:vartype graph_id: str\n:ivar configuration: Configuration manifest for this snapshot.\n:vartype configuration: GraphConfigurationManifest\n:ivar corpus_uri: Canonical uniform resource identifier for the corpus root.\n:vartype corpus_uri: str\n:ivar catalog_generated_at: Catalog timestamp used for the snapshot.\n:vartype catalog_generated_at: str\n:ivar extraction_snapshot: Extraction snapshot reference.\n:vartype extraction_snapshot: str\n:ivar created_at: International Organization for Standardization 8601 timestamp for snapshot creation.\n:vartype created_at: str\n:ivar stats: Snapshot statistics.\n:vartype stats: dict[str, Any]",
+  "properties": {
+    "catalog_generated_at": {
+      "title": "Catalog Generated At",
+      "type": "string"
+    },
+    "configuration": {
+      "$ref": "#/$defs/GraphConfigurationManifest"
+    },
+    "corpus_uri": {
+      "title": "Corpus Uri",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "title": "Extraction Snapshot",
+      "type": "string"
+    },
+    "graph_id": {
+      "title": "Graph Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "stats": {
+      "additionalProperties": true,
+      "title": "Stats",
+      "type": "object"
+    }
+  },
+  "required": [
+    "snapshot_id",
+    "graph_id",
+    "configuration",
+    "corpus_uri",
+    "catalog_generated_at",
+    "extraction_snapshot",
+    "created_at"
+  ],
+  "title": "GraphSnapshotManifest",
+  "type": "object"
+}

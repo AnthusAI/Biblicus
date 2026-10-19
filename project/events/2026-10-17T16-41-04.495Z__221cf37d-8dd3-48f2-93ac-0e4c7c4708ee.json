@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "221cf37d-8dd3-48f2-93ac-0e4c7c4708ee",
+  "issue_id": "blbs-ca6f88a1-acbc-4bdb-b561-54434195424a",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-17T16:41:04.495Z",
+  "actor_id": "unknown",
+  "payload": {
+    "title": "Drop the supervised loop and recommendation labels before they reach main",
+    "description": "## Goal\nKeep Biblicus a feature and evidence engine. Learned decisions belong to Cyclotron.\n\n## Work (after blbs-12b984)\n- `topic_classifier.py` (2,051 lines on the curation branch): keep document vectors, keyword evidence and seed-topic projection as unsupervised signals. Remove the supervised, review-driven loop (training from reviewed seed items and steering feedback that behaves as a learned classifier).\n- `steering_proposals.py`: remove the `recommendation` field (`recommend`, `do_not_recommend`, `needs_clarification`). Proposals stay proposals. Papyrus `AGENTS.md` already treats these as agent labels, not review actions, so no Papyrus review logic depends on them; confirm by grep before removing.\n- Update features, docs and the Papyrus consumer notes in the same PR. Specs first.\n\n## Decision context\nCyclotron (AnthusAI/Cyclotron) is one recurring yes/no decision with a batched decision model, an ML model fitted on human labels, an LLM optimizer, and a review program. Its own docs say its review-rate defaults are placeholders and no accuracy figure comes from real reviewers, so this removal must not happen until the shadow-mode task shows it works on Papyrus labels.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "Claude"
+    }
+  }
+}
