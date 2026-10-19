@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.analysis import markov
 from biblicus.analysis.models import (
     MarkovAnalysisTextSourceConfig,

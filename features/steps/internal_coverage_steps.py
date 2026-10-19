@@ -307,7 +307,7 @@ def step_workflow_dependency_edge_cases_done(context) -> None:
 
 @when("I exercise CLI dependency edge cases")
 def step_cli_dependency_edge_cases(context) -> None:
-    from biblicus import cli as cli_module
+    from features.steps.cli_namespace import cli_namespace as cli_module
 
     corpus = Corpus.open(_corpus_path(context, "corpus"))
 

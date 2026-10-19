@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 
 
 def test_load_ingest_metadata_file_requires_mapping(tmp_path: Path):

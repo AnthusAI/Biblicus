@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.ai.models import LlmClientConfig
 from biblicus.analysis import markov, topic_modeling
 from biblicus.analysis.models import (

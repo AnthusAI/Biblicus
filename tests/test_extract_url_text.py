@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus import url_text as url_text_module
 
 

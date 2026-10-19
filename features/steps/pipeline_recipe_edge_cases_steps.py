@@ -6,16 +6,10 @@ from types import SimpleNamespace
 from behave import then, when
 from pydantic import BaseModel, ValidationError
 
-from biblicus.cli import (
-    _resolve_extraction_snapshot_for_analysis,
-    cmd_benchmark_download,
-    cmd_benchmark_run,
-    cmd_benchmark_status,
-    cmd_collection_show,
-    cmd_graph_extract,
-    cmd_source_set,
-    cmd_source_show,
-)
+from biblicus.cli.benchmark import cmd_benchmark_download, cmd_benchmark_run, cmd_benchmark_status
+from biblicus.cli.common import _resolve_extraction_snapshot_for_analysis
+from biblicus.cli.corpus import cmd_collection_show, cmd_source_set, cmd_source_show
+from biblicus.cli.graph import cmd_graph_extract
 from biblicus.collections import (
     _archive_missing_corpora,
     _discover_subfolders,
@@ -57,13 +51,13 @@ from biblicus.pipelines import (
     load_pipeline_recipe,
     run_pipeline_recipe,
 )
+from biblicus.testing_values import build_test_value
 from biblicus.user_config import (
     BiblicusUserConfig,
     SourceProfileConfig,
     _parse_account_name_from_connection_string,
     resolve_source_profile,
 )
-from biblicus.testing_values import build_test_value
 
 
 class _FakePlan:
@@ -698,7 +692,7 @@ def step_exercise_pipeline_recipe_edge_cases(context) -> None:
         "extractor_id: pipeline\nconfiguration:\n  stages: []\n", encoding="utf-8"
     )
 
-    from biblicus import cli as cli_module
+    from features.steps.cli_namespace import cli_namespace as cli_module
 
     manifest_path = (
         corpus_for_analysis.extraction_snapshot_dir(

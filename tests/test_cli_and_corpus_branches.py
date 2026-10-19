@@ -2,7 +2,8 @@ import argparse
 
 import pytest
 
-from biblicus import cli, corpus as corpus_mod
+from biblicus import corpus as corpus_mod
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.models import CatalogItem
 
 

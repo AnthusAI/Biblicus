@@ -20,7 +20,8 @@ from biblicus.analysis import models as models
 from biblicus import extraction as extraction
 
 # Core modules we need to touch
-from biblicus import cli, inference, knowledge_base, workflow
+from biblicus import inference, knowledge_base, workflow
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus._vendor.dotyaml import interpolation as dot_interpolation
 from biblicus._vendor.dotyaml import loader as dot_loader
 from biblicus._vendor.dotyaml import transformer as dot_transformer
@@ -677,7 +678,7 @@ def step_run_harness(context) -> None:
 
     with suppress(Exception):
         from biblicus.evaluation import benchmark_runner as bench_mod
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
@@ -877,7 +878,7 @@ def step_run_harness(context) -> None:
     with suppress(Exception):
         from pydantic import ValidationError
 
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
         from biblicus.errors import IngestCollisionError
         from biblicus.extraction import (
             create_extraction_configuration_manifest,
@@ -3899,7 +3900,7 @@ def step_isolated_workspace(context) -> None:
 def step_exhaust_gaps(context) -> None:
     import time
 
-    from biblicus import cli as cli_mod
+    from features.steps.cli_namespace import cli_namespace as cli_mod
     from biblicus.analysis import markov as markov_mod
     from biblicus.analysis import topic_modeling
     from biblicus.constants import CORPUS_DIR_NAME, LEGACY_CORPUS_DIR_NAME, SCHEMA_VERSION
@@ -12179,16 +12180,16 @@ def step_exhaust_gaps(context) -> None:
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "1"
         with (
             mock.patch(
-                "biblicus.cli.load_configuration_view",
+                "biblicus.cli.common.load_configuration_view",
                 return_value={"extractor_id": "pipeline"},
                 create=True,
             ),
             mock.patch(
-                "biblicus.cli._normalize_extraction_configuration",
+                "biblicus.cli.common._normalize_extraction_configuration",
                 return_value=("pipeline", {}, None),
             ),
             mock.patch(
-                "biblicus.cli.load_or_build_extraction_snapshot",
+                "biblicus.cli.common.load_or_build_extraction_snapshot",
                 return_value=ExtractionSnapshotManifest(
                     snapshot_id="s-auto",
                     configuration=create_extraction_configuration_manifest(
@@ -14892,17 +14893,18 @@ def step_exhaust_core(context) -> None:
         os.chdir(original_cwd)
 
     with suppress(Exception):
-        from biblicus.cli import (
-            _default_extraction_max_workers,
-            _dependency_mode,
-            _normalize_extraction_configuration,
+        from biblicus.cli.benchmark import (
             cmd_benchmark_download,
             cmd_benchmark_report,
             cmd_benchmark_run,
             cmd_benchmark_status,
-            cmd_dashboard_configure,
-            cmd_dashboard_sync,
         )
+        from biblicus.cli.common import (
+            _default_extraction_max_workers,
+            _dependency_mode,
+            _normalize_extraction_configuration,
+        )
+        from biblicus.cli.dashboard import cmd_dashboard_configure, cmd_dashboard_sync
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
@@ -17780,7 +17782,7 @@ def step_exhaust_core(context) -> None:
         os.environ.pop("BIBLICUS_NEO4J_BOLT_PORT", None)
 
     with suppress(Exception):
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
 
         corpus = _temp_corpus()
         original_stdin = sys.stdin
@@ -17868,7 +17870,7 @@ def step_exhaust_core(context) -> None:
 
 
     with suppress(Exception):
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
         from biblicus.models import ExtractionSnapshotReference
 
         corpus = _temp_corpus()
@@ -18273,7 +18275,7 @@ def step_exhaust_core(context) -> None:
 
     with suppress(Exception):
         from biblicus import workflow as workflow_mod
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
 
         from biblicus.api import retrieval as api_retrieval_mod
 
@@ -20113,7 +20115,7 @@ def step_exhaust_migration(context) -> None:
 
 
     try:
-        from biblicus import cli as cli_mod
+        from features.steps.cli_namespace import cli_namespace as cli_mod
         from biblicus.configuration import load_configuration_view, parse_dotted_overrides
 
         cli_mod._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])

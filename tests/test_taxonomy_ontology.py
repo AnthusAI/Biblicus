@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 from pydantic import ValidationError
 
-from biblicus import cli as cli_module
+from features.steps.cli_namespace import cli_namespace as cli_module
 from biblicus import taxonomy as taxonomy_module
 from biblicus.corpus import Corpus
 from biblicus.models import ExtractionSnapshotReference

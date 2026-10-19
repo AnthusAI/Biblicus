@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 
 
 def test_normalize_extraction_configuration_bad_type():

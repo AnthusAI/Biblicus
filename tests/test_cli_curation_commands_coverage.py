@@ -10,7 +10,7 @@ import pytest
 import yaml
 from pydantic import BaseModel
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.corpus import Corpus
 
 

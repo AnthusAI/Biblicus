@@ -8,7 +8,7 @@ from argparse import Namespace
 
 import pytest
 
-from biblicus.cli import cmd_build, cmd_query
+from biblicus.cli.retrieval import cmd_build, cmd_query
 from biblicus.corpus import Corpus
 
 

@@ -613,7 +613,8 @@ Behavior specifications:
 
 Primary implementation:
 
-- `src/biblicus/cli.py`
+- `src/biblicus/cli/extract.py`
+- `src/biblicus/web_transform.py`
 
 ## Context pack blocks
 

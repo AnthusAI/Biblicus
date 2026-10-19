@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from biblicus import cli, migration
+from biblicus import migration
+from features.steps.cli_namespace import cli_namespace as cli
 
 
 def test_cmd_download_unknown_dataset(capsys):

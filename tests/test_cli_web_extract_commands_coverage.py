@@ -8,7 +8,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from biblicus import cli, url_text, web_reference_metadata
+from biblicus import url_text, web_reference_metadata
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.models import ExtractionSnapshotReference
 
 

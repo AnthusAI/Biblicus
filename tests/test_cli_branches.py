@@ -1,6 +1,6 @@
 import argparse
 
-from biblicus import cli
+from features.steps.cli_namespace import cli_namespace as cli
 from biblicus.models import ExtractionSnapshotReference
 from biblicus.corpus import Corpus
 
