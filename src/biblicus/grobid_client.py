@@ -9,7 +9,7 @@ import threading
 import time
 from typing import Callable, TypeVar
 
-from .url_text import UrlTextExtractionError
+from .url_text_errors import UrlTextExtractionError
 
 T = TypeVar("T")
 
