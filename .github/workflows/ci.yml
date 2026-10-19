@@ -100,6 +100,12 @@ jobs:
           name: coverage-json-py312
           path: coverage.json
 
+  tactus_compatibility:
+    needs: test
+    uses: ./.github/workflows/tactus-compatibility.yml
+    with:
+      biblicus_ref: ${{ github.sha }}
+
   docs:
     runs-on: ubuntu-latest
     needs: test
