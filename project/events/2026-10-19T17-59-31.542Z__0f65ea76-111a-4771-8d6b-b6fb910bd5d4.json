@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "0f65ea76-111a-4771-8d6b-b6fb910bd5d4",
+  "issue_id": "blbs-7569c079-ded7-4f13-b094-3349d2719041",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T17:59:31.542Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Match YouTube hosts exactly instead of by substring",
+    "description": "CodeQL py/incomplete-url-substring-sanitization alerts 17, 18, 19 in src/biblicus/url_text.py: YouTube detection used endswith on the network location so lookalike hosts such as notyoutube.com were treated as YouTube.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "claude"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "blbs-7569c079-ded7-4f13-b094-3349d2719041",
+  "title": "Match YouTube hosts exactly instead of by substring",
+  "description": "CodeQL py/incomplete-url-substring-sanitization alerts 17, 18, 19 in src/biblicus/url_text.py: YouTube detection used endswith on the network location so lookalike hosts such as notyoutube.com were treated as YouTube.",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "8bce6020-b9d7-4488-b0ee-69d410872f66",
+      "author": "home",
+      "text": "Added features/url_source_classification.feature, which failed before the fix for notyoutube.com, notyoutu.be and YouTube.com:443. One helper, _is_youtube_hostname, does exact or dot-suffix hostname matching. Also fixed CodeQL notes: unnecessary lambda in context.py, import cycles between url_text and grobid_client (new url_text_errors.py) and between steering_proposals and taxonomy (new steering_models.py). The _ENSURED_URL alerts 23-25 are false positives because the variable is read.",
+      "created_at": "2026-10-19T18:20:44.468698Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": null
+    },
+    {
+      "id": "30abd64d-8248-4efc-8f19-0ec63c882bc0",
+      "author": "home",
+      "text": "Added features/url_source_classification.feature, which failed before the fix for notyoutube.com, notyoutu.be and YouTube.com:443. One helper, _is_youtube_hostname, does exact or dot-suffix hostname matching. Also fixed CodeQL notes: unnecessary lambda in context.py, import cycles between url_text and grobid_client (new url_text_errors.py) and between steering_proposals and taxonomy (new steering_models.py). The _ENSURED_URL alerts 23-25 are false positives because the variable is read.",
+      "created_at": "2026-10-19T18:20:48.922206Z",
+      "comment_type": "default",
+      "data": {},
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "claude",
+        "settings": {}
+      }
+    }
+  ],
+  "created_at": "2026-10-19T17:59:31.529879Z",
+  "updated_at": "2026-10-19T18:20:48.922285Z",
+  "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {
+    "source": "shared",
+    "project_label": "blbs"
+  },
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude",
+    "settings": {}
+  },
+  "agent_assignment": null
+}
