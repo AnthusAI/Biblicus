@@ -25,6 +25,9 @@ def _read_json_stream(stream_text):
 
 
 def _url_text_payload(status):
+    error = None
+    if status == "failed":
+        error = {"code": "fetch_failed", "message": "unreachable", "details": {"attempt": 1}}
     return {
         "status": status,
         "source_kind": "web",
@@ -35,7 +38,7 @@ def _url_text_payload(status):
         "content_type": None,
         "prompt_version": "url-text-v1",
         "attempts": [],
-        "error": None,
+        "error": error,
     }
 
 
@@ -55,7 +58,8 @@ def test_extract_url_text_reports_invalid_input_json(tmp_path, capsys):
     exit_code = cli_package.main(["extract", "url-text", "--input-json", str(input_path)])
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"]["code"] == "invalid_input_json"
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"]["code"] == "invalid_input_json"
 
 
 def test_extract_url_text_requires_source_uri(tmp_path, capsys):
@@ -65,9 +69,11 @@ def test_extract_url_text_requires_source_uri(tmp_path, capsys):
     )
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"] == {
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"] == {
         "code": "missing_source_uri",
         "message": "source_uri is required",
+        "details": {},
     }
 
 
@@ -100,7 +106,24 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
     )
     captured = capsys.readouterr()
     assert exit_code == expected_exit_code
-    assert _read_json_stream(captured.out) == _url_text_payload(status)
+    if status == "ok":
+        assert _read_json_stream(captured.out) == _url_text_payload(status)
+    else:
+        assert _read_json_stream(captured.out) == {
+            "status": "failed",
+            "error": {
+                "code": "fetch_failed",
+                "message": "unreachable",
+                "details": {
+                    "source_kind": "web",
+                    "strategy": "markdown-then-html-then-direct",
+                    "content_type": None,
+                    "prompt_version": "url-text-v1",
+                    "attempts": [],
+                    "attempt": 1,
+                },
+            },
+        }
     assert recorded_calls == [
         {
             "source_uri": "https://fixture.test/page",
@@ -130,8 +153,9 @@ def test_extract_url_text_uses_default_timeout_and_reports_extraction_error(
         ]
     )
     captured = capsys.readouterr()
-    assert exit_code == 2
-    error_payload = _read_json_stream(captured.err)
+    assert exit_code == 1
+    assert captured.err == ""
+    error_payload = _read_json_stream(captured.out)
     assert error_payload["status"] == "failed"
     assert error_payload["error"]["code"] == "fetch_failed"
     assert recorded_calls[0]["reference_title"] == ""
@@ -144,9 +168,14 @@ def test_extract_web_metadata_reports_invalid_input_json_from_standard_input(mon
     exit_code = cli_package.main(["extract", "web-metadata"])
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err) == {
+    assert captured.err == ""
+    assert _read_json_stream(captured.out) == {
         "status": "failed",
-        "error": {"code": "invalid_input_json", "message": "Input JSON must be an object"},
+        "error": {
+            "code": "invalid_input_json",
+            "message": "Input JSON must be an object",
+            "details": {},
+        },
     }
 
 
@@ -157,7 +186,8 @@ def test_extract_web_metadata_requires_source_uri_or_html(tmp_path, capsys):
     )
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"]["code"] == "missing_input"
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"]["code"] == "missing_input"
 
 
 def test_extract_web_metadata_from_html_content_uses_local_source_uri(
@@ -293,10 +323,15 @@ def test_extract_web_metadata_reports_extraction_value_error(monkeypatch, tmp_pa
         ]
     )
     captured = capsys.readouterr()
-    assert exit_code == 2
-    assert _read_json_stream(captured.err) == {
+    assert exit_code == 1
+    assert captured.err == ""
+    assert _read_json_stream(captured.out) == {
         "status": "failed",
-        "error": {"code": "web_metadata_failed", "message": "metadata extraction exploded"},
+        "error": {
+            "code": "web_metadata_failed",
+            "message": "metadata extraction exploded",
+            "details": {},
+        },
     }
 
 

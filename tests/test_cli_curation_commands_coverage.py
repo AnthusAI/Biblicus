@@ -413,7 +413,7 @@ def test_graph_extract_rejects_negative_retry_attempts(
     """Graph extraction rejects negative retry attempts before building."""
     corpus_path = _initialize_corpus(tmp_path)
 
-    exit_code, _, error_output = _run_cli(
+    exit_code, output, error_output = _run_cli(
         capsys,
         [
             "--corpus",
@@ -430,7 +430,8 @@ def test_graph_extract_rejects_negative_retry_attempts(
     )
 
     assert exit_code == 2
-    assert "item_retry_attempts: Input should be greater than or equal to 0" in error_output
+    assert error_output == ""
+    assert "item_retry_attempts: Input should be greater than or equal to 0" in output
 
 
 def test_graph_extract_progress_reports_heartbeat_and_errors(
@@ -568,10 +569,11 @@ def test_context_pack_build_blocks_requires_standard_input(
     """Build-blocks rejects an empty standard input."""
     monkeypatch.setattr(sys, "stdin", io.StringIO("  \n"))
 
-    exit_code, _, error_output = _run_cli(capsys, ["context-pack", "build-blocks"])
+    exit_code, output, error_output = _run_cli(capsys, ["context-pack", "build-blocks"])
 
     assert exit_code == 2
-    assert "Context block build requires" in error_output
+    assert error_output == ""
+    assert "Context block build requires" in json.loads(output)["error"]["message"]
 
 
 def test_topic_granularity_sweep_prints_json(

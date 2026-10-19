@@ -16,6 +16,8 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
+from .command_failure import CommandFailureException, raise_for_error_payload
+
 MODEL = "gpt-5.4-mini-2026-03-17"
 PROMPT_VERSION = "bounded-web-v2"
 MAX_INPUT_BYTES = 262144
@@ -109,6 +111,49 @@ class TransformResult(BaseModel):
     retry_trace: list[dict] = Field(default_factory=list)
     retry_failure_count: int = 0
     retry_rounds_used: int = 0
+
+
+class TransformFailureDetails(BaseModel):
+    """Carry the diagnostics of a failed transformation in the command failure details.
+
+    :ivar prompt_version: Prompt contract version that was applied.
+    :vartype prompt_version: str
+    :ivar model: Pinned model identifier.
+    :vartype model: str
+    :ivar task: Metadata field requested, or None for article selection.
+    :vartype task: str or None
+    :ivar warnings: Warnings raised before the failure.
+    :vartype warnings: list[str]
+    :ivar map_reduce: Map and reduce call counts made before the failure.
+    :vartype map_reduce: dict[str, int]
+    :ivar retry_trace: Sanitized trace of retries.
+    :vartype retry_trace: list[dict]
+    :ivar retry_failure_count: Number of failed retries.
+    :vartype retry_failure_count: int
+    :ivar retry_rounds_used: Number of retry rounds used.
+    :vartype retry_rounds_used: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    prompt_version: str
+    model: str
+    task: str | None
+    warnings: list[str]
+    map_reduce: dict[str, int]
+    retry_trace: list[dict]
+    retry_failure_count: int
+    retry_rounds_used: int
+
+    @classmethod
+    def from_result(cls, result: "TransformResult") -> "TransformFailureDetails":
+        """Copy the diagnostics out of a failed result.
+
+        :param result: Failed transformation result.
+        :type result: TransformResult
+        :return: The diagnostics.
+        :rtype: TransformFailureDetails
+        """
+        return cls(**result.model_dump(include=set(cls.model_fields)))
 
 
 class TransformError(ValueError):
@@ -347,37 +392,38 @@ def run_transform(arguments: argparse.Namespace) -> int:
 
     :param arguments: Parsed CLI arguments with source and command selection.
     :type arguments: argparse.Namespace
-    :return: Zero on success, two on a structured failure.
+    :return: Zero on success.
     :rtype: int
+    :raises CommandFailureException: If the input is rejected or the transformation fails.
     """
     article = arguments.web_transform_task == "article"
     task = None if article else arguments.web_transform_task
     try:
         source = _load_source(arguments.input_json, article)
     except TransformError as error:
-        result = TransformResult(task=task)
-        result.error = {"code": error.code, "message": str(error)}
-    else:
-        from .api import (
-            SummarizeMapReduceRequest,
-            extract_article_text,
-            summarize_map_reduce,
-            validate_request,
-        )
+        raise CommandFailureException(code=error.code, message=str(error)) from error
+    from .api import (
+        SummarizeMapReduceRequest,
+        extract_article_text,
+        summarize_map_reduce,
+        validate_request,
+    )
 
-        if article:
-            result = extract_article_text(source)
-        else:
-            request = validate_request(
-                SummarizeMapReduceRequest,
-                "summarize map-reduce",
-                **source.model_dump(),
-                task=task,
-                model=arguments.model,
-            )
-            result = summarize_map_reduce(request)
+    if article:
+        result = extract_article_text(source)
+    else:
+        request = validate_request(
+            SummarizeMapReduceRequest,
+            "summarize map-reduce",
+            **source.model_dump(),
+            task=task,
+            model=arguments.model,
+        )
+        result = summarize_map_reduce(request)
+    if result.status != "ok":
+        raise_for_error_payload(result.error, TransformFailureDetails.from_result(result))
     print(result.model_dump_json())
-    return 0 if result.status == "ok" else 2
+    return 0
 
 
 def add_transform_commands(subparsers, extract_subparsers) -> None:
@@ -403,8 +449,8 @@ def add_transform_commands(subparsers, extract_subparsers) -> None:
         parser.add_argument("--input-json", required=True)
         parser.add_argument("--format", choices=["json"], default="json")
         parser.set_defaults(func=run_transform)
-    article.set_defaults(web_transform_task="article")
-    summary.set_defaults(func=_run_summary)
+    article.set_defaults(web_transform_task="article", typed_command="extract article-text")
+    summary.set_defaults(func=_run_summary, typed_command="summarize map-reduce")
 
 
 def _run_summary(arguments: argparse.Namespace) -> int:

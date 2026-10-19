@@ -395,7 +395,9 @@ def test_cli_extract_url_text_rejects_missing_source_uri(tmp_path, capsys):
     ])
 
     assert exit_code == 2
-    payload = json.loads(capsys.readouterr().err)
+    captured_output = capsys.readouterr()
+    assert captured_output.err == ""
+    payload = json.loads(captured_output.out)
     assert payload["status"] == "failed"
     assert payload["error"]["code"] == "missing_source_uri"
 
@@ -414,6 +416,8 @@ def test_cli_extract_url_text_rejects_malformed_json(tmp_path, capsys):
     ])
 
     assert exit_code == 2
-    payload = json.loads(capsys.readouterr().err)
+    captured_output = capsys.readouterr()
+    assert captured_output.err == ""
+    payload = json.loads(captured_output.out)
     assert payload["status"] == "failed"
     assert payload["error"]["code"] == "invalid_input_json"

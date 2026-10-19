@@ -26,15 +26,15 @@ Feature: Corpus edge cases and robustness
     When I ingest the file "blob.bin" with tags "t" into corpus "corpus"
     And I overwrite the last ingested item's sidecar with a Yet Another Markup Language list
     When I snapshot "reindex" in corpus "corpus"
-    Then the command fails with exit code 2
-    And standard error includes "Sidecar metadata must be a mapping"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Sidecar metadata must be a mapping"
 
   Scenario: Reindex rejects markdown files that are not Unicode Transformation Format 8
     Given I initialized a corpus at "corpus"
     And a raw file with universally unique identifier "00000000-0000-0000-0000-000000000003" exists in corpus "corpus" named "bad.md" with invalid Unicode Transformation Format 8 bytes
     When I snapshot "reindex" in corpus "corpus"
-    Then the command fails with exit code 2
-    And standard error includes "Markdown file must be Unicode Transformation Format 8"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Markdown file must be Unicode Transformation Format 8"
 
   Scenario: Reindex ignores invalid biblicus.id and falls back to universally unique identifier prefix
     Given I initialized a corpus at "corpus"

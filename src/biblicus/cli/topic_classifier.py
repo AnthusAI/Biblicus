@@ -400,7 +400,7 @@ def register_topic_classifier_commands(subparsers: argparse._SubParsersAction) -
         default=None,
         help="Extraction snapshot reference in the form extractor_id:snapshot_id.",
     )
-    p_topic_classifier_train.set_defaults(func=cmd_topic_classifier_train)
+    p_topic_classifier_train.set_defaults(func=cmd_topic_classifier_train, typed_command="topic-classifier train")
 
     p_topic_classifier_classify = topic_classifier_sub.add_parser(
         "classify", help="Classify an existing corpus item."
@@ -489,7 +489,7 @@ def register_topic_classifier_commands(subparsers: argparse._SubParsersAction) -
         default="json",
         help="Output format.",
     )
-    p_topic_classifier_project.set_defaults(func=cmd_topic_classifier_project)
+    p_topic_classifier_project.set_defaults(func=cmd_topic_classifier_project, typed_command="topic-classifier project")
 
     p_topic_classifier_ingest = topic_classifier_sub.add_parser(
         "ingest-classify", help="Ingest one source and classify it immediately."

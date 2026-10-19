@@ -398,7 +398,7 @@ def register_analyze_commands(subparsers: argparse._SubParsersAction) -> None:
         default="markdown",
         help="Output format.",
     )
-    p_analyze_topic_context.set_defaults(func=cmd_analyze_topic_context)
+    p_analyze_topic_context.set_defaults(func=cmd_analyze_topic_context, typed_command="analyze topic-context")
 
     p_analyze_topic_trends = analyze_sub.add_parser(
         "topic-trends", help="Run publication-date topic trend analysis."
@@ -435,7 +435,7 @@ def register_analyze_commands(subparsers: argparse._SubParsersAction) -> None:
         default="json",
         help="Output format.",
     )
-    p_analyze_topic_trends.set_defaults(func=cmd_analyze_topic_trends)
+    p_analyze_topic_trends.set_defaults(func=cmd_analyze_topic_trends, typed_command="analyze topic-trends")
 
     p_analyze_profile = analyze_sub.add_parser("profile", help="Run profiling analysis.")
     _add_common_corpus_arg(p_analyze_profile)

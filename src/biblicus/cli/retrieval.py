@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from ..api import validate_request
+from ..api import InvalidRequestError, validate_request
 from ..context import (
     CharacterBudget,
     ContextBlockBuildRequest,
@@ -223,7 +223,7 @@ def cmd_context_pack_build_blocks(arguments: argparse.Namespace) -> int:
 
     input_text = sys.stdin.read()
     if not input_text.strip():
-        raise ValueError(
+        raise InvalidRequestError(
             "Context block build requires a context-block request JavaScript Object Notation on standard input"
         )
     request = ContextBlockBuildRequest.model_validate_json(input_text)
@@ -332,7 +332,7 @@ def register_query_commands(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         help="Optional minimum score threshold to filter evidence after retrieval.",
     )
-    p_query.set_defaults(func=cmd_query)
+    p_query.set_defaults(func=cmd_query, typed_command="query")
 
     p_context_pack = subparsers.add_parser(
         "context-pack", help="Build context pack text from evidence."
@@ -376,7 +376,7 @@ def register_query_commands(subparsers: argparse._SubParsersAction) -> None:
         "build-blocks",
         help="Build a budgeted context pack from ordered context blocks in JavaScript Object Notation.",
     )
-    p_context_pack_build_blocks.set_defaults(func=cmd_context_pack_build_blocks)
+    p_context_pack_build_blocks.set_defaults(func=cmd_context_pack_build_blocks, typed_command="context-pack build-blocks")
 
     p_eval = subparsers.add_parser("eval", help="Evaluate a snapshot against a dataset.")
     _add_common_corpus_arg(p_eval)

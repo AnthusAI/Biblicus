@@ -101,14 +101,14 @@ Feature: Command-line interface error behavior (human-friendly failures)
   Scenario: Reject query without a snapshot
     Given I initialized a corpus at "corpus"
     When I snapshot "query --no-deps --query test --max-total-items 1 --maximum-total-characters 10 --max-items-per-source 1" in corpus "corpus"
-    Then the command fails with exit code 2
-    And standard error includes "Dependencies missing for query"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Dependencies missing for query"
 
   Scenario: Reject querying a missing snapshot manifest
     Given I initialized a corpus at "corpus"
     When I snapshot "query --snapshot 00000000-0000-0000-0000-000000000000 --query test" in corpus "corpus"
-    Then the command fails with exit code 2
-    And standard error includes "Missing snapshot manifest"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Missing snapshot manifest"
 
   Scenario: Reject retriever mismatch on query
     Given I initialized a corpus at "corpus"
@@ -116,8 +116,8 @@ Feature: Command-line interface error behavior (human-friendly failures)
     When I ingest the file "alpha.md" into corpus "corpus"
     And I build a "scan" retrieval snapshot in corpus "corpus"
     And I attempt to query the latest snapshot with retriever "sqlite-full-text-search"
-    Then the command fails with exit code 2
-    And standard error includes "Retriever mismatch"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "Retriever mismatch"
 
   Scenario: Reject invalid corpus config schema version
     Given I initialized a corpus at "corpus"
@@ -140,7 +140,7 @@ Feature: Command-line interface error behavior (human-friendly failures)
     And I build a "scan" retrieval snapshot in corpus "corpus"
     And I attempt to query the latest snapshot with an invalid budget
     Then the command fails with exit code 2
-    And standard error includes "greater than or equal to 1"
+    And the failure envelope message includes "greater than or equal to 1"
 
   Scenario: Reject evaluation queries without expectations
     Given I initialized a corpus at "corpus"

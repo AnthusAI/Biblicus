@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from ..api import validate_request
+from ..command_failure import InvalidRequestError
 from ..corpus import Corpus
 from ..models import (
     parse_extraction_snapshot_reference,
@@ -38,7 +39,7 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
     else:
         extraction_snapshot = corpus.latest_extraction_snapshot_reference()
         if extraction_snapshot is None:
-            raise ValueError("Graph extraction requires an extraction snapshot")
+            raise InvalidRequestError("Graph extraction requires an extraction snapshot")
         print(
             "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,
@@ -252,7 +253,7 @@ def register_graph_commands(subparsers: argparse._SubParsersAction) -> None:
         default=10.0,
         help="Progress heartbeat interval in seconds (<=0 disables heartbeat events).",
     )
-    p_graph_extract.set_defaults(func=cmd_graph_extract)
+    p_graph_extract.set_defaults(func=cmd_graph_extract, typed_command="graph extract")
 
     p_graph_list = graph_sub.add_parser("list", help="List graph extraction snapshots.")
     _add_common_corpus_arg(p_graph_list)

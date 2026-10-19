@@ -142,8 +142,8 @@ Feature: Embedding retrieval and chunking
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
-    Then the command fails with exit code 2
-    And standard error includes "artifacts"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "artifacts"
 
   Scenario: In-memory query fails fast when embedding artifacts are missing
     Given I initialized a corpus at "corpus"
@@ -160,8 +160,8 @@ Feature: Embedding retrieval and chunking
       | max_total_items      | 5     |
       | maximum_total_characters | 1000  |
       | max_items_per_source | 5     |
-    Then the command fails with exit code 2
-    And standard error includes "artifacts"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "artifacts"
 
   Scenario: An empty embedding index returns no evidence
     Given I initialized a corpus at "corpus"

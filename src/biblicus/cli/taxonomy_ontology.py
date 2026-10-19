@@ -169,7 +169,7 @@ def register_taxonomy_ontology_commands(subparsers: argparse._SubParsersAction) 
         required=True,
         help="Accepted taxonomy JSON input.",
     )
-    p_taxonomy_record.set_defaults(func=cmd_taxonomy_record)
+    p_taxonomy_record.set_defaults(func=cmd_taxonomy_record, typed_command="taxonomy record")
 
     p_taxonomy_discover = taxonomy_sub.add_parser(
         "discover", help="Discover candidate child taxonomy nodes."
@@ -196,7 +196,7 @@ def register_taxonomy_ontology_commands(subparsers: argparse._SubParsersAction) 
         default="json",
         help="Output format.",
     )
-    p_taxonomy_discover.set_defaults(func=cmd_taxonomy_discover)
+    p_taxonomy_discover.set_defaults(func=cmd_taxonomy_discover, typed_command="taxonomy discover")
 
     p_ontology = subparsers.add_parser(
         "ontology", help="Validate and materialize accepted ontology."

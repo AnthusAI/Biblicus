@@ -169,13 +169,13 @@ def register_steering_commands(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         help="Topic governance snapshot identifier. Defaults to the latest pointer when omitted.",
     )
-    p_steering_export.set_defaults(func=cmd_steering_export)
+    p_steering_export.set_defaults(func=cmd_steering_export, typed_command="steering export")
 
     p_steering_artifacts = steering_sub.add_parser(
         "artifacts", help="List stable Biblicus artifact references."
     )
     _add_common_corpus_arg(p_steering_artifacts)
-    p_steering_artifacts.set_defaults(func=cmd_steering_artifacts)
+    p_steering_artifacts.set_defaults(func=cmd_steering_artifacts, typed_command="steering artifacts")
 
     p_steering_graph_signals = steering_sub.add_parser(
         "graph-signals",
@@ -203,7 +203,7 @@ def register_steering_commands(subparsers: argparse._SubParsersAction) -> None:
         default="json",
         help="Output format.",
     )
-    p_steering_graph_signals.set_defaults(func=cmd_steering_graph_signals)
+    p_steering_graph_signals.set_defaults(func=cmd_steering_graph_signals, typed_command="steering graph-signals")
 
     p_steering_proposals = steering_sub.add_parser(
         "proposals",
@@ -251,4 +251,4 @@ def register_steering_commands(subparsers: argparse._SubParsersAction) -> None:
         required=True,
         help="Destination Biblicus seed-manifest.json path.",
     )
-    p_steering_render.set_defaults(func=cmd_steering_render_seed_manifest)
+    p_steering_render.set_defaults(func=cmd_steering_render_seed_manifest, typed_command="steering render-seed-manifest")

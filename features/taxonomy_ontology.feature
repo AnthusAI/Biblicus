@@ -13,8 +13,8 @@ Feature: Taxonomy and ontology graph steering
     Given I initialized a corpus at "taxonomy-invalid-lab"
     And a malformed taxonomy input "bad-taxonomy.json" exists with problem "<problem>"
     When I attempt to record taxonomy input "bad-taxonomy.json" in corpus "taxonomy-invalid-lab"
-    Then the command fails with exit code 2
-    And standard error includes "<message>"
+    Then the command fails with exit code 1
+    And the failure envelope message includes "<message>"
 
     Examples:
       | problem        | message              |
