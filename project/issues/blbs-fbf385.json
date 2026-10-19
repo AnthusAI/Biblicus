@@ -10,9 +10,22 @@
   "parent": null,
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "cefde51d-b1fb-41d6-a8d3-c66d1c313d68",
+      "author": "home",
+      "text": "PR https://github.com/AnthusAI/Biblicus/pull/82. Contract: every typed command (API_COMMANDS) prints exactly one CommandFailure JSON object {status: failed, error: {code, message, details}} on stdout, stderr empty. Exit 2 = rejected by validation (invalid_request, invalid_input_json, missing_source_uri, missing_input, invalid_input, input_too_large); exit 1 = operation failed. Non-typed commands and argparse usage errors unchanged. Python functions unchanged. Papyrus consumer change needed in biblicus_runner.",
+      "created_at": "2026-10-19T19:42:05.646745Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "claude"
+      }
+    }
+  ],
   "created_at": "2026-10-19T19:20:43.847409Z",
-  "updated_at": "2026-10-19T19:20:54.538988Z",
+  "updated_at": "2026-10-19T19:42:05.646772Z",
   "closed_at": null,
   "agent": {
     "platform": "claude-code",
