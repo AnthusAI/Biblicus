@@ -7,12 +7,14 @@
   "priority": 2,
   "assignee": null,
   "creator": null,
-  "parent": "blbs-fda727",
+  "parent": "blbs-fda72784-6cb2-403b-92d2-eb0d77941455",
   "labels": [],
   "dependencies": [],
   "comments": [],
   "created_at": "2026-02-19T23:25:26.686082Z",
-  "updated_at": "2026-02-19T23:25:26.686082Z",
+  "updated_at": "2026-10-19T20:28:09.111118Z",
   "closed_at": null,
+  "right_now_summary": null,
+  "right_now_updated_at": null,
   "custom": {}
 }

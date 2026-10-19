@@ -12,9 +12,13 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-02-12T04:30:05.739312Z",
-  "updated_at": "2026-02-18T22:26:55.645972Z",
-  "closed_at": null,
+  "updated_at": "2026-10-19T20:28:12.267827Z",
+  "closed_at": "2026-10-19T20:28:12.267778Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
   "custom": {
-    "beads_owner": "rap@endymion.com"
+    "beads_owner": "rap@endymion.com",
+    "project_label": "blbs",
+    "source": "shared"
   }
 }
