@@ -24,10 +24,19 @@ INVALID_INPUT_FAILURE_CODES = frozenset(
         "invalid_input",
         "input_too_large",
         "invalid_request",
+        "invalid_configuration",
     }
 )
 OPERATION_FAILED_CODE = "operation_failed"
 INVALID_REQUEST_CODE = "invalid_request"
+
+
+class InvalidRequestError(ValueError):
+    """
+    A request failed validation before any operation ran.
+
+    The command-line interface reports it as the ``invalid_request`` failure with exit status 2.
+    """
 
 
 class CommandFailureError(BaseModel):
@@ -92,19 +101,24 @@ class CommandFailureException(Exception):
         super().__init__(message)
 
 
-def raise_for_error_payload(error_payload: Dict[str, Any]) -> None:
+def raise_for_error_payload(
+    error_payload: Dict[str, Any], diagnostics: BaseModel | None = None
+) -> None:
     """
     Raise the structured failure described by a failed response model's ``error`` object.
 
     :param error_payload: The ``error`` mapping of a failed response, with ``code``, ``message``
         and optionally ``details``.
     :type error_payload: dict[str, Any]
+    :param diagnostics: Typed diagnostics from the failed response, merged into ``details``
+        beneath any details the error already carries.
+    :type diagnostics: pydantic.BaseModel or None
     :return: None.
     :rtype: None
     :raises CommandFailureException: Always, carrying the code, message and details.
     """
+    details: Dict[str, Any] = diagnostics.model_dump() if diagnostics is not None else {}
+    details.update(error_payload.get("details") or {})
     raise CommandFailureException(
-        code=error_payload["code"],
-        message=error_payload["message"],
-        details=error_payload.get("details"),
+        code=error_payload["code"], message=error_payload["message"], details=details
     )

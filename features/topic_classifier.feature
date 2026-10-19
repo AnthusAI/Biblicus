@@ -283,7 +283,7 @@ Feature: Topic classifier workflows
     Given I initialized a corpus at "ambiguous-authority-lab"
     And I initialized a corpus at "ambiguous-target-lab"
     When I project classifier "classifier-lab-v1" from corpus "ambiguous-authority-lab" onto all items and item id "example-item" in corpus "ambiguous-target-lab"
-    Then the command fails with exit code 1
+    Then the command fails with exit code 2
     And the failure envelope message includes "Topic classifier projection requires exactly one of --all or --item-id"
 
   Scenario: Cross-corpus projection requires a target extraction snapshot

@@ -14,12 +14,13 @@ from typing import Any, Dict, Iterable, List, Optional
 import yaml
 from pydantic import ValidationError
 
-from ..api import InvalidRequestError, format_validation_error
+from ..api import format_validation_error
 from ..command_failure import (
     INVALID_REQUEST_CODE,
     OPERATION_FAILED_CODE,
     CommandFailure,
     CommandFailureError,
+    InvalidRequestError,
 )
 from ..corpus import Corpus
 from ..extraction import load_or_build_extraction_snapshot
@@ -259,12 +260,12 @@ def _dependency_mode(arguments: argparse.Namespace) -> str:
     :type arguments: argparse.Namespace
     :return: Dependency mode (auto, none, or prompt).
     :rtype: str
-    :raises ValueError: If conflicting flags are set.
+    :raises InvalidRequestError: If conflicting flags are set.
     """
     auto_deps = bool(getattr(arguments, "auto_deps", False))
     no_deps = bool(getattr(arguments, "no_deps", False))
     if auto_deps and no_deps:
-        raise ValueError("--auto-deps and --no-deps cannot be combined")
+        raise InvalidRequestError("--auto-deps and --no-deps cannot be combined")
     if auto_deps:
         return "auto"
     if no_deps:

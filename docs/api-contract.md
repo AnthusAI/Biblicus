@@ -60,10 +60,21 @@ Every command in the table above fails the same way. It prints exactly one JSON 
 
 The object is a `CommandFailure` from `biblicus.command_failure`. `code` is a stable machine-readable name, `message` is a sentence for people, and `details` carries structured diagnostics such as `http_status` and is empty when there are none. The exit status separates two cases, and the code alone decides which:
 
-| Exit status | Meaning | Codes |
+| Code | Exit status | Raised when |
 | --- | --- | --- |
-| `2` | The request was rejected by validation before the operation ran. | `invalid_request`, `invalid_input_json`, `missing_source_uri`, `missing_input`, `invalid_input`, `input_too_large` |
-| `1` | The request passed validation and the operation failed, including any `ValueError` or missing file raised while it ran. | `operation_failed`, and any code an operation names, for example `provider_failed`, `web_metadata_failed` or `direct_conversion_failed` |
+| `invalid_request` | 2 | A request model failed validation, a numeric input such as `timeout_seconds` is not a number, stdin is empty where a request is required, or arguments conflict or are missing (`--auto-deps` with `--no-deps`; neither or both of `--all` and `--item-id`; no extraction snapshot for `graph extract`). |
+| `invalid_input_json` | 2 | `--input-json` is not JSON or not an object. |
+| `missing_source_uri` | 2 | `extract url-text` input has no `source_uri`. |
+| `missing_input` | 2 | `extract web-metadata` input has neither `source_uri` nor `html_content`. |
+| `invalid_input` | 2 | `extract article-text` or `summarize map-reduce` input or model was rejected. |
+| `input_too_large` | 2 | The transform input or request exceeds the size bound. |
+| `invalid_configuration` | 2 | The gateway configuration (key, base address, retries) was rejected before the call. |
+| `operation_failed` | 1 | Any other `ValueError`, missing file or similar raised while the operation ran, for example a missing snapshot or invalid file contents. |
+| `provider_failed`, `invalid_provider_output` | 1 | The gateway call failed or returned unusable output. |
+| `web_metadata_failed` | 1 | `extract web-metadata` rejected the page. |
+| Codes named by URL extraction, such as `direct_conversion_failed` | 1 | The fetch or conversion failed. |
+
+`details` is never lost. When `extract url-text` fails after running, `details` carries a `UrlTextFailureDetails` (`source_kind`, `strategy`, `content_type`, `prompt_version`, `attempts`) merged with any details the extraction error named, such as `http_status`. When `extract article-text` or `summarize map-reduce` fails after running, `details` carries a `TransformFailureDetails` (`prompt_version`, `model`, `task`, `warnings`, `map_reduce`, `retry_trace`, `retry_failure_count`, `retry_rounds_used`). Failures raised before anything ran, such as `invalid_input_json`, have empty `details`.
 
 A caller therefore reads standard output for both outcomes: parse it as the response model when the exit status is 0 and as `CommandFailure` otherwise. The Python functions keep returning their response models, including the `status` and `error` fields of `UrlTextResponse` and `TransformResult`; only the command line turns a failed response into the envelope, so a failed `extract url-text` and a failed `summarize map-reduce` look the same as a failed `query`.
 

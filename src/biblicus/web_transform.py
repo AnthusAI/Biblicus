@@ -113,6 +113,49 @@ class TransformResult(BaseModel):
     retry_rounds_used: int = 0
 
 
+class TransformFailureDetails(BaseModel):
+    """Carry the diagnostics of a failed transformation in the command failure details.
+
+    :ivar prompt_version: Prompt contract version that was applied.
+    :vartype prompt_version: str
+    :ivar model: Pinned model identifier.
+    :vartype model: str
+    :ivar task: Metadata field requested, or None for article selection.
+    :vartype task: str or None
+    :ivar warnings: Warnings raised before the failure.
+    :vartype warnings: list[str]
+    :ivar map_reduce: Map and reduce call counts made before the failure.
+    :vartype map_reduce: dict[str, int]
+    :ivar retry_trace: Sanitized trace of retries.
+    :vartype retry_trace: list[dict]
+    :ivar retry_failure_count: Number of failed retries.
+    :vartype retry_failure_count: int
+    :ivar retry_rounds_used: Number of retry rounds used.
+    :vartype retry_rounds_used: int
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    prompt_version: str
+    model: str
+    task: str | None
+    warnings: list[str]
+    map_reduce: dict[str, int]
+    retry_trace: list[dict]
+    retry_failure_count: int
+    retry_rounds_used: int
+
+    @classmethod
+    def from_result(cls, result: "TransformResult") -> "TransformFailureDetails":
+        """Copy the diagnostics out of a failed result.
+
+        :param result: Failed transformation result.
+        :type result: TransformResult
+        :return: The diagnostics.
+        :rtype: TransformFailureDetails
+        """
+        return cls(**result.model_dump(include=set(cls.model_fields)))
+
+
 class TransformError(ValueError):
     """Carry a sanitized failure code across the command boundary.
 
@@ -378,7 +421,7 @@ def run_transform(arguments: argparse.Namespace) -> int:
         )
         result = summarize_map_reduce(request)
     if result.status != "ok":
-        raise_for_error_payload(result.error)
+        raise_for_error_payload(result.error, TransformFailureDetails.from_result(result))
     print(result.model_dump_json())
     return 0
 

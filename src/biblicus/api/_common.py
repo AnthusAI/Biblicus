@@ -8,17 +8,10 @@ from typing import Any, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from ..command_failure import InvalidRequestError
 from ..corpus import Corpus
 
 RequestModelType = TypeVar("RequestModelType", bound=BaseModel)
-
-
-class InvalidRequestError(ValueError):
-    """
-    A request failed validation before any operation ran.
-
-    The command-line interface reports it as the ``invalid_request`` failure with exit status 2.
-    """
 
 
 class ApiRequestModel(BaseModel):

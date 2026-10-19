@@ -85,6 +85,47 @@ class UrlTextResponse(ApiResponseModel):
     error: Optional[Dict[str, Any]]
 
 
+class UrlTextFailureDetails(ApiResponseModel):
+    """
+    Diagnostics a failed URL text extraction carries in the command failure ``details``.
+
+    :ivar source_kind: ``web``, ``pdf`` or ``youtube``.
+    :vartype source_kind: str
+    :ivar strategy: Fetch strategy that was applied.
+    :vartype strategy: str
+    :ivar content_type: Fetched content type or None.
+    :vartype content_type: str or None
+    :ivar prompt_version: Extraction contract version.
+    :vartype prompt_version: str
+    :ivar attempts: Ordered fetch attempts made before the failure.
+    :vartype attempts: list[dict[str, Any]]
+    """
+
+    source_kind: Literal["web", "pdf", "youtube"]
+    strategy: str
+    content_type: Optional[str]
+    prompt_version: str
+    attempts: List[Dict[str, Any]]
+
+    @classmethod
+    def from_response(cls, response: "UrlTextResponse") -> "UrlTextFailureDetails":
+        """
+        Copy the diagnostics out of a failed response.
+
+        :param response: Failed URL text response.
+        :type response: UrlTextResponse
+        :return: The diagnostics.
+        :rtype: UrlTextFailureDetails
+        """
+        return cls(
+            source_kind=response.source_kind,
+            strategy=response.strategy,
+            content_type=response.content_type,
+            prompt_version=response.prompt_version,
+            attempts=response.attempts,
+        )
+
+
 class WebMetadataRequest(ApiRequestModel):
     """
     Request to extract reference metadata from a page URL or supplied HTML.

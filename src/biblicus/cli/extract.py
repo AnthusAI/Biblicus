@@ -320,7 +320,7 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     :raises CommandFailureException: If the input is invalid or the extraction fails.
     """
     from .. import url_text as url_text_module
-    from ..api import UrlTextRequest, extract_url_text
+    from ..api import UrlTextFailureDetails, UrlTextRequest, extract_url_text
 
     payload = _load_input_json_object(arguments.input_json)
     source_uri = str(payload.get("source_uri") or "").strip()
@@ -341,7 +341,7 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     except url_text_module.UrlTextExtractionError as error:
         raise_for_error_payload(error.to_dict())
     if output.status != "ok":
-        raise_for_error_payload(output.error)
+        raise_for_error_payload(output.error, UrlTextFailureDetails.from_response(output))
     print(output.model_dump_json(indent=2, exclude_unset=True))
     return 0
 

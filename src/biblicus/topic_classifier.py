@@ -35,6 +35,7 @@ from .analysis.topic_modeling import (
     _group_documents_by_topic,
     _resolve_topic_keywords,
 )
+from .command_failure import InvalidRequestError
 from .constants import ANALYSIS_SCHEMA_VERSION
 from .corpus import Corpus
 from .extraction import load_or_build_extraction_snapshot
@@ -814,7 +815,9 @@ def project_topic_classifier_items(
     """
     explicit_item_ids = [item_id.strip() for item_id in item_ids if item_id.strip()]
     if int(project_all) + int(bool(explicit_item_ids)) != 1:
-        raise ValueError("Topic classifier projection requires exactly one of --all or --item-id")
+        raise InvalidRequestError(
+            "Topic classifier projection requires exactly one of --all or --item-id"
+        )
 
     target_corpus.load_extraction_snapshot_manifest(
         extractor_id=extraction_snapshot.extractor_id,

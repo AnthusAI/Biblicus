@@ -111,7 +111,18 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
     else:
         assert _read_json_stream(captured.out) == {
             "status": "failed",
-            "error": {"code": "fetch_failed", "message": "unreachable", "details": {"attempt": 1}},
+            "error": {
+                "code": "fetch_failed",
+                "message": "unreachable",
+                "details": {
+                    "source_kind": "web",
+                    "strategy": "markdown-then-html-then-direct",
+                    "content_type": None,
+                    "prompt_version": "url-text-v1",
+                    "attempts": [],
+                    "attempt": 1,
+                },
+            },
         }
     assert recorded_calls == [
         {

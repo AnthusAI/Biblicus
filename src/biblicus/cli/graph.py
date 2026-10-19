@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from ..api import validate_request
+from ..command_failure import InvalidRequestError
 from ..corpus import Corpus
 from ..models import (
     parse_extraction_snapshot_reference,
@@ -38,7 +39,7 @@ def cmd_graph_extract(arguments: argparse.Namespace) -> int:
     else:
         extraction_snapshot = corpus.latest_extraction_snapshot_reference()
         if extraction_snapshot is None:
-            raise ValueError("Graph extraction requires an extraction snapshot")
+            raise InvalidRequestError("Graph extraction requires an extraction snapshot")
         print(
             "Warning: using latest extraction snapshot; pass --extraction-snapshot for reproducibility.",
             file=sys.stderr,

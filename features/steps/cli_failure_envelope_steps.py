@@ -34,7 +34,7 @@ def _failed_url_text_payload() -> dict:
         "title": None,
         "content_type": None,
         "prompt_version": "test",
-        "attempts": [],
+        "attempts": [{"strategy": "markdown", "outcome": "failed"}],
         "error": {
             "code": "direct_conversion_failed",
             "message": "Conversion failed",
@@ -106,9 +106,15 @@ def step_failure_envelope_message_includes(context, text: str) -> None:
     assert text in message, message
 
 
-@then('the failure envelope details include "{key}" with value {value:d}')
-def step_failure_envelope_details_include(context, key: str, value: int) -> None:
-    assert _failure_envelope(context)["error"]["details"][key] == value
+@then('the failure envelope details include "{key}" with JSON {value}')
+def step_failure_envelope_details_include(context, key: str, value: str) -> None:
+    assert _failure_envelope(context)["error"]["details"][key] == json.loads(value)
+
+
+@then('the failure envelope details have exactly the keys "{keys}"')
+def step_failure_envelope_details_keys(context, keys: str) -> None:
+    expected = {key.strip() for key in keys.split(",")}
+    assert set(_failure_envelope(context)["error"]["details"]) == expected
 
 
 @then("standard error is empty")

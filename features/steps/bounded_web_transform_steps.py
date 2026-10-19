@@ -13,6 +13,7 @@ from unittest.mock import patch
 from behave import given, then, when
 
 from biblicus.cli import main
+from biblicus.web_transform import TransformFailureDetails
 from biblicus.command_failure import INVALID_INPUT_FAILURE_CODES, CommandFailure
 from features.steps.api_schema_support import assert_matches_published_schema
 
@@ -263,6 +264,25 @@ def then_contract(context, case):
         assert failure.error.code
         if case == "denied":
             assert (context.web_exit, failure.error.code) == (1, "provider_failed")
+        if not failure.error.details:
+            assert case in {
+                "invalid_json",
+                "non_object",
+                "empty_source",
+                "unknown_field",
+                "wrong_type",
+                "input_bytes",
+                "missing_file",
+                "wrong_model",
+                "invalid_source_date",
+            }
+        else:
+            assert set(failure.error.details) == set(TransformFailureDetails.model_fields)
+            expected_task = None if context.web_task == "article" else context.web_task
+            assert failure.error.details["task"] == expected_task
+            assert failure.error.details["retry_trace"] == []
+        if case == "missing_key":
+            assert (context.web_exit, failure.error.code) == (2, "invalid_configuration")
         if case == "invalid_json":
             assert (context.web_exit, failure.error.code) == (2, "invalid_input")
         assert "offline-capability" not in json.dumps(result)

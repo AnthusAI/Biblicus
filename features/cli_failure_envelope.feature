@@ -47,10 +47,28 @@ Feature: One JSON failure envelope for every typed command
       | web metadata rejection | ["extract", "web-metadata", "--input-json", "-"]  | {"html_content": "<p>x</p>"}                  | web_metadata_failed | Page rejected       |
       | missing corpus | ["reindex", "--corpus", "corpus:missing-corpus"] | (empty) | operation_failed | Not a Biblicus corpus |
 
-  Scenario: A failed URL extraction carries its error details in the envelope
+  Scenario: A failed URL extraction carries its error details and diagnostics in the envelope
     Given the typed operation behind "url text failed result" fails
     When I run the typed command with arguments '["extract", "url-text", "--input-json", "-"]' and standard input '{"source_uri": "https://example.org/a"}'
-    Then the failure envelope details include "http_status" with value 503
+    Then the failure envelope details include "http_status" with JSON 503
+    And the failure envelope details include "source_kind" with JSON "web"
+    And the failure envelope details include "strategy" with JSON "markdown-then-html-then-direct"
+    And the failure envelope details include "prompt_version" with JSON "test"
+    And the failure envelope details include "attempts" with JSON [{"strategy": "markdown", "outcome": "failed"}]
+    And the failure envelope details have exactly the keys "http_status, source_kind, strategy, content_type, prompt_version, attempts"
+
+  Scenario Outline: A request with conflicting or missing arguments is rejected with exit status 2
+    Given I initialized a corpus at "envelope-lab"
+    When I run the typed command with arguments '<arguments>' and standard input '(empty)'
+    Then the command fails with exit code 2
+    And standard output is one failure envelope with code "invalid_request"
+    And the failure envelope message includes "<message>"
+    And standard error is empty
+
+    Examples:
+      | arguments | message |
+      | ["--corpus", "corpus:envelope-lab", "query", "--query", "x", "--auto-deps", "--no-deps"] | cannot be combined |
+      | ["--corpus", "corpus:envelope-lab", "graph", "extract", "--extractor", "cooccurrence"] | requires an extraction snapshot |
 
   Scenario: Commands that are not typed keep printing plain text on standard error
     When I run the command-line interface with arguments and standard input:
