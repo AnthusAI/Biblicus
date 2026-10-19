@@ -17,7 +17,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
+from .grobid_client import call_grobid_with_limits
 from .html_structured_pipeline import enrich_web_extraction_structured
+from .url_text_errors import UrlTextExtractionError
 
 URL_TEXT_PROMPT_VERSION = "url-text-v1"
 URL_TEXT_DEFAULT_TIMEOUT_SECONDS = 20.0
@@ -36,37 +38,6 @@ _BROWSER_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 )
-
-
-class UrlTextExtractionError(RuntimeError):
-    """
-    Structured URL extraction error.
-
-    :ivar code: Stable machine-readable error code.
-    :vartype code: str
-    :ivar message: Human-readable error message.
-    :vartype message: str
-    :ivar details: Optional diagnostic details.
-    :vartype details: dict[str, Any]
-    """
-
-    def __init__(self, *, code: str, message: str, details: Optional[Dict[str, Any]] = None):
-        self.code = str(code)
-        self.message = str(message)
-        self.details = dict(details or {})
-        super().__init__(self.message)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Render this error as a JSON-serializable object.
-
-        :return: Structured error payload.
-        :rtype: dict[str, Any]
-        """
-        payload: Dict[str, Any] = {"code": self.code, "message": self.message}
-        if self.details:
-            payload["details"] = self.details
-        return payload
 
 
 def load_url_text_input_json(path_or_dash: str) -> Dict[str, Any]:
@@ -501,32 +472,41 @@ def _convert_direct_with_markitdown(source_uri: str) -> Dict[str, Any]:
     return payload
 
 
+YOUTUBE_SHORT_LINK_HOSTNAME = "youtu.be"
+YOUTUBE_DOMAIN = "youtube.com"
+
+
+def _is_youtube_hostname(source_uri: str) -> bool:
+    hostname = (urlparse(str(source_uri or "").strip()).hostname or "").lower()
+    return (
+        hostname == YOUTUBE_SHORT_LINK_HOSTNAME
+        or hostname == YOUTUBE_DOMAIN
+        or hostname.endswith("." + YOUTUBE_DOMAIN)
+    )
+
+
 def _canonicalize_youtube_watch_url(source_uri: str) -> str:
-    parsed = urlparse(str(source_uri or "").strip())
-    host = (parsed.netloc or "").lower()
     video_id = _youtube_video_id_from_uri(source_uri)
     if video_id:
         return f"https://www.youtube.com/watch?v={video_id}"
-    if host.endswith("youtube.com") or host == "youtu.be":
-        return str(source_uri or "").strip()
     return str(source_uri or "").strip()
 
 
 def _youtube_video_id_from_uri(source_uri: str) -> str:
+    if not _is_youtube_hostname(source_uri):
+        return ""
     parsed = urlparse(str(source_uri or "").strip())
-    host = (parsed.netloc or "").lower()
-    if host == "youtu.be":
+    if parsed.hostname == YOUTUBE_SHORT_LINK_HOSTNAME:
         token = (parsed.path or "").strip("/").split("/")[0]
         return token.strip()
-    if host.endswith("youtube.com"):
-        query = parse_qs(parsed.query or "")
-        if query.get("v"):
-            return str(query["v"][0]).strip()
-        path = parsed.path or ""
-        if path.startswith("/shorts/"):
-            return path.removeprefix("/shorts/").split("/")[0].strip()
-        if path.startswith("/embed/"):
-            return path.removeprefix("/embed/").split("/")[0].strip()
+    query = parse_qs(parsed.query or "")
+    if query.get("v"):
+        return str(query["v"][0]).strip()
+    path = parsed.path or ""
+    if path.startswith("/shorts/"):
+        return path.removeprefix("/shorts/").split("/")[0].strip()
+    if path.startswith("/embed/"):
+        return path.removeprefix("/embed/").split("/")[0].strip()
     return ""
 
 
@@ -831,8 +811,6 @@ def _convert_pdf_with_grobid(
             "Accept": "application/xml, text/xml;q=0.9, */*;q=0.1",
         },
     )
-    from .grobid_client import call_grobid_with_limits
-
     def _request_once() -> str:
         try:
             with urlopen(request, timeout=URL_TEXT_GROBID_TIMEOUT_SECONDS) as response:
@@ -1243,10 +1221,8 @@ def _markitdown_payload(result: Any) -> Dict[str, Any]:
 
 
 def _classify_source_kind(source_uri: str) -> str:
-    parsed = urlparse(source_uri)
-    host = (parsed.netloc or "").lower()
-    path = (parsed.path or "").lower()
-    if host.endswith("youtube.com") or host.endswith("youtu.be"):
+    path = (urlparse(source_uri).path or "").lower()
+    if _is_youtube_hostname(source_uri):
         return "youtube"
     if path.endswith(".pdf"):
         return "pdf"

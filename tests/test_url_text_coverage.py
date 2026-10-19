@@ -7,7 +7,6 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-from biblicus import grobid_client as grobid_client_module
 from biblicus import grobid_runtime as grobid_runtime_module
 from biblicus import url_text as url_text_module
 from biblicus.url_text import UrlTextExtractionError
@@ -1058,9 +1057,7 @@ def install_fake_grobid_dependencies(monkeypatch, *, ensure_behavior=None):
         "ensure_grobid_running",
         ensure_behavior or default_ensure_grobid_running,
     )
-    monkeypatch.setattr(
-        grobid_client_module, "call_grobid_with_limits", lambda operation: operation()
-    )
+    monkeypatch.setattr(url_text_module, "call_grobid_with_limits", lambda operation: operation())
 
 
 def test_convert_pdf_with_grobid_reports_unreachable_runtime(monkeypatch):
