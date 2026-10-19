@@ -3,7 +3,7 @@
   "title": "Papyrus: declare Biblicus dependency and replace subprocess bridges with one runner",
   "description": "## Goal (Papyrus repo, AnthusAI/Papyrus; tracked here because it depends on a Biblicus release)\nReplace four hand-written subprocess bridges and the sibling-checkout assumption with one declared dependency and one runner.\n\n## Findings\n- Papyrus declares no Biblicus dependency. `uv.lock` pins biblicus 1.11.1 only through `tactus @ file:///Users/ryan/Projects/Tactus`.\n- `BIBLICUS_ROOT` defaults to `../Biblicus`; `analysis_profiles.py` hardcodes `/Users/ryan/Projects/Biblicus`.\n- Four modules each build their own subprocess: `newsroom.py` (`.venv/bin/python -m biblicus`), `reference_url_text.py` and `reference_curation_signals.py` (same, plus `PYTHONPATH=BIBLICUS_ROOT/src`), `curation_cycle.py` and `accession.py` (`uv run --extra topic-modeling biblicus`).\n- `reference_url_text.py` retries under `uv run --extra markitdown` when MarkItDown is missing.\n\n## Work (after the curation surface is released)\n1. Declare `biblicus[web,ner,markitdown,topic-modeling,openai]>=<release with curation commands>` directly in `pyproject.toml`.\n2. One `BiblicusRunner` class owns the subprocess: executable resolution, environment, JSON parse, typed errors. Keep the process boundary; it keeps BERTopic and spaCy out of the Lambda runtime.\n3. Remove every `/Users/ryan` default; take `BIBLICUS_WORKDIR` from the environment or fail with a clear message.\n4. Add Papyrus CI that runs its Python tests against the released Biblicus.",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -16,22 +16,42 @@
       "author": "unknown",
       "text": "2026-10-19 status: dependency declared, runner not built. Papyrus PR 244 declared biblicus >=1.14.1,<2 in pyproject.toml and no /Users/ryan defaults remain in src. NOT done: no BiblicusRunner exists, BIBLICUS_ROOT still appears about 45 times under src, the subprocess bridges (newsroom.py, reference_url_text.py, reference_curation_signals.py, curation_cycle.py, accession.py) are unchanged, and Papyrus has no CI job against the released Biblicus (workflows: tests, package-smoke, release, inbound-email-tests). PyPI has Biblicus 1.14.2. A Papyrus-only thread cannot reach Biblicus Kanbus, so do this from a thread with both repos.",
       "created_at": "2026-10-19T16:45:47.981702Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "945e1db4-0f01-46a5-90f6-4026e5a032b0",
+      "author": "home",
+      "text": "2026-10-19: Runner implemented by a Sonnet worker as AnthusAI/Papyrus#364 (base develop): one BiblicusRunner in src/papyrus_content/biblicus_runner.py, all five bridges plus the other uv/BIBLICUS_ROOT call sites moved onto it, BIBLICUS_ROOT and /Users/ryan gone from src, newsroom extra declares biblicus[dspy,markitdown,neo4j,ner,openai,topic-modeling,web]>=1.14.1,<2, CI asserts a site-packages Biblicus. Sent back in review for: a PPY issue and feature/PPY-* branch per Papyrus AGENTS.md, lint, stale /Users/ryan in docs/scripts, a clear error for pre-runner analysis plans, and removing the stderr-then-stdout / trailing-JSON parse (one stream per command; any Biblicus inconsistency gets fixed in Biblicus).",
+      "created_at": "2026-10-19T18:19:55.772262Z",
       "comment_type": "default",
-      "data": {},
-      "agent": null
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
+    },
+    {
+      "id": "7854f401-3e6e-4ef3-97b1-33503c8d607b",
+      "author": "home",
+      "text": "Done 2026-10-19: AnthusAI/Papyrus#365 (PPY-c32c35, branch feature/PPY-c32c35-biblicus-runner) merged to Papyrus develop as a0dfc282 after a revision round; CI green (python, smoke, ts). #364 closed in its favour. One BiblicusRunner; every BIBLICUS_ROOT and /Users/ryan reference removed from src, docs and scripts (docs/archive untouched); BIBLICUS_WORKDIR or a clear error; each typed command parses only its declared stream with json.loads; pre-runner analysis plans fail with a regenerate message. Reaches Papyrus main with its next develop->main release. Biblicus-side follow-up filed for the inconsistent CLI failure envelopes.",
+      "created_at": "2026-10-19T18:46:15.363876Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-10-17T16:40:53.988960Z",
-  "updated_at": "2026-10-19T16:45:47.981880Z",
-  "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
+  "updated_at": "2026-10-19T18:46:15.825896Z",
+  "closed_at": "2026-10-19T18:46:15.825855Z",
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }

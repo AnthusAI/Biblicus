@@ -24,7 +24,7 @@ from .steering_feedback import (
     steering_feedback_ref,
     taxonomy_candidate_suppression,
 )
-from .steering_proposals import SteeringProposal, SteeringSignal
+from .steering_models import SteeringProposal, SteeringSignal
 from .time import utc_now_iso
 from .topic_classifier import _load_model_bundle, load_topic_classifier_seed_manifest
 
