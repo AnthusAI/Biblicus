@@ -1,7 +1,7 @@
 {
   "id": "blbs-dfb9885b-bac2-4aa3-89c4-c2194f2c2143",
   "title": "Delete merged Papyrus remote branches (second pass)",
-  "description": "28 Papyrus remote branches are fully merged into main as of 2026-10-19 (git merge-base --is-ancestor origin/<branch> origin/main succeeds). Cloud sandbox deletion returns 403; run through Remote Control on Ryan's Mac (BlackbookM1, /Users/home/Projects/Chattic.us) with his gh credentials, re-checking ancestry first. Never delete main. The earlier pass on 2026-10-18 removed 143. Papyrus has 84 more branches with unmerged commits that belong to the Papyrus owner to triage.",
+  "description": "28 Papyrus remote branches are fully merged into main as of 2026-10-19 (git merge-base --is-ancestor origin/<branch> origin/main succeeds). Cloud sandbox deletion returns 403; run through Remote Control on Ryan's Mac (BlackbookM1, ~/Projects/Chattic.us) with his gh credentials, re-checking ancestry first. Never delete main. The earlier pass on 2026-10-18 removed 143. Papyrus has 84 more branches with unmerged commits that belong to the Papyrus owner to triage.",
   "type": "chore",
   "status": "closed",
   "priority": 3,
