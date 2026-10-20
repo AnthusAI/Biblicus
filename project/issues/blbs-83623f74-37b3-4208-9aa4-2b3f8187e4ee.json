@@ -3,7 +3,7 @@
   "title": "Disable GROBID CrossRef consolidation by default",
   "description": "",
   "type": "bug",
-  "status": "open",
+  "status": "in_progress",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -12,7 +12,7 @@
   "dependencies": [],
   "comments": [],
   "created_at": "2026-10-20T00:08:13.500468Z",
-  "updated_at": "2026-10-20T00:08:13.500534Z",
+  "updated_at": "2026-10-20T00:10:35.340288Z",
   "closed_at": null,
   "agent": {
     "platform": "claude-code",
