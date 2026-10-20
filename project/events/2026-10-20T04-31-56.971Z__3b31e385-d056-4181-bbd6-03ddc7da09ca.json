@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "3b31e385-d056-4181-bbd6-03ddc7da09ca",
+  "issue_id": "blbs-c5038e81-c99a-41fb-b382-fa5fdfaef617",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-20T04:31:56.971Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "docs/bounded-web-transform.md is a session handoff report, including failing tests",
+    "description": "**Problem**\nA published docs page is internal working-session text rather than documentation.\n\n**Evidence**\n- docs/bounded-web-transform.md:3 begins \"Run from the Biblicus checkout with Python 3.10-3.13 ... The offline handoff was tested ...\"\n- docs/bounded-web-transform.md:32 reports failing tests as part of the handoff narrative.\n- Related open epic: Provide Papyrus bounded web transformation handoff (dde6ae).\n\n**Fix**\nRewrite the page as reference documentation (what the transform does, how to run it, its limits) and move handoff/status notes to the Kanbus issue.\n\n**How to verify**\nThe page has no session-handoff language or test-failure narrative (`grep -n -i 'handoff\\|failing' docs/bounded-web-transform.md` returns only intended product wording).\n\nSource: Anthus repo audit, 2026-10-20.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "audit-filing"
+    }
+  }
+}
