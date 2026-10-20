@@ -1,0 +1,38 @@
+{
+  "id": "blbs-83623f74-37b3-4208-9aa4-2b3f8187e4ee",
+  "title": "Disable GROBID CrossRef consolidation by default",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "969a8633-802d-434c-b3e2-fd78e0c4ea47",
+      "author": "home",
+      "text": "Fix in https://github.com/AnthusAI/Biblicus/pull/85",
+      "created_at": "2026-10-20T00:15:40.342745Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "claude"
+      }
+    }
+  ],
+  "created_at": "2026-10-20T00:08:13.500468Z",
+  "updated_at": "2026-10-20T00:15:40.342779Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

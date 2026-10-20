@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "37113c11-c059-4fee-9948-d4d0e4e1211a",
+  "issue_id": "blbs-83623f74-37b3-4208-9aa4-2b3f8187e4ee",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-20T00:08:13.500Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Disable GROBID CrossRef consolidation by default",
+    "description": "",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "claude"
+    }
+  }
+}

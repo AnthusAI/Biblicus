@@ -11,17 +11,22 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 DEFAULT_GROBID_URL = "http://127.0.0.1:8070"
-DEFAULT_GROBID_DOCKER_IMAGE = "lfoppiano/grobid:0.8.0"
+DEFAULT_GROBID_DOCKER_IMAGE = "grobid/grobid:0.9.1-crf"
 DEFAULT_GROBID_CONTAINER_NAME = "biblicus-grobid"
 URL_TEXT_GROBID_URL_ENV = "BIBLICUS_GROBID_URL"
 GROBID_AUTO_START_ENV = "BIBLICUS_GROBID_AUTO_START"
 GROBID_CONTAINER_NAME_ENV = "BIBLICUS_GROBID_CONTAINER_NAME"
 GROBID_DOCKER_IMAGE_ENV = "BIBLICUS_GROBID_DOCKER_IMAGE"
+DEFAULT_GROBID_MEMORY_LIMIT = "5g"
+GROBID_JAVA_OPTIONS = "JAVA_OPTS=-Xms512m -Xmx2g"
+GROBID_MEMORY_LIMIT_ENV = "BIBLICUS_GROBID_MEMORY_LIMIT"
+GROBID_CONSOLIDATE_HEADER_ENV = "BIBLICUS_GROBID_CONSOLIDATE_HEADER"
+GROBID_CONSOLIDATE_CITATIONS_ENV = "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS"
 
 DOCKER_CANDIDATE_PATHS = (
     "/usr/local/bin/docker",
@@ -33,17 +38,42 @@ _ENSURE_LOCK = __import__("threading").Lock()
 _ENSURED_URL: str | None = None
 
 
+def _environment_flag_enabled(name: str, *, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def grobid_auto_start_enabled() -> bool:
     """
     Return whether localhost GROBID should be auto-started via Docker.
 
+    Auto-start is enabled unless ``BIBLICUS_GROBID_AUTO_START`` is set to a falsey value.
+
     :return: True when auto-start is enabled.
     :rtype: bool
     """
-    raw = os.environ.get(GROBID_AUTO_START_ENV)
-    if raw is not None:
-        return raw.strip().lower() in {"1", "true", "yes", "on"}
-    return True
+    return _environment_flag_enabled(GROBID_AUTO_START_ENV, default=True)
+
+
+def grobid_consolidation_fields() -> Dict[str, str]:
+    """
+    Resolve the GROBID CrossRef consolidation form fields.
+
+    Both header and citation consolidation are off unless enabled through
+    ``BIBLICUS_GROBID_CONSOLIDATE_HEADER`` and ``BIBLICUS_GROBID_CONSOLIDATE_CITATIONS``.
+    Consolidation calls an external service, which makes output non-deterministic and slow.
+
+    :return: Form fields ``consolidateHeader`` and ``consolidateCitations`` with values ``"0"`` or ``"1"``.
+    :rtype: dict[str, str]
+    """
+    header_enabled = _environment_flag_enabled(GROBID_CONSOLIDATE_HEADER_ENV, default=False)
+    citations_enabled = _environment_flag_enabled(GROBID_CONSOLIDATE_CITATIONS_ENV, default=False)
+    return {
+        "consolidateHeader": "1" if header_enabled else "0",
+        "consolidateCitations": "1" if citations_enabled else "0",
+    }
 
 
 def resolve_grobid_base_url() -> str:
@@ -132,6 +162,45 @@ def _grobid_docker_image() -> str:
     )
 
 
+def _grobid_memory_limit() -> str:
+    return (
+        str(os.environ.get(GROBID_MEMORY_LIMIT_ENV) or "").strip() or DEFAULT_GROBID_MEMORY_LIMIT
+    )
+
+
+def grobid_docker_run_arguments(*, port: int) -> List[str]:
+    """
+    Build the ``docker run`` arguments for the local GROBID container.
+
+    The container is published on the loopback interface only, restarts unless stopped, and has a
+    memory limit with no extra swap. The Java heap is capped well below the limit because the
+    Wapiti models load outside the heap.
+
+    :param port: Host port to publish on 127.0.0.1.
+    :type port: int
+    :return: Arguments following the docker executable, starting with ``run``.
+    :rtype: list[str]
+    """
+    memory_limit = _grobid_memory_limit()
+    return [
+        "run",
+        "-d",
+        "--name",
+        _grobid_container_name(),
+        "--restart",
+        "unless-stopped",
+        "--memory",
+        memory_limit,
+        "--memory-swap",
+        memory_limit,
+        "-e",
+        GROBID_JAVA_OPTIONS,
+        "-p",
+        f"127.0.0.1:{port}:8070",
+        _grobid_docker_image(),
+    ]
+
+
 def _port_is_open(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(1.0)
@@ -188,16 +257,7 @@ def _start_or_reuse_local_grobid_container(*, port: int) -> None:
         return
 
     completed = subprocess.run(
-        [
-            docker_command,
-            "run",
-            "-d",
-            "--name",
-            container_name,
-            "-p",
-            f"{port}:8070",
-            image,
-        ],
+        [docker_command, *grobid_docker_run_arguments(port=port)],
         capture_output=True,
         text=True,
         check=False,

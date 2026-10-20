@@ -1,0 +1,38 @@
+{
+  "id": "blbs-d59cb430-ba43-4349-81ba-078d6d3c4268",
+  "title": "Local GROBID container binds localhost with restart and memory limits",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "7f44f0d1-cc9f-409d-9df3-ad0d0be4ddd6",
+      "author": "home",
+      "text": "Fix in https://github.com/AnthusAI/Biblicus/pull/85",
+      "created_at": "2026-10-20T00:15:42.301004Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "claude"
+      }
+    }
+  ],
+  "created_at": "2026-10-20T00:08:16.047820Z",
+  "updated_at": "2026-10-20T00:15:42.301031Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

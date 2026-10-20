@@ -1,0 +1,38 @@
+{
+  "id": "blbs-f41c9d65-f1ea-4ba3-840f-2b3cca8ff34b",
+  "title": "Default GROBID image publishes arm64",
+  "description": "",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "fdd19c77-a371-4195-b4b2-880b4bff85d3",
+      "author": "home",
+      "text": "Fix in https://github.com/AnthusAI/Biblicus/pull/85",
+      "created_at": "2026-10-20T00:15:41.444032Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-sonnet-5-5",
+        "name": "claude"
+      }
+    }
+  ],
+  "created_at": "2026-10-20T00:08:14.775924Z",
+  "updated_at": "2026-10-20T00:15:41.444059Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
