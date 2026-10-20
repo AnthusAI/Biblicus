@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "bf9304a8-0cef-42e2-9d74-469614bad93a",
+  "issue_id": "blbs-3c3121eb-a27e-4f24-bc1f-8d1a087819c9",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-20T23:31:52.025Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Dashboard builds only on one machine and has no CI",
+    "description": "Found while fixing dashboard npm alerts (blbs-9459a5, PR 93). apps/dashboard cannot be installed, built or tested on a fresh checkout:\n- package.json line 64 declares springstack as a file: dependency on an absolute path inside one developer's home directory, so it resolves on no other machine.\n- npm ci fails on develop because package-lock.json is out of sync with package.json.\n- tsc --noEmit reports 14 errors (missing springstack module, missing amplify_outputs.json, import.meta.env types, react-resizable-panels prop types).\n- npm test cannot start: cucumber.js is CommonJS in an ES-module package, and the scenarios need a running app plus Playwright.\n- No CI job runs anything for the dashboard, so dependency updates (such as PR 93's Amplify backend 1.22 to 1.25 and react-router-dom 6.30.6) ship unverified.\nFix: depend on springstack through a published package or a git dependency (decide with Ryan which), make npm ci pass, fix the typecheck errors, make the cucumber suite runnable, and add a dashboard CI job (npm ci, typecheck, build, tests) required on develop and main. Blocks the next develop-to-main release while PR 93's updates are on develop.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-opus-5-5",
+      "name": "claude"
+    }
+  }
+}
