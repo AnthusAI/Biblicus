@@ -55,10 +55,22 @@
         "model": "claude-opus-5-5",
         "name": "claude"
       }
+    },
+    {
+      "id": "b00ad99d-bf1c-4a1a-90d6-5163cce1a401",
+      "author": "home",
+      "text": "2026-10-20 status (board drift fix). Closed since the 2026-10-19 status: f801df (PR 76), 49f6fb (PR 79), af04bd, 45b76d, dfb988, 1aca09. Release 1.15.0 is commit 4f21672 (tag v1.15.0) on main, with the version bump in pyproject.toml and src/biblicus/__init__.py, promoted from develop by PR 87 on 2026-10-20; it has no issue of its own. develop does not yet contain 1.15.0 until back-merge PR 89 (main into develop, open, clean) merges. Remaining children: 67eb7d (Cyclotron shadow mode) and ca6f88 (supervised loop removal, waits on 67eb7d). The epic stays open until both close.",
+      "created_at": "2026-10-20T13:16:36.629221Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude",
+        "model": "claude-opus-5-5",
+        "name": "drift-fix"
+      }
     }
   ],
   "created_at": "2026-10-17T14:41:54.366054Z",
-  "updated_at": "2026-10-19T21:05:06.023092Z",
+  "updated_at": "2026-10-20T13:16:36.629251Z",
   "closed_at": null,
   "agent": {
     "platform": "claude-code",
