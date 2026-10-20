@@ -21,6 +21,33 @@ Feature: GROBID runtime environment
     And the resolved GROBID container name is "biblicus-grobid"
     And the resolved GROBID Docker image is "grobid/grobid:0.9.1-crf"
 
+  Scenario: The local GROBID container is published on localhost only with a restart policy and memory limits
+    Given the GROBID environment variable "BIBLICUS_GROBID_CONTAINER_NAME" is unset
+    And the GROBID environment variable "BIBLICUS_GROBID_DOCKER_IMAGE" is unset
+    And the GROBID environment variable "BIBLICUS_GROBID_MEMORY_LIMIT" is unset
+    Then the GROBID Docker run arguments for port 8070 are:
+      | argument                  |
+      | run                       |
+      | -d                        |
+      | --name                    |
+      | biblicus-grobid           |
+      | --restart                 |
+      | unless-stopped            |
+      | --memory                  |
+      | 5g                        |
+      | --memory-swap             |
+      | 5g                        |
+      | -e                        |
+      | JAVA_OPTS=-Xms512m -Xmx2g |
+      | -p                        |
+      | 127.0.0.1:8070:8070       |
+      | grobid/grobid:0.9.1-crf   |
+
+  Scenario: The GROBID container memory limit is configurable
+    Given the GROBID environment variable "BIBLICUS_GROBID_MEMORY_LIMIT" is "6g"
+    Then the GROBID Docker run arguments contain the pair "--memory" "6g"
+    And the GROBID Docker run arguments contain the pair "--memory-swap" "6g"
+
   Scenario: CrossRef consolidation is off by default for header and citations
     Given the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_HEADER" is unset
     And the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS" is unset

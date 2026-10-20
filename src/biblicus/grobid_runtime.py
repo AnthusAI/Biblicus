@@ -22,6 +22,9 @@ URL_TEXT_GROBID_URL_ENV = "BIBLICUS_GROBID_URL"
 GROBID_AUTO_START_ENV = "BIBLICUS_GROBID_AUTO_START"
 GROBID_CONTAINER_NAME_ENV = "BIBLICUS_GROBID_CONTAINER_NAME"
 GROBID_DOCKER_IMAGE_ENV = "BIBLICUS_GROBID_DOCKER_IMAGE"
+DEFAULT_GROBID_MEMORY_LIMIT = "5g"
+GROBID_JAVA_OPTIONS = "JAVA_OPTS=-Xms512m -Xmx2g"
+GROBID_MEMORY_LIMIT_ENV = "BIBLICUS_GROBID_MEMORY_LIMIT"
 GROBID_CONSOLIDATE_HEADER_ENV = "BIBLICUS_GROBID_CONSOLIDATE_HEADER"
 GROBID_CONSOLIDATE_CITATIONS_ENV = "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS"
 
@@ -159,6 +162,45 @@ def _grobid_docker_image() -> str:
     )
 
 
+def _grobid_memory_limit() -> str:
+    return (
+        str(os.environ.get(GROBID_MEMORY_LIMIT_ENV) or "").strip() or DEFAULT_GROBID_MEMORY_LIMIT
+    )
+
+
+def grobid_docker_run_arguments(*, port: int) -> List[str]:
+    """
+    Build the ``docker run`` arguments for the local GROBID container.
+
+    The container is published on the loopback interface only, restarts unless stopped, and has a
+    memory limit with no extra swap. The Java heap is capped well below the limit because the
+    Wapiti models load outside the heap.
+
+    :param port: Host port to publish on 127.0.0.1.
+    :type port: int
+    :return: Arguments following the docker executable, starting with ``run``.
+    :rtype: list[str]
+    """
+    memory_limit = _grobid_memory_limit()
+    return [
+        "run",
+        "-d",
+        "--name",
+        _grobid_container_name(),
+        "--restart",
+        "unless-stopped",
+        "--memory",
+        memory_limit,
+        "--memory-swap",
+        memory_limit,
+        "-e",
+        GROBID_JAVA_OPTIONS,
+        "-p",
+        f"127.0.0.1:{port}:8070",
+        _grobid_docker_image(),
+    ]
+
+
 def _port_is_open(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(1.0)
@@ -215,16 +257,7 @@ def _start_or_reuse_local_grobid_container(*, port: int) -> None:
         return
 
     completed = subprocess.run(
-        [
-            docker_command,
-            "run",
-            "-d",
-            "--name",
-            container_name,
-            "-p",
-            f"{port}:8070",
-            image,
-        ],
+        [docker_command, *grobid_docker_run_arguments(port=port)],
         capture_output=True,
         text=True,
         check=False,

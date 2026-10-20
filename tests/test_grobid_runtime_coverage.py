@@ -356,8 +356,16 @@ def test_start_or_reuse_local_grobid_container_launches_new_container(monkeypatc
         "-d",
         "--name",
         "test-grobid",
+        "--restart",
+        "unless-stopped",
+        "--memory",
+        "5g",
+        "--memory-swap",
+        "5g",
+        "-e",
+        "JAVA_OPTS=-Xms512m -Xmx2g",
         "-p",
-        "9070:8070",
+        "127.0.0.1:9070:8070",
         "example/grobid:test",
     ]
 

@@ -145,8 +145,11 @@ URL text extraction converts PDFs with a GROBID service. Biblicus reads GROBID s
 - `BIBLICUS_GROBID_AUTO_START`: whether Biblicus launches a local Docker container when no service is reachable at a localhost URL. Default **enabled** (any value other than `1`, `true`, `yes` or `on` disables it).
 - `BIBLICUS_GROBID_CONTAINER_NAME`: name of the auto-started container. Default `biblicus-grobid`.
 - `BIBLICUS_GROBID_DOCKER_IMAGE`: image for the auto-started container. Default `grobid/grobid:0.9.1-crf`, which publishes both `linux/arm64` and `linux/amd64` (the previous default was amd64 only and is killed for lack of memory under emulation on Apple Silicon).
+- `BIBLICUS_GROBID_MEMORY_LIMIT`: Docker memory limit (also used as the swap limit) for the auto-started container. Default `5g`. GROBID peaks near 4.4 GiB on a long PDF and a 3g limit is killed at startup, because the Wapiti models load outside the Java heap.
 - `BIBLICUS_GROBID_CONSOLIDATE_HEADER`: ask GROBID to consolidate the header against CrossRef. Default off.
 - `BIBLICUS_GROBID_CONSOLIDATE_CITATIONS`: ask GROBID to consolidate citations against CrossRef. Default off.
+
+The auto-started container is published on `127.0.0.1` only (not reachable from the network), restarts unless stopped, and runs with `JAVA_OPTS=-Xms512m -Xmx2g`.
 
 Consolidation is off by default because it calls CrossRef during extraction. On a long PDF this hits CrossRef rate limits, can take several minutes (past the 180 second request timeout), and makes the extracted text depend on an external service. Enable it only when you accept that cost.
 
