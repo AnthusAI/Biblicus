@@ -19,7 +19,7 @@ Feature: GROBID runtime environment
     And the GROBID environment variable "PAPYRUS_GROBID_DOCKER_IMAGE" is "example/grobid:2"
     Then the resolved GROBID base URL is "http://127.0.0.1:8070"
     And the resolved GROBID container name is "biblicus-grobid"
-    And the resolved GROBID Docker image is "lfoppiano/grobid:0.8.0"
+    And the resolved GROBID Docker image is "grobid/grobid:0.9.1-crf"
 
   Scenario: CrossRef consolidation is off by default for header and citations
     Given the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_HEADER" is unset

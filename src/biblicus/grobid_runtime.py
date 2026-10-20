@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 DEFAULT_GROBID_URL = "http://127.0.0.1:8070"
-DEFAULT_GROBID_DOCKER_IMAGE = "lfoppiano/grobid:0.8.0"
+DEFAULT_GROBID_DOCKER_IMAGE = "grobid/grobid:0.9.1-crf"
 DEFAULT_GROBID_CONTAINER_NAME = "biblicus-grobid"
 URL_TEXT_GROBID_URL_ENV = "BIBLICUS_GROBID_URL"
 GROBID_AUTO_START_ENV = "BIBLICUS_GROBID_AUTO_START"

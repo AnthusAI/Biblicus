@@ -143,6 +143,8 @@ URL text extraction converts PDFs with a GROBID service. Biblicus reads GROBID s
 
 - `BIBLICUS_GROBID_URL`: base URL of the service. Default `http://127.0.0.1:8070`.
 - `BIBLICUS_GROBID_AUTO_START`: whether Biblicus launches a local Docker container when no service is reachable at a localhost URL. Default **enabled** (any value other than `1`, `true`, `yes` or `on` disables it).
+- `BIBLICUS_GROBID_CONTAINER_NAME`: name of the auto-started container. Default `biblicus-grobid`.
+- `BIBLICUS_GROBID_DOCKER_IMAGE`: image for the auto-started container. Default `grobid/grobid:0.9.1-crf`, which publishes both `linux/arm64` and `linux/amd64` (the previous default was amd64 only and is killed for lack of memory under emulation on Apple Silicon).
 - `BIBLICUS_GROBID_CONSOLIDATE_HEADER`: ask GROBID to consolidate the header against CrossRef. Default off.
 - `BIBLICUS_GROBID_CONSOLIDATE_CITATIONS`: ask GROBID to consolidate citations against CrossRef. Default off.
 
