@@ -1,0 +1,25 @@
+{
+  "id": "blbs-5de9c4d1-691b-4246-b871-ba7ea3216a3c",
+  "title": "Biblicus docs site is down: anthusai.github.io/Biblicus/ and readthedocs both return 404",
+  "description": "**Problem**\nThe Biblicus documentation site is not published anywhere. Every link to it is dead, including links on other Anthus sites.\n\n**Evidence**\n- `curl -s -o /dev/null -w '%{http_code}' -L https://anthusai.github.io/Biblicus/` returns 404.\n- `curl -s -o /dev/null -w '%{http_code}' -L https://biblicus.readthedocs.io/` returns 404.\n- .github/workflows/docs.yml:23 gates the build on `vars.DOCS_SITE_ENABLED == 'true'` and :90 gates deploy on `DOCS_DEPLOY == 'true'`; all runs are skipped. ci.yml:140 has a step conditioned on `vars.DOCS_SITE_ENABLED != 'true'`.\n- Dead links in the repo: README.md:519 (\"Full documentation is published on GitHub Pages\"), the docs badge at README.md:~778, and the repository homepage setting.\n- Linked from other sites: the shared Anthus footer on https://markus.anth.us/ and https://babul.us/ (and other sites that use the same footer list) links to https://anthusai.github.io/Biblicus/. The footer list lives in AnthusAI/anthus-footer (~/Projects/anthus-footer, src/sites.js); its main branch already points Biblicus at the GitHub repo, but Markus hardcodes the dead URL at docsite/build_site.py:242 and babul.us serves an older copy. Fixing the Biblicus docs site fixes those footers' Biblicus link without changing them (the Markus issue covers the hardcoded copy).\n\n**Fix**\nDecide the docs home (GitHub Pages or Read the Docs), set `DOCS_SITE_ENABLED=true` and `DOCS_DEPLOY=true` repository variables (or the equivalent setup), run the docs workflow on main, and update the repo homepage and badge. If the site is intentionally retired, remove the links instead and say so in the README.\n\n**How to verify**\n`curl -s -o /dev/null -w '%{http_code}' -L https://anthusai.github.io/Biblicus/` returns 200 (or the chosen new URL does), and the footer link on https://markus.anth.us/ resolves with 200.\n\nSource: Anthus repo audit, 2026-10-20.",
+  "type": "bug",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-20T04:31:55.575019Z",
+  "updated_at": "2026-10-20T04:31:55.575072Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "audit-filing"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

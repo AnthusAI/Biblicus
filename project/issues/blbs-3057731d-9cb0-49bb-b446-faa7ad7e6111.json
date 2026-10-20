@@ -1,0 +1,25 @@
+{
+  "id": "blbs-3057731d-9cb0-49bb-b446-faa7ad7e6111",
+  "title": "Audit cleanup (low priority): Biblicus",
+  "description": "**Problem**\nLow-severity findings from the 2026-10-20 audit of Biblicus.\n\n**Evidence / Fix** (one checklist line per finding)\n- [ ] docs API-reference links are dead while the docs site is disabled (resolves with the docs-site issue).\n- [ ] README.md:743 shows `poetry run sphinx -b html docs docs/_build/html`; the command is `sphinx-build`.\n- [ ] README license section omits that the license is MIT, and a stray section follows the link definitions.\n- [ ] skills/ai-ml-corpus-retrieval/SKILL.md:12 and its references/ files contain an absolute `/Users/<developer>/Projects` path; use a relative path.\n- [ ] A tracked directory with a leading space in its name (\" /tmp/biblicus_test/\", e.g. metadata/catalog.json, metadata/config.json) is accidental test output; delete it (`git ls-files | grep '^ '`).\n- [ ] infrastructure/reinforcement-memory/cdk.out/ is committed and contains an AWS account ID; remove it from git and add it to .gitignore.\n- [ ] Stale \"Plexus\" naming: docs/reinforcement-memory.md, footer.html:15 (a plexus.anth.us label), _llm.py:18, infrastructure stack.ts:16; rename to Primus (see the Plexus-to-Primus rename work).\n- [ ] platform.aldea.ai documentation links fail DNS resolution; replace or remove.\n\n**How to verify**\n`git ls-files | grep -c '^ '` returns 0; `git ls-files | grep -c cdk.out` returns 0; `grep -rn 'Users/' skills/` returns nothing; `grep -rni plexus docs footer.html src infrastructure` returns nothing.\n\nSource: Anthus repo audit, 2026-10-20.",
+  "type": "bug",
+  "status": "open",
+  "priority": 3,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-20T04:31:59.758027Z",
+  "updated_at": "2026-10-20T04:31:59.758066Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "audit-filing"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
