@@ -1,0 +1,25 @@
+{
+  "id": "blbs-f41c9d65-f1ea-4ba3-840f-2b3cca8ff34b",
+  "title": "Default GROBID image publishes arm64",
+  "description": "",
+  "type": "bug",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-10-20T00:08:14.775924Z",
+  "updated_at": "2026-10-20T00:08:14.775980Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

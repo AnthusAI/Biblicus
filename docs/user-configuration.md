@@ -137,6 +137,17 @@ Environment variables override configuration when present:
 - `BIBLICUS_NEO4J_HTTP_PORT`
 - `BIBLICUS_NEO4J_BOLT_PORT`
 
+## GROBID PDF extraction
+
+URL text extraction converts PDFs with a GROBID service. Biblicus reads GROBID settings from environment variables only:
+
+- `BIBLICUS_GROBID_URL`: base URL of the service. Default `http://127.0.0.1:8070`.
+- `BIBLICUS_GROBID_AUTO_START`: whether Biblicus launches a local Docker container when no service is reachable at a localhost URL. Default **enabled** (any value other than `1`, `true`, `yes` or `on` disables it).
+- `BIBLICUS_GROBID_CONSOLIDATE_HEADER`: ask GROBID to consolidate the header against CrossRef. Default off.
+- `BIBLICUS_GROBID_CONSOLIDATE_CITATIONS`: ask GROBID to consolidate citations against CrossRef. Default off.
+
+Consolidation is off by default because it calls CrossRef during extraction. On a long PDF this hits CrossRef rate limits, can take several minutes (past the 180 second request timeout), and makes the extracted text depend on an external service. Enable it only when you accept that cost.
+
 ## Common pitfalls
 
 - Saving secrets in the corpus directory instead of a user config file.

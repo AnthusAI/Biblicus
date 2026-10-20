@@ -20,3 +20,18 @@ Feature: GROBID runtime environment
     Then the resolved GROBID base URL is "http://127.0.0.1:8070"
     And the resolved GROBID container name is "biblicus-grobid"
     And the resolved GROBID Docker image is "lfoppiano/grobid:0.8.0"
+
+  Scenario: CrossRef consolidation is off by default for header and citations
+    Given the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_HEADER" is unset
+    And the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS" is unset
+    Then the GROBID consolidation fields are header "0" and citations "0"
+
+  Scenario: CrossRef header consolidation can be enabled on its own
+    Given the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_HEADER" is "true"
+    And the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS" is unset
+    Then the GROBID consolidation fields are header "1" and citations "0"
+
+  Scenario: CrossRef citation consolidation can be enabled on its own
+    Given the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_HEADER" is unset
+    And the GROBID environment variable "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS" is "yes"
+    Then the GROBID consolidation fields are header "0" and citations "1"

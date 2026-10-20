@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -22,6 +22,8 @@ URL_TEXT_GROBID_URL_ENV = "BIBLICUS_GROBID_URL"
 GROBID_AUTO_START_ENV = "BIBLICUS_GROBID_AUTO_START"
 GROBID_CONTAINER_NAME_ENV = "BIBLICUS_GROBID_CONTAINER_NAME"
 GROBID_DOCKER_IMAGE_ENV = "BIBLICUS_GROBID_DOCKER_IMAGE"
+GROBID_CONSOLIDATE_HEADER_ENV = "BIBLICUS_GROBID_CONSOLIDATE_HEADER"
+GROBID_CONSOLIDATE_CITATIONS_ENV = "BIBLICUS_GROBID_CONSOLIDATE_CITATIONS"
 
 DOCKER_CANDIDATE_PATHS = (
     "/usr/local/bin/docker",
@@ -33,17 +35,42 @@ _ENSURE_LOCK = __import__("threading").Lock()
 _ENSURED_URL: str | None = None
 
 
+def _environment_flag_enabled(name: str, *, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def grobid_auto_start_enabled() -> bool:
     """
     Return whether localhost GROBID should be auto-started via Docker.
 
+    Auto-start is enabled unless ``BIBLICUS_GROBID_AUTO_START`` is set to a falsey value.
+
     :return: True when auto-start is enabled.
     :rtype: bool
     """
-    raw = os.environ.get(GROBID_AUTO_START_ENV)
-    if raw is not None:
-        return raw.strip().lower() in {"1", "true", "yes", "on"}
-    return True
+    return _environment_flag_enabled(GROBID_AUTO_START_ENV, default=True)
+
+
+def grobid_consolidation_fields() -> Dict[str, str]:
+    """
+    Resolve the GROBID CrossRef consolidation form fields.
+
+    Both header and citation consolidation are off unless enabled through
+    ``BIBLICUS_GROBID_CONSOLIDATE_HEADER`` and ``BIBLICUS_GROBID_CONSOLIDATE_CITATIONS``.
+    Consolidation calls an external service, which makes output non-deterministic and slow.
+
+    :return: Form fields ``consolidateHeader`` and ``consolidateCitations`` with values ``"0"`` or ``"1"``.
+    :rtype: dict[str, str]
+    """
+    header_enabled = _environment_flag_enabled(GROBID_CONSOLIDATE_HEADER_ENV, default=False)
+    citations_enabled = _environment_flag_enabled(GROBID_CONSOLIDATE_CITATIONS_ENV, default=False)
+    return {
+        "consolidateHeader": "1" if header_enabled else "0",
+        "consolidateCitations": "1" if citations_enabled else "0",
+    }
 
 
 def resolve_grobid_base_url() -> str:

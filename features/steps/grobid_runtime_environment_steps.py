@@ -44,6 +44,18 @@ def step_resolved_grobid_container_name(context, expected_name: str) -> None:
     assert grobid_runtime._grobid_container_name() == expected_name
 
 
+@then(
+    'the GROBID consolidation fields are header "{expected_header}" and citations "{expected_citations}"'
+)
+def step_grobid_consolidation_fields(
+    context, expected_header: str, expected_citations: str
+) -> None:
+    assert grobid_runtime.grobid_consolidation_fields() == {
+        "consolidateHeader": expected_header,
+        "consolidateCitations": expected_citations,
+    }
+
+
 @then('the resolved GROBID Docker image is "{expected_image}"')
 def step_resolved_grobid_docker_image(context, expected_image: str) -> None:
     assert grobid_runtime._grobid_docker_image() == expected_image

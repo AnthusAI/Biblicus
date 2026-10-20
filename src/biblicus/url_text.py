@@ -776,7 +776,11 @@ def _convert_pdf_with_grobid(
     source_uri: str,
     content_type: Optional[str],
 ) -> Dict[str, Any]:
-    from .grobid_runtime import ensure_grobid_running, resolve_grobid_base_url
+    from .grobid_runtime import (
+        ensure_grobid_running,
+        grobid_consolidation_fields,
+        resolve_grobid_base_url,
+    )
 
     try:
         base_url = ensure_grobid_running(resolve_grobid_base_url())
@@ -791,8 +795,7 @@ def _convert_pdf_with_grobid(
     boundary = f"----biblicus{uuid.uuid4().hex}"
     body = _multipart_form_data(
         fields={
-            "consolidateHeader": "1",
-            "consolidateCitations": "1",
+            **grobid_consolidation_fields(),
             "includeRawCitations": "0",
             "includeRawAffiliations": "0",
         },
