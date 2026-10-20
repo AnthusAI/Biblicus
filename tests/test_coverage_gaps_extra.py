@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from biblicus import cli
+from biblicus.cli import benchmark as cli_benchmark
+from biblicus.cli import dashboard as cli_dashboard
 from biblicus.ai.models import LlmClientConfig
 from biblicus.analysis import markov, topic_modeling
 from biblicus.analysis.models import (
@@ -284,21 +285,21 @@ def test_cli_benchmark_and_dashboard(monkeypatch, tmp_path):
 
     import subprocess
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: types.SimpleNamespace(returncode=0))
-    cli.cmd_benchmark_download(Namespace(datasets="funsd,unknown,scanned-arxiv", corpus_dir=str(tmp_path), count=None, force=True))
+    cli_benchmark.cmd_benchmark_download(Namespace(datasets="funsd,unknown,scanned-arxiv", corpus_dir=str(tmp_path), count=None, force=True))
 
     result_file = tmp_path / "results.json"
     result_file.write_text(
         json.dumps({"benchmark_name": "demo", "timestamp": "today", "categories": {"forms": {"dataset": "ds", "documents_evaluated": 1, "best_pipeline": "p", "best_score": 0.9}}, "recommendations": {"best": "p"}}),
         encoding="utf-8",
     )
-    cli.cmd_benchmark_report(Namespace(input=str(result_file), output=str(tmp_path / "report.md")))
+    cli_benchmark.cmd_benchmark_report(Namespace(input=str(result_file), output=str(tmp_path / "report.md")))
 
     corpus_dir = tmp_path / "bench"
     gt_dir = corpus_dir / ".biblicus" / "funsd_ground_truth"
     gt_dir.mkdir(parents=True)
     (gt_dir.parent / "config.json").write_text("{}", encoding="utf-8")
     (gt_dir / "doc1.txt").write_text("text", encoding="utf-8")
-    cli.cmd_benchmark_status(Namespace(corpus_dir=str(tmp_path)))
+    cli_benchmark.cmd_benchmark_status(Namespace(corpus_dir=str(tmp_path)))
 
     class FakePublisher:
         def __init__(self, name):
@@ -315,8 +316,8 @@ def test_cli_benchmark_and_dashboard(monkeypatch, tmp_path):
         catalog_path = Path("catalog.json")
 
     monkeypatch.setattr(amplify_mod, "AmplifyPublisher", FakePublisher)
-    monkeypatch.setattr(cli, "Corpus", types.SimpleNamespace(open=lambda path: FakeCorpus(), discover=lambda: FakeCorpus()))
-    assert cli.cmd_dashboard_sync(Namespace(corpus=None, force=False)) == 1
+    monkeypatch.setattr(cli_dashboard, "Corpus", types.SimpleNamespace(open=lambda path: FakeCorpus(), discover=lambda: FakeCorpus()))
+    assert cli_dashboard.cmd_dashboard_sync(Namespace(corpus=None, force=False)) == 1
 
 
 def test_markov_span_markup_and_llm_labels(monkeypatch):

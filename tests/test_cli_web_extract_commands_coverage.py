@@ -8,7 +8,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from biblicus import cli, url_text, web_reference_metadata
+from biblicus import url_text, web_reference_metadata
+import biblicus.cli as cli_package
+from biblicus.cli import common as cli_common
 from biblicus.models import ExtractionSnapshotReference
 
 
@@ -23,6 +25,9 @@ def _read_json_stream(stream_text):
 
 
 def _url_text_payload(status):
+    error = None
+    if status == "failed":
+        error = {"code": "fetch_failed", "message": "unreachable", "details": {"attempt": 1}}
     return {
         "status": status,
         "source_kind": "web",
@@ -33,7 +38,7 @@ def _url_text_payload(status):
         "content_type": None,
         "prompt_version": "url-text-v1",
         "attempts": [],
-        "error": None,
+        "error": error,
     }
 
 
@@ -50,22 +55,25 @@ def test_extract_url_text_reports_invalid_input_json(tmp_path, capsys):
     """Verify that extract url text reports invalid input json."""
     input_path = tmp_path / "broken.json"
     input_path.write_text("{not json", encoding="utf-8")
-    exit_code = cli.main(["extract", "url-text", "--input-json", str(input_path)])
+    exit_code = cli_package.main(["extract", "url-text", "--input-json", str(input_path)])
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"]["code"] == "invalid_input_json"
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"]["code"] == "invalid_input_json"
 
 
 def test_extract_url_text_requires_source_uri(tmp_path, capsys):
     """Verify that extract url text requires source uri."""
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         ["extract", "url-text", "--input-json", _write_input_json(tmp_path, {"source_uri": " "})]
     )
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"] == {
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"] == {
         "code": "missing_source_uri",
         "message": "source_uri is required",
+        "details": {},
     }
 
 
@@ -81,7 +89,7 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
         return _url_text_payload(status)
 
     monkeypatch.setattr(url_text, "extract_url_text", fake_extract_url_text)
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "url-text",
@@ -98,7 +106,24 @@ def test_extract_url_text_prints_output_and_maps_status_to_exit_code(
     )
     captured = capsys.readouterr()
     assert exit_code == expected_exit_code
-    assert _read_json_stream(captured.out) == _url_text_payload(status)
+    if status == "ok":
+        assert _read_json_stream(captured.out) == _url_text_payload(status)
+    else:
+        assert _read_json_stream(captured.out) == {
+            "status": "failed",
+            "error": {
+                "code": "fetch_failed",
+                "message": "unreachable",
+                "details": {
+                    "source_kind": "web",
+                    "strategy": "markdown-then-html-then-direct",
+                    "content_type": None,
+                    "prompt_version": "url-text-v1",
+                    "attempts": [],
+                    "attempt": 1,
+                },
+            },
+        }
     assert recorded_calls == [
         {
             "source_uri": "https://fixture.test/page",
@@ -119,7 +144,7 @@ def test_extract_url_text_uses_default_timeout_and_reports_extraction_error(
         raise url_text.UrlTextExtractionError(code="fetch_failed", message="unreachable")
 
     monkeypatch.setattr(url_text, "extract_url_text", failing_extract_url_text)
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "url-text",
@@ -128,8 +153,9 @@ def test_extract_url_text_uses_default_timeout_and_reports_extraction_error(
         ]
     )
     captured = capsys.readouterr()
-    assert exit_code == 2
-    error_payload = _read_json_stream(captured.err)
+    assert exit_code == 1
+    assert captured.err == ""
+    error_payload = _read_json_stream(captured.out)
     assert error_payload["status"] == "failed"
     assert error_payload["error"]["code"] == "fetch_failed"
     assert recorded_calls[0]["reference_title"] == ""
@@ -139,23 +165,29 @@ def test_extract_url_text_uses_default_timeout_and_reports_extraction_error(
 def test_extract_web_metadata_reports_invalid_input_json_from_standard_input(monkeypatch, capsys):
     """Verify that extract web metadata reports invalid input json from standard input."""
     monkeypatch.setattr("sys.stdin", io.StringIO("[1, 2, 3]"))
-    exit_code = cli.main(["extract", "web-metadata"])
+    exit_code = cli_package.main(["extract", "web-metadata"])
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err) == {
+    assert captured.err == ""
+    assert _read_json_stream(captured.out) == {
         "status": "failed",
-        "error": {"code": "invalid_input_json", "message": "Input JSON must be an object"},
+        "error": {
+            "code": "invalid_input_json",
+            "message": "Input JSON must be an object",
+            "details": {},
+        },
     }
 
 
 def test_extract_web_metadata_requires_source_uri_or_html(tmp_path, capsys):
     """Verify that extract web metadata requires source uri or html."""
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         ["extract", "web-metadata", "--input-json", _write_input_json(tmp_path, {})]
     )
     captured = capsys.readouterr()
     assert exit_code == 2
-    assert _read_json_stream(captured.err)["error"]["code"] == "missing_input"
+    assert captured.err == ""
+    assert _read_json_stream(captured.out)["error"]["code"] == "missing_input"
 
 
 def test_extract_web_metadata_from_html_content_uses_local_source_uri(
@@ -171,7 +203,7 @@ def test_extract_web_metadata_from_html_content_uses_local_source_uri(
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
     )
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "web-metadata",
@@ -213,7 +245,7 @@ def test_extract_web_metadata_from_html_content_keeps_explicit_source_uri(
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
     )
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "web-metadata",
@@ -249,7 +281,7 @@ def test_extract_web_metadata_from_source_uri_fetches_page(
     payload = {"source_uri": "https://fixture.test/page"}
     if timeout_value is not None:
         payload["timeout_seconds"] = timeout_value
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "web-metadata",
@@ -282,7 +314,7 @@ def test_extract_web_metadata_reports_extraction_value_error(monkeypatch, tmp_pa
         "extract_web_reference_metadata_from_url",
         failing_extract_from_url,
     )
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "web-metadata",
@@ -291,10 +323,15 @@ def test_extract_web_metadata_reports_extraction_value_error(monkeypatch, tmp_pa
         ]
     )
     captured = capsys.readouterr()
-    assert exit_code == 2
-    assert _read_json_stream(captured.err) == {
+    assert exit_code == 1
+    assert captured.err == ""
+    assert _read_json_stream(captured.out) == {
         "status": "failed",
-        "error": {"code": "web_metadata_failed", "message": "metadata extraction exploded"},
+        "error": {
+            "code": "web_metadata_failed",
+            "message": "metadata extraction exploded",
+            "details": {},
+        },
     }
 
 
@@ -317,7 +354,7 @@ class _FakeCorpusForSnapshotReuse:
 def test_get_or_build_extraction_snapshot_builds_pipeline_without_recipe(tmp_path):
     """Verify that get or build extraction snapshot builds pipeline without recipe."""
     fake_corpus = _FakeCorpusForSnapshotReuse()
-    reference = cli._get_or_build_extraction_snapshot(
+    reference = cli_common._get_or_build_extraction_snapshot(
         corpus=fake_corpus, recipe_path=tmp_path / "missing.json", analysis_label="analysis"
     )
     assert reference == ExtractionSnapshotReference(
@@ -336,7 +373,7 @@ def test_get_or_build_extraction_snapshot_reads_recipe_json(tmp_path):
         encoding="utf-8",
     )
     fake_corpus = _FakeCorpusForSnapshotReuse()
-    reference = cli._get_or_build_extraction_snapshot(
+    reference = cli_common._get_or_build_extraction_snapshot(
         corpus=fake_corpus, recipe_path=recipe_path, analysis_label="analysis"
     )
     assert reference.extractor_id == "pass-through-text"
@@ -348,7 +385,7 @@ def test_get_or_build_extraction_snapshot_ignores_invalid_recipe_json(tmp_path):
     recipe_path = tmp_path / "recipe.json"
     recipe_path.write_text("{invalid", encoding="utf-8")
     fake_corpus = _FakeCorpusForSnapshotReuse()
-    reference = cli._get_or_build_extraction_snapshot(
+    reference = cli_common._get_or_build_extraction_snapshot(
         corpus=fake_corpus, recipe_path=recipe_path, analysis_label="analysis"
     )
     assert reference.extractor_id == "pipeline"
@@ -368,7 +405,7 @@ def test_extract_web_metadata_command_line_flag_enables_llm_fallback(
     monkeypatch.setattr(
         web_reference_metadata, "extract_web_reference_metadata_from_html", fake_extract_from_html
     )
-    exit_code = cli.main(
+    exit_code = cli_package.main(
         [
             "extract",
             "web-metadata",

@@ -307,12 +307,13 @@ def step_workflow_dependency_edge_cases_done(context) -> None:
 
 @when("I exercise CLI dependency edge cases")
 def step_cli_dependency_edge_cases(context) -> None:
-    from biblicus import cli as cli_module
+    from biblicus.cli import common as cli_common
+    from biblicus.cli import retrieval as cli_retrieval
 
     corpus = Corpus.open(_corpus_path(context, "corpus"))
 
     try:
-        cli_module._dependency_mode(
+        cli_common._dependency_mode(
             argparse.Namespace(auto_deps=True, no_deps=True),
         )
         raise AssertionError("Expected conflicting dependency flags to raise")
@@ -333,14 +334,14 @@ def step_cli_dependency_edge_cases(context) -> None:
     try:
         sys.stdin = DummyStdin(is_tty=False)
         assert (
-            cli_module._dependency_mode(
+            cli_common._dependency_mode(
                 argparse.Namespace(auto_deps=False, no_deps=False),
             )
             == "auto"
         )
         sys.stdin = DummyStdin(is_tty=True)
         assert (
-            cli_module._dependency_mode(
+            cli_common._dependency_mode(
                 argparse.Namespace(auto_deps=False, no_deps=False),
             )
             == "prompt"
@@ -360,10 +361,10 @@ def step_cli_dependency_edge_cases(context) -> None:
     original_input = builtins.input
     try:
         builtins.input = lambda _: "y"
-        assert cli_module._prompt_dependency_plan(ready_plan, "index")
+        assert cli_common._prompt_dependency_plan(ready_plan, "index")
         builtins.input = lambda _: "n"
         try:
-            cli_module._execute_dependency_plan(
+            cli_common._execute_dependency_plan(
                 ready_plan, corpus=corpus, label="index", mode="prompt"
             )
             raise AssertionError("Expected prompt decline to raise")
@@ -381,7 +382,7 @@ def step_cli_dependency_edge_cases(context) -> None:
     )
     complete_plan = Plan(tasks=[complete_task], root=complete_task, status="complete")
     assert (
-        cli_module._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             complete_plan, corpus=corpus, label="index", mode="auto"
         )
         == []
@@ -397,7 +398,7 @@ def step_cli_dependency_edge_cases(context) -> None:
     )
     blocked_plan = Plan(tasks=[blocked_task], root=blocked_task, status="blocked")
     try:
-        cli_module._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             blocked_plan, corpus=corpus, label="index", mode="auto"
         )
         raise AssertionError("Expected blocked plan to raise")
@@ -405,7 +406,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         pass
 
     try:
-        cli_module._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             ready_plan, corpus=corpus, label="index", mode="none"
         )
         raise AssertionError("Expected no-deps plan to raise")
@@ -413,7 +414,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         pass
 
     try:
-        cli_module._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             ready_plan, corpus=corpus, label="index", mode="invalid"
         )
         raise AssertionError("Expected invalid dependency mode to raise")
@@ -429,7 +430,7 @@ def step_cli_dependency_edge_cases(context) -> None:
     )
     query_plan = Plan(tasks=[query_task], root=query_task, status="ready")
     assert (
-        cli_module._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             query_plan, corpus=corpus, label="query", mode="auto"
         )
         == []
@@ -455,7 +456,7 @@ def step_cli_dependency_edge_cases(context) -> None:
         root=query_root,
         status="ready",
     )
-    cli_module._execute_dependency_plan(
+    cli_common._execute_dependency_plan(
         query_plan_with_deps, corpus=corpus, label="query", mode="auto"
     )
 
@@ -488,7 +489,7 @@ def step_cli_dependency_edge_cases(context) -> None:
             no_deps=False,
         )
         try:
-            cli_module.cmd_query(args)
+            cli_retrieval.cmd_query(args)
             raise AssertionError("Expected query without snapshot to raise")
         except ValueError:
             pass

@@ -39,6 +39,10 @@ Typed commands
    :members:
    :undoc-members:
 
+.. automodule:: biblicus.command_failure
+   :members:
+   :undoc-members:
+
 Extraction
 ----------
 

@@ -3,25 +3,36 @@
   "title": "Split cli.py into one module per command group",
   "description": "## Goal\n`src/biblicus/cli.py` is 2,507 lines on main and grows by about 2,300 with the curation branch. Split it into one module per command group (corpus, extract, retrieval and evaluation, analyze, graph, curation, benchmark, sync) under `src/biblicus/cli/` with a small `main` that registers them. No behavior change; the existing features are the safety net. Do this after blbs-12b984 so the new commands are split too. Keep `biblicus = \"biblicus.cli:main\"`.",
   "type": "task",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "b556949a-d72b-408c-8ede-b5c0b176e877",
+      "author": "home",
+      "text": "Done 2026-10-19: PR 79 merged to develop (5abee03). src/biblicus/cli/ package with one module per command group (corpus, extract, retrieval, graph, taxonomy_ontology, steering, research_intake, topic_classifier, analyze, benchmark, crawl, dashboard) plus common.py; biblicus.cli:main unchanged; help output for the root and all 86 parsers byte-identical. First revision used a test proxy that rebound names across modules; sent back, and tests now patch the specific module they depend on, with the shared _execute_dependency_plan reached through cli.common. Single scripts/test.py run: 1307 scenarios pass, coverage 98.43% (fail_under 98).",
+      "created_at": "2026-10-19T19:19:16.551962Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
+    }
+  ],
   "created_at": "2026-10-17T16:41:26.179721Z",
-  "updated_at": "2026-10-17T16:41:26.179965Z",
-  "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
+  "updated_at": "2026-10-19T19:19:17.106470Z",
+  "closed_at": "2026-10-19T19:19:17.106427Z",
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }

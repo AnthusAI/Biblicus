@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from biblicus import cli
+import biblicus.cli as cli_package
 from biblicus import url_text as url_text_module
 
 
@@ -366,7 +366,7 @@ def test_cli_extract_url_text_outputs_json_contract(tmp_path, monkeypatch, capsy
 
     monkeypatch.setattr(url_text_module, "extract_url_text", fake_extract_url_text)
 
-    exit_code = cli.main([
+    exit_code = cli_package.main([
         "extract",
         "url-text",
         "--input-json",
@@ -385,7 +385,7 @@ def test_cli_extract_url_text_rejects_missing_source_uri(tmp_path, capsys):
     input_path = tmp_path / "input.json"
     input_path.write_text(json.dumps({"reference_title": "Missing URI"}), encoding="utf-8")
 
-    exit_code = cli.main([
+    exit_code = cli_package.main([
         "extract",
         "url-text",
         "--input-json",
@@ -395,7 +395,9 @@ def test_cli_extract_url_text_rejects_missing_source_uri(tmp_path, capsys):
     ])
 
     assert exit_code == 2
-    payload = json.loads(capsys.readouterr().err)
+    captured_output = capsys.readouterr()
+    assert captured_output.err == ""
+    payload = json.loads(captured_output.out)
     assert payload["status"] == "failed"
     assert payload["error"]["code"] == "missing_source_uri"
 
@@ -404,7 +406,7 @@ def test_cli_extract_url_text_rejects_malformed_json(tmp_path, capsys):
     input_path = tmp_path / "bad.json"
     input_path.write_text("{not-json", encoding="utf-8")
 
-    exit_code = cli.main([
+    exit_code = cli_package.main([
         "extract",
         "url-text",
         "--input-json",
@@ -414,6 +416,8 @@ def test_cli_extract_url_text_rejects_malformed_json(tmp_path, capsys):
     ])
 
     assert exit_code == 2
-    payload = json.loads(capsys.readouterr().err)
+    captured_output = capsys.readouterr()
+    assert captured_output.err == ""
+    payload = json.loads(captured_output.out)
     assert payload["status"] == "failed"
     assert payload["error"]["code"] == "invalid_input_json"

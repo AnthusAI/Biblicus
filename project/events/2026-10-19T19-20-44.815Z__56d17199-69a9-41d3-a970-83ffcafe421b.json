@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "event_id": "56d17199-69a9-41d3-a970-83ffcafe421b",
+  "issue_id": "blbs-d4c93b",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-19T19:20:44.815Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Define CorpusConfig in coverage_harness_steps",
+    "description": "features/steps/coverage_harness_steps.py references CorpusConfig without importing it. Add the correct import from its real module and ensure a scenario exercises the path, or remove the dead code.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 3,
+    "assignee": null,
+    "parent": null,
+    "labels": []
+  }
+}

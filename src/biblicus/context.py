@@ -103,6 +103,22 @@ class ContextBlock(BaseModel):
     metadata: Optional[Dict[str, object]] = None
 
 
+class TokenCounter(BaseModel):
+    """
+    Token counter configuration for token budget fitting.
+
+    This is a lightweight model wrapper so token fitting remains explicit and testable even when
+    the underlying tokenizer is provided by an optional dependency.
+
+    :ivar tokenizer_id: Tokenizer identifier (for example, naive-whitespace).
+    :vartype tokenizer_id: str
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    tokenizer_id: str = Field(default="naive-whitespace", min_length=1)
+
+
 class ContextSectionBudget(BaseModel):
     """
     Token share budget for one logical section of an assembled context pack.
@@ -144,7 +160,7 @@ class ContextBlockBuildRequest(BaseModel):
     max_tokens: Optional[int] = Field(default=None, ge=1)
     max_characters: Optional[int] = Field(default=None, ge=1)
     section_budgets: List[ContextSectionBudget] = Field(default_factory=list)
-    token_counter: TokenCounter = Field(default_factory=lambda: TokenCounter())
+    token_counter: TokenCounter = Field(default_factory=TokenCounter)
 
 
 class ContextBlockBuildResult(BaseModel):
@@ -179,22 +195,6 @@ class ContextBlockBuildResult(BaseModel):
     total_characters: int = Field(ge=0)
     max_tokens: Optional[int] = Field(default=None, ge=1)
     max_characters: Optional[int] = Field(default=None, ge=1)
-
-
-class TokenCounter(BaseModel):
-    """
-    Token counter configuration for token budget fitting.
-
-    This is a lightweight model wrapper so token fitting remains explicit and testable even when
-    the underlying tokenizer is provided by an optional dependency.
-
-    :ivar tokenizer_id: Tokenizer identifier (for example, naive-whitespace).
-    :vartype tokenizer_id: str
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    tokenizer_id: str = Field(default="naive-whitespace", min_length=1)
 
 
 class TokenBudget(BaseModel):

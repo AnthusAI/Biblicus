@@ -10,18 +10,29 @@
   "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
   "labels": [],
   "dependencies": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "1232877a-3202-49ab-b9b6-ffcaffe85508",
+      "author": "home",
+      "text": "2026-10-19 audit of Papyrus origin/main (a35694b5). Done: step 1 (papyrus-relevance cyclotron seeded from doctrine, AssignmentClaimLease in relevance_sweep.py), step 3 (editor accept/reject -> cyclotron.review, relevance_sweep.py:598), shadow recording with live agreement (relevance_shadow.py, PR 298/304). Not done: (a) no comparison of Cyclotron against the 1-5 quality rubric (reference_curation_signals.py:64 QUALITY_ASSESSMENT_RUBRIC still present and feeds ranking); the only proof is lib/approved-priming-proofs/papyrus.json, 10 held-out sources, agreement 0.9 at 13 labels, no calibration values, no rubric baseline. (b) step 5, steering proposal acceptance through Cyclotron: nothing exists. Remaining work: pair each shadow decision with quality_rating_is on the same reviewed References, n well above 10, record accuracy and calibration for both, then decide promotion. Then step 5. Opt-in auto-reject of clear misses (PR 358) already gates on a fresh proof.",
+      "created_at": "2026-10-19T18:19:56.312886Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
+    }
+  ],
   "created_at": "2026-10-17T16:41:15.671544Z",
-  "updated_at": "2026-10-17T16:41:15.671831Z",
+  "updated_at": "2026-10-19T18:19:56.312917Z",
   "closed_at": null,
-  "right_now_summary": null,
-  "right_now_updated_at": null,
-  "custom": {},
   "agent": {
     "platform": "claude-code",
     "model": "claude-sonnet-5-5",
-    "name": "Claude",
-    "settings": {}
+    "name": "Claude"
   },
-  "agent_assignment": null
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
 }

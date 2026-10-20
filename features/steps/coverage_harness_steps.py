@@ -20,7 +20,11 @@ from biblicus.analysis import models as models
 from biblicus import extraction as extraction
 
 # Core modules we need to touch
-from biblicus import cli, inference, knowledge_base, workflow
+from biblicus import inference, knowledge_base, workflow
+from biblicus.cli import benchmark as cli_benchmark
+from biblicus.cli import common as cli_common
+from biblicus.cli import dashboard as cli_dashboard
+from biblicus.corpus import Corpus
 from biblicus._vendor.dotyaml import interpolation as dot_interpolation
 from biblicus._vendor.dotyaml import loader as dot_loader
 from biblicus._vendor.dotyaml import transformer as dot_transformer
@@ -39,7 +43,7 @@ from biblicus.analysis.models import (
     TopicModelingConfiguration,
     TopicModelingReport,
 )
-from biblicus.constants import CORPUS_DIR_NAME, SIDECAR_SUFFIX
+from biblicus.constants import CORPUS_DIR_NAME, SCHEMA_VERSION, SIDECAR_SUFFIX
 from biblicus.corpus import Corpus
 from biblicus.evaluation import benchmark_runner, metrics, ocr_benchmark, stt_benchmark
 from biblicus.extraction import (
@@ -64,6 +68,7 @@ from biblicus.graph import neo4j
 from biblicus.migration import migrate_layout
 from biblicus.models import (
     CatalogItem,
+    CorpusConfig,
     ExtractedText,
     ExtractionSnapshotReference,
     ExtractionStageOutput,
@@ -677,25 +682,34 @@ def step_run_harness(context) -> None:
 
     with suppress(Exception):
         from biblicus.evaluation import benchmark_runner as bench_mod
-        from biblicus import cli as cli_mod
+        from biblicus.cli import analyze as cli_analyze
+        from biblicus.cli import benchmark as cli_benchmark
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import crawl as cli_crawl
+        from biblicus.cli import dashboard as cli_dashboard
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import graph as cli_graph
+        from biblicus.cli import retrieval as cli_retrieval
+        from biblicus.corpus import Corpus
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
-            cli_mod._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
-            cli_mod._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "2"
-        cli_mod._default_extraction_max_workers()
+        cli_common._default_extraction_max_workers()
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
 
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": None}
         )
 
@@ -741,7 +755,7 @@ def step_run_harness(context) -> None:
         original_bench_runner = bench_mod.BenchmarkRunner
         bench_mod.BenchmarkConfig = _BenchConfig2
         bench_mod.BenchmarkRunner = _BenchRunner2
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines="pipe.yml",
@@ -749,7 +763,7 @@ def step_run_harness(context) -> None:
                 output=str(root / "bench_out.json"),
             )
         )
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines=None,
@@ -779,7 +793,7 @@ def step_run_harness(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(report_input),
                 output=str(root / "bench2.md"),
@@ -793,7 +807,7 @@ def step_run_harness(context) -> None:
         gt_dir = legacy_root / "sroie_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
 
         class _PublisherOk:
             def __init__(self, name):
@@ -825,13 +839,13 @@ def step_run_harness(context) -> None:
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PublisherOk
         )
-        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
+        cli_dashboard.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PublisherRaise
         )
-        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
+        cli_dashboard.cmd_dashboard_sync(argparse.Namespace(corpus=str(_temp_corpus().root), force=False))
 
-        cli_mod.cmd_dashboard_configure(
+        cli_dashboard.cmd_dashboard_configure(
             argparse.Namespace(
                 endpoint="http://example",
                 api_key="k",
@@ -877,7 +891,16 @@ def step_run_harness(context) -> None:
     with suppress(Exception):
         from pydantic import ValidationError
 
-        from biblicus import cli as cli_mod
+        from biblicus.cli import analyze as cli_analyze
+        from biblicus.cli import benchmark as cli_benchmark
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import crawl as cli_crawl
+        from biblicus.cli import dashboard as cli_dashboard
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import graph as cli_graph
+        from biblicus.cli import retrieval as cli_retrieval
+        from biblicus.corpus import Corpus
         from biblicus.errors import IngestCollisionError
         from biblicus.extraction import (
             create_extraction_configuration_manifest,
@@ -906,7 +929,7 @@ def step_run_harness(context) -> None:
         collision_path.parent.mkdir(parents=True, exist_ok=True)
         collision_path.write_text("x", encoding="utf-8")
         collision_corpus.ingest_file(collision_path)
-        original_open = cli_mod.Corpus.open
+        original_open = Corpus.open
         collision_corpus.ingest_source = lambda *args, **kwargs: (_ for _ in ()).throw(
             IngestCollisionError(
                 source_uri=collision_path.as_uri(),
@@ -914,8 +937,8 @@ def step_run_harness(context) -> None:
                 existing_relpath="x",
             )
         )
-        cli_mod.Corpus.open = classmethod(lambda cls, path: collision_corpus)
-        cli_mod.cmd_ingest(
+        Corpus.open = classmethod(lambda cls, path: collision_corpus)
+        cli_corpus.cmd_ingest(
             argparse.Namespace(
                 corpus=str(collision_corpus.root),
                 note=None,
@@ -926,7 +949,7 @@ def step_run_harness(context) -> None:
                 title=None,
             )
         )
-        cli_mod.cmd_ingest(
+        cli_corpus.cmd_ingest(
             argparse.Namespace(
                 corpus=str(collision_corpus.root),
                 note=None,
@@ -937,14 +960,14 @@ def step_run_harness(context) -> None:
                 title=None,
             )
         )
-        cli_mod.Corpus.open = original_open
+        Corpus.open = original_open
 
-        cli_mod._parse_stage_spec("extractor:,a=1")
+        cli_extract._parse_stage_spec("extractor:,a=1")
 
         import_root = cli_corpus.root / "import"
         import_root.mkdir(parents=True, exist_ok=True)
         (import_root / "file.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_import_tree(
+        cli_corpus.cmd_import_tree(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 path=str(import_root),
@@ -953,7 +976,7 @@ def step_run_harness(context) -> None:
             )
         )
         try:
-            cli_mod.cmd_purge(argparse.Namespace(corpus=str(cli_corpus.root), confirm=None))
+            cli_corpus.cmd_purge(argparse.Namespace(corpus=str(cli_corpus.root), confirm=None))
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -977,19 +1000,19 @@ def step_run_harness(context) -> None:
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         write_extraction_snapshot_manifest(snapshot_dir=snapshot_dir, manifest=recipe_manifest)
         write_extraction_latest_pointer(extractor_dir=snapshot_dir.parent, manifest=recipe_manifest)
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=cli_corpus,
             extraction_snapshot=None,
             analysis_label="analysis",
         )
 
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=cli_corpus,
             extraction_snapshot="pipeline:abc",
             analysis_label="analysis",
         )
         recipe_path.unlink()
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=cli_corpus,
             extraction_snapshot=None,
             analysis_label="analysis",
@@ -1003,16 +1026,16 @@ def step_run_harness(context) -> None:
         from biblicus import workflow as workflow_mod
 
         original_build_plan = workflow_mod.build_plan_for_extract
-        original_execute = cli_mod._execute_dependency_plan
-        original_build_snapshot = cli_mod.build_extraction_snapshot
+        original_execute = cli_common._execute_dependency_plan
+        original_build_snapshot = cli_extract.build_extraction_snapshot
         workflow_mod.build_plan_for_extract = lambda *args, **kwargs: types.SimpleNamespace(
             status="complete", tasks=[]
         )
-        cli_mod._execute_dependency_plan = lambda *args, **kwargs: []
-        cli_mod.build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        cli_common._execute_dependency_plan = lambda *args, **kwargs: []
+        cli_extract.build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             model_dump_json=lambda indent=2: "{}"
         )
-        cli_mod.cmd_extract_build(
+        cli_extract.cmd_extract_build(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=[str(build_cfg)],
@@ -1025,7 +1048,7 @@ def step_run_harness(context) -> None:
             )
         )
         try:
-            cli_mod.cmd_extract_build(
+            cli_extract.cmd_extract_build(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     configuration=None,
@@ -1040,7 +1063,7 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.cmd_extract_build(
+        cli_extract.cmd_extract_build(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=None,
@@ -1053,8 +1076,8 @@ def step_run_harness(context) -> None:
             )
         )
         workflow_mod.build_plan_for_extract = original_build_plan
-        cli_mod._execute_dependency_plan = original_execute
-        cli_mod.build_extraction_snapshot = original_build_snapshot
+        cli_common._execute_dependency_plan = original_execute
+        cli_extract.build_extraction_snapshot = original_build_snapshot
 
         extraction_manifest = create_extraction_snapshot_manifest(
             cli_corpus, configuration=config_manifest
@@ -1087,15 +1110,15 @@ def step_run_harness(context) -> None:
             snapshot_dir=extraction_dir, manifest=extraction_manifest
         )
 
-        cli_mod.cmd_extract_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
-        cli_mod.cmd_extract_show(
+        cli_extract.cmd_extract_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
+        cli_extract.cmd_extract_show(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 snapshot=f"pipeline:{extraction_manifest.snapshot_id}",
             )
         )
         try:
-            cli_mod.cmd_extract_delete(
+            cli_extract.cmd_extract_delete(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     snapshot=f"pipeline:{extraction_manifest.snapshot_id}",
@@ -1109,7 +1132,7 @@ def step_run_harness(context) -> None:
         dataset_path = root / "dataset.json"
         dataset_path.write_text("{}", encoding="utf-8")
         try:
-            cli_mod.cmd_extract_evaluate(
+            cli_extract.cmd_extract_evaluate(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     snapshot=None,
@@ -1119,15 +1142,15 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        original_load_dataset = cli_mod.load_extraction_dataset
-        cli_mod.load_extraction_dataset = lambda *args, **kwargs: (_ for _ in ()).throw(
+        original_load_dataset = cli_extract.load_extraction_dataset
+        cli_extract.load_extraction_dataset = lambda *args, **kwargs: (_ for _ in ()).throw(
             ValidationError.from_exception_data(
                 "Dataset",
                 [{"type": "value_error", "loc": ("root",), "msg": "bad", "input": None}],
             )
         )
         try:
-            cli_mod.cmd_extract_evaluate(
+            cli_extract.cmd_extract_evaluate(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     snapshot=f"pipeline:{extraction_manifest.snapshot_id}",
@@ -1137,32 +1160,32 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.load_extraction_dataset = original_load_dataset
+        cli_extract.load_extraction_dataset = original_load_dataset
 
-        original_eval = cli_mod.evaluate_extraction_snapshot
-        original_write_eval = cli_mod.write_extraction_evaluation_result
-        cli_mod.load_extraction_dataset = lambda *args, **kwargs: types.SimpleNamespace()
-        cli_mod.evaluate_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        original_eval = cli_extract.evaluate_extraction_snapshot
+        original_write_eval = cli_extract.write_extraction_evaluation_result
+        cli_extract.load_extraction_dataset = lambda *args, **kwargs: types.SimpleNamespace()
+        cli_extract.evaluate_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             model_dump_json=lambda indent=2: "{}"
         )
-        cli_mod.write_extraction_evaluation_result = lambda *args, **kwargs: None
-        cli_mod.cmd_extract_evaluate(
+        cli_extract.write_extraction_evaluation_result = lambda *args, **kwargs: None
+        cli_extract.cmd_extract_evaluate(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 snapshot=f"pipeline:{extraction_manifest.snapshot_id}",
                 dataset=str(dataset_path),
             )
         )
-        cli_mod.evaluate_extraction_snapshot = original_eval
-        cli_mod.write_extraction_evaluation_result = original_write_eval
-        cli_mod.load_extraction_dataset = original_load_dataset
+        cli_extract.evaluate_extraction_snapshot = original_eval
+        cli_extract.write_extraction_evaluation_result = original_write_eval
+        cli_extract.load_extraction_dataset = original_load_dataset
         from biblicus.graph import extraction as graph_extraction_mod
 
         original_build_graph = graph_extraction_mod.build_graph_snapshot
         graph_extraction_mod.build_graph_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             model_dump_json=lambda indent=2: "{}"
         )
-        cli_mod.cmd_graph_extract(
+        cli_graph.cmd_graph_extract(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=None,
@@ -1180,8 +1203,8 @@ def step_run_harness(context) -> None:
         graph_extraction_mod.load_graph_snapshot_manifest = (
             lambda *args, **kwargs: types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
         )
-        cli_mod.cmd_graph_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
-        cli_mod.cmd_graph_show(
+        cli_graph.cmd_graph_list(argparse.Namespace(corpus=str(cli_corpus.root), extractor_id=None))
+        cli_graph.cmd_graph_show(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 snapshot="simple:abc",
@@ -1214,14 +1237,14 @@ def step_run_harness(context) -> None:
 
         query_corpus = _QueryCorpus(cli_corpus.root)
         from biblicus.api import retrieval as api_retrieval_mod
-        original_open = cli_mod.Corpus.open
+        original_open = Corpus.open
         original_get_retriever = api_retrieval_mod.get_retriever
-        original_execute = cli_mod._execute_dependency_plan
+        original_execute = cli_common._execute_dependency_plan
         original_rerank = api_retrieval_mod.apply_evidence_reranker
         original_filter = api_retrieval_mod.apply_evidence_filter
         original_query_plan = workflow_mod.build_plan_for_query
-        cli_mod.Corpus.open = classmethod(lambda cls, path: query_corpus)
-        cli_mod._execute_dependency_plan = lambda *args, **kwargs: (
+        Corpus.open = classmethod(lambda cls, path: query_corpus)
+        cli_common._execute_dependency_plan = lambda *args, **kwargs: (
             setattr(query_corpus, "latest_snapshot_id", "snap1") or []
         )
         workflow_mod.build_plan_for_query = lambda *args, **kwargs: types.SimpleNamespace(
@@ -1253,7 +1276,7 @@ def step_run_harness(context) -> None:
         api_retrieval_mod.apply_evidence_reranker = lambda *args, **kwargs: []
         api_retrieval_mod.apply_evidence_filter = lambda *args, **kwargs: []
         try:
-            cli_mod.cmd_query(
+            cli_retrieval.cmd_query(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     snapshot=None,
@@ -1272,7 +1295,7 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.cmd_query(
+        cli_retrieval.cmd_query(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 snapshot=None,
@@ -1288,9 +1311,9 @@ def step_run_harness(context) -> None:
                 no_deps=False,
             )
         )
-        cli_mod.Corpus.open = original_open
+        Corpus.open = original_open
         api_retrieval_mod.get_retriever = original_get_retriever
-        cli_mod._execute_dependency_plan = original_execute
+        cli_common._execute_dependency_plan = original_execute
         api_retrieval_mod.apply_evidence_reranker = original_rerank
         api_retrieval_mod.apply_evidence_filter = original_filter
         workflow_mod.build_plan_for_query = original_query_plan
@@ -1298,7 +1321,7 @@ def step_run_harness(context) -> None:
         original_stdin = sys.stdin
         sys.stdin = io.StringIO("")
         try:
-            cli_mod.cmd_context_pack_build(
+            cli_retrieval.cmd_context_pack_build(
                 argparse.Namespace(
                     join_with="\\n",
                     ordering="score",
@@ -1332,7 +1355,7 @@ def step_run_harness(context) -> None:
             ],
         )
         sys.stdin = io.StringIO(retrieval_result.model_dump_json())
-        cli_mod.cmd_context_pack_build(
+        cli_retrieval.cmd_context_pack_build(
             argparse.Namespace(
                 join_with="\\n",
                 ordering="score",
@@ -1344,7 +1367,7 @@ def step_run_harness(context) -> None:
         sys.stdin = original_stdin
 
         try:
-            cli_mod.cmd_eval(
+            cli_retrieval.cmd_eval(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     snapshot=None,
@@ -1358,13 +1381,13 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        original_load_dataset = cli_mod.load_dataset
-        original_eval_snapshot = cli_mod.evaluate_snapshot
-        cli_mod.load_dataset = lambda path: types.SimpleNamespace()
-        cli_mod.evaluate_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        original_load_dataset = cli_retrieval.load_dataset
+        original_eval_snapshot = cli_retrieval.evaluate_snapshot
+        cli_retrieval.load_dataset = lambda path: types.SimpleNamespace()
+        cli_retrieval.evaluate_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             model_dump_json=lambda indent=2: "{}"
         )
-        cli_mod.cmd_eval(
+        cli_retrieval.cmd_eval(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 snapshot="snap1",
@@ -1375,14 +1398,14 @@ def step_run_harness(context) -> None:
                 offset=0,
             )
         )
-        cli_mod.load_dataset = original_load_dataset
-        cli_mod.evaluate_snapshot = original_eval_snapshot
+        cli_retrieval.load_dataset = original_load_dataset
+        cli_retrieval.evaluate_snapshot = original_eval_snapshot
 
-        original_crawl = cli_mod.crawl_into_corpus
-        cli_mod.crawl_into_corpus = lambda *args, **kwargs: types.SimpleNamespace(
+        original_crawl = cli_crawl.crawl_into_corpus
+        cli_crawl.crawl_into_corpus = lambda *args, **kwargs: types.SimpleNamespace(
             model_dump_json=lambda indent=2: "{}"
         )
-        cli_mod.cmd_crawl(
+        cli_crawl.cmd_crawl(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 root_url="https://example.com",
@@ -1392,17 +1415,17 @@ def step_run_harness(context) -> None:
                 tag=None,
             )
         )
-        cli_mod.crawl_into_corpus = original_crawl
+        cli_crawl.crawl_into_corpus = original_crawl
 
         analyze_cfg = root / "analyze.yml"
         analyze_cfg.write_text("{}", encoding="utf-8")
-        original_backend = cli_mod.get_analysis_backend
-        cli_mod.get_analysis_backend = lambda name: types.SimpleNamespace(
+        original_backend = cli_analyze.get_analysis_backend
+        cli_analyze.get_analysis_backend = lambda name: types.SimpleNamespace(
             run_analysis=lambda *args, **kwargs: types.SimpleNamespace(
                 model_dump_json=lambda indent=2: "{}"
             )
         )
-        cli_mod.cmd_analyze_topics(
+        cli_analyze.cmd_analyze_topics(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=[str(analyze_cfg)],
@@ -1411,7 +1434,7 @@ def step_run_harness(context) -> None:
                 extraction_snapshot=None,
             )
         )
-        cli_mod.cmd_analyze_profile(
+        cli_analyze.cmd_analyze_profile(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=None,
@@ -1420,7 +1443,7 @@ def step_run_harness(context) -> None:
                 extraction_snapshot=None,
             )
         )
-        cli_mod.cmd_analyze_markov(
+        cli_analyze.cmd_analyze_markov(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 configuration=[str(analyze_cfg)],
@@ -1429,10 +1452,10 @@ def step_run_harness(context) -> None:
                 extraction_snapshot=None,
             )
         )
-        cli_mod.get_analysis_backend = original_backend
+        cli_analyze.get_analysis_backend = original_backend
 
-        original_backend = cli_mod.get_analysis_backend
-        cli_mod.get_analysis_backend = lambda name: types.SimpleNamespace(
+        original_backend = cli_analyze.get_analysis_backend
+        cli_analyze.get_analysis_backend = lambda name: types.SimpleNamespace(
             run_analysis=lambda *args, **kwargs: (_ for _ in ()).throw(
                 ValidationError.from_exception_data(
                     "Cfg",
@@ -1448,7 +1471,7 @@ def step_run_harness(context) -> None:
             )
         )
         try:
-            cli_mod.cmd_analyze_topics(
+            cli_analyze.cmd_analyze_topics(
                 argparse.Namespace(
                     corpus=str(cli_corpus.root),
                     configuration=[str(analyze_cfg)],
@@ -1460,7 +1483,7 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.get_analysis_backend = original_backend
+        cli_analyze.get_analysis_backend = original_backend
         from biblicus.evaluation import benchmark_runner as bench_mod
 
         bench_cfg = root / "bench.yml"
@@ -1505,7 +1528,7 @@ def step_run_harness(context) -> None:
 
         bench_mod.BenchmarkConfig = _BenchConfig
         bench_mod.BenchmarkRunner = _BenchRunner
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines=None,
@@ -1514,7 +1537,7 @@ def step_run_harness(context) -> None:
             )
         )
         try:
-            cli_mod.cmd_benchmark_run(
+            cli_benchmark.cmd_benchmark_run(
                 argparse.Namespace(
                     config=str(bench_cfg),
                     pipelines=None,
@@ -1525,7 +1548,7 @@ def step_run_harness(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines=None,
@@ -1555,7 +1578,7 @@ def step_run_harness(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(report_input),
                 output=str(root / "bench.md"),
@@ -1564,7 +1587,7 @@ def step_run_harness(context) -> None:
 
         original_run = subprocess.run
         subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1)
-        cli_mod.cmd_benchmark_download(
+        cli_benchmark.cmd_benchmark_download(
             argparse.Namespace(
                 datasets="funsd,sroie,scanned-arxiv,unknown",
                 corpus_dir=str(root / "benchdata"),
@@ -1581,7 +1604,7 @@ def step_run_harness(context) -> None:
         gt_dir = funsd_root / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
 
         class _FailPublisher:
             def __init__(self, name):
@@ -1605,11 +1628,11 @@ def step_run_harness(context) -> None:
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_FailPublisher
         )
-        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(cli_corpus.root), force=False))
+        cli_dashboard.cmd_dashboard_sync(argparse.Namespace(corpus=str(cli_corpus.root), force=False))
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_SkipPublisher
         )
-        cli_mod.cmd_dashboard_sync(
+        cli_dashboard.cmd_dashboard_sync(
             argparse.Namespace(corpus=str(cli_corpus.root), force=False)
         )
 
@@ -3356,8 +3379,8 @@ def step_run_harness(context) -> None:
     dot_loader.load_yaml_view([temp_yaml])
 
     # CLI helpers
-    cli._dependency_mode(types.SimpleNamespace(auto_deps=False, no_deps=False))
-    cli._parse_tags("x,y", ["y", "z"])
+    cli_common._dependency_mode(types.SimpleNamespace(auto_deps=False, no_deps=False))
+    cli_common._parse_tags("x,y", ["y", "z"])
 
     # Extraction manifest helpers
     create_extraction_configuration_manifest(
@@ -3852,10 +3875,10 @@ def step_run_extended_harness(context) -> None:
 
     # CLI coverage: exercise dependency mode branches and parsing helpers
     with suppress(Exception):
-        cli._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=False))
+        cli_common._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=False))
 
     with suppress(Exception):
-        cli._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
+        cli_common._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
 
 
     # Corpus edge helpers: latest snapshot pointers (safe guard)
@@ -3899,7 +3922,10 @@ def step_isolated_workspace(context) -> None:
 def step_exhaust_gaps(context) -> None:
     import time
 
-    from biblicus import cli as cli_mod
+    from biblicus.cli import benchmark as cli_benchmark
+    from biblicus.cli import common as cli_common
+    from biblicus.cli import dashboard as cli_dashboard
+    from biblicus.corpus import Corpus
     from biblicus.analysis import markov as markov_mod
     from biblicus.analysis import topic_modeling
     from biblicus.constants import CORPUS_DIR_NAME, LEGACY_CORPUS_DIR_NAME, SCHEMA_VERSION
@@ -3920,35 +3946,35 @@ def step_exhaust_gaps(context) -> None:
     # dotyaml loader branches: absolute dotenv, missing yaml, override paths
     root = context.coverage_root
     with suppress(Exception):
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": " ", "configuration": {}}
         )
 
     with suppress(Exception):
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": "bad"}
         )
 
     with suppress(Exception):
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": True}
         )
 
     with suppress(Exception):
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": "bad"}
         )
 
     with suppress(Exception):
-        cli_mod._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pipeline", "configuration": {}, "max_workers": 0}
         )
 
-    cli_mod._normalize_extraction_configuration(
+    cli_common._normalize_extraction_configuration(
         {"extractor_id": "pass-through-text", "configuration": {"x": 1}}
     )
     with suppress(Exception):
-        cli_mod.cmd_benchmark_download(
+        cli_benchmark.cmd_benchmark_download(
             argparse.Namespace(
                 datasets="unknown,scanned-arxiv",
                 corpus_dir=str(root / "bench"),
@@ -3958,7 +3984,7 @@ def step_exhaust_gaps(context) -> None:
         )
 
     with suppress(Exception):
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(root / "missing" / "*.json"),
                 output=str(root / "report.md"),
@@ -4590,21 +4616,21 @@ def step_exhaust_gaps(context) -> None:
     resolve_deepgram_api_key()
     resolve_aldea_api_key()
     with suppress(Exception):
-        cli_mod._default_extraction_max_workers()
+        cli_common._default_extraction_max_workers()
 
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
     with suppress(Exception):
-        cli_mod._default_extraction_max_workers()
+        cli_common._default_extraction_max_workers()
 
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
     with suppress(Exception):
-        cli_mod._default_extraction_max_workers()
+        cli_common._default_extraction_max_workers()
 
     os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "2"
-    cli_mod._default_extraction_max_workers()
+    cli_common._default_extraction_max_workers()
     os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
     with suppress(Exception):
-        cli_mod._dependency_mode(argparse.Namespace(auto_deps=True, no_deps=True))
+        cli_common._dependency_mode(argparse.Namespace(auto_deps=True, no_deps=True))
 
     from biblicus.evaluation.metrics import entity_metrics
 
@@ -5794,24 +5820,24 @@ def step_exhaust_gaps(context) -> None:
 
     with suppress(Exception):
         try:
-            cli_mod._normalize_extraction_configuration({"configuration": None})
+            cli_common._normalize_extraction_configuration({"configuration": None})
         except Exception:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod._normalize_extraction_configuration({"max_workers": "abc"})
+            cli_common._normalize_extraction_configuration({"max_workers": "abc"})
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
         try:
-            cli_mod._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
-            cli_mod._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -5843,14 +5869,14 @@ def step_exhaust_gaps(context) -> None:
         write_extraction_latest_pointer(
             extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest
         )
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=corpus_resolve, extraction_snapshot=None, analysis_label="demo"
         )
-        original_loader = cli_mod.load_or_build_extraction_snapshot
-        cli_mod.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        original_loader = cli_common.load_or_build_extraction_snapshot
+        cli_common.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             snapshot_id="s1"
         )
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=corpus_resolve, extraction_snapshot=None, analysis_label="demo"
         )
     except Exception:
@@ -5858,7 +5884,7 @@ def step_exhaust_gaps(context) -> None:
 
     finally:
         with suppress(Exception):
-            cli_mod.load_or_build_extraction_snapshot = original_loader  # type: ignore[assignment]
+            cli_common.load_or_build_extraction_snapshot = original_loader  # type: ignore[assignment]
 
 
     with suppress(Exception):
@@ -5869,7 +5895,7 @@ def step_exhaust_gaps(context) -> None:
         gt_dir = meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
 
 
     try:
@@ -5883,7 +5909,7 @@ def step_exhaust_gaps(context) -> None:
         original_run = subprocess.run
         subprocess.run = lambda *args, **kwargs: _RunOK(0)
         bench_root = root / "bench_download"
-        cli_mod.cmd_benchmark_download(
+        cli_benchmark.cmd_benchmark_download(
             argparse.Namespace(
                 datasets="funsd,sroie",
                 corpus_dir=str(bench_root),
@@ -5924,7 +5950,7 @@ def step_exhaust_gaps(context) -> None:
 
         original_runner = benchmark_runner.BenchmarkRunner
         benchmark_runner.BenchmarkRunner = _FakeRunner  # type: ignore[assignment]
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines="pipe.yml",
@@ -5932,7 +5958,7 @@ def step_exhaust_gaps(context) -> None:
                 output=None,
             )
         )
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg),
                 pipelines="pipe.yml",
@@ -5968,7 +5994,7 @@ def step_exhaust_gaps(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(input=str(report_input), output=str(root / "report.md"))
         )
 
@@ -5987,7 +6013,7 @@ def step_exhaust_gaps(context) -> None:
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(
             AmplifyPublisher=_PubOK
         )
-        cli_mod.cmd_dashboard_sync(
+        cli_dashboard.cmd_dashboard_sync(
             types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
         )
 
@@ -6011,7 +6037,7 @@ def step_exhaust_gaps(context) -> None:
             AmplifyPublisher=_PubBad
         )
         try:
-            cli_mod.cmd_dashboard_sync(
+            cli_dashboard.cmd_dashboard_sync(
                 types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
             )
         except Exception:
@@ -9206,7 +9232,7 @@ def step_exhaust_gaps(context) -> None:
         bench_root = root / "bench_dl"
         original_run = subprocess.run
         subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=0)
-        cli_mod.cmd_benchmark_download(
+        cli_benchmark.cmd_benchmark_download(
             argparse.Namespace(
                 datasets="funsd,sroie",
                 corpus_dir=str(bench_root),
@@ -9242,7 +9268,7 @@ def step_exhaust_gaps(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(result_path),
                 output=str(root / "bench_report.md"),
@@ -9297,7 +9323,7 @@ def step_exhaust_gaps(context) -> None:
         (root / "bench.yml").write_text(
             "benchmark_name: demo\ncategories: {}\npipelines: []\n", encoding="utf-8"
         )
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(root / "bench.yml"),
                 pipelines="p1.yml,p2.yml",
@@ -9305,7 +9331,7 @@ def step_exhaust_gaps(context) -> None:
                 output=str(root / "out.json"),
             )
         )
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(root / "bench.yml"),
                 pipelines=None,
@@ -9330,7 +9356,7 @@ def step_exhaust_gaps(context) -> None:
         gt_dir = meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
 
 
     with suppress(Exception):
@@ -9350,7 +9376,7 @@ def step_exhaust_gaps(context) -> None:
                     errors=["a", "b", "c", "d", "e", "f"],
                 )
         sys.modules["biblicus.sync.amplify_publisher"] = types.SimpleNamespace(AmplifyPublisher=_PubErr)
-        cli_mod.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
+        cli_dashboard.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False))
 
     with suppress(Exception):
         class _PubFail:
@@ -9367,7 +9393,7 @@ def step_exhaust_gaps(context) -> None:
             AmplifyPublisher=_PubFail
         )
         try:
-            cli_mod.cmd_dashboard_sync(
+            cli_dashboard.cmd_dashboard_sync(
                 types.SimpleNamespace(corpus=str(_temp_corpus().root), force=False)
             )
         except Exception:
@@ -10542,50 +10568,50 @@ def step_exhaust_gaps(context) -> None:
     with suppress(Exception):
         # _normalize_extraction_configuration error branches
         try:
-            cli._normalize_extraction_configuration({"configuration": "not-a-dict"})
+            cli_common._normalize_extraction_configuration({"configuration": "not-a-dict"})
         except Exception:
             _ignore_expected_coverage_exception()
 
         try:
-            cli._normalize_extraction_configuration({"max_workers": True})
+            cli_common._normalize_extraction_configuration({"max_workers": True})
         except Exception:
             _ignore_expected_coverage_exception()
 
         # non-pipeline extractor normalization
-        cli._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pass-through-text", "configuration": {}}
         )
         # default workers env parsing errors
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
         try:
-            cli._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         try:
-            cli._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
         except Exception:
             _ignore_expected_coverage_exception()
 
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
 
         # benchmark download branches: unknown and scanned-arxiv
-        cli.cmd_benchmark_download(
+        cli_benchmark.cmd_benchmark_download(
             types.SimpleNamespace(
                 datasets="unknown,scanned-arxiv", corpus_dir=root, count=None, force=False
             )
         )
         # benchmark report error path
         try:
-            cli.cmd_benchmark_report(
+            cli_benchmark.cmd_benchmark_report(
                 types.SimpleNamespace(input="missing*.json", output=root / "out.md")
             )
         except Exception:
             _ignore_expected_coverage_exception()
 
         # dashboard configure writes file
-        cli.cmd_dashboard_configure(
+        cli_dashboard.cmd_dashboard_configure(
             types.SimpleNamespace(endpoint="e", api_key="k", bucket="b", region="r")
         )
 
@@ -10606,7 +10632,7 @@ def step_exhaust_gaps(context) -> None:
             AmplifyPublisher=_Pub
         )
         try:
-            cli.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(corpus.root), force=False))
+            cli_dashboard.cmd_dashboard_sync(types.SimpleNamespace(corpus=str(corpus.root), force=False))
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -10694,10 +10720,10 @@ def step_exhaust_gaps(context) -> None:
         args = types.SimpleNamespace(datasets="funsd", corpus_dir=str(root / "bench-corpora"), count=1, force=True)
         with mock.patch("subprocess.run") as fake_run:
             fake_run.return_value = types.SimpleNamespace(returncode=0)
-            cli.cmd_benchmark_download(args)
+            cli_benchmark.cmd_benchmark_download(args)
 
     with suppress(Exception):
-        cli.cmd_benchmark_status(types.SimpleNamespace(corpus_dir=str(root / "bench-corpora")))
+        cli_benchmark.cmd_benchmark_status(types.SimpleNamespace(corpus_dir=str(root / "bench-corpora")))
 
 
     # corpus helpers purge/reindex branches
@@ -12153,22 +12179,22 @@ def step_exhaust_gaps(context) -> None:
     try:
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "not-int"
         with suppress(Exception):
-            cli._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "0"
         with suppress(Exception):
-            cli._default_extraction_max_workers()
+            cli_common._default_extraction_max_workers()
 
         # dependency mode conflict branch
         with suppress(Exception):
-            cli._resolve_dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
+            cli_common._dependency_mode(types.SimpleNamespace(auto_deps=True, no_deps=True))
 
         # normalize extraction configuration error paths
         for bad_config in [{"configuration": "x"}, {"extractor_id": "", "configuration": {}}, {"max_workers": 0}]:
             with suppress(Exception):
-                cli._normalize_extraction_configuration(bad_config)  # type: ignore[arg-type]
+                cli_common._normalize_extraction_configuration(bad_config)  # type: ignore[arg-type]
 
-        cli._normalize_extraction_configuration(
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "other", "configuration": {"a": 1}, "max_workers": 2}
         )
         # resolve extraction snapshot with and without recipe
@@ -12179,16 +12205,16 @@ def step_exhaust_gaps(context) -> None:
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "1"
         with (
             mock.patch(
-                "biblicus.cli.load_configuration_view",
+                "biblicus.cli.common.load_configuration_view",
                 return_value={"extractor_id": "pipeline"},
                 create=True,
             ),
             mock.patch(
-                "biblicus.cli._normalize_extraction_configuration",
+                "biblicus.cli.common._normalize_extraction_configuration",
                 return_value=("pipeline", {}, None),
             ),
             mock.patch(
-                "biblicus.cli.load_or_build_extraction_snapshot",
+                "biblicus.cli.common.load_or_build_extraction_snapshot",
                 return_value=ExtractionSnapshotManifest(
                     snapshot_id="s-auto",
                     configuration=create_extraction_configuration_manifest(
@@ -12202,12 +12228,12 @@ def step_exhaust_gaps(context) -> None:
                 ),
             ),
         ):
-            cli._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=temp_corpus, extraction_snapshot=None, analysis_label="demo"
             )
         os.environ.pop("BIBLICUS_EXTRACT_MAX_WORKERS", None)
         with suppress(Exception):
-            cli._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=_temp_corpus(), extraction_snapshot=None, analysis_label="demo"
             )
 
@@ -12221,11 +12247,11 @@ def step_exhaust_gaps(context) -> None:
                 )
 
         with suppress(Exception):
-            cli._execute_dependency_plan(_FakePlan("complete", []), corpus=temp_corpus, label="L", mode="auto")
-            cli._execute_dependency_plan(_FakePlan("blocked", []), corpus=temp_corpus, label="L", mode="auto")
+            cli_common._execute_dependency_plan(_FakePlan("complete", []), corpus=temp_corpus, label="L", mode="auto")
+            cli_common._execute_dependency_plan(_FakePlan("blocked", []), corpus=temp_corpus, label="L", mode="auto")
 
         with suppress(Exception):
-            cli._execute_dependency_plan(_FakePlan("ready", []), corpus=temp_corpus, label="L", mode="none")
+            cli_common._execute_dependency_plan(_FakePlan("ready", []), corpus=temp_corpus, label="L", mode="none")
 
     finally:
         if original_workers is None:
@@ -13030,7 +13056,7 @@ def step_exhaust_gaps(context) -> None:
         )
 
         analysis_corpus = _temp_corpus()
-        recipe_path = cli_mod._default_extraction_recipe_path(analysis_corpus)
+        recipe_path = cli_common._default_extraction_recipe_path(analysis_corpus)
         recipe_path.parent.mkdir(parents=True, exist_ok=True)
         recipe_path.write_text(
             "extractor_id: pipeline\nconfiguration:\n  stages:\n    - extractor_id: pass-through-text\n      config: {}\n",
@@ -13043,13 +13069,13 @@ def step_exhaust_gaps(context) -> None:
             configuration={"stages": [{"extractor_id": "pass-through-text", "config": {}}]},
             max_workers=1,
         )
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=analysis_corpus,
             extraction_snapshot=None,
             analysis_label="analysis",
         )
         missing_corpus = _temp_corpus()
-        missing_recipe = cli_mod._default_extraction_recipe_path(missing_corpus)
+        missing_recipe = cli_common._default_extraction_recipe_path(missing_corpus)
         missing_recipe.parent.mkdir(parents=True, exist_ok=True)
         missing_recipe.write_text(
             "extractor_id: pipeline\nconfiguration:\n  stages:\n    - extractor_id: pass-through-text\n      config: {}\n",
@@ -13070,7 +13096,7 @@ def step_exhaust_gaps(context) -> None:
         write_extraction_latest_pointer(
             extractor_dir=snapshot_dir.parent, manifest=snapshot_manifest
         )
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=missing_corpus,
             extraction_snapshot=None,
             analysis_label="analysis",
@@ -13082,7 +13108,7 @@ def step_exhaust_gaps(context) -> None:
         original_run = subprocess_mod.run
         subprocess_mod.run = lambda *args, **kwargs: types.SimpleNamespace(returncode=1)
         try:
-            cli_mod.cmd_benchmark_download(
+            cli_benchmark.cmd_benchmark_download(
                 argparse.Namespace(
                     datasets="funsd,sroie",
                     corpus_dir=str(bench_root),
@@ -13099,10 +13125,10 @@ def step_exhaust_gaps(context) -> None:
         gt_dir = meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("text", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(bench_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(bench_root)))
         # benchmark report with missing file glob
         try:
-            cli_mod.cmd_benchmark_report(
+            cli_benchmark.cmd_benchmark_report(
                 argparse.Namespace(
                     input=str(bench_root / "missing" / "*.json"),
                     output=str(bench_root / "out.md"),
@@ -14709,7 +14735,7 @@ def step_exhaust_stt(context) -> None:
         result.to_markdown(root / "bench_out.md")
         result.print_summary()
         runner.run_category(next(iter(bench_config.categories.values())))
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg_path),
                 pipelines=None,
@@ -14717,7 +14743,7 @@ def step_exhaust_stt(context) -> None:
                 output=None,
             )
         )
-        cli_mod.cmd_benchmark_run(
+        cli_benchmark.cmd_benchmark_run(
             argparse.Namespace(
                 config=str(bench_cfg_path),
                 pipelines=None,
@@ -14737,7 +14763,7 @@ def step_exhaust_stt(context) -> None:
         gt_dir = meta_dir / "funsd_ground_truth"
         gt_dir.mkdir(parents=True, exist_ok=True)
         (gt_dir / "doc.txt").write_text("x", encoding="utf-8")
-        cli_mod.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
+        cli_benchmark.cmd_benchmark_status(argparse.Namespace(corpus_dir=str(status_root)))
 
     with suppress(Exception):
         report_input = root / "bench_results.json"
@@ -14759,7 +14785,7 @@ def step_exhaust_stt(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_benchmark_report(
+        cli_benchmark.cmd_benchmark_report(
             argparse.Namespace(
                 input=str(report_input),
                 output=str(root / "bench_report.md"),
@@ -14791,7 +14817,7 @@ def step_exhaust_stt(context) -> None:
         )
         fake_corpus = _temp_corpus()
         fake_corpus.catalog_path.write_text("{}", encoding="utf-8")
-        cli_mod.cmd_dashboard_sync(argparse.Namespace(corpus=str(fake_corpus.root), force=False))
+        cli_dashboard.cmd_dashboard_sync(argparse.Namespace(corpus=str(fake_corpus.root), force=False))
 
 
 
@@ -14892,17 +14918,18 @@ def step_exhaust_core(context) -> None:
         os.chdir(original_cwd)
 
     with suppress(Exception):
-        from biblicus.cli import (
-            _default_extraction_max_workers,
-            _dependency_mode,
-            _normalize_extraction_configuration,
+        from biblicus.cli.benchmark import (
             cmd_benchmark_download,
             cmd_benchmark_report,
             cmd_benchmark_run,
             cmd_benchmark_status,
-            cmd_dashboard_configure,
-            cmd_dashboard_sync,
         )
+        from biblicus.cli.common import (
+            _default_extraction_max_workers,
+            _dependency_mode,
+            _normalize_extraction_configuration,
+        )
+        from biblicus.cli.dashboard import cmd_dashboard_configure, cmd_dashboard_sync
 
         os.environ["BIBLICUS_EXTRACT_MAX_WORKERS"] = "bad"
         try:
@@ -17780,7 +17807,12 @@ def step_exhaust_core(context) -> None:
         os.environ.pop("BIBLICUS_NEO4J_BOLT_PORT", None)
 
     with suppress(Exception):
-        from biblicus import cli as cli_mod
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import graph as cli_graph
+        from biblicus.cli import retrieval as cli_retrieval
+        from biblicus.corpus import Corpus
 
         corpus = _temp_corpus()
         original_stdin = sys.stdin
@@ -17794,12 +17826,12 @@ def step_exhaust_core(context) -> None:
             files=[],
         )
         try:
-            cli_mod.cmd_ingest(args)
+            cli_corpus.cmd_ingest(args)
         except Exception:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod.cmd_ingest(args)
+            cli_corpus.cmd_ingest(args)
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -17814,9 +17846,9 @@ def step_exhaust_core(context) -> None:
                 tag=[],
                 files=[],
             )
-            cli_mod.cmd_ingest(stdin_args)
+            cli_corpus.cmd_ingest(stdin_args)
             sys.stdin = io.StringIO("hello")
-            cli_mod.cmd_ingest(stdin_args)
+            cli_corpus.cmd_ingest(stdin_args)
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -17832,7 +17864,7 @@ def step_exhaust_core(context) -> None:
             files=[],
         )
         try:
-            cli_mod.cmd_ingest(empty_args)
+            cli_corpus.cmd_ingest(empty_args)
         except Exception:
             _ignore_expected_coverage_exception()
 
@@ -17840,7 +17872,7 @@ def step_exhaust_core(context) -> None:
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "doc.txt").write_text("x", encoding="utf-8")
         try:
-            cli_mod.cmd_import_tree(
+            cli_corpus.cmd_import_tree(
                 argparse.Namespace(
                     corpus=str(corpus.root),
                     path=str(source_root),
@@ -17852,23 +17884,28 @@ def step_exhaust_core(context) -> None:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod._parse_stage_spec('pass-through-text:config={"a":[1,2],"b":"x"}')
+            cli_extract._parse_stage_spec('pass-through-text:config={"a":[1,2],"b":"x"}')
         except Exception:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod._parse_stage_spec("pass-through-text:bad")
+            cli_extract._parse_stage_spec("pass-through-text:bad")
         except Exception:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod._parse_stage_spec("pass-through-text:=")
+            cli_extract._parse_stage_spec("pass-through-text:=")
         except Exception:
             _ignore_expected_coverage_exception()
 
 
     with suppress(Exception):
-        from biblicus import cli as cli_mod
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import graph as cli_graph
+        from biblicus.cli import retrieval as cli_retrieval
+        from biblicus.corpus import Corpus
         from biblicus.models import ExtractionSnapshotReference
 
         corpus = _temp_corpus()
@@ -17884,14 +17921,14 @@ def step_exhaust_core(context) -> None:
             _ = _corpus
             return recipe
 
-        original_default = cli_mod._default_extraction_recipe_path
-        cli_mod._default_extraction_recipe_path = _fake_default_path
-        original_loader = cli_mod.load_or_build_extraction_snapshot
-        cli_mod.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        original_default = cli_common._default_extraction_recipe_path
+        cli_common._default_extraction_recipe_path = _fake_default_path
+        original_loader = cli_common.load_or_build_extraction_snapshot
+        cli_common.load_or_build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             snapshot_id="snap-1"
         )
         try:
-            cli_mod._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=corpus,
                 extraction_snapshot=None,
                 analysis_label="test",
@@ -17899,7 +17936,7 @@ def step_exhaust_core(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod.load_or_build_extraction_snapshot = original_loader
+        cli_common.load_or_build_extraction_snapshot = original_loader
         config_manifest = create_extraction_configuration_manifest(
             extractor_id="pipeline",
             name="cfg",
@@ -17919,7 +17956,7 @@ def step_exhaust_core(context) -> None:
         )
         corpus.write_latest_extraction_snapshot(latest)
         try:
-            cli_mod._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=corpus,
                 extraction_snapshot=None,
                 analysis_label="test",
@@ -17928,7 +17965,7 @@ def step_exhaust_core(context) -> None:
             _ignore_expected_coverage_exception()
 
         try:
-            cli_mod._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=corpus,
                 extraction_snapshot=latest.as_string(),
                 analysis_label="test",
@@ -17936,7 +17973,7 @@ def step_exhaust_core(context) -> None:
         except Exception:
             _ignore_expected_coverage_exception()
 
-        cli_mod._default_extraction_recipe_path = original_default
+        cli_common._default_extraction_recipe_path = original_default
 
     with suppress(Exception):
         from biblicus import extraction as extraction_mod
@@ -18273,23 +18310,28 @@ def step_exhaust_core(context) -> None:
 
     with suppress(Exception):
         from biblicus import workflow as workflow_mod
-        from biblicus import cli as cli_mod
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import graph as cli_graph
+        from biblicus.cli import retrieval as cli_retrieval
+        from biblicus.corpus import Corpus
 
         from biblicus.api import retrieval as api_retrieval_mod
 
-        original_get_retriever = cli_mod.get_retriever
+        original_get_retriever = cli_retrieval.get_retriever
         original_api_get_retriever = api_retrieval_mod.get_retriever
-        original_execute = cli_mod._execute_dependency_plan
+        original_execute = cli_common._execute_dependency_plan
         original_build_index = workflow_mod.build_plan_for_index
         original_build_extract = workflow_mod.build_plan_for_extract
         original_build_query = workflow_mod.build_plan_for_query
-        original_build_snapshot = cli_mod.build_extraction_snapshot
-        original_load_dataset = cli_mod.load_extraction_dataset
-        original_eval_snapshot = cli_mod.evaluate_extraction_snapshot
-        original_write_eval = cli_mod.write_extraction_evaluation_result
+        original_build_snapshot = cli_extract.build_extraction_snapshot
+        original_load_dataset = cli_extract.load_extraction_dataset
+        original_eval_snapshot = cli_extract.evaluate_extraction_snapshot
+        original_write_eval = cli_extract.write_extraction_evaluation_result
         original_apply_reranker = api_retrieval_mod.apply_evidence_reranker
         original_apply_filter = api_retrieval_mod.apply_evidence_filter
-        original_corpus_open = cli_mod.Corpus.open
+        original_corpus_open = Corpus.open
         from biblicus.graph import extraction as graph_extraction_mod
         original_graph_build = graph_extraction_mod.build_graph_snapshot
         original_graph_list = graph_extraction_mod.list_graph_snapshots
@@ -18326,15 +18368,15 @@ def step_exhaust_core(context) -> None:
                     ),
                 )
 
-        cli_mod.get_retriever = lambda name: _FakeRetriever()
+        cli_retrieval.get_retriever = lambda name: _FakeRetriever()
         api_retrieval_mod.get_retriever = lambda name: _FakeRetriever()
-        cli_mod._execute_dependency_plan = lambda *args, **kwargs: []
+        cli_common._execute_dependency_plan = lambda *args, **kwargs: []
         workflow_mod.build_plan_for_index = lambda *args, **kwargs: types.SimpleNamespace(
             status="complete", tasks=[], root=types.SimpleNamespace(reason=None)
         )
         workflow_mod.build_plan_for_extract = workflow_mod.build_plan_for_index
         workflow_mod.build_plan_for_query = workflow_mod.build_plan_for_index
-        cli_mod.build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
+        cli_extract.build_extraction_snapshot = lambda *args, **kwargs: types.SimpleNamespace(
             snapshot_id="snap",
             model_dump_json=lambda indent=2: "{}",
         )
@@ -18343,7 +18385,7 @@ def step_exhaust_core(context) -> None:
             config_path = tmp_corpus.root / "retriever.yml"
             config_path.write_text("retriever_id: scan\n", encoding="utf-8")
             try:
-                cli_mod.cmd_build(
+                cli_retrieval.cmd_build(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         retriever="scan",
@@ -18363,7 +18405,7 @@ def step_exhaust_core(context) -> None:
                 "extractor_id: pass-through-text\nconfiguration: {}\n", encoding="utf-8"
             )
             try:
-                cli_mod.cmd_extract_build(
+                cli_extract.cmd_extract_build(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         configuration=[str(extract_config)],
@@ -18379,7 +18421,7 @@ def step_exhaust_core(context) -> None:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_extract_build(
+                cli_extract.cmd_extract_build(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         configuration=None,
@@ -18416,21 +18458,21 @@ def step_exhaust_core(context) -> None:
                 )
             )
             try:
-                cli_mod.cmd_extract_list(
+                cli_extract.cmd_extract_list(
                     argparse.Namespace(corpus=str(tmp_corpus.root), extractor_id=None)
                 )
             except Exception:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_extract_show(
+                cli_extract.cmd_extract_show(
                     argparse.Namespace(corpus=str(tmp_corpus.root), snapshot=snapshot_ref)
                 )
             except Exception:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_extract_delete(
+                cli_extract.cmd_extract_delete(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         snapshot=snapshot_ref,
@@ -18441,7 +18483,7 @@ def step_exhaust_core(context) -> None:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_extract_delete(
+                cli_extract.cmd_extract_delete(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         snapshot=snapshot_ref,
@@ -18454,13 +18496,13 @@ def step_exhaust_core(context) -> None:
 
             dataset_path = tmp_corpus.root / "dataset.json"
             dataset_path.write_text("{}", encoding="utf-8")
-            cli_mod.load_extraction_dataset = lambda path: types.SimpleNamespace()
-            cli_mod.evaluate_extraction_snapshot = lambda **kwargs: types.SimpleNamespace(
+            cli_extract.load_extraction_dataset = lambda path: types.SimpleNamespace()
+            cli_extract.evaluate_extraction_snapshot = lambda **kwargs: types.SimpleNamespace(
                 model_dump_json=lambda indent=2: "{}"
             )
-            cli_mod.write_extraction_evaluation_result = lambda **kwargs: None
+            cli_extract.write_extraction_evaluation_result = lambda **kwargs: None
             try:
-                cli_mod.cmd_extract_evaluate(
+                cli_extract.cmd_extract_evaluate(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         snapshot=None,
@@ -18495,7 +18537,7 @@ def step_exhaust_core(context) -> None:
                 _ = _path
                 return fake_corpus
 
-            cli_mod.Corpus.open = _open
+            Corpus.open = _open
 
             def _execute(plan, *, corpus, label, mode):
                 _ = plan
@@ -18504,9 +18546,9 @@ def step_exhaust_core(context) -> None:
                 corpus.latest_snapshot_id = "snap"
                 return []
 
-            cli_mod._execute_dependency_plan = _execute
+            cli_common._execute_dependency_plan = _execute
             try:
-                cli_mod.cmd_query(
+                cli_retrieval.cmd_query(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         snapshot=None,
@@ -18526,7 +18568,7 @@ def step_exhaust_core(context) -> None:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_query(
+                cli_retrieval.cmd_query(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         snapshot="snap",
@@ -18547,7 +18589,7 @@ def step_exhaust_core(context) -> None:
 
 
             try:
-                cli_mod.cmd_graph_extract(
+                cli_graph.cmd_graph_extract(
                     argparse.Namespace(
                         corpus=str(tmp_corpus.root),
                         extractor="simple-entities",
@@ -18561,33 +18603,33 @@ def step_exhaust_core(context) -> None:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_graph_list(
+                cli_graph.cmd_graph_list(
                     argparse.Namespace(corpus=str(tmp_corpus.root), extractor_id=None)
                 )
             except Exception:
                 _ignore_expected_coverage_exception()
 
             try:
-                cli_mod.cmd_graph_show(
+                cli_graph.cmd_graph_show(
                     argparse.Namespace(corpus=str(tmp_corpus.root), snapshot="simple-entities:snap")
                 )
             except Exception:
                 _ignore_expected_coverage_exception()
 
         finally:
-            cli_mod.get_retriever = original_get_retriever
+            cli_retrieval.get_retriever = original_get_retriever
             api_retrieval_mod.get_retriever = original_api_get_retriever
-            cli_mod._execute_dependency_plan = original_execute
+            cli_common._execute_dependency_plan = original_execute
             workflow_mod.build_plan_for_index = original_build_index
             workflow_mod.build_plan_for_extract = original_build_extract
             workflow_mod.build_plan_for_query = original_build_query
-            cli_mod.build_extraction_snapshot = original_build_snapshot
-            cli_mod.load_extraction_dataset = original_load_dataset
-            cli_mod.evaluate_extraction_snapshot = original_eval_snapshot
-            cli_mod.write_extraction_evaluation_result = original_write_eval
+            cli_extract.build_extraction_snapshot = original_build_snapshot
+            cli_extract.load_extraction_dataset = original_load_dataset
+            cli_extract.evaluate_extraction_snapshot = original_eval_snapshot
+            cli_extract.write_extraction_evaluation_result = original_write_eval
             api_retrieval_mod.apply_evidence_reranker = original_apply_reranker
             api_retrieval_mod.apply_evidence_filter = original_apply_filter
-            cli_mod.Corpus.open = original_corpus_open
+            Corpus.open = original_corpus_open
             graph_extraction_mod.build_graph_snapshot = original_graph_build
             graph_extraction_mod.list_graph_snapshots = original_graph_list
             graph_extraction_mod.load_graph_snapshot_manifest = original_graph_load
@@ -20113,12 +20155,15 @@ def step_exhaust_migration(context) -> None:
 
 
     try:
-        from biblicus import cli as cli_mod
+        from biblicus.cli import common as cli_common
+        from biblicus.cli import corpus as cli_corpus
+        from biblicus.cli import extract as cli_extract
+        from biblicus.cli import retrieval as cli_retrieval
         from biblicus.configuration import load_configuration_view, parse_dotted_overrides
 
-        cli_mod._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])
+        cli_common._parse_config_pairs(["a=1", "b=2.5", "c={\"x\":1}", "d=[1,2]", "e=text"])
         with suppress(Exception):
-            cli_mod._parse_config_pairs(["bad={"])
+            cli_common._parse_config_pairs(["bad={"])
 
         parse_dotted_overrides(["a=1"])
         with suppress(Exception):
@@ -20135,29 +20180,29 @@ def step_exhaust_migration(context) -> None:
         with suppress(Exception):
             load_configuration_view([str(root / "missing_cfg.yml")], configuration_label="Config")
 
-        cli_mod._parse_stage_spec("pass-through-text")
-        cli_mod._parse_stage_spec("pass-through-text:")
-        cli_mod._parse_stage_spec("pass-through-text:alpha=1,beta={\"x\":1}")
+        cli_extract._parse_stage_spec("pass-through-text")
+        cli_extract._parse_stage_spec("pass-through-text:")
+        cli_extract._parse_stage_spec("pass-through-text:alpha=1,beta={\"x\":1}")
         with suppress(Exception):
-            cli_mod._parse_stage_spec("")
-
-        with suppress(Exception):
-            cli_mod._parse_stage_spec(":")
-
+            cli_extract._parse_stage_spec("")
 
         with suppress(Exception):
-            cli_mod._normalize_extraction_configuration({"configuration": []})
+            cli_extract._parse_stage_spec(":")
+
 
         with suppress(Exception):
-            cli_mod._normalize_extraction_configuration({"extractor_id": "", "configuration": {}})
+            cli_common._normalize_extraction_configuration({"configuration": []})
 
         with suppress(Exception):
-            cli_mod._normalize_extraction_configuration({"max_workers": True})
+            cli_common._normalize_extraction_configuration({"extractor_id": "", "configuration": {}})
 
         with suppress(Exception):
-            cli_mod._normalize_extraction_configuration({"max_workers": -1})
+            cli_common._normalize_extraction_configuration({"max_workers": True})
 
-        cli_mod._normalize_extraction_configuration(
+        with suppress(Exception):
+            cli_common._normalize_extraction_configuration({"max_workers": -1})
+
+        cli_common._normalize_extraction_configuration(
             {"extractor_id": "pass-through-text", "configuration": {"k": "v"}}
         )
 
@@ -20171,7 +20216,7 @@ def step_exhaust_migration(context) -> None:
             tag=None,
             title=None,
         )
-        cli_mod.cmd_ingest(nothing_args)
+        cli_corpus.cmd_ingest(nothing_args)
         ingest_path = cli_corpus.raw_dir / "note.txt"
         ingest_path.parent.mkdir(parents=True, exist_ok=True)
         ingest_path.write_text("note", encoding="utf-8")
@@ -20184,21 +20229,21 @@ def step_exhaust_migration(context) -> None:
             tag=None,
             title=None,
         )
-        cli_mod.cmd_ingest(file_args)
-        cli_mod.cmd_list(argparse.Namespace(corpus=str(cli_corpus.root), limit=10))
+        cli_corpus.cmd_ingest(file_args)
+        cli_corpus.cmd_list(argparse.Namespace(corpus=str(cli_corpus.root), limit=10))
         item_id = list(cli_corpus.load_catalog().items.values())[0].id
-        cli_mod.cmd_show(argparse.Namespace(corpus=str(cli_corpus.root), id=item_id))
-        cli_mod.cmd_reindex(argparse.Namespace(corpus=str(cli_corpus.root)))
+        cli_corpus.cmd_show(argparse.Namespace(corpus=str(cli_corpus.root), id=item_id))
+        cli_corpus.cmd_reindex(argparse.Namespace(corpus=str(cli_corpus.root)))
         import_root = cli_corpus.root / "import"
         import_root.mkdir(parents=True, exist_ok=True)
         (import_root / "a.txt").write_text("a", encoding="utf-8")
-        cli_mod.cmd_import_tree(
+        cli_corpus.cmd_import_tree(
             argparse.Namespace(
                 corpus=str(cli_corpus.root), path=str(import_root), tags=None, tag=None
             )
         )
         with suppress(Exception):
-            cli_mod.cmd_ingest(file_args)
+            cli_corpus.cmd_ingest(file_args)
 
 
         extract_corpus = _temp_corpus()
@@ -20239,10 +20284,10 @@ def step_exhaust_migration(context) -> None:
         )
         write_extraction_snapshot_manifest(snapshot_dir=snap_dir, manifest=snap_manifest)
         snapshot_ref = f"pipeline:{snap_manifest.snapshot_id}"
-        cli_mod.cmd_extract_list(
+        cli_extract.cmd_extract_list(
             argparse.Namespace(corpus=str(extract_corpus.root), extractor_id=None)
         )
-        cli_mod.cmd_extract_show(
+        cli_extract.cmd_extract_show(
             argparse.Namespace(corpus=str(extract_corpus.root), snapshot=snapshot_ref)
         )
         dataset_path = extract_corpus.root / "dataset.json"
@@ -20256,7 +20301,7 @@ def step_exhaust_migration(context) -> None:
             ),
             encoding="utf-8",
         )
-        cli_mod.cmd_extract_evaluate(
+        cli_extract.cmd_extract_evaluate(
             argparse.Namespace(
                 corpus=str(extract_corpus.root),
                 snapshot=snapshot_ref,
@@ -20264,7 +20309,7 @@ def step_exhaust_migration(context) -> None:
             )
         )
         with suppress(Exception):
-            cli_mod.cmd_extract_delete(
+            cli_extract.cmd_extract_delete(
                 argparse.Namespace(
                     corpus=str(extract_corpus.root),
                     snapshot=snapshot_ref,
@@ -20272,7 +20317,7 @@ def step_exhaust_migration(context) -> None:
                 )
             )
 
-        cli_mod.cmd_extract_delete(
+        cli_extract.cmd_extract_delete(
             argparse.Namespace(
                 corpus=str(extract_corpus.root),
                 snapshot=snapshot_ref,
@@ -20301,7 +20346,7 @@ def step_exhaust_migration(context) -> None:
             )
         )
         with suppress(Exception):
-            cli_mod.cmd_extract_evaluate(
+            cli_extract.cmd_extract_evaluate(
                 argparse.Namespace(
                     corpus=str(extract_corpus2.root),
                     snapshot=None,
@@ -20311,7 +20356,7 @@ def step_exhaust_migration(context) -> None:
 
         extract_corpus2.latest_extraction_snapshot_reference = original_latest
 
-        recipe_path = cli_mod._default_extraction_recipe_path(cli_corpus)
+        recipe_path = cli_common._default_extraction_recipe_path(cli_corpus)
         recipe_path.parent.mkdir(parents=True, exist_ok=True)
         recipe_path.write_text("extractor_id: pipeline\nconfiguration: {}\n", encoding="utf-8")
         latest_ref = ExtractionSnapshotReference(extractor_id="pipeline", snapshot_id="latest")
@@ -20323,7 +20368,7 @@ def step_exhaust_migration(context) -> None:
         (latest_dir / "manifest.json").write_text("{}", encoding="utf-8")
         original_latest = cli_corpus.latest_extraction_snapshot_reference
         cli_corpus.latest_extraction_snapshot_reference = lambda extractor_id=None: latest_ref
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=cli_corpus,
             extraction_snapshot=None,
             analysis_label="analysis",
@@ -20332,13 +20377,13 @@ def step_exhaust_migration(context) -> None:
 
         no_recipe = _temp_corpus()
         with suppress(Exception):
-            cli_mod._resolve_extraction_snapshot_for_analysis(
+            cli_common._resolve_extraction_snapshot_for_analysis(
                 corpus=no_recipe,
                 extraction_snapshot=None,
                 analysis_label="analysis",
             )
 
-        cli_mod._resolve_extraction_snapshot_for_analysis(
+        cli_common._resolve_extraction_snapshot_for_analysis(
             corpus=no_recipe,
             extraction_snapshot="pipeline:snap",
             analysis_label="analysis",
@@ -20364,16 +20409,16 @@ def step_exhaust_migration(context) -> None:
 
         original_input = builtins.input
         builtins.input = lambda *args, **kwargs: "y"
-        cli_mod._prompt_dependency_plan(_Plan("ready", [_Task("index")]), "index")
+        cli_common._prompt_dependency_plan(_Plan("ready", [_Task("index")]), "index")
         builtins.input = original_input
-        cli_mod._execute_dependency_plan(
+        cli_common._execute_dependency_plan(
             _Plan("complete", [_Task("index", status="complete")]),
             corpus=cli_corpus,
             label="index",
             mode="auto",
         )
         with suppress(Exception):
-            cli_mod._execute_dependency_plan(
+            cli_common._execute_dependency_plan(
                 _Plan("blocked", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
@@ -20381,7 +20426,7 @@ def step_exhaust_migration(context) -> None:
             )
 
         with suppress(Exception):
-            cli_mod._execute_dependency_plan(
+            cli_common._execute_dependency_plan(
                 _Plan("ready", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
@@ -20389,7 +20434,7 @@ def step_exhaust_migration(context) -> None:
             )
 
         with suppress(Exception):
-            cli_mod._execute_dependency_plan(
+            cli_common._execute_dependency_plan(
                 _Plan("ready", [_Task("index")]),
                 corpus=cli_corpus,
                 label="index",
@@ -20409,11 +20454,11 @@ def step_exhaust_migration(context) -> None:
                 _ = configuration
                 return types.SimpleNamespace(model_dump_json=lambda indent=2: "{}")
 
-        original_get_retriever = cli_mod.get_retriever
-        original_execute = cli_mod._execute_dependency_plan
-        cli_mod.get_retriever = lambda retriever_id: _FakeRetriever()
-        cli_mod._execute_dependency_plan = lambda *args, **kwargs: []
-        cli_mod.cmd_build(
+        original_get_retriever = cli_retrieval.get_retriever
+        original_execute = cli_common._execute_dependency_plan
+        cli_retrieval.get_retriever = lambda retriever_id: _FakeRetriever()
+        cli_common._execute_dependency_plan = lambda *args, **kwargs: []
+        cli_retrieval.cmd_build(
             argparse.Namespace(
                 corpus=str(cli_corpus.root),
                 retriever="scan",
@@ -20423,8 +20468,8 @@ def step_exhaust_migration(context) -> None:
                 dependencies="auto",
             )
         )
-        cli_mod.get_retriever = original_get_retriever
-        cli_mod._execute_dependency_plan = original_execute
+        cli_retrieval.get_retriever = original_get_retriever
+        cli_common._execute_dependency_plan = original_execute
     except Exception:
         _ignore_expected_coverage_exception()
 

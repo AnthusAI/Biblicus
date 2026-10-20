@@ -8,6 +8,7 @@ from typing import Any, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from ..command_failure import InvalidRequestError
 from ..corpus import Corpus
 
 RequestModelType = TypeVar("RequestModelType", bound=BaseModel)
@@ -63,12 +64,12 @@ def validate_request(
     :type fields: Any
     :return: Validated request model.
     :rtype: pydantic.BaseModel
-    :raises ValueError: If the fields do not satisfy the request model.
+    :raises InvalidRequestError: If the fields do not satisfy the request model.
     """
     try:
         return request_type(**fields)
     except ValidationError as error:
-        raise ValueError(format_validation_error(command_label, error)) from error
+        raise InvalidRequestError(format_validation_error(command_label, error)) from error
 
 
 def open_request_corpus(corpus_path: str) -> Corpus:

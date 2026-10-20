@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "a3ff32bb-ee7a-4d67-bdaa-9c1027659c4c",
+  "issue_id": "blbs-bfaab6f3-2daa-477d-afca-18d146b65c6f",
+  "event_type": "field_updated",
+  "occurred_at": "2026-10-19T20:28:10.920Z",
+  "actor_id": "home",
+  "payload": {
+    "changes": {
+      "parent": {
+        "from": "blbs-fda727",
+        "to": "blbs-fda72784-6cb2-403b-92d2-eb0d77941455"
+      }
+    }
+  }
+}

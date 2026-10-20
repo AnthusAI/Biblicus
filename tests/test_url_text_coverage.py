@@ -7,7 +7,6 @@ from urllib.error import HTTPError, URLError
 
 import pytest
 
-from biblicus import grobid_client as grobid_client_module
 from biblicus import grobid_runtime as grobid_runtime_module
 from biblicus import url_text as url_text_module
 from biblicus.url_text import UrlTextExtractionError
@@ -1058,9 +1057,7 @@ def install_fake_grobid_dependencies(monkeypatch, *, ensure_behavior=None):
         "ensure_grobid_running",
         ensure_behavior or default_ensure_grobid_running,
     )
-    monkeypatch.setattr(
-        grobid_client_module, "call_grobid_with_limits", lambda operation: operation()
-    )
+    monkeypatch.setattr(url_text_module, "call_grobid_with_limits", lambda operation: operation())
 
 
 def test_convert_pdf_with_grobid_reports_unreachable_runtime(monkeypatch):
@@ -1104,7 +1101,25 @@ def test_convert_pdf_with_grobid_posts_multipart_and_parses_tei(monkeypatch):
     assert sent_timeout == url_text_module.URL_TEXT_GROBID_TIMEOUT_SECONDS
     assert sent_request.get_method() == "POST"
     assert b"%PDF-bytes" in sent_request.data
-    assert b'name="consolidateHeader"' in sent_request.data
+    assert b'name="consolidateHeader"\r\n\r\n0\r\n' in sent_request.data
+    assert b'name="consolidateCitations"\r\n\r\n0\r\n' in sent_request.data
+
+
+def test_convert_pdf_with_grobid_sends_enabled_consolidation(monkeypatch):
+    """Verify convert pdf with grobid sends consolidation fields enabled by environment."""
+    install_fake_grobid_dependencies(monkeypatch)
+    monkeypatch.setenv("BIBLICUS_GROBID_CONSOLIDATE_HEADER", "1")
+    monkeypatch.setenv("BIBLICUS_GROBID_CONSOLIDATE_CITATIONS", "1")
+    fake_urlopen, recorded_requests = build_sequential_urlopen_fake(
+        [FakeUrlopenResponse(body=b"", content_type="application/xml")]
+    )
+    monkeypatch.setattr(url_text_module, "urlopen", fake_urlopen)
+    url_text_module._convert_pdf_with_grobid(
+        data=b"%PDF", source_uri="https://example.test/a.pdf", content_type=None
+    )
+    sent_request, _ = recorded_requests[0]
+    assert b'name="consolidateHeader"\r\n\r\n1\r\n' in sent_request.data
+    assert b'name="consolidateCitations"\r\n\r\n1\r\n' in sent_request.data
 
 
 def test_convert_pdf_with_grobid_preserves_supplied_content_type(monkeypatch):
