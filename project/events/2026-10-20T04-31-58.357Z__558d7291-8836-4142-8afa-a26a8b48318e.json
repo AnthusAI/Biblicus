@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "558d7291-8836-4142-8afa-a26a8b48318e",
+  "issue_id": "blbs-5d957425-2800-4d27-b24d-ac1ecaa41e52",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-20T04:31:58.357Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "About 25 broken relative links in docs/guides/heron-implementation.md and layout-aware-ocr-results.md",
+    "description": "**Problem**\nRelative links in the two guides point to files that do not exist, so they break in the built site and on GitHub.\n\n**Evidence**\n- About 25 bad relative links across docs/guides/heron-implementation.md and docs/guides/layout-aware-ocr-results.md (found by a link check over the docs tree).\n\n**Fix**\nFix or remove each link (best done together with the rewrite of those guides in the \"task completion reports\" issue). Add a link check to the docs build.\n\n**How to verify**\nA link checker (or `sphinx-build -b linkcheck docs docs/_build/linkcheck`) reports zero broken internal links for those two files.\n\nSource: Anthus repo audit, 2026-10-20.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "audit-filing"
+    }
+  }
+}
