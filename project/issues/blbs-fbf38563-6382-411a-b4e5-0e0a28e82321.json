@@ -3,7 +3,7 @@
   "title": "Every CLI failure prints one JSON error envelope on one stream",
   "description": "Found while building the Papyrus BiblicusRunner (AnthusAI/Papyrus#365). Biblicus CLI failures are inconsistent, so consumers cannot parse failures from one known place:\n- extract url-text: extraction failures print a full UrlTextResponse with status failed on stdout (exit 1, cli.py around 1353 on main 537264d, built in url_text.py 156-180), while input failures (invalid_input_json, missing_source_uri) and an escaped UrlTextExtractionError print a {status, error} envelope on stderr (exit 2, cli.py around 1319-1352).\n- validate_request raises ValueError for invalid request fields (api/_common.py 68-71); main() prints the bare message as plain text on stderr (exit 2, cli.py around 4562-4576). This affects every typed command.\n- extract web-metadata prints {status, error} on stderr; summarize map-reduce and extract article-text print TransformResult with error on stdout (web_transform.py 337-380); context-pack build-blocks has no structured failure.\nDecide one contract (specs first): which stream carries failure JSON, one envelope shape, and exit codes; apply it to every command that emits JSON. Coordinate the consumer change in Papyrus biblicus_runner.py (each typed method declares its failure stream today). Do after blbs-49f6fb lands, since it touches the split cli modules.",
   "type": "bug",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 2,
   "assignee": null,
   "creator": null,
@@ -22,11 +22,23 @@
         "model": "claude-sonnet-5-5",
         "name": "claude"
       }
+    },
+    {
+      "id": "53df29ff-de5f-4fc7-a0e7-fbbdae454ae1",
+      "author": "home",
+      "text": "Done 2026-10-19: PR 82 merged to develop. Typed commands (every API_COMMANDS entry) print exactly one CommandFailure on stdout on failure, {status: failed, error: {code, message, details}}, stderr empty; exit 2 for request rejection (invalid_request, invalid_input_json, missing_source_uri, missing_input, invalid_input, input_too_large, invalid_configuration), exit 1 for operation failures. url-text failures keep diagnostics in typed UrlTextFailureDetails, transform failures in TransformFailureDetails. Contract in docs/api-contract.md. Released as a fix (patch). Papyrus runner must change in lockstep: see the Papyrus follow-up.",
+      "created_at": "2026-10-19T21:25:51.827107Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-10-19T18:46:21.002418Z",
-  "updated_at": "2026-10-19T21:04:55.125340Z",
-  "closed_at": null,
+  "updated_at": "2026-10-19T21:25:51.853267Z",
+  "closed_at": "2026-10-19T21:25:51.853231Z",
   "agent": {
     "platform": "claude-code",
     "model": "claude-opus-5-5",
