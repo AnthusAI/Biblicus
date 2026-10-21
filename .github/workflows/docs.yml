@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PAPYRUS_REQUIREMENT: "papyrus-newsroom[markus]==5.8.0"
+  PAPYRUS_REQUIREMENT: "papyrus-newsroom[markus]==5.10.0"
   MARKUS_REQUIREMENT: "anthus-markus>=0.13.0,<0.14"
 
 jobs:
