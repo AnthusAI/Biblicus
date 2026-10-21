@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "e2d5a988-c1f2-4b33-8e87-5c8171e713cf",
+  "issue_id": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-21T12:47:28.881Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Typed knowledge extraction and weekly trends for publication knowledge bases",
+    "description": "Biblicus-side work needed so a publication can show entity pages, typed relations and weekly trends from its corpus. First consumer: the Shipped publication (AnthusAI/Shipped-web, board key SHIP). Papyrus consumers: initiative PPY-428252 (Public knowledge base: expose the wiki, topics and trends in publications) and initiative PPY-77bb3b (collaborative steering).\n\nScope boundary (see AGENTS.md): Biblicus produces extracted text, analysis outputs and proposals. Editorial acceptance, publishing and the public surface belong to Papyrus; learned decisions belong to Cyclotron.\n\nChildren (all stories):\n1. Weekly time-series bins for topic-trends.\n2. Cluster identity across runs (new, merged, split clusters).\n3. Typed-entity extractor with closed vocabularies, typed relations and entity resolution.\n4. Exploration: decision-model-based extractors versus the current spaCy pipeline.\n5. Pending: cloud job runner for topic modelling and extraction jobs.\n\nDefinition of Done: each child closed or explicitly deferred; Papyrus board items cross-linked by full id.",
+    "issue_type": "epic",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude_code",
+      "model": "Sonnet 5.5",
+      "name": "papyrus-anthus"
+    }
+  }
+}
