@@ -1,0 +1,38 @@
+{
+  "id": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+  "title": "Typed knowledge extraction and weekly trends for publication knowledge bases",
+  "description": "Biblicus-side work needed so a publication can show entity pages, typed relations and weekly trends from its corpus. First consumer: the Shipped publication (AnthusAI/Shipped-web, board key SHIP). Papyrus consumers: initiative PPY-428252 (Public knowledge base: expose the wiki, topics and trends in publications) and initiative PPY-77bb3b (collaborative steering).\n\nScope boundary (see AGENTS.md): Biblicus produces extracted text, analysis outputs and proposals. Editorial acceptance, publishing and the public surface belong to Papyrus; learned decisions belong to Cyclotron.\n\nChildren (all stories):\n1. Weekly time-series bins for topic-trends.\n2. Cluster identity across runs (new, merged, split clusters).\n3. Typed-entity extractor with closed vocabularies, typed relations and entity resolution.\n4. Exploration: decision-model-based extractors versus the current spaCy pipeline.\n5. Pending: cloud job runner for topic modelling and extraction jobs.\n\nDefinition of Done: each child closed or explicitly deferred; Papyrus board items cross-linked by full id.",
+  "type": "epic",
+  "status": "open",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "5da36bb9-3265-4e6e-9a28-b47472ae9873",
+      "author": "home",
+      "text": "Papyrus counterparts: initiative PPY-428252 (public knowledge base; epics PPY-495ec8 wiki, PPY-493930 snapshot and components, PPY-a45fd1 entity trends, PPY-0331f5 emerging-cluster callouts) and initiative PPY-77bb3b (collaborative steering; submit-a-link epic PPY-5b8cdc uses the typed extractor). Shipped pilot: ship-b35fa2.",
+      "created_at": "2026-10-21T12:50:33.242308Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    }
+  ],
+  "created_at": "2026-10-21T12:47:28.881784Z",
+  "updated_at": "2026-10-21T12:50:33.242329Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude_code",
+    "model": "Sonnet 5.5",
+    "name": "papyrus-anthus"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

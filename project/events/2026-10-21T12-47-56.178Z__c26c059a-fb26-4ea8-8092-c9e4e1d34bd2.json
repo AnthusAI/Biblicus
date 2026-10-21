@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "c26c059a-fb26-4ea8-8092-c9e4e1d34bd2",
+  "issue_id": "blbs-e14d5c16-f294-41f5-a082-6855f87e3dcf",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-21T12:47:56.178Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Exploration: decision-model-based extractors versus the spaCy pipeline",
+    "description": "## Context\nEntity extraction in Biblicus does not use a language model today (spaCy NER, dependency relations, co-occurrence). New fast extraction models built on cheaper decision models may do typed entity and relation extraction at lower cost and higher quality than spaCy labels. Evaluate them against the current pipeline for the needs of a publication knowledge base: typed kinds (maker, task, technique, licence) and typed relations (made_by, built_on, replaces).\n\nThis is an exploration. Its output is a written recommendation, not a production extractor. It informs the typed-entity extractor story under the same epic (blbs-d380cb). Papyrus consumer: PPY-428252.\n\nRule: apply the same protocol to every candidate, with no extra help for any baseline (benchmark parity). Any language-model baseline defaults to the cheap GPT-6 Luna tier unless stated otherwise; any other provider or model needs explicit approval before a run.\n\n## Acceptance criteria\n\\`\\`\\`gherkin\nFeature: Extractor evaluation\n  Scenario: Labelled evaluation set\n    Given a labelled set of at least 100 short documents with typed entities and relations\n    And a closed vocabulary file\n    When every candidate extractor runs under the same protocol\n    Then precision, recall and F1 are reported per entity kind and per relation type\n\n  Scenario: Speed and cost\n    Then the report includes median and p95 latency per document and cost per 1,000 documents for each candidate\n\n  Scenario: Recommendation\n    Then the report recommends a backend for the typed-entity extractor\n    And states the failure modes seen, including hallucinated entities and unresolved aliases\n\\`\\`\\`\n\n## Candidates\nCurrent spaCy pipeline (baseline), decision-model-based extractors, and a cheap language-model baseline. Record the version and configuration of each.",
+    "issue_type": "story",
+    "status": "open",
+    "priority": 2,
+    "assignee": null,
+    "parent": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+    "labels": [],
+    "agent": {
+      "platform": "claude_code",
+      "model": "Sonnet 5.5",
+      "name": "papyrus-anthus"
+    }
+  }
+}
