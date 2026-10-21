@@ -16,7 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PAPYRUS_REQUIREMENT: "papyrus-newsroom[markus] @ git+https://github.com/AnthusAI/Papyrus.git@develop"
+  PAPYRUS_REQUIREMENT: "papyrus-newsroom[markus]==5.1.0"
+  MARKUS_REQUIREMENT: "anthus-markus>=0.13.0,<0.14"
 
 jobs:
   build:
@@ -40,7 +41,7 @@ jobs:
           poetry install --with dev
 
       - name: Install the Papyrus documentation builder
-        run: python -m pip install "$PAPYRUS_REQUIREMENT" "anthus-markus>=0.7.0,<1.0.0"
+        run: python -m pip install "$PAPYRUS_REQUIREMENT" "$MARKUS_REQUIREMENT"
 
       - name: Build site
         run: >-
@@ -48,6 +49,7 @@ jobs:
           --docs docs --out _site --name "Biblicus"
           --tagline "Make your documents usable by your assistant, then decide later how you will search and retrieve them."
           --source-url "https://github.com/AnthusAI/Biblicus"
+          --site-url "https://anthusai.github.io/Biblicus/"
           --redirect-former-urls
           --exclude "pr-faq/**" --exclude "reports/**" --exclude "*-plan.md"
 
