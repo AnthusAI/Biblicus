@@ -34,10 +34,22 @@
         "model": "claude-opus-5-5",
         "name": "claude"
       }
+    },
+    {
+      "id": "9a8f6c01-588f-44a1-a0ce-e16d9692c020",
+      "author": "home",
+      "text": "2026-10-21 count by the Cyclotron session (read-only; sites p.apyr.us, threat-intelligence and anth-us, pilobol only partly checked): the rubric-vs-Cyclotron comparison cannot be measured on current data. (1) 0 quality_rating_is SemanticRelations exist in production, current or superseded. (2) Papyrus never stores ratings 1 or 2: setReferenceQualityRating (amplify/functions/category-action/handler.ts around 555-566) writes the relation only when rating >= 3 and rejects otherwise, so the cut-off is accept iff >= 3 and low ratings are lost. (3) No rejection reason codes are recorded (2 comment relations in total, both accepts, reasonCode null). (4) The largest labelled set, p.apyr.us knowledge-corpus-ai-ml-research, has 1,376 accepted and 20 rejected, but 1,341 accepts are bulk trusted imports and 15 rejects are housekeeping; only 6 references were human-reviewed. Threat-intelligence's 25 labels come from an E2E agent. No paid backtest was run. Options: (a) an editor rates a spread of a few hundred pending ai-ml-research references (4,618 pending) and Papyrus stores ratings 1 and 2; or (b) redefine this issue's target as accept/reject only, which still needs a few hundred human editor decisions. Decision is Ryan's.",
+      "created_at": "2026-10-21T02:56:11.037365Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-10-17T16:41:15.671544Z",
-  "updated_at": "2026-10-21T01:06:59.682197Z",
+  "updated_at": "2026-10-21T02:56:11.037401Z",
   "closed_at": null,
   "agent": {
     "platform": "claude-code",
