@@ -346,6 +346,35 @@ def cmd_extract_url_text(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_extract_typed_entities(arguments: argparse.Namespace) -> int:
+    """
+    Extract typed entities and relations from corpus items using a closed vocabulary.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from ..api import TypedEntitiesRequest, extract_typed_entities
+    from ..typed_extraction import typed_entities_json
+    from .common import _corpus_path_from_arguments
+
+    request = validate_request(
+        TypedEntitiesRequest,
+        "extract typed-entities",
+        corpus_path=_corpus_path_from_arguments(arguments),
+        vocabulary_path=arguments.vocabulary,
+        registry_path=arguments.registry,
+        backend=arguments.backend,
+        threshold=arguments.threshold,
+        item_ids=list(arguments.item_id or []),
+        extraction_snapshot=arguments.extraction_snapshot,
+        out_dir=arguments.out,
+    )
+    sys.stdout.write(typed_entities_json(extract_typed_entities(request)))
+    return 0
+
+
 def cmd_extract_web_metadata(arguments: argparse.Namespace) -> int:
     """
     Extract reference metadata (title, authors, dates) from web HTML heuristics.
@@ -539,6 +568,53 @@ def register_extract_commands(subparsers: argparse._SubParsersAction) -> None:
         help="Output format (only json is supported).",
     )
     p_extract_url_text.set_defaults(func=cmd_extract_url_text, typed_command="extract url-text")
+
+    p_extract_typed_entities = extract_sub.add_parser(
+        "typed-entities",
+        help="Extract typed entities and relations from corpus items using a closed vocabulary.",
+    )
+    _add_common_corpus_arg(p_extract_typed_entities)
+    p_extract_typed_entities.add_argument(
+        "--vocabulary",
+        required=True,
+        help="Closed vocabulary file (YAML or JSON) listing entity kinds and relation types.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--registry",
+        default=None,
+        help="Registry of accepted entities (JSON list of key, kind, aliases). Omit to propose every mention.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--backend",
+        choices=["gliner2", "registry-only"],
+        default="gliner2",
+        help="gliner2 runs the registry matcher then GLiNER2; registry-only runs the matcher alone.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--threshold",
+        type=float,
+        default=0.7,
+        help="Score threshold for the backend, greater than 0 and at most 1.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--item-id",
+        action="append",
+        default=None,
+        help="Item identifier to process. Repeat for several items. Default: every item with extracted text.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--extraction-snapshot",
+        default=None,
+        help="Extraction snapshot as extractor_id:snapshot_id supplying item text. Default: the latest snapshot.",
+    )
+    p_extract_typed_entities.add_argument(
+        "--out",
+        default=None,
+        help="Directory that also receives output.json. The corpus analysis folder always receives it.",
+    )
+    p_extract_typed_entities.set_defaults(
+        func=cmd_extract_typed_entities, typed_command="extract typed-entities"
+    )
 
     p_extract_web_metadata = extract_sub.add_parser(
         "web-metadata",

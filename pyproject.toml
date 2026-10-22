@@ -93,6 +93,9 @@ reinforcement-memory = [
   "virtuus>=0.5.0",
   "bertopic>=0.17.4",
 ]
+typed-extraction = [
+  "gliner2[local]>=2.1.0,<2.2",
+]
 
 [tool.poetry.group.dev.dependencies]
 behave = ">=1.2.6"

@@ -11,7 +11,7 @@ Feature: Typed application programming interface contract for Papyrus
     When I edit, delete and add published schema files in the scratch copy
     Then the schema check reports the changed, missing and unexpected files
     When I regenerate the schemas into the scratch copy
-    Then the scratch copy is current again with 38 schema files
+    Then the scratch copy is current again with 40 schema files
 
   Scenario: Reindex and query output validates against the published schemas
     Given I initialized a corpus at "api-retrieval-lab"
