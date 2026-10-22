@@ -1,0 +1,52 @@
+# Closed vocabulary for the Shipped publication knowledge base.
+# Per-publication data: Biblicus never hard-codes these kinds or relation types.
+# The label is the short natural-language name given to zero-shot extractors; every candidate receives the same labels and no further description.
+version: 1
+publication: shipped
+entity_kinds:
+  - key: maker
+    label: company or developer
+    description: An organisation or person that releases or trains a model (for example a lab, company, research team or independent developer).
+  - key: model
+    label: AI model
+    description: A specific named model, checkpoint, version or hosted model product (for example a model with a size or version suffix).
+  - key: model_family
+    label: model family
+    description: A named series or line of models without a size or checkpoint suffix (for example a generation such as Gemma 4).
+  - key: task
+    label: task
+    description: A job a model is built or used for (for example content moderation, voice cloning, text-to-speech, routing).
+  - key: technique
+    label: training technique
+    description: A training or architecture method (for example LoRA, mixture-of-experts, reinforcement learning, distillation).
+  - key: licence
+    label: software licence
+    description: A named licence or licence family that governs weights or code (for example Apache 2.0, MIT, CC BY-NC 4.0, a maker-specific licence).
+  - key: dataset
+    label: benchmark or dataset
+    description: A named benchmark, test set or training dataset.
+  - key: platform
+    label: software platform
+    description: A named service, runtime, hub or serving stack (hardware and languages are excluded).
+  - key: concept
+    label: concept
+    description: An abstract idea or interface the publication discusses (for example decision model, guardrail, safety classifier, System One).
+relation_types:
+  - key: made_by
+    label: made by
+    description: A model or model family was made or published by a maker.
+  - key: built_on
+    label: built on
+    description: A model was fine-tuned, adapted or derived from another model or model family.
+  - key: measured_by
+    label: measured by
+    description: A model was evaluated on a named dataset or benchmark.
+  - key: replaces
+    label: replaces
+    description: A newer model replaces an older one in a product or line.
+  - key: successor_of
+    label: successor of
+    description: A model is the next version of an earlier model.
+  - key: licensed_under
+    label: licensed under
+    description: A model is released under a licence.
