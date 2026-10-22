@@ -23,8 +23,10 @@ from ._common import (
 )
 from .analysis import (
     TopicContextRequest,
+    TopicIdentityRequest,
     TopicTrendsRequest,
     analyze_topic_context,
+    analyze_topic_identity,
     analyze_topic_trends,
 )
 from .context_pack import (
@@ -109,6 +111,7 @@ def _registry_entries() -> Dict[str, ApiCommand]:
     from ..taxonomy import TaxonomyDiscoveryOutput, TaxonomyRecordOutput
     from ..topic_classifier import TopicClassifierProjectionOutput, TopicClassifierTrainOutput
     from ..topic_context import TopicContextOutput
+    from ..topic_identity import TopicIdentityOutput
     from ..topic_trends import TopicTrendOutput
     from ..web_transform import ArticleInput, TransformResult
 
@@ -182,6 +185,13 @@ def _registry_entries() -> Dict[str, ApiCommand]:
             TopicTrendsRequest,
             TopicTrendOutput,
             analyze_topic_trends,
+        ),
+        (
+            "analyze-topic-identity",
+            "analyze",
+            TopicIdentityRequest,
+            TopicIdentityOutput,
+            analyze_topic_identity,
         ),
         (
             "context-pack-build-blocks",
@@ -265,6 +275,7 @@ __all__ = [
     "TopicClassifierProjectRequest",
     "TopicClassifierTrainRequest",
     "TopicContextRequest",
+    "TopicIdentityRequest",
     "TopicTrendsRequest",
     "UrlTextRequest",
     "UrlTextFailureDetails",

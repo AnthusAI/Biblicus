@@ -82,6 +82,7 @@ def step_every_command_published(context) -> None:
         "topic-classifier-project",
         "analyze-topic-context",
         "analyze-topic-trends",
+        "analyze-topic-identity",
         "context-pack-build-blocks",
         "summarize-map-reduce",
         "extract-url-text",

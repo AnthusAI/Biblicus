@@ -19,6 +19,10 @@ keywords. Biblicus supports BERTopic as an optional dependency and forwards its 
 the BERTopic constructor. This allows you to tune clustering behavior while keeping the output in a consistent
 schema.
 
+## How many documents BERTopic needs
+
+BERTopic needs a reasonable number of documents before its clusters are stable: with a few dozen documents, clusters appear and vanish between runs and most documents fall into the outlier topic (`-1`). Plan for hundreds of documents. The minimum corpus size at which clusters stayed usable is not known in advance and depends on the corpus, so record the smallest corpus size you actually observed to give stable clusters, and treat anything below it as unreliable. `analyze topic-identity` reports `document_count`, `outlier_document_count` and `cluster_count` for every run so the numbers are on record beside the clusters. See [Topic identity](topic-identity.md).
+
 ## Pipeline stages
 
 - Text collection reads extracted text artifacts from an extraction snapshot.
@@ -331,6 +335,6 @@ match the keywords, adjust lexical processing or increase `min_topic_size` to re
 
 ## Common pitfalls
 
-- Using too few documents for BERTopic defaults (aim for at least 16).
+- Using too few documents for BERTopic defaults (aim for at least 16, and for hundreds before relying on cluster identity across runs).
 - Forgetting to enable stop words and ending up with filler topics.
 - Comparing runs that used different extraction prompts or lexical settings.
