@@ -95,6 +95,7 @@ Extraction turns raw files into usable text. Biblicus supports pluggable extract
 
 - [Extraction](extraction.md)
 - [Extraction Evaluation](extraction-evaluation.md)
+- [Typed Extractor Evaluation](typed-extractor-evaluation.md)
 - [Extractors](extractors/index.md)
 - [Speech to Text](STT.md)
 

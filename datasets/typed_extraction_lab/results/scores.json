@@ -1,0 +1,5706 @@
+[
+  {
+    "label": "gazetteer",
+    "meta": {
+      "candidate": "gazetteer",
+      "name": "gazetteer",
+      "version": "biblicus-evaluation alias matcher (normalised token longest match)",
+      "threshold": 0.5,
+      "load_seconds": 6.875023245811462e-06,
+      "peak_rss_mb": 23.140625,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 18.05322265625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8591549295774648,
+            "recall": 0.3860759493670886,
+            "f1": 0.5327510917030568,
+            "tp": 61,
+            "fp": 10,
+            "fn": 97,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.45652173913043476,
+            "recall": 0.08823529411764706,
+            "f1": 0.147887323943662,
+            "tp": 21,
+            "fp": 25,
+            "fn": 217,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 6,
+            "fn": 19,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.7404580152671756,
+            "recall": 0.7950819672131147,
+            "f1": 0.766798418972332,
+            "tp": 97,
+            "fp": 34,
+            "fn": 25,
+            "support": 122
+          },
+          "technique": {
+            "precision": 1.0,
+            "recall": 0.8444444444444444,
+            "f1": 0.9156626506024096,
+            "tp": 38,
+            "fp": 0,
+            "fn": 7,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.9852941176470589,
+            "recall": 0.7976190476190477,
+            "f1": 0.8815789473684211,
+            "tp": 67,
+            "fp": 1,
+            "fn": 17,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 1.0,
+            "recall": 0.3,
+            "f1": 0.4615384615384615,
+            "tp": 3,
+            "fp": 0,
+            "fn": 7,
+            "support": 10
+          },
+          "platform": {
+            "precision": 1.0,
+            "recall": 0.75,
+            "f1": 0.8571428571428571,
+            "tp": 36,
+            "fp": 0,
+            "fn": 12,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.9,
+            "recall": 0.84375,
+            "f1": 0.870967741935484,
+            "tp": 27,
+            "fp": 3,
+            "fn": 5,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.8158508158508159,
+          "recall": 0.46296296296296297,
+          "f1": 0.5907172995780591,
+          "tp": 350,
+          "fp": 79,
+          "fn": 406,
+          "support": 756
+        },
+        "macro_f1": 0.6038141659118538,
+        "untyped": {
+          "precision": 0.8205128205128205,
+          "recall": 0.4656084656084656,
+          "f1": 0.5940928270042194,
+          "tp": 352,
+          "fp": 77,
+          "fn": 404,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8591549295774648,
+            "recall": 0.3860759493670886,
+            "f1": 0.5327510917030568,
+            "tp": 61,
+            "fp": 10,
+            "fn": 97,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6086956521739131,
+            "recall": 0.11764705882352941,
+            "f1": 0.19718309859154928,
+            "tp": 28,
+            "fp": 18,
+            "fn": 210,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 6,
+            "fn": 19,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.7709923664122137,
+            "recall": 0.8278688524590164,
+            "f1": 0.7984189723320158,
+            "tp": 101,
+            "fp": 30,
+            "fn": 21,
+            "support": 122
+          },
+          "technique": {
+            "precision": 1.0,
+            "recall": 0.8444444444444444,
+            "f1": 0.9156626506024096,
+            "tp": 38,
+            "fp": 0,
+            "fn": 7,
+            "support": 45
+          },
+          "licence": {
+            "precision": 1.0,
+            "recall": 0.8095238095238095,
+            "f1": 0.8947368421052632,
+            "tp": 68,
+            "fp": 0,
+            "fn": 16,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 1.0,
+            "recall": 0.3,
+            "f1": 0.4615384615384615,
+            "tp": 3,
+            "fp": 0,
+            "fn": 7,
+            "support": 10
+          },
+          "platform": {
+            "precision": 1.0,
+            "recall": 0.75,
+            "f1": 0.8571428571428571,
+            "tp": 36,
+            "fp": 0,
+            "fn": 12,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.9666666666666667,
+            "recall": 0.90625,
+            "f1": 0.9354838709677419,
+            "tp": 29,
+            "fp": 1,
+            "fn": 3,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.8484848484848485,
+          "recall": 0.48148148148148145,
+          "f1": 0.6143459915611814,
+          "tp": 364,
+          "fp": 65,
+          "fn": 392,
+          "support": 756
+        },
+        "macro_f1": 0.6214353161092617,
+        "untyped": {
+          "precision": 0.8671328671328671,
+          "recall": 0.49206349206349204,
+          "f1": 0.6278481012658227,
+          "tp": 372,
+          "fp": 57,
+          "fn": 384,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 0.16124997637234628,
+      "p95": 0.35405656381044537,
+      "mean": 0.18156099610332346
+    },
+    "cpu_ms": {
+      "median": 0.15749999999999792,
+      "p95": 0.33949999999999314,
+      "mean": 0.1756267605633807
+    },
+    "cpu_seconds_per_1000_documents": 0.1756267605633807,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "known_resolved_correctly": 352,
+      "new_wrongly_merged": 12
+    },
+    "failure_modes": {
+      "predicted_mentions": 429,
+      "spurious_no_gold_overlap": 10,
+      "wrong_kind_overlap": 55,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "streaming (task)",
+          6
+        ],
+        [
+          "Laya (model_family)",
+          1
+        ],
+        [
+          "classify (task)",
+          1
+        ],
+        [
+          "V1.1 (model)",
+          1
+        ],
+        [
+          "System One (concept)",
+          1
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (task vs model)",
+          19
+        ],
+        [
+          "Llama (model vs model)",
+          5
+        ],
+        [
+          "Jev (model vs model)",
+          3
+        ],
+        [
+          "Qwen3 (model vs model_family)",
+          3
+        ],
+        [
+          "Mistral (maker vs model)",
+          3
+        ],
+        [
+          "NVIDIA (maker vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner-medium@0.3",
+    "meta": {
+      "candidate": "gliner-medium@0.3",
+      "name": "gliner-medium",
+      "version": "gliner 0.2.29, torch 2.14.1, urchade/gliner_medium-v2.1, threshold 0.3",
+      "threshold": 0.3,
+      "load_seconds": 26.16231116699055,
+      "peak_rss_mb": 2198.484375,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 1,
+      "machine_load_average_at_end": 62.82275390625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8839285714285714,
+            "recall": 0.6265822784810127,
+            "f1": 0.7333333333333333,
+            "tp": 99,
+            "fp": 13,
+            "fn": 59,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.4679245283018868,
+            "recall": 0.5210084033613446,
+            "f1": 0.49304174950298213,
+            "tp": 124,
+            "fp": 141,
+            "fn": 114,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.2222222222222222,
+            "recall": 0.42105263157894735,
+            "f1": 0.2909090909090909,
+            "tp": 8,
+            "fp": 28,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.2549019607843137,
+            "recall": 0.10655737704918032,
+            "f1": 0.15028901734104044,
+            "tp": 13,
+            "fp": 38,
+            "fn": 109,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.057971014492753624,
+            "recall": 0.08888888888888889,
+            "f1": 0.07017543859649124,
+            "tp": 4,
+            "fp": 65,
+            "fn": 41,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7613636363636364,
+            "recall": 0.7976190476190477,
+            "f1": 0.7790697674418605,
+            "tp": 67,
+            "fp": 21,
+            "fn": 17,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.16,
+            "recall": 0.4,
+            "f1": 0.22857142857142856,
+            "tp": 4,
+            "fp": 21,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.22388059701492538,
+            "recall": 0.625,
+            "f1": 0.3296703296703297,
+            "tp": 30,
+            "fp": 104,
+            "fn": 18,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 85,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.40346820809248557,
+          "recall": 0.46164021164021163,
+          "f1": 0.4305983960518199,
+          "tp": 349,
+          "fp": 516,
+          "fn": 407,
+          "support": 756
+        },
+        "macro_f1": 0.34167335059628406,
+        "untyped": {
+          "precision": 0.5271676300578034,
+          "recall": 0.6031746031746031,
+          "f1": 0.5626156693399137,
+          "tp": 456,
+          "fp": 409,
+          "fn": 300,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9196428571428571,
+            "recall": 0.6518987341772152,
+            "f1": 0.762962962962963,
+            "tp": 103,
+            "fp": 9,
+            "fn": 55,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.539622641509434,
+            "recall": 0.6008403361344538,
+            "f1": 0.5685884691848906,
+            "tp": 143,
+            "fp": 122,
+            "fn": 95,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.3055555555555556,
+            "recall": 0.5789473684210527,
+            "f1": 0.4000000000000001,
+            "tp": 11,
+            "fp": 25,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.2549019607843137,
+            "recall": 0.10655737704918032,
+            "f1": 0.15028901734104044,
+            "tp": 13,
+            "fp": 38,
+            "fn": 109,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.11594202898550725,
+            "recall": 0.17777777777777778,
+            "f1": 0.14035087719298248,
+            "tp": 8,
+            "fp": 61,
+            "fn": 37,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7954545454545454,
+            "recall": 0.8333333333333334,
+            "f1": 0.8139534883720929,
+            "tp": 70,
+            "fp": 18,
+            "fn": 14,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.16,
+            "recall": 0.4,
+            "f1": 0.22857142857142856,
+            "tp": 4,
+            "fp": 21,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2462686567164179,
+            "recall": 0.6875,
+            "f1": 0.3626373626373626,
+            "tp": 33,
+            "fp": 101,
+            "fn": 15,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 85,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.44508670520231214,
+          "recall": 0.5092592592592593,
+          "f1": 0.47501542257865514,
+          "tp": 385,
+          "fp": 480,
+          "fn": 371,
+          "support": 756
+        },
+        "macro_f1": 0.38081706736252896,
+        "untyped": {
+          "precision": 0.6104046242774567,
+          "recall": 0.6984126984126984,
+          "f1": 0.6514497223935842,
+          "tp": 528,
+          "fp": 337,
+          "fn": 228,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 139.18458350235596,
+      "p95": 194.62557710066895,
+      "mean": 145.8836029587858
+    },
+    "cpu_ms": {
+      "median": 206.6100000000013,
+      "p95": 284.4743000000008,
+      "mean": 217.39121830985914
+    },
+    "cpu_seconds_per_1000_documents": 217.39121830985914,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 240,
+      "known_resolved_correctly": 135,
+      "known_left_unresolved": 10
+    },
+    "failure_modes": {
+      "predicted_mentions": 865,
+      "spurious_no_gold_overlap": 289,
+      "wrong_kind_overlap": 191,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "31B (model)",
+          4
+        ],
+        [
+          "E2B (model)",
+          4
+        ],
+        [
+          "E4B (model)",
+          4
+        ],
+        [
+          "GPU (platform)",
+          4
+        ],
+        [
+          "Context (concept)",
+          3
+        ],
+        [
+          "Base model (model)",
+          3
+        ],
+        [
+          "reasoning (concept)",
+          3
+        ],
+        [
+          "state (concept)",
+          3
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MIT (platform vs licence)",
+          6
+        ],
+        [
+          "voice cloning (technique vs task)",
+          5
+        ],
+        [
+          "decision model (model vs concept)",
+          5
+        ],
+        [
+          "Fish Audio (platform vs maker)",
+          4
+        ],
+        [
+          "OpenBMB (platform vs maker)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner-medium@0.5",
+    "meta": {
+      "candidate": "gliner-medium@0.5",
+      "name": "gliner-medium",
+      "version": "gliner 0.2.29, torch 2.14.1, urchade/gliner_medium-v2.1, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 36.51355020800838,
+      "peak_rss_mb": 1698.234375,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 41.2861328125
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9090909090909091,
+            "recall": 0.569620253164557,
+            "f1": 0.7003891050583658,
+            "tp": 90,
+            "fp": 9,
+            "fn": 68,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.5561224489795918,
+            "recall": 0.4579831932773109,
+            "f1": 0.5023041474654378,
+            "tp": 109,
+            "fp": 87,
+            "fn": 129,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.3333333333333333,
+            "recall": 0.42105263157894735,
+            "f1": 0.372093023255814,
+            "tp": 8,
+            "fp": 16,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3333333333333333,
+            "recall": 0.07377049180327869,
+            "f1": 0.12080536912751677,
+            "tp": 9,
+            "fp": 18,
+            "fn": 113,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.0851063829787234,
+            "recall": 0.08888888888888889,
+            "f1": 0.08695652173913045,
+            "tp": 4,
+            "fp": 43,
+            "fn": 41,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7901234567901234,
+            "recall": 0.7619047619047619,
+            "f1": 0.7757575757575756,
+            "tp": 64,
+            "fp": 17,
+            "fn": 20,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3076923076923077,
+            "recall": 0.4,
+            "f1": 0.34782608695652173,
+            "tp": 4,
+            "fp": 9,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2631578947368421,
+            "recall": 0.5208333333333334,
+            "f1": 0.34965034965034963,
+            "tp": 25,
+            "fp": 70,
+            "fn": 23,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 36,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5064724919093851,
+          "recall": 0.414021164021164,
+          "f1": 0.4556040756914119,
+          "tp": 313,
+          "fp": 305,
+          "fn": 443,
+          "support": 756
+        },
+        "macro_f1": 0.3617535754456347,
+        "untyped": {
+          "precision": 0.6407766990291263,
+          "recall": 0.5238095238095238,
+          "f1": 0.5764192139737991,
+          "tp": 396,
+          "fp": 222,
+          "fn": 360,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9494949494949495,
+            "recall": 0.5949367088607594,
+            "f1": 0.7315175097276264,
+            "tp": 94,
+            "fp": 5,
+            "fn": 64,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6377551020408163,
+            "recall": 0.5252100840336135,
+            "f1": 0.576036866359447,
+            "tp": 125,
+            "fp": 71,
+            "fn": 113,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.4583333333333333,
+            "recall": 0.5789473684210527,
+            "f1": 0.5116279069767442,
+            "tp": 11,
+            "fp": 13,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3333333333333333,
+            "recall": 0.07377049180327869,
+            "f1": 0.12080536912751677,
+            "tp": 9,
+            "fp": 18,
+            "fn": 113,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.1702127659574468,
+            "recall": 0.17777777777777778,
+            "f1": 0.1739130434782609,
+            "tp": 8,
+            "fp": 39,
+            "fn": 37,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8271604938271605,
+            "recall": 0.7976190476190477,
+            "f1": 0.8121212121212122,
+            "tp": 67,
+            "fp": 14,
+            "fn": 17,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3076923076923077,
+            "recall": 0.4,
+            "f1": 0.34782608695652173,
+            "tp": 4,
+            "fp": 9,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2736842105263158,
+            "recall": 0.5416666666666666,
+            "f1": 0.3636363636363636,
+            "tp": 26,
+            "fp": 69,
+            "fn": 22,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 36,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5566343042071198,
+          "recall": 0.455026455026455,
+          "f1": 0.5007278020378457,
+          "tp": 344,
+          "fp": 274,
+          "fn": 412,
+          "support": 756
+        },
+        "macro_f1": 0.4041649287092992,
+        "untyped": {
+          "precision": 0.7249190938511327,
+          "recall": 0.5925925925925926,
+          "f1": 0.6521106259097526,
+          "tp": 448,
+          "fp": 170,
+          "fn": 308,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 157.6876044855453,
+      "p95": 241.22477289347438,
+      "mean": 170.90118134313946
+    },
+    "cpu_ms": {
+      "median": 226.62049999999567,
+      "p95": 307.8034500000029,
+      "mean": 236.02250704225375
+    },
+    "cpu_seconds_per_1000_documents": 236.02250704225375,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 218,
+      "known_resolved_correctly": 118,
+      "known_left_unresolved": 8
+    },
+    "failure_modes": {
+      "predicted_mentions": 618,
+      "spurious_no_gold_overlap": 137,
+      "wrong_kind_overlap": 137,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "E2B (model)",
+          3
+        ],
+        [
+          "Base model (model)",
+          3
+        ],
+        [
+          "31B (model)",
+          2
+        ],
+        [
+          "category (concept)",
+          2
+        ],
+        [
+          "long context (concept)",
+          2
+        ],
+        [
+          "instruction following (task)",
+          2
+        ],
+        [
+          "3B (model)",
+          2
+        ],
+        [
+          "8B (model)",
+          2
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MIT (platform vs licence)",
+          6
+        ],
+        [
+          "Fish Audio (platform vs maker)",
+          4
+        ],
+        [
+          "decision model (model vs concept)",
+          4
+        ],
+        [
+          "OpenBMB (platform vs maker)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner-medium@0.7",
+    "meta": {
+      "candidate": "gliner-medium@0.7",
+      "name": "gliner-medium",
+      "version": "gliner 0.2.29, torch 2.14.1, urchade/gliner_medium-v2.1, threshold 0.7",
+      "threshold": 0.7,
+      "load_seconds": 26.717096416978166,
+      "peak_rss_mb": 2457.046875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 1,
+      "machine_load_average_at_end": 38.06005859375
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9090909090909091,
+            "recall": 0.5063291139240507,
+            "f1": 0.6504065040650406,
+            "tp": 80,
+            "fp": 8,
+            "fn": 78,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6275862068965518,
+            "recall": 0.38235294117647056,
+            "f1": 0.475195822454308,
+            "tp": 91,
+            "fp": 54,
+            "fn": 147,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.3888888888888889,
+            "recall": 0.3684210526315789,
+            "f1": 0.37837837837837834,
+            "tp": 7,
+            "fp": 11,
+            "fn": 12,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 9,
+            "fn": 122,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.15,
+            "recall": 0.06666666666666667,
+            "f1": 0.09230769230769231,
+            "tp": 3,
+            "fp": 17,
+            "fn": 42,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.821917808219178,
+            "recall": 0.7142857142857143,
+            "f1": 0.7643312101910829,
+            "tp": 60,
+            "fp": 13,
+            "fn": 24,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.6,
+            "recall": 0.3,
+            "f1": 0.4,
+            "tp": 3,
+            "fp": 2,
+            "fn": 7,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.296875,
+            "recall": 0.3958333333333333,
+            "f1": 0.3392857142857143,
+            "tp": 19,
+            "fp": 45,
+            "fn": 29,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 14,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.6032110091743119,
+          "recall": 0.3478835978835979,
+          "f1": 0.44127516778523496,
+          "tp": 263,
+          "fp": 173,
+          "fn": 493,
+          "support": 756
+        },
+        "macro_f1": 0.3444339246313574,
+        "untyped": {
+          "precision": 0.7224770642201835,
+          "recall": 0.4166666666666667,
+          "f1": 0.5285234899328859,
+          "tp": 315,
+          "fp": 121,
+          "fn": 441,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9431818181818182,
+            "recall": 0.5253164556962026,
+            "f1": 0.6747967479674797,
+            "tp": 83,
+            "fp": 5,
+            "fn": 75,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7103448275862069,
+            "recall": 0.4327731092436975,
+            "f1": 0.5378590078328981,
+            "tp": 103,
+            "fp": 42,
+            "fn": 135,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.5,
+            "recall": 0.47368421052631576,
+            "f1": 0.4864864864864865,
+            "tp": 9,
+            "fp": 9,
+            "fn": 10,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 9,
+            "fn": 122,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.35,
+            "recall": 0.15555555555555556,
+            "f1": 0.21538461538461537,
+            "tp": 7,
+            "fp": 13,
+            "fn": 38,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.863013698630137,
+            "recall": 0.75,
+            "f1": 0.802547770700637,
+            "tp": 63,
+            "fp": 10,
+            "fn": 21,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.6,
+            "recall": 0.3,
+            "f1": 0.4,
+            "tp": 3,
+            "fp": 2,
+            "fn": 7,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.3125,
+            "recall": 0.4166666666666667,
+            "f1": 0.35714285714285715,
+            "tp": 20,
+            "fp": 44,
+            "fn": 28,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 14,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.6605504587155964,
+          "recall": 0.38095238095238093,
+          "f1": 0.4832214765100671,
+          "tp": 288,
+          "fp": 148,
+          "fn": 468,
+          "support": 756
+        },
+        "macro_f1": 0.3860241650572193,
+        "untyped": {
+          "precision": 0.8004587155963303,
+          "recall": 0.46164021164021163,
+          "f1": 0.5855704697986578,
+          "tp": 349,
+          "fp": 87,
+          "fn": 407,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 131.13762499415316,
+      "p95": 163.23761393141467,
+      "mean": 133.9893535896152
+    },
+    "cpu_ms": {
+      "median": 207.70450000000017,
+      "p95": 282.061099999999,
+      "mean": 217.5263943661974
+    },
+    "cpu_seconds_per_1000_documents": 217.5263943661974,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 179,
+      "known_resolved_correctly": 101,
+      "known_left_unresolved": 8
+    },
+    "failure_modes": {
+      "predicted_mentions": 436,
+      "spurious_no_gold_overlap": 60,
+      "wrong_kind_overlap": 88,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "Base model (model)",
+          3
+        ],
+        [
+          "31B (model)",
+          2
+        ],
+        [
+          "3B (model)",
+          2
+        ],
+        [
+          "general safety (concept)",
+          1
+        ],
+        [
+          "1.7B VoiceDesign model (model)",
+          1
+        ],
+        [
+          "32B Think (model)",
+          1
+        ],
+        [
+          "customer service (task)",
+          1
+        ],
+        [
+          "invoice processing (task)",
+          1
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MIT (platform vs licence)",
+          5
+        ],
+        [
+          "Fish Audio (platform vs maker)",
+          4
+        ],
+        [
+          "decision model (model vs concept)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "OpenBMB (platform vs maker)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner-multi@0.5",
+    "meta": {
+      "candidate": "gliner-multi@0.5",
+      "name": "gliner-multi",
+      "version": "gliner 0.2.29, torch 2.14.1, urchade/gliner_multi-v2.1, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 28.227670458029024,
+      "peak_rss_mb": 2565.625,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 126.26708984375
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8818897637795275,
+            "recall": 0.7088607594936709,
+            "f1": 0.7859649122807018,
+            "tp": 112,
+            "fp": 15,
+            "fn": 46,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.671875,
+            "recall": 0.36134453781512604,
+            "f1": 0.4699453551912568,
+            "tp": 86,
+            "fp": 42,
+            "fn": 152,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.24242424242424243,
+            "recall": 0.42105263157894735,
+            "f1": 0.3076923076923077,
+            "tp": 8,
+            "fp": 25,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3125,
+            "recall": 0.040983606557377046,
+            "f1": 0.07246376811594202,
+            "tp": 5,
+            "fp": 11,
+            "fn": 117,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.26666666666666666,
+            "recall": 0.08888888888888889,
+            "f1": 0.13333333333333333,
+            "tp": 4,
+            "fp": 11,
+            "fn": 41,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.43243243243243246,
+            "recall": 0.19047619047619047,
+            "f1": 0.2644628099173554,
+            "tp": 16,
+            "fp": 21,
+            "fn": 68,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.5,
+            "recall": 0.1,
+            "f1": 0.16666666666666669,
+            "tp": 1,
+            "fp": 1,
+            "fn": 9,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.21359223300970873,
+            "recall": 0.4583333333333333,
+            "f1": 0.2913907284768212,
+            "tp": 22,
+            "fp": 81,
+            "fn": 26,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 57,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.49034749034749037,
+          "recall": 0.335978835978836,
+          "f1": 0.3987441130298274,
+          "tp": 254,
+          "fp": 264,
+          "fn": 502,
+          "support": 756
+        },
+        "macro_f1": 0.2768799868527094,
+        "untyped": {
+          "precision": 0.6525096525096525,
+          "recall": 0.4470899470899471,
+          "f1": 0.5306122448979591,
+          "tp": 338,
+          "fp": 180,
+          "fn": 418,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.905511811023622,
+            "recall": 0.7278481012658228,
+            "f1": 0.807017543859649,
+            "tp": 115,
+            "fp": 12,
+            "fn": 43,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6875,
+            "recall": 0.3697478991596639,
+            "f1": 0.4808743169398907,
+            "tp": 88,
+            "fp": 40,
+            "fn": 150,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.2727272727272727,
+            "recall": 0.47368421052631576,
+            "f1": 0.34615384615384615,
+            "tp": 9,
+            "fp": 24,
+            "fn": 10,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.375,
+            "recall": 0.04918032786885246,
+            "f1": 0.08695652173913043,
+            "tp": 6,
+            "fp": 10,
+            "fn": 116,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.4666666666666667,
+            "recall": 0.15555555555555556,
+            "f1": 0.23333333333333334,
+            "tp": 7,
+            "fp": 8,
+            "fn": 38,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.6486486486486487,
+            "recall": 0.2857142857142857,
+            "f1": 0.396694214876033,
+            "tp": 24,
+            "fp": 13,
+            "fn": 60,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.5,
+            "recall": 0.1,
+            "f1": 0.16666666666666669,
+            "tp": 1,
+            "fp": 1,
+            "fn": 9,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.22330097087378642,
+            "recall": 0.4791666666666667,
+            "f1": 0.30463576158940403,
+            "tp": 23,
+            "fp": 80,
+            "fn": 25,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 57,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.527027027027027,
+          "recall": 0.3611111111111111,
+          "f1": 0.4285714285714285,
+          "tp": 273,
+          "fp": 245,
+          "fn": 483,
+          "support": 756
+        },
+        "macro_f1": 0.3135924672397726,
+        "untyped": {
+          "precision": 0.7200772200772201,
+          "recall": 0.4933862433862434,
+          "f1": 0.5855572998430141,
+          "tp": 373,
+          "fp": 145,
+          "fn": 383,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 349.8351250018459,
+      "p95": 691.9051874749127,
+      "mean": 383.270651120922
+    },
+    "cpu_ms": {
+      "median": 275.1620000000017,
+      "p95": 416.03720000000095,
+      "mean": 295.25106338028274
+    },
+    "cpu_seconds_per_1000_documents": 295.25106338028274,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 186,
+      "known_resolved_correctly": 78,
+      "known_left_unresolved": 8,
+      "new_wrongly_merged": 1
+    },
+    "failure_modes": {
+      "predicted_mentions": 518,
+      "spurious_no_gold_overlap": 113,
+      "wrong_kind_overlap": 132,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "E2B (model)",
+          4
+        ],
+        [
+          "E4B (model)",
+          4
+        ],
+        [
+          "Context (concept)",
+          3
+        ],
+        [
+          "Think (model)",
+          2
+        ],
+        [
+          "emotion (concept)",
+          2
+        ],
+        [
+          "prosody (concept)",
+          2
+        ],
+        [
+          "vision (concept)",
+          2
+        ],
+        [
+          "31B (model)",
+          2
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "Apache 2.0 (platform vs licence)",
+          26
+        ],
+        [
+          "Apache-2.0 (platform vs licence)",
+          11
+        ],
+        [
+          "Apache-2 (platform vs licence)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "Apache (platform vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner2@0.3",
+    "meta": {
+      "candidate": "gliner2@0.3",
+      "name": "gliner2-base",
+      "version": "gliner2 2.1.0, torch 2.14.1, fastino/gliner2-base-v1, threshold 0.3",
+      "threshold": 0.3,
+      "load_seconds": 26.909266874950845,
+      "peak_rss_mb": 2284.90625,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 1,
+      "machine_load_average_at_end": 59.19482421875
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8571428571428571,
+            "recall": 0.8734177215189873,
+            "f1": 0.8652037617554859,
+            "tp": 138,
+            "fp": 23,
+            "fn": 20,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6339622641509434,
+            "recall": 0.7058823529411765,
+            "f1": 0.6679920477137177,
+            "tp": 168,
+            "fp": 97,
+            "fn": 70,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.06358381502890173,
+            "recall": 0.5789473684210527,
+            "f1": 0.11458333333333333,
+            "tp": 11,
+            "fp": 162,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.18835616438356165,
+            "recall": 0.45081967213114754,
+            "f1": 0.26570048309178745,
+            "tp": 55,
+            "fp": 237,
+            "fn": 67,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.13043478260869565,
+            "recall": 0.13333333333333333,
+            "f1": 0.13186813186813187,
+            "tp": 6,
+            "fp": 40,
+            "fn": 39,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.6881720430107527,
+            "recall": 0.7619047619047619,
+            "f1": 0.7231638418079096,
+            "tp": 64,
+            "fp": 29,
+            "fn": 20,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.17391304347826086,
+            "recall": 0.8,
+            "f1": 0.2857142857142857,
+            "tp": 8,
+            "fp": 38,
+            "fn": 2,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2635135135135135,
+            "recall": 0.8125,
+            "f1": 0.39795918367346933,
+            "tp": 39,
+            "fp": 109,
+            "fn": 9,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.020710059171597635,
+            "recall": 0.21875,
+            "f1": 0.03783783783783785,
+            "tp": 7,
+            "fp": 331,
+            "fn": 25,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.3175416133162612,
+          "recall": 0.656084656084656,
+          "f1": 0.42795513373597927,
+          "tp": 496,
+          "fp": 1066,
+          "fn": 260,
+          "support": 756
+        },
+        "macro_f1": 0.38778032297732873,
+        "untyped": {
+          "precision": 0.37964148527528807,
+          "recall": 0.7843915343915344,
+          "f1": 0.5116479723899914,
+          "tp": 593,
+          "fp": 969,
+          "fn": 163,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8757763975155279,
+            "recall": 0.8924050632911392,
+            "f1": 0.8840125391849529,
+            "tp": 141,
+            "fp": 20,
+            "fn": 17,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6641509433962264,
+            "recall": 0.7394957983193278,
+            "f1": 0.6998011928429424,
+            "tp": 176,
+            "fp": 89,
+            "fn": 62,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.06936416184971098,
+            "recall": 0.631578947368421,
+            "f1": 0.125,
+            "tp": 12,
+            "fp": 161,
+            "fn": 7,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.2191780821917808,
+            "recall": 0.5245901639344263,
+            "f1": 0.30917874396135264,
+            "tp": 64,
+            "fp": 228,
+            "fn": 58,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.1956521739130435,
+            "recall": 0.2,
+            "f1": 0.1978021978021978,
+            "tp": 9,
+            "fp": 37,
+            "fn": 36,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7526881720430108,
+            "recall": 0.8333333333333334,
+            "f1": 0.7909604519774012,
+            "tp": 70,
+            "fp": 23,
+            "fn": 14,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.17391304347826086,
+            "recall": 0.8,
+            "f1": 0.2857142857142857,
+            "tp": 8,
+            "fp": 38,
+            "fn": 2,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2702702702702703,
+            "recall": 0.8333333333333334,
+            "f1": 0.4081632653061225,
+            "tp": 40,
+            "fp": 108,
+            "fn": 8,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.023668639053254437,
+            "recall": 0.25,
+            "f1": 0.04324324324324324,
+            "tp": 8,
+            "fp": 330,
+            "fn": 24,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.3380281690140845,
+          "recall": 0.6984126984126984,
+          "f1": 0.45556514236410695,
+          "tp": 528,
+          "fp": 1034,
+          "fn": 228,
+          "support": 756
+        },
+        "macro_f1": 0.41598621333694424,
+        "untyped": {
+          "precision": 0.40781049935979513,
+          "recall": 0.8425925925925926,
+          "f1": 0.549611734253667,
+          "tp": 637,
+          "fp": 925,
+          "fn": 119,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.7737226277372263,
+          "recall": 0.8153846153846154,
+          "f1": 0.7940074906367043,
+          "tp": 106,
+          "fp": 31,
+          "fn": 24,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.17582417582417584,
+          "recall": 0.45714285714285713,
+          "f1": 0.253968253968254,
+          "tp": 16,
+          "fp": 75,
+          "fn": 19,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.01,
+          "recall": 0.14285714285714285,
+          "f1": 0.018691588785046728,
+          "tp": 1,
+          "fp": 99,
+          "fn": 6,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.05,
+          "recall": 0.5,
+          "f1": 0.09090909090909091,
+          "tp": 2,
+          "fp": 38,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.06666666666666667,
+          "recall": 0.75,
+          "f1": 0.12244897959183675,
+          "tp": 3,
+          "fp": 42,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.35185185185185186,
+          "recall": 0.5757575757575758,
+          "f1": 0.4367816091954023,
+          "tp": 38,
+          "fp": 70,
+          "fn": 28,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.31861804222648754,
+        "recall": 0.6747967479674797,
+        "f1": 0.4328552803129075,
+        "tp": 166,
+        "fp": 355,
+        "fn": 80,
+        "support": 246
+      },
+      "macro_f1": 0.28613450218105585
+    },
+    "latency_ms": {
+      "median": 299.7277499816846,
+      "p95": 355.4430680640507,
+      "mean": 304.4056513877159
+    },
+    "cpu_ms": {
+      "median": 471.74350000000055,
+      "p95": 622.3224499999982,
+      "mean": 488.2201478873239
+    },
+    "cpu_seconds_per_1000_documents": 488.2201478873239,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 300,
+      "known_resolved_correctly": 213,
+      "known_left_unresolved": 15
+    },
+    "failure_modes": {
+      "predicted_mentions": 1562,
+      "spurious_no_gold_overlap": 803,
+      "wrong_kind_overlap": 231,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 521,
+      "top_spurious": [
+        [
+          "card (platform)",
+          18
+        ],
+        [
+          "text (concept)",
+          15
+        ],
+        [
+          "reasoning (task)",
+          13
+        ],
+        [
+          "4B (model_family)",
+          9
+        ],
+        [
+          "27B (model_family)",
+          9
+        ],
+        [
+          "languages (concept)",
+          8
+        ],
+        [
+          "2B (model_family)",
+          8
+        ],
+        [
+          "probability (concept)",
+          7
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (model_family vs task)",
+          15
+        ],
+        [
+          "MoE (model_family vs technique)",
+          12
+        ],
+        [
+          "TTS (model vs task)",
+          6
+        ],
+        [
+          "Hugging Face (maker vs platform)",
+          5
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "Ministral 3 (model vs model_family)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner2@0.5",
+    "meta": {
+      "candidate": "gliner2@0.5",
+      "name": "gliner2-base",
+      "version": "gliner2 2.1.0, torch 2.14.1, fastino/gliner2-base-v1, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 20.542322166031227,
+      "peak_rss_mb": 2191.421875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 46.25732421875
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8947368421052632,
+            "recall": 0.8607594936708861,
+            "f1": 0.8774193548387097,
+            "tp": 136,
+            "fp": 16,
+            "fn": 22,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7205240174672489,
+            "recall": 0.6932773109243697,
+            "f1": 0.7066381156316917,
+            "tp": 165,
+            "fp": 64,
+            "fn": 73,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.07352941176470588,
+            "recall": 0.5263157894736842,
+            "f1": 0.12903225806451613,
+            "tp": 10,
+            "fp": 126,
+            "fn": 9,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.24509803921568626,
+            "recall": 0.4098360655737705,
+            "f1": 0.3067484662576687,
+            "tp": 50,
+            "fp": 154,
+            "fn": 72,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.16666666666666666,
+            "recall": 0.1111111111111111,
+            "f1": 0.13333333333333333,
+            "tp": 5,
+            "fp": 25,
+            "fn": 40,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7078651685393258,
+            "recall": 0.75,
+            "f1": 0.7283236994219654,
+            "tp": 63,
+            "fp": 26,
+            "fn": 21,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.28,
+            "recall": 0.7,
+            "f1": 0.4,
+            "tp": 7,
+            "fp": 18,
+            "fn": 3,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.3153153153153153,
+            "recall": 0.7291666666666666,
+            "f1": 0.440251572327044,
+            "tp": 35,
+            "fp": 76,
+            "fn": 13,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.014018691588785047,
+            "recall": 0.09375,
+            "f1": 0.024390243902439022,
+            "tp": 3,
+            "fp": 211,
+            "fn": 29,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.3983193277310924,
+          "recall": 0.626984126984127,
+          "f1": 0.48715313463514903,
+          "tp": 474,
+          "fp": 716,
+          "fn": 282,
+          "support": 756
+        },
+        "macro_f1": 0.41623744930859646,
+        "untyped": {
+          "precision": 0.4680672268907563,
+          "recall": 0.7367724867724867,
+          "f1": 0.5724563206577595,
+          "tp": 557,
+          "fp": 633,
+          "fn": 199,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9078947368421053,
+            "recall": 0.8734177215189873,
+            "f1": 0.8903225806451613,
+            "tp": 138,
+            "fp": 14,
+            "fn": 20,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7467248908296943,
+            "recall": 0.7184873949579832,
+            "f1": 0.7323340471092077,
+            "tp": 171,
+            "fp": 58,
+            "fn": 67,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.08088235294117647,
+            "recall": 0.5789473684210527,
+            "f1": 0.14193548387096774,
+            "tp": 11,
+            "fp": 125,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.2696078431372549,
+            "recall": 0.45081967213114754,
+            "f1": 0.3374233128834356,
+            "tp": 55,
+            "fp": 149,
+            "fn": 67,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.23333333333333334,
+            "recall": 0.15555555555555556,
+            "f1": 0.18666666666666668,
+            "tp": 7,
+            "fp": 23,
+            "fn": 38,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7640449438202247,
+            "recall": 0.8095238095238095,
+            "f1": 0.7861271676300579,
+            "tp": 68,
+            "fp": 21,
+            "fn": 16,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.28,
+            "recall": 0.7,
+            "f1": 0.4,
+            "tp": 7,
+            "fp": 18,
+            "fn": 3,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.3153153153153153,
+            "recall": 0.7291666666666666,
+            "f1": 0.440251572327044,
+            "tp": 35,
+            "fp": 76,
+            "fn": 13,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.018691588785046728,
+            "recall": 0.125,
+            "f1": 0.03252032520325203,
+            "tp": 4,
+            "fp": 210,
+            "fn": 28,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.41680672268907565,
+          "recall": 0.656084656084656,
+          "f1": 0.5097636176772866,
+          "tp": 496,
+          "fp": 694,
+          "fn": 260,
+          "support": 756
+        },
+        "macro_f1": 0.43862012848175475,
+        "untyped": {
+          "precision": 0.49411764705882355,
+          "recall": 0.7777777777777778,
+          "f1": 0.60431654676259,
+          "tp": 588,
+          "fp": 602,
+          "fn": 168,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.8110236220472441,
+          "recall": 0.7923076923076923,
+          "f1": 0.801556420233463,
+          "tp": 103,
+          "fp": 24,
+          "fn": 27,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.2711864406779661,
+          "recall": 0.45714285714285713,
+          "f1": 0.3404255319148936,
+          "tp": 16,
+          "fp": 43,
+          "fn": 19,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 67,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.08,
+          "recall": 0.5,
+          "f1": 0.13793103448275865,
+          "tp": 2,
+          "fp": 23,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.12,
+          "recall": 0.75,
+          "f1": 0.20689655172413793,
+          "tp": 3,
+          "fp": 22,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.41975308641975306,
+          "recall": 0.5151515151515151,
+          "f1": 0.46258503401360546,
+          "tp": 34,
+          "fp": 47,
+          "fn": 32,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.4114583333333333,
+        "recall": 0.6422764227642277,
+        "f1": 0.5015873015873016,
+        "tp": 158,
+        "fp": 226,
+        "fn": 88,
+        "support": 246
+      },
+      "macro_f1": 0.32489909539480977
+    },
+    "latency_ms": {
+      "median": 352.39310399629176,
+      "p95": 457.8020961431321,
+      "mean": 367.1733301233756
+    },
+    "cpu_ms": {
+      "median": 507.3514999999986,
+      "p95": 689.5799000000142,
+      "mean": 530.5228661971839
+    },
+    "cpu_seconds_per_1000_documents": 530.5228661971839,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 283,
+      "known_resolved_correctly": 201,
+      "known_left_unresolved": 12
+    },
+    "failure_modes": {
+      "predicted_mentions": 1190,
+      "spurious_no_gold_overlap": 531,
+      "wrong_kind_overlap": 163,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 384,
+      "top_spurious": [
+        [
+          "reasoning (task)",
+          11
+        ],
+        [
+          "27B (model_family)",
+          9
+        ],
+        [
+          "card (platform)",
+          8
+        ],
+        [
+          "4B (model_family)",
+          8
+        ],
+        [
+          "text (concept)",
+          8
+        ],
+        [
+          "probability (concept)",
+          7
+        ],
+        [
+          "31B (model)",
+          7
+        ],
+        [
+          "2B (model_family)",
+          7
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (model_family vs task)",
+          11
+        ],
+        [
+          "MoE (model_family vs technique)",
+          11
+        ],
+        [
+          "Hugging Face (maker vs platform)",
+          4
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "NVIDIA (maker vs licence)",
+          3
+        ],
+        [
+          "MOSS-TTS (model_family vs model)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "gliner2@0.7",
+    "meta": {
+      "candidate": "gliner2@0.7",
+      "name": "gliner2-base",
+      "version": "gliner2 2.1.0, torch 2.14.1, fastino/gliner2-base-v1, threshold 0.7",
+      "threshold": 0.7,
+      "load_seconds": 23.08284187503159,
+      "peak_rss_mb": 2279.3125,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 1,
+      "machine_load_average_at_end": 47.01318359375
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9191176470588235,
+            "recall": 0.7911392405063291,
+            "f1": 0.8503401360544217,
+            "tp": 125,
+            "fp": 11,
+            "fn": 33,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7623762376237624,
+            "recall": 0.6470588235294118,
+            "f1": 0.7,
+            "tp": 154,
+            "fp": 48,
+            "fn": 84,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.07272727272727272,
+            "recall": 0.42105263157894735,
+            "f1": 0.12403100775193797,
+            "tp": 8,
+            "fp": 102,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3108108108108108,
+            "recall": 0.3770491803278688,
+            "f1": 0.34074074074074073,
+            "tp": 46,
+            "fp": 102,
+            "fn": 76,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.23529411764705882,
+            "recall": 0.08888888888888889,
+            "f1": 0.12903225806451613,
+            "tp": 4,
+            "fp": 13,
+            "fn": 41,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7349397590361446,
+            "recall": 0.7261904761904762,
+            "f1": 0.7305389221556886,
+            "tp": 61,
+            "fp": 22,
+            "fn": 23,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "f1": 0.4,
+            "tp": 5,
+            "fp": 10,
+            "fn": 5,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.35294117647058826,
+            "recall": 0.625,
+            "f1": 0.4511278195488722,
+            "tp": 30,
+            "fp": 55,
+            "fn": 18,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.007874015748031496,
+            "recall": 0.03125,
+            "f1": 0.012578616352201259,
+            "tp": 1,
+            "fp": 126,
+            "fn": 31,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.47020585048754066,
+          "recall": 0.5740740740740741,
+          "f1": 0.5169743895175699,
+          "tp": 434,
+          "fp": 489,
+          "fn": 322,
+          "support": 756
+        },
+        "macro_f1": 0.4153766111853754,
+        "untyped": {
+          "precision": 0.5417118093174431,
+          "recall": 0.6613756613756614,
+          "f1": 0.5955926146515783,
+          "tp": 500,
+          "fp": 423,
+          "fn": 256,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9264705882352942,
+            "recall": 0.7974683544303798,
+            "f1": 0.8571428571428572,
+            "tp": 126,
+            "fp": 10,
+            "fn": 32,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7871287128712872,
+            "recall": 0.6680672268907563,
+            "f1": 0.7227272727272727,
+            "tp": 159,
+            "fp": 43,
+            "fn": 79,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.08181818181818182,
+            "recall": 0.47368421052631576,
+            "f1": 0.13953488372093023,
+            "tp": 9,
+            "fp": 101,
+            "fn": 10,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.33783783783783783,
+            "recall": 0.4098360655737705,
+            "f1": 0.3703703703703704,
+            "tp": 50,
+            "fp": 98,
+            "fn": 72,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.35294117647058826,
+            "recall": 0.13333333333333333,
+            "f1": 0.19354838709677416,
+            "tp": 6,
+            "fp": 11,
+            "fn": 39,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7951807228915663,
+            "recall": 0.7857142857142857,
+            "f1": 0.7904191616766467,
+            "tp": 66,
+            "fp": 17,
+            "fn": 18,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3333333333333333,
+            "recall": 0.5,
+            "f1": 0.4,
+            "tp": 5,
+            "fp": 10,
+            "fn": 5,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.35294117647058826,
+            "recall": 0.625,
+            "f1": 0.4511278195488722,
+            "tp": 30,
+            "fp": 55,
+            "fn": 18,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.015748031496062992,
+            "recall": 0.0625,
+            "f1": 0.025157232704402517,
+            "tp": 2,
+            "fp": 125,
+            "fn": 30,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.49079089924160346,
+          "recall": 0.5992063492063492,
+          "f1": 0.5396069088743299,
+          "tp": 453,
+          "fp": 470,
+          "fn": 303,
+          "support": 756
+        },
+        "macro_f1": 0.43889199833201403,
+        "untyped": {
+          "precision": 0.5687973997833152,
+          "recall": 0.6944444444444444,
+          "f1": 0.6253722453841573,
+          "tp": 525,
+          "fp": 398,
+          "fn": 231,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.8660714285714286,
+          "recall": 0.7461538461538462,
+          "f1": 0.8016528925619835,
+          "tp": 97,
+          "fp": 15,
+          "fn": 33,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.46875,
+          "recall": 0.42857142857142855,
+          "f1": 0.4477611940298507,
+          "tp": 15,
+          "fp": 17,
+          "fn": 20,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 41,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.10526315789473684,
+          "recall": 0.5,
+          "f1": 0.17391304347826086,
+          "tp": 2,
+          "fp": 17,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.17647058823529413,
+          "recall": 0.75,
+          "f1": 0.2857142857142857,
+          "tp": 3,
+          "fp": 14,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.5079365079365079,
+          "recall": 0.48484848484848486,
+          "f1": 0.49612403100775193,
+          "tp": 32,
+          "fp": 31,
+          "fn": 34,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.5246478873239436,
+        "recall": 0.6056910569105691,
+        "f1": 0.5622641509433961,
+        "tp": 149,
+        "fp": 135,
+        "fn": 97,
+        "support": 246
+      },
+      "macro_f1": 0.36752757446535544
+    },
+    "latency_ms": {
+      "median": 307.65414601773955,
+      "p95": 373.201245861128,
+      "mean": 313.8155219773106
+    },
+    "cpu_ms": {
+      "median": 485.2185000000002,
+      "p95": 649.2829999999955,
+      "mean": 502.92922535211255
+    },
+    "cpu_seconds_per_1000_documents": 502.92922535211255,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 256,
+      "known_resolved_correctly": 186,
+      "known_left_unresolved": 11
+    },
+    "failure_modes": {
+      "predicted_mentions": 923,
+      "spurious_no_gold_overlap": 357,
+      "wrong_kind_overlap": 113,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 284,
+      "top_spurious": [
+        [
+          "27B (model_family)",
+          9
+        ],
+        [
+          "probability (concept)",
+          7
+        ],
+        [
+          "2B (model_family)",
+          7
+        ],
+        [
+          "reasoning (task)",
+          7
+        ],
+        [
+          "31B (model)",
+          6
+        ],
+        [
+          "4B (model_family)",
+          6
+        ],
+        [
+          "emotion (concept)",
+          5
+        ],
+        [
+          "state (concept)",
+          5
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MoE (model_family vs technique)",
+          10
+        ],
+        [
+          "TTS (model_family vs task)",
+          9
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "NVIDIA (maker vs licence)",
+          3
+        ],
+        [
+          "MOSS-TTS (model_family vs model)",
+          3
+        ],
+        [
+          "Hugging Face (maker vs platform)",
+          2
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "glirel@0.5",
+    "meta": {
+      "candidate": "glirel@0.5",
+      "name": "gliner-medium+glirel-large",
+      "version": "gliner 0.2.29, torch 2.14.1, urchade/gliner_medium-v2.1, threshold 0.5; glirel 1.2.1, jackboyla/glirel-large-v0, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 43.50571870896965,
+      "peak_rss_mb": 3074.015625,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 53.96728515625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9090909090909091,
+            "recall": 0.569620253164557,
+            "f1": 0.7003891050583658,
+            "tp": 90,
+            "fp": 9,
+            "fn": 68,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.5561224489795918,
+            "recall": 0.4579831932773109,
+            "f1": 0.5023041474654378,
+            "tp": 109,
+            "fp": 87,
+            "fn": 129,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.3333333333333333,
+            "recall": 0.42105263157894735,
+            "f1": 0.372093023255814,
+            "tp": 8,
+            "fp": 16,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3333333333333333,
+            "recall": 0.07377049180327869,
+            "f1": 0.12080536912751677,
+            "tp": 9,
+            "fp": 18,
+            "fn": 113,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.0851063829787234,
+            "recall": 0.08888888888888889,
+            "f1": 0.08695652173913045,
+            "tp": 4,
+            "fp": 43,
+            "fn": 41,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.7901234567901234,
+            "recall": 0.7619047619047619,
+            "f1": 0.7757575757575756,
+            "tp": 64,
+            "fp": 17,
+            "fn": 20,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3076923076923077,
+            "recall": 0.4,
+            "f1": 0.34782608695652173,
+            "tp": 4,
+            "fp": 9,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2631578947368421,
+            "recall": 0.5208333333333334,
+            "f1": 0.34965034965034963,
+            "tp": 25,
+            "fp": 70,
+            "fn": 23,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 36,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5064724919093851,
+          "recall": 0.414021164021164,
+          "f1": 0.4556040756914119,
+          "tp": 313,
+          "fp": 305,
+          "fn": 443,
+          "support": 756
+        },
+        "macro_f1": 0.3617535754456347,
+        "untyped": {
+          "precision": 0.6407766990291263,
+          "recall": 0.5238095238095238,
+          "f1": 0.5764192139737991,
+          "tp": 396,
+          "fp": 222,
+          "fn": 360,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9494949494949495,
+            "recall": 0.5949367088607594,
+            "f1": 0.7315175097276264,
+            "tp": 94,
+            "fp": 5,
+            "fn": 64,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6377551020408163,
+            "recall": 0.5252100840336135,
+            "f1": 0.576036866359447,
+            "tp": 125,
+            "fp": 71,
+            "fn": 113,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.4583333333333333,
+            "recall": 0.5789473684210527,
+            "f1": 0.5116279069767442,
+            "tp": 11,
+            "fp": 13,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3333333333333333,
+            "recall": 0.07377049180327869,
+            "f1": 0.12080536912751677,
+            "tp": 9,
+            "fp": 18,
+            "fn": 113,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.1702127659574468,
+            "recall": 0.17777777777777778,
+            "f1": 0.1739130434782609,
+            "tp": 8,
+            "fp": 39,
+            "fn": 37,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8271604938271605,
+            "recall": 0.7976190476190477,
+            "f1": 0.8121212121212122,
+            "tp": 67,
+            "fp": 14,
+            "fn": 17,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.3076923076923077,
+            "recall": 0.4,
+            "f1": 0.34782608695652173,
+            "tp": 4,
+            "fp": 9,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2736842105263158,
+            "recall": 0.5416666666666666,
+            "f1": 0.3636363636363636,
+            "tp": 26,
+            "fp": 69,
+            "fn": 22,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 36,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5566343042071198,
+          "recall": 0.455026455026455,
+          "f1": 0.5007278020378457,
+          "tp": 344,
+          "fp": 274,
+          "fn": 412,
+          "support": 756
+        },
+        "macro_f1": 0.4041649287092992,
+        "untyped": {
+          "precision": 0.7249190938511327,
+          "recall": 0.5925925925925926,
+          "f1": 0.6521106259097526,
+          "tp": 448,
+          "fp": 170,
+          "fn": 308,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.4418604651162791,
+          "recall": 0.14615384615384616,
+          "f1": 0.21965317919075145,
+          "tp": 19,
+          "fp": 24,
+          "fn": 111,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 12,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.04878048780487805,
+          "recall": 0.5,
+          "f1": 0.08888888888888888,
+          "tp": 2,
+          "fp": 39,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.06666666666666667,
+          "recall": 0.015151515151515152,
+          "f1": 0.024691358024691357,
+          "tp": 1,
+          "fp": 14,
+          "fn": 65,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.1981981981981982,
+        "recall": 0.08943089430894309,
+        "f1": 0.12324929971988795,
+        "tp": 22,
+        "fp": 89,
+        "fn": 224,
+        "support": 246
+      },
+      "macro_f1": 0.05553890435072195
+    },
+    "latency_ms": {
+      "median": 510.1207919942681,
+      "p95": 833.4631211444502,
+      "mean": 550.6039518579303
+    },
+    "cpu_ms": {
+      "median": 773.5250000000065,
+      "p95": 1013.7146000000082,
+      "mean": 784.1837816901391
+    },
+    "cpu_seconds_per_1000_documents": 784.1837816901391,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 218,
+      "known_resolved_correctly": 118,
+      "known_left_unresolved": 8
+    },
+    "failure_modes": {
+      "predicted_mentions": 618,
+      "spurious_no_gold_overlap": 137,
+      "wrong_kind_overlap": 137,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 128,
+      "top_spurious": [
+        [
+          "E2B (model)",
+          3
+        ],
+        [
+          "Base model (model)",
+          3
+        ],
+        [
+          "31B (model)",
+          2
+        ],
+        [
+          "category (concept)",
+          2
+        ],
+        [
+          "long context (concept)",
+          2
+        ],
+        [
+          "instruction following (task)",
+          2
+        ],
+        [
+          "3B (model)",
+          2
+        ],
+        [
+          "8B (model)",
+          2
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MIT (platform vs licence)",
+          6
+        ],
+        [
+          "Fish Audio (platform vs maker)",
+          4
+        ],
+        [
+          "decision model (model vs concept)",
+          4
+        ],
+        [
+          "OpenBMB (platform vs maker)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ],
+        [
+          "Qwen3-TTS (model_family vs model)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "hybrid@0.5",
+    "meta": {
+      "candidate": "hybrid@0.5",
+      "name": "gazetteer+gliner2",
+      "version": "alias matcher + gliner2 2.1.0, torch 2.14.1, fastino/gliner2-base-v1, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 22.594614541972987,
+      "peak_rss_mb": 2004.53125,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 40.1181640625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9139072847682119,
+            "recall": 0.8734177215189873,
+            "f1": 0.8932038834951456,
+            "tp": 138,
+            "fp": 13,
+            "fn": 20,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6491228070175439,
+            "recall": 0.6218487394957983,
+            "f1": 0.6351931330472103,
+            "tp": 148,
+            "fp": 80,
+            "fn": 90,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.08,
+            "recall": 0.42105263157894735,
+            "f1": 0.13445378151260506,
+            "tp": 8,
+            "fp": 92,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.37992831541218636,
+            "recall": 0.8688524590163934,
+            "f1": 0.5286783042394015,
+            "tp": 106,
+            "fp": 173,
+            "fn": 16,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.6842105263157895,
+            "recall": 0.8666666666666667,
+            "f1": 0.7647058823529413,
+            "tp": 39,
+            "fp": 18,
+            "fn": 6,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8181818181818182,
+            "recall": 0.8571428571428571,
+            "f1": 0.8372093023255814,
+            "tp": 72,
+            "fp": 16,
+            "fn": 12,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.2857142857142857,
+            "recall": 0.6,
+            "f1": 0.3870967741935483,
+            "tp": 6,
+            "fp": 15,
+            "fn": 4,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.41904761904761906,
+            "recall": 0.9166666666666666,
+            "f1": 0.5751633986928104,
+            "tp": 44,
+            "fp": 61,
+            "fn": 4,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.1134453781512605,
+            "recall": 0.84375,
+            "f1": 0.19999999999999998,
+            "tp": 27,
+            "fp": 211,
+            "fn": 5,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.46408839779005523,
+          "recall": 0.7777777777777778,
+          "f1": 0.5813148788927335,
+          "tp": 588,
+          "fp": 679,
+          "fn": 168,
+          "support": 756
+        },
+        "macro_f1": 0.5506338288732493,
+        "untyped": {
+          "precision": 0.48855564325177586,
+          "recall": 0.8187830687830688,
+          "f1": 0.6119624320316361,
+          "tp": 619,
+          "fp": 648,
+          "fn": 137,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9205298013245033,
+            "recall": 0.879746835443038,
+            "f1": 0.8996763754045308,
+            "tp": 139,
+            "fp": 12,
+            "fn": 19,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7017543859649122,
+            "recall": 0.6722689075630253,
+            "f1": 0.6866952789699571,
+            "tp": 160,
+            "fp": 68,
+            "fn": 78,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.09,
+            "recall": 0.47368421052631576,
+            "f1": 0.15126050420168066,
+            "tp": 9,
+            "fp": 91,
+            "fn": 10,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.3978494623655914,
+            "recall": 0.9098360655737705,
+            "f1": 0.5536159600997507,
+            "tp": 111,
+            "fp": 168,
+            "fn": 11,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.6842105263157895,
+            "recall": 0.8666666666666667,
+            "f1": 0.7647058823529413,
+            "tp": 39,
+            "fp": 18,
+            "fn": 6,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8409090909090909,
+            "recall": 0.8809523809523809,
+            "f1": 0.8604651162790699,
+            "tp": 74,
+            "fp": 14,
+            "fn": 10,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.2857142857142857,
+            "recall": 0.6,
+            "f1": 0.3870967741935483,
+            "tp": 6,
+            "fp": 15,
+            "fn": 4,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.41904761904761906,
+            "recall": 0.9166666666666666,
+            "f1": 0.5751633986928104,
+            "tp": 44,
+            "fp": 61,
+            "fn": 4,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.12184873949579832,
+            "recall": 0.90625,
+            "f1": 0.2148148148148148,
+            "tp": 29,
+            "fp": 209,
+            "fn": 3,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.48224151539068666,
+          "recall": 0.8082010582010583,
+          "f1": 0.6040533860603066,
+          "tp": 611,
+          "fp": 656,
+          "fn": 145,
+          "support": 756
+        },
+        "macro_f1": 0.565943789445456,
+        "untyped": {
+          "precision": 0.5130228887134964,
+          "recall": 0.8597883597883598,
+          "f1": 0.6426099851705388,
+          "tp": 650,
+          "fp": 617,
+          "fn": 106,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.8110236220472441,
+          "recall": 0.7923076923076923,
+          "f1": 0.801556420233463,
+          "tp": 103,
+          "fp": 24,
+          "fn": 27,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.2711864406779661,
+          "recall": 0.45714285714285713,
+          "f1": 0.3404255319148936,
+          "tp": 16,
+          "fp": 43,
+          "fn": 19,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 67,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.08,
+          "recall": 0.5,
+          "f1": 0.13793103448275865,
+          "tp": 2,
+          "fp": 23,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.12,
+          "recall": 0.75,
+          "f1": 0.20689655172413793,
+          "tp": 3,
+          "fp": 22,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.41975308641975306,
+          "recall": 0.5151515151515151,
+          "f1": 0.46258503401360546,
+          "tp": 34,
+          "fp": 47,
+          "fn": 32,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.4114583333333333,
+        "recall": 0.6422764227642277,
+        "f1": 0.5015873015873016,
+        "tp": 158,
+        "fp": 226,
+        "fn": 88,
+        "support": 246
+      },
+      "macro_f1": 0.32489909539480977
+    },
+    "latency_ms": {
+      "median": 403.3084789989516,
+      "p95": 605.3636684373486,
+      "mean": 429.80597237646447
+    },
+    "cpu_ms": {
+      "median": 533.3555000000132,
+      "p95": 719.9892000000004,
+      "mean": 553.5554366197198
+    },
+    "cpu_seconds_per_1000_documents": 553.5554366197198,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 246,
+      "known_resolved_correctly": 352,
+      "new_wrongly_merged": 12,
+      "known_left_unresolved": 1
+    },
+    "failure_modes": {
+      "predicted_mentions": 1267,
+      "spurious_no_gold_overlap": 536,
+      "wrong_kind_overlap": 120,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 384,
+      "top_spurious": [
+        [
+          "reasoning (task)",
+          11
+        ],
+        [
+          "27B (model_family)",
+          9
+        ],
+        [
+          "card (platform)",
+          8
+        ],
+        [
+          "4B (model_family)",
+          8
+        ],
+        [
+          "text (concept)",
+          8
+        ],
+        [
+          "probability (concept)",
+          7
+        ],
+        [
+          "31B (model)",
+          7
+        ],
+        [
+          "streaming (task)",
+          7
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (task vs model)",
+          19
+        ],
+        [
+          "Llama (model vs model)",
+          5
+        ],
+        [
+          "Jev (model vs model)",
+          3
+        ],
+        [
+          "Qwen3 (model vs model_family)",
+          3
+        ],
+        [
+          "Mistral (maker vs model)",
+          3
+        ],
+        [
+          "NVIDIA (maker vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "hybrid@0.7",
+    "meta": {
+      "candidate": "hybrid@0.7",
+      "name": "gazetteer+gliner2",
+      "version": "alias matcher + gliner2 2.1.0, torch 2.14.1, fastino/gliner2-base-v1, threshold 0.7",
+      "threshold": 0.7,
+      "load_seconds": 19.20901758299442,
+      "peak_rss_mb": 2272.875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 48.4921875
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9148936170212766,
+            "recall": 0.8164556962025317,
+            "f1": 0.862876254180602,
+            "tp": 129,
+            "fp": 12,
+            "fn": 29,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6811594202898551,
+            "recall": 0.592436974789916,
+            "f1": 0.6337078651685393,
+            "tp": 141,
+            "fp": 66,
+            "fn": 97,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.09523809523809523,
+            "recall": 0.42105263157894735,
+            "f1": 0.1553398058252427,
+            "tp": 8,
+            "fp": 76,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.452991452991453,
+            "recall": 0.8688524590163934,
+            "f1": 0.595505617977528,
+            "tp": 106,
+            "fp": 128,
+            "fn": 16,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.8125,
+            "recall": 0.8666666666666667,
+            "f1": 0.8387096774193549,
+            "tp": 39,
+            "fp": 9,
+            "fn": 6,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8352941176470589,
+            "recall": 0.8452380952380952,
+            "f1": 0.8402366863905326,
+            "tp": 71,
+            "fp": 14,
+            "fn": 13,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.35714285714285715,
+            "recall": 0.5,
+            "f1": 0.41666666666666663,
+            "tp": 5,
+            "fp": 9,
+            "fn": 5,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.5,
+            "recall": 0.9166666666666666,
+            "f1": 0.6470588235294118,
+            "tp": 44,
+            "fp": 44,
+            "fn": 4,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.17532467532467533,
+            "recall": 0.84375,
+            "f1": 0.2903225806451613,
+            "tp": 27,
+            "fp": 127,
+            "fn": 5,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5402843601895735,
+          "recall": 0.753968253968254,
+          "f1": 0.6294864715626726,
+          "tp": 570,
+          "fp": 485,
+          "fn": 186,
+          "support": 756
+        },
+        "macro_f1": 0.5867137753114489,
+        "untyped": {
+          "precision": 0.5620853080568721,
+          "recall": 0.7843915343915344,
+          "f1": 0.6548868028713418,
+          "tp": 593,
+          "fp": 462,
+          "fn": 163,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9148936170212766,
+            "recall": 0.8164556962025317,
+            "f1": 0.862876254180602,
+            "tp": 129,
+            "fp": 12,
+            "fn": 29,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7342995169082126,
+            "recall": 0.6386554621848739,
+            "f1": 0.6831460674157303,
+            "tp": 152,
+            "fp": 55,
+            "fn": 86,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.10714285714285714,
+            "recall": 0.47368421052631576,
+            "f1": 0.17475728155339806,
+            "tp": 9,
+            "fp": 75,
+            "fn": 10,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.47435897435897434,
+            "recall": 0.9098360655737705,
+            "f1": 0.6235955056179776,
+            "tp": 111,
+            "fp": 123,
+            "fn": 11,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.8125,
+            "recall": 0.8666666666666667,
+            "f1": 0.8387096774193549,
+            "tp": 39,
+            "fp": 9,
+            "fn": 6,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.8588235294117647,
+            "recall": 0.8690476190476191,
+            "f1": 0.863905325443787,
+            "tp": 73,
+            "fp": 12,
+            "fn": 11,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.35714285714285715,
+            "recall": 0.5,
+            "f1": 0.41666666666666663,
+            "tp": 5,
+            "fp": 9,
+            "fn": 5,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.5,
+            "recall": 0.9166666666666666,
+            "f1": 0.6470588235294118,
+            "tp": 44,
+            "fp": 44,
+            "fn": 4,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.18831168831168832,
+            "recall": 0.90625,
+            "f1": 0.31182795698924737,
+            "tp": 29,
+            "fp": 125,
+            "fn": 3,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5601895734597157,
+          "recall": 0.7817460317460317,
+          "f1": 0.6526780784097184,
+          "tp": 591,
+          "fp": 464,
+          "fn": 165,
+          "support": 756
+        },
+        "macro_f1": 0.6025048398684639,
+        "untyped": {
+          "precision": 0.5895734597156398,
+          "recall": 0.8227513227513228,
+          "f1": 0.6869133075648812,
+          "tp": 622,
+          "fp": 433,
+          "fn": 134,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.8660714285714286,
+          "recall": 0.7461538461538462,
+          "f1": 0.8016528925619835,
+          "tp": 97,
+          "fp": 15,
+          "fn": 33,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.46875,
+          "recall": 0.42857142857142855,
+          "f1": 0.4477611940298507,
+          "tp": 15,
+          "fp": 17,
+          "fn": 20,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 41,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.10526315789473684,
+          "recall": 0.5,
+          "f1": 0.17391304347826086,
+          "tp": 2,
+          "fp": 17,
+          "fn": 2,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.17647058823529413,
+          "recall": 0.75,
+          "f1": 0.2857142857142857,
+          "tp": 3,
+          "fp": 14,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.5079365079365079,
+          "recall": 0.48484848484848486,
+          "f1": 0.49612403100775193,
+          "tp": 32,
+          "fp": 31,
+          "fn": 34,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.5246478873239436,
+        "recall": 0.6056910569105691,
+        "f1": 0.5622641509433961,
+        "tp": 149,
+        "fp": 135,
+        "fn": 97,
+        "support": 246
+      },
+      "macro_f1": 0.36752757446535544
+    },
+    "latency_ms": {
+      "median": 315.92035401263274,
+      "p95": 414.62704337027384,
+      "mean": 352.6333943238928
+    },
+    "cpu_ms": {
+      "median": 485.596000000001,
+      "p95": 645.388650000008,
+      "mean": 508.53515492957746
+    },
+    "cpu_seconds_per_1000_documents": 508.53515492957746,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 226,
+      "known_resolved_correctly": 352,
+      "new_wrongly_merged": 12,
+      "known_left_unresolved": 1
+    },
+    "failure_modes": {
+      "predicted_mentions": 1055,
+      "spurious_no_gold_overlap": 365,
+      "wrong_kind_overlap": 99,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 284,
+      "top_spurious": [
+        [
+          "27B (model_family)",
+          9
+        ],
+        [
+          "probability (concept)",
+          7
+        ],
+        [
+          "streaming (task)",
+          7
+        ],
+        [
+          "2B (model_family)",
+          7
+        ],
+        [
+          "reasoning (task)",
+          7
+        ],
+        [
+          "31B (model)",
+          6
+        ],
+        [
+          "4B (model_family)",
+          6
+        ],
+        [
+          "emotion (concept)",
+          5
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (task vs model)",
+          19
+        ],
+        [
+          "Llama (model vs model)",
+          5
+        ],
+        [
+          "Jev (model vs model)",
+          3
+        ],
+        [
+          "Qwen3 (model vs model_family)",
+          3
+        ],
+        [
+          "Mistral (maker vs model)",
+          3
+        ],
+        [
+          "NVIDIA (maker vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "llm",
+    "meta": {
+      "candidate": "llm",
+      "name": "gpt-6-luna",
+      "version": "openai 3.36.1, gpt-6-luna",
+      "threshold": 0.5,
+      "load_seconds": 1.6197305000387132,
+      "peak_rss_mb": 85.5,
+      "documents": 142,
+      "errors": 0,
+      "spent_usd": 0.0426407,
+      "tokens_in": 33287,
+      "tokens_out": 78624,
+      "spent_usd_at_cap_rates_5_20": 1.738915000000001,
+      "price_note": "USD 0.10 in / 0.50 out per million tokens, from secondary pricing aggregators (not confirmed on the OpenAI pricing page); run was capped using conservative 5/20 rates"
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8488372093023255,
+            "recall": 0.9240506329113924,
+            "f1": 0.8848484848484849,
+            "tp": 146,
+            "fp": 26,
+            "fn": 12,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7773584905660378,
+            "recall": 0.865546218487395,
+            "f1": 0.8190854870775348,
+            "tp": 206,
+            "fp": 59,
+            "fn": 32,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.15714285714285714,
+            "recall": 0.5789473684210527,
+            "f1": 0.24719101123595505,
+            "tp": 11,
+            "fp": 59,
+            "fn": 8,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.397196261682243,
+            "recall": 0.6967213114754098,
+            "f1": 0.505952380952381,
+            "tp": 85,
+            "fp": 129,
+            "fn": 37,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.3111111111111111,
+            "recall": 0.3111111111111111,
+            "f1": 0.3111111111111111,
+            "tp": 14,
+            "fp": 31,
+            "fn": 31,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.9404761904761905,
+            "recall": 0.9404761904761905,
+            "f1": 0.9404761904761905,
+            "tp": 79,
+            "fp": 5,
+            "fn": 5,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.4117647058823529,
+            "recall": 0.7,
+            "f1": 0.5185185185185185,
+            "tp": 7,
+            "fp": 10,
+            "fn": 3,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.6190476190476191,
+            "recall": 0.8125,
+            "f1": 0.7027027027027026,
+            "tp": 39,
+            "fp": 24,
+            "fn": 9,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.022058823529411766,
+            "recall": 0.09375,
+            "f1": 0.03571428571428571,
+            "tp": 3,
+            "fp": 133,
+            "fn": 29,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.5534709193245778,
+          "recall": 0.7804232804232805,
+          "f1": 0.6476399560922064,
+          "tp": 590,
+          "fp": 476,
+          "fn": 166,
+          "support": 756
+        },
+        "macro_f1": 0.5517333525152405,
+        "untyped": {
+          "precision": 0.5984990619136961,
+          "recall": 0.843915343915344,
+          "f1": 0.7003293084522503,
+          "tp": 638,
+          "fp": 428,
+          "fn": 118,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.8662790697674418,
+            "recall": 0.9430379746835443,
+            "f1": 0.9030303030303031,
+            "tp": 149,
+            "fp": 23,
+            "fn": 9,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.7849056603773585,
+            "recall": 0.8739495798319328,
+            "f1": 0.827037773359841,
+            "tp": 208,
+            "fp": 57,
+            "fn": 30,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.2,
+            "recall": 0.7368421052631579,
+            "f1": 0.31460674157303364,
+            "tp": 14,
+            "fp": 56,
+            "fn": 5,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.4252336448598131,
+            "recall": 0.7459016393442623,
+            "f1": 0.5416666666666667,
+            "tp": 91,
+            "fp": 123,
+            "fn": 31,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.4,
+            "recall": 0.4,
+            "f1": 0.4000000000000001,
+            "tp": 18,
+            "fp": 27,
+            "fn": 27,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.9642857142857143,
+            "recall": 0.9642857142857143,
+            "f1": 0.9642857142857143,
+            "tp": 81,
+            "fp": 3,
+            "fn": 3,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.47058823529411764,
+            "recall": 0.8,
+            "f1": 0.5925925925925927,
+            "tp": 8,
+            "fp": 9,
+            "fn": 2,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.6349206349206349,
+            "recall": 0.8333333333333334,
+            "f1": 0.7207207207207206,
+            "tp": 40,
+            "fp": 23,
+            "fn": 8,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.029411764705882353,
+            "recall": 0.125,
+            "f1": 0.047619047619047616,
+            "tp": 4,
+            "fp": 132,
+            "fn": 28,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.575046904315197,
+          "recall": 0.8108465608465608,
+          "f1": 0.672886937431394,
+          "tp": 613,
+          "fp": 453,
+          "fn": 143,
+          "support": 756
+        },
+        "macro_f1": 0.5901732844275467,
+        "untyped": {
+          "precision": 0.6350844277673546,
+          "recall": 0.8955026455026455,
+          "f1": 0.7431394072447861,
+          "tp": 677,
+          "fp": 389,
+          "fn": 79,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.8413793103448276,
+          "recall": 0.9384615384615385,
+          "f1": 0.8872727272727273,
+          "tp": 122,
+          "fp": 23,
+          "fn": 8,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.5517241379310345,
+          "recall": 0.9142857142857143,
+          "f1": 0.6881720430107526,
+          "tp": 32,
+          "fp": 26,
+          "fn": 3,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.25,
+          "recall": 0.7142857142857143,
+          "f1": 0.37037037037037035,
+          "tp": 5,
+          "fp": 15,
+          "fn": 2,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 1.0,
+          "recall": 0.75,
+          "f1": 0.8571428571428571,
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.6666666666666665,
+          "tp": 3,
+          "fp": 2,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.7702702702702703,
+          "recall": 0.8636363636363636,
+          "f1": 0.8142857142857143,
+          "tp": 57,
+          "fp": 17,
+          "fn": 9,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.7278688524590164,
+        "recall": 0.9024390243902439,
+        "f1": 0.8058076225045373,
+        "tp": 222,
+        "fp": 83,
+        "fn": 24,
+        "support": 246
+      },
+      "macro_f1": 0.713985063124848
+    },
+    "latency_ms": {
+      "median": 5986.823500512401,
+      "p95": 13368.806087481787,
+      "mean": 6710.553089792522
+    },
+    "cpu_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "mean": 0.0
+    },
+    "cpu_seconds_per_1000_documents": 0.0,
+    "api_cost_usd_per_1000_documents": 0.30028661971830983,
+    "resolution": {
+      "new_proposed": 342,
+      "known_resolved_correctly": 259,
+      "known_left_unresolved": 11,
+      "new_wrongly_merged": 1
+    },
+    "failure_modes": {
+      "predicted_mentions": 1068,
+      "spurious_no_gold_overlap": 311,
+      "wrong_kind_overlap": 142,
+      "ungrounded_text_not_in_source": 2,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 305,
+      "top_spurious": [
+        [
+          "reasoning (task)",
+          15
+        ],
+        [
+          "fine-tuned (technique)",
+          7
+        ],
+        [
+          "31B (model)",
+          4
+        ],
+        [
+          "E2B (model)",
+          4
+        ],
+        [
+          "E4B (model)",
+          4
+        ],
+        [
+          "open-weights (concept)",
+          4
+        ],
+        [
+          "8B (model)",
+          4
+        ],
+        [
+          "vision encoder (concept)",
+          4
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "TTS (task vs model)",
+          10
+        ],
+        [
+          "Qwen (maker vs model)",
+          6
+        ],
+        [
+          "MoE (model_family vs technique)",
+          6
+        ],
+        [
+          "mixture-of-experts (concept vs technique)",
+          5
+        ],
+        [
+          "decision (task vs concept)",
+          5
+        ],
+        [
+          "MOSS-TTS (model_family vs model)",
+          5
+        ]
+      ],
+      "top_ungrounded": [
+        [
+          "voice cloning",
+          1
+        ],
+        [
+          "expression tags",
+          1
+        ]
+      ]
+    },
+    "errors": 0
+  },
+  {
+    "label": "nuner-zero@0.5",
+    "meta": {
+      "candidate": "nuner-zero@0.5",
+      "name": "nuner-zero",
+      "version": "gliner 0.2.29, torch 2.14.1, numind/NuNER_Zero, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 30.080096207966562,
+      "peak_rss_mb": 4094.6875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 41.6044921875
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.40865384615384615,
+            "recall": 0.5379746835443038,
+            "f1": 0.46448087431693985,
+            "tp": 85,
+            "fp": 123,
+            "fn": 73,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.14489311163895488,
+            "recall": 0.25630252100840334,
+            "f1": 0.18512898330804248,
+            "tp": 61,
+            "fp": 360,
+            "fn": 177,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.06521739130434782,
+            "recall": 0.15789473684210525,
+            "f1": 0.0923076923076923,
+            "tp": 3,
+            "fp": 43,
+            "fn": 16,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.0851063829787234,
+            "recall": 0.03278688524590164,
+            "f1": 0.047337278106508875,
+            "tp": 4,
+            "fp": 43,
+            "fn": 118,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 18,
+            "fn": 45,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.028112449799196786,
+            "recall": 0.08333333333333333,
+            "f1": 0.04204204204204204,
+            "tp": 7,
+            "fp": 242,
+            "fn": 77,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.10714285714285714,
+            "recall": 0.3,
+            "f1": 0.15789473684210525,
+            "tp": 3,
+            "fp": 25,
+            "fn": 7,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.08403361344537816,
+            "recall": 0.20833333333333334,
+            "f1": 0.11976047904191618,
+            "tp": 10,
+            "fp": 109,
+            "fn": 38,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 18,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.14991334488734837,
+          "recall": 0.22883597883597884,
+          "f1": 0.181151832460733,
+          "tp": 173,
+          "fp": 981,
+          "fn": 583,
+          "support": 756
+        },
+        "macro_f1": 0.123216898440583,
+        "untyped": {
+          "precision": 0.17764298093587522,
+          "recall": 0.27116402116402116,
+          "f1": 0.21465968586387432,
+          "tp": 205,
+          "fp": 949,
+          "fn": 551,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.6153846153846154,
+            "recall": 0.810126582278481,
+            "f1": 0.6994535519125684,
+            "tp": 128,
+            "fp": 80,
+            "fn": 30,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.2684085510688836,
+            "recall": 0.47478991596638653,
+            "f1": 0.34294385432473445,
+            "tp": 113,
+            "fp": 308,
+            "fn": 125,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.17391304347826086,
+            "recall": 0.42105263157894735,
+            "f1": 0.24615384615384617,
+            "tp": 8,
+            "fp": 38,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.23404255319148937,
+            "recall": 0.09016393442622951,
+            "f1": 0.1301775147928994,
+            "tp": 11,
+            "fp": 36,
+            "fn": 111,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.3333333333333333,
+            "recall": 0.13333333333333333,
+            "f1": 0.19047619047619044,
+            "tp": 6,
+            "fp": 12,
+            "fn": 39,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.2289156626506024,
+            "recall": 0.6785714285714286,
+            "f1": 0.34234234234234234,
+            "tp": 57,
+            "fp": 192,
+            "fn": 27,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.14285714285714285,
+            "recall": 0.4,
+            "f1": 0.21052631578947364,
+            "tp": 4,
+            "fp": 24,
+            "fn": 6,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.2857142857142857,
+            "recall": 0.7083333333333334,
+            "f1": 0.40718562874251496,
+            "tp": 34,
+            "fp": 85,
+            "fn": 14,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.05555555555555555,
+            "recall": 0.03125,
+            "f1": 0.04,
+            "tp": 1,
+            "fp": 17,
+            "fn": 31,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.31369150779896016,
+          "recall": 0.47883597883597884,
+          "f1": 0.37905759162303665,
+          "tp": 362,
+          "fp": 792,
+          "fn": 394,
+          "support": 756
+        },
+        "macro_f1": 0.2899176938371744,
+        "untyped": {
+          "precision": 0.36568457538994803,
+          "recall": 0.5582010582010583,
+          "f1": 0.4418848167539267,
+          "tp": 422,
+          "fp": 732,
+          "fn": 334,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 470.5742289952468,
+      "p95": 1030.4308565187966,
+      "mean": 565.638784636845
+    },
+    "cpu_ms": {
+      "median": 639.8550000000043,
+      "p95": 835.8970000000003,
+      "mean": 660.2948943661984
+    },
+    "cpu_seconds_per_1000_documents": 660.2948943661984,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 199,
+      "known_left_unresolved": 90,
+      "known_resolved_correctly": 65,
+      "known_resolved_to_wrong_entity": 8
+    },
+    "failure_modes": {
+      "predicted_mentions": 1154,
+      "spurious_no_gold_overlap": 307,
+      "wrong_kind_overlap": 485,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          ". (licence)",
+          53
+        ],
+        [
+          ". (model)",
+          49
+        ],
+        [
+          "model (model)",
+          11
+        ],
+        [
+          ". (platform)",
+          10
+        ],
+        [
+          ". (maker)",
+          7
+        ],
+        [
+          "31B (model)",
+          4
+        ],
+        [
+          "27B (model)",
+          4
+        ],
+        [
+          "27B (model_family)",
+          4
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "0 (licence vs licence)",
+          50
+        ],
+        [
+          "2 (licence vs licence)",
+          31
+        ],
+        [
+          "AI (maker vs maker)",
+          22
+        ],
+        [
+          "Face (platform vs platform)",
+          21
+        ],
+        [
+          "3 (model vs model)",
+          19
+        ],
+        [
+          "1 (model vs model)",
+          14
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "relex@0.5",
+    "meta": {
+      "candidate": "relex@0.5",
+      "name": "gliner-relex-large",
+      "version": "gliner 0.2.29, torch 2.14.1, knowledgator/gliner-relex-large-v1.0, threshold 0.5",
+      "threshold": 0.5,
+      "load_seconds": 43.190054708044045,
+      "peak_rss_mb": 3397.1875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 49.25390625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9025974025974026,
+            "recall": 0.879746835443038,
+            "f1": 0.8910256410256411,
+            "tp": 139,
+            "fp": 15,
+            "fn": 19,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.6170212765957447,
+            "recall": 0.7310924369747899,
+            "f1": 0.6692307692307693,
+            "tp": 174,
+            "fp": 108,
+            "fn": 64,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.08860759493670886,
+            "recall": 0.3684210526315789,
+            "f1": 0.14285714285714285,
+            "tp": 7,
+            "fp": 72,
+            "fn": 12,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.27358490566037735,
+            "recall": 0.23770491803278687,
+            "f1": 0.2543859649122807,
+            "tp": 29,
+            "fp": 77,
+            "fn": 93,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.1956521739130435,
+            "recall": 0.2,
+            "f1": 0.1978021978021978,
+            "tp": 9,
+            "fp": 37,
+            "fn": 36,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.6292134831460674,
+            "recall": 0.6666666666666666,
+            "f1": 0.6473988439306357,
+            "tp": 56,
+            "fp": 33,
+            "fn": 28,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.10526315789473684,
+            "recall": 0.8,
+            "f1": 0.18604651162790697,
+            "tp": 8,
+            "fp": 68,
+            "fn": 2,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.4024390243902439,
+            "recall": 0.6875,
+            "f1": 0.5076923076923078,
+            "tp": 33,
+            "fp": 49,
+            "fn": 15,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 52,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.47101449275362317,
+          "recall": 0.6018518518518519,
+          "f1": 0.5284552845528454,
+          "tp": 455,
+          "fp": 511,
+          "fn": 301,
+          "support": 756
+        },
+        "macro_f1": 0.388493264342098,
+        "untyped": {
+          "precision": 0.5351966873706004,
+          "recall": 0.6838624338624338,
+          "f1": 0.6004645760743321,
+          "tp": 517,
+          "fp": 449,
+          "fn": 239,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.9285714285714286,
+            "recall": 0.9050632911392406,
+            "f1": 0.9166666666666666,
+            "tp": 143,
+            "fp": 11,
+            "fn": 15,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.648936170212766,
+            "recall": 0.7689075630252101,
+            "f1": 0.7038461538461539,
+            "tp": 183,
+            "fp": 99,
+            "fn": 55,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.10126582278481013,
+            "recall": 0.42105263157894735,
+            "f1": 0.16326530612244897,
+            "tp": 8,
+            "fp": 71,
+            "fn": 11,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.33962264150943394,
+            "recall": 0.29508196721311475,
+            "f1": 0.3157894736842105,
+            "tp": 36,
+            "fp": 70,
+            "fn": 86,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.21739130434782608,
+            "recall": 0.2222222222222222,
+            "f1": 0.2197802197802198,
+            "tp": 10,
+            "fp": 36,
+            "fn": 35,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.6404494382022472,
+            "recall": 0.6785714285714286,
+            "f1": 0.6589595375722543,
+            "tp": 57,
+            "fp": 32,
+            "fn": 27,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.10526315789473684,
+            "recall": 0.8,
+            "f1": 0.18604651162790697,
+            "tp": 8,
+            "fp": 68,
+            "fn": 2,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.4146341463414634,
+            "recall": 0.7083333333333334,
+            "f1": 0.523076923076923,
+            "tp": 34,
+            "fp": 48,
+            "fn": 14,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 52,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.49585921325051757,
+          "recall": 0.6335978835978836,
+          "f1": 0.5563298490127758,
+          "tp": 479,
+          "fp": 487,
+          "fn": 277,
+          "support": 756
+        },
+        "macro_f1": 0.40971453248630935,
+        "untyped": {
+          "precision": 0.5900621118012422,
+          "recall": 0.753968253968254,
+          "f1": 0.6620209059233451,
+          "tp": 570,
+          "fp": 396,
+          "fn": 186,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.746031746031746,
+          "recall": 0.7230769230769231,
+          "f1": 0.7343749999999999,
+          "tp": 94,
+          "fp": 32,
+          "fn": 36,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.17293233082706766,
+          "recall": 0.6571428571428571,
+          "f1": 0.2738095238095238,
+          "tp": 23,
+          "fp": 110,
+          "fn": 12,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.07692307692307693,
+          "recall": 0.5714285714285714,
+          "f1": 0.13559322033898308,
+          "tp": 4,
+          "fp": 48,
+          "fn": 3,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.12121212121212122,
+          "recall": 1.0,
+          "f1": 0.21621621621621626,
+          "tp": 4,
+          "fp": 29,
+          "fn": 0,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.1,
+          "recall": 0.75,
+          "f1": 0.17647058823529416,
+          "tp": 3,
+          "fp": 27,
+          "fn": 1,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.49038461538461536,
+          "recall": 0.7727272727272727,
+          "f1": 0.6,
+          "tp": 51,
+          "fp": 53,
+          "fn": 15,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.37447698744769875,
+        "recall": 0.7276422764227642,
+        "f1": 0.4944751381215471,
+        "tp": 179,
+        "fp": 299,
+        "fn": 67,
+        "support": 246
+      },
+      "macro_f1": 0.35607742476666954
+    },
+    "latency_ms": {
+      "median": 416.2606249738019,
+      "p95": 550.6906725873705,
+      "mean": 433.32106046235964
+    },
+    "cpu_ms": {
+      "median": 671.7040000000054,
+      "p95": 885.6161499999978,
+      "mean": 694.827711267604
+    },
+    "cpu_seconds_per_1000_documents": 694.827711267604,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 301,
+      "known_resolved_correctly": 167,
+      "known_left_unresolved": 11
+    },
+    "failure_modes": {
+      "predicted_mentions": 966,
+      "spurious_no_gold_overlap": 342,
+      "wrong_kind_overlap": 145,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 1,
+      "relations_predicted": 501,
+      "top_spurious": [
+        [
+          "reasoning (task)",
+          5
+        ],
+        [
+          "probability (concept)",
+          4
+        ],
+        [
+          "weights (concept)",
+          4
+        ],
+        [
+          "4B (model)",
+          3
+        ],
+        [
+          "Weights (concept)",
+          3
+        ],
+        [
+          "E2B (model)",
+          2
+        ],
+        [
+          "E4B (model)",
+          2
+        ],
+        [
+          "reference audio (dataset)",
+          2
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "MoE (model_family vs technique)",
+          4
+        ],
+        [
+          "decision model (model vs concept)",
+          4
+        ],
+        [
+          "MIT-licensed (licence vs licence)",
+          3
+        ],
+        [
+          "mixture-of-experts reasoning model (model_family vs technique)",
+          3
+        ],
+        [
+          "Gemma 4 (model vs model_family)",
+          3
+        ],
+        [
+          "MIT licensed (licence vs licence)",
+          3
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  },
+  {
+    "label": "spacy",
+    "meta": {
+      "candidate": "spacy",
+      "name": "spacy-en_core_web_sm",
+      "version": "spacy 3.8.16, en_core_web_sm 3.7.1",
+      "threshold": 0.5,
+      "load_seconds": 7.161317166988738,
+      "peak_rss_mb": 352.6875,
+      "documents": 142,
+      "errors": 0,
+      "repeats": 3,
+      "machine_load_average_at_end": 18.05322265625
+    },
+    "entities": {
+      "strict": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.23249299719887956,
+            "recall": 0.5253164556962026,
+            "f1": 0.3223300970873787,
+            "tp": 83,
+            "fp": 274,
+            "fn": 75,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.23880597014925373,
+            "recall": 0.06722689075630252,
+            "f1": 0.10491803278688523,
+            "tp": 16,
+            "fp": 51,
+            "fn": 222,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 19,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 122,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 45,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 9,
+            "fn": 84,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 10,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 48,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.22863741339491916,
+          "recall": 0.13095238095238096,
+          "f1": 0.1665264928511354,
+          "tp": 99,
+          "fp": 334,
+          "fn": 657,
+          "support": 756
+        },
+        "macro_f1": 0.04747201443047377,
+        "untyped": {
+          "precision": 0.558891454965358,
+          "recall": 0.3201058201058201,
+          "f1": 0.40706476030277544,
+          "tp": 242,
+          "fp": 191,
+          "fn": 514,
+          "support": 756
+        }
+      },
+      "lenient": {
+        "per_kind": {
+          "maker": {
+            "precision": 0.2605042016806723,
+            "recall": 0.5886075949367089,
+            "f1": 0.36116504854368936,
+            "tp": 93,
+            "fp": 264,
+            "fn": 65,
+            "support": 158
+          },
+          "model": {
+            "precision": 0.26865671641791045,
+            "recall": 0.07563025210084033,
+            "f1": 0.11803278688524589,
+            "tp": 18,
+            "fp": 49,
+            "fn": 220,
+            "support": 238
+          },
+          "model_family": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 19,
+            "support": 19
+          },
+          "task": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 122,
+            "support": 122
+          },
+          "technique": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 45,
+            "support": 45
+          },
+          "licence": {
+            "precision": 0.1111111111111111,
+            "recall": 0.011904761904761904,
+            "f1": 0.021505376344086023,
+            "tp": 1,
+            "fp": 8,
+            "fn": 83,
+            "support": 84
+          },
+          "dataset": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 10,
+            "support": 10
+          },
+          "platform": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 48,
+            "support": 48
+          },
+          "concept": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 32,
+            "support": 32
+          }
+        },
+        "micro": {
+          "precision": 0.2586605080831409,
+          "recall": 0.14814814814814814,
+          "f1": 0.1883936080740118,
+          "tp": 112,
+          "fp": 321,
+          "fn": 644,
+          "support": 756
+        },
+        "macro_f1": 0.05563369019700236,
+        "untyped": {
+          "precision": 0.6928406466512702,
+          "recall": 0.3968253968253968,
+          "f1": 0.5046257359125316,
+          "tp": 300,
+          "fp": 133,
+          "fn": 456,
+          "support": 756
+        }
+      }
+    },
+    "relations": {
+      "per_type": {
+        "made_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 130,
+          "support": 130
+        },
+        "built_on": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 35,
+          "support": 35
+        },
+        "measured_by": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "support": 7
+        },
+        "replaces": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "successor_of": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 4,
+          "support": 4
+        },
+        "licensed_under": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 0,
+          "fn": 66,
+          "support": 66
+        }
+      },
+      "micro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 246,
+        "support": 246
+      },
+      "macro_f1": 0.0
+    },
+    "latency_ms": {
+      "median": 9.526583482511342,
+      "p95": 17.224805979640223,
+      "mean": 10.671807260787062
+    },
+    "cpu_ms": {
+      "median": 9.303499999999687,
+      "p95": 17.016550000000255,
+      "mean": 10.457140845070453
+    },
+    "cpu_seconds_per_1000_documents": 10.457140845070453,
+    "api_cost_usd_per_1000_documents": 0.0,
+    "resolution": {
+      "new_proposed": 69,
+      "known_resolved_correctly": 37,
+      "known_left_unresolved": 6
+    },
+    "failure_modes": {
+      "predicted_mentions": 433,
+      "spurious_no_gold_overlap": 100,
+      "wrong_kind_overlap": 221,
+      "ungrounded_text_not_in_source": 0,
+      "relation_endpoints_not_in_source": 0,
+      "relations_predicted": 0,
+      "top_spurious": [
+        [
+          "4B (maker)",
+          10
+        ],
+        [
+          "API (maker)",
+          8
+        ],
+        [
+          "2B (maker)",
+          8
+        ],
+        [
+          "8B (maker)",
+          7
+        ],
+        [
+          "0.6B (maker)",
+          5
+        ],
+        [
+          "CPU (maker)",
+          5
+        ],
+        [
+          "GPU (maker)",
+          5
+        ],
+        [
+          "27B (maker)",
+          3
+        ]
+      ],
+      "top_wrong_kind": [
+        [
+          "Apache (model vs licence)",
+          24
+        ],
+        [
+          "TTS (maker vs task)",
+          21
+        ],
+        [
+          "MIT (maker vs licence)",
+          14
+        ],
+        [
+          "Hugging Face (maker vs platform)",
+          9
+        ],
+        [
+          "Apache 2.0 (model vs licence)",
+          5
+        ],
+        [
+          "Hugging Face (model vs platform)",
+          5
+        ]
+      ],
+      "top_ungrounded": []
+    },
+    "errors": 0
+  }
+]
