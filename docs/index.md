@@ -118,6 +118,7 @@ Analysis tools help you find structure inside large text corpora. Topic modeling
 - [Taxonomy and Ontology](taxonomy-ontology.md)
 - [Research Agent Intake](research-agent-intake.md)
 - [Topic Trends](topic-trends.md)
+- [Topic Identity](topic-identity.md)
 - [Steering Proposals](steering-proposals.md)
 - [Markov Analysis](markov-analysis.md)
 

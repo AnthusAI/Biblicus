@@ -89,10 +89,41 @@ def cmd_analyze_topic_trends(arguments: argparse.Namespace) -> int:
         windows=windows,
         as_of=arguments.as_of,
         rank_window=arguments.rank_window,
+        bin=arguments.bin,
+        weeks=arguments.weeks,
     )
     output = analyze_topic_trends(request)
     if arguments.format == "markdown":
         print(topic_trends_markdown(output))
+    else:
+        print(output.model_dump_json(indent=2))
+    return 0
+
+
+def cmd_analyze_topic_identity(arguments: argparse.Namespace) -> int:
+    """
+    Assign stable cluster identifiers and lifecycle events to a topic modeling run.
+
+    :param arguments: Parsed command-line interface arguments.
+    :type arguments: argparse.Namespace
+    :return: Exit code.
+    :rtype: int
+    """
+    from ..api import TopicIdentityRequest, analyze_topic_identity
+    from ..topic_identity import topic_identity_markdown
+
+    request = validate_request(
+        TopicIdentityRequest,
+        "analyze topic-identity",
+        corpus_path=_corpus_path_from_arguments(arguments),
+        current_run_id=arguments.current,
+        previous_run_id=arguments.previous,
+        threshold=arguments.threshold,
+        trends_snapshot_id=arguments.trends_snapshot,
+    )
+    output = analyze_topic_identity(request)
+    if arguments.format == "markdown":
+        print(topic_identity_markdown(output))
     else:
         print(output.model_dump_json(indent=2))
     return 0
@@ -430,12 +461,60 @@ def register_analyze_commands(subparsers: argparse._SubParsersAction) -> None:
         help="Window used to rank topics. Must be included in --windows.",
     )
     p_analyze_topic_trends.add_argument(
+        "--bin",
+        choices=["weekly"],
+        default=None,
+        help="Add a per-topic count series binned by ISO week. The final bin is the week of --as-of (default today, UTC).",
+    )
+    p_analyze_topic_trends.add_argument(
+        "--weeks",
+        type=int,
+        default=None,
+        help="Number of weekly bins, oldest to newest. Requires --bin. Defaults to 8.",
+    )
+    p_analyze_topic_trends.add_argument(
         "--format",
         choices=["json", "markdown"],
         default="json",
         help="Output format.",
     )
     p_analyze_topic_trends.set_defaults(func=cmd_analyze_topic_trends, typed_command="analyze topic-trends")
+
+    p_analyze_topic_identity = analyze_sub.add_parser(
+        "topic-identity",
+        help="Match topic-model clusters to the previous run and assign stable cluster identifiers.",
+    )
+    _add_common_corpus_arg(p_analyze_topic_identity)
+    p_analyze_topic_identity.add_argument(
+        "--current",
+        required=True,
+        help="Topic modeling snapshot identifier of the run to identify.",
+    )
+    p_analyze_topic_identity.add_argument(
+        "--previous",
+        default=None,
+        help="Previous topic modeling snapshot identifier. Omit for the first run.",
+    )
+    p_analyze_topic_identity.add_argument(
+        "--threshold",
+        type=float,
+        default=0.5,
+        help="Minimum Jaccard overlap of member item identifiers for two clusters to match.",
+    )
+    p_analyze_topic_identity.add_argument(
+        "--trends-snapshot",
+        default=None,
+        help="Topic trends snapshot built with --bin weekly, used for the eight-week series.",
+    )
+    p_analyze_topic_identity.add_argument(
+        "--format",
+        choices=["json", "markdown"],
+        default="json",
+        help="Output format.",
+    )
+    p_analyze_topic_identity.set_defaults(
+        func=cmd_analyze_topic_identity, typed_command="analyze topic-identity"
+    )
 
     p_analyze_profile = analyze_sub.add_parser("profile", help="Run profiling analysis.")
     _add_common_corpus_arg(p_analyze_profile)

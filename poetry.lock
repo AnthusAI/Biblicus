@@ -11084,4 +11084,4 @@ web = ["beautifulsoup4"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "4b6d8b07ac529e7504d9506ea916fe5978753174cdbe459d36a22e707699b1fb"
+content-hash = "99a3c44a143d574671ff5ae1a30b3d5f7b35a63f2d00f69b05970658048d45bd"
