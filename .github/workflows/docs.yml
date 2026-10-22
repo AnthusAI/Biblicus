@@ -48,6 +48,7 @@ jobs:
           --tagline "Make your documents usable by your assistant, then decide later how you will search and retrieve them."
           --source-url "https://github.com/AnthusAI/Biblicus"
           --redirect-former-urls
+          --contact-url "https://anth.us/engage/?solution=Biblicus&cta=docs"
           --exclude "pr-faq/**" --exclude "reports/**" --exclude "*-plan.md"
 
       - name: Build API reference with Sphinx
