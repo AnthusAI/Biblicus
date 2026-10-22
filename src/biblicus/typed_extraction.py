@@ -51,7 +51,6 @@ CACHE_DIRECTORY_NAME = "cache"
 EntityState = Literal["resolved", "proposed"]
 
 _NON_ALPHANUMERIC_RUN = re.compile(r"[\W_]+")
-_TOKEN = re.compile(r"[^\W_]+")
 _JOINER = r"(?:[^\w\n]|_)+"
 _LEFT_BOUNDARY = r"(?<!\w)(?<!\w[-./'’])"
 _RIGHT_BOUNDARY = r"(?!\w)(?![-./'’]\w)"
