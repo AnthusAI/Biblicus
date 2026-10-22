@@ -22,10 +22,17 @@
         "model": "Sonnet 5.5",
         "name": "papyrus-anthus"
       }
+    },
+    {
+      "id": "5670ae65-c7c6-4eb0-a871-ff3ce92ce615",
+      "author": "home",
+      "text": "Board reconciliation 2026-10-22. Explicitly deferred, stays in the backlog. Weekly topic modelling and extraction still run by hand on a developer workstation (docs/knowledge-workstation-run.md in Papyrus). Any new cloud resource needs Ryan's approval.",
+      "created_at": "2026-10-22T10:46:54.571193Z",
+      "comment_type": "default"
     }
   ],
   "created_at": "2026-10-21T12:47:56.221777Z",
-  "updated_at": "2026-10-21T12:50:33.391613Z",
+  "updated_at": "2026-10-22T10:46:54.571217Z",
   "closed_at": null,
   "agent": {
     "platform": "claude_code",
