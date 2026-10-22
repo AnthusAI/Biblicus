@@ -14,8 +14,8 @@ Evaluation set for the typed entity and relation extractor exploration (Kanbus s
 The gold set was annotated by an AI agent (Claude Sonnet 5.5) acting as a human proxy, seeded from the
 editor-entered front-matter entities (`maker` and `task`) of each item and extended by reading every document.
 It has not been reviewed by a human editor. A spot check of 12 randomly chosen documents and a consistency pass
-(every surface form annotated in two or more documents was checked for omissions elsewhere) found and fixed
-22 omissions. Expect residual noise in the fuzzy kinds (`task`, `concept`, `technique`); the per-kind scores
+(every surface form annotated in two or more documents was checked for omissions elsewhere) found 25 omitted mentions
+(added) and 2 inconsistent `reasoning` task mentions (removed). Expect residual noise in the fuzzy kinds (`task`, `concept`, `technique`); the per-kind scores
 in the evaluation report should be read with that in mind. All text is public; the set contains no email addresses.
 
 ## Annotation rules
