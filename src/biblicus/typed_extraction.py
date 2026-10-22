@@ -24,7 +24,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Literal, Optional, Sequence, Tuple
 
-import yaml
 from pydantic import Field, model_validator
 
 from .analysis.schema import AnalysisSchemaModel
@@ -38,6 +37,7 @@ from .typed_extraction_backends import (
     BackendRelation,
     TypedExtractionBackend,
 )
+from .typed_vocabulary import Vocabulary, canonical_json
 
 TYPED_ENTITIES_ANALYSIS_ID = "typed-entities"
 TYPED_ENTITIES_SCHEMA_VERSION = 1
@@ -72,76 +72,6 @@ def normalise_alias(text: str) -> str:
     """
     folded = unicodedata.normalize("NFKC", text).casefold()
     return _NON_ALPHANUMERIC_RUN.sub(" ", folded).strip()
-
-
-class VocabularyTerm(AnalysisSchemaModel):
-    """
-    One entity kind or relation type of a closed vocabulary.
-
-    :ivar key: Stable key written to the output.
-    :vartype key: str
-    :ivar label: Short natural-language name given to the backend.
-    :vartype label: str
-    :ivar description: Optional longer description for human readers.
-    :vartype description: str or None
-    """
-
-    key: str = Field(min_length=1)
-    label: str = Field(min_length=1)
-    description: Optional[str] = None
-
-
-class Vocabulary(AnalysisSchemaModel):
-    """
-    Closed vocabulary of entity kinds and relation types for one publication.
-
-    :ivar version: Vocabulary version chosen by the publication.
-    :vartype version: int
-    :ivar publication: Publication the vocabulary belongs to.
-    :vartype publication: str
-    :ivar entity_kinds: Allowed entity kinds.
-    :vartype entity_kinds: list[VocabularyTerm]
-    :ivar relation_types: Allowed relation types.
-    :vartype relation_types: list[VocabularyTerm]
-    """
-
-    version: int = Field(ge=1)
-    publication: str = Field(min_length=1)
-    entity_kinds: List[VocabularyTerm] = Field(min_length=1)
-    relation_types: List[VocabularyTerm] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def _validate_unique_terms(self) -> "Vocabulary":
-        for group_name, terms in (
-            ("entity kind", self.entity_kinds),
-            ("relation type", self.relation_types),
-        ):
-            for field_name in ("key", "label"):
-                values = [getattr(term, field_name) for term in terms]
-                duplicates = sorted({value for value in values if values.count(value) > 1})
-                if duplicates:
-                    raise ValueError(f"Duplicate {group_name} {field_name}: {duplicates[0]}")
-        return self
-
-    @property
-    def hash(self) -> str:
-        """
-        Hash of the whole vocabulary content.
-
-        :return: Hexadecimal digest that changes when any term changes.
-        :rtype: str
-        """
-        return hash_text(_canonical_json(self.model_dump(mode="json")))
-
-    @property
-    def entity_kind_keys(self) -> List[str]:
-        """
-        Entity kind keys in vocabulary order.
-
-        :return: Entity kind keys.
-        :rtype: list[str]
-        """
-        return [term.key for term in self.entity_kinds]
 
 
 class RegistryEntry(AnalysisSchemaModel):
@@ -437,7 +367,7 @@ class TypedEntityRegistry:
         canonical = sorted(
             (entry.key, entry.kind, sorted(entry.aliases)) for entry in self._entries
         )
-        return hash_text(_canonical_json(canonical))
+        return hash_text(canonical_json(canonical))
 
     def resolve(self, text: str, kind: str) -> Optional[str]:
         """
@@ -473,31 +403,6 @@ class TypedEntityRegistry:
         return found
 
 
-def load_vocabulary(path: Path) -> Vocabulary:
-    """
-    Load a vocabulary file written in YAML or JSON.
-
-    :param path: Vocabulary file path.
-    :type path: pathlib.Path
-    :return: Validated vocabulary.
-    :rtype: Vocabulary
-    :raises FileNotFoundError: If the file does not exist.
-    :raises ValueError: If the content is not a valid vocabulary.
-    """
-    if not path.is_file():
-        raise FileNotFoundError(f"Vocabulary file not found: {path}")
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as error:
-        raise ValueError(f"Vocabulary file {path} is not valid YAML: {error}") from error
-    if not isinstance(data, dict):
-        raise ValueError(f"Vocabulary file {path} must contain a mapping")
-    try:
-        return Vocabulary.model_validate(data)
-    except ValueError as error:
-        raise ValueError(f"Invalid vocabulary {path}: {error}") from error
-
-
 def load_registry(path: Path, vocabulary: Vocabulary) -> TypedEntityRegistry:
     """
     Load a registry file: a JSON list of ``{key, kind, aliases}`` objects.
@@ -524,38 +429,6 @@ def load_registry(path: Path, vocabulary: Vocabulary) -> TypedEntityRegistry:
     except ValueError as error:
         raise ValueError(f"Invalid registry {path}: {error}") from error
     return TypedEntityRegistry(entries, vocabulary)
-
-
-def paragraph_windows(text: str, *, maximum_characters: int = 2000) -> List[Tuple[int, int]]:
-    """
-    Split a text into paragraph-sized windows.
-
-    Windows are separated by blank lines. A paragraph longer than the limit is cut at the last
-    whitespace before the limit, or at the limit when it has none.
-
-    :param text: Item text.
-    :type text: str
-    :param maximum_characters: Largest window size in characters.
-    :type maximum_characters: int
-    :return: ``(start, end)`` offsets of non-empty windows, in order.
-    :rtype: list[tuple[int, int]]
-    """
-    windows: List[Tuple[int, int]] = []
-    cursor = 0
-    for separator in list(re.finditer(r"\n[ \t]*\n", text)) + [None]:
-        paragraph_end = separator.start() if separator else len(text)
-        next_cursor = separator.end() if separator else len(text)
-        start = cursor
-        while start < paragraph_end:
-            end = min(start + maximum_characters, paragraph_end)
-            if end < paragraph_end:
-                cut = max(text.rfind(" ", start, end), text.rfind("\n", start, end))
-                end = cut if cut > start else end
-            if text[start:end].strip():
-                windows.append((start, end))
-            start = end
-        cursor = next_cursor
-    return windows
 
 
 def extract_typed_entities(
@@ -674,10 +547,6 @@ def typed_entities_run_dir(*, corpus: Corpus, run_id: str) -> Path:
     return corpus.analysis_run_dir(analysis_id=TYPED_ENTITIES_ANALYSIS_ID, snapshot_id=run_id)
 
 
-def _canonical_json(value: object) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-
-
 def _compile_alias_pattern(aliases: Dict[str, _Resolution]) -> Optional["re.Pattern[str]"]:
     if not aliases:
         return None
@@ -740,7 +609,7 @@ def _run_identifier(
     texts: Sequence[Tuple[str, str]],
 ) -> str:
     digest = hash_text(
-        _canonical_json(
+        canonical_json(
             {
                 "vocabulary": vocabulary.hash,
                 "registry": registry.hash if registry else None,
@@ -761,7 +630,7 @@ def _cache_path(
     threshold: float,
 ) -> Path:
     key = hash_text(
-        _canonical_json(
+        canonical_json(
             {
                 "text": hash_text(text),
                 "vocabulary": vocabulary.hash,
@@ -983,14 +852,10 @@ __all__ = [
     "TypedEntityRegistry",
     "TypedItemResult",
     "TypedRelation",
-    "Vocabulary",
     "VocabularyIdentity",
-    "VocabularyTerm",
     "extract_typed_entities",
     "load_registry",
-    "load_vocabulary",
     "normalise_alias",
-    "paragraph_windows",
     "typed_entities_json",
     "typed_entities_run_dir",
 ]

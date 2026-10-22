@@ -10,8 +10,9 @@ from typing import List, Literal, Optional
 from pydantic import Field
 
 from .. import typed_extraction as typed_extraction_module
-from ..typed_extraction import TypedEntitiesOutput, load_registry, load_vocabulary
+from ..typed_extraction import TypedEntitiesOutput, load_registry
 from ..typed_extraction_backends import create_backend
+from ..typed_vocabulary import load_vocabulary
 from ._common import ApiRequestModel, open_request_corpus
 
 

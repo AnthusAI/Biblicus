@@ -620,6 +620,7 @@ Behavior specifications:
 Primary implementation:
 
 - `src/biblicus/typed_extraction.py`
+- `src/biblicus/typed_vocabulary.py`
 - `src/biblicus/typed_extraction_backends.py`
 - `src/biblicus/api/typed_extraction.py`
 

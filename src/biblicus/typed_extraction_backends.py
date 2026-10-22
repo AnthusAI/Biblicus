@@ -14,14 +14,12 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
 from .analysis.schema import AnalysisSchemaModel
-
-if TYPE_CHECKING:
-    from .typed_extraction import Vocabulary
+from .typed_vocabulary import Vocabulary
 
 GLINER2_BACKEND_ID = "gliner2"
 GLINER2_MODEL = "fastino/gliner2-base-v1"
@@ -127,14 +125,14 @@ class TypedExtractionBackend(ABC):
     cacheable: bool = True
 
     @abstractmethod
-    def extract(self, text: str, vocabulary: "Vocabulary", threshold: float) -> BackendExtraction:
+    def extract(self, text: str, vocabulary: Vocabulary, threshold: float) -> BackendExtraction:
         """
         Propose entity mentions and relations for one item text.
 
         :param text: Item text.
         :type text: str
         :param vocabulary: Closed vocabulary; every returned kind and type must belong to it.
-        :type vocabulary: biblicus.typed_extraction.Vocabulary
+        :type vocabulary: biblicus.typed_vocabulary.Vocabulary
         :param threshold: Minimum confidence for a proposal.
         :type threshold: float
         :return: Proposed mentions and relations.
@@ -150,14 +148,14 @@ class RegistryOnlyBackend(TypedExtractionBackend):
     identity = BackendIdentity(id=REGISTRY_ONLY_BACKEND_ID)
     cacheable = False
 
-    def extract(self, text: str, vocabulary: "Vocabulary", threshold: float) -> BackendExtraction:
+    def extract(self, text: str, vocabulary: Vocabulary, threshold: float) -> BackendExtraction:
         """
         Return an empty proposal.
 
         :param text: Item text.
         :type text: str
         :param vocabulary: Closed vocabulary.
-        :type vocabulary: biblicus.typed_extraction.Vocabulary
+        :type vocabulary: biblicus.typed_vocabulary.Vocabulary
         :param threshold: Minimum confidence, unused.
         :type threshold: float
         :return: Empty extraction.
@@ -196,22 +194,20 @@ class Gliner2Backend(TypedExtractionBackend):
             self._loaded_model = _load_gliner2_model()
         return self._loaded_model
 
-    def extract(self, text: str, vocabulary: "Vocabulary", threshold: float) -> BackendExtraction:
+    def extract(self, text: str, vocabulary: Vocabulary, threshold: float) -> BackendExtraction:
         """
         Propose entity mentions and relations for one item text.
 
         :param text: Item text.
         :type text: str
         :param vocabulary: Closed vocabulary.
-        :type vocabulary: biblicus.typed_extraction.Vocabulary
+        :type vocabulary: biblicus.typed_vocabulary.Vocabulary
         :param threshold: Minimum confidence for a proposal.
         :type threshold: float
         :return: Proposed mentions and relations.
         :rtype: BackendExtraction
         :raises TypedExtractionDependencyError: If the ``typed-extraction`` extra is not installed.
         """
-        from .typed_extraction import paragraph_windows
-
         kind_by_label = {term.label: term.key for term in vocabulary.entity_kinds}
         type_by_label = {term.label: term.key for term in vocabulary.relation_types}
         mentions: List[BackendMention] = []
@@ -284,6 +280,38 @@ class Gliner2Backend(TypedExtractionBackend):
         return relations
 
 
+def paragraph_windows(text: str, *, maximum_characters: int = 2000) -> List[Tuple[int, int]]:
+    """
+    Split a text into paragraph-sized windows.
+
+    Windows are separated by blank lines. A paragraph longer than the limit is cut at the last
+    whitespace before the limit, or at the limit when it has none.
+
+    :param text: Item text.
+    :type text: str
+    :param maximum_characters: Largest window size in characters.
+    :type maximum_characters: int
+    :return: ``(start, end)`` offsets of non-empty windows, in order.
+    :rtype: list[tuple[int, int]]
+    """
+    windows: List[Tuple[int, int]] = []
+    cursor = 0
+    for separator in list(re.finditer(r"\n[ \t]*\n", text)) + [None]:
+        paragraph_end = separator.start() if separator else len(text)
+        next_cursor = separator.end() if separator else len(text)
+        start = cursor
+        while start < paragraph_end:
+            end = min(start + maximum_characters, paragraph_end)
+            if end < paragraph_end:
+                cut = max(text.rfind(" ", start, end), text.rfind("\n", start, end))
+                end = cut if cut > start else end
+            if text[start:end].strip():
+                windows.append((start, end))
+            start = end
+        cursor = next_cursor
+    return windows
+
+
 _TRIM_CHARACTERS = re.compile(r"[\s,.;:!?()\[\]{}\"']")
 
 
@@ -337,4 +365,5 @@ __all__ = [
     "TypedExtractionBackend",
     "TypedExtractionDependencyError",
     "create_backend",
+    "paragraph_windows",
 ]
