@@ -601,6 +601,28 @@ Primary implementation:
 - `src/biblicus/topic_identity.py`
 - `src/biblicus/research_intake.py`
 
+## Typed entities and relations
+
+What it does:
+
+- Extracts entities and relations of a publication's closed vocabulary from the extracted text of corpus items, resolves mentions of accepted entities by exact normalised alias match, and proposes the rest with character-offset evidence. The default backend is a registry matcher followed by GLiNER2, behind the optional `typed-extraction` extra.
+
+Documentation:
+
+- `docs/typed-entities.md`
+- `docs/typed-extractor-evaluation.md`
+
+Behavior specifications:
+
+- `features/typed_entity_extraction.feature`
+- `features/typed_entity_extraction_integration.feature`
+
+Primary implementation:
+
+- `src/biblicus/typed_extraction.py`
+- `src/biblicus/typed_extraction_backends.py`
+- `src/biblicus/api/typed_extraction.py`
+
 ## Bounded web transform
 
 What it does:

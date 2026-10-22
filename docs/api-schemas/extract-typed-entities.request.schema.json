@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "description": "Request to extract typed entities and relations from corpus items.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar vocabulary_path: Closed vocabulary file (YAML or JSON).\n:vartype vocabulary_path: str\n:ivar registry_path: Registry of accepted entities (JSON list), or None to propose every mention.\n:vartype registry_path: str or None\n:ivar backend: ``gliner2`` for the registry matcher followed by GLiNER2, or ``registry-only``.\n:vartype backend: str\n:ivar threshold: Score threshold for the backend, greater than 0 and at most 1.\n:vartype threshold: float\n:ivar item_ids: Items to process; empty for every item with extracted text.\n:vartype item_ids: list[str]\n:ivar extraction_snapshot: Extraction snapshot as ``extractor_id:snapshot_id``, or None for the\n    latest snapshot.\n:vartype extraction_snapshot: str or None\n:ivar out_dir: Extra directory that receives ``output.json``, or None.\n:vartype out_dir: str or None",
+  "properties": {
+    "backend": {
+      "default": "gliner2",
+      "enum": [
+        "gliner2",
+        "registry-only"
+      ],
+      "title": "Backend",
+      "type": "string"
+    },
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "extraction_snapshot": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Extraction Snapshot"
+    },
+    "item_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Item Ids",
+      "type": "array"
+    },
+    "out_dir": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Out Dir"
+    },
+    "registry_path": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Registry Path"
+    },
+    "threshold": {
+      "default": 0.7,
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Threshold",
+      "type": "number"
+    },
+    "vocabulary_path": {
+      "minLength": 1,
+      "title": "Vocabulary Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "vocabulary_path"
+  ],
+  "title": "TypedEntitiesRequest",
+  "type": "object"
+}

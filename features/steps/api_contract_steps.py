@@ -87,6 +87,7 @@ def step_every_command_published(context) -> None:
         "summarize-map-reduce",
         "extract-url-text",
         "extract-article-text",
+        "extract-typed-entities",
         "extract-web-metadata",
         "query",
         "reindex",
