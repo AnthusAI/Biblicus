@@ -63,6 +63,8 @@ relation_types:
     label: licensed under
 ```
 
+A vocabulary can hold both `model` (a specific named model, such as `CosyVoice2` or `CosyVoice 3`) and `model_family` (the line of models above it, such as `CosyVoice`). They are separate kinds and the extractor never folds one into the other. To relate a model to its family, add a `member_of` relation type (see `datasets/typed_extraction_lab/vocabulary.yml`). The model proposes `member_of` only when the text states the membership; a shared name prefix does not make one, and a model whose family the text does not name has no `member_of` relation.
+
 Keys and labels must be unique inside their group. Every `kind` and `type` in the output is a key from this file. A complete example is `datasets/typed_extraction_lab/vocabulary.yml`.
 
 ## The registry
