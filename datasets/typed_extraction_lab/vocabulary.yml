@@ -9,7 +9,7 @@ entity_kinds:
     description: An organisation or person that releases or trains a model (for example a lab, company, research team or independent developer).
   - key: model
     label: AI model
-    description: A specific named model, checkpoint, version or hosted model product (for example a model with a size or version suffix).
+    description: A specific named model, checkpoint, version or hosted model product (for example CosyVoice2, CosyVoice 3 or a model with a size or version suffix). Kept apart from model_family, which is the line above it.
   - key: model_family
     label: model family
     description: A named series or line of models without a size or checkpoint suffix (for example a generation such as Gemma 4).
@@ -47,6 +47,9 @@ relation_types:
   - key: successor_of
     label: successor of
     description: A model is the next version of an earlier model.
+  - key: member_of
+    label: member of
+    description: A specific model belongs to a named model family. Only when the text says which family; a shared name prefix alone is not enough.
   - key: licensed_under
     label: licensed under
     description: A model is released under a licence.

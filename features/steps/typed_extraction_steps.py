@@ -303,6 +303,12 @@ def step_item_relations(context, name: str) -> None:
     assert actual == expected, actual
 
 
+@then('item "{name}" has no relations')
+def step_item_no_relations(context, name: str) -> None:
+    item = _item_result(context, name)
+    assert item["relations"] == [], item
+
+
 @then('item "{name}" has no entities and no relations')
 def step_item_empty(context, name: str) -> None:
     item = _item_result(context, name)

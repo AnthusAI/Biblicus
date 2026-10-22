@@ -31,6 +31,7 @@ in the evaluation report should be read with that in mind. All text is public; t
 - `concept`: an abstract idea or interface the publication discusses (`decision model`, `safety classifier`, `System One API`).
 - Every occurrence of a surface form is annotated. Nested spans are not annotated (the longest wins).
 - A relation is annotated only when both endpoints appear as mentions in the same document and the sentence states the relationship (`made_by`, `built_on`, `measured_by`, `replaces`, `successor_of`, `licensed_under`). Relations whose subject is a pronoun ("It is built on...") are not annotated.
+- `member_of` (a model belongs to a named model family) is in the vocabulary so the extractor can relate a model to its family, but this gold set has no `member_of` annotations and the scores under `results/` were produced before it was added; they have not been re-run.
 
 ## Annotation format
 
