@@ -235,7 +235,7 @@ except FileNotFoundError:
 - **Use conventional commits** for all commits: prefix with `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, etc. to trigger the appropriate semantic version bump.
 - The workflow parses commit messages to determine the next version (major, minor, patch) and automatically generates release notes.
 - Local development should focus on writing code and tests; versioning and publishing are automated on `main`, which receives code only through a `develop` to `main` release pull request after code review.
-- Branching follows Git Flow: `develop` is the integration branch and `main` holds releases. Feature branches start from `develop` and their pull requests target `develop`. Merging `develop` into `main` is the release, and nothing earlier triggers semantic-release.
+- Branching follows Git Flow: `develop` is the integration branch and `main` holds releases. Feature branches start from `develop` and their pull requests target `develop`. Merging `develop` into `main` is the release, and nothing earlier triggers semantic-release. A hotfix is the one exception: a branch cut from `main` for an urgent fix to something already released or deployed (for example the docs site), merged into `main` by pull request with a commit type that does not trigger a release unless the fix itself must be published, then merged back into `develop` immediately.
 
 ## Coding style policies
 
