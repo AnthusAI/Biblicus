@@ -29,6 +29,7 @@ html_theme = "biblicus_rtd"
 html_theme_path = [str(Path(__file__).resolve().parent / "_themes")]
 html_static_path = ["_static"]
 html_css_files = ["css/biblicus.css"]
+html_context = {"contact_url": "https://anth.us/engage/?solution=Biblicus&cta=api-reference"}
 
 html_theme_options = {
     "prev_next_buttons_location": "bottom",
