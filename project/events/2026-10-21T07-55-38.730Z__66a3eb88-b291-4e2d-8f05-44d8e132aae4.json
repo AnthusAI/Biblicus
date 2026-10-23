@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "66a3eb88-b291-4e2d-8f05-44d8e132aae4",
+  "issue_id": "blbs-67eb7d88-4aba-45e8-98ba-44e7643a84c8",
+  "event_type": "field_updated",
+  "occurred_at": "2026-10-21T07:55:38.730Z",
+  "actor_id": "home",
+  "payload": {
+    "changes": {
+      "title": {
+        "from": "Papyrus relevance through Cyclotron in shadow mode",
+        "to": "Measure Cyclotron relevance decisions against editor accept/reject"
+      }
+    }
+  }
+}
