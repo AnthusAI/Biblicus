@@ -171,6 +171,114 @@
       "title": "TopicTrendEntry",
       "type": "object"
     },
+    "TopicTrendWeeklyBins": {
+      "additionalProperties": false,
+      "description": "Weekly time-series bins for every topic.\n\nWeeks are ISO weeks that start on Monday. The final bin is the ISO week that contains\n``as_of``. Items without a valid published date are excluded from every bin and counted in\n``undated_items``.\n\n:ivar bin: Binning granularity. Always ``weekly``.\n:vartype bin: str\n:ivar weeks: Number of bins.\n:vartype weeks: int\n:ivar as_of: Date whose ISO week is the final bin.\n:vartype as_of: str\n:ivar iso_weeks: ISO week labels such as ``2026-W43``, oldest to newest.\n:vartype iso_weeks: list[str]\n:ivar week_starts: Monday date of each bin, oldest to newest.\n:vartype week_starts: list[str]\n:ivar undated_items: Catalog items excluded because they have no valid published date.\n:vartype undated_items: int\n:ivar discovered_topics: Weekly counts for each discovered topic.\n:vartype discovered_topics: list[TopicTrendWeeklySeries]\n:ivar canonical_topics: Weekly counts for each canonical topic.\n:vartype canonical_topics: list[TopicTrendWeeklySeries]",
+      "properties": {
+        "as_of": {
+          "minLength": 1,
+          "title": "As Of",
+          "type": "string"
+        },
+        "bin": {
+          "default": "weekly",
+          "title": "Bin",
+          "type": "string"
+        },
+        "canonical_topics": {
+          "items": {
+            "$ref": "#/$defs/TopicTrendWeeklySeries"
+          },
+          "title": "Canonical Topics",
+          "type": "array"
+        },
+        "discovered_topics": {
+          "items": {
+            "$ref": "#/$defs/TopicTrendWeeklySeries"
+          },
+          "title": "Discovered Topics",
+          "type": "array"
+        },
+        "iso_weeks": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Iso Weeks",
+          "type": "array"
+        },
+        "undated_items": {
+          "minimum": 0,
+          "title": "Undated Items",
+          "type": "integer"
+        },
+        "week_starts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Week Starts",
+          "type": "array"
+        },
+        "weeks": {
+          "minimum": 1,
+          "title": "Weeks",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "weeks",
+        "as_of",
+        "undated_items"
+      ],
+      "title": "TopicTrendWeeklyBins",
+      "type": "object"
+    },
+    "TopicTrendWeeklySeries": {
+      "additionalProperties": false,
+      "description": "Weekly publication counts for one topic.\n\n:ivar topic_id: BERTopic topic identifier for discovered topics.\n:vartype topic_id: int or None\n:ivar topic_uid: Canonical topic identity for classifier topics.\n:vartype topic_uid: str or None\n:ivar label: Human-readable topic label.\n:vartype label: str\n:ivar counts: One integer count per week, ordered oldest to newest.\n:vartype counts: list[int]",
+      "properties": {
+        "counts": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Counts",
+          "type": "array"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Id"
+        },
+        "topic_uid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Uid"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "TopicTrendWeeklySeries",
+      "type": "object"
+    },
     "TopicTrendWindowMetric": {
       "additionalProperties": false,
       "description": "Publication-window metric for a topic.\n\n:ivar window: Window identifier.\n:vartype window: str\n:ivar document_count: Topic documents inside the window.\n:vartype document_count: int\n:ivar corpus_document_count: Corpus documents inside the window.\n:vartype corpus_document_count: int\n:ivar share: Topic share inside the window.\n:vartype share: float\n:ivar baseline_share: Topic all-time share.\n:vartype baseline_share: float\n:ivar momentum_score: Window share divided by baseline share.\n:vartype momentum_score: float",
@@ -219,7 +327,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Topic trend analysis output.\n\n:ivar schema_version: Schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar snapshot_id: Topic governance snapshot identifier.\n:vartype snapshot_id: str\n:ivar generated_at: Deterministic generation timestamp derived from as_of.\n:vartype generated_at: str\n:ivar inputs: Reproducibility inputs.\n:vartype inputs: dict[str, Any]\n:ivar as_of: Publication date used as the window anchor.\n:vartype as_of: str\n:ivar windows: Window identifiers.\n:vartype windows: list[str]\n:ivar rank_window: Window used for ranking.\n:vartype rank_window: str\n:ivar summary: Corpus-level trend summary.\n:vartype summary: dict[str, Any]\n:ivar canonical_topics: Ranked canonical topic coverage.\n:vartype canonical_topics: list[TopicTrendEntry]\n:ivar discovered_topics: Ranked discovered topic trends.\n:vartype discovered_topics: list[TopicTrendEntry]\n:ivar proposals: Unified steering proposal records.\n:vartype proposals: list[SteeringProposal]\n:ivar artifact_paths: Written artifact paths.\n:vartype artifact_paths: dict[str, str]\n:ivar warnings: Warning messages.\n:vartype warnings: list[str]",
+  "description": "Topic trend analysis output.\n\n:ivar schema_version: Schema version.\n:vartype schema_version: int\n:ivar analysis_id: Analysis identifier.\n:vartype analysis_id: str\n:ivar snapshot_id: Topic governance snapshot identifier.\n:vartype snapshot_id: str\n:ivar generated_at: Deterministic generation timestamp derived from as_of.\n:vartype generated_at: str\n:ivar inputs: Reproducibility inputs.\n:vartype inputs: dict[str, Any]\n:ivar as_of: Publication date used as the window anchor.\n:vartype as_of: str\n:ivar windows: Window identifiers.\n:vartype windows: list[str]\n:ivar rank_window: Window used for ranking.\n:vartype rank_window: str\n:ivar summary: Corpus-level trend summary.\n:vartype summary: dict[str, Any]\n:ivar canonical_topics: Ranked canonical topic coverage.\n:vartype canonical_topics: list[TopicTrendEntry]\n:ivar discovered_topics: Ranked discovered topic trends.\n:vartype discovered_topics: list[TopicTrendEntry]\n:ivar proposals: Unified steering proposal records.\n:vartype proposals: list[SteeringProposal]\n:ivar weekly_bins: Weekly bins, present only when weekly binning was requested.\n:vartype weekly_bins: TopicTrendWeeklyBins or None\n:ivar artifact_paths: Written artifact paths.\n:vartype artifact_paths: dict[str, str]\n:ivar warnings: Warning messages.\n:vartype warnings: list[str]",
   "properties": {
     "analysis_id": {
       "default": "topic-governance",
@@ -296,6 +404,17 @@
       },
       "title": "Warnings",
       "type": "array"
+    },
+    "weekly_bins": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TopicTrendWeeklyBins"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "windows": {
       "items": {

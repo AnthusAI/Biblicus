@@ -95,6 +95,7 @@ Extraction turns raw files into usable text. Biblicus supports pluggable extract
 
 - [Extraction](extraction.md)
 - [Extraction Evaluation](extraction-evaluation.md)
+- [Typed Extractor Evaluation](typed-extractor-evaluation.md)
 - [Extractors](extractors/index.md)
 - [Speech to Text](STT.md)
 
@@ -118,6 +119,8 @@ Analysis tools help you find structure inside large text corpora. Topic modeling
 - [Taxonomy and Ontology](taxonomy-ontology.md)
 - [Research Agent Intake](research-agent-intake.md)
 - [Topic Trends](topic-trends.md)
+- [Topic Identity](topic-identity.md)
+- [Typed Entities and Relations](typed-entities.md)
 - [Steering Proposals](steering-proposals.md)
 - [Markov Analysis](markov-analysis.md)
 

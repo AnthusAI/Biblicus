@@ -23,8 +23,10 @@ from ._common import (
 )
 from .analysis import (
     TopicContextRequest,
+    TopicIdentityRequest,
     TopicTrendsRequest,
     analyze_topic_context,
+    analyze_topic_identity,
     analyze_topic_trends,
 )
 from .context_pack import (
@@ -56,6 +58,7 @@ from .topic_classifier import (
     topic_classifier_project,
     topic_classifier_train,
 )
+from .typed_extraction import TypedEntitiesRequest, extract_typed_entities
 from .web import (
     ArticleTextRequest,
     ArticleTextResponse,
@@ -109,7 +112,9 @@ def _registry_entries() -> Dict[str, ApiCommand]:
     from ..taxonomy import TaxonomyDiscoveryOutput, TaxonomyRecordOutput
     from ..topic_classifier import TopicClassifierProjectionOutput, TopicClassifierTrainOutput
     from ..topic_context import TopicContextOutput
+    from ..topic_identity import TopicIdentityOutput
     from ..topic_trends import TopicTrendOutput
+    from ..typed_extraction import TypedEntitiesOutput
     from ..web_transform import ArticleInput, TransformResult
 
     entries = [
@@ -182,6 +187,20 @@ def _registry_entries() -> Dict[str, ApiCommand]:
             TopicTrendsRequest,
             TopicTrendOutput,
             analyze_topic_trends,
+        ),
+        (
+            "analyze-topic-identity",
+            "analyze",
+            TopicIdentityRequest,
+            TopicIdentityOutput,
+            analyze_topic_identity,
+        ),
+        (
+            "extract-typed-entities",
+            "extract",
+            TypedEntitiesRequest,
+            TypedEntitiesOutput,
+            extract_typed_entities,
         ),
         (
             "context-pack-build-blocks",
@@ -265,7 +284,9 @@ __all__ = [
     "TopicClassifierProjectRequest",
     "TopicClassifierTrainRequest",
     "TopicContextRequest",
+    "TopicIdentityRequest",
     "TopicTrendsRequest",
+    "TypedEntitiesRequest",
     "UrlTextRequest",
     "UrlTextFailureDetails",
     "UrlTextResponse",
@@ -276,6 +297,7 @@ __all__ = [
     "build_api_schemas",
     "context_pack_build_blocks",
     "extract_article_text",
+    "extract_typed_entities",
     "extract_url_text",
     "extract_web_metadata",
     "InvalidRequestError",

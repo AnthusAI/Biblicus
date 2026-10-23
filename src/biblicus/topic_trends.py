@@ -27,6 +27,9 @@ from .topic_classifier import (
 )
 
 TOPIC_GOVERNANCE_ANALYSIS_ID = "topic-governance"
+WEEKLY_BIN = "weekly"
+DEFAULT_WEEKLY_BINS = 8
+MAXIMUM_WEEKLY_BINS = 520
 PROPOSAL_KEYWORD_STOPWORDS = {"al", "et", "paper", "eq"}
 
 
@@ -91,6 +94,62 @@ class TopicTrendEntry(AnalysisSchemaModel):
     window_metrics: Dict[str, TopicTrendWindowMetric] = Field(default_factory=dict)
 
 
+class TopicTrendWeeklySeries(AnalysisSchemaModel):
+    """
+    Weekly publication counts for one topic.
+
+    :ivar topic_id: BERTopic topic identifier for discovered topics.
+    :vartype topic_id: int or None
+    :ivar topic_uid: Canonical topic identity for classifier topics.
+    :vartype topic_uid: str or None
+    :ivar label: Human-readable topic label.
+    :vartype label: str
+    :ivar counts: One integer count per week, ordered oldest to newest.
+    :vartype counts: list[int]
+    """
+
+    topic_id: Optional[int] = None
+    topic_uid: Optional[str] = None
+    label: str = Field(min_length=1)
+    counts: List[int] = Field(default_factory=list)
+
+
+class TopicTrendWeeklyBins(AnalysisSchemaModel):
+    """
+    Weekly time-series bins for every topic.
+
+    Weeks are ISO weeks that start on Monday. The final bin is the ISO week that contains
+    ``as_of``. Items without a valid published date are excluded from every bin and counted in
+    ``undated_items``.
+
+    :ivar bin: Binning granularity. Always ``weekly``.
+    :vartype bin: str
+    :ivar weeks: Number of bins.
+    :vartype weeks: int
+    :ivar as_of: Date whose ISO week is the final bin.
+    :vartype as_of: str
+    :ivar iso_weeks: ISO week labels such as ``2026-W43``, oldest to newest.
+    :vartype iso_weeks: list[str]
+    :ivar week_starts: Monday date of each bin, oldest to newest.
+    :vartype week_starts: list[str]
+    :ivar undated_items: Catalog items excluded because they have no valid published date.
+    :vartype undated_items: int
+    :ivar discovered_topics: Weekly counts for each discovered topic.
+    :vartype discovered_topics: list[TopicTrendWeeklySeries]
+    :ivar canonical_topics: Weekly counts for each canonical topic.
+    :vartype canonical_topics: list[TopicTrendWeeklySeries]
+    """
+
+    bin: str = Field(default=WEEKLY_BIN)
+    weeks: int = Field(ge=1)
+    as_of: str = Field(min_length=1)
+    iso_weeks: List[str] = Field(default_factory=list)
+    week_starts: List[str] = Field(default_factory=list)
+    undated_items: int = Field(ge=0)
+    discovered_topics: List[TopicTrendWeeklySeries] = Field(default_factory=list)
+    canonical_topics: List[TopicTrendWeeklySeries] = Field(default_factory=list)
+
+
 class TopicTrendOutput(AnalysisSchemaModel):
     """
     Topic trend analysis output.
@@ -119,6 +178,8 @@ class TopicTrendOutput(AnalysisSchemaModel):
     :vartype discovered_topics: list[TopicTrendEntry]
     :ivar proposals: Unified steering proposal records.
     :vartype proposals: list[SteeringProposal]
+    :ivar weekly_bins: Weekly bins, present only when weekly binning was requested.
+    :vartype weekly_bins: TopicTrendWeeklyBins or None
     :ivar artifact_paths: Written artifact paths.
     :vartype artifact_paths: dict[str, str]
     :ivar warnings: Warning messages.
@@ -137,6 +198,9 @@ class TopicTrendOutput(AnalysisSchemaModel):
     canonical_topics: List[TopicTrendEntry] = Field(default_factory=list)
     discovered_topics: List[TopicTrendEntry] = Field(default_factory=list)
     proposals: List[SteeringProposal] = Field(default_factory=list)
+    weekly_bins: Optional[TopicTrendWeeklyBins] = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     artifact_paths: Dict[str, str] = Field(default_factory=dict)
     warnings: List[str] = Field(default_factory=list)
 
@@ -176,6 +240,8 @@ def build_topic_trends(
     windows: Sequence[str],
     as_of: Optional[str],
     rank_window: str,
+    bin: Optional[str] = None,
+    weeks: Optional[int] = None,
 ) -> TopicTrendOutput:
     """
     Build and persist a temporal topic intelligence report.
@@ -192,9 +258,15 @@ def build_topic_trends(
     :type as_of: str or None
     :param rank_window: Window used for ranking.
     :type rank_window: str
+    :param bin: Optional binning granularity. ``weekly`` adds weekly counts per topic.
+    :type bin: str or None
+    :param weeks: Number of weekly bins. Defaults to 8 when ``bin`` is ``weekly``.
+    :type weeks: int or None
     :return: Topic trend output.
     :rtype: TopicTrendOutput
+    :raises ValueError: If the windows, rank window, or binning options are invalid.
     """
+    weekly_anchor = _resolve_weekly_request(bin=bin, weeks=weeks, as_of=as_of)
     parsed_windows = _parse_windows(windows)
     if rank_window not in parsed_windows:
         raise ValueError("rank_window must be included in windows")
@@ -253,6 +325,20 @@ def build_topic_trends(
         "as_of": anchor.isoformat(),
         "rank_window": rank_window,
     }
+    weekly_bins = None
+    if weekly_anchor is not None:
+        weeks = weeks or DEFAULT_WEEKLY_BINS
+        inputs.update(
+            {"bin": WEEKLY_BIN, "weeks": weeks, "weekly_as_of": weekly_anchor.isoformat()}
+        )
+        weekly_bins = _weekly_bins(
+            weeks=weeks,
+            anchor=weekly_anchor,
+            item_dates=item_dates,
+            undated_count=len(undated_item_ids),
+            discovered_topics=discovered_topics,
+            canonical_topics=canonical_topics,
+        )
     snapshot_id = _topic_governance_snapshot_id(inputs)
     generated_at = f"{anchor.isoformat()}T00:00:00+00:00"
     output = TopicTrendOutput(
@@ -273,6 +359,7 @@ def build_topic_trends(
         canonical_topics=canonical_topics,
         discovered_topics=discovered_topics,
         proposals=proposals,
+        weekly_bins=weekly_bins,
         warnings=date_warnings + canonical_warnings,
     )
     artifact_paths = _write_topic_trend_artifacts(corpus=corpus, output=output)
@@ -398,10 +485,30 @@ def topic_trends_markdown(output: TopicTrendOutput) -> str:
             )
     else:
         lines.append("No proposals.")
+    if payload.get("weekly_bins"):
+        lines.extend(_weekly_bins_markdown(payload["weekly_bins"]))
     if payload["warnings"]:
         lines.extend(["", "## Warnings", ""])
         lines.extend(f"- {warning}" for warning in payload["warnings"])
     return "\n".join(lines)
+
+
+def _weekly_bins_markdown(weekly_bins: Dict[str, Any]) -> List[str]:
+    lines = [
+        "",
+        "## Weekly Bins",
+        "",
+        f"- Weeks: {weekly_bins['weeks']} ending {weekly_bins['iso_weeks'][-1]}",
+        f"- Undated items: {weekly_bins['undated_items']}",
+        "",
+        "| Topic | Counts (oldest to newest) |",
+        "| --- | --- |",
+    ]
+    for group in ("discovered_topics", "canonical_topics"):
+        for row in weekly_bins[group]:
+            counts = " ".join(str(count) for count in row["counts"])
+            lines.append(f"| {_markdown_cell(row['label'])} | {counts} |")
+    return lines
 
 
 def _load_topic_modeling_output(*, corpus: Corpus, snapshot_id: str) -> TopicModelingOutput:
@@ -474,6 +581,79 @@ def _parse_publication_date(value: str) -> date:
     if parsed.tzinfo is not None:
         parsed = parsed.astimezone(timezone.utc)
     return parsed.date()
+
+
+def _today_utc() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def _resolve_weekly_request(
+    *, bin: Optional[str], weeks: Optional[int], as_of: Optional[str]
+) -> Optional[date]:
+    if bin is None:
+        if weeks is not None:
+            raise ValueError("weeks requires bin")
+        return None
+    if bin != WEEKLY_BIN:
+        raise ValueError(f"bin must be {WEEKLY_BIN}")
+    if weeks is not None and not 1 <= weeks <= MAXIMUM_WEEKLY_BINS:
+        raise ValueError(f"weeks must be between 1 and {MAXIMUM_WEEKLY_BINS}")
+    return _parse_publication_date(as_of) if as_of else _today_utc()
+
+
+def _week_start(day: date) -> date:
+    return day - timedelta(days=day.weekday())
+
+
+def _weekly_counts(
+    *, item_ids: Sequence[str], item_dates: Dict[str, date], first_week: date, weeks: int
+) -> List[int]:
+    counts = [0] * weeks
+    for item_id in item_ids:
+        index = (_week_start(item_dates[item_id]) - first_week).days // 7
+        if 0 <= index < weeks:
+            counts[index] += 1
+    return counts
+
+
+def _weekly_bins(
+    *,
+    weeks: int,
+    anchor: date,
+    item_dates: Dict[str, date],
+    undated_count: int,
+    discovered_topics: Sequence[TopicTrendEntry],
+    canonical_topics: Sequence[TopicTrendEntry],
+) -> TopicTrendWeeklyBins:
+    final_week = _week_start(anchor)
+    first_week = final_week - timedelta(weeks=weeks - 1)
+    starts = [first_week + timedelta(weeks=offset) for offset in range(weeks)]
+
+    def series(entries: Sequence[TopicTrendEntry]) -> List[TopicTrendWeeklySeries]:
+        return [
+            TopicTrendWeeklySeries(
+                topic_id=entry.topic_id,
+                topic_uid=entry.topic_uid,
+                label=entry.label,
+                counts=_weekly_counts(
+                    item_ids=[item_id for item_id in entry.document_ids if item_id in item_dates],
+                    item_dates=item_dates,
+                    first_week=first_week,
+                    weeks=weeks,
+                ),
+            )
+            for entry in entries
+        ]
+
+    return TopicTrendWeeklyBins(
+        weeks=weeks,
+        as_of=anchor.isoformat(),
+        iso_weeks=[f"{start.isocalendar()[0]}-W{start.isocalendar()[1]:02d}" for start in starts],
+        week_starts=[start.isoformat() for start in starts],
+        undated_items=undated_count,
+        discovered_topics=series(discovered_topics),
+        canonical_topics=series(canonical_topics),
+    )
 
 
 def _resolve_as_of(*, as_of: Optional[str], item_dates: Dict[str, date]) -> date:

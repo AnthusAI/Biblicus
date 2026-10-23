@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_id": "fab5004e-9f9c-43cf-9e72-29ef10099799",
+  "issue_id": "blbs-9668cfbc-3c50-4cc7-b698-8a4a44e8c7b7",
+  "event_type": "field_updated",
+  "occurred_at": "2026-10-21T12:48:04.250Z",
+  "actor_id": "home",
+  "payload": {
+    "changes": {
+      "description": {
+        "from": "## Context\nWeekly topic modelling and extraction currently run by hand on a developer workstation. That stays the case for now. Later, these jobs (BERTopic topic modelling, topic-trends, cluster matching, typed extraction) should run on a schedule in the cloud, containerised (for example an AWS Batch job definition with a container image), not on someone's laptop. They cannot run inside a Lambda bundle (heavy optional dependencies).\n\nStatus: pending/backlog. Do not start. New cloud resources and schedules need explicit human approval before anything is created. Papyrus side: PPY-428252 and PPY-77bb3b describe the scheduled snapshot that consumes the outputs; this story is the producing side.\n\n## Acceptance criteria (for when it is picked up)\n\\`\\`\\`gherkin\nFeature: Cloud job runner\n  Scenario: Run a job in a container\n    Given a container image with the job's optional dependencies\n    When a job is submitted with a corpus location and a configuration\n    Then it runs to completion without a developer machine\n    And writes its outputs to the configured storage location\n\n  Scenario: Scheduled weekly run\n    Given an approved weekly schedule\n    When the schedule fires\n    Then the topic-modelling job runs and records its snapshot identifier\n\\`\\`\\`",
+        "to": "## Context\nWeekly topic modelling and extraction currently run by hand on a developer workstation. That stays the case for now. Later, these jobs (BERTopic topic modelling, topic-trends, cluster matching, typed extraction) should run on a schedule in the cloud, containerised (for example an AWS Batch job definition with a container image), not on someone's laptop. They cannot run inside a Lambda bundle (heavy optional dependencies).\n\nStatus: pending/backlog. Do not start. New cloud resources and schedules need explicit human approval before anything is created. Papyrus side: PPY-428252 and PPY-77bb3b describe the scheduled snapshot that consumes the outputs; this story is the producing side.\n\n## Acceptance criteria (for when it is picked up)\n```gherkin\nFeature: Cloud job runner\n  Scenario: Run a job in a container\n    Given a container image with the job's optional dependencies\n    When a job is submitted with a corpus location and a configuration\n    Then it runs to completion without a developer machine\n    And writes its outputs to the configured storage location\n\n  Scenario: Scheduled weekly run\n    Given an approved weekly schedule\n    When the schedule fires\n    Then the topic-modelling job runs and records its snapshot identifier\n```"
+      }
+    }
+  }
+}

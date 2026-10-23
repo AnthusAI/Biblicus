@@ -1,0 +1,69 @@
+{
+  "id": "blbs-81ec10bb-ad59-4f1c-b658-5ded241ed4ce",
+  "title": "Typed-entity extractor, typed relations and entity resolution",
+  "description": "## Context\nToday's graph extractors (`simple-entities`, `ner-entities` with spaCy, `dependency-relations`, co-occurrence) emit spaCy labels (PERSON, ORG, GPE) and co-occurrence or SVO edges. A publication needs entities of its own kinds (for example maker, task, technique, licence, model family, concept, platform, dataset) and typed relations (for example made_by, built_on, measured_by, replaces, successor_of, publishes). The vocabularies are per-publication data (a closed vocabulary file), never hard-coded in Biblicus.\n\nPapyrus consumers: PPY-428252 (public knowledge base) and PPY-77bb3b (submit-a-link: after a submission, entities are extracted asynchronously and the submitter confirms or fixes them). Exploration blbs sibling story \"Evaluate decision-model-based extractors\" decides which backend implements this extractor; this story defines the contract and a baseline. Parent epic: blbs-d380cb.\n\nAs a publication builder, I want a typed extractor driven by a closed vocabulary, so that extracted entities and relations are limited to kinds the desk defined, each with evidence.\n\n## Acceptance criteria\n```gherkin\nFeature: Typed entity and relation extraction\n  Scenario: Closed vocabulary\n    Given a vocabulary file listing entity kinds and relation types\n    When I extract from an item's text\n    Then every entity has a kind from the vocabulary\n    And every relation has a type from the vocabulary and two resolved or proposed endpoints\n\n  Scenario: Evidence\n    When the extractor emits an entity or relation\n    Then it includes the source span (character offsets) and the item id\n\n  Scenario: Entity resolution by alias\n    Given an accepted entity with the alias \"NAME-A\"\n    When a text mentions \"name-a\" with different case or spacing\n    Then the mention resolves to the existing entity key\n    And no new entity is proposed\n\n  Scenario: Proposed new entity\n    When a mention matches no known entity or alias\n    Then the extractor emits a proposed entity with state \"proposed\"\n    And fuzzy merging of distinct entities never happens automatically\n\n  Scenario: Deterministic and cached\n    When the same text, vocabulary and configuration are extracted twice\n    Then the second run is served from cache with identical output\n```\n\n## Notes\nRuns as a job (not in a Lambda bundle). Exports to Papyrus follow the existing graph export shape (`analysis_graph.py`, generated nodes with status generated); Papyrus owns acceptance. No default model is chosen here; the evaluation story decides.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "1fb3b864-b17e-4554-8577-b1d4f99396bf",
+      "author": "home",
+      "text": "The backend is chosen by the evaluation story blbs-e14d5c. Papyrus consumers: PPY-da545d (asynchronous extraction and entity confirm step), PPY-a45fd1 (entity trends).",
+      "created_at": "2026-10-21T12:50:33.307797Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    },
+    {
+      "id": "05dbcdc8-9271-4a7e-8834-33670aa2458f",
+      "author": "home",
+      "text": "Branch feature/typed-entity-extractor. Implemented biblicus extract typed-entities (registry alias matcher then GLiNER2 base fastino/gliner2-base-v1 rev f9634218e5 at 0.7, optional extra typed-extraction, registry-only backend, deterministic output, text+vocabulary+backend+revision+threshold cache, run folders under analysis/typed-entities). 39 BDD scenarios on a fake GLiNER2 library plus one @integration scenario on the real cached model; new code at 100% line and branch coverage. Real run on datasets/typed_extraction_lab (142 documents, registry from the gold labels of even-indexed items): registry-only 557 resolved, 0 proposed, 0 relations, 0.02 s; gliner2 1066 entities (564 resolved, 502 proposed) and 213 relations (119 resolved, 94 proposed), 49.2 s of extraction for 142 items (about 350 ms per item on a busy 10-core Mac) plus model load; second run 142 cache hits, 0.12 s, byte-identical output. PR link follows.",
+      "created_at": "2026-10-22T05:25:24.132203Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    },
+    {
+      "id": "09e03381-c9dc-4ff1-ba5c-70be2d0229e3",
+      "author": "home",
+      "text": "PR: https://github.com/AnthusAI/Biblicus/pull/106",
+      "created_at": "2026-10-22T05:25:51.988892Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    },
+    {
+      "id": "e498353f-5a1d-4a2b-9ba8-511a7a6c9f1d",
+      "author": "home",
+      "text": "Closed. biblicus extract typed-entities (PR #106). Real use on Shipped: 2,649 mentions, 1,171 resolved with the registry from accepted Papyrus entities; output imported by papyrus knowledge publish-run.",
+      "created_at": "2026-10-22T10:41:14.558468Z",
+      "comment_type": "default"
+    }
+  ],
+  "created_at": "2026-10-21T12:47:56.136159Z",
+  "updated_at": "2026-10-22T10:41:14.577378Z",
+  "closed_at": "2026-10-22T10:41:14.577352Z",
+  "agent": {
+    "platform": "claude_code",
+    "model": "Sonnet 5.5",
+    "name": "papyrus-anthus"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
