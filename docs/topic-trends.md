@@ -57,6 +57,47 @@ Markdown tables show the human-readable topic label beside the BERTopic topic id
 snapshot used a BERTopic representation model, the label is the representation-model label rather than only the first
 keyword fragment.
 
+## Weekly bins
+
+Add `--bin weekly` to report, for every topic, a series of integer counts binned by ISO week. This is the series a front end needs for an 8-week sparkline or a 26-week trend chart.
+
+```bash
+biblicus analyze topic-trends \
+  --corpus corpora/AI-ML-research \
+  --topic-modeling-snapshot <snapshot_id> \
+  --bin weekly --weeks 26 \
+  --as-of 2026-10-21
+```
+
+- `--weeks N` sets the number of bins and defaults to 8. It requires `--bin`; passing it alone is an error. The maximum is 520.
+- Weeks are ISO weeks that start on Monday. The final bin is the ISO week that contains `--as-of`. With `--bin weekly` the default `--as-of` is today in UTC, not the latest published date. Pass an explicit `--as-of` for a deterministic result.
+- Each topic reports exactly `N` integer counts ordered oldest to newest. Items published before the first bin or after the final week are not counted in any bin.
+- Items with no valid `dates.published_at` are excluded from every bin and counted once in `weekly_bins.undated_items`.
+- Without `--bin` the output is identical to the trailing-window output: the `weekly_bins` key is absent, not null.
+
+The output gains one block, `weekly_bins`, in `analysis/topic-governance/<snapshot_id>/output.json`:
+
+```json
+{
+  "weekly_bins": {
+    "bin": "weekly",
+    "weeks": 8,
+    "as_of": "2026-03-11",
+    "iso_weeks": ["2026-W04", "...", "2026-W11"],
+    "week_starts": ["2026-01-19", "...", "2026-03-09"],
+    "undated_items": 2,
+    "discovered_topics": [
+      {"topic_id": 0, "topic_uid": null, "label": "agent", "counts": [1, 1, 2, 0, 1, 0, 0, 2]}
+    ],
+    "canonical_topics": []
+  }
+}
+```
+
+`discovered_topics` entries carry `topic_id` (the BERTopic topic identifier, including `-1` for outliers) and `canonical_topics` entries carry `topic_uid` when a `--classifier` is given. The published schema is `docs/api-schemas/analyze-topic-trends.response.schema.json`. The behavior specifications are in `features/topic_trend_weekly_bins.feature`.
+
+Entity-level series are not computed here. Consumers count those over their own confirmed entity links.
+
 ## Momentum ranking
 
 Momentum compares a topic's recent publication-window share to its all-time share in the trend-eligible corpus. The default ranking window is `90d`.

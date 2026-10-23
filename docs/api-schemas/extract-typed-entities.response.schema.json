@@ -1,0 +1,318 @@
+{
+  "$defs": {
+    "BackendDescription": {
+      "additionalProperties": false,
+      "description": "Backend, model and threshold of a run.\n\n:ivar id: Backend identifier.\n:vartype id: str\n:ivar model: Model name, or None for a backend without a model.\n:vartype model: str or None\n:ivar revision: Model revision, or None for a backend without a model.\n:vartype revision: str or None\n:ivar threshold: Score threshold applied to model output.\n:vartype threshold: float",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "threshold": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "threshold"
+      ],
+      "title": "BackendDescription",
+      "type": "object"
+    },
+    "EntitySpan": {
+      "additionalProperties": false,
+      "description": "Character offsets into the item text.\n\n:ivar start: Offset of the first character.\n:vartype start: int\n:ivar end: Offset after the last character.\n:vartype end: int",
+      "properties": {
+        "end": {
+          "minimum": 1,
+          "title": "End",
+          "type": "integer"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "EntitySpan",
+      "type": "object"
+    },
+    "TypedEntitiesSummary": {
+      "additionalProperties": false,
+      "description": "Counts over the whole run.\n\n:ivar items: Items processed.\n:vartype items: int\n:ivar entities: Entities emitted.\n:vartype entities: int\n:ivar resolved: Entities resolved to a registry entity.\n:vartype resolved: int\n:ivar proposed: Entities proposed as new.\n:vartype proposed: int\n:ivar relations: Relations emitted.\n:vartype relations: int",
+      "properties": {
+        "entities": {
+          "minimum": 0,
+          "title": "Entities",
+          "type": "integer"
+        },
+        "items": {
+          "minimum": 0,
+          "title": "Items",
+          "type": "integer"
+        },
+        "proposed": {
+          "minimum": 0,
+          "title": "Proposed",
+          "type": "integer"
+        },
+        "relations": {
+          "minimum": 0,
+          "title": "Relations",
+          "type": "integer"
+        },
+        "resolved": {
+          "minimum": 0,
+          "title": "Resolved",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "items",
+        "entities",
+        "resolved",
+        "proposed",
+        "relations"
+      ],
+      "title": "TypedEntitiesSummary",
+      "type": "object"
+    },
+    "TypedEntity": {
+      "additionalProperties": false,
+      "description": "One entity mention with its evidence.\n\n:ivar id: Entity identifier, unique within the item.\n:vartype id: str\n:ivar kind: Entity kind from the vocabulary.\n:vartype kind: str\n:ivar text: Mention text as it appears in the item.\n:vartype text: str\n:ivar state: ``resolved`` when the mention matched a registry alias, otherwise ``proposed``.\n:vartype state: str\n:ivar entity_key: Registry entity key for a resolved mention, otherwise None.\n:vartype entity_key: str or None\n:ivar span: Character offsets into the item text.\n:vartype span: EntitySpan\n:ivar score: Confidence between 0 and 1; 1.0 for a registry match.\n:vartype score: float",
+      "properties": {
+        "entity_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity Key"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "span": {
+          "$ref": "#/$defs/EntitySpan"
+        },
+        "state": {
+          "enum": [
+            "resolved",
+            "proposed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "text",
+        "state",
+        "span",
+        "score"
+      ],
+      "title": "TypedEntity",
+      "type": "object"
+    },
+    "TypedItemResult": {
+      "additionalProperties": false,
+      "description": "Entities and relations extracted from one item.\n\n:ivar item_id: Corpus item identifier.\n:vartype item_id: str\n:ivar entities: Entities ordered by position.\n:vartype entities: list[TypedEntity]\n:ivar relations: Relations ordered by position.\n:vartype relations: list[TypedRelation]",
+      "properties": {
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/TypedEntity"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        },
+        "relations": {
+          "items": {
+            "$ref": "#/$defs/TypedRelation"
+          },
+          "title": "Relations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "item_id"
+      ],
+      "title": "TypedItemResult",
+      "type": "object"
+    },
+    "TypedRelation": {
+      "additionalProperties": false,
+      "description": "One typed relation between two entities of the same item.\n\n:ivar id: Relation identifier, unique within the item.\n:vartype id: str\n:ivar type: Relation type from the vocabulary.\n:vartype type: str\n:ivar subject: Identifier of the subject entity.\n:vartype subject: str\n:ivar object: Identifier of the object entity.\n:vartype object: str\n:ivar state: ``resolved`` only when both endpoints are resolved, otherwise ``proposed``.\n:vartype state: str\n:ivar span: Character offsets covering both endpoints.\n:vartype span: EntitySpan\n:ivar score: Confidence between 0 and 1.\n:vartype score: float",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "object": {
+          "minLength": 1,
+          "title": "Object",
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "span": {
+          "$ref": "#/$defs/EntitySpan"
+        },
+        "state": {
+          "enum": [
+            "resolved",
+            "proposed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "type": {
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "subject",
+        "object",
+        "state",
+        "span",
+        "score"
+      ],
+      "title": "TypedRelation",
+      "type": "object"
+    },
+    "VocabularyIdentity": {
+      "additionalProperties": false,
+      "description": "Identity of the vocabulary used for a run.\n\n:ivar publication: Publication name.\n:vartype publication: str\n:ivar version: Vocabulary version.\n:vartype version: int\n:ivar hash: Vocabulary content hash.\n:vartype hash: str",
+      "properties": {
+        "hash": {
+          "minLength": 1,
+          "title": "Hash",
+          "type": "string"
+        },
+        "publication": {
+          "minLength": 1,
+          "title": "Publication",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "publication",
+        "version",
+        "hash"
+      ],
+      "title": "VocabularyIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Typed entities and relations for a set of corpus items.\n\nThe document is written to ``analysis/typed-entities/<run_id>/output.json`` and, when requested,\nto a caller-chosen directory. It contains no timestamps: the same inputs always produce\nbyte-identical output.\n\n:ivar schema_version: Schema version.\n:vartype schema_version: int\n:ivar vocabulary: Identity of the vocabulary used.\n:vartype vocabulary: VocabularyIdentity\n:ivar backend: Backend, model and threshold used.\n:vartype backend: BackendDescription\n:ivar summary: Counts over the run.\n:vartype summary: TypedEntitiesSummary\n:ivar items: Results per item, ordered by item identifier.\n:vartype items: list[TypedItemResult]",
+  "properties": {
+    "backend": {
+      "$ref": "#/$defs/BackendDescription"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/TypedItemResult"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "summary": {
+      "$ref": "#/$defs/TypedEntitiesSummary"
+    },
+    "vocabulary": {
+      "$ref": "#/$defs/VocabularyIdentity"
+    }
+  },
+  "required": [
+    "vocabulary",
+    "backend",
+    "summary"
+  ],
+  "title": "TypedEntitiesOutput",
+  "type": "object"
+}

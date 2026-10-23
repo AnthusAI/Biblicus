@@ -575,12 +575,13 @@ Primary implementation:
 
 What it does:
 
-- Trains and projects topic classifiers, builds topic context for research agents, and reports topic trends over time.
+- Trains and projects topic classifiers, builds topic context for research agents, reports topic trends over time with optional weekly bins, and assigns stable cluster identity across topic-model runs.
 
 Documentation:
 
 - `docs/topic-classifier.md`
 - `docs/topic-trends.md`
+- `docs/topic-identity.md`
 - `docs/research-agent-intake.md`
 
 Behavior specifications:
@@ -588,6 +589,8 @@ Behavior specifications:
 - `features/topic_classifier.feature`
 - `features/topic_context.feature`
 - `features/topic_trends.feature`
+- `features/topic_trend_weekly_bins.feature`
+- `features/topic_identity.feature`
 - `features/research_intake.feature`
 
 Primary implementation:
@@ -595,7 +598,31 @@ Primary implementation:
 - `src/biblicus/topic_classifier.py`
 - `src/biblicus/topic_context.py`
 - `src/biblicus/topic_trends.py`
+- `src/biblicus/topic_identity.py`
 - `src/biblicus/research_intake.py`
+
+## Typed entities and relations
+
+What it does:
+
+- Extracts entities and relations of a publication's closed vocabulary from the extracted text of corpus items, resolves mentions of accepted entities by exact normalised alias match, and proposes the rest with character-offset evidence. The default backend is a registry matcher followed by GLiNER2, behind the optional `typed-extraction` extra.
+
+Documentation:
+
+- `docs/typed-entities.md`
+- `docs/typed-extractor-evaluation.md`
+
+Behavior specifications:
+
+- `features/typed_entity_extraction.feature`
+- `features/typed_entity_extraction_integration.feature`
+
+Primary implementation:
+
+- `src/biblicus/typed_extraction.py`
+- `src/biblicus/typed_vocabulary.py`
+- `src/biblicus/typed_extraction_backends.py`
+- `src/biblicus/api/typed_extraction.py`
 
 ## Bounded web transform
 

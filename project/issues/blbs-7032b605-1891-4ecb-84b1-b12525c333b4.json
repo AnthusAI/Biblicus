@@ -1,0 +1,38 @@
+{
+  "id": "blbs-7032b605-1891-4ecb-84b1-b12525c333b4",
+  "title": "Docs footer links Contact us to the Anthus engage page",
+  "description": "Pass --contact-url to the docs site build so the Anthus family footer's Contact us link goes to https://anth.us/engage/?solution=Biblicus&cta=docs. Depends on the Papyrus docs_site footer PR.",
+  "type": "task",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "fd9dd812-33c3-46eb-b1b0-1ee0148f44bf",
+      "author": "home",
+      "text": "Docs site footer: Papyrus PR 575 added --contact-url to the shared builder; Biblicus hotfixes #111 and #113 to main (pin papyrus-newsroom 5.31.0) put Contact us -> https://anth.us/engage/?solution=Biblicus&cta=docs on every docs page, verified live 2026-10-22 (HTTP 200). API reference: PR 114 adds the link with cta=api-reference via html_context; goes live with the 1.16.0 release. PR 110 superseded by the hotfixes.",
+      "created_at": "2026-10-23T01:36:16.852126Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
+    }
+  ],
+  "created_at": "2026-10-22T15:15:39.224031Z",
+  "updated_at": "2026-10-23T01:36:16.852158Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude-code",
+    "model": "claude-sonnet-5-5",
+    "name": "claude"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
