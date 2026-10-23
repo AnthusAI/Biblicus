@@ -50,6 +50,7 @@ jobs:
           --source-url "https://github.com/AnthusAI/Biblicus"
           --site-url "https://anthusai.github.io/Biblicus/"
           --redirect-former-urls
+          --contact-url "https://anth.us/engage/?solution=Biblicus&cta=docs"
           --exclude "pr-faq/**" --exclude "reports/**" --exclude "*-plan.md"
 
       - name: Build API reference with Sphinx
