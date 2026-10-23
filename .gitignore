@@ -51,3 +51,6 @@ project/.cache/index.json
 /CHANGELOG_STT_BENCHMARKING.md
 *.py,cover
 _site/
+
+# Kanbus local overlay cache (locks); see kbs-3940fd35
+project/.overlay/

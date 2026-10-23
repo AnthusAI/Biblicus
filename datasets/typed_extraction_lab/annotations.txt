@@ -1,0 +1,926 @@
+## 0h
+maker: AccuKnox Inc.
+model: Guard 1.1 ; Qwen3.5-4B
+licence: Apache-2.0
+task: prompt injection=prompt injection defence
+concept: guardrail
+rel: Guard 1.1 | made_by | AccuKnox Inc.
+rel: Guard 1.1 | built_on | Qwen3.5-4B
+rel: Guard 1.1 | licensed_under | Apache-2.0
+## 0b
+maker: AccuKnox Inc.
+model: Guard 1.1
+platform: Hugging Face
+concept: guardrail
+task: prompt injections=prompt injection defence
+rel: Guard 1.1 | made_by | AccuKnox Inc.
+## 1h
+maker: AI Singapore
+model: Gemma-SEA-LION-Guard v2
+licence: MIT
+concept: decision model
+task: content moderation ; action governance
+rel: Gemma-SEA-LION-Guard v2 | made_by | AI Singapore
+rel: Gemma-SEA-LION-Guard v2 | licensed_under | MIT
+## 1b
+maker: AI Singapore ; National Research Foundation Singapore
+model: Gemma-SEA-LION-Guard-v2
+concept: decision model
+task: content moderation ; action governance
+rel: Gemma-SEA-LION-Guard-v2 | made_by | AI Singapore
+## 2h
+maker: Aleph Alpha
+model: Kolibri 1
+licence: Apache 2.0
+technique: mixture-of-experts ; MoE
+rel: Kolibri 1 | made_by | Aleph Alpha
+rel: Kolibri 1 | licensed_under | Apache 2.0
+## 2b
+maker: Aleph Alpha
+model: Kolibri 1
+technique: mixture-of-experts
+rel: Kolibri 1 | made_by | Aleph Alpha
+## 3h
+maker: Qwen
+model: Qwen3-TTS
+licence: Apache 2.0
+task: voice cloning ; TTS=text-to-speech ; voice design ; streaming
+rel: Qwen3-TTS | made_by | Qwen
+rel: Qwen3-TTS | licensed_under | Apache 2.0
+## 3b
+maker: Alibaba ; Qwen
+model: Qwen3-TTS
+task: text-to-speech
+rel: Qwen3-TTS | made_by | Alibaba
+## 4h
+maker: Ai2
+model: Olmo 3
+licence: Apache 2.0
+rel: Olmo 3 | made_by | Ai2
+rel: Olmo 3 | licensed_under | Apache 2.0
+## 4b
+maker: Ai2
+model: Olmo 3 32B Think
+model_family: Olmo 3
+platform: Hugging Face
+rel: Olmo 3 | made_by | Ai2
+task: coding=coding
+## 5h
+maker: Amazon
+model: Strands Decider 2B ; Qwen3.5-2B-Base
+technique: LoRA
+licence: Apache-2.0
+concept: decision model
+dataset: JevBench
+rel: Strands Decider 2B | made_by | Amazon
+rel: Strands Decider 2B | built_on | Qwen3.5-2B-Base
+rel: Strands Decider 2B | licensed_under | Apache-2.0
+rel: Strands Decider 2B | measured_by | JevBench
+## 5b
+maker: Amazon
+model: strands-decider-2B-qwen3.5-v1-2610
+platform: Hugging Face
+concept: decision model
+rel: strands-decider-2B-qwen3.5-v1-2610 | made_by | Amazon
+## 6h
+maker: Boson AI
+model: Higgs TTS 3
+task: voice cloning ; TTS=text-to-speech
+licence: research and non-commercial licence
+rel: Higgs TTS 3 | made_by | Boson AI
+rel: Higgs TTS 3 | licensed_under | research and non-commercial licence
+task: voice-cloning=voice cloning
+## 6b
+maker: Boson AI
+model: Higgs TTS 3
+platform: SGLang-Omni ; vLLM-Omni
+task: voice cloning
+rel: Higgs TTS 3 | made_by | Boson AI
+## 7h
+maker: BreezeBlue
+model: Breeze-TTS-2
+task: TTS=text-to-speech ; cloning=voice cloning ; voice design
+licence: non-commercial licence
+rel: Breeze-TTS-2 | made_by | BreezeBlue
+rel: Breeze-TTS-2 | licensed_under | non-commercial licence
+## 7b
+maker: BreezeBlue
+model: Breeze-TTS-2
+task: Voice Clone=voice cloning ; Voice Design=voice design
+rel: Breeze-TTS-2 | made_by | BreezeBlue
+task: cloning=voice cloning
+## 8h
+maker: An independent developer
+model: Jev-Style 2B Decision v3 ; Qwen3.5-2B ; Jev 1.13
+licence: Apache-2.0
+dataset: JevBench
+rel: Jev-Style 2B Decision v3 | built_on | Qwen3.5-2B
+rel: Jev-Style 2B Decision v3 | licensed_under | Apache-2.0
+rel: Jev-Style 2B Decision v3 | measured_by | JevBench
+## 8b
+maker: chaoliang yan=chaoliang yan ; TypeSafe AI ; Qwen
+model: Jev-Style-2B-Decision-v3=Jev-Style 2B Decision v3 ; Jev
+platform: Hugging Face
+concept: decision model
+rel: Jev-Style-2B-Decision-v3 | made_by | chaoliang yan
+## 9h
+maker: Convai Innovations
+model: laya-typed-decisions ; ModernBERT
+licence: Apache-2.0
+concept: decision model
+rel: laya-typed-decisions | made_by | Convai Innovations
+rel: laya-typed-decisions | built_on | ModernBERT
+rel: laya-typed-decisions | licensed_under | Apache-2.0
+## 9b
+maker: Convai Innovations
+model: laya-typed-decisions
+model_family: Laya
+platform: Hugging Face
+concept: decision model
+task: text classification
+rel: laya-typed-decisions | made_by | Convai Innovations
+## 10h
+model: REAX 1.1 ; REAX 1 ; pplx-decider ; pplx-decider-v1.2
+licence: Apache-2.0
+concept: decision model
+rel: REAX 1.1 | built_on | REAX 1
+rel: REAX 1 | built_on | pplx-decider-v1.2
+rel: REAX 1.1 | licensed_under | Apache-2.0
+rel: REAX 1.1 | successor_of | REAX 1
+## 10b
+maker: REAX ; Perplexity AI ; Qwen
+model: REAX 1.1
+platform: Hugging Face
+concept: decision model
+rel: REAX 1.1 | made_by | REAX
+## 11h
+maker: decisionmodels
+model: s1-llm-auto-router ; mmBERT-small
+licence: MIT
+task: router=LLM request routing
+rel: s1-llm-auto-router | made_by | decisionmodels
+rel: s1-llm-auto-router | built_on | mmBERT-small
+rel: s1-llm-auto-router | licensed_under | MIT
+## 11b
+maker: decisionmodels
+model: s1-llm-auto-router
+platform: Hugging Face
+concept: decision model
+task: route=LLM request routing
+rel: s1-llm-auto-router | made_by | decisionmodels
+## 12h
+maker: DeepSeek
+model: V4.1-Flash ; DeepSeek-V4.1-Flash
+licence: MIT
+technique: MoE
+rel: DeepSeek-V4.1-Flash | made_by | DeepSeek
+rel: DeepSeek-V4.1-Flash | licensed_under | MIT
+## 12b
+maker: DeepSeek
+model: DeepSeek-V4.1-Flash
+technique: mixture-of-experts
+rel: DeepSeek-V4.1-Flash | made_by | DeepSeek
+## 13h
+maker: distil labs
+model_family: Qwen3.5
+concept: decision model=decision model
+## 13b
+maker: distil labs
+model: distil-qwen3.5-4b-invoice-decision ; Qwen3.5-4B
+platform: Hugging Face
+task: vendor invoices=invoice approval
+rel: distil-qwen3.5-4b-invoice-decision | made_by | distil labs
+rel: distil-qwen3.5-4b-invoice-decision | built_on | Qwen3.5-4B
+## 14h
+model: Soprano-80M ; Soprano 1.1
+licence: Apache 2.0
+task: TTS=text-to-speech
+rel: Soprano 1.1 | replaces | Soprano-80M
+rel: Soprano-80M | licensed_under | Apache 2.0
+task: cloning=voice cloning
+## 14b
+maker: Eugene Kwek
+model: Soprano-80M
+platform: Hugging Face
+task: text-to-speech
+rel: Soprano-80M | made_by | Eugene Kwek
+maker: OpenAI=openai
+## 15h
+maker: Fish Audio
+model: Drama 3
+technique: mixture-of-experts
+task: TTS=text-to-speech ; voice cloning
+licence: research licence
+rel: Drama 3 | made_by | Fish Audio
+rel: Drama 3 | licensed_under | research licence
+technique: MoE=moe
+## 15b
+maker: Fish Audio
+model: Drama 3
+technique: mixture-of-experts
+task: text-to-speech ; Voice cloning=voice cloning
+rel: Drama 3 | made_by | Fish Audio
+## 16h
+maker: Fish Audio
+model: S2 Pro
+task: TTS=text-to-speech
+licence: research licence
+rel: S2 Pro | made_by | Fish Audio
+rel: S2 Pro | licensed_under | research licence
+## 16b
+maker: Fish Audio
+model: S2 Pro
+task: text-to-speech
+technique: reinforcement learning
+rel: S2 Pro | made_by | Fish Audio
+## 17h
+maker: FunAudioLLM
+model: Fun-CosyVoice3-0.5B-2512 ; Fun-CosyVoice3
+licence: Apache 2.0
+task: voice cloning ; TTS=text-to-speech
+rel: Fun-CosyVoice3-0.5B-2512 | made_by | FunAudioLLM
+rel: Fun-CosyVoice3-0.5B-2512 | licensed_under | Apache 2.0
+task: cloning=voice cloning
+## 17b
+maker: FunAudioLLM
+model: Fun-CosyVoice3-0.5B-2512
+task: text-to-speech ; voice cloning
+rel: Fun-CosyVoice3-0.5B-2512 | made_by | FunAudioLLM
+## 18h
+maker: Google DeepMind
+model_family: Gemma 4
+licence: Apache 2.0
+rel: Gemma 4 | made_by | Google DeepMind
+rel: Gemma 4 | licensed_under | Apache 2.0
+## 18b
+maker: Google DeepMind
+model_family: Gemma 4
+rel: Gemma 4 | made_by | Google DeepMind
+## 19h
+maker: H2O.ai
+model: H2O Lightning 4B ; Qwen3.5-4B ; GGUF
+licence: Apache-2.0
+concept: decision model
+platform: llama.cpp
+dataset: JevBench
+rel: H2O Lightning 4B | made_by | H2O.ai
+rel: H2O Lightning 4B | built_on | Qwen3.5-4B
+rel: H2O Lightning 4B | licensed_under | Apache-2.0
+rel: H2O Lightning 4B | measured_by | JevBench
+## 19b
+maker: H2O.ai
+model: h2o-lightning-4b
+platform: Hugging Face ; llama.cpp
+concept: decision model
+task: typed decisions
+rel: h2o-lightning-4b | made_by | H2O.ai
+## 20h
+maker: Hume AI
+model: TADA-1B ; Llama 3.2 1B
+licence: Llama 3.2 licence
+task: TTS=text-to-speech
+rel: TADA-1B | made_by | Hume AI
+rel: TADA-1B | built_on | Llama 3.2 1B
+rel: TADA-1B | licensed_under | Llama 3.2 licence
+task: text-to-speech=text to speech
+## 20b
+maker: Hume AI
+model: TADA-1B ; Llama 3.2 1B
+task: text-to-speech
+rel: TADA-1B | made_by | Hume AI
+rel: TADA-1B | built_on | Llama 3.2 1B
+platform: Hub=hub
+## 21h
+maker: IBM
+model: Granite 4.1 8B
+licence: Apache 2.0
+rel: Granite 4.1 8B | made_by | IBM
+rel: Granite 4.1 8B | licensed_under | Apache 2.0
+## 21b
+maker: IBM ; Granite Team at IBM=IBM
+model: Granite-4.1-8B ; Granite-4.1-8B-Base ; Granite 4.1
+technique: supervised fine-tuning ; reinforcement learning
+rel: Granite-4.1-8B | made_by | IBM
+rel: Granite-4.1-8B | built_on | Granite-4.1-8B-Base
+## 22h
+maker: IBM
+model: Granite Guardian 4.1 8B ; Granite 4.1 8B
+licence: Apache-2.0
+rel: Granite Guardian 4.1 8B | made_by | IBM
+rel: Granite Guardian 4.1 8B | built_on | Granite 4.1 8B
+rel: Granite Guardian 4.1 8B | licensed_under | Apache-2.0
+## 22b
+maker: IBM Research=IBM
+model: Granite Guardian 4.1 8B ; Granite 4.1 8B
+platform: Hugging Face
+licence: Apache-2.0
+rel: Granite Guardian 4.1 8B | made_by | IBM
+rel: Granite Guardian 4.1 8B | built_on | Granite 4.1 8B
+rel: Granite Guardian 4.1 8B | licensed_under | Apache-2.0
+## 23h
+maker: Shanghai AI Laboratory
+model: Intern-Decision-4B ; Qwen3.5-4B
+model_family: Intern-Decision
+licence: Apache-2.0
+concept: decision models=decision model
+rel: Intern-Decision | made_by | Shanghai AI Laboratory
+rel: Intern-Decision-4B | built_on | Qwen3.5-4B
+rel: Intern-Decision-4B | licensed_under | Apache-2.0
+## 23b
+maker: Shanghai AI Laboratory
+model_family: Intern-Decision
+platform: Hugging Face
+rel: Intern-Decision | made_by | Shanghai AI Laboratory
+platform: Hub=hub
+## 24h
+maker: Jared Palmer ; TypeSafe
+model: Kev-9B ; Qwen3.5-9B
+technique: LoRA
+licence: Apache-2.0
+concept: System One API
+rel: Kev-9B | made_by | Jared Palmer
+rel: Kev-9B | built_on | Qwen3.5-9B
+rel: Kev-9B | licensed_under | Apache-2.0
+concept: decision model=decision model
+## 24b
+maker: Jared Palmer ; TypeSafe
+model: Kev-9B
+platform: Hugging Face
+concept: decision model ; System One API
+rel: Kev-9B | made_by | Jared Palmer
+## 25h
+maker: JetBrains
+model: Mellum2.1 Thinking
+licence: Apache 2.0
+technique: mixture-of-experts ; reinforcement learning
+task: coding
+rel: Mellum2.1 Thinking | made_by | JetBrains
+rel: Mellum2.1 Thinking | licensed_under | Apache 2.0
+technique: MoE=moe
+## 25b
+maker: JetBrains
+model: Mellum2.1 Thinking ; Mellum2 Thinking
+technique: reinforcement learning
+rel: Mellum2.1 Thinking | made_by | JetBrains
+rel: Mellum2.1 Thinking | successor_of | Mellum2 Thinking
+## 26h
+maker: k2-fsa
+model: OmniVoice
+licence: Apache 2.0 ; CC-BY-NC
+task: TTS=text-to-speech ; voice-cloning=voice cloning ; voice-design=voice design
+rel: OmniVoice | made_by | k2-fsa
+## 26b
+maker: k2-fsa
+model: OmniVoice ; Qwen3-0.6B-Base
+task: text-to-speech ; voice cloning ; voice design
+rel: OmniVoice | made_by | k2-fsa
+rel: OmniVoice | built_on | Qwen3-0.6B-Base
+## 27h
+maker: Katanemo
+model: Arch-Router 1.5B ; Qwen2.5-1.5B
+licence: Katanemo licence
+task: router=LLM routing
+rel: Arch-Router 1.5B | made_by | Katanemo
+rel: Arch-Router 1.5B | built_on | Qwen2.5-1.5B
+rel: Arch-Router 1.5B | licensed_under | Katanemo licence
+## 27b
+model: Arch-Router
+dataset: arXiv 2506.16655
+platform: Hub
+task: router=LLM routing
+## 28h
+maker: Liquid AI
+model: LFM2.5-24B-A2B
+licence: LFM1.0 licence
+technique: MoE
+rel: LFM2.5-24B-A2B | made_by | Liquid AI
+rel: LFM2.5-24B-A2B | licensed_under | LFM1.0 licence
+## 28b
+maker: Liquid AI
+model: LFM2.5-24B-A2B
+model_family: LFM2.5
+technique: MoE
+rel: LFM2.5-24B-A2B | made_by | Liquid AI
+## 29h
+maker: Maincode
+model: Matilda Decision v1 ; Qwen3.8-27B
+licence: Apache-2.0
+dataset: Jev Decision Index 0.3
+concept: decision model
+rel: Matilda Decision v1 | made_by | Maincode
+rel: Matilda Decision v1 | built_on | Qwen3.8-27B
+rel: Matilda Decision v1 | licensed_under | Apache-2.0
+rel: Matilda Decision v1 | measured_by | Jev Decision Index 0.3
+## 29b
+maker: Maincode
+model: Matilda Decision v1
+platform: Hugging Face
+concept: decision model
+rel: Matilda Decision v1 | made_by | Maincode
+## 30h
+maker: Meta
+model: Llama Guard 4 ; Llama 4 Scout
+licence: Llama 4 licence
+dataset: MLCommons
+concept: safety classifier
+rel: Llama Guard 4 | made_by | Meta
+rel: Llama Guard 4 | built_on | Llama 4 Scout
+rel: Llama Guard 4 | licensed_under | Llama 4 licence
+## 30b
+model: Llama Guard 4
+platform: Hub
+## 31h
+maker: Microsoft
+model: Decision-1 ; Microsoft-Decision-1
+platform: Foundry ; OpenRouter
+rel: Decision-1 | made_by | Microsoft
+## 31b
+maker: Microsoft
+model: Microsoft-Decision-1 ; Qwen3.5-9B
+task: decision-scoring=decision scoring
+rel: Microsoft-Decision-1 | made_by | Microsoft
+rel: Microsoft-Decision-1 | built_on | Qwen3.5-9B
+## 32h
+maker: Microsoft
+model: VibeVoice-Realtime-0.5B
+licence: MIT
+task: streaming TTS=streaming text-to-speech
+rel: VibeVoice-Realtime-0.5B | made_by | Microsoft
+rel: VibeVoice-Realtime-0.5B | licensed_under | MIT
+## 32b
+maker: Microsoft
+model: VibeVoice-Realtime-0.5B ; Qwen2.5-0.5B
+task: text-to-speech
+rel: VibeVoice-Realtime-0.5B | made_by | Microsoft
+rel: VibeVoice-Realtime-0.5B | built_on | Qwen2.5-0.5B
+## 33h
+maker: Mistral AI
+model: Shieldstral 1.0
+licence: Apache 2.0
+rel: Shieldstral 1.0 | made_by | Mistral AI
+rel: Shieldstral 1.0 | licensed_under | Apache 2.0
+licence: Apache-2.0=apache 2 0
+concept: safety classifier=safety classifier
+## 33b
+maker: Mistral AI
+model: Shieldstral 1.0 3B
+platform: Hugging Face
+concept: safety classifier
+rel: Shieldstral 1.0 3B | made_by | Mistral AI
+## 34h
+maker: Mistral
+model: Voxtral TTS ; Voxtral 4B TTS
+licence: CC BY-NC 4.0
+rel: Voxtral TTS | made_by | Mistral
+rel: Voxtral TTS | licensed_under | CC BY-NC 4.0
+## 34b
+maker: Mistral AI
+model: Voxtral 4B TTS ; Ministral-3-3B-Base-2512
+platform: AI Studio
+task: voice cloning ; text-to-speech ; voice agents
+rel: Voxtral 4B TTS | made_by | Mistral AI
+rel: Voxtral 4B TTS | built_on | Ministral-3-3B-Base-2512
+## 35h
+maker: Mistral
+model_family: Ministral 3
+licence: Apache 2.0
+rel: Ministral 3 | made_by | Mistral
+rel: Ministral 3 | licensed_under | Apache 2.0
+## 35b
+maker: Mistral AI
+model_family: Ministral 3
+model: Ministral 3 14B Instruct 2512 ; Mistral Small 3.2 24B
+rel: Ministral 3 | made_by | Mistral AI
+## 36h
+maker: Mistral
+model: Medium 3.5
+licence: modified MIT licence
+rel: Medium 3.5 | made_by | Mistral
+rel: Medium 3.5 | licensed_under | modified MIT licence
+task: coding=coding
+## 36b
+maker: Mistral AI
+model: Mistral Medium 3.5 ; Mistral Medium 3.1 ; Magistral ; Devstral 2
+platform: Hugging Face ; Le Chat ; Vibe
+rel: Mistral Medium 3.5 | made_by | Mistral AI
+rel: Mistral Medium 3.5 | replaces | Mistral Medium 3.1
+rel: Mistral Medium 3.5 | replaces | Magistral
+rel: Mistral Medium 3.5 | replaces | Devstral 2
+task: coding=coding
+task: coding=coding
+## 37h
+maker: Moonshot
+model: Kimi K2 Thinking
+technique: MoE ; INT4 quantisation
+licence: modified MIT licence
+rel: Kimi K2 Thinking | made_by | Moonshot
+rel: Kimi K2 Thinking | licensed_under | modified MIT licence
+## 37b
+maker: moonshotai
+model: Kimi K2 Thinking
+rel: Kimi K2 Thinking | made_by | moonshotai
+## 38h
+maker: Moonshot
+model: Kimi K3
+licence: Kimi K3 License
+technique: mixture-of-experts
+rel: Kimi K3 | made_by | Moonshot
+rel: Kimi K3 | licensed_under | Kimi K3 License
+## 38b
+maker: moonshotai
+model: Kimi K3
+platform: Hugging Face
+rel: Kimi K3 | made_by | moonshotai
+## 39h
+maker: Nari Labs
+model: Dia2-2B
+licence: Apache 2.0
+task: TTS=text-to-speech
+rel: Dia2-2B | made_by | Nari Labs
+rel: Dia2-2B | licensed_under | Apache 2.0
+## 39b
+maker: Nari Labs
+model: Dia2-2B
+task: text-to-speech
+platform: Gradio
+rel: Dia2-2B | made_by | Nari Labs
+## 40h
+maker: NineNineSix
+model: KaniTTS2-en ; LFM2 350M
+licence: LFM 1.0 licence
+task: TTS=text-to-speech ; cloning=voice cloning
+rel: KaniTTS2-en | made_by | NineNineSix
+rel: KaniTTS2-en | built_on | LFM2 350M
+rel: KaniTTS2-en | licensed_under | LFM 1.0 licence
+## 40b
+maker: NineNineSix ; LiquidAI
+model: KaniTTS2-en ; LFM2 350M ; NanoCodec
+task: text-to-speech ; voice cloning
+rel: KaniTTS2-en | made_by | NineNineSix
+rel: KaniTTS2-en | built_on | LFM2 350M
+maker: Nvidia=nvidia
+## 41h
+maker: NVIDIA
+model: MagpieTTS Multilingual 357M v2607
+licence: NVIDIA Open Model License
+task: voice cloning
+rel: MagpieTTS Multilingual 357M v2607 | made_by | NVIDIA
+rel: MagpieTTS Multilingual 357M v2607 | licensed_under | NVIDIA Open Model License
+## 41b
+maker: NVIDIA
+model: MagpieTTS Multilingual 357M
+rel: MagpieTTS Multilingual 357M | made_by | NVIDIA
+## 42h
+maker: NVIDIA
+model: Nemotron 3.5 Content Safety ; Gemma-3-4B
+licence: Gemma terms
+task: moderation=content moderation
+rel: Nemotron 3.5 Content Safety | made_by | NVIDIA
+rel: Nemotron 3.5 Content Safety | built_on | Gemma-3-4B
+rel: Nemotron 3.5 Content Safety | licensed_under | Gemma terms
+## 42b
+maker: NVIDIA ; Google
+model: Nemotron 3.5 Content Safety ; Gemma-3-4B-it
+technique: LoRA
+rel: Nemotron 3.5 Content Safety | made_by | NVIDIA
+rel: Nemotron 3.5 Content Safety | built_on | Gemma-3-4B-it
+## 43h
+maker: NVIDIA
+model: Nemotron 3 Content Safety ; Gemma-3
+licence: NVIDIA open model licence ; Gemma terms
+task: moderation=content moderation
+rel: Nemotron 3 Content Safety | made_by | NVIDIA
+rel: Nemotron 3 Content Safety | built_on | Gemma-3
+rel: Nemotron 3 Content Safety | licensed_under | NVIDIA open model licence
+## 43b
+maker: NVIDIA
+model: Nemotron 3 Content Safety
+rel: Nemotron 3 Content Safety | made_by | NVIDIA
+## 44h
+maker: NVIDIA
+model: Nemotron 3 Nano 30B-A3B
+technique: MoE ; Mamba-2
+licence: NVIDIA Nemotron Open Model License
+rel: Nemotron 3 Nano 30B-A3B | made_by | NVIDIA
+rel: Nemotron 3 Nano 30B-A3B | licensed_under | NVIDIA Nemotron Open Model License
+## 44b
+maker: NVIDIA
+model: Nemotron 3 Nano 30B-A3B
+rel: Nemotron 3 Nano 30B-A3B | made_by | NVIDIA
+## 45h
+maker: OpenAI
+model: Decisions API ; GPT-6 Luna
+rel: Decisions API | made_by | OpenAI
+rel: Decisions API | built_on | GPT-6 Luna
+## 45b
+maker: OpenAI
+model: Decisions API=Decisions API ; gpt-6-luna=GPT-6 Luna
+rel: Decisions API | made_by | OpenAI
+rel: Decisions API | built_on | gpt-6-luna
+## 46h
+maker: OpenAI
+model: gpt-oss-safeguard
+licence: Apache-2.0
+task: classify=policy-based classification
+rel: gpt-oss-safeguard | made_by | OpenAI
+rel: gpt-oss-safeguard | licensed_under | Apache-2.0
+## 46b
+platform: Hugging Face
+## 47h
+maker: OpenBMB
+model: MiniCPM5-2B
+licence: Apache 2.0
+dataset: UltraData
+task: coding ; tool use
+rel: MiniCPM5-2B | made_by | OpenBMB
+rel: MiniCPM5-2B | licensed_under | Apache 2.0
+## 47b
+maker: OpenBMB
+model: MiniCPM5-2B ; MiniCPM5-1B
+model_family: MiniCPM5
+platform: Hugging Face
+rel: MiniCPM5-2B | made_by | OpenBMB
+rel: MiniCPM5-2B | successor_of | MiniCPM5-1B
+## 48h
+maker: OpenBMB
+model: VoxCPM2
+licence: Apache 2.0
+task: TTS=text-to-speech ; voice design ; cloning=voice cloning
+rel: VoxCPM2 | made_by | OpenBMB
+rel: VoxCPM2 | licensed_under | Apache 2.0
+## 48b
+maker: OpenBMB
+model: VoxCPM2 ; MiniCPM-4
+task: text-to-speech
+rel: VoxCPM2 | made_by | OpenBMB
+rel: VoxCPM2 | built_on | MiniCPM-4
+## 49h
+maker: OpenMOSS Team
+model: MOSS-TTS
+licence: Apache 2.0
+task: voice cloning ; TTS=text-to-speech
+rel: MOSS-TTS | made_by | OpenMOSS Team
+rel: MOSS-TTS | licensed_under | Apache 2.0
+task: cloning=voice cloning
+## 49b
+maker: OpenMOSS Team
+model: MOSS-TTS ; MossTTSDelay ; MossTTSLocal ; MOSS-TTSD ; MOSS-VoiceGenerator ; MOSS-SoundEffect ; MOSS-TTS-Realtime
+task: voice cloning ; voice design
+rel: MOSS-TTS | made_by | OpenMOSS Team
+## 50h
+maker: Perplexity
+model: pplx-decider ; pplx-decider-v1 ; v1.1=pplx-decider-v1.1 ; Qwen3.8-27B
+licence: Apache-2.0
+rel: pplx-decider | made_by | Perplexity
+rel: pplx-decider | built_on | Qwen3.8-27B
+rel: pplx-decider | licensed_under | Apache-2.0
+concept: decision model=decision model
+## 50b
+maker: Perplexity
+model: pplx-decider-v1-27b ; pplx-decider-v1.1-27b
+platform: Hugging Face
+licence: Apache-2.0
+concept: decision models=decision model
+rel: pplx-decider-v1-27b | made_by | Perplexity
+rel: pplx-decider-v1-27b | licensed_under | Apache-2.0
+rel: pplx-decider-v1.1-27b | licensed_under | Apache-2.0
+## 51h
+maker: Shipped
+## 51b
+maker: Shipped
+## 52h
+maker: Decision4Rec
+model: Kev
+licence: Apache-2.0
+task: rerank recommender candidates=recommender candidate ranking
+rel: Kev | made_by | Decision4Rec
+rel: Kev | licensed_under | Apache-2.0
+## 52b
+maker: Marco Polignano
+model: decision4rec-kev-9b
+platform: Hugging Face
+concept: decision model
+task: recommender systems=recommender candidate ranking
+rel: decision4rec-kev-9b | made_by | Marco Polignano
+platform: Hub=hub
+## 53h
+maker: Qwen
+model: Qwen3.8-27B
+licence: Apache 2.0
+rel: Qwen3.8-27B | made_by | Qwen
+rel: Qwen3.8-27B | licensed_under | Apache 2.0
+## 53b
+maker: Qwen
+model: Qwen3.8-27B
+model_family: Qwen3.8
+rel: Qwen3.8-27B | made_by | Qwen
+## 54h
+maker: Qwen
+model: Qwen3Guard
+licence: Apache-2.0
+task: moderation=content moderation
+rel: Qwen3Guard | made_by | Qwen
+rel: Qwen3Guard | licensed_under | Apache-2.0
+platform: Hub=hub
+## 54b
+model: Qwen3Guard
+platform: Hugging Face
+## 55h
+maker: Reflection
+model: Beam
+licence: Apache 2.0
+technique: MoE
+rel: Beam | made_by | Reflection
+rel: Beam | licensed_under | Apache 2.0
+## 55b
+maker: Reflection
+model: Beam
+rel: Beam | made_by | Reflection
+## 56h
+maker: Resemble AI
+model: Chatterbox-Turbo
+licence: MIT
+task: TTS=text-to-speech ; voice cloning ; voice agents
+rel: Chatterbox-Turbo | made_by | Resemble AI
+rel: Chatterbox-Turbo | licensed_under | MIT
+## 56b
+maker: Resemble AI
+model: Chatterbox-Turbo ; Chatterbox
+task: text-to-speech ; voice agents
+technique: distilled
+rel: Chatterbox-Turbo | made_by | Resemble AI
+## 57h
+maker: SberAI
+model: FRIDA-Decisions
+licence: MIT
+dataset: razvilka
+rel: FRIDA-Decisions | made_by | SberAI
+rel: FRIDA-Decisions | licensed_under | MIT
+rel: FRIDA-Decisions | measured_by | razvilka
+## 57b
+maker: SberAI
+model: FRIDA-Decisions
+platform: Hugging Face
+rel: FRIDA-Decisions | made_by | SberAI
+## 58h
+maker: Skywork
+model: Reward-V2
+model_family: Llama
+model: Qwen3
+dataset: RewardBench v1
+rel: Reward-V2 | measured_by | RewardBench v1
+## 58b
+concept: decision model
+## 59h
+maker: Soul-AILab
+model: SoulX-Podcast-1.7B
+licence: Apache 2.0
+task: TTS=text-to-speech ; cloning=voice cloning
+rel: SoulX-Podcast-1.7B | made_by | Soul-AILab
+rel: SoulX-Podcast-1.7B | licensed_under | Apache 2.0
+## 59b
+maker: Soul-AILab
+model: SoulX-Podcast-1.7B ; SoulX-Podcast-1.7B-dialect
+platform: Hub
+task: text-to-speech ; voice cloning
+rel: SoulX-Podcast-1.7B | made_by | Soul-AILab
+## 60h
+maker: StartLux
+model: Decision v1.1 ; StartLux-Decision-v1.1
+licence: CC BY-NC 4.0
+rel: Decision v1.1 | made_by | StartLux
+rel: StartLux-Decision-v1.1 | licensed_under | CC BY-NC 4.0
+## 60b
+maker: StartLux
+model: StartLux-Decision v1.1
+platform: Hugging Face
+concept: decision model
+rel: StartLux-Decision v1.1 | made_by | StartLux
+## 61h
+maker: StepFun
+model: Step 3.7 Flash
+licence: Apache 2.0
+technique: MoE
+rel: Step 3.7 Flash | made_by | StepFun
+rel: Step 3.7 Flash | licensed_under | Apache 2.0
+## 61b
+maker: StepFun
+model: Step 3.7 Flash
+technique: mixture-of-experts
+rel: Step 3.7 Flash | made_by | StepFun
+## 62h
+maker: StepFun
+model: Step-Audio-EditX
+task: zero-shot text-to-speech=text-to-speech
+rel: Step-Audio-EditX | made_by | StepFun
+## 62b
+maker: StepFun
+model: Step-Audio-EditX
+task: text-to-speech ; voice cloning
+rel: Step-Audio-EditX | made_by | StepFun
+## 63h
+maker: Supertone
+model: Supertonic 3
+licence: OpenRAIL-M ; MIT
+platform: ONNX
+task: TTS=text-to-speech
+rel: Supertonic 3 | made_by | Supertone
+rel: Supertonic 3 | licensed_under | OpenRAIL-M
+## 63b
+maker: Supertone
+model: Supertonic 3 ; Supertonic 2
+platform: ONNX Runtime
+task: text-to-speech
+rel: Supertonic 3 | made_by | Supertone
+rel: Supertonic 3 | successor_of | Supertonic 2
+## 64h
+maker: Torchcast AI ; StartLux
+model: Torchcast Decision 27B ; StartLux-Decision-27B
+technique: LoRA
+licence: CC BY-NC 4.0
+rel: Torchcast Decision 27B | made_by | Torchcast AI
+rel: Torchcast Decision 27B | built_on | StartLux-Decision-27B
+rel: Torchcast Decision 27B | licensed_under | CC BY-NC 4.0
+## 64b
+maker: Torchcast AI
+model: torchcast-decision-27b
+platform: Hugging Face
+rel: torchcast-decision-27b | made_by | Torchcast AI
+## 65h
+maker: TypeSafe AI
+model: Jev
+rel: Jev | made_by | TypeSafe AI
+## 65b
+maker: TypeSafe AI
+model: Jev
+concept: System One
+rel: Jev | made_by | TypeSafe AI
+## 66h
+maker: vLLM Semantic Router team=vLLM Semantic Router ; vllm-sr
+model_family: Decision 2.0
+model: Vega ; Lux
+licence: Apache-2.0
+dataset: JevArena
+rel: Decision 2.0 | made_by | vLLM Semantic Router
+rel: Decision 2.0 | licensed_under | Apache-2.0
+rel: Vega | measured_by | JevArena
+concept: decision models=decision model
+## 66b
+maker: vLLM Semantic Router team=vLLM Semantic Router
+model_family: Decision 2.0
+model: Vega-27B ; Lux-9B
+platform: Hugging Face
+rel: Decision 2.0 | made_by | vLLM Semantic Router
+## 67h
+maker: Xiaomi MiMo
+model: MiMo-V2.6-Pro-RL ; MiMo-V2.6
+licence: MIT
+technique: MoE
+rel: MiMo-V2.6-Pro-RL | made_by | Xiaomi MiMo
+rel: MiMo-V2.6-Pro-RL | licensed_under | MIT
+## 67b
+maker: Xiaomi MiMo
+model: MiMo-V2.6-Pro-RL
+technique: mixture-of-experts ; speculative decoding
+rel: MiMo-V2.6-Pro-RL | made_by | Xiaomi MiMo
+## 68h
+maker: Yandex
+model: AliceAI-Foundation-80B-A3B-Base
+licence: Apache 2.0
+technique: MoE
+rel: AliceAI-Foundation-80B-A3B-Base | made_by | Yandex
+rel: AliceAI-Foundation-80B-A3B-Base | licensed_under | Apache 2.0
+## 68b
+maker: Yandex
+model: AliceAI-Foundation-80B-A3B-Base
+technique: MoE
+rel: AliceAI-Foundation-80B-A3B-Base | made_by | Yandex
+## 69h
+maker: Z.ai
+model: GLM-TTS
+licence: MIT
+task: voice cloning ; TTS=text-to-speech
+technique: reinforcement learning
+rel: GLM-TTS | made_by | Z.ai
+rel: GLM-TTS | licensed_under | MIT
+## 69b
+maker: Z.ai
+model: GLM-TTS
+technique: reinforcement learning ; GRPO ; flow-matching
+task: text-to-speech ; voice cloning
+model: Llama
+rel: GLM-TTS | made_by | Z.ai
+## 70h
+maker: Z.ai
+model: GLM-5.3 ; GLM-5.2
+licence: glm-5.3 licence
+task: coding
+rel: GLM-5.3 | made_by | Z.ai
+rel: GLM-5.3 | built_on | GLM-5.2
+rel: GLM-5.3 | licensed_under | glm-5.3 licence
+## 70b
+maker: Z.ai
+model: GLM-5.3 ; GLM-5.2
+platform: Hugging Face
+rel: GLM-5.3 | made_by | Z.ai
+rel: GLM-5.3 | built_on | GLM-5.2

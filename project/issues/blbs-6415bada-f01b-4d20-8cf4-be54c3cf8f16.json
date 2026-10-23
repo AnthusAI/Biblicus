@@ -3,7 +3,7 @@
   "title": "Remediate archive extraction path traversal in FUNSD sample downloader",
   "description": "",
   "type": "task",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 1,
   "assignee": null,
   "creator": null,
@@ -15,11 +15,21 @@
       "id": "58830f62-f87b-4f32-be2d-b90d67daf7b0",
       "author": "derek.norrbom",
       "text": "Replaced direct ZipFile.extractall usage with guarded extraction that validates every zip member resolves under destination before extraction; this blocks path traversal (zip slip) writes outside temp_dir.",
-      "created_at": "2026-05-05T22:15:45.240706Z"
+      "created_at": "2026-05-05T22:15:45.240706Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "247cbfde-d3e8-4140-93be-b537978d08e9",
+      "author": "home",
+      "text": "Closing on evidence: PR 44 (feature/blbs-6415ba-funsd-zip-slip-fix, fix commit 7ab7172) merged 2026-05-05. scripts/download_funsd_samples.py on develop extracts through _extract_zip_safely, which rejects absolute paths, '..' parts, and any member that resolves outside the destination. No ZipFile.extractall remains in src, scripts or tools. The issue stayed in_progress after that merge because nobody closed it.",
+      "created_at": "2026-10-20T13:16:36.719921Z",
+      "comment_type": "default"
     }
   ],
   "created_at": "2026-05-05T22:15:25.767764Z",
-  "updated_at": "2026-05-05T22:15:45.240706Z",
-  "closed_at": null,
+  "updated_at": "2026-10-20T13:16:36.746700Z",
+  "closed_at": "2026-10-20T13:16:36.746667Z",
+  "right_now_summary": null,
+  "right_now_updated_at": null,
   "custom": {}
 }

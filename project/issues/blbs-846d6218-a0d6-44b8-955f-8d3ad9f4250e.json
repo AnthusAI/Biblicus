@@ -1,0 +1,59 @@
+{
+  "id": "blbs-846d6218-a0d6-44b8-955f-8d3ad9f4250e",
+  "title": "Cluster identity across topic-model runs (new, merged, split)",
+  "description": "## Context\nTopic-model cluster ids (BERTopic) reset on every run, so a front end cannot say \"cluster 41 is new\" or \"cluster 17 is growing\". Add a matching step that links the clusters of a run to the clusters of the previous run by document overlap (for example Jaccard on member item ids), assigns a stable cluster uid, and reports lifecycle events: new, continued, merged, split, gone.\n\nConsumers: Papyrus initiative PPY-428252 (emerging-cluster callouts); the desk names an accepted cluster through the existing steering-proposal flow, so Biblicus only supplies identity and statistics. Parent epic: blbs-d380cb. Depends on the weekly bins story under the same epic for the growing/cooling statistic.\n\nKnown risk: BERTopic needs hundreds of documents for stable clusters; record the minimum corpus size observed.\n\n## Acceptance criteria\n```gherkin\nFeature: Stable cluster identity across runs\n  Scenario: A cluster continues\n    Given run A produced a cluster with items {1..20}\n    And run B produced a cluster with items {2..21}\n    When I match run B to run A with an overlap threshold of 0.5\n    Then the run B cluster keeps the stable uid of the run A cluster\n    And its event is \"continued\"\n\n  Scenario: A new cluster\n    Given run B has a cluster that overlaps no run A cluster above the threshold\n    Then it receives a new stable uid and the event \"new\"\n\n  Scenario: Merge and split\n    Given two run A clusters each overlap one run B cluster above the threshold\n    Then the run B cluster is reported as \"merged\" with both predecessor uids\n    And the reverse situation is reported as \"split\" with the successor uids\n\n  Scenario: Deterministic\n    When the same two runs are matched twice\n    Then the assigned uids and events are identical\n```\n\n## Notes\nOutput carries uid, event, predecessor uids, member item count, top terms and first-seen date. Labels such as growing or cooling are a front-end rule applied only after four or more weeks of series data.",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "b420ae8f-88de-4364-973e-b8f58debf5c0",
+      "author": "home",
+      "text": "Papyrus consumer: PPY-a8da2c (cluster callouts from accepted proposals). Needs weekly bins blbs-7d8c88.",
+      "created_at": "2026-10-21T12:50:33.363902Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    },
+    {
+      "id": "86c14d99-d8d5-42e1-8eb8-a352543d82bb",
+      "author": "home",
+      "text": "Branch feature/topic-trend-bins-identity, PR https://github.com/AnthusAI/Biblicus/pull/104. Verified with behave (new features pass), pytest, 100% coverage on new code, ruff clean. Not closed: lead closes after live verification.",
+      "created_at": "2026-10-22T03:50:25.302684Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "89dd16a9-21c1-4219-8538-dacd569f37dc",
+      "author": "home",
+      "text": "tmp",
+      "created_at": "2026-10-22T03:50:30.197132Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "e26ce3de-d909-46ed-b7af-ac6ddeef2ae8",
+      "author": "home",
+      "text": "Closed. analyze topic-identity (PR #104). Real use: Shipped first run 4 clusters (71 docs, 1 outlier); second run with --previous: 4 continued, uids stable. Minimum corpus observed: 71 documents gave 4 coherent clusters.",
+      "created_at": "2026-10-22T10:41:14.464620Z",
+      "comment_type": "default"
+    }
+  ],
+  "created_at": "2026-10-21T12:47:56.091033Z",
+  "updated_at": "2026-10-22T10:41:14.483234Z",
+  "closed_at": "2026-10-22T10:41:14.483206Z",
+  "agent": {
+    "platform": "claude_code",
+    "model": "Sonnet 5.5",
+    "name": "papyrus-anthus"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

@@ -1,0 +1,55 @@
+{
+  "additionalProperties": false,
+  "description": "Request to match topic-model clusters to the previous run and assign stable identifiers.\n\n:ivar corpus_path: Corpus path or uniform resource identifier.\n:vartype corpus_path: str\n:ivar current_run_id: Topic modeling snapshot to identify.\n:vartype current_run_id: str\n:ivar previous_run_id: Previous topic modeling snapshot, or None for the first run.\n:vartype previous_run_id: str or None\n:ivar threshold: Minimum Jaccard overlap of member item identifiers for a match.\n:vartype threshold: float\n:ivar trends_snapshot_id: Topic trends snapshot with weekly bins for the eight-week series.\n:vartype trends_snapshot_id: str or None",
+  "properties": {
+    "corpus_path": {
+      "minLength": 1,
+      "title": "Corpus Path",
+      "type": "string"
+    },
+    "current_run_id": {
+      "minLength": 1,
+      "title": "Current Run Id",
+      "type": "string"
+    },
+    "previous_run_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Previous Run Id"
+    },
+    "threshold": {
+      "default": 0.5,
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Threshold",
+      "type": "number"
+    },
+    "trends_snapshot_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trends Snapshot Id"
+    }
+  },
+  "required": [
+    "corpus_path",
+    "current_run_id"
+  ],
+  "title": "TopicIdentityRequest",
+  "type": "object"
+}

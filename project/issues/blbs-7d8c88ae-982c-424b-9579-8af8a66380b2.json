@@ -1,0 +1,59 @@
+{
+  "id": "blbs-7d8c88ae-982c-424b-9579-8af8a66380b2",
+  "title": "Weekly time-series bins for topic-trends",
+  "description": "## Context\n`analyze topic-trends` (src `topic_trends.py`, docs `topic-modeling.md`) reports momentum per topic over trailing windows (`30d`, `90d`, `1y`, `all`). Consumers that draw sparklines and trend charts need a per-topic series binned by calendar week instead. The documents already carry `dates.published_at`, so this is counting on dates that are already loaded.\n\nPapyrus consumer: PPY-428252 (public knowledge base initiative). Related Biblicus items: blbs-d380cb (parent epic).\n\nAs a publication builder, I want a weekly count series per topic, so that a front end can draw an 8-week sparkline and a 26-week chart.\n\n## Acceptance criteria\n```gherkin\nFeature: Weekly bins for topic trends\n  Scenario: Request weekly bins\n    Given a corpus whose items have published dates across ten weeks\n    When I run topic-trends with weekly binning for the last 8 weeks\n    Then each topic reports exactly 8 integer counts ordered oldest to newest\n    And weeks are ISO weeks and the final bin is the current week\n\n  Scenario: Items without a published date\n    Given items with no published date\n    When I run topic-trends with weekly binning\n    Then those items are excluded from every bin and counted in a reported \"undated\" total\n\n  Scenario: Existing trailing windows unchanged\n    When I run topic-trends without a binning option\n    Then the output is identical to the current trailing-window output\n```\n\n## Out of scope\nPer-entity series (counted in Papyrus over confirmed entity links, see PPY-428252). Cluster identity (see the cluster-identity story under blbs-d380cb).",
+  "type": "story",
+  "status": "closed",
+  "priority": 2,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-d380cb2e-99ea-40b2-bf66-44e4ea7d5b5d",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "3fe54c50-997f-446f-ab18-de716964dd5f",
+      "author": "home",
+      "text": "Papyrus consumers: PPY-9abb98 (knowledge snapshot), PPY-aaa702 (sparkline and trend chart). Entity-level series are counted in Papyrus (PPY-eb5f28).",
+      "created_at": "2026-10-21T12:50:33.336087Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "papyrus-anthus"
+      }
+    },
+    {
+      "id": "c7bb8d9f-81e4-46ff-b28f-f91218ad9df0",
+      "author": "home",
+      "text": "Branch feature/topic-trend-bins-identity, PR https://github.com/AnthusAI/Biblicus/pull/104. Verified with behave (new features pass), pytest, 100% coverage on new code, ruff clean. Not closed: lead closes after live verification.",
+      "created_at": "2026-10-22T03:50:25.217473Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "2db374f7-f937-4817-9c10-0388fc5e96c2",
+      "author": "home",
+      "text": "x",
+      "created_at": "2026-10-22T03:50:27.801411Z",
+      "comment_type": "default"
+    },
+    {
+      "id": "4056b620-e830-4e04-8892-36e57d697bb2",
+      "author": "home",
+      "text": "Closed. topic-trends --bin weekly --weeks N --as-of (PR #104); used in two real Shipped runs (26 weeks) feeding Papyrus sparklines live on https://shipped.anth.us.",
+      "created_at": "2026-10-22T10:41:14.382578Z",
+      "comment_type": "default"
+    }
+  ],
+  "created_at": "2026-10-21T12:47:56.045633Z",
+  "updated_at": "2026-10-22T10:41:14.436805Z",
+  "closed_at": "2026-10-22T10:41:14.436777Z",
+  "agent": {
+    "platform": "claude_code",
+    "model": "Sonnet 5.5",
+    "name": "papyrus-anthus"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}

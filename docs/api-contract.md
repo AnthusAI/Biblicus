@@ -30,16 +30,18 @@ Requests reject unknown fields, so a misspelled field is reported instead of ign
 | `topic-classifier project` | `TopicClassifierProjectRequest` | `TopicClassifierProjectionOutput` | `topic_classifier_project` |
 | `analyze topic-context` | `TopicContextRequest` | `TopicContextOutput` | `analyze_topic_context` |
 | `analyze topic-trends` | `TopicTrendsRequest` | `TopicTrendOutput` | `analyze_topic_trends` |
+| `analyze topic-identity` | `TopicIdentityRequest` | `TopicIdentityOutput` | `analyze_topic_identity` |
 | `context-pack build-blocks` | `ContextBlockBuildRequest` | `ContextBlockBuildResult` | `context_pack_build_blocks` |
 | `summarize map-reduce` | `SummarizeMapReduceRequest` | `TransformResult` | `summarize_map_reduce` |
 | `extract url-text` | `UrlTextRequest` | `UrlTextResponse` | `extract_url_text` |
 | `extract article-text` | `ArticleInput` | `TransformResult` | `extract_article_text` |
+| `extract typed-entities` | `TypedEntitiesRequest` | `TypedEntitiesOutput` | `extract_typed_entities` |
 | `extract web-metadata` | `WebMetadataRequest` | `WebMetadataResponse` | `extract_web_metadata` |
 | `query` | `QueryRequest` | `RetrievalResult` | `query` |
 | `reindex` | `ReindexRequest` | `ReindexResponse` | `reindex` |
 | `graph extract` | `GraphExtractRequest` | `GraphSnapshotManifest` | `graph_extract` |
 
-Where a library function already returned a Pydantic model, that model is the response model. The `--format markdown` renderings of `taxonomy discover`, `topic-classifier project`, `analyze topic-context` and `analyze topic-trends` are command-line presentations of the same response model.
+Where a library function already returned a Pydantic model, that model is the response model. The `--format markdown` renderings of `taxonomy discover`, `topic-classifier project`, `analyze topic-context`, `analyze topic-trends` and `analyze topic-identity` are command-line presentations of the same response model.
 
 The `extract url-text` and `extract web-metadata` commands read their JSON input from `--input-json`, and `extract article-text` and `summarize map-reduce` read theirs the same way.
 
@@ -93,4 +95,4 @@ The first form rewrites the files. The second exits with status 1 and lists ever
 
 ## Specifications
 
-`features/cli_failure_envelope.feature` proves the failure contract: the envelope on standard output, the exit status for each category, the empty standard error, and that every typed command declares it. `features/api_contract.feature` proves that the published schemas match the models, that drift is reported and repaired, that Python functions return the typed responses, and that invalid requests name each offending field. Each command group also proves in its own feature that the real command-line output validates against its published schema: taxonomy in `features/taxonomy_ontology.feature`, steering in `features/api_contract.feature` and `features/taxonomy_ontology.feature`, topic classifier in `features/topic_classifier.feature`, analysis in `features/topic_trends.feature` and `features/topic_context.feature`, graph in `features/graph_extraction.feature`, bounded web transforms in `features/bounded_web_transform.feature`, and retrieval, reindex, context-pack blocks and web metadata in `features/api_contract.feature`.
+`features/cli_failure_envelope.feature` proves the failure contract: the envelope on standard output, the exit status for each category, the empty standard error, and that every typed command declares it. `features/api_contract.feature` proves that the published schemas match the models, that drift is reported and repaired, that Python functions return the typed responses, and that invalid requests name each offending field. Each command group also proves in its own feature that the real command-line output validates against its published schema: taxonomy in `features/taxonomy_ontology.feature`, steering in `features/api_contract.feature` and `features/taxonomy_ontology.feature`, topic classifier in `features/topic_classifier.feature`, analysis in `features/topic_trends.feature`, `features/topic_trend_weekly_bins.feature`, `features/topic_identity.feature` and `features/topic_context.feature`, graph in `features/graph_extraction.feature`, typed entities in `features/typed_entity_extraction.feature`, bounded web transforms in `features/bounded_web_transform.feature`, and retrieval, reindex, context-pack blocks and web metadata in `features/api_contract.feature`.
