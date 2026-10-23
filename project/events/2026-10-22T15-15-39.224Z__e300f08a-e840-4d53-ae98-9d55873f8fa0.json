@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "e300f08a-e840-4d53-ae98-9d55873f8fa0",
+  "issue_id": "blbs-7032b605-1891-4ecb-84b1-b12525c333b4",
+  "event_type": "issue_created",
+  "occurred_at": "2026-10-22T15:15:39.224Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Docs footer links Contact us to the Anthus engage page",
+    "description": "Pass --contact-url to the docs site build so the Anthus family footer's Contact us link goes to https://anth.us/engage/?solution=Biblicus&cta=docs. Depends on the Papyrus docs_site footer PR.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude-code",
+      "model": "claude-sonnet-5-5",
+      "name": "claude"
+    }
+  }
+}
