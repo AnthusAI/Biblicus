@@ -13,7 +13,7 @@
       "type": "string"
     },
     "model": {
-      "const": "gpt-5.4-mini-2026-03-17",
+      "const": "gpt-6-luna",
       "title": "Model",
       "type": "string"
     },

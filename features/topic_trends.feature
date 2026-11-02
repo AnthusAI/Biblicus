@@ -126,7 +126,7 @@ Feature: Temporal topic intelligence
           nr_topics: 1
         representation_model:
           provider: openai
-          model: gpt-5.4-mini
+          model: gpt-6-luna
           prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
       """
     When I snapshot a topic analysis in corpus "trend-labels" using configuration "topic.yml" and the latest extraction snapshot

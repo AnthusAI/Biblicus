@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "event_id": "300457d4-7730-4581-92e6-e0bdae95b936",
+  "issue_id": "blbs-322f41ef-b036-4b3d-9495-24444c046a4b",
+  "event_type": "issue_created",
+  "occurred_at": "2026-11-02T23:09:23.540Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "Use gpt-6-luna for every OpenAI language model call",
+    "description": "Ryan's rule (2026-11-02): all LLM calls use GPT 6 Luna. Moves web_transform MODEL, topic-modeling and html-structured and reinforcement-memory defaults, shipped configurations and docs off gpt-5.4-mini, gpt-5.4-nano, gpt-5.6-luna and gpt-4o-mini. Speech-to-text audio models are not language models and stay.",
+    "issue_type": "task",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": null,
+    "labels": [],
+    "agent": {
+      "platform": "claude_code",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

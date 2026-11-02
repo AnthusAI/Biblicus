@@ -145,9 +145,9 @@ def test_resolve_llm_helpers_uses_luna_default_for_openai(monkeypatch):
     assert causal_fn("", {}) == "openai-cause"
     assert synth_fn("", [], []) == "openai-synth"
     assert captured == {
-        "label_model": "gpt-5.6-luna",
-        "causal_model": "gpt-5.6-luna",
-        "synth_model": "gpt-5.6-luna",
+        "label_model": "gpt-6-luna",
+        "causal_model": "gpt-6-luna",
+        "synth_model": "gpt-6-luna",
     }
 
 

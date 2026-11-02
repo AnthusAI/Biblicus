@@ -117,7 +117,7 @@ from biblicus.text import TextExtractRequest, apply_text_extract
 
 request = TextExtractRequest(
     text="Hello world",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template="Return the entire text.",
 )
 result = apply_text_extract(request)
@@ -188,7 +188,7 @@ Preserve all whitespace and punctuation.
 
 request = TextExtractRequest(
     text="I can try to get help, but I promise nothing.",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template=prompt_template,
 )
 result = apply_text_extract(request)
@@ -679,7 +679,7 @@ segmentation:
   span_markup:
     client:
       provider: openai
-      model: gpt-4o-mini
+      model: gpt-6-luna
       api_key: null
       response_format: json_object
     prompt_template: |

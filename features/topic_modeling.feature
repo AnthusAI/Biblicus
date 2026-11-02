@@ -186,7 +186,7 @@ Feature: Topic modeling analysis
           nr_topics: 1
         representation_model:
           provider: openai
-          model: gpt-5.4-mini
+          model: gpt-6-luna
           prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
           nr_docs: 3
           delay_in_seconds: 0
@@ -194,7 +194,7 @@ Feature: Topic modeling analysis
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
     Then the BERTopic constructor received a representation model
     And the OpenAI client was configured with the scenario API key
-    And the BERTopic representation model used OpenAI model "gpt-5.4-mini"
+    And the BERTopic representation model used OpenAI model "gpt-6-luna"
     And the topic analysis output includes topic label "Specific Label"
     And the topic analysis output label source is "llm"
     And the OpenAI chat request omitted parameter "stop"
@@ -223,7 +223,7 @@ Feature: Topic modeling analysis
           nr_topics: 1
         representation_model:
           provider: openai
-          model: gpt-5.4-mini
+          model: gpt-6-luna
           prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot
@@ -254,7 +254,7 @@ Feature: Topic modeling analysis
           nr_topics: 1
         representation_model:
           provider: openai
-          model: gpt-5.4-mini
+          model: gpt-6-luna
           prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
       """
     And I snapshot a topic analysis in corpus "corpus" using configuration "topic.yml" and the latest extraction snapshot

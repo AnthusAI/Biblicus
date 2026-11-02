@@ -30,7 +30,7 @@ bertopic_analysis:
       prediction_data: true
   representation_model:
     provider: openai
-    model: gpt-5.4-mini
+    model: gpt-6-luna
     prompt_template: |
       I have a topic that contains the following documents:
       [DOCUMENTS]

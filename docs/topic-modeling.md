@@ -165,7 +165,7 @@ post-processing stage.
 bertopic_analysis:
   representation_model:
     provider: openai
-    model: gpt-5.4-mini
+    model: gpt-6-luna
     nr_docs: 4
     delay_in_seconds: 0
     prompt_template: |
@@ -247,7 +247,7 @@ biblicus analyze topic-context \
   --topic-modeling-snapshot <topic_modeling_snapshot_id> \
   --max-topics 20 \
   --examples-per-topic 3 \
-  --summary-model gpt-5.4-mini \
+  --summary-model gpt-6-luna \
   --format markdown
 ```
 

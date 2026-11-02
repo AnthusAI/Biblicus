@@ -110,7 +110,7 @@ Feature: Research agent topic context
           nr_topics: null
       """
     When I snapshot a topic analysis in corpus "summary-lab" using configuration "topic.yml" and the latest extraction snapshot
-    And I generate a summarized topic context report in corpus "summary-lab" using summary model "gpt-5.4-mini" with max topics 20 and 3 examples as markdown
+    And I generate a summarized topic context report in corpus "summary-lab" using summary model "gpt-6-luna" with max topics 20 and 3 examples as markdown
     Then the topic context Markdown includes "Research agent guidance."
     And the topic context Markdown includes "One sentence article summary."
     And the topic context output example "Discovery Article" uses text source "llm_summary"

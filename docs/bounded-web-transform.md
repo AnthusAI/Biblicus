@@ -3,11 +3,11 @@
 Run from the Biblicus checkout with Python 3.10–3.13 and the normal core dependencies. No OpenAI SDK or DSPy is used. The offline handoff was tested with Python 3.12, Pydantic 2.13.5 and Behave 1.3.3.
 
 ```sh
-printf '%s' '{"extracted_text":"Article body.","source_uri":"https://example.org/article","reference_title":"Article","original_title":"","original_subtitle":"","model":"gpt-5.4-mini-2026-03-17"}' | python -m biblicus extract article-text --input-json - --format json
-printf '%s' '{"extracted_text":"Article body.","source_uri":"https://example.org/article","reference_title":"Article","original_title":"","original_subtitle":""}' | python -m biblicus summarize map-reduce --task summary --model gpt-5.4-mini-2026-03-17 --input-json - --format json
+printf '%s' '{"extracted_text":"Article body.","source_uri":"https://example.org/article","reference_title":"Article","original_title":"","original_subtitle":"","model":"gpt-6-luna"}' | python -m biblicus extract article-text --input-json - --format json
+printf '%s' '{"extracted_text":"Article body.","source_uri":"https://example.org/article","reference_title":"Article","original_title":"","original_subtitle":""}' | python -m biblicus summarize map-reduce --task summary --model gpt-6-luna --input-json - --format json
 ```
 
-`--input-json -` reads one UTF-8 JSON object from stdin; a path reads one local JSON file. Unknown fields and wrong types fail validation. extracted_text must be nonempty. Context strings default to empty. Article input requires model; metadata model is required on the command line. The only model is gpt-5.4-mini-2026-03-17.
+`--input-json -` reads one UTF-8 JSON object from stdin; a path reads one local JSON file. Unknown fields and wrong types fail validation. extracted_text must be nonempty. Context strings default to empty. Article input requires model; metadata model is required on the command line. The only model is gpt-6-luna.
 
 Success exits 0 and writes one JSON object to stdout, with no stderr. Article output has status=ok, text, span_count, prompt_version, model, warnings=[], error=null, retry_trace=[], retry_failure_count=0, retry_rounds_used=0. It selects ordered paragraph IDs, reconstructing exact source passages separated by blank lines; it cannot invent article text. Metadata output has status=ok, task, value, prompt_version, model, map_reduce={map_calls:1,reduce_calls:1,chunk_count:1}, warnings=[], error=null and the same zero retry metadata. It maps the complete admitted source once and reduces those notes for the requested field. Oversized sources are rejected, never clipped or silently chunked.
 
@@ -22,7 +22,7 @@ Offline verification: PYTHONPATH=src python -m behave --stage bounded features/b
 Example article success (identity/retry fields are always present):
 
 ```json
-{"status":"ok","prompt_version":"bounded-web-v2","model":"gpt-5.4-mini-2026-03-17","task":null,"text":"Article body.","span_count":1,"value":"","map_reduce":{},"warnings":[],"error":null,"retry_trace":[],"retry_failure_count":0,"retry_rounds_used":0}
+{"status":"ok","prompt_version":"bounded-web-v2","model":"gpt-6-luna","task":null,"text":"Article body.","span_count":1,"value":"","map_reduce":{},"warnings":[],"error":null,"retry_trace":[],"retry_failure_count":0,"retry_rounds_used":0}
 ```
 
 Example metadata success uses task=summary, value="Grounded summary", text="", span_count=0 and map_reduce={"map_calls":1,"reduce_calls":1,"chunk_count":1}. Example denied request prints {"status":"failed","error":{"code":"provider_failed","message":"Gateway request failed; no retry was attempted.","details":{}}} and exits 1. Neither the failure envelope nor stderr includes the provider response body.

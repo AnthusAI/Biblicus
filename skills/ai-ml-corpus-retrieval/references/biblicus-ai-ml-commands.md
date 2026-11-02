@@ -168,7 +168,7 @@ Generate a Markdown overview of existing topics and representative examples:
   --topic-modeling-snapshot <topic_modeling_snapshot_id> \
   --max-topics 20 \
   --examples-per-topic 3 \
-  --summary-model gpt-5.4-mini \
+  --summary-model gpt-6-luna \
   --format markdown
 ```
 

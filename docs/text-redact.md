@@ -177,7 +177,7 @@ from biblicus.text import TextRedactRequest, apply_text_redact
 
 request = TextRedactRequest(
     text="Account 1234 should be removed.",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template="Return the account identifiers.",
     redaction_types=["pii"],
 )
