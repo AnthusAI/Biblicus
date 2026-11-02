@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_id": "109e53b3-4656-4454-abfd-8e48a3c80f43",
+  "issue_id": "blbs-20d4d9a6-1bd8-4528-8f84-63b71a60d264",
+  "event_type": "issue_created",
+  "occurred_at": "2026-11-02T06:16:18.195Z",
+  "actor_id": "home",
+  "payload": {
+    "title": "GLiNER2 span beyond window crashes typed-entities run",
+    "description": "extract typed-entities with the gliner2 backend raises IndexError in _trim_span when the model returns a span whose end exceeds the window (offset drift on unusual Unicode). One malformed span failed a 1,375-document run. Expected: spans are clamped to the window, wholly out-of-range spans are dropped and counted in a log message; never fails the document.",
+    "issue_type": "bug",
+    "status": "open",
+    "priority": 1,
+    "assignee": null,
+    "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+    "labels": [],
+    "agent": {
+      "platform": "claude_code",
+      "model": "Sonnet 5.5",
+      "name": "Biblicus Span Fix"
+    }
+  }
+}
