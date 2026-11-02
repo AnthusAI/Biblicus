@@ -54,7 +54,7 @@ Feature: Topic granularity sweep
           stop_words: english
         representation_model:
           provider: openai
-          model: gpt-5.4-mini
+          model: gpt-6-luna
           prompt_template: "Name this topic from [KEYWORDS] and [DOCUMENTS]."
           nr_docs: 3
       """

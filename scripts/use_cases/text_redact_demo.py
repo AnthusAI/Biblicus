@@ -91,7 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default="gpt-4o-mini",
+        default="gpt-6-luna",
         help="Model name for real runs (ignored in --mock mode).",
     )
     return parser

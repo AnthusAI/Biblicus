@@ -527,7 +527,7 @@ class TopicModelingRepresentationModelConfig(AnalysisSchemaModel):
     provider: TopicModelingRepresentationProvider = Field(
         default=TopicModelingRepresentationProvider.OPENAI
     )
-    model: str = Field(default="gpt-5.4-mini", min_length=1)
+    model: str = Field(default="gpt-6-luna", min_length=1)
     prompt_template: Optional[str] = None
     nr_docs: int = Field(default=4, ge=1)
     delay_in_seconds: Optional[float] = Field(default=None, ge=0)

@@ -27,7 +27,7 @@ Feature: One JSON failure envelope for every typed command
       | ["extract", "web-metadata", "--input-json", "-"]    | {"source_uri": "https://example.org/a", "timeout_seconds": -5}  | invalid_request    | timeout_seconds               |
       | ["extract", "web-metadata", "--input-json", "-"]    | {"html_content": "<p>x</p>", "timeout_seconds": "x"}            | invalid_request    | timeout_seconds               |
       | ["extract", "article-text", "--input-json", "-"]    | not json                                                        | invalid_input      | nonempty extracted_text       |
-      | ["summarize", "map-reduce", "--task", "title", "--model", "gpt-5.4-mini-2026-03-17", "--input-json", "-"] | not json | invalid_input | nonempty extracted_text |
+      | ["summarize", "map-reduce", "--task", "title", "--model", "gpt-6-luna", "--input-json", "-"] | not json | invalid_input | nonempty extracted_text |
       | ["context-pack", "build-blocks"] | (empty) | invalid_request | request JavaScript Object Notation |
       | ["context-pack", "build-blocks"]                    | {"blocks": 3}                                                   | invalid_request    | Invalid context-pack build-blocks request |
       | ["steering", "export", "--corpus", "corpus:envelope-lab", "--classifier", ""] | (empty) | invalid_request | Invalid steering export request |

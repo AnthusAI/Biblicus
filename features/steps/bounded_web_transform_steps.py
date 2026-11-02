@@ -59,7 +59,7 @@ def given_gateway(context, case):
     if case == "invalid_source_date":
         context.web_payload["source_publication_date"] = "2021-02-31"
     if context.web_task == "article":
-        context.web_payload["model"] = "gpt-5.4-mini-2026-03-17"
+        context.web_payload["model"] = "gpt-6-luna"
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -184,7 +184,7 @@ def when_command(context):
     if case == "wrong_type":
         context.web_payload["extracted_text"] = 42
     if case == "wrong_model":
-        context.web_payload["model"] = "other-model"
+        context.web_payload["model"] = "gpt-5.4-mini-2026-03-17"
     if case == "input_bytes":
         context.web_payload["extracted_text"] = "x" * 262145
     if case == "request_bytes":
@@ -202,10 +202,10 @@ def when_command(context):
             "--task",
             context.web_task,
             "--model",
-            "gpt-5.4-mini-2026-03-17",
+            "gpt-6-luna",
         ]
     if case == "metadata_wrong_model":
-        args[-1] = "other-model"
+        args[-1] = "gpt-5.4-mini-2026-03-17"
     with tempfile.TemporaryDirectory() as temp:
         source = "-"
         if case in {"file_input", "missing_file"}:
@@ -330,7 +330,7 @@ def then_contract(context, case):
         assert authorization == "Bearer offline-capability"
         assert set(payload) == {"model", "input", "text", "max_output_tokens"}
         assert payload["max_output_tokens"] == 2000
-        assert payload["model"] == "gpt-5.4-mini-2026-03-17"
+        assert payload["model"] == "gpt-6-luna"
         assert payload["text"]["format"]["type"] == "json_schema"
         assert "untrusted" in payload["input"][0]["content"]
     if len(context.web_requests) == 2:

@@ -27,7 +27,7 @@ from biblicus.user_config import resolve_openai_api_key
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
+DEFAULT_OPENAI_MODEL = "gpt-6-luna"
 DEFAULT_OPENAI_REASONING_EFFORT = "low"
 DEFAULT_OPENAI_TIMEOUT_SECONDS = 60.0
 DEFAULT_OPENAI_MAX_RETRIES = 1

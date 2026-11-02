@@ -111,7 +111,7 @@ from biblicus.text import TextSliceRequest, apply_text_slice
 
 request = TextSliceRequest(
     text="One. Two. Three.",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template="Return each sentence as a slice.",
 )
 result = apply_text_slice(request)

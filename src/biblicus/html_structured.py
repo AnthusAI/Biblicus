@@ -16,7 +16,7 @@ from typing import Any, Callable, Dict, List, Optional
 from .ai.models import LlmClientConfig
 
 HTML_STRUCTURED_PROMPT_VERSION = "html-structured-v1"
-HTML_STRUCTURED_DEFAULT_MODEL = "gpt-5.4-nano"
+HTML_STRUCTURED_DEFAULT_MODEL = "gpt-6-luna"
 HTML_STRUCTURED_MAX_ARTICLE_CHARS = 120_000
 HTML_STRUCTURED_ENABLE_ENV = "BIBLICUS_HTML_LLM_STRUCTURED"
 

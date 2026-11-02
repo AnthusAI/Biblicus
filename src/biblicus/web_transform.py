@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
 
 from .command_failure import CommandFailureException, raise_for_error_payload
 
-MODEL = "gpt-5.4-mini-2026-03-17"
+MODEL = "gpt-6-luna"
 PROMPT_VERSION = "bounded-web-v2"
 MAX_INPUT_BYTES = 262144
 MAX_REQUEST_BYTES = 65536

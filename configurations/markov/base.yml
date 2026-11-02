@@ -24,7 +24,7 @@ report:
     enabled: true
     client:
       provider: openai
-      model: gpt-4o-mini
+      model: gpt-6-luna
       api_key: null
       response_format: json_object
     token_budget: 2048

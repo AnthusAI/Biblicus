@@ -126,7 +126,7 @@ from biblicus.text import TextLinkRequest, apply_text_link
 
 request = TextLinkRequest(
     text="Acme launched a product. Later, Acme reported results.",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template="Link repeated mentions of the same company to the first mention.",
     id_prefix="link_",
 )

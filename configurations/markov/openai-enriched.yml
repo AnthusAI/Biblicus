@@ -7,7 +7,7 @@ segmentation:
   llm:
     client:
       provider: openai
-      model: gpt-4o-mini
+      model: gpt-6-luna
       api_key: null
     system_prompt: null
     prompt_template: |
@@ -26,7 +26,7 @@ llm_observations:
   enabled: true
   client:
     provider: openai
-    model: gpt-4o-mini
+    model: gpt-6-luna
     api_key: null
   system_prompt: null
   prompt_template: |

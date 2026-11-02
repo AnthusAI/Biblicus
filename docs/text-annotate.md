@@ -120,7 +120,7 @@ from biblicus.text import TextAnnotateRequest, apply_text_annotate
 
 request = TextAnnotateRequest(
     text="We run fast.",
-    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-4o-mini"),
+    client=LlmClientConfig(provider=AiProvider.OPENAI, model="gpt-6-luna"),
     prompt_template="Return all the verbs.",
     allowed_attributes=["label", "phase", "role"],
 )
