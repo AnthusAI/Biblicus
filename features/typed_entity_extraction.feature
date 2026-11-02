@@ -182,6 +182,30 @@ Feature: Typed entity and relation extraction
     And the output names no model and no revision
     And the fake GLiNER2 library read no windows
 
+  Scenario: A malformed span from the model never fails the item or the run
+    A span model can return offsets that drift from the text it was given, for example after unusual Unicode in extracted text. A span that starts inside the window is clamped to the window; a span that lies wholly outside it is dropped. Either way the run completes and the adjusted and dropped spans are counted in a log message.
+    Given the fake GLiNER2 library also returns these spans relative to the window length:
+      | label            | start | end | score |
+      | software licence | -9    | +10 | 0.9   |
+      | AI model         | +5    | +9  | 0.9   |
+    And the fake GLiNER2 library also returns this relation relative to the window length:
+      | label   | subject_start | subject_end | object_start | object_end | score |
+      | made by | 0             | 6           | +3           | +8         | 0.9   |
+    And I built a pass-through extraction snapshot in corpus "typed-lab"
+    When I extract typed entities in corpus "typed-lab" with options "--vocabulary vocabulary.yml --registry registry.json"
+    Then the standard output validates against the published "extract-typed-entities" response schema
+    And item "alpha" has these entities:
+      | text       | kind    | state    | entity_key |
+      | NAME-A     | maker   | resolved | name-a     |
+      | Guard 1.1  | model   | proposed | -          |
+      | Apache 2.0 | licence | resolved | apache-2   |
+    And item "alpha" has these relations:
+      | type           | subject   | object     | state    |
+      | made_by        | Guard 1.1 | NAME-A     | proposed |
+      | licensed_under | Guard 1.1 | Apache 2.0 | proposed |
+    And every entity text in the output appears at its offsets in item "alpha" of corpus "typed-lab"
+    And the typed extraction log reports 1 adjusted spans and 2 dropped spans
+
   Scenario: The pinned model is loaded once at its pinned revision
     Given I built a pass-through extraction snapshot in corpus "typed-lab"
     When I extract typed entities in corpus "typed-lab" with options "--vocabulary vocabulary.yml --registry registry.json"

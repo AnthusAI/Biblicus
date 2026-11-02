@@ -12,6 +12,7 @@ an optional extra, installed with ``pip install "biblicus[typed-extraction]"``.
 
 from __future__ import annotations
 
+import logging
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
@@ -20,6 +21,8 @@ from pydantic import Field
 
 from .analysis.schema import AnalysisSchemaModel
 from .typed_vocabulary import Vocabulary
+
+logger = logging.getLogger(__name__)
 
 GLINER2_BACKEND_ID = "gliner2"
 GLINER2_MODEL = "fastino/gliner2-base-v1"
@@ -212,19 +215,28 @@ class Gliner2Backend(TypedExtractionBackend):
         type_by_label = {term.label: term.key for term in vocabulary.relation_types}
         mentions: List[BackendMention] = []
         relations: List[BackendRelation] = []
+        audit = _SpanAudit()
         for window_start, window_end in paragraph_windows(
             text, maximum_characters=WINDOW_MAXIMUM_CHARACTERS
         ):
             window = text[window_start:window_end]
-            mentions.extend(self._window_mentions(window, window_start, kind_by_label, threshold))
+            mentions.extend(
+                self._window_mentions(window, window_start, kind_by_label, threshold, audit)
+            )
             if type_by_label:
                 relations.extend(
-                    self._window_relations(window, window_start, type_by_label, threshold)
+                    self._window_relations(window, window_start, type_by_label, threshold, audit)
                 )
+        audit.report()
         return BackendExtraction(mentions=mentions, relations=relations)
 
     def _window_mentions(
-        self, window: str, offset: int, kind_by_label: Dict[str, str], threshold: float
+        self,
+        window: str,
+        offset: int,
+        kind_by_label: Dict[str, str],
+        threshold: float,
+        audit: "_SpanAudit",
     ) -> List[BackendMention]:
         found = self._model.extract_entities(
             window,
@@ -236,7 +248,10 @@ class Gliner2Backend(TypedExtractionBackend):
         mentions = []
         for label, spans in found.items():
             for span in spans:
-                start, end = _trim_span(window, span["start"], span["end"])
+                bounds = audit.clamp(window, span["start"], span["end"])
+                if bounds is None:
+                    continue
+                start, end = _trim_span(window, *bounds)
                 if end > start:
                     mentions.append(
                         BackendMention(
@@ -249,7 +264,12 @@ class Gliner2Backend(TypedExtractionBackend):
         return mentions
 
     def _window_relations(
-        self, window: str, offset: int, type_by_label: Dict[str, str], threshold: float
+        self,
+        window: str,
+        offset: int,
+        type_by_label: Dict[str, str],
+        threshold: float,
+        audit: "_SpanAudit",
     ) -> List[BackendRelation]:
         found = self._model.extract_relations(
             window,
@@ -261,8 +281,12 @@ class Gliner2Backend(TypedExtractionBackend):
         relations = []
         for label, pairs in found.items():
             for pair in pairs:
-                subject = _trim_span(window, pair["head"]["start"], pair["head"]["end"])
-                target = _trim_span(window, pair["tail"]["start"], pair["tail"]["end"])
+                head = audit.clamp(window, pair["head"]["start"], pair["head"]["end"])
+                tail = audit.clamp(window, pair["tail"]["start"], pair["tail"]["end"])
+                if head is None or tail is None:
+                    continue
+                subject = _trim_span(window, *head)
+                target = _trim_span(window, *tail)
                 if subject[1] > subject[0] and target[1] > target[0]:
                     relations.append(
                         BackendRelation(
@@ -313,6 +337,62 @@ def paragraph_windows(text: str, *, maximum_characters: int = 2000) -> List[Tupl
 
 
 _TRIM_CHARACTERS = re.compile(r"[\s,.;:!?()\[\]{}\"']")
+
+
+class _SpanAudit:
+    """
+    Validate model spans against their window and count the ones that needed correction.
+
+    A span model can return offsets that drift from the text it read, for example after unusual
+    Unicode in extracted text. A span that starts inside the window is clamped to the window; a span
+    that lies wholly outside it is dropped. One malformed span must never fail an item.
+
+    :ivar adjusted: Spans clamped to the window.
+    :vartype adjusted: int
+    :ivar dropped: Spans discarded because they lie wholly outside the window.
+    :vartype dropped: int
+    """
+
+    def __init__(self) -> None:
+        self.adjusted = 0
+        self.dropped = 0
+
+    def clamp(self, window: str, start: int, end: int) -> Optional[Tuple[int, int]]:
+        """
+        Clamp a span to the window.
+
+        :param window: Text the model read.
+        :type window: str
+        :param start: Span start reported by the model.
+        :type start: int
+        :param end: Span end reported by the model.
+        :type end: int
+        :return: Clamped ``(start, end)``, or ``None`` when the span lies wholly outside the window.
+        :rtype: tuple[int, int] or None
+        """
+        clamped_start = max(start, 0)
+        clamped_end = min(end, len(window))
+        if clamped_start >= clamped_end:
+            self.dropped += 1
+            return None
+        if (clamped_start, clamped_end) != (start, end):
+            self.adjusted += 1
+        return clamped_start, clamped_end
+
+    def report(self) -> None:
+        """
+        Log the counts when any span was adjusted or dropped.
+
+        :return: None.
+        :rtype: None
+        """
+        if self.adjusted or self.dropped:
+            logger.warning(
+                "Typed extraction adjusted %d span(s) to the window and dropped %d span(s) "
+                "outside it",
+                self.adjusted,
+                self.dropped,
+            )
 
 
 def _trim_span(window: str, start: int, end: int) -> Tuple[int, int]:
