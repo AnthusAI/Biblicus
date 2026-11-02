@@ -118,7 +118,7 @@ def _install_fake_gliner2(context) -> None:
                 if row["label"] in labels:
                     found.setdefault(row["label"], []).append(
                         {
-                            "text": "",
+                            "text": row["text"],
                             "start": _relative_offset(window, row["start"]),
                             "end": _relative_offset(window, row["end"]),
                             "confidence": row["score"],
@@ -158,13 +158,13 @@ def _install_fake_gliner2(context) -> None:
                     found.setdefault(row["label"], []).append(
                         {
                             "head": {
-                                "text": "",
+                                "text": row["subject_text"],
                                 "start": _relative_offset(window, row["subject_start"]),
                                 "end": _relative_offset(window, row["subject_end"]),
                                 "confidence": row["score"],
                             },
                             "tail": {
-                                "text": "",
+                                "text": row["object_text"],
                                 "start": _relative_offset(window, row["object_start"]),
                                 "end": _relative_offset(window, row["object_end"]),
                                 "confidence": row["score"],
@@ -219,6 +219,7 @@ def step_fake_gliner2_raw_spans(context) -> None:
     _fake_state(context).raw_entities = [
         {
             "label": row["label"],
+            "text": row.get("text", ""),
             "start": row["start"],
             "end": row["end"],
             "score": float(row["score"]),
@@ -234,6 +235,8 @@ def step_fake_gliner2_raw_relation(context) -> None:
     _fake_state(context).raw_relations = [
         {
             "label": row["label"],
+            "subject_text": row.get("subject_text", ""),
+            "object_text": row.get("object_text", ""),
             "subject_start": row["subject_start"],
             "subject_end": row["subject_end"],
             "object_start": row["object_start"],
@@ -549,10 +552,13 @@ def step_fake_windows(context, count: int) -> None:
     assert len(_fake_state(context).windows) == count, len(_fake_state(context).windows)
 
 
-@then("the typed extraction log reports {adjusted:d} adjusted spans and {dropped:d} dropped spans")
-def step_typed_log_counts(context, adjusted: int, dropped: int) -> None:
+@then(
+    "the typed extraction log reports {adjusted:d} adjusted spans, {dropped:d} dropped spans "
+    "and {mismatched:d} mismatched spans"
+)
+def step_typed_log_counts(context, adjusted: int, dropped: int, mismatched: int) -> None:
     reported = [record.args for record in _fake_state(context).log_records]
-    assert reported == [(adjusted, dropped)], reported
+    assert reported == [(adjusted, dropped, mismatched)], reported
 
 
 @then("the fake GLiNER2 library read no windows")
