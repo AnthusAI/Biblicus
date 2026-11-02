@@ -248,7 +248,7 @@ class Gliner2Backend(TypedExtractionBackend):
         mentions = []
         for label, spans in found.items():
             for span in spans:
-                bounds = audit.clamp(window, span["start"], span["end"])
+                bounds = audit.clamp(window, span["start"], span["end"], span.get("text", ""))
                 if bounds is None:
                     continue
                 start, end = _trim_span(window, *bounds)
@@ -281,8 +281,12 @@ class Gliner2Backend(TypedExtractionBackend):
         relations = []
         for label, pairs in found.items():
             for pair in pairs:
-                head = audit.clamp(window, pair["head"]["start"], pair["head"]["end"])
-                tail = audit.clamp(window, pair["tail"]["start"], pair["tail"]["end"])
+                head = audit.clamp(
+                    window, pair["head"]["start"], pair["head"]["end"], pair["head"].get("text", "")
+                )
+                tail = audit.clamp(
+                    window, pair["tail"]["start"], pair["tail"]["end"], pair["tail"].get("text", "")
+                )
                 if head is None or tail is None:
                     continue
                 subject = _trim_span(window, *head)
@@ -347,17 +351,24 @@ class _SpanAudit:
     Unicode in extracted text. A span that starts inside the window is clamped to the window; a span
     that lies wholly outside it is dropped. One malformed span must never fail an item.
 
+    When the model also returns the span text, the window must hold exactly that text at the
+    reported offsets. A span whose offsets do not select its own text is dropped, because clamping
+    unreliable offsets would label the wrong text.
+
     :ivar adjusted: Spans clamped to the window.
     :vartype adjusted: int
     :ivar dropped: Spans discarded because they lie wholly outside the window.
     :vartype dropped: int
+    :ivar mismatched: Spans discarded because the window text at their offsets is not the span text.
+    :vartype mismatched: int
     """
 
     def __init__(self) -> None:
         self.adjusted = 0
         self.dropped = 0
+        self.mismatched = 0
 
-    def clamp(self, window: str, start: int, end: int) -> Optional[Tuple[int, int]]:
+    def clamp(self, window: str, start: int, end: int, text: str = "") -> Optional[Tuple[int, int]]:
         """
         Clamp a span to the window.
 
@@ -367,9 +378,15 @@ class _SpanAudit:
         :type start: int
         :param end: Span end reported by the model.
         :type end: int
-        :return: Clamped ``(start, end)``, or ``None`` when the span lies wholly outside the window.
+        :param text: Span text reported by the model, or an empty string when it reported none.
+        :type text: str
+        :return: Clamped ``(start, end)``, or ``None`` when the span lies wholly outside the window
+            or its offsets do not select ``text``.
         :rtype: tuple[int, int] or None
         """
+        if text and not (0 <= start < end <= len(window) and window[start:end] == text):
+            self.mismatched += 1
+            return None
         clamped_start = max(start, 0)
         clamped_end = min(end, len(window))
         if clamped_start >= clamped_end:
@@ -386,12 +403,13 @@ class _SpanAudit:
         :return: None.
         :rtype: None
         """
-        if self.adjusted or self.dropped:
+        if self.adjusted or self.dropped or self.mismatched:
             logger.warning(
-                "Typed extraction adjusted %d span(s) to the window and dropped %d span(s) "
-                "outside it",
+                "Typed extraction adjusted %d span(s) to the window, dropped %d span(s) "
+                "outside it and dropped %d span(s) whose offsets do not select their text",
                 self.adjusted,
                 self.dropped,
+                self.mismatched,
             )
 
 

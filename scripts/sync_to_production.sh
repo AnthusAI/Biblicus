@@ -23,7 +23,7 @@ fi
 OUTPUTS_FILE="apps/dashboard/amplify_outputs.json"
 
 if [ ! -f "$OUTPUTS_FILE" ]; then
-    echo "Error: amplify_outputs.json not found. Run: npx ampx generate outputs --branch main --app-id d2tt8jli0p2lze"
+    echo "Error: amplify_outputs.json not found. Run: npx ampx generate outputs --branch main --app-id <amplify-app-id>"
     exit 1
 fi
 
@@ -59,4 +59,4 @@ python scripts/sync_catalog.py "$CORPUS_PATH"
 
 echo ""
 echo "✓ Sync complete!"
-echo "View at: http://localhost:5175 (local) or https://main.d2tt8jli0p2lze.amplifyapp.com (production)"
+echo "View at: http://localhost:5175 (local) or the Amplify production URL"

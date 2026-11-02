@@ -204,7 +204,30 @@ Feature: Typed entity and relation extraction
       | made_by        | Guard 1.1 | NAME-A     | proposed |
       | licensed_under | Guard 1.1 | Apache 2.0 | proposed |
     And every entity text in the output appears at its offsets in item "alpha" of corpus "typed-lab"
-    And the typed extraction log reports 1 adjusted spans and 2 dropped spans
+    And the typed extraction log reports 1 adjusted spans, 2 dropped spans and 0 mismatched spans
+
+  Scenario: A span whose offsets do not select its own text is dropped, never clamped
+    GLiNER2 reports the text of every span beside its offsets. When the item text at those offsets is not that text, the offsets are unreliable, and clamping them would label the wrong text. The span is dropped, whether it lies past the end of the window or inside it, and the run completes with the spans the model placed correctly.
+    Given the fake GLiNER2 library also returns these spans relative to the window length:
+      | label            | text       | start | end | score |
+      | software licence | Apache 2.0 | +5    | +15 | 0.9   |
+      | software licence | Apache 2.0 | 0     | 6   | 0.9   |
+    And the fake GLiNER2 library also returns this relation relative to the window length:
+      | label   | subject_text | object_text | subject_start | subject_end | object_start | object_end | score |
+      | made by | Guard 1.1    | NAME-A      | +3            | +12         | +20           | +26        | 0.9   |
+    And I built a pass-through extraction snapshot in corpus "typed-lab"
+    When I extract typed entities in corpus "typed-lab" with options "--vocabulary vocabulary.yml --registry registry.json"
+    Then item "alpha" has these entities:
+      | text       | kind    | state    | entity_key |
+      | NAME-A     | maker   | resolved | name-a     |
+      | Guard 1.1  | model   | proposed | -          |
+      | Apache 2.0 | licence | resolved | apache-2   |
+    And item "alpha" has these relations:
+      | type           | subject   | object     | state    |
+      | made_by        | Guard 1.1 | NAME-A     | proposed |
+      | licensed_under | Guard 1.1 | Apache 2.0 | proposed |
+    And every entity text in the output appears at its offsets in item "alpha" of corpus "typed-lab"
+    And the typed extraction log reports 0 adjusted spans, 0 dropped spans and 4 mismatched spans
 
   Scenario: The pinned model is loaded once at its pinned revision
     Given I built a pass-through extraction snapshot in corpus "typed-lab"
