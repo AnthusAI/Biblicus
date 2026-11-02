@@ -581,7 +581,7 @@ Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
 Comprehensive guide covering: - Production URLs and architecture - Quick start configuration -
   Auto-sync workflow - Development setup - CLI commands reference - Troubleshooting
 
-Dashboard is fully deployed and functional at: https://main.d2tt8jli0p2lze.amplifyapp.com
+Dashboard is fully deployed and functional at: the Amplify production URL
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
