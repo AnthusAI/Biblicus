@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import shlex
 import sys
 import types
@@ -27,6 +28,9 @@ class _FakeGliner2State:
         self.entities: List[Dict[str, Any]] = []
         self.relations: List[Dict[str, Any]] = []
         self.windows: List[str] = []
+        self.raw_entities: List[Dict[str, Any]] = []
+        self.raw_relations: List[Dict[str, Any]] = []
+        self.log_records: List[logging.LogRecord] = []
         self.loads: List[Dict[str, Any]] = []
 
 
@@ -45,6 +49,40 @@ def _occurrences(window: str, phrase: str) -> List[int]:
         starts.append(cursor)
         cursor = window.find(phrase, cursor + 1)
     return starts
+
+
+def _relative_offset(window: str, expression: str) -> int:
+    if expression.startswith("+"):
+        return len(window) + int(expression[1:])
+    if expression.startswith("-") and int(expression) < 0 and expression != "-0":
+        return len(window) + int(expression)
+    return int(expression)
+
+
+class _LogCollector(logging.Handler):
+    def __init__(self, records: List[logging.LogRecord]) -> None:
+        super().__init__(level=logging.INFO)
+        self._records = records
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._records.append(record)
+
+
+def _collect_backend_log(context) -> None:
+    if getattr(context, "typed_log_collecting", False):
+        return
+    logger = logging.getLogger("biblicus.typed_extraction_backends")
+    previous_level = logger.level
+    handler = _LogCollector(_fake_state(context).log_records)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    context.typed_log_collecting = True
+
+    def restore() -> None:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+
+    context.add_cleanup(restore)
 
 
 def _install_fake_gliner2(context) -> None:
@@ -73,6 +111,16 @@ def _install_fake_gliner2(context) -> None:
                             "text": row["text"],
                             "start": start,
                             "end": start + len(row["text"]),
+                            "confidence": row["score"],
+                        }
+                    )
+            for row in state.raw_entities:
+                if row["label"] in labels:
+                    found.setdefault(row["label"], []).append(
+                        {
+                            "text": "",
+                            "start": _relative_offset(window, row["start"]),
+                            "end": _relative_offset(window, row["end"]),
                             "confidence": row["score"],
                         }
                     )
@@ -105,6 +153,24 @@ def _install_fake_gliner2(context) -> None:
                         },
                     }
                 )
+            for row in state.raw_relations:
+                if row["label"] in labels:
+                    found.setdefault(row["label"], []).append(
+                        {
+                            "head": {
+                                "text": "",
+                                "start": _relative_offset(window, row["subject_start"]),
+                                "end": _relative_offset(window, row["subject_end"]),
+                                "confidence": row["score"],
+                            },
+                            "tail": {
+                                "text": "",
+                                "start": _relative_offset(window, row["object_start"]),
+                                "end": _relative_offset(window, row["object_end"]),
+                                "confidence": row["score"],
+                            },
+                        }
+                    )
             return {"relation_extraction": found}
 
     module = types.ModuleType("gliner2")
@@ -140,6 +206,38 @@ def step_fake_gliner2_relations(context) -> None:
             "subject": row["subject"],
             "label": row["label"],
             "object": row["object"],
+            "score": float(row["score"]),
+        }
+        for row in context.table
+    ]
+
+
+@given("the fake GLiNER2 library also returns these spans relative to the window length:")
+def step_fake_gliner2_raw_spans(context) -> None:
+    _install_fake_gliner2(context)
+    _collect_backend_log(context)
+    _fake_state(context).raw_entities = [
+        {
+            "label": row["label"],
+            "start": row["start"],
+            "end": row["end"],
+            "score": float(row["score"]),
+        }
+        for row in context.table
+    ]
+
+
+@given("the fake GLiNER2 library also returns this relation relative to the window length:")
+def step_fake_gliner2_raw_relation(context) -> None:
+    _install_fake_gliner2(context)
+    _collect_backend_log(context)
+    _fake_state(context).raw_relations = [
+        {
+            "label": row["label"],
+            "subject_start": row["subject_start"],
+            "subject_end": row["subject_end"],
+            "object_start": row["object_start"],
+            "object_end": row["object_end"],
             "score": float(row["score"]),
         }
         for row in context.table
@@ -449,6 +547,12 @@ def step_fake_loaded(context, model_id: str, revision: str, count: int) -> None:
 @then("the fake GLiNER2 library read {count:d} windows")
 def step_fake_windows(context, count: int) -> None:
     assert len(_fake_state(context).windows) == count, len(_fake_state(context).windows)
+
+
+@then("the typed extraction log reports {adjusted:d} adjusted spans and {dropped:d} dropped spans")
+def step_typed_log_counts(context, adjusted: int, dropped: int) -> None:
+    reported = [record.args for record in _fake_state(context).log_records]
+    assert reported == [(adjusted, dropped)], reported
 
 
 @then("the fake GLiNER2 library read no windows")
