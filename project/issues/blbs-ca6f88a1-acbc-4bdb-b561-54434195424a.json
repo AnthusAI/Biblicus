@@ -22,10 +22,22 @@
         "model": "claude-opus-5-5",
         "name": "claude"
       }
+    },
+    {
+      "id": "7575b40e-afb9-47be-a78d-9ae4c49fb08c",
+      "author": "home",
+      "text": "Blocked on blbs-67eb7d (in progress, owned by the Cyclotron session): Cyclotron runs in shadow on up to 300 pending p.apyr.us ai-ml-research References, and Ryan's accept/reject reviews supply the labels. Unblock when its report (accuracy, per-class precision/recall, Brier score, reliability bins, disagreements) supports promotion. Papyrus still depends on recommendation (categories_steering.py reviewRecommended) and on topic-classifier train/project, so removal needs a Papyrus migration first.",
+      "created_at": "2026-10-23T13:26:31.256618Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude-code",
+        "model": "claude-opus-5-5",
+        "name": "claude"
+      }
     }
   ],
   "created_at": "2026-10-17T16:41:04.495481Z",
-  "updated_at": "2026-10-19T18:19:56.831734Z",
+  "updated_at": "2026-10-23T13:26:31.256656Z",
   "closed_at": null,
   "agent": {
     "platform": "claude-code",
