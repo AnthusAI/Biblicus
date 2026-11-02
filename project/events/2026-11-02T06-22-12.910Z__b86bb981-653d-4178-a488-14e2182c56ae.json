@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "event_id": "b86bb981-653d-4178-a488-14e2182c56ae",
+  "issue_id": "blbs-20d4d9a6-1bd8-4528-8f84-63b71a60d264",
+  "event_type": "comment_added",
+  "occurred_at": "2026-11-02T06:22:12.910Z",
+  "actor_id": "home",
+  "payload": {
+    "comment_id": "7e7abf34-5701-4af7-a41d-0261561f9a2f",
+    "comment_author": "home",
+    "agent": {
+      "platform": "claude_code",
+      "model": "Sonnet 5.5",
+      "name": "Biblicus Span Fix"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "id": "blbs-20d4d9a6-1bd8-4528-8f84-63b71a60d264",
+  "title": "GLiNER2 span beyond window crashes typed-entities run",
+  "description": "extract typed-entities with the gliner2 backend raises IndexError in _trim_span when the model returns a span whose end exceeds the window (offset drift on unusual Unicode). One malformed span failed a 1,375-document run. Expected: spans are clamped to the window, wholly out-of-range spans are dropped and counted in a log message; never fails the document.",
+  "type": "bug",
+  "status": "in_progress",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": "blbs-9d0c496d-f7c5-488b-9c10-7bf0de625f91",
+  "labels": [],
+  "dependencies": [],
+  "comments": [
+    {
+      "id": "d16853c0-21c1-4770-bd47-eb53e7fdb46b",
+      "author": "home",
+      "text": "Feature: Typed extraction survives malformed spans\n  Scenario: Span past the window end\n    Given the GLiNER2 model returns a span whose end exceeds the window\n    When typed entities are extracted\n    Then the span is clamped to the window and the run completes\n  Scenario: Span wholly outside the window\n    Given the GLiNER2 model returns a span starting past the window end\n    When typed entities are extracted\n    Then the span is dropped, counted in a log message, and the run completes",
+      "created_at": "2026-11-02T06:16:20.993772Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "Biblicus Span Fix"
+      }
+    },
+    {
+      "id": "5f071258-f2fc-4fff-a544-41755f16df91",
+      "author": "home",
+      "text": "Spec red (IndexError), then fixed: _SpanAudit clamps spans to the window, drops wholly-outside spans, logs one warning per item with adjusted/dropped counts; relations drop when either endpoint is dropped. Scenario added to typed_entity_extraction.feature. Running full coverage suite.",
+      "created_at": "2026-11-02T06:17:50.044720Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "Biblicus Span Fix"
+      }
+    },
+    {
+      "id": "7e7abf34-5701-4af7-a41d-0261561f9a2f",
+      "author": "home",
+      "text": "Full suite: new scenario green, typed_extraction_backends.py 100% line+branch. 22 unrelated scenarios fail locally from missing wikitext2 fixture / optional deps (total 97% locally); CI has them.",
+      "created_at": "2026-11-02T06:22:12.909706Z",
+      "comment_type": "default",
+      "agent": {
+        "platform": "claude_code",
+        "model": "Sonnet 5.5",
+        "name": "Biblicus Span Fix"
+      }
+    }
+  ],
+  "created_at": "2026-11-02T06:16:18.195268Z",
+  "updated_at": "2026-11-02T06:22:12.910231Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude_code",
+    "model": "Sonnet 5.5",
+    "name": "Biblicus Span Fix"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
