@@ -1,0 +1,25 @@
+{
+  "id": "blbs-08218563-ece2-4cb0-8efc-273d9a128d52",
+  "title": "Typed extraction: drop GLiNER2 spans whose offsets do not select their text",
+  "description": "Follow-up to the 1.16.1 clamp fix. Machines on Machines knowledge runs crashed with IndexError in _trim_span on a span past the window end (fixed by clamping in 1.16.1). Clamping alone could label the wrong text if offsets drift, so a span whose offsets do not select the text GLiNER2 returned with it is now dropped and counted in the log. Runtime finding: no per-item progress logging, output only written at the end; per-item results are cached by text hash so a re-run resumes if the corpus analysis cache persists.",
+  "type": "bug",
+  "status": "open",
+  "priority": 1,
+  "assignee": null,
+  "creator": null,
+  "parent": null,
+  "labels": [],
+  "dependencies": [],
+  "comments": [],
+  "created_at": "2026-11-02T21:19:30.402462Z",
+  "updated_at": "2026-11-02T21:19:30.402500Z",
+  "closed_at": null,
+  "agent": {
+    "platform": "claude_code",
+    "model": "Claude Opus 5.5",
+    "name": "Biblicus typed extraction"
+  },
+  "right_now_summary": null,
+  "right_now_updated_at": null,
+  "custom": {}
+}
